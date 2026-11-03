@@ -56,8 +56,8 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
   const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
-  const embedding = appConfig.productEmbeddings.find(({ embeddedProduct }) => embeddedProduct === entityType);
-  if (embedding && !overflowed) {
+  const embedded = appConfig.productEmbeddings.some(({ embeddedProduct }) => embeddedProduct === entityType);
+  if (embedded && !overflowed) {
     // Every row the frame names is in the hint: a host learns of an embedded change by it, or past the cap by its lists'
     // refetch. A soft delete arrives as an update, and the host drops its copy of that row.
     const update: string[] = [];
@@ -66,13 +66,7 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
       if (event.action === 'delete' || rowData.deletedAt != null) remove.push(entry.subjectId);
       else update.push(entry.subjectId);
     }
-    propagation = {
-      embeddedProduct: embedding.embeddedProduct,
-      hostProduct: embedding.hostProduct,
-      hostColumn: embedding.hostColumn,
-      update,
-      remove,
-    };
+    propagation = { embeddedProduct: entityType, update, remove };
   }
 
   return {

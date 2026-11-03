@@ -2,7 +2,6 @@ import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { endStream, type StreamErrorPayload, writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 
@@ -29,11 +28,6 @@ async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamEr
   await endStream(subscriber.stream);
 }
 
-/** Whether a registered stream is an app stream, with a session and memberships behind it. */
-export function isAppStream(subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber {
-  return 'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
-}
-
 /** Closes streams side by side, so a client that stopped reading holds up none of the others. */
 export async function closeAppStreams(closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[], failure: string): Promise<void> {
   await Promise.allSettled(
@@ -49,10 +43,7 @@ export async function closeAppStreams(closings: { subscriber: AppStreamSubscribe
  * memberships again.
  */
 export async function endOrganizationStreams(organizationIds: string[], message: string): Promise<void> {
-  const streams = streamSubscriberManager
-    .all()
-    .filter(isAppStream)
-    .filter((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)));
+  const streams = streamSubscriberManager.all().filter((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)));
   if (streams.length === 0) return;
   const payload: StreamErrorPayload = { code: 'access_changed', message };
   await closeAppStreams(
@@ -66,7 +57,7 @@ export async function endOrganizationStreams(organizationIds: string[], message:
  * catch-up of the new connection brings the generation that makes it refetch.
  */
 export async function resyncAppStreams(): Promise<void> {
-  const streams = streamSubscriberManager.all().filter(isAppStream);
+  const streams = streamSubscriberManager.all();
   if (streams.length === 0) return;
   const payload: StreamErrorPayload = { code: 'resync', message: 'Sync books were rebuilt' };
   await closeAppStreams(

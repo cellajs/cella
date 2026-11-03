@@ -121,8 +121,6 @@ export const zStreamChange = z.object({
   propagation: z
     .object({
       embeddedProduct: z.enum(['attachment']),
-      hostProduct: z.enum(['attachment']),
-      hostColumn: z.string(),
       update: z.array(z.string()),
       remove: z.array(z.string()),
     })
@@ -1059,10 +1057,9 @@ export const zPostAppCatchupResponse = z.object({
         .array(
           z.object({
             embeddedProduct: z.enum(['attachment']),
-            hostProduct: z.enum(['attachment']),
-            hostColumn: z.string(),
             update: z.array(z.string()),
             remove: z.array(z.string()),
+            overflow: z.boolean().optional(),
           }),
         )
         .optional(),

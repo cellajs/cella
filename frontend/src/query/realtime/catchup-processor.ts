@@ -7,7 +7,7 @@ import { queryClient } from '~/query/query-client';
 import * as cacheOps from '~/query/realtime/cache-ops';
 import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
-import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/propagation';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -144,6 +144,11 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
     // Propagation runs after the range fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.
     if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
+        // More rows changed than a hint names: the host lists refetch, embedded copies included.
+        if (hint.overflow) {
+          invalidateEmbeddingHosts(hint.embeddedProduct, organizationId);
+          continue;
+        }
         const pending = hasEntityQueryKeys(hint.embeddedProduct) && attachPendingPropagation(hint.embeddedProduct, organizationId, hint);
         if (!pending) propagateEmbeddings(hint);
       }

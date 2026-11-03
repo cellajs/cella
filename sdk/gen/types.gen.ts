@@ -163,14 +163,6 @@ export type StreamChange = {
      */
     embeddedProduct: 'attachment';
     /**
-     * Host product type whose cache should be patched
-     */
-    hostProduct: 'attachment';
-    /**
-     * Column on the host product that embeds the changed product
-     */
-    hostColumn: string;
-    /**
      * Embedded row IDs whose cached copies in host rows need a refresh
      */
     update: Array<string>;
@@ -2360,14 +2352,6 @@ export type PostAppCatchupResponses = {
            */
           embeddedProduct: 'attachment';
           /**
-           * Host product type whose cache should be patched
-           */
-          hostProduct: 'attachment';
-          /**
-           * Column on the host product that embeds the changed product
-           */
-          hostColumn: string;
-          /**
            * Embedded row IDs whose cached copies in host rows need a refresh
            */
           update: Array<string>;
@@ -2375,6 +2359,10 @@ export type PostAppCatchupResponses = {
            * Embedded row IDs (deleted or soft deleted) that host rows drop
            */
           remove: Array<string>;
+          /**
+           * Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch
+           */
+          overflow?: boolean;
         }>;
       };
     };

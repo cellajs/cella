@@ -1,3 +1,4 @@
+import type { SSEStreamingApi } from 'hono/streaming';
 import {
   type Access,
   appConfig,
@@ -11,12 +12,16 @@ import type { ActivityRow } from '#/lib/activity-bus';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
+import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 
 /** A signed-in user's stream: its own signals on its user topic, changes and reader signals on each of its organizations' topics. */
-export interface AppStreamSubscriber extends BaseStreamSubscriber {
+export interface AppStreamSubscriber {
+  id: string;
+  stream: SSEStreamingApi;
+  /** The topic the subscriber is routed by, such as `user:123`; `register` takes more. */
+  topic?: string;
   userId: string;
   /** The session this connection authenticated with; its ending closes the stream. */
   sessionId: string;
@@ -110,9 +115,7 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
 
 /** The subscribers on an organization's topic that hold the organization. */
 export function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
-  return streamSubscriberManager
-    .getByTopic<AppStreamSubscriber>(organizationTopic(organizationId))
-    .filter((subscriber) => subscriber.organizationIds.has(organizationId));
+  return streamSubscriberManager.getByTopic(organizationTopic(organizationId)).filter((subscriber) => subscriber.organizationIds.has(organizationId));
 }
 
 /**

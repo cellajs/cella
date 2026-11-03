@@ -296,7 +296,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
+    const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 
@@ -322,7 +322,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
+    const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 

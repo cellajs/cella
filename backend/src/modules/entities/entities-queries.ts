@@ -237,6 +237,8 @@ interface FindChangedEntityDeltaIdsOpts {
   afterSeq: number;
   /** The rows the caller may read (`buildCollectionReadWhere`); unset reads every row of the organization. */
   readWhere?: SQL;
+  /** The most rows read, in no order. */
+  limit: number;
 }
 
 /**
@@ -245,7 +247,7 @@ interface FindChangedEntityDeltaIdsOpts {
  */
 export const findChangedEntityDeltaIds = async (
   ctx: DbContext,
-  { entityType, organizationId, afterSeq, readWhere }: FindChangedEntityDeltaIdsOpts,
+  { entityType, organizationId, afterSeq, readWhere, limit }: FindChangedEntityDeltaIdsOpts,
 ) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
@@ -257,6 +259,7 @@ export const findChangedEntityDeltaIds = async (
     SELECT id, ${deletedAtSelect} AS "deletedAt"
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
+    LIMIT ${limit}
   `);
 
   const updatedIds: string[] = [];

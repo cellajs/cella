@@ -8,11 +8,8 @@ import { forEachListQuery, mapListItems } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
-/** The part of a propagation hint the client reads: its host fields are advisory, and this app's productEmbeddings config says where embedded copies are cached. */
-type PropagationHint = Pick<NonNullable<StreamChange['propagation']>, 'embeddedProduct' | 'update' | 'remove'>;
-
 /** Patch stale embedded-product references across every host column productEmbeddings declares for the changed product. */
-export function propagateEmbeddings(hint: PropagationHint): void {
+export function propagateEmbeddings(hint: NonNullable<StreamChange['propagation']>): void {
   const { embeddedProduct, update, remove } = hint;
   if (update.length === 0 && remove.length === 0) return;
 

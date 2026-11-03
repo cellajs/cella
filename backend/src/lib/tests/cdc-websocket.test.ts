@@ -6,6 +6,10 @@ import { productCacheStore } from '#/middlewares/product-cache/product-cache-sto
 import { mockActivity } from '#/modules/activities/activities-mocks';
 import { log } from '#/utils/logger';
 
+// A generation move ends every app stream: the case counts the calls.
+const { resyncAppStreams } = vi.hoisted(() => ({ resyncAppStreams: vi.fn(() => Promise.resolve()) }));
+vi.mock('#/modules/entities/helpers/session-streams', () => ({ resyncAppStreams }));
+
 /** A worker socket as the socket server uses one: it registers handlers and may be closed. The test fires the handlers. */
 const fakeSocket = () => {
   const handlers: Record<string, (...args: unknown[]) => void> = {};
@@ -210,28 +214,27 @@ describe('CDC socket: a message as the bus receives it', () => {
 });
 
 describe('CDC socket: control messages', () => {
-  it('holds the report of a worker of another release as unreadable, and still follows its generation', () => {
+  it('holds the report of a worker of another release as unreadable, and still follows its generation: a move ends every app stream once', () => {
     const worker = connect();
     const olderReport = (generation: number) => ({ _control: 'health', payload: { replicationStatus: 'active', lastLsn: null, generation } });
 
     worker.send(olderReport(41));
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    const generations: number[] = [];
-    cdcWebSocketServer.onGenerationChange((generation) => generations.push(generation));
+    resyncAppStreams.mockClear();
     worker.send(olderReport(42));
     worker.send({ _control: 'health' });
     worker.send({ _control: 'health', payload: { status: 'fine', reasons: [], details: {}, generation: 42 } });
 
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    expect(generations).toEqual([42]);
+    expect(resyncAppStreams).toHaveBeenCalledOnce();
   });
 
   it('ignores a control message it does not know, without a warning or an error in the log', () => {
-    const warn = vi.spyOn(log, 'warn');
-    const error = vi.spyOn(log, 'error');
     const worker = connect();
     worker.send(healthReport({ status: 'degraded', reasons: ['wal_lag_high'] }));
     const before = cdcWebSocketServer.getHealthStatus();
+    const warn = vi.spyOn(log, 'warn');
+    const error = vi.spyOn(log, 'error');
 
     worker.send({ _control: 'wal_lag_alert', severity: 'wal_lag_warn', lagBytes: 2 ** 30 });
 

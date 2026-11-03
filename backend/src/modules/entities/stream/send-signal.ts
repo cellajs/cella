@@ -10,9 +10,7 @@ import { log } from '#/utils/logger';
 function audienceSubscribers(audience: Audience): AppStreamSubscriber[] {
   if (audience.kind === 'user') {
     // The user topic already targets the user; the filter is the safety net.
-    return streamSubscriberManager
-      .getByTopic<AppStreamSubscriber>(userTopic(audience.userId))
-      .filter((subscriber) => subscriber.userId === audience.userId);
+    return streamSubscriberManager.getByTopic(userTopic(audience.userId)).filter((subscriber) => subscriber.userId === audience.userId);
   }
   const { subject, action } = audience;
   const organizationId = subject.entityType === 'organization' ? subject.id : subject.channelIds.organization;

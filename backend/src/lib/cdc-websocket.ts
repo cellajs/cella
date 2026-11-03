@@ -9,6 +9,7 @@ import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { activitySchema } from '#/modules/activities/activities-schema';
+import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
 import { log } from '#/utils/logger';
 
 const rowDataSchema = z.record(z.string(), z.unknown());
@@ -121,7 +122,6 @@ class CdcWebSocketServer {
   private parseErrors = 0;
   private workerHealth: WorkerHealthReport | null = null;
   private generation: number | null = null;
-  private generationListeners: ((generation: number) => void)[] = [];
   /**
    * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read,
    * that it reads again from a failure, or that it is unhealthy. Null while one reads. A process that just started has
@@ -212,18 +212,15 @@ class CdcWebSocketServer {
 
   /**
    * The first generation the worker reports is where this process starts; a later, other one means the books were
-   * corrected or rebuilt while clients were connected.
+   * corrected or rebuilt while clients were connected, so the cursors a client holds say nothing about them any more.
    */
   private noteGeneration(generation: number | undefined): void {
     if (typeof generation !== 'number' || generation === this.generation) return;
     const moved = this.generation !== null;
     this.generation = generation;
-    if (moved) for (const listener of this.generationListeners) listener(generation);
-  }
-
-  /** Registers what to do when the worker's books move to another generation. */
-  onGenerationChange(listener: (generation: number) => void): void {
-    this.generationListeners.push(listener);
+    if (!moved) return;
+    log.warn('The sync books moved to another generation: clients reconnect and refetch', { generation });
+    void resyncAppStreams();
   }
 
   /**

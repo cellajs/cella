@@ -22,7 +22,7 @@ export interface SyncedRows {
 type Handler<T> = (event: T) => void;
 
 /** One kind of in-process event: `publish` reaches every handler that `subscribe` registered, and `name` labels a failing handler's log line. */
-export function createEmitter<T>(name: string) {
+function createEmitter<T>(name: string) {
   const handlers = new Set<Handler<T>>();
 
   /** A throwing handler is logged and skipped, so one bad subscriber cannot break the sync flow. */

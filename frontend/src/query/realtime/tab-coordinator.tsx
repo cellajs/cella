@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
-import { createEmitter } from '~/query/realtime/sync-events';
 import { markBundleStale } from '~/query/schema-version-guard';
 
 const channelName = 'tab-sync';
@@ -16,12 +15,14 @@ export interface SyncHealth {
   workerAway: boolean;
 }
 
-type BroadcastMessage =
+/** What the leader posts to the follower tabs: the frames of its stream, its catchup answers and the health of its stream. */
+export type LeaderMessage =
   | { type: 'stream-change'; change: StreamChange }
   | { type: 'stream-signal'; signal: StreamSignal }
   | { type: 'catchup'; response: PostAppCatchupResponse }
-  | { type: 'sync-health'; health: SyncHealth }
-  | { type: 'schema-version'; version: number };
+  | { type: 'sync-health'; health: SyncHealth };
+
+type BroadcastMessage = LeaderMessage | { type: 'schema-version'; version: number };
 
 interface TabCoordinatorState {
   isLeader: boolean;
@@ -39,10 +40,7 @@ export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
 
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
-const streamChangeEmitter = createEmitter<StreamChange>('TabStreamChange');
-const streamSignalEmitter = createEmitter<StreamSignal>('TabStreamSignal');
-const catchupEmitter = createEmitter<PostAppCatchupResponse>('TabCatchup');
-const syncHealthEmitter = createEmitter<SyncHealth>('TabSyncHealth');
+let leaderMessageHandler: ((message: LeaderMessage) => void) | null = null;
 /** What this tab last broadcast as leader, said again to a tab that opens later; null once it heard another leader's. */
 let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
@@ -177,48 +175,24 @@ function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
 
   // The leader acts on its own stream: its changes and signals as they arrive, a catchup answer where its request returns.
   if (store.isLeader) return;
+  if (message.type === 'sync-health') lastSyncHealth = null;
+  leaderMessageHandler?.(message);
+}
+
+/** Sets the one handler of what the leader posts; the stream manager sets it, and it runs only while this tab follows. */
+export function onLeaderMessage(handler: (message: LeaderMessage) => void): void {
+  leaderMessageHandler = handler;
+}
+
+/** Called by the leader with each frame and catchup answer it receives, and with the health of its stream, which it posts only when it changed. */
+export function postToFollowers(message: LeaderMessage): void {
   if (message.type === 'sync-health') {
-    lastSyncHealth = null;
-    syncHealthEmitter.publish(message.health);
+    const { health } = message;
+    if (lastSyncHealth?.streamHealthy === health.streamHealthy && lastSyncHealth.workerAway === health.workerAway) return;
+    lastSyncHealth = health;
   }
-  if (message.type === 'stream-change') streamChangeEmitter.publish(message.change);
-  if (message.type === 'stream-signal') streamSignalEmitter.publish(message.signal);
-  if (message.type === 'catchup') catchupEmitter.publish(message.response);
+  broadcastChannel?.postMessage(message);
 }
-
-/** Called by the leader with each catchup answer: followers send no catchup request of their own. */
-export function broadcastCatchup(response: PostAppCatchupResponse): void {
-  broadcastChannel?.postMessage({ type: 'catchup', response } satisfies BroadcastMessage);
-}
-
-/** Followers register here to receive the leader's catchup answers. */
-export const onCatchup = catchupEmitter.subscribe;
-
-/** Called by the leader with the health of its stream, posted only when it changed: a follower has no stream of its own to judge by. */
-export function broadcastSyncHealth(health: SyncHealth): void {
-  if (lastSyncHealth?.streamHealthy === health.streamHealthy && lastSyncHealth.workerAway === health.workerAway) return;
-  lastSyncHealth = health;
-  broadcastChannel?.postMessage({ type: 'sync-health', health } satisfies BroadcastMessage);
-}
-
-/** Followers register here to receive the health of the leader's stream. */
-export const onSyncHealth = syncHealthEmitter.subscribe;
-
-/** Called by the leader for each change frame it receives. */
-export function broadcastStreamChange(change: StreamChange): void {
-  broadcastChannel?.postMessage({ type: 'stream-change', change } satisfies BroadcastMessage);
-}
-
-/** Followers register here to receive the leader's changes. */
-export const onStreamChange = streamChangeEmitter.subscribe;
-
-/** Called by the leader for each signal frame it receives. */
-export function broadcastStreamSignal(signal: StreamSignal): void {
-  broadcastChannel?.postMessage({ type: 'stream-signal', signal } satisfies BroadcastMessage);
-}
-
-/** Followers register here to receive the leader's signals. */
-export const onStreamSignal = streamSignalEmitter.subscribe;
 
 export function isLeader(): boolean {
   return tabCoordinatorStore.getState().isLeader;

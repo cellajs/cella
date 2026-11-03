@@ -900,15 +900,6 @@
                 "enum": ["attachment"],
                 "description": "Embedded product type whose change triggered the propagation"
               },
-              "hostProduct": {
-                "type": "string",
-                "enum": ["attachment"],
-                "description": "Host product type whose cache should be patched"
-              },
-              "hostColumn": {
-                "type": "string",
-                "description": "Column on the host product that embeds the changed product"
-              },
               "update": {
                 "type": "array",
                 "items": {
@@ -924,7 +915,7 @@
                 "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
               }
             },
-            "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"],
+            "required": ["embeddedProduct", "update", "remove"],
             "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
@@ -5763,15 +5754,6 @@
                                   "enum": ["attachment"],
                                   "description": "Embedded product type whose change triggered the propagation"
                                 },
-                                "hostProduct": {
-                                  "type": "string",
-                                  "enum": ["attachment"],
-                                  "description": "Host product type whose cache should be patched"
-                                },
-                                "hostColumn": {
-                                  "type": "string",
-                                  "description": "Column on the host product that embeds the changed product"
-                                },
                                 "update": {
                                   "type": "array",
                                   "items": {
@@ -5785,9 +5767,13 @@
                                     "type": "string"
                                   },
                                   "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
+                                },
+                                "overflow": {
+                                  "type": "boolean",
+                                  "description": "Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch"
                                 }
                               },
-                              "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"]
+                              "required": ["embeddedProduct", "update", "remove"]
                             }
                           }
                         }

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
+import { postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig } from 'shared';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
@@ -15,22 +15,19 @@ import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { syncStore } from '~/query/realtime/sync-store';
 import {
-  broadcastCatchup,
-  broadcastStreamChange,
-  broadcastStreamSignal,
-  broadcastSyncHealth,
   initTabCoordinator,
   isLeader,
-  onCatchup,
-  onStreamChange,
-  onStreamSignal,
-  onSyncHealth,
+  type LeaderMessage,
+  onLeaderMessage,
+  postToFollowers,
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
 import type { StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
+const streamName = 'AppStream';
+const streamUrl = `${appConfig.backendUrl}/entities/app/stream`;
 const maxFailures = 3;
 const circuitCooldownMs = 60_000;
 const initialBackoffMs = 5_000;
@@ -50,20 +47,6 @@ const streamSilenceMs = 75_000;
 /** What a ping of the app stream carries while the server's CDC worker has not been reading for a minute. */
 const workerAwayPing = 'worker_away';
 
-interface StreamConfig {
-  endpoint: string;
-  withCredentials: boolean;
-  useTabCoordination: boolean;
-  /** `signal` aborts once the round outlasts its bound: a late answer then reaches neither the followers nor this tab's cache. */
-  fetchAndProcessCatchup: (signal: AbortSignal) => Promise<void>;
-  /** A follower's side of catchup: process the answer the leader passed on. */
-  processLeaderCatchup: (response: PostAppCatchupResponse) => Promise<void>;
-  processChange: (change: StreamChange) => void;
-  processSignal: (signal: StreamSignal) => void;
-  /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
-  onPing?: (data: string) => void;
-}
-
 interface StreamStoreState {
   state: StreamState;
 }
@@ -77,7 +60,7 @@ type StreamStore = StreamStoreState & StreamStoreActions;
 
 const initStore: StreamStoreState = { state: 'disconnected' };
 
-function createStreamStore(name: string) {
+function createStreamStore() {
   return createStore<StreamStore>()(
     devtools(
       (set) => ({
@@ -86,7 +69,7 @@ function createStreamStore(name: string) {
         reset: () => set(initStore),
       }),
       {
-        name,
+        name: streamName,
         enabled: isDebugMode,
       },
     ),
@@ -112,12 +95,31 @@ function resolveInitialCatchupGate() {
   initialCatchupResolve = null;
 }
 
-/** Owns one SSE connection: catchup, reconnect, backoff and the circuit breaker. Exported for tests. */
-export class StreamManager {
-  private config: StreamConfig;
+/**
+ * One catchup round: the views of the cached memberships, the answer posted to the follower tabs, then processed.
+ * @param signal - Aborts once the round outlasts its bound: a late answer then reaches neither the followers nor this tab's cache.
+ */
+async function fetchAndProcessCatchup(signal: AbortSignal): Promise<void> {
+  declareViewsFromMemberships();
+  const views = syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes());
+  const response = await postAppCatchup({ body: { views: views.length > 0 ? views : undefined }, signal });
+  signal.throwIfAborted();
+  // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing
+  // fails. A tab that gave leadership up while the request was in flight (a public page) posts nothing.
+  if (isLeader()) postToFollowers({ type: 'catchup', response });
+  await processAppCatchup(response);
+}
+
+/** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
+function applySyncHealth(health: SyncHealth): void {
+  setSyncStreamHealthy(health.streamHealthy);
+  setSyncWorkerAway(health.workerAway);
+}
+
+/** Owns the app's one SSE connection, held by the leader tab: catchup, reconnect, backoff and the circuit breaker. */
+class StreamManager {
   private eventSource: EventSource | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  private broadcastCleanup: (() => void) | null = null;
   private abortController: AbortController | null = null;
   private consecutiveFailures = 0;
   private circuitOpen = false;
@@ -133,19 +135,19 @@ export class StreamManager {
   private silenceTimeout: ReturnType<typeof setTimeout> | null = null;
   /** Time of the last event of any kind on the open EventSource. */
   private lastEventAt = 0;
+  /** What the stream last said of the server's CDC worker. A stream that is down says nothing new, and the first ping of the next one does. */
+  private workerAway = false;
 
   /** Changes arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
   private pendingChanges: StreamChange[] = [];
   private buffering = false;
   private bufferOverflowed = false;
 
-  readonly store: ReturnType<typeof createStreamStore>;
-  private readonly name: string;
+  readonly store = createStreamStore();
 
-  constructor(name: string, config: StreamConfig) {
-    this.name = name;
-    this.config = config;
-    this.store = createStreamStore(name);
+  constructor() {
+    this.store.subscribe(() => this.publishSyncHealth());
+    onLeaderMessage((message) => this.followLeader(message));
   }
 
   isConnected(): boolean {
@@ -163,7 +165,7 @@ export class StreamManager {
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
     if (this.circuitOpen) {
-      console.debug(`[${this.name}] Circuit breaker open, not attempting reconnect`);
+      console.debug(`[${streamName}] Circuit breaker open, not attempting reconnect`);
       return;
     }
 
@@ -171,44 +173,38 @@ export class StreamManager {
     this.abortController = new AbortController();
     const { signal } = this.abortController;
 
-    const { useTabCoordination } = this.config;
-
     try {
-      if (useTabCoordination) {
-        await initTabCoordinator();
-        if (signal.aborted) return;
-
-        this.broadcastCleanup?.();
-        const stopChanges = onStreamChange((change) => {
-          if (!isLeader()) this.config.processChange(change);
-        });
-        const stopSignals = onStreamSignal((signal) => {
-          if (!isLeader()) this.config.processSignal(signal);
-        });
-        const stopCatchup = onCatchup((response) => {
-          if (!isLeader()) void this.followLeaderCatchup(response);
-        });
-        this.broadcastCleanup = () => {
-          stopChanges();
-          stopSignals();
-          stopCatchup();
-        };
-
-        if (!isLeader()) {
-          console.debug(`[${this.name}] Not leader, listening to broadcasts only`);
-          this.store.getState().setState('live');
-          // A follower runs no catchup of its own: writes that wait for the first one are released now.
-          resolveInitialCatchupGate();
-          return;
-        }
-      }
+      await initTabCoordinator();
     } catch (error) {
       if (!signal.aborted) this.handleCatchupFailure(error);
       return;
     }
+    if (signal.aborted) return;
+
+    if (!isLeader()) {
+      console.debug(`[${streamName}] Not leader, listening to broadcasts only`);
+      this.store.getState().setState('live');
+      // A follower runs no catchup of its own: writes that wait for the first one are released now.
+      resolveInitialCatchupGate();
+      return;
+    }
 
     // Open the firehose first; catchup runs when the server's `offset` event arrives.
-    if (!signal.aborted) this.connectSSE(signal);
+    this.connectSSE(signal);
+  }
+
+  /** What the leader posted, which the coordinator hands this tab only while it follows. */
+  private followLeader(message: LeaderMessage): void {
+    // A follower has no stream of its own to judge by: it takes the leader's word, also before it connects.
+    if (message.type === 'sync-health') {
+      applySyncHealth(message.health);
+      return;
+    }
+    // A tab that left the app, or has not connected yet, takes no frames and no answers.
+    if (this.store.getState().state === 'disconnected') return;
+    if (message.type === 'stream-change') handleStreamChange(message.change);
+    else if (message.type === 'stream-signal') handleStreamSignal(message.signal);
+    else processAppCatchup(message.response).catch((error) => console.warn(`[${streamName}] Could not process the leader's catchup answer:`, error));
   }
 
   /** Catch up while buffering, then drain in arrival order and go live. One buffer overflow runs catchup again; a second throws. */
@@ -217,17 +213,17 @@ export class StreamManager {
       this.store.getState().setState('catching-up');
 
       for (let round = 0; ; round++) {
-        console.debug(`[${this.name}] Fetching catchup`);
+        console.debug(`[${streamName}] Fetching catchup`);
         await this.boundedCatchup();
         if (signal.aborted || this.eventSource !== eventSource) return;
-        console.debug(`[${this.name}] Catchup complete`);
+        console.debug(`[${streamName}] Catchup complete`);
 
         if (!this.bufferOverflowed) break;
         if (round >= 1) throw new Error('Change buffer overflowed twice during catchup');
         // A second catchup reads after every dropped change, so it covers them.
         this.bufferOverflowed = false;
         this.pendingChanges = [];
-        console.debug(`[${this.name}] Change buffer overflowed, re-running catchup`);
+        console.debug(`[${streamName}] Change buffer overflowed, re-running catchup`);
       }
 
       // Release paused mutations before draining; drain is idempotent ingestion.
@@ -262,18 +258,9 @@ export class StreamManager {
       }, catchupTimeoutMs);
     });
     try {
-      await Promise.race([this.config.fetchAndProcessCatchup(round.signal), expiry]);
+      await Promise.race([fetchAndProcessCatchup(round.signal), expiry]);
     } finally {
       clearTimeout(timer);
-    }
-  }
-
-  /** A follower's catchup: it sends no request and processes the answer the leader passed on. */
-  private async followLeaderCatchup(response: PostAppCatchupResponse) {
-    try {
-      await this.config.processLeaderCatchup(response);
-    } catch (error) {
-      console.warn(`[${this.name}] Could not process the leader's catchup answer:`, error);
     }
   }
 
@@ -282,8 +269,8 @@ export class StreamManager {
     this.consecutiveFailures++;
     const isPermanentError = this.isPermanentError(error);
 
-    console.error(`[${this.name}] Catchup failed:`, error);
-    reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutive_failures: this.consecutiveFailures });
+    console.error(`[${streamName}] Catchup failed:`, error);
+    reportCriticalError('realtime.catchup_failed', error, { stream: streamName, consecutive_failures: this.consecutiveFailures });
     this.store.getState().setState('error');
 
     // Open the gate on failure too, so paused mutations are not stuck forever.
@@ -299,8 +286,8 @@ export class StreamManager {
 
   private applyChange(change: StreamChange) {
     // Followers get a change when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
-    if (this.config.useTabCoordination && isLeader()) broadcastStreamChange(change);
-    this.config.processChange(change);
+    postToFollowers({ type: 'stream-change', change });
+    handleStreamChange(change);
   }
 
   private isPermanentError(error: unknown): boolean {
@@ -310,8 +297,6 @@ export class StreamManager {
   }
 
   private connectSSE(signal: AbortSignal) {
-    const { endpoint, withCredentials } = this.config;
-
     // A stream that is still open here is replaced, and its watchdog goes with it.
     this.closeEventSource();
     this.store.getState().setState('connecting');
@@ -319,14 +304,14 @@ export class StreamManager {
     this.bufferOverflowed = false;
     this.pendingChanges = [];
     let catchupStarted = false;
-    const eventSource = new EventSource(endpoint, { withCredentials });
+    const eventSource = new EventSource(streamUrl, { withCredentials: true });
     const noteActivity = () => {
       this.lastEventAt = Date.now();
       reportReachable();
     };
 
     eventSource.onopen = () => {
-      console.debug(`[${this.name}] SSE connected, waiting for offset...`);
+      console.debug(`[${streamName}] SSE connected, waiting for offset...`);
     };
 
     eventSource.addEventListener('change', (event) => {
@@ -347,7 +332,7 @@ export class StreamManager {
 
         this.applyChange(change);
       } catch (error) {
-        console.debug(`[${this.name}] Failed to parse change:`, error);
+        console.debug(`[${streamName}] Failed to parse change:`, error);
       }
     });
 
@@ -356,16 +341,16 @@ export class StreamManager {
       noteActivity();
       try {
         const signal: StreamSignal = JSON.parse(event.data);
-        if (this.config.useTabCoordination && isLeader()) broadcastStreamSignal(signal);
-        this.config.processSignal(signal);
+        postToFollowers({ type: 'stream-signal', signal });
+        handleStreamSignal(signal);
       } catch (error) {
-        console.debug(`[${this.name}] Failed to parse signal:`, error);
+        console.debug(`[${streamName}] Failed to parse signal:`, error);
       }
     });
 
     eventSource.addEventListener('offset', () => {
       noteActivity();
-      console.debug(`[${this.name}] SSE offset received`);
+      console.debug(`[${streamName}] SSE offset received`);
       if (catchupStarted) return;
       catchupStarted = true;
       void this.runCatchupCycle(signal, eventSource);
@@ -374,7 +359,8 @@ export class StreamManager {
     // The server's keepalive shows that the stream is alive, and carries the one standing fact the server has to tell.
     eventSource.addEventListener('ping', (event) => {
       noteActivity();
-      this.config.onPing?.(typeof event.data === 'string' ? event.data : '');
+      this.workerAway = event.data === workerAwayPing;
+      this.publishSyncHealth();
     });
 
     // Server-sent error event with a typed payload; the bare transport Event goes to `onerror`.
@@ -386,7 +372,7 @@ export class StreamManager {
         const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
         // Any other end fails the stream as a transport error does, so a server that keeps ending it before catchup opens the circuit.
         if (!permanent) return this.handleStreamFailure(`Server stream error: ${payload.code}`);
-        console.debug(`[${this.name}] Server stream error:`, payload);
+        console.debug(`[${streamName}] Server stream error:`, payload);
         this.closeEventSource();
         this.store.getState().setState('error');
         this.openCircuit(`server error: ${payload.code}`, true);
@@ -405,7 +391,7 @@ export class StreamManager {
   /** One path for a stream that failed, by a transport error or by silence: count it, close it, then open the circuit or reconnect after the backoff. */
   private handleStreamFailure(reason: string) {
     this.consecutiveFailures++;
-    console.debug(`[${this.name}] ${reason}`);
+    console.debug(`[${streamName}] ${reason}`);
 
     if (this.connectedAt && Date.now() - this.connectedAt >= minUptimeMs) {
       this.currentBackoff = initialBackoffMs;
@@ -450,7 +436,7 @@ export class StreamManager {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
     this.circuitPermanent = permanent;
-    console.warn(`[${this.name}] Circuit breaker opened:`, reason);
+    console.warn(`[${streamName}] Circuit breaker opened:`, reason);
     // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
     resolveInitialCatchupGate();
 
@@ -479,7 +465,7 @@ export class StreamManager {
     const delay = this.currentBackoff + jitter;
     this.currentBackoff = Math.min(maxBackoffMs, this.currentBackoff * backoffFactor);
 
-    console.debug(`[${this.name}] Scheduling reconnect in`, Math.round(delay / 1000), 's');
+    console.debug(`[${streamName}] Scheduling reconnect in`, Math.round(delay / 1000), 's');
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
@@ -496,7 +482,7 @@ export class StreamManager {
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < circuitCooldownMs) {
       const secondsRemaining = Math.round((circuitCooldownMs - elapsed) / 1000);
-      console.debug(`[${this.name}] Circuit cooldown:`, secondsRemaining, 's remaining');
+      console.debug(`[${streamName}] Circuit cooldown:`, secondsRemaining, 's remaining');
       this.scheduleCooldownCheck(circuitCooldownMs - elapsed);
       return;
     }
@@ -504,7 +490,7 @@ export class StreamManager {
     if (this.healthCheckInProgress) return;
     this.healthCheckInProgress = true;
 
-    console.debug(`[${this.name}] Circuit cooldown elapsed, checking health`);
+    console.debug(`[${streamName}] Circuit cooldown elapsed, checking health`);
 
     // A disconnect or a forced reconnect while the check runs ends this connect cycle, and the answer with it.
     const cycle = this.abortController;
@@ -512,18 +498,18 @@ export class StreamManager {
       const response = await fetch(healthUrl);
       if (this.abortController !== cycle) return;
       if (response.ok) {
-        console.debug(`[${this.name}] Health check passed, reconnecting`);
+        console.debug(`[${streamName}] Health check passed, reconnecting`);
         this.reconnect();
       } else {
         this.circuitOpenedAt = Date.now();
         this.scheduleCooldownCheck(circuitCooldownMs);
-        console.debug(`[${this.name}] Health check failed, extending cooldown`);
+        console.debug(`[${streamName}] Health check failed, extending cooldown`);
       }
     } catch {
       if (this.abortController !== cycle) return;
       this.circuitOpenedAt = Date.now();
       this.scheduleCooldownCheck(circuitCooldownMs);
-      console.debug(`[${this.name}] Health check unreachable, extending cooldown`);
+      console.debug(`[${streamName}] Health check unreachable, extending cooldown`);
     } finally {
       this.healthCheckInProgress = false;
     }
@@ -532,9 +518,8 @@ export class StreamManager {
   private startVisibilityReconnect() {
     if (this.visibilityHandler) return;
     this.visibilityHandler = () => {
-      const shouldReconnect = !this.config.useTabCoordination || isLeader();
-      if (document.visibilityState === 'visible' && shouldReconnect && !this.isConnected()) {
-        console.debug(`[${this.name}] Tab visible, attempting reconnect...`);
+      if (document.visibilityState === 'visible' && isLeader() && !this.isConnected()) {
+        console.debug(`[${streamName}] Tab visible, attempting reconnect...`);
         this.attemptReconnect();
       }
     };
@@ -549,11 +534,11 @@ export class StreamManager {
   }
 
   private startLeaderReconnect() {
-    if (!this.config.useTabCoordination || this.leaderUnsubscribe) return;
+    if (this.leaderUnsubscribe) return;
     let wasLeader = tabCoordinatorStore.getState().isLeader;
     this.leaderUnsubscribe = tabCoordinatorStore.subscribe((state) => {
       if (state.isLeader && !wasLeader && !this.isConnected()) {
-        console.debug(`[${this.name}] Became leader, reconnecting...`);
+        console.debug(`[${streamName}] Became leader, reconnecting...`);
         this.reconnect();
       }
       wasLeader = state.isLeader;
@@ -572,9 +557,8 @@ export class StreamManager {
     this.onlineUnsubscribe = onlineManager.subscribe((online) => {
       const cameBack = online && !wasOnline;
       wasOnline = online;
-      const shouldReconnect = !this.config.useTabCoordination || isLeader();
-      if (cameBack && shouldReconnect && !this.isConnected() && !this.circuitPermanent) {
-        console.debug(`[${this.name}] Back online, reconnecting...`);
+      if (cameBack && isLeader() && !this.isConnected() && !this.circuitPermanent) {
+        console.debug(`[${streamName}] Back online, reconnecting...`);
         this.reconnect();
       }
     });
@@ -609,9 +593,6 @@ export class StreamManager {
     }
 
     this.closeEventSource();
-
-    this.broadcastCleanup?.();
-    this.broadcastCleanup = null;
     this.connectedAt = null;
     this.store.getState().setState('disconnected');
   }
@@ -632,52 +613,17 @@ export class StreamManager {
     this.stop();
     this.connect();
   }
+
+  /** Takes the health of live delivery from this tab's own stream and tells the follower tabs when it changed. Of the stream only the `error` state counts: each reconnect runs a catchup. */
+  private publishSyncHealth(): void {
+    if (!isLeader()) return;
+    const health: SyncHealth = { streamHealthy: this.store.getState().state !== 'error', workerAway: this.workerAway };
+    applySyncHealth(health);
+    postToFollowers({ type: 'sync-health', health });
+  }
 }
 
-export const appStreamManager = new StreamManager('AppStream', {
-  endpoint: `${appConfig.backendUrl}/entities/app/stream`,
-  withCredentials: true,
-  useTabCoordination: true,
-  fetchAndProcessCatchup: async (signal) => {
-    declareViewsFromMemberships();
-    const views = syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes());
-    const response = await postAppCatchup({ body: { views: views.length > 0 ? views : undefined }, signal });
-    signal.throwIfAborted();
-    // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing fails.
-    if (isLeader()) broadcastCatchup(response);
-    await processAppCatchup(response);
-  },
-  processLeaderCatchup: processAppCatchup,
-  processChange: handleStreamChange,
-  processSignal: (signal) => handleStreamSignal(signal),
-  onPing: (data) => {
-    workerAway = data === workerAwayPing;
-    publishSyncHealth();
-  },
-});
-
-/** What the app stream last said of the server's CDC worker. A stream that is down says nothing new, and the first ping of the next one does. */
-let workerAway = false;
-
-/** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
-function applySyncHealth(health: SyncHealth): void {
-  setSyncStreamHealthy(health.streamHealthy);
-  setSyncWorkerAway(health.workerAway);
-}
-
-/** Takes the health of live delivery from this tab's own stream and tells the follower tabs when it changed. Of the stream only the `error` state counts: each reconnect runs a catchup. */
-function publishSyncHealth(): void {
-  if (!isLeader()) return;
-  const health: SyncHealth = { streamHealthy: appStreamManager.store.getState().state !== 'error', workerAway };
-  applySyncHealth(health);
-  broadcastSyncHealth(health);
-}
-
-appStreamManager.store.subscribe(publishSyncHealth);
-// A follower takes the leader's word. Once it leads, its own stream connects and says, whatever it last heard.
-onSyncHealth((health) => {
-  if (!isLeader()) applySyncHealth(health);
-});
+export const appStreamManager = new StreamManager();
 
 /**
  * Resolves once a leader's catchup completes after page load or a sign-in, or fails; at once in a follower tab; and when

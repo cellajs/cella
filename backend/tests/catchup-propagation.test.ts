@@ -3,10 +3,11 @@ import { postAppCatchup } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { maxHintRows } from '#/modules/entities/operations/propagation-hints';
 import type { AppCatchupResponse } from '#/schemas';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { adminDb, createTestOrganization } from './helpers';
@@ -15,13 +16,14 @@ import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
 
-// The template declares no embedding: this one lets the catchup of its product carry hints.
+// The template declares no embedding: these two let the catchup of its product carry hints, and embed it twice.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
-  return {
-    ...actual,
-    appConfig: { ...actual.appConfig, productEmbeddings: [{ embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'attachments' }] },
-  };
+  const productEmbeddings = [
+    { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'attachments' },
+    { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'cover' },
+  ];
+  return { ...actual, appConfig: { ...actual.appConfig, productEmbeddings } };
 });
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -44,18 +46,24 @@ describe('Catchup propagation hints', async () => {
   let hidden: string;
   let removed: string;
 
-  const insertAttachment = async (createdBy: string, seq: number, overrides: Record<string, unknown> = {}) => {
+  /** An attachment row of `home`, stamped at `seq`. */
+  const attachmentRow = (home: { tenantId: string }, homePlan: TestEntityHierarchyPlan, createdBy: string, seq: number, overrides = {}) => {
     const id = generateId();
-    const columns = { id, tenantId: organization.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null, public: false };
-    await insertAttachmentRow(buildInsertableProduct('attachment', { ...columns, seq, ...overrides }, id));
-    return id;
+    const columns = { id, tenantId: home.tenantId, ...homePlan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null, public: false };
+    return buildInsertableProduct('attachment', { ...columns, seq, ...overrides }, id);
   };
 
-  const hintsOf = async (as: { sessionCookie: string }) => {
-    const view = { organizationId: organization.id, entityType: 'attachment' as const, cursor };
+  const insertAttachment = async (createdBy: string, seq: number, overrides: Record<string, unknown> = {}) => {
+    const row = attachmentRow(organization, plan, createdBy, seq, overrides);
+    await insertAttachmentRow(row);
+    return row.id as string;
+  };
+
+  const hintsOf = async (as: { sessionCookie: string }, organizationId = organization.id) => {
+    const view = { organizationId, entityType: 'attachment' as const, cursor };
     const { data, response } = await call(postAppCatchup, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
-    return (data as AppCatchupResponse).organizations[organization.id]?.propagation;
+    return (data as AppCatchupResponse).organizations[organizationId]?.propagation;
   };
 
   beforeAll(async () => {
@@ -80,15 +88,30 @@ describe('Catchup propagation hints', async () => {
     await clearSecurityTestData();
   });
 
-  it('must not name a changed row the caller cannot read in a hint', async () => {
-    expect(await hintsOf(member)).toEqual([
-      { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'attachments', update: [readable], remove: [removed] },
-    ]);
+  // The client patches every host column its own config declares, so one hint per embedded product is the contract it reads.
+  it('must not name a changed row the caller cannot read in a hint, and names the embedded product once however many hosts embed it', async () => {
+    expect(await hintsOf(member)).toEqual([{ embeddedProduct: 'attachment', update: [readable], remove: [removed] }]);
   });
 
   it('names every changed row, the soft-deleted one as removed, to a caller who reads them all (positive control)', async () => {
     const [hint] = (await hintsOf(admin)) ?? [];
     expect(hint?.update.toSorted()).toEqual([readable, hidden].toSorted());
     expect(hint?.remove).toEqual([removed]);
+  });
+
+  it('names no row of an organization where more changed than one hint names, and says so: the client refetches the host lists', async () => {
+    const bulk = await createTestOrganization();
+    const bulkAdmin = await createOrgUser(call, bulk.tenantId, bulk.id, 'hints-bulk-admin', adminRole);
+    const bulkPlan = await seedAttachmentHome(bulk, bulkAdmin.id);
+    onTestFinished(async () => {
+      await adminDb.delete(attachmentsTable).where(eq(attachmentsTable.tenantId, bulk.tenantId));
+      await adminDb.delete(channelCountersTable).where(eq(channelCountersTable.channelKey, bulk.id));
+      await cleanupEntityHierarchy(adminDb, bulkPlan);
+    });
+    const rows = Array.from({ length: maxHintRows + 1 }, (_, index) => attachmentRow(bulk, bulkPlan, bulkAdmin.id, cursor + 1 + index));
+    await Promise.all(rows.map(insertAttachmentRow));
+    await adminDb.insert(channelCountersTable).values({ channelKey: bulk.id, counts: { 'e:f:attachment': cursor + rows.length } });
+
+    expect(await hintsOf(bulkAdmin, bulk.id)).toEqual([{ embeddedProduct: 'attachment', update: [], remove: [], overflow: true }]);
   });
 });

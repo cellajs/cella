@@ -8,13 +8,16 @@ import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { AppCatchupResponse, CatchupOrganizationSummary, CatchupView } from '#/schemas';
 import { getEntityTable } from '#/tables';
 
-/** The embeddings of each embedded product type, from productEmbeddings config. */
-const embeddingsByProduct = Map.groupBy(appConfig.productEmbeddings, (embedding) => embedding.embeddedProduct);
+/** The product types productEmbeddings config embeds in a host, each once however many hosts embed it. */
+const embeddedProducts = new Set(appConfig.productEmbeddings.map(({ embeddedProduct }) => embeddedProduct));
+
+/** The most changed rows one hint names, as many as one range read returns: past it the hint names none, and the client refetches the host lists. */
+export const maxHintRows = 1000;
 
 /**
- * An embedded product changed when the org's `e:f:{embeddedProduct}` frontier exceeds the client's org-view cursor. The
- * ids come from a delta read in the caller's tenant that keeps the rows the caller may read, as a list does, so a hint
- * names no row the caller cannot fetch; tombstones return as removal hints.
+ * An embedded product changed when the org's `e:f:{embeddedProduct}` frontier exceeds the client's org-view cursor:
+ * the organization gets one hint for it. The ids come from a delta read in the caller's tenant that keeps the rows the
+ * caller may read, as a list does, so a hint names no row the caller cannot fetch; tombstones return as removal hints.
  * @param orgCounters - The parsed counter row of each organization in `organizations`.
  */
 export async function buildPropagationHints(
@@ -23,7 +26,7 @@ export async function buildPropagationHints(
   views: CatchupView[],
   orgCounters: Map<string, { frontiers: Record<string, number> }>,
 ): Promise<void> {
-  if (embeddingsByProduct.size === 0 || views.length === 0) return;
+  if (embeddedProducts.size === 0 || views.length === 0) return;
   const { memberships } = ctx.var;
   const access = accessFrom(ctx);
   const tenantByOrganization = new Map(memberships.map((membership) => [membership.organizationId, membership.tenantId]));
@@ -43,7 +46,7 @@ export async function buildPropagationHints(
     const hints: CatchupOrganizationSummary['propagation'] = [];
     const frontiers = orgCounters.get(organizationId)?.frontiers ?? {};
 
-    for (const [embeddedProduct, embeddings] of embeddingsByProduct) {
+    for (const embeddedProduct of embeddedProducts) {
       const clientCursor = cursorFor.get(`${organizationId}:${embeddedProduct}`);
       // No declared view for this embedded product, or no baseline yet.
       if (clientCursor === undefined || clientCursor === 0) continue;
@@ -61,13 +64,14 @@ export async function buildPropagationHints(
           organizationId,
           afterSeq: clientCursor,
           readWhere: readWhere.kind === 'where' ? readWhere.where : undefined,
+          limit: maxHintRows + 1,
         }),
       );
-      if (updatedIds.length === 0 && deletedIds.length === 0) continue;
+      const changed = updatedIds.length + deletedIds.length;
+      if (changed === 0) continue;
 
-      for (const { hostProduct, hostColumn } of embeddings) {
-        hints.push({ embeddedProduct, hostProduct, hostColumn, update: updatedIds, remove: deletedIds });
-      }
+      if (changed > maxHintRows) hints.push({ embeddedProduct, update: [], remove: [], overflow: true });
+      else hints.push({ embeddedProduct, update: updatedIds, remove: deletedIds });
     }
 
     if (hints.length > 0) {

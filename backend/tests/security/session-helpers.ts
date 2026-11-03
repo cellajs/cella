@@ -5,7 +5,6 @@ import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
@@ -106,7 +105,7 @@ export interface OpenStream {
 
 const openStreams: OpenStream[] = [];
 
-const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic<AppStreamSubscriber>(`user:${userId}`);
+const subscribersOf = (userId: string) => streamSubscriberManager.getByTopic(`user:${userId}`);
 
 /** Reads an app stream response as the browser's EventSource does; `cancelOpenStreams` ends it. */
 export function readStream(response: Response, sessionId: string): OpenStream {

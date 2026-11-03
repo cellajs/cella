@@ -1,5 +1,6 @@
-import type { PostAppCatchupResponse, StreamSignal } from 'sdk';
+import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LeaderMessage } from '~/query/realtime/tab-coordinator';
 
 vi.mock('shared/schema-evolution', () => ({ currentSchemaVersion: 1 }));
 vi.mock('~/query/schema-version-guard', () => ({ markBundleStale: vi.fn() }));
@@ -85,17 +86,7 @@ const fakeLocks = new FakeLocks();
 vi.stubGlobal('navigator', { locks: fakeLocks });
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
-const {
-  broadcastCatchup,
-  broadcastStreamSignal,
-  broadcastSyncHealth,
-  initTabCoordinator,
-  isLeader,
-  onCatchup,
-  onStreamSignal,
-  onSyncHealth,
-  releaseTabLeadership,
-} = await import('~/query/realtime/tab-coordinator');
+const { initTabCoordinator, isLeader, onLeaderMessage, postToFollowers, releaseTabLeadership } = await import('~/query/realtime/tab-coordinator');
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -148,16 +139,35 @@ describe('tab coordinator leadership', () => {
 describe('what the leader tells the other tabs', () => {
   const down = { streamHealthy: false, workerAway: true };
 
-  it('reaches the handlers of a follower tab as the leader posted it: a catchup answer, a signal and the health of its stream', async () => {
-    const answer: PostAppCatchupResponse = { organizations: {}, generation: 7 };
+  it('reaches the one handler of a follower tab as the leader posted it, and none while this tab leads: a change, a signal, a catchup answer and the health of its stream', async () => {
+    const change: StreamChange = {
+      action: 'update',
+      productType: 'attachment',
+      organizationId: 'org-1',
+      tenantId: null,
+      channelId: null,
+      rows: [],
+      overflow: null,
+      spreadWindow: null,
+      propagation: null,
+    };
     const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
+    const answer: PostAppCatchupResponse = { organizations: {}, generation: 7 };
+    const messages: LeaderMessage[] = [
+      { type: 'stream-change', change },
+      { type: 'stream-signal', signal },
+      { type: 'catchup', response: answer },
+      { type: 'sync-health', health: down },
+    ];
+    const received: unknown[] = [];
+    onLeaderMessage((message) => received.push(message));
 
-    // This tab leads, and posts.
+    // This tab leads, and posts: what another tab posts it ignores, since it acts on its own stream.
     await initTabCoordinator();
-    broadcastCatchup(answer);
-    broadcastStreamSignal(signal);
-    broadcastSyncHealth(down);
-    const posted = FakeBroadcastChannel.opened?.posted.slice(-3) ?? [];
+    for (const message of messages) postToFollowers(message);
+    const posted = FakeBroadcastChannel.opened?.posted.slice(-messages.length) ?? [];
+    for (const message of posted) receive(message);
+    expect(received).toEqual([]);
 
     // Another tab leads now: this one follows, runs no catchup and has no stream, and hears what was posted.
     releaseTabLeadership();
@@ -165,26 +175,15 @@ describe('what the leader tells the other tabs', () => {
     fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
     await initTabCoordinator();
     expect(isLeader()).toBe(false);
-    const catchups: unknown[] = [];
-    const signals: unknown[] = [];
-    const healths: unknown[] = [];
-    const stopCatchup = onCatchup((response) => catchups.push(response));
-    const stopSignal = onStreamSignal((received) => signals.push(received));
-    const stopHealth = onSyncHealth((health) => healths.push(health));
 
     for (const message of posted) receive(message);
-    stopCatchup();
-    stopSignal();
-    stopHealth();
 
-    expect(catchups).toEqual([answer]);
-    expect(signals).toEqual([signal]);
-    expect(healths).toEqual([down]);
+    expect(received).toEqual(messages);
   });
 
   it('includes the health of its stream, said again to a tab that opens later: every tab announces its version as it opens', async () => {
     await initTabCoordinator();
-    broadcastSyncHealth(down);
+    postToFollowers({ type: 'sync-health', health: down });
     const posted = FakeBroadcastChannel.opened?.posted ?? [];
     const saidBefore = posted.filter((message) => (message as { type: string }).type === 'sync-health').length;
 
@@ -198,8 +197,8 @@ describe('what the leader tells the other tabs', () => {
     const up = { streamHealthy: true, workerAway: false };
     const healthPosts = () => (FakeBroadcastChannel.opened?.posted ?? []).filter((message) => (message as { type: string }).type === 'sync-health');
     await initTabCoordinator();
-    broadcastSyncHealth(up);
-    broadcastSyncHealth(up);
+    postToFollowers({ type: 'sync-health', health: up });
+    postToFollowers({ type: 'sync-health', health: up });
     const posts = healthPosts().length;
 
     // Another tab leads and tells of a failed stream, which this one, following, now holds.
@@ -214,7 +213,7 @@ describe('what the leader tells the other tabs', () => {
     releaseOther();
     await tick();
     expect(isLeader()).toBe(true);
-    broadcastSyncHealth(up);
+    postToFollowers({ type: 'sync-health', health: up });
 
     expect(healthPosts()).toHaveLength(posts + 1);
     expect(healthPosts().at(-1)).toEqual({ type: 'sync-health', health: up });

@@ -5,12 +5,20 @@ import { validIdSchema } from '#/schemas/common-schemas';
 import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
+/** The client patches every host column its own productEmbeddings config declares for the embedded product. */
 const propagationHintSchema = z.object({
   embeddedProduct: z.enum(appConfig.productEntityTypes).describe('Embedded product type whose change triggered the propagation'),
-  hostProduct: z.enum(appConfig.productEntityTypes).describe('Host product type whose cache should be patched'),
-  hostColumn: z.string().describe('Column on the host product that embeds the changed product'),
   update: z.array(z.string()).describe('Embedded row IDs whose cached copies in host rows need a refresh'),
   remove: z.array(z.string()).describe('Embedded row IDs (deleted or soft deleted) that host rows drop'),
+});
+
+const catchupPropagationHintSchema = propagationHintSchema.extend({
+  overflow: z
+    .boolean()
+    .optional()
+    .describe(
+      'Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch',
+    ),
 });
 
 /** One row a change frame names: no content, the client fetches it. */
@@ -109,8 +117,8 @@ const catchupOrganizationSummarySchema = z.object({
     .record(z.string(), z.number().int())
     .optional()
     .openapi({ description: 'Versions by signal type: bump-only counters a client compares with the ones it stored' }),
-  /** Embedded-product changes that require patching the host's cache. */
-  propagation: z.array(propagationHintSchema).optional(),
+  /** Embedded-product changes that require patching the host's cache: one hint per embedded product. */
+  propagation: z.array(catchupPropagationHintSchema).optional(),
 });
 
 export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSummarySchema>;
