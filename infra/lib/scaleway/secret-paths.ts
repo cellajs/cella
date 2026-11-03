@@ -8,7 +8,7 @@
  */
 export const RUNTIME_FOLDER = '/runtime/';
 
-/** Folder for engine-internal keys: the deploy key's copy, the passphrase and its salt, the database passwords. Only the operator reads it. */
+/** Folder for engine-internal keys: the deploy key's copy, the passphrase, the database passwords. Only the operator reads it. */
 export const ENGINE_FOLDER = '/engine/';
 
 /** The deploy key's condition on secret values: the runtime folder, and nothing else. The identity plan compares the live rule with this string. */

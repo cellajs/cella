@@ -7,7 +7,6 @@ import {
   enabledServices,
   isSingletonHost,
   placeServices,
-  rolloutOwner,
   type ServiceDefinition,
   services,
 } from './services';
@@ -84,24 +83,6 @@ describe('service registry: singleVM (deployedServices / coHostedServices)', () 
     const cfg = { yjs: { enabled: false }, mcp: { enabled: true } };
     expect(coHostedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
     expect(deployedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
-  });
-});
-
-describe('rolloutOwner', () => {
-  it('names the service itself when it has a machine of its own', () => {
-    expect(rolloutOwner(allOn, false, 'frontend')).toBe('frontend');
-    expect(rolloutOwner(allOn, true, 'backend')).toBe('backend');
-  });
-
-  it('names the singleVM host for a co-hosted worker and a collocated container', () => {
-    expect(rolloutOwner(allOn, true, 'yjs')).toBe('backend');
-    expect(rolloutOwner(allOn, true, 'frontend')).toBe('backend');
-  });
-
-  it('names no service for a disabled one or an unknown slug', () => {
-    expect(rolloutOwner(allOff, true, 'yjs')).toBeUndefined();
-    expect(rolloutOwner(allOff, false, 'mcp')).toBeUndefined();
-    expect(rolloutOwner(allOn, true, 'nope')).toBeUndefined();
   });
 });
 

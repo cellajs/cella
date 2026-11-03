@@ -61,7 +61,7 @@ On an operator machine `infra/.env.<mode>` holds the observer key and nothing a 
 Each environment has a Scaleway project of its own, so its Secret Manager starts at the project's root. It is split into folders, and each key's policy names the folders it reads in that project:
 
 - `/runtime/`: one container per value, read by the deploy key: every runtime secret, the uploads key's two halves, the repository read key and the telemetry ingest key. A deploy composes each machine's env file from the values its services consume ([config/runtime-secrets.config.ts](../../infra/config/runtime-secrets.config.ts)); a change of consumers writes no IAM.
-- `/engine/`: the deploy key's copy, the passphrase with the stack's salt, and the database passwords, which only the operator reads.
+- `/engine/`: the deploy key's copy, the passphrase and the database passwords, which only the operator reads.
 
 On a shared host the services read one env file, so they share their secrets.
 

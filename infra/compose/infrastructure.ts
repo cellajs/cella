@@ -93,7 +93,6 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   const meta: ServiceMeta = {
     slug,
     healthPort: cfg.port,
-    healthTimeoutSeconds: cfg.healthTimeoutSeconds,
     healthExpectStatus: cfg.healthExpectStatus ?? 200,
     runRelease: cfg.release !== undefined,
     replacementStrategy: cfg.replacementStrategy,

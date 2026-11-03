@@ -34,7 +34,6 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
 export const fakeService = {
   image: 'r/x:latest',
   port: 4000,
-  healthTimeoutSeconds: 60,
   startPeriod: '10s',
   replacementStrategy: 'start-first',
   instanceType: 'DEV1-S',

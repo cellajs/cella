@@ -15,7 +15,6 @@ export const appServices = defineServices({
     port: 4000,
     // API services answer /health with 204 and no body; the LB matches it exactly.
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 240,
     startPeriod: '15s',
     // A new machine per release: it serves beside the old one once its agent reports it healthy, then the old one drains. The one-shot release companion applies migrations at the new machine's boot, so the app block does not migrate on its own.
     replacementStrategy: 'start-first',
@@ -44,7 +43,6 @@ export const appServices = defineServices({
     target: 'cdc',
     port: 4001,
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 90,
     startPeriod: '10s',
     // CDC switches stop-first because it owns one PostgreSQL replication slot, and is reached only through the private network.
     replacementStrategy: 'stop-first',
@@ -62,7 +60,6 @@ export const appServices = defineServices({
     target: 'yjs',
     port: 4002,
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 90,
     startPeriod: '10s',
     replacementStrategy: 'start-first',
     // Sessions close during drain; WebSocket clients reconnect to the new machine and resync from durable CRDT state.
@@ -85,7 +82,6 @@ export const appServices = defineServices({
     image: '${REGISTRY}/backend:${MCP_TAG:-latest}',
     port: 4003,
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 240,
     startPeriod: '15s',
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
@@ -105,7 +101,6 @@ export const appServices = defineServices({
     image: '${REGISTRY}/backend:${OAUTH_TAG:-latest}',
     port: 4004,
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 240,
     startPeriod: '15s',
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
@@ -125,7 +120,6 @@ export const appServices = defineServices({
     image: '${REGISTRY}/backend:${JOBS_TAG:-latest}',
     port: 4006,
     healthExpectStatus: 204,
-    healthTimeoutSeconds: 240,
     startPeriod: '15s',
     // One maintainer per deployment: pg-boss cron and queue supervision run in exactly one process, and nothing routes to it, so it never overlaps its predecessor.
     replacementStrategy: 'stop-first',
@@ -142,7 +136,6 @@ export const appServices = defineServices({
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
     dockerfile: 'infra/caddy/Dockerfile',
     port: 80,
-    healthTimeoutSeconds: 90,
     startPeriod: '10s',
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',

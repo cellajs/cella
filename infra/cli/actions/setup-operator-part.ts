@@ -1,6 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { deriveInfra } from '../../lib/naming';
@@ -335,15 +333,12 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
   if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
 
-  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it; the new stack's salt goes
-  // beside it, so the main job can deploy any commit without this stack file.
-  const stackFile = resolve(infraDir, `Pulumi.${environment}.yaml`);
+  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
   await storeCustodiedPassphrase({
     secretKey: operatorKey.secretKey,
     region: appConfig.s3.region,
     projectId,
     passphrase: pulumiPassphrase,
-    stackYaml: existsSync(stackFile) ? readFileSync(stackFile, 'utf8') : undefined,
   }).catch((error) =>
     console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
   );

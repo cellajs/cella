@@ -1,5 +1,3 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
 import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
@@ -10,9 +8,8 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { infraDir } from '../../lib/utils/paths';
 import { moveSecretsOutOfPrefix } from '../../tasks/move-secret-paths';
-import { ensureCustodiedSalt, readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
+import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { maskedSecret } from '../prompts/masked-secret';
 import { forgetOperatorKey, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
 import { endAction, type InfraContext } from '../shared';
@@ -199,13 +196,9 @@ export async function acquireIdentityKey(stack: StackRef, why: string): Promise<
 /**
  * Let the passphrase come from Secret Manager for this run. Reading it unlocks the session, so nobody types the passphrase; a person without
  * a key at hand leaves the prompt empty and types the passphrase as before. A passphrase typed while the session is unlocked is stored, which
- * is how an existing stack gets its copy; the stack file's salt goes beside it, from this checkout when it verifies.
+ * is how an existing stack gets its copy.
  */
 export function installPassphraseCustody(stack: StackRef): void {
-  const stackYaml = () => {
-    const file = join(infraDir, `Pulumi.${stack.environment}.yaml`);
-    return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
-  };
   const custody = {
     secretKey: '',
     region: stack.appConfig.s3.region,
@@ -215,21 +208,15 @@ export function installPassphraseCustody(stack: StackRef): void {
     async read() {
       const unlocked = await unlock(stack, { optional: 'Enter to type the Pulumi passphrase' });
       if (!unlocked) return undefined;
-      const passphrase = await readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
+      return readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
         console.warn(`${warningMark} Could not read the passphrase from Secret Manager (${errorMessage(error)}); type it once.`);
         return undefined;
       });
-      if (passphrase) {
-        await ensureCustodiedSalt({ ...custody, secretKey: unlocked.secret, passphrase, stackYaml: stackYaml() }).catch((error) =>
-          console.warn(`${warningMark} Could not store the stack's salt beside the passphrase (${errorMessage(error)}).`),
-        );
-      }
-      return passphrase;
     },
     async store(passphrase) {
       const key = rememberedOperatorKey();
       if (!key) return false;
-      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase, stackYaml: stackYaml() }).then(
+      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase }).then(
         () => true,
         (error) => {
           console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked again next time.`);

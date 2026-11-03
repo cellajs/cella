@@ -40,8 +40,6 @@ export interface ServiceMeta {
   slug: string;
   /** The service's port: its pools forward to it, and the agent probes its health path there. */
   healthPort: number;
-  /** As {@link AppServiceConfig.healthTimeoutSeconds}. */
-  healthTimeoutSeconds: number;
   /** As {@link AppServiceConfig.healthExpectStatus}. */
   healthExpectStatus: number;
   /** Whether a one-shot release companion runs before this service starts on a new machine (derived from `release`). */
@@ -128,8 +126,6 @@ export interface AppServiceConfig {
   image: string;
   /** The single port this service listens on. Drives its Compose `ports:` and healthcheck, its pools' forward port and its agent port. */
   port: number;
-  /** Carried in the `x-service` metadata and the applied description; no deploy step reads it, as the switch waits `SERVING_TIMEOUT_SECONDS` (tasks/switch-machines.ts) for every machine. */
-  healthTimeoutSeconds: number;
   /** Compose healthcheck `start_period`: grace window before failing probes count, roughly the container's cold-boot time. */
   startPeriod: string;
   /** HTTP status this service's health endpoint returns when healthy. Defaults to 200; bodyless API responses use 204. The agent passes any 2xx; a pool matches this exactly only while it still lists a machine the Pulumi program made. */
