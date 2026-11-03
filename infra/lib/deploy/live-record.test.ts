@@ -55,7 +55,7 @@ describe('the live record', () => {
 
   it('keeps a role another switch wrote between the read and the write, as roles switch concurrently', async () => {
     const { s3, read } = liveS3(record({ backend: entry() }), record({ backend: entry(), frontend: entry({ machine: 'srv-3' }) }));
-    await recordRole(s3, 'b', 'production', 'cdc', entry({ slot: 'b', machine: 'srv-4' }), { by: 'job:test' });
+    await recordRole(s3, 'b', 'production', 'cdc', entry({ slot: 'b', machine: 'srv-4' }), { by: 'job:test', sleep: async () => {} });
     expect(Object.keys(read().roles).sort()).toEqual(['backend', 'cdc', 'frontend']);
     await recordRole(s3, 'b', 'production', 'backend', undefined, { by: 'job:test' });
     expect(Object.keys(read().roles).sort()).toEqual(['cdc', 'frontend']);

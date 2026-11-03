@@ -27,6 +27,8 @@ function fake(opts: { machines?: Record<string, RoleMachine[]>; serves?: 'servin
   const ops: string[] = [];
   const recorded: Array<[string, LiveRole | undefined]> = [];
   let made = 0;
+  let writing = 0;
+  let concurrent = 0;
   const fx: SwitchEffects = {
     machinesOf: async (role) => opts.machines?.[role] ?? [],
     boot: async (role, slot) => {
@@ -50,13 +52,17 @@ function fake(opts: { machines?: Record<string, RoleMachine[]>; serves?: 'servin
       ops.push(`remove ${machine}`);
     },
     record: async (role, entry) => {
+      writing += 1;
+      concurrent = Math.max(concurrent, writing);
+      await new Promise((done) => setTimeout(done, 1));
+      writing -= 1;
       ops.push(`record ${role} ${entry ? entry.slot : 'none'}`);
       recorded.push([role, entry]);
     },
     sleep: async () => {},
     log: () => {},
   };
-  return { fx, ops, recorded };
+  return { fx, ops, recorded, concurrent: () => concurrent };
 }
 
 describe('a switch', () => {
@@ -128,5 +134,17 @@ describe('every switch of a deploy', () => {
     expect(ops.indexOf('remove b0')).toBeLessThan(ops.indexOf('boot frontend b'));
     expect(ops.slice(-3)).toEqual(['drain y0', 'remove y0', 'record yjs none']);
     expect(switched).toHaveLength(2);
+  });
+
+  it('writes the live record one role at a time, so no role loses a conflict after its machine serves', async () => {
+    const { fx, concurrent } = fake();
+    const roles = [
+      roleOf('backend'),
+      roleOf('frontend'),
+      roleOf('backend', { role: 'yjs', primary: false }),
+      roleOf('backend', { role: 'mcp', primary: false }),
+    ];
+    await switchMachines({ roles, pending: roles.map((role) => role.role), record: { schemaVersion: 1, roles: {} }, target, switched: [] }, fx);
+    expect(concurrent()).toBe(1);
   });
 });

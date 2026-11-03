@@ -77,8 +77,8 @@ async function writeLiveRecord(s3: S3Like, bucket: string, stack: string, record
 }
 
 /**
- * Set or clear one role's entry, read-modify-write under `If-Match` and again on a conflict: roles switch concurrently, and each writes
- * only its own entry over the winner's record.
+ * Set or clear one role's entry, read-modify-write under `If-Match`, and again after a jittered pause on a conflict: each writer writes only
+ * its own entry over the winner's record. The deploy writes one entry at a time (tasks/switch-machines.ts), so a conflict is another process.
  */
 export async function recordRole(
   s3: S3Like,
@@ -86,9 +86,10 @@ export async function recordRole(
   stack: string,
   role: string,
   entry: LiveRole | undefined,
-  opts: { by: string; attempts?: number; now?: () => Date } = { by: 'unknown' },
+  opts: { by: string; attempts?: number; now?: () => Date; sleep?: (ms: number) => Promise<void> } = { by: 'unknown' },
 ): Promise<void> {
-  const attempts = opts.attempts ?? 5;
+  const attempts = opts.attempts ?? 8;
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
   for (let attempt = 1; ; attempt++) {
     const { record, etag } = await readLiveRecord(s3, bucket, stack);
     const roles = { ...record.roles };
@@ -100,6 +101,7 @@ export async function recordRole(
       return;
     } catch (err) {
       if (!isPreconditionFailed(err) || attempt >= attempts) throw err;
+      await sleep(200 * attempt + Math.floor(Math.random() * 300));
     }
   }
 }

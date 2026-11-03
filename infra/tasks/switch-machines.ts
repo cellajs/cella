@@ -131,8 +131,18 @@ export async function switchRole(plan: { role: MachineRole; live?: LiveRole; tar
  */
 export async function switchMachines(
   opts: { roles: readonly MachineRole[]; pending: readonly string[]; record: LiveRecord; target: DeployTarget; switched: SwitchResult[] },
-  fx: SwitchEffects,
+  effects: SwitchEffects,
 ): Promise<void> {
+  // Roles switch concurrently and each writes the live record: one write at a time, so none loses a race after its machine serves.
+  let writes: Promise<unknown> = Promise.resolve();
+  const fx: SwitchEffects = {
+    ...effects,
+    record: (role, entry) => {
+      const write = writes.then(() => effects.record(role, entry));
+      writes = write.catch(() => undefined);
+      return write;
+    },
+  };
   const one = async (role: MachineRole) => {
     opts.switched.push(await switchRole({ role, live: opts.record.roles[role.role], target: opts.target }, fx));
   };
