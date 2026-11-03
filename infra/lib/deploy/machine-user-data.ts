@@ -1,17 +1,12 @@
+import type { Manifest } from '../../agent/src/manifest';
 import { type AgentPort, type BootPlan, type ReleaseArchive, supportedImageContract, supportedSchemaVersion } from '../../agent/src/plan';
 import { type CloudConfigFile, cloudConfigDocument } from '../utils/cloud-config';
 
 /** The user data key the machine's agent polls for its manifest; `cloud-init` holds the rest. */
 export const MANIFEST_KEY = 'manifest';
 
-/** What the deploy tells a machine's agent while it runs, through its user data: the role and release it was made for, and whether to drain. */
-export interface MachineManifest {
-  role: string;
-  release: string;
-  drain: boolean;
-}
-
-export const renderManifest = (manifest: MachineManifest): string => JSON.stringify(manifest);
+/** What the deploy tells a machine's agent while it runs, in the shape the agent reads it. */
+export const renderManifest = (manifest: Manifest): string => JSON.stringify(manifest);
 
 export interface MachineUserDataParams {
   /** App slug: namespaces the machine's `/etc/<slug>` config dir and serial markers. */

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { supportedImageContract, supportedSchemaVersion } from '../../agent/src/plan';
 import { type EngineConfig, engineConfig } from '../../config/engine-config';
 import { infraDir } from '../utils/paths';
 import { descriptionHash } from './applied-engine';
@@ -31,8 +32,8 @@ function engineFields(config: EngineConfig): EngineConfig {
 
 /**
  * The app as the engine of one environment sees it: the engine config's fields, every registry under `config/` the apply and the deploy
- * read (the runtime secrets and managed keys as the engine reads them), each env supplier's value, and the Node, pnpm and
- * repository the root `package.json` names, which the builder and the engine run on. A store is described by its kind and its factory's
+ * read (the runtime secrets and managed keys as the engine reads them), each env supplier's value, the boot plan's contract version, and
+ * the Node, pnpm and repository the root `package.json` names, which the builder and the engine run on. A store is described by its kind and its factory's
  * settings. Run after `loadEngineConfig()`.
  * @param root the checkout whose `package.json` is read
  */
@@ -66,6 +67,8 @@ async function appDescription(root = join(infraDir, '..')): Promise<Record<strin
   return {
     engine: engineFields(config),
     toolchain: { node: pkg.engines?.node, packageManager: pkg.packageManager, repository: pkg.repository },
+    // The agent is the release's and its boot plan the engine's: the contract they share must match.
+    bootPlan: { schemaVersion: supportedSchemaVersion, imageContract: supportedImageContract },
     services: appServices,
     processIdentityEnv,
     general: generalConfig,

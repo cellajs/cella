@@ -141,7 +141,7 @@ One name per concept across code and docs:
 | **runner** | The app's small machine that starts a deploy when an environment's target moves. |
 | **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy, on the engine image. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry; the main job names it by digest. |
-| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the root `package.json`'s Node, pnpm and repository. Its hash is in `control/<mode>/applied.json` and the image's stamp. |
+| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. Its hash is in `control/<mode>/applied.json` and the image's stamp. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links, holds no key, and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |

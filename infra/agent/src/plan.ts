@@ -1,6 +1,12 @@
 import { posix } from 'node:path';
 import { isRecord } from '../../lib/utils/guards';
 
+/**
+ * The contract between the engine that writes a machine's user data (lib/deploy/machine-user-data.ts) and the agent that reads it: the
+ * boot plan below and the manifest (manifest.ts). A change to either bumps it. The agent is built from the release and the plan written
+ * by the applied engine, so it is part of the applied description: a release that bumps it ends `apply needed` until an apply publishes
+ * an engine that writes it, and the agent refuses a plan of another version.
+ */
 export const supportedSchemaVersion = 3;
 export const supportedImageContract = 'docker-node-boot-v1';
 
