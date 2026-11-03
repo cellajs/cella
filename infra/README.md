@@ -42,7 +42,7 @@ It owns the whole pipeline, from building a missing release to removing the old 
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy makes a new machine per role on its idle slot, waits until the load balancer sees it healthy at the expected release, then drains and deletes the old one. Traffic moves by health: every pool lists both slots' reserved addresses for good, and no deploy edits one.
+1. **Create-then-replace.** A release never mutates a running server: each deploy makes a new machine per role on its idle slot, waits until the load balancer sees it healthy at the expected release, then drains and deletes the old one.
 2. **The live record decides.** Which slot serves each role, with which commit, is written after every switch: a re-run of a deploy that served changes nothing, and Pulumi holds the foundation only.
 3. **Least-privilege keys.** Each key does one kind of work and is found by its name, never by a stored id.
 
