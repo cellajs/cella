@@ -96,7 +96,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
 }
 
 /**
- * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the leaseed for a full lifetime.
+ * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the environment leased for a full lifetime.
  * Returns the uninstaller; call it after a normal release.
  */
 export function installSignalRelease(lease: StackLease, opts: { exit?: (code: number) => void; log?: (msg: string) => void } = {}): () => void {
