@@ -79,8 +79,8 @@ function makeFake(opts: { live?: LiveRecord; rotation?: number; switchFails?: bo
     publishEntryFiles: async () => {
       ops.push('publish-entry');
     },
-    bootAccounts: async ({ sha }) => {
-      ops.push(`boot-diag:${sha}`);
+    bootAccounts: async (envs) => {
+      ops.push(`boot-diag:${envs.length}`);
       return [{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }];
     },
     writeRunRecord: async ({ bucket, record, log }) => {

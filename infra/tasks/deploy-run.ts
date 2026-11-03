@@ -62,8 +62,8 @@ export interface DeployEffects {
   /** Switch the roles given (tasks/switch-machines.ts). */
   switchMachines(request: SwitchRequest): Promise<void>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
-  /** The boot accounts of release `sha`, one per role. */
-  bootAccounts(opts: { mode: string; sha: string }): Promise<RunBootAccount[]>;
+  /** The boot accounts this run's machines uploaded to the keys the compose step named, one per role; none for a role with no account yet. */
+  bootAccounts(envs: readonly MachineEnv[]): Promise<RunBootAccount[]>;
   /** Write a run's record and log to the environment's diagnostics bucket. */
   writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
   group(title: string): void;
@@ -254,7 +254,9 @@ export async function runDeploy(
       } catch (err) {
         telemetry?.event(deployEvents.switchFailed, { error: errorMessage(err) }, { severity: 'error' });
         say("[deploy] a switch failed; reading the release's boot accounts");
-        const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha }).catch((diagErr) => {
+        // This run's own keys: an account an earlier attempt at the same commit uploaded names another boot.
+        const envs = JSON.parse(await fx.readFile(envsFile).catch(() => '[]')) as MachineEnv[];
+        const accounts = await fx.bootAccounts(envs).catch((diagErr) => {
           say(`[deploy] the boot accounts could not be read: ${errorMessage(diagErr)}`);
           return undefined;
         });
@@ -559,18 +561,23 @@ function createRealEffects(): DeployEffects {
     },
     publishEntryFiles: publishEntryFilesToBucket,
     writeRunRecord: writeRunRecordToBucket,
-    async bootAccounts({ sha }) {
-      const [{ bucketBootAccountReader, releaseAccounts }, { loadEngineConfig }, { deriveInfra }, { machineRoles }] = await Promise.all([
+    async bootAccounts(envs) {
+      const [{ accountFailed, BOOT_ACCOUNTS_PREFIX }, { loadEngineConfig }, { deriveInfra }, { GetObjectCommand }] = await Promise.all([
         import('../lib/deploy/boot-accounts'),
         import('../config/engine-config'),
         import('../lib/naming'),
-        import('../lib/machine-roles'),
+        import('@aws-sdk/client-s3'),
       ]);
-      const appConfig = await loadEngineConfig();
-      const { naming, region } = deriveInfra(appConfig);
-      const roles = machineRoles(appConfig).map((role) => role.role);
-      return (await releaseAccounts(bucketBootAccountReader(await diagnosticsClient(region), naming.bootDiagBucket), roles, sha)).map(
-        ({ service, account }) => (account ? { service, key: account.key, failed: account.failed } : { service }),
+      const { naming, region } = deriveInfra(await loadEngineConfig());
+      const s3 = await diagnosticsClient(region);
+      return Promise.all(
+        envs.map(async ({ service, bootAccount }): Promise<RunBootAccount> => {
+          const body = await s3.send(new GetObjectCommand({ Bucket: naming.bootDiagBucket, Key: bootAccount })).then(
+            (object) => object.Body?.transformToString(),
+            () => undefined,
+          );
+          return body === undefined ? { service } : { service, key: bootAccount.slice(BOOT_ACCOUNTS_PREFIX.length), failed: accountFailed(body) };
+        }),
       );
     },
     group: (title) => console.info(`\n=== ${title} ===`),
