@@ -32,7 +32,6 @@ function codeLinkFindings(file: string, source: string): Finding[] {
     rule: 'code-in-link',
     term: match[0],
     message: 'drop the backticks inside the link label: the code chip hides the link underline',
-    review: false,
   }));
 }
 

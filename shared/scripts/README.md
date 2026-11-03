@@ -8,7 +8,7 @@ The repo checks: the commands that gate a commit, a PR and a release, in the tem
 
 | Script | What it checks | Who runs it |
 | --- | --- | --- |
-| `check-style.ts` | The style check: the rule modules below over every file git lists, untracked ones it does not ignore included. Exits 1 on a required rule; review markers print under `--audit` only and never fail. Path arguments limit the files read. | `pnpm style [paths…]` and `pnpm style:audit`. `pnpm lint`, `pnpm lint:fix` and `pnpm check` run it, and the CI lint job on every PR. |
+| `check-style.ts` | The style check: the rule modules below over every file git lists, untracked ones it does not ignore included. Exits 1 on any finding. Path arguments limit the files read. | `pnpm style [paths…]`. `pnpm lint`, `pnpm lint:fix` and `pnpm check` run it, and the CI lint job on every PR. |
 | `check-lenses.ts` | The schema-evolution lenses in `shared/src/schema-evolution/` ([CI guards](../../cella/SCHEMA_EVOLUTION.md#ci-guards)): a dated lens module never changes after its first commit; no lens touches a frozen envelope field, a field the CDC counters read or an embedding host column; a contract lens follows an expand lens on the same field; a lens module neither awaits nor imports dynamically; every configured entity type calls its `evolutionContract` factory in `backend/src/modules`. | `pnpm --filter shared lens:check`. `pnpm check` runs it, and the CI lint job on every PR, with full history for the append-only compare. |
 | `check-commit-msg.ts` | A commit message release-please can read: a Conventional Commits header `type(scope)!: subject` with one of its types, at most 120 characters, the subject neither capitalised nor ending in a full stop. A header git or a tool writes (merge, revert, fixup, version) passes. | lefthook's `commit-msg` hook. CI lints the PR title with its own action. |
 | `check-template-config.ts` | Typechecks the repo as a new app has it: writes `config.template.ts` over `config.default.ts` as the scaffolder does, regenerates the SDK and runs `pnpm ts`. `--tests` also runs the sign-in, connections and SSO federation client suites on the test database. Restores `shared/config` and `sdk/gen` from git afterwards, so both must be committed. Passes at once in an app, which has no `config.template.ts`. | `pnpm template:check [--tests]`. The CI build-services job runs it with `--tests` on every PR. |
@@ -29,17 +29,16 @@ The tests beside these files run in the `shared` suite (`pnpm --filter shared te
 | `check-app-vocabulary.ts` | Template and app vocabulary from `cella/AGENTS.md`: the `source-control-term` and `product-name` rules below. An app adds exceptions, `proseExclude` and `markerClasses` in `shared/config/vocabulary-allowlist.ts`. |
 | `frontend-rules.ts` | Frontend conventions Biome cannot express, in the frontend sources: the scripts under `frontend/src` outside generated files, content, stories and tests. |
 | `tailwind-class-rules.ts` | Frontend class names that compile to no CSS, checked against the Tailwind design system of the stylesheet that imports `tailwindcss`. A class that a stylesheet, a script or an arbitrary selector such as `group-[.x]` uses passes; another intentional marker goes in `markerClasses`, here for template hooks or in `shared/config/vocabulary-allowlist.ts` for the app's own. |
-| `text-color-rules.ts` | The four text steps, which increased contrast can raise. Opacity at rest on an element that holds text is a review marker; on an icon it is fine. |
-| `button-recipe-rules.ts` | Review markers only. A button takes its color from its variant, so classes on a `Button` or a `buttonVariants()` call that set a fill, edge or text color are marked. A neutral hover is `hover:bg-muted` on a pressable, accent on a navigable item and sidebar-accent in the sidebar; another one is marked. |
+| `text-color-rules.ts` | The four text steps, which increased contrast can raise: a text token takes no opacity modifier, and a palette gray skips the theme. |
 | `token-contrast-rules.ts` | The color token pairs of `frontend/src/styling/tailwind.css` in light and dark mode, text and the raised control edge (`--edge-raised`) alike, against WCAG's ratios, so a token that fails is caught before any page is opened. |
 | `stamp-rules.ts` | Row stamps in `backend/src`: a moment comes from `getIsoDate()`, a row's last writer and tombstone from `updateStamps()` / `deleteStamps()`. |
 | `alignment-rules.ts` | The folder and README shape of an [alignment](../../cella/alignments/README.md), which `pnpm cella align` reads. In the template, also the alignment a branch owes when it changes an app-owned path template code reads from, unless a commit message carries `Alignment: none, <reason>`. |
-| `class-tokens.ts` | Splits a class token into its variants and utility, and lists the tokens of every string under a node, for the Tailwind, text color and button rules. |
+| `class-tokens.ts` | Splits a class token into its variants and utility, and lists the tokens of every string under a node, for the Tailwind and text color rules. |
 | `repo-files.ts` | The file list, path filters, positions and finding shape the rules share, and `withRestoredPaths`, which the two config checks run their swap in. |
 
-## Required rules
+## Rules
 
-A required rule fails `pnpm style`; every other rule prints a review marker under `pnpm style:audit`.
+Every rule fails `pnpm style`.
 
 | Rule | Fails on | Where |
 | --- | --- | --- |
