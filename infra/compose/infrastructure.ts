@@ -137,7 +137,8 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
     restart: 'unless-stopped',
     // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
-    stop_grace_period: cfg.stopGracePeriod ?? '30s',
+    // SIGTERM drain window for in-flight requests.
+    stop_grace_period: '30s',
     ...(cfg.includeEnvFile === false ? {} : { env_file: ENV_FILES }),
     environment,
     healthcheck: healthcheck(cfg.port, cfg.startPeriod),
@@ -152,8 +153,8 @@ function releaseServiceName(slug: string): string {
 }
 
 /**
- * One-shot release companion for a service that declares a `release` step: the service image with the app's
- * release command/env, run at the new machine's boot BEFORE the app starts, which depends on its exit 0.
+ * One-shot release companion for a service that declares a `release` step: the service image with the step's env, run
+ * at the new machine's boot BEFORE the app starts, which depends on its exit 0.
  * It shares the service's profile, so the agent's `--profile <service>` starts it with the app.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
@@ -163,7 +164,6 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
     pull_policy: 'never',
     profiles: [slug],
     restart: 'no',
-    ...(release?.command ? { command: release.command } : {}),
     env_file: ENV_FILES,
     environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
   };

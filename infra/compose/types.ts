@@ -24,9 +24,7 @@ export type ServicePlacement = 'vm' | 'host';
  * The engine runs the service image as a companion; what the step does is app-defined (schema migration, backfill, seed).
  */
 export interface ReleaseStep {
-  /** Command override for the release container. Omit to use the image's default entrypoint. */
-  command?: readonly string[];
-  /** Env applied to the release container (e.g. an app-owned process selector). */
+  /** Env applied to the release container (e.g. a process selector). */
   env?: Readonly<Record<string, string>>;
   /** Env applied to the long-running app block whenever a release step exists (e.g. disable app-boot migration). */
   appEnv?: Readonly<Record<string, string>>;
@@ -97,7 +95,7 @@ export interface ComposeService {
   profiles: readonly string[];
   /** The release companion the app starts after, once it exited 0. */
   depends_on?: Readonly<Record<string, { condition: 'service_completed_successfully' }>>;
-  restart: 'unless-stopped' | 'no' | 'always' | 'on-failure';
+  restart: 'unless-stopped' | 'no';
   command?: readonly string[];
   /** `host` for the agent, which answers health checks on the machine's own addresses and reads the metadata service. */
   network_mode?: 'host';
@@ -193,8 +191,6 @@ export interface AppServiceConfig {
   includeStandardEnv?: boolean;
   /** Mount `.env` + `.env.runtime`. Default true; set false for the SPA proxy. */
   includeEnvFile?: boolean;
-  /** SIGTERM drain window for in-flight requests. Default `'30s'`. */
-  stopGracePeriod?: string;
 }
 
 /** The app-owned service registry: slug → declarative config. */
