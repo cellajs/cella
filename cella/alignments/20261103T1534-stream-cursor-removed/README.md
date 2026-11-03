@@ -7,7 +7,7 @@ grep: clientCacheVersion, getLatestActivityId, findLatestActivityId, lastEventId
 
 # The stream cursor is gone
 
-The catchup body and answer have no `cursor`, a change frame carries no SSE `id`, the `offset` event is empty, and neither the sync store nor the `StreamManager` store holds a stream cursor. `getLatestActivityId`, `findLatestActivityId`, `setCursor` and `StreamFrame`'s `id` are gone. `writeOffset(stream)` takes no cursor, `processAppCatchup(response)` takes a first catchup from `syncStore.caughtUpAt === null`, and `broadcastCatchup(response)` and `onCatchup` pass the answer alone.
+The catchup body and answer have no `cursor`, a change frame carries no SSE `id`, the `offset` event is empty, and neither the sync store nor the `StreamManager` store holds a stream cursor. `getLatestActivityId`, `findLatestActivityId`, `setCursor` and `StreamFrame`'s `id` are gone. `writeOffset(stream)` takes no cursor, and `processAppCatchup(response)` takes a first catchup from `syncStore.caughtUpAt === null`.
 
 ## What & why
 

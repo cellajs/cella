@@ -1,7 +1,7 @@
 ---
 breaking: true
 clientCacheBump: false
-caughtBy: compiler
+caughtBy: tests
 grep: resendInvitationEmail, remindInvitee, unboundOpener, replaces, TokenReplacement, hasLiveInvitationToken, updateMembershipCounts, inactive_membership_id
 generate: true
 ---
@@ -27,7 +27,7 @@ No script: manual.
 1. Run `pnpm generate`: it produces `CREATE INDEX "tokens_inactive_membership_id_idx"` and the `ADD CONSTRAINT ... ON DELETE CASCADE` on `tokens`. Paste `data.sql` above them in the new `migration.sql`; no rename hints.
 2. Replace a call of `resendInvitationEmail(ctx, token)` with `resendInvitation(ctx, { invitation, organization })` from `resend-pending-invitation.ts`, which takes the mail caps, for a membership invitation, or `resendInvitationByTokenOp(ctx, tokenId)` for the public resend. `mailInvitations` is the one send path behind both and takes no cap itself.
 3. A token type an app added declares its subject in `replacementSubjects` (`tokens-queries.ts`) and drops `replaces` and `unboundOpener` from its policy.
-4. In app tests, insert the `inactive_memberships` row before a token that names it, and expect no token on a held invitation until its channel's dispatch.
+4. In app tests, insert the `inactive_memberships` row before a token that names it, and expect no token on a held invitation until its channel's dispatch. These compile and fail at run time: projectcampus `backend/tests/invitations/draft-invites-app.test.ts` expects a link on a held course invitation (line 71) and reads its link before the publish (lines 135-155), where the dispatch now issues the first one.
 
 ## Verify
 

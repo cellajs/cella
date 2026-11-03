@@ -7,7 +7,7 @@ grep: batchUntilSeq, event.subjectId, event.userId, event.changedFields, Activit
 
 # Each row of a product change carries its own activity
 
-A product event on the activity bus (`ProductActivityEvent`) has no `id`, `userId`, `subjectId`, `changedFields` or `stx` of its own: each of its `rows` carries `activityId`, `userId`, `changedFields` and `stx`. The `StreamChange` frame drops `subjectId`, `seq`, `stx`, `actorId`, `batchUntilSeq` and `count` for `rows: [{ subjectId, seq, stx, actorId }]`, listing only the rows its receiver may read. Past `maxStreamChangeRows` (20) a frame names no row and sets `overflow`: the sequence range of a create or update, nulls on a delete, after which the client refetches the lists of the type. `fanOutNotifications` takes a `ProductActivityEvent`, `buildStreamChange(event, rows?)` the rows to name, `buildMoveOut(event, row, movedFrom)` the moved row.
+A product event on the activity bus (`ProductActivityEvent`) has no `id`, `userId`, `subjectId`, `changedFields` or `stx` of its own: each of its `rows` carries `activityId`, `userId`, `changedFields` and `stx`. The `StreamChange` frame drops `subjectId`, `seq`, `stx`, `actorId`, `batchUntilSeq` and `count` for `rows: [{ subjectId, seq, stx, actorId }]`, listing only the rows its receiver may read. Past `maxStreamChangeRows` (20) a frame names no row and sets `overflow`: the sequence range of a create or update, which the client fetches, or nulls on a delete, whose lists the client marks for a refetch. `fanOutNotifications` takes a `ProductActivityEvent`, `buildStreamChange(event, rows?)` the rows to name, `buildMoveOut(event, row, movedFrom)` the moved row.
 
 ## What & why
 

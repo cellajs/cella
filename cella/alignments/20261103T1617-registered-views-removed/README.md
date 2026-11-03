@@ -1,8 +1,8 @@
 ---
 breaking: true
-clientCacheBump: true
+clientCacheBump: false
 caughtBy: compiler
-grep: clientCacheVersion, elevateAcross, declareSyncView, RegisteredSyncView, truePath, selfFrontiers, frontierNodeKeys, mirrorChannelPaths, frontiers, e:f:h:
+grep: elevateAcross, declareSyncView, RegisteredSyncView, truePath, selfFrontiers, frontierNodeKeys, mirrorChannelPaths, frontiers, e:f:h:
 generate: true
 ---
 
@@ -16,7 +16,7 @@ A registered view never fetched a range: its answer only refetched the organizat
 
 ## Blast radius
 
-App code or tests that build catchup views with `key`, `prefixes`, `entityTypes` or `depth`, or read `frontiers`. One migration drops a column. A tab on the old bundle fails every catchup until it reloads. The breaking spec diff moves `clientCacheVersion`.
+App code or tests that build catchup views with `key`, `prefixes`, `entityTypes` or `depth`, or read `frontiers`. One migration drops a column. A tab on the old bundle fails every catchup until it reloads. The breaking spec diff takes the one `clientCacheVersion` move of 20261103T1534-stream-cursor-removed.
 
 ## Run
 
@@ -24,10 +24,9 @@ No script: manual.
 
 ## Manual steps
 
-1. If `shared/config` sets its own `clientCacheVersion`, change its value.
-2. Run `pnpm generate`: it alone writes the migration, one `ALTER TABLE "channel_counters" DROP COLUMN "path"`. No rename question arises, so it takes no hint.
-3. App code or a test that posts a catchup view sends `{ organizationId, entityType, cursor }`, and one that reads an answer reads `organizationId`, `entityType` and `frontier`.
-4. An app test that seeds `channel_counters` drops `path`, and one that asserts an `e:f:h:` key or an `e:f:` key on a channel below the organization drops that assertion.
+1. Run `pnpm generate`: it alone writes the migration, one `ALTER TABLE "channel_counters" DROP COLUMN "path"`. No rename question arises, so it takes no hint.
+2. App code or a test that posts a catchup view sends `{ organizationId, entityType, cursor }`, and one that reads an answer reads `organizationId`, `entityType` and `frontier`.
+3. An app test that seeds `channel_counters` drops `path`, and one that asserts an `e:f:h:` key or an `e:f:` key on a channel below the organization drops that assertion.
 
 ## Verify
 
