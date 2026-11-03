@@ -1,4 +1,5 @@
-import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys';
+import type { ManagedKeyDefinition } from '../lib/managed-keys';
+import type { MintedKeyField } from '../lib/managed-keys-config';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';

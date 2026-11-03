@@ -1,7 +1,9 @@
 import { composeConfig, type ServiceName } from '../../compose/compose';
+import type { EngineConfig } from '../../config/engine-config';
 import type { EnvSupplier, EnvSupplierContext } from '../env-suppliers';
 import { internalLbPort, type MachineRole } from '../machine-roles';
-import { type ServiceDefinition, servicesByName } from '../services';
+import { deriveInfra } from '../naming';
+import { type ServiceDefinition, serviceEndpoints, servicesByName } from '../services';
 
 /** Placeholders the engine sets on every machine: the registry the release's images are named for, the mode, and the agent's own. */
 const INJECTED_VARS = new Set(['REGISTRY', 'APP_MODE', 'AGENT_TAG', 'AGENT_DIR']);
@@ -130,4 +132,20 @@ export function staticEnv(input: StaticEnvInput): string {
   return Object.entries(env)
     .map(([name, value]) => `${name}=${value}`)
     .join('\n');
+}
+
+/** The context every supplier is called with for an environment: its names, region and mode, and its public services' URLs. */
+export function supplierContext(config: EngineConfig): EnvSupplierContext {
+  const { naming, region } = deriveInfra(config);
+  const urls = new Map(serviceEndpoints(config).map((endpoint) => [endpoint.slug as string, endpoint.url]));
+  return {
+    naming,
+    region,
+    mode: config.mode,
+    serviceUrl: (slug) => {
+      const url = urls.get(slug);
+      if (!url) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`);
+      return url;
+    },
+  };
 }

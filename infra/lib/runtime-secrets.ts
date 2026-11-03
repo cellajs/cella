@@ -1,47 +1,13 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
+import type { RuntimeSecretDerivation, RuntimeSecretGeneration, RuntimeSecretValueSource } from './runtime-secrets-config';
 import { type ServiceDefinition, serviceNames } from './services';
 import type { DatabaseRole, StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
 
 export type RuntimeSecretConsumer = ServiceName;
-
-export type RuntimeSecretValueSource = 'engine' | 'operator';
-export type RuntimeSecretGeneration = 'manual' | 'random';
-
-/** One runtime secret's app-owned mapping data from `runtime-secrets.config.ts`. The `id` is the config object key; {@link RuntimeSecretDefinition} is the flattened shape. */
-export interface RuntimeSecretConfig {
-  /** Scaleway Secret Manager container name (kebab-case). */
-  secretName: string;
-  /** Human-readable purpose, surfaced in tooling and the container description. */
-  description: string;
-  /** Environment variable the consuming service reads the value as. */
-  envVar: string;
-  /** Whether deploy/health gating treats the value's absence as fatal. */
-  required: boolean;
-  /** `'engine'` = the engine makes the value (generated, derived, a database's connection string, a store's output); `'operator'` = the operator sets it. */
-  valueSource: RuntimeSecretValueSource;
-  /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
-  generation: RuntimeSecretGeneration;
-  /** Services that receive the secret in their machine's `.env.runtime`, which the deploy composes from the runtime folder. */
-  services: readonly RuntimeSecretConsumer[];
-  /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
-  derivedFrom?: RuntimeSecretDerivation;
-  /**
-   * A generated value "Rotate secrets" may replace: one that protects no stored data (a signing key, a secret two services share). A key that
-   * encrypts or hashes stored data is left out: a new value would leave that data unreadable or unmatched. A value derived from a rotatable
-   * one follows it.
-   */
-  rotatable?: boolean;
-}
-
-/** How a derived secret's value follows its source: the source secret's id and a pure function of the source value. */
-export interface RuntimeSecretDerivation {
-  secretId: string;
-  derive: (sourceValue: string) => string;
-}
 
 /** A runtime-secret id. Store contributions register ids outside the app-config key union, so this stays a plain string and load-time validation rejects duplicates. */
 export type RuntimeSecretId = string;
@@ -61,11 +27,6 @@ export interface RuntimeSecretDefinition {
   rotatable?: boolean;
   /** A database connection string the operator task ensure-database assembles for this role. */
   database?: { role: DatabaseRole };
-}
-
-/** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
-export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecretConfig>>(secrets: T): T {
-  return secrets;
 }
 
 /** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order. */

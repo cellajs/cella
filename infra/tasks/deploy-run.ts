@@ -546,7 +546,7 @@ function createRealEffects(): DeployEffects {
         import('./switch-machines'),
         import('../config/env-suppliers.config'),
         import('../config/telemetry.config'),
-        import('../lib/env-suppliers'),
+        import('../lib/deploy/static-env'),
         import('../lib/scaleway/s3-client'),
       ]);
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');

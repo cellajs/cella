@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: false
 caughtBy: nothing
-grep: RELEASE_CHECK, MAIN_JOB_SCRIPT, RELEASES_ONLY, declaredMainJob, StoreProvisioner
+grep: RELEASE_CHECK, MAIN_JOB_SCRIPT, RELEASES_ONLY, declaredMainJob, StoreProvisioner, defineRuntimeSecrets, defineManagedKeys, MintedKeyField
 ---
 
 # The main job runs the applied engine
@@ -28,7 +28,8 @@ No script: manual.
 3. `pnpm infra apply --mode <env>` from a checkout at that target. It builds and pushes the engine image, the plan shows the main job's new image, script and env (`MODE`, `REPO`, `REGION`, `RUNTIME_FOLDER` and `RELEASES_ONLY` go), the `up` rewrites the definition, `applied.json` is recorded, and the target starts again from the image.
 4. Before the target deployed from the image, **Rotate keys** and **Rotate secrets** redeploy a live commit older than this change, which the engine image cannot deploy: deploy the target first. Before step 3, the database access actions and the seed refuse to run, as their `up` would delete the main job.
 5. A store factory of the app's own (a `StoreProvisioner` in `infra/resources/stores/`) sets `settings: config` on what it returns, so a change to its config owes an apply; without it only its kind and the runtime secrets it declares are in the description.
-6. An app script that called `declaredMainJob` passes `{ projectId, organizationId, image }` with an image by digest; one that relied on `RELEASE_CHECK` uses `isReleaseCommit` in `infra/lib/deploy/target.ts`.
+6. `infra/config/runtime-secrets.config.ts` imports `defineRuntimeSecrets` from `../lib/runtime-secrets-config`, and `infra/config/managed-keys.config.ts` imports `defineManagedKeys` from `../lib/managed-keys-config` (`MintedKeyField` moved there too): the typecheck names an app copy that kept the old import.
+7. An app script that called `declaredMainJob` passes `{ projectId, organizationId, image }` with an image by digest; one that relied on `RELEASE_CHECK` uses `isReleaseCommit` in `infra/lib/deploy/target.ts`.
 
 ## Verify
 

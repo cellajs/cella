@@ -1,5 +1,5 @@
 import { createPrivateKey, createPublicKey, hkdfSync } from 'node:crypto';
-import { defineRuntimeSecrets } from '../lib/runtime-secrets';
+import { defineRuntimeSecrets } from '../lib/runtime-secrets-config';
 
 /**
  * The Yjs relay's public key for the backend's token key material: the Ed25519 seed is HKDF-SHA256 of the material,

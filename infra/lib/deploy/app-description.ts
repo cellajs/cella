@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { type EngineConfig, engineConfig } from '../../config/engine-config';
-import { supplierContext } from '../env-suppliers';
 import { infraDir } from '../utils/paths';
 import { descriptionHash } from './applied-engine';
+import { supplierContext } from './static-env';
 
 /** The fields of the engine config the engine reads, and no other field of the app's config: a change to one of them owes an apply. */
 function engineFields(config: EngineConfig): EngineConfig {
@@ -38,15 +38,25 @@ function engineFields(config: EngineConfig): EngineConfig {
  */
 async function appDescription(root = join(infraDir, '..')): Promise<Record<string, unknown>> {
   const config = engineConfig();
-  // One after another: the registries import each other, and two graphs loading at once meet a binding before it is initialized.
-  const { runtimeSecrets } = await import('../runtime-secrets');
-  const { appStores } = await import('../../config/stores.config');
-  const { appServices, processIdentityEnv } = await import('../../config/services.config');
-  const { generalConfig } = await import('../../config/general.config');
-  const { healthContract } = await import('../../config/health.config');
-  const { managedKeys } = await import('../managed-keys');
-  const { appEnvSuppliers } = await import('../../config/env-suppliers.config');
-  const { telemetrySink } = await import('../../config/telemetry.config');
+  const [
+    { runtimeSecrets },
+    { managedKeys },
+    { appStores },
+    { appServices, processIdentityEnv },
+    { generalConfig },
+    { healthContract },
+    { appEnvSuppliers },
+    { telemetrySink },
+  ] = await Promise.all([
+    import('../runtime-secrets'),
+    import('../managed-keys'),
+    import('../../config/stores.config'),
+    import('../../config/services.config'),
+    import('../../config/general.config'),
+    import('../../config/health.config'),
+    import('../../config/env-suppliers.config'),
+    import('../../config/telemetry.config'),
+  ]);
   const context = supplierContext(config);
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     engines?: { node?: string };
