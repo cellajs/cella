@@ -152,7 +152,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new generation starts beside the old one; the load balancer serves both, checks the new one's health and release, then drops the old one. A failed check hands the pool back to the old generation. | None (load balancer overlap). |
 | **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The new generation replaces the old in the same stack update. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
-| **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first, with load balancer overlap. One session holds the replication slot and one process claims each cron period, so the new process's cdc and jobs wait until the old VM is removed, right after promotion. | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
+| **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first, with load balancer overlap. One session holds the replication slot, so the new process's cdc waits until the old VM is removed, right after promotion. Both processes run a jobs worker until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
 
 ## Runtime secret delivery
 

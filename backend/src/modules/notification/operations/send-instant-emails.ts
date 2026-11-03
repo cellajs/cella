@@ -1,8 +1,9 @@
 import { appConfig } from 'shared';
+import { textFromDocument } from 'shared/blocknote';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
-import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
+import type { NotificationSubjectRow } from '#/lib/module';
 import { commentEmail } from '#/modules/notification/emails/comment-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
@@ -14,7 +15,7 @@ import {
   stampEmailed,
   type WrittenNotification,
 } from '#/modules/notification/notification-queries';
-import { getNotificationSource, loadSubjectPreview } from '#/modules/notification/notification-sources';
+import { findContextNames } from '#/modules/notification/notification-sources';
 import { instantEmailTypes } from '#/modules/notification/notification-types';
 import { log } from '#/utils/logger';
 
@@ -27,10 +28,11 @@ const dbCtx = { var: { db: baseDb } };
 /**
  * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmail`
  * (`instantEmailTypes`), each to a recipient with a verified address who keeps that category on (comment email is
- * opt-in). A row whose mail went out is stamped `emailedAt`, so the digest skips it; any other row, a failed send
- * included, stays for the digest.
+ * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row whose mail
+ * went out is stamped `emailedAt`, so the digest skips it; any other row, a failed send included, stays for the digest.
+ * @param subjects - The subject rows the fan-out read, with their body, keyed by id.
  */
-export async function sendInstantEmails(rows: WrittenNotification[]): Promise<void> {
+export async function sendInstantEmails(rows: WrittenNotification[], subjects: Map<string, NotificationSubjectRow>): Promise<void> {
   const types = instantEmailTypes();
   const typed = rows.filter((row) => types.includes(row.type));
   if (typed.length === 0) return;
@@ -45,18 +47,16 @@ export async function sendInstantEmails(rows: WrittenNotification[]): Promise<vo
 
   const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
   const channelNames = await findChannelNames(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
+  const titles = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
 
   const mailed: string[] = [];
 
   for (const notification of mailable) {
     const user = byUser.get(notification.userId);
-    const source = getNotificationSource(notification.entityType);
-    if (!user || !source) continue;
+    const subject = subjects.get(notification.subjectId);
+    if (!user || !subject) continue;
 
     try {
-      const preview = await tenantReadById(notification.tenantId, (tx) => loadSubjectPreview(source, tx, notification.subjectId));
-      if (!preview) continue;
-
       const statics = {
         actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
         channelName: channelNames.get(notification.channelId) ?? '',
@@ -65,8 +65,8 @@ export async function sendInstantEmails(rows: WrittenNotification[]): Promise<vo
         email: user.email,
         lng: user.language,
         name: user.name,
-        subjectTitle: preview.title,
-        excerpt: htmlToExcerpt(preview.body, excerptLength),
+        subjectTitle: titles.get(contextOf(notification)) ?? '',
+        excerpt: htmlToExcerpt(descriptionText(subject.description), excerptLength),
         link: buildNotificationLink(appConfig.frontendUrl, {
           tenantId: notification.tenantId,
           organizationId: notification.organizationId,
@@ -94,4 +94,15 @@ export async function sendInstantEmails(rows: WrittenNotification[]): Promise<vo
 
   await stampEmailed(dbCtx, { ids: mailed });
   if (mailed.length > 0) log.info('Instant notification emails sent', { count: mailed.length });
+}
+
+/** The id a row is titled by: its context, else the subject itself, as the inbox titles it. */
+function contextOf(row: WrittenNotification): string {
+  return row.contextId ?? row.subjectId;
+}
+
+/** Plain text of a stored body for the excerpt: block documents flatten, legacy HTML passes through. */
+function descriptionText(description: NotificationSubjectRow['description']): string {
+  if (!description) return '';
+  return textFromDocument(description) ?? description;
 }

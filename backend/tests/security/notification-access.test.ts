@@ -134,10 +134,10 @@ describe('Notification access', async () => {
     await db.update(organizationsTable).set({ name: 'Renamed organization' }).where(eq(organizationsTable.id, tenant.organization.id));
   });
 
-  // Each test starts from unmailed, undigested rows and users who never had a digest.
+  // Each test starts from unread, unmailed rows and users who never had a digest.
   beforeEach(async () => {
     const users = [leaver.id, stayer.id];
-    await db.update(notificationsTable).set({ emailedAt: null, digestedAt: null, readAt: null }).where(inArray(notificationsTable.userId, users));
+    await db.update(notificationsTable).set({ emailedAt: null, readAt: null }).where(inArray(notificationsTable.userId, users));
     await db.update(notificationPreferencesTable).set({ lastDigestAt: null }).where(inArray(notificationPreferencesTable.userId, users));
   });
 

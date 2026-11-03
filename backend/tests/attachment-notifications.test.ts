@@ -155,7 +155,7 @@ describe('Attachment mentions (template notification source)', async () => {
   /** Subjects of one test each, so one test's inbox rows never dedupe another's. */
   const subjectIds: string[] = [];
 
-  const newSubject = async (description: string | null = null, columns: { public?: boolean } = {}) => {
+  const newSubject = async (description: string | null = null, columns: { public?: boolean; name?: string } = {}) => {
     const id = generateId();
     subjectIds.push(id);
     const row = buildInsertableProduct(
@@ -258,7 +258,7 @@ describe('Attachment mentions (template notification source)', async () => {
       entityId: attachmentId,
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
-      description: mentionsOf([member.id]),
+      description: JSON.stringify([paragraphWithText('please sign the contract'), paragraphWithMentions([member.id])]),
       editors: [tenant.user.id],
     });
 
@@ -270,38 +270,49 @@ describe('Attachment mentions (template notification source)', async () => {
     const [told] = await notificationsFor(member.id);
     expect(told?.type).toBe('mention');
     expect(told?.emailedAt).not.toBeNull();
-    expect(mailsTo(member.email)).toHaveLength(1);
+    // Titled with the name the inbox shows, quoting the body the fan-out read.
+    const [{ name }] = await db.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
+    const mails = mailsTo(member.email);
+    expect(mails).toHaveLength(1);
+    expect(mails[0]?.recipient).toMatchObject({ subjectTitle: name, excerpt: expect.stringContaining('please sign the contract') });
     // The push link opens the notification's context, which defaults to the row itself.
     const [, payload] = vi.mocked(sendNotificationPush).mock.calls.at(-1) ?? [];
     expect(linkedContextId(payload?.url)).toBe(attachmentId);
   });
 
-  it('links the mention mail to the notification context, the item hosting the subject', async () => {
+  it('links and titles the mention mail by the notification context, the item hosting the subject', async () => {
     const hostId = generateId();
     const source = attachmentSource();
     source.declaration.resolveContextId = () => hostId;
-    onTestFinished(() => void delete source.declaration.resolveContextId);
+    source.declaration.loadContextNames = async (_tx, ids) => new Map(ids.map((id) => [id, id === hostId ? 'Host item' : '']));
+    onTestFinished(() => {
+      delete source.declaration.resolveContextId;
+      delete source.declaration.loadContextNames;
+    });
     const subjectId = await newSubject(mentionsOf([member.id]));
 
     await fanOutNotifications(createdEvent(subjectId));
     const [mail] = mailsTo(member.email);
     expect(linkedContextId(mail?.recipient.link)).toBe(hostId);
+    expect(mail?.recipient.subjectTitle).toBe('Host item');
   });
 
   it('leaves a mention whose mail failed unstamped, for the digest', async () => {
-    const subjectId = await newSubject(mentionsOf([member.id]));
+    const subjectId = await newSubject(mentionsOf([member.id]), { name: 'Unmailed item' });
 
     failNextMailSend();
     await fanOutNotifications(createdEvent(subjectId));
     expect(mailsTo(member.email)).toHaveLength(1);
 
     const [row] = await db
-      .select({ id: notificationsTable.id, emailedAt: notificationsTable.emailedAt })
+      .select({ emailedAt: notificationsTable.emailedAt })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, subjectId)));
     expect(row?.emailedAt).toBeNull();
-    const digest = await buildDigestForUser({ var: { db: baseDb } }, member.id, new Date(Date.now() - 60 * 1000), 'en');
-    expect(digest.notificationIds).toContain(row?.id);
+    const minute = 60 * 1000;
+    const window = { since: new Date(Date.now() - minute).toISOString(), before: new Date(Date.now() + minute).toISOString() };
+    const sections = await buildDigestForUser({ var: { db: baseDb } }, { userId: member.id, ...window, lng: 'en' });
+    expect(sections.flatMap((section) => section.lines).join()).toContain('Unmailed item');
   });
 
   it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {
@@ -504,18 +515,6 @@ describe('Attachment mentions (template notification source)', async () => {
 
       await fanOutNotifications(createdEvent(subjectId));
       expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
-    });
-
-    it('sends no mention from a source declared mentionable: false', async () => {
-      const source = attachmentSource();
-      source.declaration.mentionable = false;
-      onTestFinished(() => {
-        delete source.declaration.mentionable;
-      });
-
-      const subjectId = await newSubject(mentionsOf([member.id]));
-      await fanOutNotifications(createdEvent(subjectId));
-      expect(await inboxOf(member.id, subjectId)).toEqual([]);
     });
   });
 

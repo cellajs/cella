@@ -92,8 +92,8 @@ export const notificationsSeed = async () => {
 
   for (const entityType of seedMentionEntityTypes) {
     const source = getNotificationSource(entityType);
-    if (!source || source.declaration.mentionable === false) {
-      noteSpinnerWarning(`The ${entityType} module declares no mention fan-out → no ${entityType} mentions seeded`);
+    if (!source) {
+      noteSpinnerWarning(`The ${entityType} module declares no notification source → no ${entityType} mentions seeded`);
       continue;
     }
 

@@ -3,7 +3,7 @@ import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { type UnsubscribeCategory, verifyCategoryToken } from '#/modules/notification/helpers/category-token';
-import { defaultDigestFrequency } from '#/modules/notification/notification-db';
+import { defaultPreferences } from '#/modules/notification/notification-db';
 import { updatePreferences } from '#/modules/notification/notification-queries';
 import type { updatePreferencesBodySchema } from '#/modules/notification/notification-schema';
 import { findUserById, updateUser } from '#/modules/user/user-queries';
@@ -12,7 +12,7 @@ type Preferences = z.infer<typeof updatePreferencesBodySchema>;
 
 /** The preferences each notification category's link sets, off and back on. The digest comes back at its default. */
 const categoryPreferences = {
-  digest: (enabled) => ({ digest: enabled ? defaultDigestFrequency : 'off' }),
+  digest: (enabled) => ({ digest: enabled ? defaultPreferences.digest : 'off' }),
   mention: (enabled) => ({ mentionEmail: enabled }),
   comment: (enabled) => ({ commentEmail: enabled }),
 } satisfies Record<Exclude<UnsubscribeCategory, 'newsletter'>, (enabled: boolean) => Preferences>;

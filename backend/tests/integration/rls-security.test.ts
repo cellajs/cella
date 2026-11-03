@@ -623,7 +623,6 @@ const rlsSuiteReady = await (async () => {
     it.skipIf(iterableRlsProducts.length === 0)('tenant-scoped runtime read matches the admin_role read and is empty without context', async () => {
       if (!rolesAvailable) return;
       const [entityType, fixture] = iterableRlsProducts[0];
-      // The generic table read; app declarations with their own loadRows take the same tx.
       const source: NotificationSource = { entityType, declaration: {} };
       const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
 

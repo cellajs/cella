@@ -47,20 +47,18 @@ export async function fanOutNotifications(event: ProductActivityEvent): Promise<
   const { organizationId, tenantId } = event;
   if (!organizationId || !tenantId) return;
 
-  const mentionable = source.declaration.mentionable !== false;
   // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
   const changes = event.rows.flatMap((row) => {
     const subjectId = row.rowData.id;
-    const readsMentions = mentionable && mayAddMentions(event.action, row);
+    const readsMentions = mayAddMentions(event.action, row);
     return typeof subjectId === 'string' && (readsMentions || source.declaration.resolveRecipients) ? [{ row, subjectId, readsMentions }] : [];
   });
   if (changes.length === 0) return;
 
-  // An event carries only the permission columns of its rows, never the body, so the rows are re-read.
+  // An event carries only the permission columns of its rows, never the body, so the rows are re-read with it.
   const subjectIds = [...new Set(changes.map(({ subjectId }) => subjectId))];
-  const body = changes.some(({ readsMentions }) => readsMentions);
   const subjects = new Map(
-    (await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body }))).map((subject) => [subject.id, subject]),
+    (await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: true }))).map((subject) => [subject.id, subject]),
   );
 
   const ids: EventIds = { organizationId, tenantId };
@@ -75,7 +73,7 @@ export async function fanOutNotifications(event: ProductActivityEvent): Promise<
       log.error('Notification fan-out failed for row', { error, activityId: row.activityId, subjectId });
     }
   }
-  await sendInstantEmails(told);
+  await sendInstantEmails(told, subjects);
 }
 
 /**

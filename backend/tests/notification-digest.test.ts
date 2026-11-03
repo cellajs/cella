@@ -79,17 +79,12 @@ describe('Weekly digest by default', async () => {
     expect(mailsTo(member.email)).toEqual([]);
   });
 
-  it('stamps neither the rows nor the run when the digest mail fails, so the next tick sends it', async () => {
+  it('stamps no run when the digest mail fails, so the next tick sends it', async () => {
     failNextMailSend();
     await runDigest(nextNoonOn(5));
 
     expect(mailsTo(member.email)).toHaveLength(1);
     expect(await preferencesOf(member.id)).toBeUndefined();
-    const rows = await db
-      .select({ digestedAt: notificationsTable.digestedAt })
-      .from(notificationsTable)
-      .where(eq(notificationsTable.userId, member.id));
-    expect(rows).toEqual([{ digestedAt: null }]);
   });
 
   it('mails the weekly digest to a user without a preferences row and stamps the run on a new row', async () => {
@@ -107,5 +102,77 @@ describe('Weekly digest by default', async () => {
     // A user with nothing undigested is not due, so the run neither mails nor stamps it.
     expect(mailsTo(idle.email)).toEqual([]);
     expect(await preferencesOf(idle.id)).toBeUndefined();
+  });
+});
+
+// The window is Postgres's from end to end: it starts at the recipient's last run and ends at this run's start. A
+// JavaScript read of zone-less text would shift it by the process's zone, so a run outside UTC (TZ=Europe/Amsterdam)
+// catches one.
+describe('Digest window', async () => {
+  const call = await createAppClient();
+  let tenant: TestTenant;
+  let member: { id: string; email: string };
+  const hour = 60 * 60 * 1000;
+  const titles = { before: 'Before the last run', after: 'After the last run', during: 'During this run' };
+  const subjectIds = { before: generateId(), after: generateId(), during: generateId() };
+
+  /** Noon UTC yesterday: past the send hour, and behind the wall clock at any hour, so a run stamped by the clock fails. The last daily digest ran a day earlier. */
+  const thisRun = new Date();
+  thisRun.setUTCHours(12, 0, 0, 0);
+  thisRun.setUTCDate(thisRun.getUTCDate() - 1);
+  const lastRun = new Date(thisRun.getTime() - 24 * hour);
+
+  const sectionsTo = (email: string) => mailsTo(email).map(({ recipient }) => ('sectionsHtml' in recipient ? String(recipient.sectionsHtml) : ''));
+
+  beforeAll(async () => {
+    tenant = await createTestTenant(call, 'digest-window');
+    member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'digest-window-member', adminRole);
+
+    const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
+    const { response } = await call(createAttachments, {
+      path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+      body: Object.values(subjectIds).map((id) => attachmentBody(id, home)),
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+    expect(response.status).toBe(201);
+
+    const createdAt = { before: lastRun.getTime() - hour / 2, after: lastRun.getTime() + hour / 2, during: thisRun.getTime() + 60 * 1000 };
+    for (const key of ['before', 'after', 'during'] as const) {
+      await adminDb.update(attachmentsTable).set({ name: titles[key] }).where(eq(attachmentsTable.id, subjectIds[key]));
+      await db.insert(notificationsTable).values({
+        createdAt: new Date(createdAt[key]).toISOString(),
+        userId: member.id,
+        actorId: tenant.user.id,
+        type: 'comment',
+        entityType: 'attachment',
+        subjectId: subjectIds[key],
+        contextId: subjectIds[key],
+        channelId: tenant.organization.id,
+        channelType: 'organization',
+        organizationId: tenant.organization.id,
+        tenantId: tenant.tenantId,
+        activityId: `act:${generateId()}`,
+      });
+    }
+    await db.insert(notificationPreferencesTable).values({ userId: member.id, digest: 'daily', lastDigestAt: lastRun.toISOString() });
+  });
+
+  afterAll(async () => {
+    await db.delete(notificationsTable).where(eq(notificationsTable.userId, member.id));
+    await clearSecurityTestData();
+  });
+
+  it('covers the rows since the last run up to the start of this one, and leaves a row written during the run to the next', async () => {
+    await runDigest(thisRun);
+    const [first] = sectionsTo(member.email);
+    expect(first).toContain(titles.after);
+    expect(first).not.toContain(titles.before);
+    expect(first).not.toContain(titles.during);
+
+    // The run settled the window at its start: the next day's digest carries the row written during it, and no other.
+    await runDigest(new Date(thisRun.getTime() + 24 * hour));
+    const [, second] = sectionsTo(member.email);
+    expect(second).toContain(titles.during);
+    expect(second).not.toContain(titles.after);
   });
 });

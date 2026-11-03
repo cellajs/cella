@@ -11,8 +11,12 @@ import { usersTable } from '#/modules/user/user-db';
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
 export type DigestFrequency = (typeof digestFrequencies)[number];
 
-/** Cadence of a user without a preferences row, and the column default. */
-export const defaultDigestFrequency: DigestFrequency = 'weekly';
+/** The preferences of a user without a row, and the column defaults: every reader answers a missing row with these. */
+export const defaultPreferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' } as const satisfies {
+  mentionEmail: boolean;
+  commentEmail: boolean;
+  digest: DigestFrequency;
+};
 
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product
@@ -47,9 +51,8 @@ export const notificationsTable = snakeCase.table(
     /** The CDC activity of the write that told the user. */
     activityId: varchar({ length: 64 }).notNull(),
     readAt: isoTimestamp(),
-    /** Set once the row's instant mail went out; the digest skips it. */
+    /** Set once the row's instant mail went out, and on every seeded row; the digest skips it. */
     emailedAt: isoTimestamp(),
-    digestedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.id, table.createdAt] }),
@@ -71,9 +74,9 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .$type<UserId>(),
   /** In-app delivery is never opt-out; only email is. */
-  mentionEmail: boolean().notNull().default(true),
-  commentEmail: boolean().notNull().default(false),
-  digest: varchar({ enum: digestFrequencies }).notNull().default(defaultDigestFrequency),
+  mentionEmail: boolean().notNull().default(defaultPreferences.mentionEmail),
+  commentEmail: boolean().notNull().default(defaultPreferences.commentEmail),
+  digest: varchar({ enum: digestFrequencies }).notNull().default(defaultPreferences.digest),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: isoTimestamp(),
   updatedAt: timestampColumns.updatedAt,

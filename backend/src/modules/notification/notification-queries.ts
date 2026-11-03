@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,7 +8,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
 import {
   type DigestFrequency,
-  defaultDigestFrequency,
+  defaultPreferences,
   type InsertNotificationModel,
   type NotificationPreferencesModel,
   notificationPreferencesTable,
@@ -100,22 +100,14 @@ export async function markNotificationsRead(ctx: DbContext, { userId, ids, conte
   return updated.length;
 }
 
-interface FindOrCreatePreferencesOpts {
+interface FindPreferencesOpts {
   userId: string;
 }
 
-/** Preferences row, created on first read so callers never handle a missing row. */
-export async function findOrCreatePreferences(ctx: DbContext, { userId }: FindOrCreatePreferencesOpts) {
-  const { db } = ctx.var;
-
-  const [existing] = await db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
-  if (existing) return existing;
-
-  const [created] = await db.insert(notificationPreferencesTable).values({ userId }).onConflictDoNothing().returning();
-  if (created) return created;
-
-  const [raced] = await db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
-  return raced;
+/** The user's preferences row; undefined for a user who never saved one, whose preferences are `defaultPreferences`. */
+export async function findPreferences(ctx: DbContext, { userId }: FindPreferencesOpts) {
+  const [row] = await ctx.var.db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
+  return row;
 }
 
 interface UpdatePreferencesOpts {
@@ -296,8 +288,7 @@ interface UserIdsOpts {
 
 /**
  * Recipients with a verified address, each with the instant mail categories they keep on; anyone else keeps the in-app
- * notification only. The preferences row is created on first read of the settings, so a missing row means the
- * defaults: mention email on, comment email off.
+ * notification only. A user without a preferences row keeps the defaults.
  */
 export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserIdsOpts) {
   if (userIds.length === 0) return [];
@@ -308,8 +299,8 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
       email: usersTable.email,
       name: usersTable.name,
       language: usersTable.language,
-      mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, true)`,
-      commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, false)`,
+      mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, ${defaultPreferences.mentionEmail})`,
+      commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, ${defaultPreferences.commentEmail})`,
     })
     .from(usersTable)
     .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))
@@ -340,36 +331,41 @@ export async function stampEmailed(ctx: DbContext, { ids }: NotificationIdsOpts)
   await ctx.var.db.update(notificationsTable).set({ emailedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
 }
 
+/**
+ * Rows a digest may still carry: unread, never mailed, of an organization the recipient still belongs to, created in
+ * `[since, before)`. `before` is the run's start, so a row written during a run falls in the recipient's next window.
+ */
+const undigestedRows = (since: SQL | string, before: string) => sql`${notificationsTable.readAt} is null
+  and ${notificationsTable.emailedAt} is null
+  and ${notificationsTable.createdAt} >= ${since}
+  and ${notificationsTable.createdAt} < ${before}
+  and ${recipientStillBelongs}`;
+
 interface FindDueDigestRecipientsOpts {
-  /** Start of today: a recipient already run since then is not due. */
+  /** The run's start: every window ends there. */
+  runAt: string;
+  /** Start of the run's day: a recipient already run since then is not due. */
   dayStart: string;
   includeWeekly: boolean;
-  /** How far back each cadence's window reaches at most. */
-  earliest: Record<'daily' | 'weekly', string>;
   limit: number;
 }
 
 /**
- * Recipients whose digest is due: verified address, cadence on (the default without a preferences row), not yet
- * run today, and at least one row `findUndigestedNotifications` would return for the runner's window
- * (`lastDigestAt`, no further back than `earliest` for the cadence; see run-digest.ts). A run walks only users
- * with something to send.
+ * Recipients whose digest is due, each with where their window starts: verified address, cadence on (the default without
+ * a preferences row), not yet run today, and at least one row `findUndigestedNotifications` returns for the window. It
+ * starts at `lastDigestAt`, so a late or skipped run resumes where the previous one stopped, but reaches back no further
+ * than the cadence plus a day: a first digest, and the first after the digest was off, cover recent rows only.
+ * @returns `windowStart` as the driver's text, for `findUndigestedNotifications` to take as it is: no JavaScript `Date` reads it.
  */
-export async function findDueDigestRecipients(ctx: DbContext, { dayStart, includeWeekly, earliest, limit }: FindDueDigestRecipientsOpts) {
-  const digest = sql<DigestFrequency>`coalesce(${notificationPreferencesTable.digest}, ${defaultDigestFrequency})`;
+export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart, includeWeekly, limit }: FindDueDigestRecipientsOpts) {
+  const digest = sql<DigestFrequency>`coalesce(${notificationPreferencesTable.digest}, ${defaultPreferences.digest})`;
   const cadences: DigestFrequency[] = includeWeekly ? ['daily', 'weekly'] : ['daily'];
-  const earliestForCadence = sql`case when ${digest} = 'weekly'
-    then ${earliest.weekly}::timestamp else ${earliest.daily}::timestamp end`;
-  // greatest() skips nulls: without a stamp the window starts at the earliest start.
-  const windowStart = sql`greatest(${notificationPreferencesTable.lastDigestAt}, ${earliestForCadence})`;
+  const reach = sql`case when ${digest} = 'weekly' then interval '8 days' else interval '2 days' end`;
+  // greatest() skips nulls: without a stamp the window starts at the furthest reach.
+  const windowStart = sql<string>`greatest(${notificationPreferencesTable.lastDigestAt}, ${runAt}::timestamptz - ${reach})`;
   const hasUndigested = sql`exists (
     select 1 from ${notificationsTable}
-    where ${notificationsTable.userId} = ${usersTable.id}
-      and ${notificationsTable.readAt} is null
-      and ${notificationsTable.emailedAt} is null
-      and ${notificationsTable.digestedAt} is null
-      and ${notificationsTable.createdAt} >= ${windowStart}
-      and ${recipientStillBelongs}
+    where ${notificationsTable.userId} = ${usersTable.id} and ${undigestedRows(windowStart, runAt)}
   )`;
 
   return (
@@ -377,7 +373,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { dayStart, includ
       .selectDistinctOn([usersTable.id], {
         userId: usersTable.id,
         digest,
-        lastDigestAt: notificationPreferencesTable.lastDigestAt,
+        windowStart,
         email: usersTable.email,
         name: usersTable.name,
         language: usersTable.language,
@@ -398,26 +394,20 @@ export async function findDueDigestRecipients(ctx: DbContext, { dayStart, includ
   );
 }
 
-interface FindUndigestedNotificationsOpts {
+/** One recipient's digest window `[since, before)`; `buildDigestForUser` takes it without `limit`. */
+export interface FindUndigestedNotificationsOpts {
   userId: string;
+  /** The window's start, as `findDueDigestRecipients` gave it. */
   since: string;
+  /** The run's start, where the window ends. */
+  before: string;
   limit: number;
 }
 
-/** Unread, un-emailed, un-digested rows since `since`; the digest's whole content source. */
-export async function findUndigestedNotifications(ctx: DbContext, { userId, since, limit }: FindUndigestedNotificationsOpts) {
-  const filters = [
-    eq(notificationsTable.userId, userId),
-    isNull(notificationsTable.readAt),
-    isNull(notificationsTable.emailedAt),
-    isNull(notificationsTable.digestedAt),
-    gte(notificationsTable.createdAt, since),
-    recipientStillBelongs,
-  ];
-
+/** The rows of a user's digest window, oldest first; the digest's whole content source. */
+export async function findUndigestedNotifications(ctx: DbContext, { userId, since, before, limit }: FindUndigestedNotificationsOpts) {
   return ctx.var.db
     .select({
-      id: notificationsTable.id,
       type: notificationsTable.type,
       entityType: notificationsTable.entityType,
       subjectId: notificationsTable.subjectId,
@@ -426,27 +416,21 @@ export async function findUndigestedNotifications(ctx: DbContext, { userId, sinc
       tenantId: notificationsTable.tenantId,
     })
     .from(notificationsTable)
-    .where(and(...filters))
+    .where(and(eq(notificationsTable.userId, userId), undigestedRows(since, before)))
     .orderBy(asc(notificationsTable.createdAt))
     .limit(limit);
 }
 
-/** Settles the rows a digest covered, so no later digest repeats them. */
-export async function stampDigested(ctx: DbContext, { ids }: NotificationIdsOpts): Promise<void> {
-  if (ids.length === 0) return;
-  await ctx.var.db.update(notificationsTable).set({ digestedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
-}
-
 interface StampDigestRunOpts {
-  userIds: string[];
+  userId: string;
+  /** The run's start, where the user's next window starts. */
   ranAt: string;
 }
 
-/** Upserts, so a user who never saved preferences gets a row with the defaults and the stamp. */
-export async function stampDigestRun(ctx: DbContext, { userIds, ranAt }: StampDigestRunOpts): Promise<void> {
-  if (userIds.length === 0) return;
+/** Settles a recipient's window once their digest went out or had nothing to say. Upserts, so a user without a row gets one with the defaults. */
+export async function stampDigestRun(ctx: DbContext, { userId, ranAt }: StampDigestRunOpts): Promise<void> {
   await ctx.var.db
     .insert(notificationPreferencesTable)
-    .values(userIds.map((userId) => ({ userId, lastDigestAt: ranAt })))
+    .values({ userId, lastDigestAt: ranAt })
     .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { lastDigestAt: ranAt } });
 }
