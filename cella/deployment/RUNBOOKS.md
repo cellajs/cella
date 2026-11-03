@@ -79,11 +79,11 @@ The worker makes a new slot when it starts again, and every client refetches onc
 
 A wrong admin email is fixed in **Manage runtime secrets**, then by rebooting the backend machine ([Scaleway console](https://console.scaleway.com/instance/servers) → the machine → **Reboot**): its boot seeds the admin while the users table is empty.
 
-On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and seed with the printed connection string:
+On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and run the migrate companion, which seeds the admin on an empty users table, with the printed connection string:
 
 ```bash
 pnpm --filter backend build
-ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' pnpm --filter backend seed:production init
+ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' SERVICE=migrate node backend/dist/main.js
 ```
 
 ## Reset the database

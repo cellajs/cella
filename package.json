@@ -32,7 +32,6 @@
     "sdk": "pnpm --filter backend generate:openapi && pnpm --filter sdk generate:sdk",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm run clean && pnpm --reporter=append-only -r --parallel --stream run \"/^dev(:[a-z]+)?$/\"",
-    "dev:single": "pnpm run clean && cross-env SINGLE_VM=true pnpm --reporter=append-only -r --parallel --stream --filter backend --filter frontend dev",
     "tunnel": "cross-env APP_MODE=tunnel pnpm dev",
     "seed": "pnpm --filter backend seed",
     "sync:verify": "pnpm --filter cdc-worker sync verify",
@@ -53,7 +52,6 @@
     "ts": "pnpm -r ts",
     "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf && pnpm --filter cdc-worker tsperf && pnpm --filter yjs-worker tsperf",
     "build": "pnpm run clean && pnpm -r --parallel build",
-    "start": "pnpm -r --parallel start",
     "test": "pnpm sdk && pnpm test:full",
     "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run --silent=passed-only",
     "test:core:verbose": "pnpm docker:test && cross-env TEST_MODE=core vitest run",
@@ -69,8 +67,7 @@
     "a11y": "pnpm -C a11y a11y",
     "a11y:run": "pnpm -C a11y stack",
     "deps:bundle:analyze": "cross-env ANALYZE=true pnpm --filter frontend build",
-    "unused": "knip --dependencies --include files,exports,nsExports",
-    "session": "bash session.sh"
+    "unused": "knip --dependencies --include files,exports,nsExports"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

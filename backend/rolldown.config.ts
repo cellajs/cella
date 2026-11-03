@@ -7,7 +7,6 @@ const { external } = keepOnDisk(appKeepOnDisk, pkg.dependencies);
 
 const entries = {
   main: 'src/main.ts',
-  'seeds-bundle': 'scripts/seeds-bundle.ts',
   // pino starts the OTLP log transport by path from the bundle's folder (shared/src/pino.ts).
   'otel-log-transport': '../shared/src/otel-log-transport.ts',
 };
