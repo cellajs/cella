@@ -26,13 +26,15 @@ The EU has great cloud providers; what it lacks is an easy way to deploy within 
 
 **Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
 
-**Release** is one command, which the environment's main job runs when the runner sees its target move:
+**Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**: the engine built from your checkout, with the **applied description** of the app, which every run of the main job starts from.
+
+**Release** is one command, which the engine image runs in the environment's main job when the runner sees its target move:
 
 ```
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline, from building a missing release to removing the old machines.
+It owns the whole pipeline, from building a missing release to removing the old machines. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, and the apply from its checkout starts it again.
 
 **Manage** is the same `pnpm infra` on an existing stack: one menu to observe, change privileged resources, keys and secrets, reach the database, repair and tear down. Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help`. There is no unattended mode: a change needs a person at the prompt.
 
@@ -51,6 +53,7 @@ Three rules:
 - **No machine holds a key.** The deploy composes each machine's env file from the values its services consume and hands the machine links that end within minutes: to that file, to the release's archives, whose digests it refuses to differ, and to the upload of its boot account. Once the machine booted, the deploy takes the links off its user data and deletes the file.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
 - **The builder holds no key.** It writes the release's archives and its reports through links, and the app's code runs there in containers that reach no machine metadata.
+- **A target's code never runs beside the deploy key.** The main job runs the engine image an apply published, with the target, the retry counter, the deploy key and the project as its only values; the target's code runs on the builder and on its machines.
 
 ## Observability
 
@@ -68,7 +71,7 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name, a main job whose image, command, env or secret references changed. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name, a main job that runs another image than the digest the last apply recorded, or another command, env or secret references. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
@@ -102,7 +105,7 @@ The CLI reads no privileged key and no passphrase from a file or the environment
 
 ## Extending
 
-The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
+The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. An app changes it through the registries in [config/](config/): services with their strategies and routes, sizing, the machine image, database and asset retention (`general.config.ts`), backing stores, runtime secrets, managed keys, app-wide env values (`env-suppliers.config.ts`), health, the frontend CSP and telemetry. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace. With every registry beside it, it is the applied description an apply publishes, so a change to any of them deploys after an apply. A status check is a provider in [lib/status/providers/](lib/status/providers/); a registered store adds its own through `validate()`.
 
 An app is deployable with a Docker image per service, a `/health` endpoint reporting the `X-App-Version` release SHA, and a one-shot `migrate` companion. The agent answers the load balancer from that endpoint, on a port of its own per service.
 
@@ -117,6 +120,7 @@ An app is deployable with a Docker image per service, a `/health` endpoint repor
 | [agent/](agent/) | The agent every machine runs |
 | [caddy/](caddy/) | The frontend's Caddy image and its Caddyfile |
 | [runner/](runner/) | The runner's program |
+| [Dockerfile](Dockerfile) | The engine image an apply builds |
 | [scripts/](scripts/) | The gate that keeps app knowledge out of the engine's code |
 | [tests/](tests/README.md) | Tests that span modules, and their helpers |
 | [environments](environments) | What each environment deploys |
@@ -132,11 +136,14 @@ One name per concept across code and docs:
 | **release** | One git SHA baked into images and machines. |
 | **deploy** | One run of the deploy command. |
 | **blocked** | How a run ends when a required runtime value is missing, which an operator stores. |
+| **apply needed** | How a run ends when its target describes the app otherwise than the applied description; the apply from its checkout starts it again. |
 | **unchanged** | How a run ends when every role served its target already, under the same retry counter and rotation. |
 | **runner** | The app's small machine that starts a deploy when an environment's target moves. |
-| **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy. |
+| **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy, on the engine image. |
+| **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry; the main job names it by digest. |
+| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the root `package.json`'s Node, pnpm and repository. Its hash is in `control/<mode>/applied.json` and the image's stamp. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
-| **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links and holds no key. |
+| **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links, holds no key, and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
 | **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |
 | **link** | A presigned Object Storage URL the deploy key signs: one call on one object, until it ends within minutes. |

@@ -23,7 +23,9 @@ refuses the call, and none between two holders of one zone.
 | **Outside** | The observer, the builder, the build containers, a service's machine, other environments and apps | No key of the deploy path; a machine its own env file, once |
 
 In the deploy path the deploy key composes each machine's env file from the runtime values and signs the links a machine and the builder
-fetch and write through, and the runner can start the main job with a command of its own.
+fetch and write through, and the runner can start the main job with a command of its own. The code it deploys reads the values its
+machines receive, and never runs beside the deploy key: the main job runs the engine image an apply published, and the target's code
+builds on the builder, which holds no key.
 
 ## API keys
 
@@ -32,7 +34,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | Key | Does | Works from | Lives in | Replaced by |
 | --- | --- | --- | --- | --- |
 | **Owner API key** (your own, as organization Owner) | Everything; the one key that writes IAM | Any address | Nowhere: typed at the prompt | Made per occasion with an expiry of hours, revoked after |
-| **Operator** (`<app>-operator`, or your own user in `<app>-operators`) | Every product in the app's projects, IAM read; no IAM write | Any address, within the day | Nowhere: made in the console at each sitting | Ends by itself; **Set up operators** rewrites the policies |
+| **Operator** (`<app>-operator`, or your own user in `<app>-operators`) | Every product in the app's projects, the engine image's push to the registry included, IAM read; no IAM write | Any address, within the day | Nowhere: made in the console at each sitting | Ends by itself; **Set up operators** rewrites the policies |
 | **Deploy** (`<slug>-<mode>-ci-deploy`) | One environment's machines and their private NICs, its boot-diag bucket; reads the load balancer, the reserved addresses and the runtime folder | Any address | `deploy-key` in the engine folder | **Rotate keys** |
 | **Observer** (`<app>-observer`) | Read-only on the app's projects, the boot accounts, run records and `control/` of the boot-diag bucket; no machine, archive, env file or state | Any address | `infra/.env.<mode>` (`SCW_OBSERVER_*`) | Deleted in the console; **Update identities** makes a machine a new one |
 | **Uploads** (`<slug>-<mode>-uploads`) | Objects of the two upload buckets: the backend's uploads and presigned URLs | Any address | The runtime folder, and the env file of each machine that signs uploads | **Rotate keys** |
@@ -42,7 +44,9 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 
 **The observer** has one key per operator machine, which serves every environment there; the key's description names the machine and the day it was made. **Update identities** on another machine, with your Owner API key, makes that machine its own. The key works from any address, so it reads nothing that holds a key, a secret value or the app's code: no machine, no archive, no env file, no stack checkpoint. **Rotate keys** leaves it alone.
 
-**The runner** key can edit a job definition, as Scaleway has no permission set that only starts runs. The app has one runner, which serves its environments only. The inventory in **Show status**, what exists beside what the environment declares, compares the main job's whole definition with the declared one, its env and secret references included, and Show runs flags a run started with values or a command of its own.
+**The runner** key can edit a job definition, as Scaleway has no permission set that only starts runs. The app has one runner, which serves its environments only. The inventory in **Show status**, what exists beside what the environment declares, compares the main job's whole definition with the declared one, its image with the digest the last apply recorded in `applied.json`, its env and secret references included, and Show runs flags a run started with values or a command of its own.
+
+**The engine image.** An apply builds it on your machine and pushes it to the environment's registry namespace with your operator key, through a Docker config of its own that the apply deletes after the push, so the key never reaches your credential store. Serverless Jobs pulls the image for each run from the registry of the job's own project: no key of the engine's pulls it, and the deploy key holds no registry right. The image holds the engine's code and the description of the app, no key and no secret value.
 
 **What it cannot do.** The deploy key writes no IAM, database instance or backups, VPC, DNS, load balancer, pool, reserved address, bucket configuration or policy, secret, image or job definition, and reaches no Pulumi state: those take the operator key or an Owner moment. It reads secret values in the runtime folder only, never the passphrase or the database passwords. It moves traffic only by the machines it makes and drains, as every pool lists the reserved addresses for good. It writes private networks, as a private NIC at a reserved address takes the network's write set, so a leaked key can attach a machine of its own to the environment's network. Of the buckets, it never reaches the private uploads bucket, and of the public one only `geoip/`.
 
@@ -89,7 +93,7 @@ The inventory in **Show status** names a key of the operator application that ou
 
 ## Repository read key
 
-The main job and the builder fetch the target commit from the repository the root `package.json` names, and the runner fetches its pinned release and the environments file. A public repository needs nothing. A private one needs a read-only key in each environment before its first deploy:
+The builder fetches the target commit from the repository the root `package.json` names, the main job lists its release tags there with the same key, and the runner fetches its pinned release and the environments file. A public repository needs nothing. A private one needs a read-only key in each environment before its first deploy:
 
 1. Make a fine-grained GitHub token for that repository only, with **Contents: read** and nothing else, and an expiry.
 2. Run `pnpm infra repository-key` on your operator key, after **Set up the runner**. It checks that the repository answers to the token, then stores it in the environment's runtime folder and in the runner's project, which a run before the runner's setup skips.

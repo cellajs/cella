@@ -7,6 +7,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 Publishing a release starts an automatic deployment: it creates new servers for that exact version,
 waits until the load balancer sees them healthy, then drains and removes the old servers.
 [Pulumi](https://www.pulumi.com/) manages the foundation (network, load balancer, database, buckets), a deploy makes and deletes the servers itself, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
+Every deploy runs the engine the last apply published, and a release that describes the app otherwise waits for an apply.
 Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need, and servers hold none: they fetch the release and their secrets through links that end within minutes.
 
 ## Overview
@@ -83,24 +84,27 @@ An environment that follows the releases, as production does, takes `releases` o
 
 **Pausing staging.** Removing staging's line stops its deploys, not its cost: its machines keep running. To stop the cost, tear staging down (`pnpm infra teardown --mode staging`), drop it from `infra/runner.json` and **Replace the runner**.
 
-**Rollback.** No old machine is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a build is kept by its commit. It also runs the engine of its target, so a release deploys the way it was made. A release made before a planned break of the engine cannot be deployed after it: roll forward then.
+**Rollback.** No old machine is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a build is kept by its commit. It runs the applied engine, so an earlier release whose description of the app differs ends **apply needed** until an apply from a checkout at that release publishes its engine. A release older than the applied engine reports no description and cannot be deployed: roll forward then.
 
 **The live record.** `control/<mode>/live.json` in the boot-diag bucket says, per role, which slot serves, its machine and its commit, and the retry counter and rotation it was booted under. A deploy replaces only the roles that do not serve its target that way: running the same deploy twice changes nothing, and a run that failed halfway resumes with the roles it did not switch. A raised retry counter, or a rotation since, replaces every machine.
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy. A run fetches the target commit, installs the engine's own workspaces with no key in their environment, and runs the target's own deploy. It starts from the `node` image of the root `engines.node`, so a Node bump owes an apply. A deploy reads no Pulumi state and no passphrase.
+Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy, and the **engine image** its runs start from, by digest. The apply builds that image from the operator's checkout and pushes it to the environment's registry. It carries the engine and the **applied description**: the app as that checkout describes it to the engine, every registry under `infra/config/`, the engine's fields of the app config, and the Node, pnpm and repository the root `package.json` names. A run fetches and installs nothing: the image starts its deploy with the target, the retry counter, the deploy key and the project, and no other value a start sets. A deploy reads no Pulumi state and no passphrase.
 
-A run ends in one of four outcomes:
+The target's code never runs beside the deploy key. The builder evaluates the target's own description from its checkout, in a container that holds no key, and reports its hash beside the archives' digests. Before the deploy reads a runtime value, it holds that hash against the image's: a release that describes the app as the applied engine does deploys without an apply, one that differs ends **apply needed**. An engine change outside the description reaches the deploys at the next apply.
+
+A run ends in one of five outcomes:
 
 - **Deployed:** the target serves.
 - **Unchanged:** every role served the target already; nothing was built or made.
-- **Blocked:** the run stopped before it made any machine, on a required runtime value that is empty, which its record names ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
+- **Blocked:** the run stopped before it booted a machine of the release, on a required runtime value that is empty, which its record names ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
+- **Apply needed:** the target describes the app otherwise than the applied engine, or the run did not start from an engine image; nothing was composed or booted ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)). The apply from a checkout at the target starts it again.
 - **Failed:** every role it did not switch keeps its machine, and the target waits for a change in git or a start by hand.
 
 `pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`; the runner reads the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
-**Releases only.** In an environment that follows the releases, as production does, the definition's own script refuses a target that no release tag names, before it fetches anything. It catches a start by hand that names the wrong commit. A key that may start runs can also start one with values or a command of its own, which gets past that check: Show runs flags such a run.
+**Releases only.** In an environment that follows the releases, as production does, the engine refuses a target that no release tag names, before the deploy starts. It reads the rule from the environment its image was built for, so no value a start sets turns the check off or moves the run elsewhere: it catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, which gets past that check: Show runs flags such a run.
 
 The rule is as strong as who may push a tag: `99.0.0` pushed on any commit is the newest release. So an app sets a ruleset that restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
@@ -120,7 +124,7 @@ Records, boot accounts and Scaleway's job runs are kept for 60 days, and the buc
 
 ### The builder
 
-When the boot-diag bucket lacks the release's manifest, or an archive the manifest names, the deploy makes a builder machine that fetches the commit, builds every image and the frontend, and is deleted when the build ends. The builder holds no Scaleway key: it writes each image as an archive Docker loads, the frontend's files as one archive, and last the manifest with each archive's digest, all under `releases/<sha>/` through links the deploy signed before it made the machine, and reports its steps the same way. The deploy checks every archive against the manifest, then uploads the frontend files from their archive with its own key, refusing any entry but a plain file inside the build's output. The app's code runs on the builder only in containers that reach no machine metadata. Every base image, and BuildKit itself, is pinned by digest, so a tag moved on Docker Hub changes no build; a Node, Caddy or BuildKit bump refreshes its digest. Archives are kept 60 days; a rollback to an older release builds it again.
+When the boot-diag bucket lacks the release's manifest, or an archive the manifest names, the deploy makes a builder machine that fetches the commit, builds every image and the frontend, and is deleted when the build ends. The builder holds no Scaleway key: it writes each image as an archive Docker loads, the frontend's files as one archive, and last the manifest with each archive's digest and the hash of the release's own description of the app, all under `releases/<sha>/` through links the deploy signed before it made the machine, and reports its steps the same way. The deploy checks every archive against the manifest, then uploads the frontend files from their archive with its own key, refusing any entry but a plain file inside the build's output. The app's code runs on the builder only in containers that reach no machine metadata. Every base image, and BuildKit itself, is pinned by digest, so a tag moved on Docker Hub changes no build; a Node, Caddy or BuildKit bump refreshes its digest. Archives are kept 60 days; a rollback to an older release builds it again.
 
 ## Deploy flow
 
@@ -130,11 +134,15 @@ The runner sees a new target and starts a run of the main job
 The lease, then the live record: every role that serves the
 target already is left as it is (all of them: unchanged)
         ↓
+Release not built yet: a builder machine writes the archives,
+the frontend files and the release's description through
+links, then is deleted
+        ↓
+The release's description against the applied engine's:
+one that differs ends the run apply needed
+        ↓
 Each role's env file, from the runtime folder:
 a required value that is missing ends the run blocked
-        ↓
-Release not built yet: a builder machine writes the archives
-and the frontend files through links, then is deleted
         ↓
 The primary role (backend) switches alone, then every other
 role at once: boot on the idle slot, wait until its pools
@@ -162,10 +170,10 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 ## Runtime secret delivery
 
-Each value has one container in the runtime folder, which only the deploy key reads. Before it builds anything, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run. A stop-first machine that a failed switch kept keeps its file, as a late boot may still need it, until the bucket's rule removes it within a day.
+Each value has one container in the runtime folder, which only the deploy key reads. Once the release is built and its description checked, the deploy composes each machine's env file from the values its services consume and writes it to the boot-diag bucket, which no other key reads; the new machine fetches it once through a link in its user data and keeps it at `0600`, and the deploy deletes it once the machine's boot account arrived, or at the end of the run. A stop-first machine that a failed switch kept keeps its file, as a late boot may still need it, until the bucket's rule removes it within a day.
 
 - **The Pulumi state holds no machine and no secret value of the app's but one.** After each apply, operator tasks make database passwords and generated secrets, such as a cookie secret, straight into Secret Manager. A value that exists is kept until a [rotation](./deployment/KEYS.md#rotation). The exception, the password of a Redis store an app enables, sits under the passphrase.
-- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine exists, and storing it in **Manage runtime secrets** starts the target again.
+- **A deploy writes no secret of the app's.** An apply makes every value, so a secret added to the registry reaches the stack through **Review & apply changes**; Update identities writes the uploads key. A required value that is missing ends the run blocked before any machine of the release boots, and storing it in **Manage runtime secrets** starts the target again.
 - **A machine keeps the values it booted with.** A reboot runs its env file again and fetches nothing, so a changed value reaches the machines the next deploy makes: a new release, or a rotation.
 - **Every value is a single line**, as an env file is line-based. Store a multi-line value such as a PEM certificate base64-encoded and decode it in the service, as `DATABASE_SSL_CA` does.
 
@@ -175,10 +183,10 @@ The load balancer, its pools, the reserved addresses they list, its DNS records 
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](../infra/config). Each field is a single value or a per-mode map (`{ production: …, staging: … }`).
+All tunable infra config lives in committed, type-checked files under [config/](../infra/config). Each field is a single value or a per-mode map (`{ production: …, staging: … }`). Every file there is part of the applied description: a release that changes one deploys once **Review & apply changes** ran from a checkout that has the change, and ends apply needed until then.
 
 | File | Owns | Applied by |
 | --- | --- | --- |
-| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | A deploy; a new or changed load balancer route or machine role takes **Review & apply changes** first |
+| [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, rollout strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
 | [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention | **Review & apply changes** (privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

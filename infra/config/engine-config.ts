@@ -4,7 +4,7 @@ export interface EngineServiceEndpoint {
   publicUrl?: string;
 }
 
-/** The engine's input contract: everything the deploy engine reads about the app. A host injects a value satisfying it, and any new field the engine reads belongs here first. */
+/** The engine's input contract: everything the deploy engine reads about the app. A host injects a value satisfying it, and any new field the engine reads belongs here first, and in the applied description (lib/deploy/app-description.ts). */
 export interface EngineConfig {
   /** URL-safe resource prefix for every Scaleway resource and bucket. */
   slug: string;

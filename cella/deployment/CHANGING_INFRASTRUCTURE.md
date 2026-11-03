@@ -5,8 +5,9 @@ This document explains how privileged infrastructure changes are reviewed and ap
 ### TL;DR
 
 Everything Pulumi manages is privileged: the database, the network with its reserved addresses, the load balancer with
-its pools, buckets, secrets and DNS change only through an apply on your operator key, after you have seen its plan. A
-deploy makes and deletes the machines and changes none of it. Every pull request says which applies merging owes.
+its pools, buckets, secrets and DNS change only through an apply on your operator key, after you have seen its plan. An
+apply also publishes the engine every deploy runs, with the description of the app it applied. A deploy makes and
+deletes the machines and changes none of it. Every pull request says which applies merging owes.
 
 ## Privileged changes
 
@@ -18,17 +19,22 @@ deploy makes and deletes the machines and changes none of it. Every pull request
 - buckets and their policies
 - secret containers and their versions
 - DNS records
-- the main job's definition
+- the main job's definition, the engine image it runs and the applied description (`control/<mode>/applied.json`)
 
 Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Review & apply changes** (`pnpm infra apply`):
 
-1. Shows the plan: what differs between the code and the live resources, drift made outside Pulumi included, and asks once whether to apply it. Answering no applies nothing.
-2. On a yes, applies the plan. Running machines stay in place: no machine is a resource of the program. If another apply ran meanwhile, you see the new plan and confirm again.
-3. Verifies the result live: the declared database privileges exist. A mismatch fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
+1. Builds the engine image from your checkout's tracked files and pushes it to the environment's registry on your operator key. Your machine needs Docker with buildx, able to build linux/amd64 (Docker Desktop and OrbStack are). Until the `up` names the image, no run starts from it.
+2. Shows the plan: what differs between the code and the live resources, drift made outside Pulumi included, the main job's new image among them, and asks once whether to apply it. Answering no applies nothing.
+3. On a yes, applies the plan. Running machines stay in place: no machine is a resource of the program. If another apply ran meanwhile, you see the new plan and confirm again.
+4. Records the engine it published in `applied.json`, verifies the result live (the declared database privileges exist) and starts a target whose last run ended blocked or apply needed. A mismatch of privileges fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm infra preview` shows the same plan without the question and changes nothing at all, for a script or a look that must never apply.
 
 A deploy reads what the last apply made, the reserved addresses by their tags and the pools by their names, and stops with "an apply makes it" when something it needs is missing. A change a deploy does not need, a bucket policy say, waits for the next apply, which an engine change that owes one names in its alignment.
+
+## What needs an apply
+
+A deploy runs the engine the last **Review & apply changes** built, and holds every release against the description that engine carries: every registry under [config/](../../infra/config), the engine's fields of the app config (domain, origin, buckets, enabled services, `singleVM`), and the Node, pnpm and repository the root `package.json` names. A release whose description is the applied one deploys without an apply. One that changes it ends **apply needed** until an apply from a checkout that has the change publishes it, and that apply starts it again ([Apply needed](./RUNBOOKS.md#apply-needed)). A release that changes only the engine's code (`infra/lib`, `infra/tasks`, `infra/resources`) deploys on the applied engine, and its own engine runs from the next apply on. The database access actions and the seed run an `up` that keeps the main job's image.
 
 ## Pull request check
 
