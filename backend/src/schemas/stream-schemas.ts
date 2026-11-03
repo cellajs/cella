@@ -13,6 +13,21 @@ const propagationHintSchema = z.object({
   remove: z.array(z.string()).describe('Embedded row IDs (deleted or soft deleted) that host rows drop'),
 });
 
+/** One row a change frame names: no content, the client fetches it. */
+const streamChangeRowSchema = z.object({
+  subjectId: z.string(),
+  seq: z
+    .number()
+    .int()
+    .nullable()
+    .describe('Org-sequence position (one order per organization, shared across product entity types); null on a delete'),
+  stx: nullableStxBaseSchema,
+  actorId: z
+    .string()
+    .nullable()
+    .describe('Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user'),
+});
+
 /** Clients fetch the changed rows separately. */
 export const streamChangeSchema = z
   .object({
@@ -20,19 +35,21 @@ export const streamChangeSchema = z
       .enum([...activityActions, 'moveOut'] as const)
       .describe('Change kind; moveOut = the row left this path (reparent) and is no longer readable there'),
     productType: z.enum(appConfig.productEntityTypes),
-    subjectId: z.string(),
     organizationId: z.string(),
     tenantId: z.string().nullable(),
     path: z.string().nullable().describe('Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
-    seq: z.number().int().nullable().describe('Org-sequence position (one order per organization, shared across product entity types)'),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
-    stx: nullableStxBaseSchema,
-    actorId: z
-      .string()
+    rows: z
+      .array(streamChangeRowSchema)
+      .describe(
+        'The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave',
+      ),
+    overflow: z
+      .object({ afterSeq: z.number().int().nullable(), untilSeq: z.number().int().nullable() })
       .nullable()
-      .describe('Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user'),
-    batchUntilSeq: z.number().int().nullable().describe('Last sequence position for a batched change: client should fetch range'),
-    count: z.number().int().nullable().describe('Exact row count for batches: sequence ranges of different paths may interleave'),
+      .describe(
+        'Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch',
+      ),
     spreadWindow: z
       .number()
       .int()
@@ -44,7 +61,7 @@ export const streamChangeSchema = z
   })
   .openapi('StreamChange', {
     description:
-      'A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
+      'A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
     example: mockStreamChange(),
     'x-tags': schemaTags('data', 'entities', 'cella'),
   });

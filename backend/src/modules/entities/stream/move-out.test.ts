@@ -62,23 +62,26 @@ const row = (id: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-/** A product update as the bus delivers it: the activity of its first row, and its rows, each moved one with where it was. */
-const updateEvent = (rows: ActivityRow[]): AppStreamProductEvent =>
+/** A product update as the bus delivers it: its rows, each with the activity of its write, a moved one with where it was. */
+const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): AppStreamProductEvent =>
   ({
-    id: 'activity-mo-1',
     type: 'attachment.updated',
     action: 'update',
     entityType: 'attachment',
     resourceType: null,
     tableName: 'attachments',
-    subjectId: rows[0].rowData.id,
     tenantId: 'tenant-1',
     organizationId: org,
     ...nullAncestorScopes,
     rowData: null,
-    rows,
+    rows: rows.map((row) => ({
+      activityId: `act-${row.rowData.id}`,
+      userId: 'writer-user',
+      changedFields: null,
+      stx: { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} },
+      ...row,
+    })),
     trace: null,
-    stx: { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} },
   }) as unknown as AppStreamProductEvent;
 
 afterEach(() => {
@@ -108,14 +111,10 @@ describe('dispatchMoveOuts', () => {
     expect(member.received[0]).toMatchObject({
       action: 'moveOut',
       productType: 'attachment',
-      subjectId: 'att-1',
       // Computed from movedFrom's ancestor ids; org-homed attachments resolve to the org id.
       path: org,
-      seq: 7,
-      // The removal is the payload: no range to fetch, and no stx although the event has one.
-      batchUntilSeq: null,
-      count: 1,
-      stx: null,
+      // The removal is the payload: no stx or writer although the row has them, so no tab takes it for its echo.
+      rows: [{ subjectId: 'att-1', seq: 7, stx: null, actorId: null }],
     });
   });
 
@@ -163,7 +162,7 @@ describe('dispatchMoveOuts', () => {
     );
 
     expect(member.received).toHaveLength(1);
-    // It names the moved row, with the lowest seq of the event.
-    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: org, seq: 7, batchUntilSeq: null, count: 1 });
+    // It names the moved row alone, with its own seq.
+    expect(member.received[0]).toMatchObject({ action: 'moveOut', path: org, rows: [{ subjectId: 'att-2', seq: 8 }] });
   });
 });

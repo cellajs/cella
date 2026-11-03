@@ -1,13 +1,35 @@
-import { appConfig, type EntityRole } from 'shared';
-import { describe, expect, it } from 'vitest';
-import { canReceiveProductEvent, rowReadDecisions, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
+import { type Access, appConfig, type EntityActionType, type EntityRole, type SubjectForPermission } from 'shared';
+import { describe, expect, it, vi } from 'vitest';
+import { canReceiveProductEvent, readerFrames, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../../tests/fixtures';
 
+// The template reads no row by `own`: here the least privileged organization role reads only the attachments it wrote,
+// so the sweep reaches the decision `readerFrames` takes again for a row's author.
+vi.mock('shared', async (importOriginal) => {
+  const shared = await importOriginal<typeof import('shared')>();
+  const { appConfig, hierarchy, publicReadGrants } = shared;
+  const { configurePolicyMatrix } = await import('shared/testing/policies');
+  const { getDecisionsForAccesses } = await import('shared/permissions/engine/resolve-access');
+  const policies = configurePolicyMatrix(appConfig.entityTypes, ({ entityType, channels }) => {
+    if (entityType !== 'attachment') return;
+    channels.organization[hierarchy.getMostPrivilegedRole('organization')]({ read: 1 });
+    channels.organization[hierarchy.getLeastPrivilegedRole('organization')]({ read: 'own' });
+  });
+  const checkAccessFanout = (accesses: Access[], action: EntityActionType, subject: SubjectForPermission) =>
+    getDecisionsForAccesses(
+      policies,
+      accesses.map((access) => ('anonymous' in access ? { memberships: [] } : access)),
+      subject,
+      { publicGrants: publicReadGrants },
+    ).map((can) => can[action]);
+  return { ...shared, checkAccessFanout };
+});
+
 /**
- * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
- * propagation, per-row any-of composition, and per-subscriber isolation.
+ * `readerFrames` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
+ * propagation, rows decided once for alike ones, and per-subscriber isolation.
  */
 const orgs = ['org-el-a', 'org-el-b', 'org-el-c'];
 const users = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
@@ -36,50 +58,37 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
   ...extra,
 });
 
-/** A product event as the bus delivers it: the activity of its first row, and its rows with their permission fields. */
+/** A product event as the bus delivers it: its rows, each with the activity of its write and its permission fields. */
 const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]): AppStreamProductEvent =>
+  // A fixture: the cast covers the widened `type` string and the untyped channel columns `nullAncestorScopes` spreads.
   ({
-    id: 'activity-eligibility',
     type: 'attachment.created',
     action: 'create',
     entityType: 'attachment',
     resourceType: null,
     tableName: 'attachments',
-    subjectId: rows[0].id,
     tenantId: 'tenant-1',
     organizationId,
     ...nullAncestorScopes,
     rowData: null,
-    rows: rows.map((rowData, index) => ({ seq: index + 1, rowData })),
+    rows: rows.map((rowData, index) => ({ activityId: `act-${index}`, userId: null, changedFields: null, stx: null, seq: index + 1, rowData })),
     trace: null,
-    stx: null,
   }) as unknown as AppStreamProductEvent;
 
-/** The dispatch any-of composition over an event's rows, order-preserving, as selectEligible does. */
-const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProductEvent): boolean[] => {
-  const results = subscribers.map(() => false);
-  let undecided = subscribers.map((_, index) => index);
-  for (const { rowData } of event.rows) {
-    if (undecided.length === 0) break;
-    const decisions = rowReadDecisions(
-      undecided.map((index) => subscribers[index]),
-      event,
-      rowData,
-    );
-    undecided = undecided.filter((subscriberIndex, position) => {
-      if (decisions[position]) {
-        results[subscriberIndex] = true;
-        return false;
-      }
-      return true;
-    });
-  }
-  return results;
+/** The rows the dispatch names to each subscriber, in their order; none for a subscriber in no frame. */
+const batchRows = (subscribers: SubscriberAccess[], event: AppStreamProductEvent) => {
+  const named = new Map<SubscriberAccess, AppStreamProductEvent['rows']>();
+  for (const { rows, readers } of readerFrames(subscribers, event)) for (const reader of readers) named.set(reader, rows);
+  return subscribers.map((subscriber) => named.get(subscriber) ?? []);
 };
 
+/** Whether the dispatch names any row of the event to each subscriber. */
+const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProductEvent): boolean[] =>
+  batchRows(subscribers, event).map((rows) => rows.length > 0);
+
 /** The per-subscriber evaluation: independent batch-of-1 checks, no cross-subscriber sharing. */
-const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean =>
-  event.rows.some(({ rowData }) => canReceiveProductEvent(subscriber, event, rowData));
+const singleRows = (subscriber: SubscriberAccess, event: AppStreamProductEvent) =>
+  event.rows.filter(({ rowData }) => canReceiveProductEvent(subscriber, event, rowData));
 
 describe('dispatch batch eligibility: deterministic splits', () => {
   it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {
@@ -96,8 +105,8 @@ describe('dispatch batch eligibility: deterministic splits', () => {
 
     // broken comes first: were classes shared naively, its deny would leak onto clean.
     expect(batchDecisions([broken, clean], event)).toEqual([false, true]);
-    expect(singleDecision(clean, event)).toBe(true);
-    expect(singleDecision(broken, event)).toBe(false);
+    expect(singleRows(clean, event)).toHaveLength(1);
+    expect(singleRows(broken, event)).toEqual([]);
   });
 
   it('system admin and memberless subscriber resolve differently in one batch', () => {
@@ -122,7 +131,7 @@ const mulberry32 = (seed: number) => {
 };
 
 describe('dispatch batch eligibility: randomized parity sweep', () => {
-  it('batch decision === independent single decision for every subscriber, across 300 random events', () => {
+  it('the rows a batch names === the rows independent single decisions allow, for every subscriber, across 300 random events', () => {
     const SEED = 0xce11a;
     const random = mulberry32(SEED);
     const pick = <T>(items: T[]): T => items[Math.floor(random() * items.length)];
@@ -134,6 +143,7 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
       const rows = Array.from({ length: rowCount }, (_, i) =>
         attachmentRow(`att-${iteration}-${i}`, random() < 0.7 ? eventOrg : pick(orgs), {
           createdBy: random() < 0.2 ? null : pick(users),
+          public: random() < 0.3,
           ...(random() < 0.15 ? { publishedAt: null } : random() < 0.3 ? { publishedAt: '2026-07-01T00:00:00Z' } : {}),
         }),
       );
@@ -149,9 +159,9 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
         };
       });
 
-      const batch = batchDecisions(subscribers, event);
+      const batch = batchRows(subscribers, event);
       for (const [index, subscriber] of subscribers.entries()) {
-        expect(batch[index], `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index}`).toBe(singleDecision(subscriber, event));
+        expect(batch[index], `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index}`).toEqual(singleRows(subscriber, event));
       }
     }
   });

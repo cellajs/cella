@@ -21,14 +21,14 @@ tab A ──PATCH──▶ API ──UPDATE──▶ Postgres
                                API activityBus .......... an event
                                     │ who may read the row?
                                     ▼
-tab B ◀────── SSE ─────────── change frame .............. ids, path, sequence range
+tab B ◀────── SSE ─────────── change frame .............. path, rows with seq and write
   │
   └── GET ?afterSeq=6&untilSeq=7 ──▶ API ──▶ rows ──▶ tab B's cache
 ```
 
 1. Tab A patches every cached query holding `a42` and sends the edit with its `stx`: an attempt ID and field timestamps. The API stores it and answers with the stored row.
 2. Postgres commits. The CDC worker reads the change from the WAL in commit order, records an activity, stamps the row with `org1`'s next sequence position and moves the channel summaries.
-3. It hands the API one message per audience. The API checks every subscriber of `org1` with the permission engine REST reads use, and sends the allowed ones a change frame without row data.
+3. It hands the API one message per audience, each row with the activity it was recorded as. The API checks every subscriber of `org1` with the permission engine REST reads use, and sends each allowed one a change frame of the rows it may read, without row data.
 4. Tab A recognizes its own `stx` and patches only that. Tab B fetches the announced range through the list endpoint.
 
 The diagram's labels are the edit's names: a **change** in the WAL and on the stream, an **activity** once recorded, a **message** between two processes, an **event** inside one. Reconnecting takes the same path: cursor `3` and frontier `7` become `afterSeq=3&untilSeq=7`.
@@ -99,7 +99,7 @@ The client derives its views from the user's memberships and the policy matrix. 
 
 ### Changes
 
-A change frame announces one row or a range of rows to fetch and patch into the caches, a delete that only marks the lists for a refetch (no sync-visible row remains), or a move-out that drops the row at once. An echo of the tab's own write patches only `stx`. A change counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
+A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names none of them: the client fetches their sequence range, or after a delete refetches the lists. An echo of the tab's own write patches only `stx`, and a frame of only such rows fetches nothing. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 

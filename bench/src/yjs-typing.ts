@@ -316,7 +316,7 @@ interface StreamChange {
 
 /**
  * One user on the app's SSE stream, counting attachment change frames per phase, as a non-editing viewer sees them. Under
- * load CDC batches changes of one scope into one frame (`count`, `batchUntilSeq`), so frames are fewer than writes.
+ * load CDC batches changes of one scope into one frame (its `rows`), so frames are fewer than writes.
  */
 async function watchStream(run: RunState, userIndex: number, signal: AbortSignal): Promise<void> {
   try {

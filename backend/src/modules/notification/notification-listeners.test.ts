@@ -11,13 +11,12 @@ vi.mock('./operations/send-instant-emails', () => ({ sendPendingInstantEmails: v
 /** A product write as the CDC worker delivers it; the listener reads only these fields. */
 const productWrite = (): ActivityEvent =>
   ({
-    id: `act:${generateId()}`,
     type: 'attachment.updated',
     action: 'update',
     entityType: 'attachment',
-    subjectId: generateId(),
     organizationId: generateId(),
     tenantId: 'tenant1',
+    rows: [{ activityId: `act:${generateId()}`, userId: null, changedFields: null, stx: null, rowData: { id: generateId() } }],
   }) as unknown as ActivityEvent;
 
 /** Emits the write and waits until the listener has settled. */

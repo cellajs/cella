@@ -5,7 +5,7 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb, getSeedDb } from '#/db/db';
-import type { ActivityEvent } from '#/lib/activity-bus';
+import type { ActivityRow, ProductActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { commentEmail } from '#/modules/notification/emails/comment-email';
@@ -98,29 +98,41 @@ describe('Attachment mentions (template notification source)', async () => {
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, attachmentId)));
 
-  /** An update of one attachment as the bus delivers it; `subjectIds` makes it an event of several rows. */
-  const updatedEvent = (actorId: string, overrides: Partial<ActivityEvent> = {}, subjectIds = [overrides.subjectId ?? attachmentId]): ActivityEvent =>
+  /** One row's change as a message carries it: the activity of its write, by `writer`, and the row's id. */
+  const changedRow = (subjectId: string, writer: string, changedFields: string[] | null = ['description']): ActivityRow => ({
+    activityId: `act:${generateId()}`,
+    userId: writer,
+    changedFields,
+    stx: null,
+    rowData: { id: subjectId },
+  });
+
+  /** A product event of attachment rows as the bus delivers it; `action` defaults to an update. */
+  const productEvent = (rows: ActivityRow[], action: 'create' | 'update' = 'update'): ProductActivityEvent =>
     // Test mock: the CDC worker fills the remaining columns; the fan-out reads only these.
     ({
-      id: `act:${generateId()}`,
-      type: 'attachment.updated',
-      action: 'update',
+      type: action === 'create' ? 'attachment.created' : 'attachment.updated',
+      action,
       entityType: 'attachment',
       resourceType: null,
       tableName: 'attachments',
-      userId: actorId,
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
       ...nullAncestorScopes,
       rowData: null,
       trace: null,
-      stx: null,
-      changedFields: ['description'],
-      ...overrides,
-      // The activity is that of the first row.
-      subjectId: subjectIds[0],
-      rows: subjectIds.map((id) => ({ rowData: { id } })),
-    }) as unknown as ActivityEvent;
+      rows,
+    }) as unknown as ProductActivityEvent;
+
+  /** A change of one attachment by `writer`, a description edit unless `changedFields` says otherwise. */
+  const updatedEvent = (
+    writer: string,
+    {
+      subjectId = attachmentId,
+      action = 'update',
+      changedFields = action === 'update' ? ['description'] : null,
+    }: { subjectId?: string; action?: 'create' | 'update'; changedFields?: string[] | null } = {},
+  ) => productEvent([changedRow(subjectId, writer, changedFields)], action);
 
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'attachment-mentions');
@@ -380,8 +392,7 @@ describe('Attachment mentions (template notification source)', async () => {
         .from(notificationsTable)
         .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, subjectId)));
 
-    const createdEvent = (subjectId: string) =>
-      updatedEvent(tenant.user.id, { subjectId, type: 'attachment.created', action: 'create', changedFields: null });
+    const createdEvent = (subjectId: string) => updatedEvent(tenant.user.id, { subjectId, action: 'create' });
 
     beforeAll(async () => {
       other = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'attachment-mentions-other', adminRole);
@@ -419,15 +430,45 @@ describe('Attachment mentions (template notification source)', async () => {
       expect(await inboxOf(other.id, subjectId)).toEqual([{ type: 'mention' }]);
     });
 
-    it('mentions the users of every row of an event of several rows, whatever its changed fields say', async () => {
+    it('reads the mentions of each row of an event of several rows by the fields that row changed', async () => {
       const subjectIds = [await newSubject(mentionsOf([member.id])), await newSubject(mentionsOf([other.id]))];
 
-      // The changed fields are those of the first row alone: they say nothing about the description of the second.
-      const renamed = updatedEvent(tenant.user.id, { changedFields: ['name', 'updatedAt'] }, subjectIds);
-      expect(await fanOutNotifications(renamed)).toBe(true);
+      // One flush: a rename of the first row and a description edit of the second.
+      const event = productEvent([changedRow(subjectIds[0], tenant.user.id, ['name', 'updatedAt']), changedRow(subjectIds[1], tenant.user.id)]);
+      expect(await fanOutNotifications(event)).toBe(true);
 
-      expect(await inboxOf(member.id, subjectIds[0])).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(member.id, subjectIds[0])).toEqual([]);
       expect(await inboxOf(other.id, subjectIds[1])).toEqual([{ type: 'mention' }]);
+    });
+
+    it('tells each row of one flush under its own writer and activity, two writers mentioning each other', async () => {
+      // A flush groups the transactions of several writers: the owner edits the first row, `other` the second.
+      const first = await newSubject(mentionsOf([member.id, other.id]));
+      const second = await newSubject(mentionsOf([member.id, tenant.user.id, other.id]));
+      const rows = [changedRow(first, tenant.user.id), changedRow(second, other.id)];
+
+      expect(await fanOutNotifications(productEvent(rows))).toBe(true);
+
+      const told = await db
+        .select({
+          userId: notificationsTable.userId,
+          subjectId: notificationsTable.subjectId,
+          actorId: notificationsTable.actorId,
+          activityId: notificationsTable.activityId,
+        })
+        .from(notificationsTable)
+        .where(inArray(notificationsTable.subjectId, [first, second]));
+      const byWrite = (subjectId: string) =>
+        told
+          .filter((row) => row.subjectId === subjectId)
+          .map(({ userId, actorId, activityId }) => ({ userId, actorId, activityId }))
+          .sort((a, b) => a.userId.localeCompare(b.userId));
+      const expected = (row: ActivityRow, userIds: string[]) =>
+        userIds.map((userId) => ({ userId, actorId: row.userId, activityId: row.activityId })).sort((a, b) => a.userId.localeCompare(b.userId));
+
+      // One user mentioned in both rows hears of both; the second writer's mention of the first is no self-mention.
+      expect(byWrite(first)).toEqual(expected(rows[0], [member.id, other.id]));
+      expect(byWrite(second)).toEqual(expected(rows[1], [member.id, tenant.user.id]));
     });
 
     it('notifies nobody about a mention of an account without read access', async () => {
@@ -589,7 +630,7 @@ describe('Attachment mentions (template notification source)', async () => {
         delete source.declaration.resolveRecipients;
       });
       // A create event: an update skips recipients already notified about the subject.
-      const createdEvent = () => updatedEvent(tenant.user.id, { type: 'attachment.created', action: 'create', subjectId: replySubjectId });
+      const createdEvent = () => updatedEvent(tenant.user.id, { action: 'create', subjectId: replySubjectId });
 
       expect(await fanOutNotifications(createdEvent())).toBe(false);
       offerCommentEmail();

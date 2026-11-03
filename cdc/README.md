@@ -69,7 +69,7 @@ Recording happens once per change, however often the change arrives: an activity
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows; the API turns those into change frames. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows, each carrying the activity it was recorded as and so its own writer; the API turns those into change frames. Then the worker acknowledges the flush.
 
 For an app with product embeddings, the worker also takes a deleted row's id out of the hosts that referenced it. That write is its own and records no activity.
 

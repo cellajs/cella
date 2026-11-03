@@ -1,6 +1,8 @@
 import { appConfig, hierarchy, pathHomeId } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { dbPoolPressure } from '#/db/db';
+import type { ActivityRow } from '#/lib/activity-bus';
+import { maxStreamChangeRows } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { StreamChange } from '#/schemas';
@@ -21,35 +23,48 @@ function computeSpreadWindow(organizationId: string): number {
   return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
 }
 
+/** The sequence range a frame over the row cap names: that of a create's or update's rows, none of a delete's. */
+function overflowRange(action: StreamChange['action'], entries: StreamChange['rows']): NonNullable<StreamChange['overflow']> {
+  let low = Number.POSITIVE_INFINITY;
+  let high = Number.NEGATIVE_INFINITY;
+  for (const { seq } of entries) {
+    if (seq === null) continue;
+    low = Math.min(low, seq);
+    high = Math.max(high, seq);
+  }
+  if (action === 'delete' || high < low) return { afterSeq: null, untilSeq: null };
+  return { afterSeq: low - 1, untilSeq: high };
+}
+
 /**
- * The change frame of a product event, with no entity data. An event with one row carries that row's `seq` and the
- * activity's `stx`; one with more rows carries the range of their sequence values and their number.
- * @param event - The event to tell subscribers about.
- * @returns What every eligible subscriber receives.
+ * The change frame of rows of a product event, with no entity data: each row with its seq, its writer and the stx of
+ * its write, or past `maxStreamChangeRows` none of them and their range.
+ * @param event - The event the rows belong to.
+ * @param rows - The rows to name: those of the event its receivers may read.
+ * @returns What every receiver of these rows gets.
  */
-export function buildStreamChange(event: AppStreamProductEvent): StreamChange {
+export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {
   const { entityType } = event;
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
 
-  // A message is the rows of one audience, so the first row's path speaks for all of them.
-  const rows = event.rows;
-  const first = rows[0]?.rowData ?? null;
-  const seqs = rows.flatMap(({ seq }) => (seq === undefined ? [] : [seq]));
-  const several = rows.length > 1;
+  const named = rows.flatMap(({ rowData, seq, stx, userId }) =>
+    typeof rowData.id === 'string' ? [{ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId: userId } }] : [],
+  );
+  const entries = named.map(({ entry }) => entry);
+  const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
   const embedding = appConfig.productEmbeddings.find(({ embeddedProduct }) => embeddedProduct === entityType);
-  if (embedding) {
-    // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
-    // delete arrives as an update, and the host drops its copy of that row.
+  if (embedding && !overflowed) {
+    // Every row the frame names is in the hint: a host learns of an embedded change by it, or past the cap by its lists'
+    // refetch. A soft delete arrives as an update, and the host drops its copy of that row.
     const update: string[] = [];
     const remove: string[] = [];
-    for (const { rowData } of rows) {
-      if (typeof rowData.id !== 'string') continue;
-      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(rowData.id);
-      else update.push(rowData.id);
+    for (const { rowData, entry } of named) {
+      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(entry.subjectId);
+      else update.push(entry.subjectId);
     }
     propagation = {
       embeddedProduct: embedding.embeddedProduct,
@@ -63,28 +78,27 @@ export function buildStreamChange(event: AppStreamProductEvent): StreamChange {
   return {
     action: event.action,
     productType: entityType,
-    subjectId: event.subjectId,
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
-    path: first ? hierarchy.computeProductPath(entityType, first) : null,
+    // The rows of an event share one path.
+    path: named[0] ? hierarchy.computeProductPath(entityType, named[0].rowData) : null,
     channelId,
-    // Sequence values of one audience need not be contiguous: the range brackets them and `count` says how many rows it holds.
-    seq: seqs.length > 0 ? Math.min(...seqs) : null,
-    stx: event.stx ?? null,
-    actorId: event.userId ?? null,
-    batchUntilSeq: several && seqs.length > 0 ? Math.max(...seqs) : null,
-    count: several ? rows.length : null,
+    rows: overflowed ? [] : entries,
+    overflow: overflowed ? overflowRange(event.action, entries) : null,
     spreadWindow: computeSpreadWindow(event.organizationId),
     propagation,
   };
 }
 
 /**
- * Sent only to subscribers who could read the old location but not the new one: no delta fetch
- * returns the row for them, so this change is itself the removal instruction.
+ * Sent only to subscribers who could read a row where it was but not where it is: no range fetch returns the row for
+ * them, so this change is itself the removal instruction.
+ * @param event - The update as it reads where the row was.
+ * @param row - The moved row.
+ * @param movedFrom - Its permission fields where it was.
  */
-export function buildMoveOut(event: AppStreamProductEvent, movedFrom: Record<string, unknown>): StreamChange {
-  const base = buildStreamChange(event);
+export function buildMoveOut(event: AppStreamProductEvent, row: ActivityRow, movedFrom: Record<string, unknown>): StreamChange {
+  const base = buildStreamChange(event, [row]);
   const oldPath = hierarchy.computeProductPath(event.entityType, movedFrom);
   return {
     ...base,
@@ -92,11 +106,8 @@ export function buildMoveOut(event: AppStreamProductEvent, movedFrom: Record<str
     path: oldPath,
     // The old path's deepest segment is the old home channel (unseen grouping).
     channelId: oldPath ? pathHomeId(oldPath) : base.channelId,
-    // No range to fetch: the removal is the payload.
-    batchUntilSeq: null,
-    count: 1,
-    stx: null,
-    actorId: null,
+    // The removal is the payload: no tab takes it for its own echo.
+    rows: base.rows.map((entry) => ({ ...entry, stx: null, actorId: null })),
     propagation: null,
   };
 }

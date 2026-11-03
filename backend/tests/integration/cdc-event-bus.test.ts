@@ -2,7 +2,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import { activityBus, type ProductActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -123,8 +123,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       },
       'cdc-rows-test-attachment',
     );
-    const created: ActivityEvent[] = [];
-    const listener = (event: ActivityEvent) => void (event.subjectId === attachmentId && created.push(event));
+    const created: ProductActivityEvent[] = [];
+    const listener = (event: ProductActivityEvent) => void (event.rows.some(({ rowData }) => rowData.id === attachmentId) && created.push(event));
     activityBus.on('attachment.created', listener);
 
     await db.insert(attachmentsTable).values(attachment as never);
@@ -133,13 +133,14 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
 
     const [stored] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     const [event] = created;
-    // One row, with the seq the worker stamped on it: the API gives its notification that seq and no range.
+    // One row, with the seq the worker stamped on it and the activity it was recorded as, its writer the inserter.
     expect(event.rows).toHaveLength(1);
-    expect(event.rows?.[0].seq).toBe(stored.seq);
+    expect(event.rows[0].seq).toBe(stored.seq);
     expect(stored.seq).toBeGreaterThan(0);
+    expect(event.rows[0].userId).toBe(testUser.id);
     // What decides who may read the row travels; its name and its file do not, and no whole row comes beside the list.
-    expect(event.rows?.[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
-    expect(event.rows?.[0].rowData).not.toHaveProperty('name');
+    expect(event.rows[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
+    expect(event.rows[0].rowData).not.toHaveProperty('name');
     expect(JSON.stringify(event)).not.toContain('cdc-rows-test-name');
     expect(event.rowData).toBeNull();
     expect(event.organizationId).toBe(testOrg.id);

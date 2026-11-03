@@ -16,14 +16,14 @@ import { log } from '#/utils/logger';
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated', 'deleted'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {
-      if (!event.subjectId || !event.organizationId) return;
+      const { organizationId } = event;
+      if (!organizationId) return;
       try {
-        // The bus carries product events with their rows, so the narrowing holds for every event of a product type.
-        const productEvent = event as AppStreamProductEvent;
+        const productEvent: AppStreamProductEvent = { ...event, organizationId };
         // Reparented rows also tell old-path readers who lost visibility, side by side so a stalled reader delays neither.
         await Promise.all([dispatchChange(productEvent), action === 'updated' && dispatchMoveOuts(productEvent)]);
       } catch (error) {
-        log.error('Failed to dispatch entity change event', { error, activityId: event.id });
+        log.error('Failed to dispatch entity change event', { error, activityIds: event.rows.map((row) => row.activityId) });
       }
     });
   }

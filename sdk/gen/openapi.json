@@ -834,9 +834,6 @@
             "type": "string",
             "enum": ["attachment"]
           },
-          "subjectId": {
-            "type": "string"
-          },
           "organizationId": {
             "type": "string"
           },
@@ -847,35 +844,53 @@
             "type": ["string", "null"],
             "description": "Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path"
           },
-          "seq": {
-            "type": ["integer", "null"],
-            "description": "Org-sequence position (one order per organization, shared across product entity types)"
-          },
           "channelId": {
             "type": ["string", "null"],
             "description": "Deepest channel entity ID above the rows, which groups unseen counts"
           },
-          "stx": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StxBase"
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string"
+                },
+                "seq": {
+                  "type": ["integer", "null"],
+                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete"
+                },
+                "stx": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/StxBase"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "actorId": {
+                  "type": ["string", "null"],
+                  "description": "Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user"
+                }
               },
-              {
-                "type": "null"
+              "required": ["subjectId", "seq", "stx", "actorId"]
+            },
+            "description": "The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave"
+          },
+          "overflow": {
+            "type": ["object", "null"],
+            "properties": {
+              "afterSeq": {
+                "type": ["integer", "null"]
+              },
+              "untilSeq": {
+                "type": ["integer", "null"]
               }
-            ]
-          },
-          "actorId": {
-            "type": ["string", "null"],
-            "description": "Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user"
-          },
-          "batchUntilSeq": {
-            "type": ["integer", "null"],
-            "description": "Last sequence position for a batched change: client should fetch range"
-          },
-          "count": {
-            "type": ["integer", "null"],
-            "description": "Exact row count for batches: sequence ranges of different paths may interleave"
+            },
+            "required": ["afterSeq", "untilSeq"],
+            "description": "Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch"
           },
           "spreadWindow": {
             "type": ["integer", "null"],
@@ -917,40 +932,28 @@
             "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
-        "required": [
-          "action",
-          "productType",
-          "subjectId",
-          "organizationId",
-          "tenantId",
-          "path",
-          "seq",
-          "channelId",
-          "stx",
-          "actorId",
-          "batchUntilSeq",
-          "count",
-          "spreadWindow",
-          "propagation"
-        ],
-        "description": "A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
+        "required": ["action", "productType", "organizationId", "tenantId", "path", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
+        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
-          "action": "delete",
+          "action": "update",
           "productType": "attachment",
-          "subjectId": "00f807bd-cd41-467a-873e-e3fdf380db7d",
-          "organizationId": "d0102854-b763-413e-8dfb-8e38e2cac8f5",
-          "tenantId": "ar3rydltry0gpl2zi6lz65m9",
-          "path": "d0102854-b763-413e-8dfb-8e38e2cac8f5",
-          "channelId": "5d704379-9680-4740-9cb0-43fded3f5508",
-          "seq": 265,
-          "stx": {
-            "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
-            "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
-            "fieldTimestamps": {}
-          },
-          "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df",
-          "batchUntilSeq": null,
-          "count": null,
+          "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
+          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
+          "path": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
+          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
+          "rows": [
+            {
+              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
+              "seq": 143,
+              "stx": {
+                "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
+                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
+                "fieldTimestamps": {}
+              },
+              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
+            }
+          ],
+          "overflow": null,
           "spreadWindow": null,
           "propagation": null
         },

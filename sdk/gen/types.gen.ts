@@ -114,7 +114,7 @@ export type StxBase = {
 };
 
 /**
- * A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
   /**
@@ -122,7 +122,6 @@ export type StreamChange = {
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment';
-  subjectId: string;
   organizationId: string;
   tenantId: string | null;
   /**
@@ -130,26 +129,31 @@ export type StreamChange = {
    */
   path: string | null;
   /**
-   * Org-sequence position (one order per organization, shared across product entity types)
-   */
-  seq: number | null;
-  /**
    * Deepest channel entity ID above the rows, which groups unseen counts
    */
   channelId: string | null;
-  stx: StxBase | null;
   /**
-   * Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user
+   * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
    */
-  actorId: string | null;
+  rows: Array<{
+    subjectId: string;
+    /**
+     * Org-sequence position (one order per organization, shared across product entity types); null on a delete
+     */
+    seq: number | null;
+    stx: StxBase | null;
+    /**
+     * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
+     */
+    actorId: string | null;
+  }>;
   /**
-   * Last sequence position for a batched change: client should fetch range
+   * Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch
    */
-  batchUntilSeq: number | null;
-  /**
-   * Exact row count for batches: sequence ranges of different paths may interleave
-   */
-  count: number | null;
+  overflow: {
+    afterSeq: number | null;
+    untilSeq: number | null;
+  } | null;
   /**
    * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
    */

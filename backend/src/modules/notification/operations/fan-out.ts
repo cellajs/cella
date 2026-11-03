@@ -1,10 +1,10 @@
-import { appConfig, buildSubjectFromEntity, checkAccessFanout, type ProductEntityType } from 'shared';
+import { type ActivityAction, appConfig, buildSubjectFromEntity, checkAccessFanout, type ProductEntityType } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { homeChannelOf } from '#/db/utils/home-channel';
-import type { ActivityEvent } from '#/lib/activity-bus';
+import type { ActivityRow, ProductActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
@@ -25,7 +25,6 @@ type Candidate = { userId: string; type: NotificationType };
 interface EventIds {
   organizationId: string;
   tenantId: string;
-  activityId: string;
 }
 
 /** Runs off the activity bus, outside any request. */
@@ -33,68 +32,75 @@ const dbCtx = { var: { db: baseDb } };
 
 /**
  * Turn one CDC event into per-recipient inbox rows, for entity types whose module declared a
- * notification source (lib/module.ts). Mentions come from the row's stored body when the event
+ * notification source (lib/module.ts). Mentions come from the row's stored body when its change
  * can carry new ones; further recipients from the source's `resolveRecipients`. Every recipient
  * passes the same read check, so a mention in a body the client wrote never reaches a user who
- * may not read the row.
+ * may not read the row. Each row is told under its own activity and writer.
  *
  * Runs post-commit off the activity bus, so the row is durable before anyone is told about it.
  * Resolves true when it wrote a row the instant email pass mails (`instantEmailTypes`): a mention,
  * or a comment or reply while the app sets `has.commentEmail`.
  */
-export async function fanOutNotifications(event: ActivityEvent): Promise<boolean> {
-  const source = event.entityType && getNotificationSource(event.entityType);
+export async function fanOutNotifications(event: ProductActivityEvent): Promise<boolean> {
+  const source = getNotificationSource(event.entityType);
   if (!source) return false;
-  const { organizationId, tenantId, id: activityId } = event;
+  const { organizationId, tenantId } = event;
   if (!organizationId || !tenantId) return false;
 
-  const subjectIds = (event.rows ?? []).flatMap(({ rowData }) => (typeof rowData.id === 'string' ? [rowData.id] : []));
-  if (subjectIds.length === 0) return false;
-
-  const readsMentions = source.declaration.mentionable !== false && mayAddMentions(event);
+  const mentionable = source.declaration.mentionable !== false;
   // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
-  if (!readsMentions && !source.declaration.resolveRecipients) return false;
+  const changes = event.rows.flatMap((row) => {
+    const subjectId = row.rowData.id;
+    const readsMentions = mentionable && mayAddMentions(event.action, row);
+    return typeof subjectId === 'string' && (readsMentions || source.declaration.resolveRecipients) ? [{ row, subjectId, readsMentions }] : [];
+  });
+  if (changes.length === 0) return false;
 
   // An event carries only the permission columns of its rows, never the body, so the rows are re-read.
-  const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: readsMentions }));
+  const subjectIds = [...new Set(changes.map(({ subjectId }) => subjectId))];
+  const body = changes.some(({ readsMentions }) => readsMentions);
+  const subjects = new Map(
+    (await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body }))).map((subject) => [subject.id, subject]),
+  );
 
-  const ids: EventIds = { organizationId, tenantId, activityId };
+  const ids: EventIds = { organizationId, tenantId };
   let mailable = false;
-  for (const row of rows) {
+  // In commit order, so a later write of a subject sees who an earlier one told.
+  for (const { row, subjectId, readsMentions } of changes) {
+    const subject = subjects.get(subjectId);
+    if (!subject) continue;
     try {
-      if (await fanOutRow(event, ids, source, row, readsMentions)) mailable = true;
+      if (await fanOutRow(event.action, ids, row, source, subject, readsMentions)) mailable = true;
     } catch (error) {
-      log.error('Notification fan-out failed for row', { error, activityId, subjectId: row.id });
+      log.error('Notification fan-out failed for row', { error, activityId: row.activityId, subjectId });
     }
   }
   return mailable;
 }
 
 /**
- * Whether the event can add mentions: a create, or an update whose changed fields include the
+ * Whether a row's change can add mentions: a create, or an update whose changed fields include the
  * body. Publishing a draft arrives as a create (replication emits an insert for a row that enters
- * the publication), so a mention written in a draft notifies at publish.
- * The changed fields are those of the event's first row and a missing list says nothing, so
- * an event of several rows and one without a list both count as a body change; users told before
- * are skipped either way.
+ * the publication), so a mention written in a draft notifies at publish. A missing list says
+ * nothing, so it counts as a body change; users told before are skipped either way.
  */
-function mayAddMentions(event: ActivityEvent): boolean {
-  if (event.action === 'create') return true;
-  if (event.action !== 'update') return false;
-  if (!event.changedFields || (event.rows?.length ?? 0) > 1) return true;
-  return event.changedFields.includes('description');
+function mayAddMentions(action: ActivityAction, { changedFields }: ActivityRow): boolean {
+  if (action === 'create') return true;
+  if (action !== 'update') return false;
+  return !changedFields || changedFields.includes('description');
 }
 
-/** Writes one row's notifications; true when one is mailable (a redelivered one too, so its email pass reruns). */
+/** Writes one row's notifications under its activity and writer; true when one is mailable (a redelivered one too, so its email pass reruns). */
 async function fanOutRow(
-  event: ActivityEvent,
-  { organizationId, tenantId, activityId }: EventIds,
+  action: ActivityAction,
+  { organizationId, tenantId }: EventIds,
+  { activityId, userId: writerId }: ActivityRow,
   source: NotificationSource,
   row: NotificationSubjectRow,
   readsMentions: boolean,
 ): Promise<boolean> {
   const { entityType } = source;
-  const actorId = event.userId ?? row.createdBy ?? null;
+  const actorId = writerId ?? row.createdBy ?? null;
 
   const candidates = new Map<string, Candidate>();
   // First writer wins, so a mention outranks the activity classification for the same user.
@@ -114,7 +120,7 @@ async function fanOutRow(
   if (candidates.size === 0) return false;
 
   // An edit must not re-notify people who were already told about this row.
-  const notified = event.action === 'update' ? await findNotifiedUserIds(dbCtx, { subjectId: row.id, userIds: [...candidates.keys()] }) : new Set();
+  const notified = action === 'update' ? await findNotifiedUserIds(dbCtx, { subjectId: row.id, userIds: [...candidates.keys()] }) : new Set();
   const fresh = [...candidates.values()].filter((candidate) => !notified.has(candidate.userId));
   if (fresh.length === 0) return false;
 

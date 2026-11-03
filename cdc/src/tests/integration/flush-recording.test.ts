@@ -40,8 +40,8 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   let home: AttachmentHome;
   let lsnCounter = 0x1000;
   const committedAt = new Map<string, string>();
-  /** What the worker sent to the API: the subject of each message, and the sequence value of each of its rows. */
-  let dispatched: { subjectId: string | null; seqs: (number | undefined)[] }[] = [];
+  /** What the worker sent to the API: per product message, the subject, activity and sequence value of each of its rows. */
+  let dispatched: { subjectIds: unknown[]; activityIds: string[]; seqs: (number | undefined)[] }[] = [];
 
   beforeAll(async () => {
     await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${tenantId}, ${`flush-${tenantId}`})`);
@@ -57,8 +57,13 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   beforeEach(() => {
     dispatched = [];
     vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
-      const { activity, rows = [] } = payload as { activity?: { subjectId: string | null }; rows?: { seq?: number }[] };
-      if (activity) dispatched.push({ subjectId: activity.subjectId, seqs: rows.map((row) => row.seq) });
+      const { rows } = payload as { rows?: { activityId: string; seq?: number; rowData: { id?: unknown } }[] };
+      if (!rows) return;
+      dispatched.push({
+        subjectIds: rows.map((row) => row.rowData.id),
+        activityIds: rows.map((row) => row.activityId),
+        seqs: rows.map((row) => row.seq),
+      });
     });
   });
 
@@ -111,8 +116,11 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]
       ?.counts ?? {}) as Record<string, number>;
 
-  const activitiesOf = async (ids: string[]) =>
-    (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
+  const activityIdsOf = async (ids: string[]) =>
+    (
+      await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids)).orderBy(activitiesTable.id)
+    ).map((row) => row.id);
+  const activitiesOf = async (ids: string[]) => (await activityIdsOf(ids)).length;
 
   const seqOf = async (id: string) => Number((await storedRow(id)).seq);
 
@@ -132,6 +140,9 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     expect(await seqOf(second)).toBe((await seqOf(first)) + 1);
     const notified = dispatched.flatMap((message) => message.seqs);
     expect(notified).toEqual([recorded.sequence - 1, recorded.sequence]);
+    // Two source transactions in one message: each row carries the activity it was recorded as.
+    expect(dispatched).toHaveLength(1);
+    expect(dispatched[0].activityIds).toEqual(await activityIdsOf([first, second]));
 
     // The same events again, as after a restart that read from an unacknowledged position.
     dispatched = [];
@@ -236,7 +247,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
 
     expect(await counts()).toEqual(recorded);
     expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 1);
-    expect(dispatched.map((message) => message.subjectId)).toEqual([id]);
+    expect(dispatched.flatMap((message) => message.subjectIds)).toEqual([id]);
   });
 
   it('hands rows that are no product to the API one at a time, in commit order', async () => {

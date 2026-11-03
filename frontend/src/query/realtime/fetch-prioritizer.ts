@@ -259,13 +259,14 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     // The org id is the fallback home for rows without ancestor ids.
     publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
   } else {
-    // Overflow, unsupported, or exhausted retries: the watermark advances to prevent a fetch loop, and the refetch mark recovers
-    // the lists, at once on screen, else when opened or read by the sync service.
-    const anyViewing = entries.some((entry) => isViewingChannel(organizationId, entry.channelId));
-    cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
+    // Overflow, unsupported, or exhausted retries: the watermark advances to prevent a fetch loop.
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
-    if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
-    publishSyncedRows({ entityType, organizationId, rows: [], degraded: true });
+    invalidateUndelivered(
+      entityType,
+      organizationId,
+      entries.map((entry) => entry.channelId),
+      entries.some((entry) => entry.hasCreates),
+    );
   }
 
   // Propagate after source data settled (fresh rows on ok, invalidated list otherwise).
@@ -274,6 +275,22 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   }
 
   return result.status === 'ok' ? 'ok' : 'fallback';
+}
+
+/**
+ * Rows of a scope the client cannot fetch one by one: the refetch mark recovers its lists, at once on screen, else when
+ * opened or read by the sync service, and `recountUnseen` asks for an exact unseen recount.
+ */
+export function invalidateUndelivered(
+  entityType: ProductEntityType,
+  organizationId: string,
+  channelIds: (string | null)[],
+  recountUnseen: boolean,
+): void {
+  const anyViewing = channelIds.some((channelId) => isViewingChannel(organizationId, channelId));
+  cacheOps.invalidateEntityListForOrg(getEntityQueryKeys(entityType), organizationId, anyViewing ? 'active' : 'none');
+  if (recountUnseen) invalidateUnseenCounts(entityType);
+  publishSyncedRows({ entityType, organizationId, rows: [], degraded: true });
 }
 
 function advanceCaughtUp(entry: DirtyEntry): void {

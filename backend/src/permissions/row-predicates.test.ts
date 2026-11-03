@@ -610,7 +610,7 @@ const dispatchRow = (row: ParityRow): Record<string, unknown> => ({
 });
 
 const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
-  ({ entityType: 'attachment', subjectId: row.id, ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
+  ({ entityType: 'attachment', ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
   it('agrees on every row for random membership sets and actors', async () => {

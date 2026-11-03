@@ -10,8 +10,7 @@ const TIER_MAX_MS = 30_000;
 /** An app-stream change: product rows of one `productType`. */
 interface StreamChange {
   productType: string;
-  seq: number | null;
-  batchUntilSeq: number | null;
+  rows: { seq: number | null }[];
   spreadWindow: number | null;
   channelId: string | null;
   organizationId: string | null;
@@ -67,20 +66,22 @@ export default defineScenario({
         };
 
         const onChange = (n: StreamChange) => {
-          if (n.seq == null) return;
+          const seqs = n.rows.flatMap(({ seq }) => (seq == null ? [] : [seq]));
+          if (seqs.length === 0) return;
           vu.counter('sse.changes');
-          const until = n.batchUntilSeq ?? n.seq;
+          const from = Math.min(...seqs);
+          const until = Math.max(...seqs);
           const scope = `${n.productType}:${n.channelId ?? n.organizationId}`;
 
           if (SSE_SYNC_MODE === 'immediate') {
             vu.histogram('sync.reaction_delay_ms', 0);
-            void rangeFetch(n.seq, until);
+            void rangeFetch(from, until);
             return;
           }
           const entry = pending.get(scope);
           if (entry) {
             // The pending flush covers this range too.
-            entry.from = Math.min(entry.from, n.seq);
+            entry.from = Math.min(entry.from, from);
             entry.until = Math.max(entry.until, until);
             return;
           }
@@ -88,7 +89,7 @@ export default defineScenario({
           const window = n.spreadWindow ?? DEFAULT_WINDOW_MS;
           const delay = window > 0 ? Math.min(hashSpread(`${clientId}:${scope}`) % window, TIER_MAX_MS) : 0;
           vu.histogram('sync.reaction_delay_ms', delay);
-          const range = { from: n.seq, until };
+          const range = { from, until };
           pending.set(scope, range);
           const timer = setTimeout(() => {
             pending.delete(scope);

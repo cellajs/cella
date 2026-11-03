@@ -126,22 +126,19 @@ describe('entities listeners: a product change on open streams', () => {
     ...extra,
   });
 
-  /** A product update as the socket hands it to the bus: the activity of its first row, and its rows. */
-  const updateEvent = (rows: ActivityRow[]): ActivityEvent =>
+  /** A product update as the socket hands it to the bus: its rows, each with the activity of its write. */
+  const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): ActivityEvent =>
     ({
-      id: 'activity-update',
       type: 'attachment.updated',
       action: 'update',
       entityType: 'attachment',
       resourceType: null,
       tableName: 'attachments',
-      subjectId: rows[0].rowData.id,
       tenantId: 'tenant-1',
       organizationId: org,
       rowData: null,
-      rows,
+      rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
       trace: null,
-      stx: null,
     }) as unknown as ActivityEvent;
 
   it('tells a reader the update, and the loss of each row a move took out of its reach', async () => {
@@ -158,9 +155,10 @@ describe('entities listeners: a product change on open streams', () => {
     );
     await settle();
 
+    // The update names the row the reader still reads; the lost one arrives as its own removal.
     expect(reader.sent.map((message) => JSON.parse(message.data))).toEqual([
-      expect.objectContaining({ action: 'update', subjectId: 'att-kept', seq: 4, batchUntilSeq: 6, count: 2 }),
-      expect.objectContaining({ action: 'moveOut', subjectId: 'att-lost', path: org, batchUntilSeq: null, count: 1 }),
+      expect.objectContaining({ action: 'update', rows: [expect.objectContaining({ subjectId: 'att-kept', seq: 4 })] }),
+      expect.objectContaining({ action: 'moveOut', path: org, rows: [expect.objectContaining({ subjectId: 'att-lost', seq: 6 })] }),
     ]);
   });
 });

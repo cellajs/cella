@@ -10,12 +10,12 @@ import { log } from '#/utils/logger';
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {
-      if (!event.subjectId || !event.organizationId) return;
+      if (!event.organizationId) return;
       try {
         const mailable = await fanOutNotifications(event);
         if (mailable) await sendPendingInstantEmails(event.organizationId);
       } catch (error) {
-        log.error('Notification fan-out or instant email pass failed', { error, activityId: event.id });
+        log.error('Notification fan-out or instant email pass failed', { error, activityIds: event.rows.map((row) => row.activityId) });
       }
     });
   }

@@ -46,8 +46,18 @@ const attachmentActivity = (id: string, action: 'update' | 'delete' = 'delete') 
     subjectId: id,
   });
 
-/** A delete of attachments of one audience as the worker sends it: the first row's activity, and every row. */
-const deleteMessage = (...ids: string[]) => ({ activity: attachmentActivity(ids[0]), rows: ids.map((id) => ({ rowData: { id } })) });
+/** A product row as the worker sends it: the activity it was recorded as, and its permission fields. */
+const messageRow = (id: string, extra: { seq?: number; rowData?: Record<string, unknown>; movedFrom?: Record<string, unknown> } = {}) => ({
+  activityId: `act-${id}`,
+  userId: null,
+  changedFields: null,
+  stx: null,
+  rowData: { id },
+  ...extra,
+});
+
+/** A delete of attachments of one audience as the worker sends it: what the rows share, and every row. */
+const deleteMessage = (...ids: string[]) => ({ activity: attachmentActivity(ids[0]), rows: ids.map((id) => messageRow(id)) });
 
 /** The events of one type that reached the bus while `act` ran. */
 const onBus = (type: Parameters<typeof activityBus.on>[0], act: () => void): ActivityEvent[] => {
@@ -79,7 +89,9 @@ describe('CDC socket: a connection that was replaced', () => {
 
     expect(cdcWebSocketServer.getHealthStatus().cdcConnected).toBe(true);
     expect(cdcWebSocketServer.getWorkerHealth()?.health).toMatchObject({ status: 'healthy' });
-    expect(deletesOnBus(() => second.send(deleteMessage('att-live'))).map((event) => event.subjectId)).toEqual(['att-live']);
+    expect(deletesOnBus(() => second.send(deleteMessage('att-live'))).flatMap((event) => event.rows?.map(({ rowData }) => rowData.id))).toEqual([
+      'att-live',
+    ]);
   });
 
   it('ignores an error and a message of the replaced connection', () => {
@@ -152,18 +164,20 @@ describe('CDC socket: a message as the bus receives it', () => {
   });
   const updatesOnBus = (act: () => void) => onBus('attachment.updated', act);
 
-  it('hands the rows of a product message to the bus as its list, with no whole row', () => {
+  it('hands the rows of a product message to the bus as its list, each with its own activity, with no whole row', () => {
     const worker = connect();
     const rows = [
-      { seq: 12, rowData: permissionFields('att-1') },
-      { seq: 14, rowData: permissionFields('att-2'), movedFrom: permissionFields('att-2', 'org-0') },
+      messageRow('att-1', { seq: 12, rowData: permissionFields('att-1') }),
+      messageRow('att-2', { seq: 14, rowData: permissionFields('att-2'), movedFrom: permissionFields('att-2', 'org-0') }),
     ];
 
     const [event] = updatesOnBus(() => worker.send({ activity: attachmentActivity('att-1', 'update'), rows }));
 
     expect(event.rows).toEqual(rows);
     expect(event.rowData).toBeNull();
-    expect(event.subjectId).toBe('att-1');
+    // The first row's activity must not speak for the message.
+    expect(event).not.toHaveProperty('subjectId');
+    expect(event).not.toHaveProperty('userId');
   });
 
   it('hands a row that is no product to the bus whole, without a list of rows', () => {

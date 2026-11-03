@@ -26,6 +26,9 @@ export type StreamFrame = { event: 'change'; id: string; data: StreamChange } | 
 /** Frame bytes a stream may hold unsent: the next frame closes it, and its client's reconnect catches up from its cursor. */
 export const maxPendingStreamBytes = 64 * 1024;
 
+/** Rows one change frame names: 20 rows of about 700 B (an update's stx) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
+export const maxStreamChangeRows = 20;
+
 /** The bytes of each stream's frames written and not yet taken by its client. */
 const pendingStreamBytes = new WeakMap<SSEStreamingApi, number>();
 

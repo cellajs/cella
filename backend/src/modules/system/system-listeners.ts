@@ -1,5 +1,5 @@
 import { baseDb } from '#/db/db';
-import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
+import { activityBus, getEventData, type RowActivityEvent } from '#/lib/activity-bus';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
@@ -11,7 +11,7 @@ const securityEmailType = { create: 'system-role-granted', update: 'system-role-
  * Every CDC-observed system-role change notifies the security contact. The session listeners drop the user's cached
  * sessions on the same event, so the role (and the impersonations it backs) holds only while granted.
  */
-const notifySystemRoleChange = async (event: ActivityEvent) => {
+const notifySystemRoleChange = async (event: RowActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');
   if (!systemRole) return;
 
