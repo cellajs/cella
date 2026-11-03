@@ -1,8 +1,7 @@
-import pc from 'picocolors';
 import { getTableName } from 'drizzle-orm';
+import pc from 'picocolors';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
-import { resourceTables } from '#/tables';
-import { entityTables } from '#/tables';
+import { entityTables, resourceTables } from '#/tables';
 import { cdcPublicationName, cdcSlotName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 

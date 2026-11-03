@@ -11,6 +11,8 @@ An app with roles of its own adds a `role_description.<role>` locale key for eac
 
 ## What & why
 
+An app that runs the `20261028T1013-locale-patterns` codemod in the same upgrade gets eight of its targets renamed to keys this change removed; the typed `t()` keys flag each one.
+
 Invite modes became a segmented control over one form, addresses read as session tiles do, and a paste names what it could not read. `InviteUsers` owns the form, so `invite-*-form.tsx` became `invite-*-field.tsx`. `select-emails.tsx` moved from `common/form-fields` to `user`. `useInviteCheck` answers through `viewOf` and `groups`. `pending-table/` became `pending-memberships-list.tsx`.
 
 ## Blast radius

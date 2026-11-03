@@ -1,9 +1,9 @@
-import { beforeAll, vi } from 'vitest';
+import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+import { setProjectAnnotations } from '@storybook/react-vite';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { addI18nFormatters } from 'shared/utils/i18n-text';
-import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-import { setProjectAnnotations } from '@storybook/react-vite';
+import { beforeAll, vi } from 'vitest';
 import * as projectAnnotations from './preview';
 
 // Initialize i18next for Storybook tests

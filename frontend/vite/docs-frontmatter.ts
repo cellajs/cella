@@ -35,6 +35,23 @@ export type DocSection = { headingId: string | null; text: string };
 /** Markdown characters and whitespace-separated words of a page body and the documents it imports. */
 export type DocSize = { chars: number; words: number };
 
+/** Site routes of imported repository documents, derived from the wrapper pages' imports: repo-relative path to /docs/page route. */
+export function repoDocRouteMap(contentDir: string, repoRoot: string): Record<string, string> {
+  const routes: Record<string, string> = {};
+  for (const file of collectPages(contentDir)) {
+    // A section's index page routes at the section path.
+    const route = `/docs/page/${path
+      .relative(contentDir, file)
+      .replaceAll(path.sep, '/')
+      .replace(/\.mdx?$/, '')
+      .replace(/\/index$/, '')}`;
+    for (const target of importTargets(file, readFileSync(file, 'utf8'))) {
+      routes[path.relative(repoRoot, target).replaceAll(path.sep, '/')] = route;
+    }
+  }
+  return routes;
+}
+
 function collectPages(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
@@ -190,25 +207,12 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
   let contentDir: string;
   let resolver: UpdatedAtResolver | undefined;
 
-  const llmsPages = (): LlmsPage[] =>
-    collectPages(contentDir).map((file) => {
-      const source = readFileSync(file, 'utf8');
-      const imported = importTargets(file, source)
-        .filter((target) => existsSync(target))
-        .map((target) => ({ file: target, source: readFileSync(target, 'utf8') }));
-      return {
-        relative: path.relative(contentDir, file).replaceAll(path.sep, '/'),
-        frontmatter: parseFrontmatter(source),
-        body: pageBody(source),
-        imported,
-      };
-    });
-
   const buildIndex = () => {
     const targets = new Set<string>();
     const entries: (readonly [string, DocPageEntry])[] = [];
     const sectionEntries: (readonly [string, DocSection[]])[] = [];
     const sizeEntries: (readonly [string, DocSize])[] = [];
+    const pages: LlmsPage[] = [];
     let config = '';
 
     for (const file of collectPages(contentDir)) {
@@ -221,10 +225,15 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
       // repo doc as their body): a body edit in cella/SYNC_ENGINE.md bumps the page.
       const parsed = parseFrontmatter(source);
       const frontmatter = resolver ? withUpdatedAt(parsed, [file, ...imports], resolver) : parsed;
-      const { headings, sections } = pageStructure(file, source);
+      // One read of each imported document serves the structure, the size and the llms copy alike.
+      const imported = imports.filter((target) => existsSync(target)).map((target) => ({ file: target, source: readFileSync(target, 'utf8') }));
+      const own = extractStructure(source);
+      const importedStructures = imported.map((entry) => extractStructure(entry.source, { stripLeadingH1: true }));
+      const headings = [...own.headings, ...importedStructures.flatMap((structure) => structure.headings)];
+      const sections = [...own.sections, ...importedStructures.flatMap((structure) => structure.sections)];
       entries.push([key, { frontmatter, headings }] as const);
-      const imported = imports.filter((target) => existsSync(target)).map((target) => readFileSync(target, 'utf8'));
-      sizeEntries.push([key, pageSize([source, ...imported])] as const);
+      sizeEntries.push([key, pageSize([source, ...imported.map((entry) => entry.source)])] as const);
+      pages.push({ relative, frontmatter: parsed, body: pageBody(source), imported });
       if (/^index\.mdx?$/.test(relative)) config = JSON.stringify(parsed);
 
       // Search corpus: skip the root index (docs config, landing body) and pages
@@ -240,9 +249,17 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
       index: Object.fromEntries(entries),
       sections: Object.fromEntries(sectionEntries),
       sizes: Object.fromEntries(sizeEntries),
+      pages,
       config,
       targets,
     };
+  };
+
+  // One walk serves the three virtual modules and the llms files; dev rebuilds drop it.
+  let cache: ReturnType<typeof buildIndex> | undefined;
+  const indexed = () => {
+    cache ??= buildIndex();
+    return cache;
   };
 
   return {
@@ -257,9 +274,9 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
       if (id === SIZES_VIRTUAL_ID) return SIZES_RESOLVED_ID;
     },
     load(id) {
-      if (id === RESOLVED_ID) return `export const docsIndex = ${JSON.stringify(buildIndex().index)};`;
-      if (id === SECTIONS_RESOLVED_ID) return `export const docsSectionsIndex = ${JSON.stringify(buildIndex().sections)};`;
-      if (id === SIZES_RESOLVED_ID) return `export const docsSizes = ${JSON.stringify(buildIndex().sizes)};`;
+      if (id === RESOLVED_ID) return `export const docsIndex = ${JSON.stringify(indexed().index)};`;
+      if (id === SECTIONS_RESOLVED_ID) return `export const docsSectionsIndex = ${JSON.stringify(indexed().sections)};`;
+      if (id === SIZES_RESOLVED_ID) return `export const docsSizes = ${JSON.stringify(indexed().sizes)};`;
     },
     // Dev: a change to a page or an imported repo doc reaches the open app as a `docs:index` or `docs:sizes`
     // event, which the app applies in place (modules/page/content.ts, table/doc-sizes.ts). Only an edit to the
@@ -269,14 +286,14 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
         server.middlewares.use((req, res, next) => {
           const name = decodeURIComponent((req.url ?? '').split('?')[0]).slice(1);
           if (name !== 'llms.txt' && !(name.startsWith('docs/page/') && name.endsWith('.md'))) return next();
-          const file = llmsFiles(llmsPages(), llms).get(name);
+          const file = llmsFiles(indexed().pages, llms).get(name);
           if (file === undefined) return next();
           res.setHeader('Content-Type', name.endsWith('.txt') ? 'text/plain; charset=utf-8' : 'text/markdown; charset=utf-8');
           res.end(file);
         });
       }
 
-      const initial = buildIndex();
+      const initial = indexed();
       let index = JSON.stringify(initial.index);
       let sizes = JSON.stringify(initial.sizes);
       let config = initial.config;
@@ -288,7 +305,8 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
 
       const rebuild = () => {
         rebuildTimer = null;
-        const next = buildIndex();
+        cache = undefined;
+        const next = indexed();
         for (const target of next.targets) {
           if (!initial.targets.has(target)) {
             initial.targets.add(target);
@@ -335,7 +353,7 @@ export function docsFrontmatter(llms?: LlmsOptions): Plugin {
     },
     generateBundle() {
       if (!llms) return;
-      for (const [fileName, source] of llmsFiles(llmsPages(), llms)) this.emitFile({ type: 'asset', fileName, source });
+      for (const [fileName, source] of llmsFiles(indexed().pages, llms)) this.emitFile({ type: 'asset', fileName, source });
     },
   };
 }

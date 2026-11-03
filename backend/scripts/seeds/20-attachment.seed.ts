@@ -1,14 +1,14 @@
-import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
-import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
+import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
+import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
+import type { SeedScript } from '../types';
 import { textDocument } from './description-document';
 import { seedAssets } from './seed-assets';
 

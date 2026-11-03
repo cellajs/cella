@@ -86,22 +86,22 @@ const indentOf = (line: string) => line.length - line.trimStart().length;
 const isCommentLine = (line: string) => /^\s*(\/\/|\/\*\*|\*)/.test(line);
 
 /** The index of the line that declares `path` under the config literal, and of the last line of its value. */
-function locate(lines: string[], path: string): { start: number; end: number } {
+function locate(lines: string[], path: string, file: string): { start: number; end: number } {
   let from = lines.findIndex((line) => line.startsWith('export const config = {'));
-  if (from < 0) throw new Error('config.default.ts: no `export const config = {` literal.');
+  if (from < 0) throw new Error(`${file}: no \`export const config = {\` literal.`);
   let to = lines.length;
   let depth = 1;
   let found = { start: -1, end: -1 };
   for (const key of path.split('.')) {
     const indent = ' '.repeat(depth * 2);
     const start = lines.findIndex((line, index) => index > from && index < to && line.startsWith(`${indent}${key}:`));
-    if (start < 0) throw new Error(`config.default.ts: no leaf \`${path}\` (at \`${key}\`).`);
+    if (start < 0) throw new Error(`${file}: no leaf \`${path}\` (at \`${key}\`).`);
     const opensBlock = /[{[]$/.test(lines[start]);
     // A block ends at the first line back on its own indent; a one-line value ends on its line.
     const end = opensBlock
       ? lines.findIndex((line, index) => index > start && indentOf(line) === indent.length && !isCommentLine(line) && /^\s*[}\]]/.test(line))
       : start;
-    if (end < 0) throw new Error(`config.default.ts: the block of \`${path}\` never closes.`);
+    if (end < 0) throw new Error(`${file}: the block of \`${path}\` never closes.`);
     found = { start, end };
     from = start;
     to = end + 1;
@@ -137,18 +137,18 @@ function renderComment(text: string, indent: string): string[] {
   return [`${indent}/**`, ...rows.map((line) => `${indent} * ${line}`), `${indent} */`];
 }
 
-/** The scaffolder's template: `source`, the default config, with every template leaf applied. */
-export function renderTemplateConfig(source: string): string {
+/** `source` with every leaf applied; `file` names the source in errors. Throws when a leaf or its anchor is gone. */
+export function applyLeaves(source: string, leaves: readonly TemplateLeaf[], file: string): string {
   const lines = source.split('\n');
-  for (const leaf of templateLeaves) {
-    const { start, end } = locate(lines, leaf.path);
+  for (const leaf of leaves) {
+    const { start, end } = locate(lines, leaf.path, file);
     const indent = ' '.repeat(indentOf(lines[start]));
     const key = leaf.path.split('.').at(-1);
     const replacement: string[] = [];
     if (leaf.value !== undefined) replacement.push(`${indent}${key}: ${leaf.value},`);
     else if (leaf.replace) {
       const [from, to] = leaf.replace;
-      if (!lines[start].includes(from)) throw new Error(`config.default.ts: \`${leaf.path}\` holds no \`${from}\`.`);
+      if (!lines[start].includes(from)) throw new Error(`${file}: \`${leaf.path}\` holds no \`${from}\`.`);
       replacement.push(lines[start].replace(from, to));
     } else replacement.push(...lines.slice(start, end + 1));
     const cut = leaf.comment === undefined ? start : commentAbove(lines, start);
@@ -158,15 +158,47 @@ export function renderTemplateConfig(source: string): string {
   return lines.join('\n');
 }
 
+/** The scaffolder's template: `source`, the default config, with every template leaf applied. */
+export function renderTemplateConfig(source: string): string {
+  return applyLeaves(source, templateLeaves, 'config.default.ts');
+}
+
+/** What the app-shape suite run (check-config-shape.ts) edits in both config files: listed surfaces, another feature flag. */
+export const appShapeLeaves: readonly TemplateLeaf[] = [
+  {
+    path: 'surfaces',
+    replace: ['surfaces: {} as', "surfaces: { 'organization.tabs': ['members', 'settings'], 'user.profile': ['organizations'] } as"],
+  },
+  { path: 'has.commentEmail', replace: ['commentEmail: false', 'commentEmail: true'] },
+];
+
+/** Applied to `config.default.ts` only: the rendered template already drops `sso`. */
+export const appShapeDefaultOnlyLeaves: readonly TemplateLeaf[] = [{ path: 'enabledAuthStrategies', replace: [", 'sso'", ''] }];
+
+/** The one app-shape edit outside the config literal: a stricter member policy. */
+export const appShapePermissionsEdit = {
+  file: 'permissions-config.ts',
+  from: "channels.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });",
+  to: 'channels.organization.member({ create: 1, read: 1, update: 0, delete: 0 });',
+} as const;
+
 if (import.meta.main) {
   const configDir = join(repoRoot, 'shared/config');
   const templatePath = join(configDir, 'config.template.ts');
   // An app has consumed its template; only the template repo keeps one current.
   if (existsSync(templatePath)) {
-    const rendered = renderTemplateConfig(readFileSync(join(configDir, 'config.default.ts'), 'utf8'));
+    const source = readFileSync(join(configDir, 'config.default.ts'), 'utf8');
+    const rendered = renderTemplateConfig(source);
     if (readFileSync(templatePath, 'utf8') !== rendered) {
       writeFileSync(templatePath, rendered);
       console.info('Wrote shared/config/config.template.ts from config.default.ts.');
+    }
+    // Render the app shape in memory too, so a moved leaf or anchor fails the PR that moves it, not the release PR.
+    applyLeaves(source, [...appShapeLeaves, ...appShapeDefaultOnlyLeaves], 'config.default.ts');
+    applyLeaves(rendered, appShapeLeaves, 'config.template.ts');
+    const permissions = readFileSync(join(configDir, appShapePermissionsEdit.file), 'utf8');
+    if (!permissions.includes(appShapePermissionsEdit.from)) {
+      throw new Error(`${appShapePermissionsEdit.file} no longer holds \`${appShapePermissionsEdit.from}\`: adjust write-template-config.ts.`);
     }
   }
 }

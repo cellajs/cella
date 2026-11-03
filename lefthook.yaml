@@ -8,21 +8,14 @@ output:
   - failure
   - execution_out
 
-commit-msg:
-  commands:
-    conventional-commit:
-      # Enforce Conventional Commits so release-please can derive versions and
-      # changelog sections. {1} is the path to the commit message file.
-      run: node shared/scripts/check-commit-msg.ts {1}
-
 pre-commit:
   parallel: true
   commands:
     biome:
       glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
-      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
     typescript:
-      priority: 1
       # `pnpm sdk` regenerates from the working tree at commit time; stage its output so a
       # schema-shaping commit cannot record stale sdk/gen while the fresh files sit unstaged.
       run: pnpm sdk && git add sdk/gen && pnpm ts

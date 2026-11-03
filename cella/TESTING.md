@@ -58,8 +58,7 @@ pnpm test
 | Command | What it does |
 | --- | --- |
 | `pnpm test` | Everything, with coverage summary (alias for `test:full`) |
-| `pnpm test:full:verbose` | Same, plus passing test output |
-| `pnpm test:core` | Skips integration tests (backend, yjs, cdc). Rarely needed (`test:core:verbose` for full output) |
+| `pnpm test:core` | Skips integration tests (backend, yjs, cdc). Rarely needed; drop `--silent=passed-only` via a direct vitest run for full output |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium. Not part of `pnpm test` ([see below](#storybook)) |
 | `pnpm app-shape:check` | The core suites again under a config shaped like an app's. Runs on the release PR |
 | `pnpm story` | Interactive Storybook dev server. Runs no tests. |

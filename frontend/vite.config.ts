@@ -20,24 +20,13 @@ import { appConfig, originEnvName, servicePaths } from '../shared/index.ts';
 import { frontendDevPort } from '../shared/src/utils/tool-ports.ts';
 import { codeTheme } from './src/utils/code-theme.ts';
 import { docsEditor } from './vite/docs-editor.ts';
-import { docsFrontmatter } from './vite/docs-frontmatter.ts';
+import { docsFrontmatter, repoDocRouteMap } from './vite/docs-frontmatter.ts';
 import { indexHtml } from './vite/index-html.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
 import { precompress } from './vite/precompress.ts';
-import { reactCompilerGuard, reactCompilerLogger } from './vite/react-compiler-guard.ts';
-import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
+import { remarkLinkRepoPaths, remarkStripRepoDocH1 } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
 import { sdkStatic } from './vite/sdk-static.ts';
-import { sdkWatch } from './vite/sdk-watch.ts';
-
-// Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
-// already renders the frontmatter title as h1. Drop the leading h1 when such a file
-// is compiled as page content. Content-root files are authored without an h1.
-const remarkStripRepoDocH1 = () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
-  if (!file.path || file.path.includes('/src/content/docs/')) return;
-  const index = tree.children.findIndex((node) => node.type === 'heading');
-  if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
-};
 
 const isStorybook = process.env.STORYBOOK === 'true';
 // `pnpm deps:bundle:analyze` sets this to emit a per-module treemap next to the build.
@@ -94,40 +83,12 @@ const DOCS_BOOT = /[\\/]src[\\/]modules[\\/]docs[\\/](docs-module|query|search-p
 
 const frontendUrl = new URL(appConfig.frontendUrl);
 
-// Imported repository docs use relative links so they also work on GitHub and in editors. When a
-// target has a docs wrapper, keep navigation inside the site; other repo paths still point to GitHub.
-const repoDocRoutes = {
-  'cella/QUICKSTART.md': '/docs/page/quickstart',
-  'cella/CHANGELOG.md': '/docs/page/changelog',
-  'cella/AGENTS.md': '/docs/page/guides/agents',
-  'cella/ARCHITECTURE.md': '/docs/page/architecture',
-  'cella/SYNC_ENGINE.md': '/docs/page/sync-engine',
-  'cella/CLIENT.md': '/docs/page/sync-engine/client',
-  'cdc/README.md': '/docs/page/sync-engine/cdc',
-  'yjs/README.md': '/docs/page/sync-engine/yjs',
-  'cella/SCHEMA_EVOLUTION.md': '/docs/page/sync-engine/schema-evolution',
-  'cella/AUTHENTICATION.md': '/docs/page/security/authentication',
-  'cella/authentication/SSO.md': '/docs/page/security/authentication/sso',
-  'cella/authentication/SESSIONS.md': '/docs/page/security/authentication/sessions',
-  'cella/PERMISSIONS.md': '/docs/page/security/permissions',
-  'cella/MULTI_TENANCY.md': '/docs/page/security/multi-tenancy',
-  'cella/INTEROPERABILITY.md': '/docs/page/interoperability',
-  'oauth/README.md': '/docs/page/interoperability/oauth',
-  'mcp/README.md': '/docs/page/interoperability/mcp',
-  'cella/OTEL.md': '/docs/page/observability',
-  'jobs/README.md': '/docs/page/jobs',
-  'cella/TESTING.md': '/docs/page/guides/testing',
-  'bench/README.md': '/docs/page/guides/load-testing',
-  'cella/RELEASES.md': '/docs/page/guides/releases',
-  'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
-  'cella/deployment/FRESH_INSTALLATION.md': '/docs/page/guides/deployment/fresh-installation',
-  'cella/deployment/KEYS.md': '/docs/page/guides/deployment/keys',
-  'cella/deployment/CHANGING_INFRASTRUCTURE.md': '/docs/page/guides/deployment/changing-infrastructure',
-  'cella/deployment/RUNBOOKS.md': '/docs/page/guides/deployment/runbooks',
-  'infra/README.md': '/docs/page/guides/deployment/infra-cli',
-} as const;
-
 const repoRoot = path.resolve(import.meta.dirname, '..');
+
+// Imported repository docs use relative links so they also work on GitHub and in editors. When a
+// target has a docs wrapper, navigation stays inside the site; other repo paths still point to GitHub.
+// The map derives from the wrapper pages' own imports, so a moved document cannot leave a stale route.
+const repoDocRoutes = repoDocRouteMap(path.resolve(import.meta.dirname, 'src/content/docs'), repoRoot);
 const repoLinks = { repoRoot, repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes };
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
@@ -176,7 +137,8 @@ const viteConfig = {
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.
     ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
-    watch: { ignored: ['**/backend/**', '**/sdk/**'] },
+    // sdk/src stays unwatched (the generator churns temp folders and lock files there); a finished write to sdk/gen reloads.
+    watch: { ignored: ['**/backend/**', '**/sdk/src/**'] },
     // The folders the app reads from outside this package; a file it imports, such as a repo doc, is served too. Vite's
     // default, the workspace root, serves any file in the checkout by path to whoever reaches the server, a tunnel included.
     fs: { allow: [import.meta.dirname, ...['shared', 'sdk', 'locales', 'json', 'node_modules'].map((dir) => path.join(repoRoot, dir))] },
@@ -430,8 +392,20 @@ const viteConfig = {
     // Docs bodies are Fast Refresh boundaries: a body edit updates in place and stops at its own module.
     react({ include: /\.(mdx?|[jt]sx?)$/ }),
     // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.
-    babel({ presets: [reactCompilerPreset({ logger: reactCompilerLogger })], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
-    reactCompilerGuard(),
+    // A compiler bail is a hard error in dev and build alike; a function that must stay uncompiled states 'use no memo'
+    // with its reason above the directive.
+    babel({ presets: [reactCompilerPreset({ panicThreshold: 'all_errors' })], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
+    {
+      name: 'react-compiler-compiled',
+      apply: 'build',
+      // A babel include that stops matching files would switch the compiler off without any other signal.
+      generateBundle(_options, bundle) {
+        const compiled = Object.values(bundle).some(
+          (output) => output.type === 'chunk' && output.moduleIds.some((id) => /[\\/]react[\\/]compiler-runtime\.js$/.test(id)),
+        );
+        if (!compiled) this.error('React Compiler output is missing: no module imports react/compiler-runtime. Check the babel include.');
+      },
+    } satisfies Plugin,
     tailwindcss(),
     // Locales pipeline: merges common.json + app.json into the runtime `c` namespace,
     // serves the result at /locales/{lng}/{ns}.json in dev and emits it into the build.
@@ -440,11 +414,10 @@ const viteConfig = {
       srcDir: path.resolve(import.meta.dirname, '../locales'),
       outDir: path.resolve(import.meta.dirname, '../.vscode/.locales-cache'),
       merge: { target: 'c', sources: ['common', 'app'] },
-      verbose: false,
     }),
     // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
     sdkStatic(),
-    ...indexHtml({
+    indexHtml({
       title: appConfig.name,
       description: appConfig.description,
       keywords: appConfig.keywords,
@@ -542,11 +515,6 @@ if (appConfig.has.pwa && !isStorybook) {
 // the public origin, but ngrok terminates TLS and forwards plain HTTP to Vite.
 if (frontendUrl.protocol === 'https:' && !isTunneled) {
   viteConfig.plugins?.push(basicSsl());
-}
-
-// Enable additional plugins only in development mode
-if (appConfig.mode === 'development' && !isStorybook) {
-  viteConfig.plugins?.push(sdkWatch());
 }
 
 // https://vitejs.dev/config/

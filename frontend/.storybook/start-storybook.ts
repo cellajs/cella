@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import net from 'node:net';
+import process from 'node:process';
 import { storybookPort } from '../../shared/src/utils/tool-ports.ts';
 
 const port = storybookPort();

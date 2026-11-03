@@ -33,8 +33,7 @@ export const paragraphBlock = (content: InlineContent[]) => ({
 export const text = (value: string): InlineContent => ({ type: 'text', text: value, styles: {} });
 
 /** A stored block document (the `description` column) of one paragraph per string. */
-export const textDocument = (...paragraphs: string[]): string =>
-  JSON.stringify(paragraphs.map((paragraph) => paragraphBlock([text(paragraph)])));
+export const textDocument = (...paragraphs: string[]): string => JSON.stringify(paragraphs.map((paragraph) => paragraphBlock([text(paragraph)])));
 
 /** `description` with a closing paragraph that mentions `user`, as the composer stores it; one that is no block document is replaced. */
 export const appendMention = (description: string | null | undefined, user: { id: string; name: string; slug: string }, body: string): string =>

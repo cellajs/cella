@@ -650,13 +650,12 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vite.config.ts`: `server.host`, `strictPort`, proxy to `localhost` ports, tunnel-only `allowedHosts` and `hmr`, `basicSsl()` when `frontendUrl` is https and not tunneled; no `server.fs`, no `server.cors`.
   - `frontend/.storybook/main.ts` (`viteFinal` adds a proxy `/api/dev/emails` to the API), `frontend/.storybook/start-storybook.ts` (`storybook dev -p <frontend port + 3006> --quiet --no-open`, no `--host`).
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
-  - `backend/scripts/drizzle-studio/start.ts`, `port.ts` (port is backend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port). The root `package.json` has no `studio` script; it is `studio/package.json` (`pnpm --filter studio dev`).
+  - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
   - `shared/README.md` (dev ports).
   - `backend/compose.yaml` (services `db`, `db_test`, `db_a11y`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
   - `a11y/src/run.ts` (ports shifted by 70, its own database `DB_A11Y_PORT`), `bench/src/config.ts` (default admin URL).
-  - `pnpm dev:proxy` in `package.json` filters `--filter proxy`; no `proxy/` directory exists in this checkout.
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.
@@ -665,7 +664,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Vitest runs in CI and dev without `--ui` or `api`.
   - The internal listener refuses public peers before any route reads its secret.
   - The mint-session script refuses outside development and test. The seeded admin has no password.
-- **Asks:** what `pnpm dev`, `pnpm story` and `pnpm --filter studio dev` bind to (loopback or every interface) and what a malicious page in the developer's browser reaches; one rule; the version minimums. These are the bulk of live advisories over time, so the rule matters more than any single bump.
+- **Asks:** what `pnpm dev`, `pnpm story` and `pnpm studio` bind to (loopback or every interface) and what a malicious page in the developer's browser reaches; one rule; the version minimums. These are the bulk of live advisories over time, so the rule matters more than any single bump.
 - **Not this class:** the supply chain of installing these packages, the lockfile, `minimumReleaseAge` and third-party scripts belong to F1. The `/dev/emails` preview route, request handling on the API listener and internal-route secrets belong to the A and C classes (A6 for the address check, B5 for the relay). Vite and Storybook build output shipped to production belongs to F1 and D1.
 
 ### F3 Deployment and infrastructure
