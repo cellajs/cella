@@ -3,25 +3,22 @@ import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { channelIdColumnsOf, findMenuParent, isHeldInvitation, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countPendingInactiveMembershipSeats,
   insertInactiveMemberships,
-  stampInactiveMembershipsReminded,
   updateInactiveMemberships,
 } from '#/modules/memberships/inactive-memberships-queries';
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
-import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
-import { takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
-import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
+import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
+import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { getValidChannel } from '#/permissions';
 import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
 import { assertRoleGrant } from '#/permissions/role-grant';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 interface CreateMembershipsInput {
@@ -80,11 +77,8 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   }
 
   // A held invitation is mailed once at its channel's publish, so it counts toward the tenant's day now.
-  const mailHeldBack = await takeInvitationMails(ctx, {
-    mailNow: held ? [] : [...invites, ...reminders].map(({ email }) => email),
-    mailAtPublish: held ? invites.length + reopened.length : 0,
-  });
-  const mails = ({ email }: { email: string }) => !mailHeldBack.has(email);
+  const mailNow = held ? [] : [...invites, ...reminders].map(({ email }) => email);
+  const mailHeldBack = await takeInvitationMails(ctx, { mailNow, mailAtPublish: held ? invites.length + reopened.length : 0 });
 
   // One transaction: what a module writes for a membership (`membershipColumns`) commits with it.
   const createdMemberships = adds.length
@@ -97,32 +91,19 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     : [];
   for (const { userId } of adds) invalidateCache.user(userId);
 
-  // A new invitation to an address no account holds carries a token's link; one an account holds is answered in-app.
-  const inviteRows = invites.map(({ email, userId }) => ({
-    id: generateId(),
-    email,
-    userId,
-    role,
-    createdBy: user.id,
-    channelType: entityType,
-    tenantId,
-    ...channelIdColumnsOf(entity),
-    channelId: entity.id,
-  }));
-  // One transaction: a link only for a row this request inserted, and the address's waitlist request answered with it.
-  const { insertedInvites, inviteTokens } = inviteRows.length
-    ? await db.transaction(async (tx) => {
-        const txCtx = { var: { db: tx } };
-        const inserted = await insertInactiveMemberships(txCtx, { memberships: inviteRows });
-        const byLink = inserted.filter((row) => !row.userId && mails(row));
-        const tokens = await issueTokens(
-          txCtx,
-          byLink.map(({ id, email }) => ({ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: id })),
-        );
-        for (const { email } of byLink) await stampWaitlistRequestInvited(txCtx, { email });
-        return { insertedInvites: inserted, inviteTokens: tokens };
-      })
-    : { insertedInvites: [], inviteTokens: [] };
+  const insertedInvites = await insertInactiveMemberships(ctx, {
+    memberships: invites.map(({ email, userId }) => ({
+      id: generateId(),
+      email,
+      userId,
+      role,
+      createdBy: user.id,
+      channelType: entityType,
+      tenantId,
+      ...channelIdColumnsOf(entity),
+      channelId: entity.id,
+    })),
+  });
 
   // Sent again: a declined invitation opens again, a higher role replaces a lower one, never the other way. A held
   // invitation goes out at publish, which sends only those without a last email.
@@ -134,42 +115,19 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   await updateInactiveMemberships(ctx, { ids: raised.map(({ invitation }) => invitation.id), values: { role } });
 
   if (!held) {
-    // A reminder to an address no account holds gets a fresh link, which retires the one mailed before.
-    const reminderTokens = await issueTokens(
+    // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
+    const toMail = [...insertedInvites, ...reminders.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
+    const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization })).map(({ email }) => email));
+    // An address whose mail did not go out gets its day back.
+    await refundInvitationMails(
       ctx,
-      reminders.flatMap(({ email, invitation }) =>
-        invitation.userId || !mails({ email })
-          ? []
-          : [{ type: 'invitation' as const, email, createdBy: user.id, inactiveMembershipId: invitation.id }],
-      ),
+      mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email)),
     );
-    const linkByEmail = new Map([...inviteTokens, ...reminderTokens].map(({ token, rawToken }) => [token.email, rawToken]));
-    const toAddress = (email: string, userId: string | null): InvitedAddress => ({ email, userId, rawToken: linkByEmail.get(email) });
 
-    // One mail batch per role: a reminder names the role its invitation holds, which may be higher than the one picked.
-    const byRole = new Map<EntityRole, InvitedAddress[]>();
-    const addTo = (mailRole: EntityRole, address: InvitedAddress) => byRole.set(mailRole, [...(byRole.get(mailRole) ?? []), address]);
-    const mailedInvites = insertedInvites.filter(mails);
-    const mailedReminders = reminders.filter(mails);
-    for (const { email, userId } of mailedInvites) addTo(role, toAddress(email, userId));
-    for (const { email, invitation } of mailedReminders) {
-      const raisedHere = raised.some((item) => item.email === email);
-      addTo(raisedHere ? role : invitation.role, toAddress(email, invitation.userId));
+    if (adds.length) {
+      const channel = { type: entityType, slug: entity.slug, name: entity.name, role };
+      await sendInvitationMails(ctx, { sender: user, channel, organization, invited: [], added: adds });
     }
-    if (!byRole.has(role) && adds.length) byRole.set(role, []);
-
-    for (const [mailRole, invited] of byRole) {
-      await sendInvitationMails(ctx, {
-        sender: user,
-        channel: { type: entityType, slug: entity.slug, name: entity.name, role: mailRole },
-        organization,
-        invited,
-        added: mailRole === role ? adds : [],
-      });
-    }
-
-    const mailedIds = [...mailedInvites.map(({ id }) => id), ...mailedReminders.map(({ invitation }) => invitation.id)];
-    await stampInactiveMembershipsReminded(ctx, { ids: mailedIds, remindedAt: getIsoDate() });
   }
 
   log.info('Users invited on entity level', {

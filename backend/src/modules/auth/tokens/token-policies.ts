@@ -4,18 +4,6 @@ import { TimeSpan } from '#/utils/time-span';
 type SameSite = 'lax' | 'strict';
 
 /**
- * Which earlier tokens of its type a new token deletes, so only the newest one for its subject works:
- * - `address-or-account`: those for its address, and for its account when it names one (a magic link).
- * - `identity`: those of its identity, or of the provider account signing up (a verification link).
- * - `invitation`: those of its membership invitation, or of its address for a system invitation.
- * - `account`: those of its account (a connect pin: one per account at a time).
- * - `session`: those bound to its session (a step-up code: one per session at a time).
- * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
- */
-const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'session', 'none'] as const;
-export type TokenReplacement = (typeof tokenReplacements)[number];
-
-/**
  * The lifecycle rules of one token type. A `link` token travels in an emailed URL: redeeming it (`invokeToken`) swaps
  * its lifetime for the single-use window and binds it to the browser with a single-use cookie. A `cookie` token lives
  * only in a cookie of its own name and is never redeemable as a link. A `code` token is a short number in a mail,
@@ -30,26 +18,19 @@ export type TokenPolicy =
       singleUseWindow: TimeSpan;
       /** SameSite of the single-use cookie; `lax` when a navigation from another site must carry it. */
       sameSite: SameSite;
-      replaces: TokenReplacement;
-      /**
-       * Who a link issued without an account belongs to when a signed-in browser opens it: `address-holder`, the
-       * account holding its address by now (a new account when nobody does); `any-account`, whoever is signed in (an
-       * invitation not yet bound to a user), whose account accepts it only once it holds the invited address.
-       */
-      unboundOpener: 'address-holder' | 'any-account';
     }
   | {
       carrier: 'cookie';
       /** Lifetime of the token and of the cookie that carries it. */
       ttl: TimeSpan;
       sameSite: SameSite;
-      replaces: TokenReplacement;
     }
-  | { carrier: 'code'; ttl: TimeSpan; replaces: TokenReplacement };
+  | { carrier: 'code'; ttl: TimeSpan };
 
 /**
- * One policy per token type; an app that adds a token type to `appConfig.tokenTypes` must add its policy here, and a
- * link type also its handler in `linkHandlers` (`operations/open-link-token.ts`).
+ * One policy per token type; an app that adds a token type to `appConfig.tokenTypes` must add its policy here, its
+ * replacement subject in `replacementSubjects` (`tokens-queries.ts`), and a link type also its handler in
+ * `linkHandlers` (`operations/open-link-token.ts`).
  * - `invitation`: its single-use window outlasts a magic-link sign-in (15 minutes) plus a second-factor challenge, so
  *   answering an invitation from another account never expires midway.
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
@@ -58,33 +39,12 @@ export type TokenPolicy =
  * - `step-up` is the emailed code a session enters to step up; see `sendStepUpCodeOp`.
  */
 export const tokenPolicies = {
-  invitation: {
-    carrier: 'link',
-    ttl: new TimeSpan(7, 'd'),
-    singleUseWindow: new TimeSpan(30, 'm'),
-    sameSite: 'lax',
-    replaces: 'invitation',
-    unboundOpener: 'any-account',
-  },
-  magic: {
-    carrier: 'link',
-    ttl: new TimeSpan(15, 'm'),
-    singleUseWindow: new TimeSpan(5, 'm'),
-    sameSite: 'strict',
-    replaces: 'address-or-account',
-    unboundOpener: 'address-holder',
-  },
-  'oauth-verification': {
-    carrier: 'link',
-    ttl: new TimeSpan(2, 'h'),
-    singleUseWindow: new TimeSpan(5, 'm'),
-    sameSite: 'lax',
-    replaces: 'identity',
-    unboundOpener: 'address-holder',
-  },
-  'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict', replaces: 'none' },
-  'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax', replaces: 'account' },
-  'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm'), replaces: 'session' },
+  invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },
+  magic: { carrier: 'link', ttl: new TimeSpan(15, 'm'), singleUseWindow: new TimeSpan(5, 'm'), sameSite: 'strict' },
+  'oauth-verification': { carrier: 'link', ttl: new TimeSpan(2, 'h'), singleUseWindow: new TimeSpan(5, 'm'), sameSite: 'lax' },
+  'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict' },
+  'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax' },
+  'step-up': { carrier: 'code', ttl: new TimeSpan(10, 'm') },
 } as const satisfies Record<TokenType, TokenPolicy>;
 
 type TokenTypeCarriedBy<C extends TokenPolicy['carrier']> = {

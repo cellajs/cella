@@ -1,0 +1,100 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "ef06ad85-20b7-47a1-9978-db8bef2b193a",
+  "prevIds": [
+    "c965b2e1-c9a0-406c-9783-1575cac82168"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_inactive_membership_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_inactive_membership_id_idx",
+        "n|idx|public.tokens_inactive_membership_id_idx",
+        "e|idx|public.tokens_inactive_membership_id_idx",
+        "n|rel|public.tokens_inactive_membership_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.inactive_membership_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tokens"
+      ],
+      "writes": [
+        "s|fk|public.tokens.tokens_inactive_membership_id_inactive_memberships_id_fkey",
+        "n|fk|public.tokens.tokens_inactive_membership_id_inactive_memberships_id_fkey",
+        "e|fk|public.tokens.tokens_inactive_membership_id_inactive_memberships_id_fkey",
+        "n|con|public.tokens.tokens_inactive_membership_id_inactive_memberships_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public",
+        "n|col|public.tokens.inactive_membership_id",
+        "n|col|public.inactive_memberships.id",
+        "e|uniqueness|public.inactive_memberships.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_inactive_membership_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "inactive_membership_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"inactive_membership_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_inactive_membership_id_inactive_memberships_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "inactive_membership_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "inactive_memberships",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "CASCADE",
+        "entityType": "fks"
+      }
+    }
+  ]
+}

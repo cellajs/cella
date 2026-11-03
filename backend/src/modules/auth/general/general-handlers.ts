@@ -8,14 +8,13 @@ import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { acceptInvitationTokenOp } from '#/modules/auth/invitations/operations/accept-invitation-token';
 import { confirmInvitationAddressOp } from '#/modules/auth/invitations/operations/confirm-invitation-address';
 import { getTokenDataOp } from '#/modules/auth/invitations/operations/get-token-data';
-import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
+import { resendInvitationByTokenOp } from '#/modules/auth/invitations/operations/resend-invitation';
 import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
 import { listSignInFederations } from '#/modules/auth/sso/operations/list-sign-in-federations';
 import '#/modules/auth/sessions/session-listeners';
 import { openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
-import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -91,8 +90,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
   const { tokenId } = ctx.req.valid('json');
 
   // One answer whether the id names a pending invitation or not, so the route tells nobody which invitations exist.
-  const oldToken = await findInvitationToken(ctx, { id: tokenId });
-  if (oldToken) await resendInvitationEmail(ctx, oldToken);
+  await resendInvitationByTokenOp(ctx, tokenId);
 
   return ctx.body(null, 204);
 });

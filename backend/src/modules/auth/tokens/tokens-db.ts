@@ -8,6 +8,7 @@ import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -39,7 +40,8 @@ export const tokensTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     identityId: uuid().references(() => identitiesTable.id, { onDelete: 'cascade' }),
-    inactiveMembershipId: uuid(),
+    /** A membership invitation's link goes with its row, so no answered or deleted invitation keeps a live link. */
+    inactiveMembershipId: uuid().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
     redirectPath: varchar({ length: maxLength.field }),
     pendingSignUp: jsonb().$type<PendingSignUp>(),
     /** The session a token is bound to: a step-up link stamps only this session. */
@@ -62,6 +64,8 @@ export const tokensTable = snakeCase.table(
     index('tokens_single_use_token_idx').on(table.type, table.singleUseToken),
     // Tokens are found by session when it is deleted or a session-bound token is replaced; most hold null.
     index('tokens_session_id_idx').on(table.sessionId).where(sql`${table.sessionId} is not null`),
+    // The same for an invitation's tokens, when its row is deleted or a new link replaces them.
+    index('tokens_inactive_membership_id_idx').on(table.inactiveMembershipId).where(sql`${table.inactiveMembershipId} is not null`),
     // One live step-up code per session: of two concurrent requests that both cleared the session's code, the later insert is refused.
     uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.type} = 'step-up'`),
   ],

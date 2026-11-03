@@ -1,8 +1,7 @@
 import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
+import type { MembershipBase, MembershipInviteResponse, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership, withdrawPendingInvitation } from 'sdk';
-import { declineHolds } from 'shared/decline-hold';
 import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
@@ -99,42 +98,17 @@ export const useInviteMemberMutation = () =>
         unsent,
       };
     },
-    onSuccess: ({ outcomes }, { channel }) => {
-      const { id: entityId, entityType, organizationId } = channel;
-      // New invitations, and declined ones that opened again, are pending now; members added at once are not
-      const pendingAdded = outcomes.filter(
-        ({ outcome, declinedAt }) => outcome === 'invite' || (outcome === 'remind' && !!declinedAt && !declineHolds(declinedAt)),
-      ).length;
-
-      if (pendingAdded) {
-        if (entityType !== 'organization' && organizationId) {
-          const orgKeys = getEntityQueryKeys('organization');
-          const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
-          queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) => updateMembershipCounts(oldOrg, pendingAdded));
-        }
-
-        const entityKeys = getEntityQueryKeys(entityType);
-        const detailQueryKey = entityKeys.detail.byId(entityId);
-        queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => updateMembershipCounts(oldEntity, pendingAdded));
-      }
-
-      invalidateInvites(channel);
-    },
+    onSuccess: (_, { channel }) => invalidateInvites(channel),
   });
 
-/** Withdraws a pending invitation: its row and links go, and the channel's pending count drops by one. */
+/** Withdraws a pending invitation: its row and links go. */
 export const useWithdrawInvitationMutation = () =>
   useMutation<void, ApiError, { channel: EnrichedChannel; id: string }>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ channel, id }) => {
       await withdrawPendingInvitation({ path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), id } });
     },
-    onSuccess: (_, { channel }) => {
-      const detailQueryKey = getEntityQueryKeys(channel.entityType).detail.byId(channel.id);
-      queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => updateMembershipCounts(oldEntity, -1));
-
-      invalidateInvites(channel);
-    },
+    onSuccess: (_, { channel }) => invalidateInvites(channel),
   });
 
 /** A restored channel's content is not kept for offline use, so a restore needs a connection: without one this warns and answers false. */
@@ -234,24 +208,6 @@ const updateMembers = (members: Member[], updatedMembership: { id: string } & Re
   members.map((member) =>
     member.membership.id === updatedMembership.id ? { ...member, membership: { ...member.membership, ...updatedMembership } } : member,
   );
-
-const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
-  if (!oldEntity?.included.counts) return oldEntity;
-
-  return {
-    ...oldEntity,
-    included: {
-      ...oldEntity.included,
-      counts: {
-        ...oldEntity.included.counts,
-        membership: {
-          ...oldEntity.included.counts.membership,
-          pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount,
-        },
-      },
-    },
-  };
-};
 
 /** Archive, mute and menu order: a response carries them on the caller's own membership only. */
 const hasPersonalView = (membership: Partial<MembershipBase>): membership is MembershipBase =>

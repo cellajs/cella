@@ -1,7 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
@@ -11,7 +10,8 @@ import { invokeToken, issueToken, issueTokens, readBoundToken, spendCookieToken 
 import { isTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
-import { authCookie, cookieChange, createTestUser, setCookiePair } from '../../../../tests/helpers';
+import { authCookie, cookieChange, createTestOrganization, createTestUser, setCookiePair } from '../../../../tests/helpers';
+import { createInvitation } from '../../../../tests/invitations/helpers';
 import { clearDatabase } from '../../../../tests/test-utils';
 
 const ctx = { var: { db } };
@@ -104,12 +104,12 @@ describe('issueToken', () => {
 
   it('replaces the earlier links of a membership invitation, and of an address for a system invitation', async () => {
     const email = address();
-    const [invitationId, otherInvitationId] = [generateId(), generateId()];
+    const inviter = await createTestUser(address());
+    const invitationTo = async () => createInvitation({ organization: await createTestOrganization(), email, createdBy: inviter.id });
+    const [first, other] = [await invitationTo(), await invitationTo()];
 
-    const first = await issueToken(ctx, { type: 'invitation', email, inactiveMembershipId: invitationId });
-    const other = await issueToken(ctx, { type: 'invitation', email, inactiveMembershipId: otherInvitationId });
     const [rotated, system] = await issueTokens(ctx, [
-      { type: 'invitation', email, inactiveMembershipId: invitationId },
+      { type: 'invitation', email, inactiveMembershipId: first.inactiveMembership.id },
       { type: 'invitation', email },
     ]);
 

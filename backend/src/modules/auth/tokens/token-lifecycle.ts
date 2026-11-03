@@ -59,7 +59,7 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its type's `ttl`. Each first
- * deletes the tokens it replaces (see `tokenReplacements`). Pass the caller's transaction in `ctx` when the issue must
+ * deletes the tokens it replaces (`deleteReplacedTokens`). Pass the caller's transaction in `ctx` when the issue must
  * commit with other writes.
  * @returns Per token, in the given order: the stored row and the raw value. The raw value exists only here; it goes
  *   into the link or cookie that carries the token.
@@ -122,12 +122,11 @@ const expired = (token: TokenRecord) => new AppError(401, `${token.type}_expired
 
 /**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
- * account goes to its policy's `unboundOpener`: the account holding its address by now (a new account when nobody
- * does), or any signed-in account (an invitation not yet bound to a user, which only an account holding its address
- * accepts).
+ * account belongs to the account holding its address by now (a new account when nobody does), except an invitation not
+ * yet bound to a user: any signed-in account opens it, and only one holding its address accepts it.
  */
 const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token: TokenRecord) => {
-  if (!token.userId && tokenPolicies[type].unboundOpener === 'any-account') return;
+  if (!token.userId && type === 'invitation') return;
 
   const signedIn = await findSession(ctx);
   if (!signedIn) return;

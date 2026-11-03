@@ -115,6 +115,24 @@ export const findPendingInactiveMembership = async (ctx: DbContext, { id, forUpd
   return invitation;
 };
 
+interface LockPendingInactiveMembershipsOpts {
+  ids: string[];
+}
+
+/**
+ * The pending (not rejected) invitations among `ids`, locked for the caller's transaction in id order: a concurrent
+ * answer, rejection or resend waits for it, and two batches over the same rows never deadlock.
+ */
+export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: LockPendingInactiveMembershipsOpts) => {
+  if (!ids.length) return [];
+  return ctx.var.db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(and(inArray(inactiveMembershipsTable.id, ids), isNull(inactiveMembershipsTable.rejectedAt)))
+    .orderBy(inactiveMembershipsTable.id)
+    .for('update');
+};
+
 interface FindPendingInactiveMembershipByEmailOpts {
   email: string;
 }
@@ -161,6 +179,7 @@ interface InsertInactiveMembershipsOpts {
 /** Inserts inactive memberships and returns the ones inserted; a row whose address the channel invited already is skipped. */
 export const insertInactiveMemberships = async (ctx: DbContext, { memberships }: InsertInactiveMembershipsOpts) => {
   const { db } = ctx.var;
+  if (!memberships.length) return [];
   return db
     .insert(inactiveMembershipsTable)
     .values(memberships)
@@ -310,7 +329,7 @@ interface InactiveMembershipIdOpts {
   id: string;
 }
 
-/** Deletes an inactive membership by id. */
+/** Deletes an inactive membership by id; its tokens go with it. */
 export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
 };

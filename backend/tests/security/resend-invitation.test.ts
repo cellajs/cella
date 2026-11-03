@@ -1,22 +1,25 @@
-import { and, eq } from 'drizzle-orm';
-import { invokeToken, resendInvitationWithToken, resendPendingInvitation } from 'sdk';
+import { and, eq, sql } from 'drizzle-orm';
+import { invokeToken, membershipInvite, resendInvitationWithToken, resendPendingInvitation } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../emails';
-import { adminRole, defaultHeaders, overrideConfig } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from '../fixtures';
 import {
   createOrganizationAdminUser,
   createTestOrganization,
   createTestSession,
   createTestUser,
   expectRefusal,
+  failNextMailSend,
   insertTestToken,
   mailedLink,
   sentMails,
@@ -149,27 +152,86 @@ describe('Resend an invitation', async () => {
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });
 
-  it('must not re-mint a revoked invitation via resend-invitation', async () => {
+  it('must not re-mint an accepted or revoked invitation via resend-invitation', async () => {
     const { token, inactiveMembership } = await expiredInvitation();
-    // The invitation row is gone (its channel was deleted); the token row outlives it, since tokens have no foreign key to it.
+    // Accepting deletes the invitation row, and so does deleting its channel; its links go with the row.
     await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
 
     const { response } = await resend({ tokenId: token.id });
 
     expect(response.status).toBe(204);
     expect(mailer.sendEmails).not.toHaveBeenCalled();
-    expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
+    expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
   });
 
-  it('must not re-mint an accepted invitation via resend-invitation', async () => {
-    const { token, inactiveMembership } = await expiredInvitation();
-    // Accepting deletes the invitation row and its tokens.
-    await db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
+  it("must not mail past its tenant's caps via resend-invitation, and mails in its organization's language", async () => {
+    const organization = await createTestOrganization({ defaultLanguage: 'nl' });
+    const restrictions = defaultRestrictions();
+    await db
+      .update(tenantsTable)
+      .set({ restrictions: { ...restrictions, rateLimits: { ...restrictions.rateLimits, invitationMailsPerDay: 1 } } })
+      .where(eq(tenantsTable.id, organization.tenantId));
+    const inviter = await createTestUser('inviter@example.com');
+    const first = await createInvitation({ organization, email: invitedEmail, createdBy: inviter.id });
+    const second = await createInvitation({ organization, email: 'second-invitee@example.com', createdBy: inviter.id });
 
-    const { response } = await resend({ tokenId: token.id });
+    expect((await resend({ tokenId: first.token.id })).response.status).toBe(204);
+    expect(sentMails()).toEqual([expect.objectContaining({ recipient: expect.objectContaining({ email: invitedEmail, lng: 'nl' }) })]);
 
-    expect(response.status).toBe(204);
+    // The address had its mail for the day and the tenant its one mail: each answers as an unknown id does.
+    const [fresh] = await invitationTokensOf(invitedEmail);
+    expect((await resend({ tokenId: fresh.id })).response.status).toBe(204);
+    expect((await resend({ tokenId: second.token.id })).response.status).toBe(204);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
+    expect(await invitationTokensOf('second-invitee@example.com')).toEqual([second.token]);
+  });
+
+  it('must not leave a live link to an invitation answered while it is mailed again', async () => {
+    const organization = await createTestOrganization();
+    const admin = await createOrganizationAdminUser('org-admin@example.com', organization.id, adminRole, organization.tenantId);
+    const { inactiveMembership } = await createInvitation({ organization, email: invitedEmail, createdBy: admin.id });
+
+    // The answer deletes the row and keeps its transaction open until the reminder waits on the row's lock.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let rowDeleted = () => {};
+    const deleted = new Promise<void>((resolve) => {
+      rowDeleted = resolve;
+    });
+    const answer = db.transaction(async (tx) => {
+      await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+      rowDeleted();
+      await released;
+    });
+    // A failed wait below must still release the lock, or the open transaction blocks every later file.
+    onTestFinished(async () => {
+      release();
+      await answer.catch(() => undefined);
+    });
+    await deleted;
+
+    // Inviting the address again reminds it: the plan still reads the row the answer has not committed.
+    const reminder = call(membershipInvite, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      query: { entityId: organization.id, entityType: 'organization' },
+      body: { emails: [invitedEmail], role: memberRole },
+      headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
+    });
+    await vi.waitFor(async () => {
+      const { rows } = await db.execute<{ waiting: number }>(
+        sql`select count(*)::int as waiting from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and query ilike '%from "inactive_memberships"%for update%'`,
+      );
+      expect(rows[0].waiting).toBe(1);
+    });
+    release();
+    await answer;
+
+    const { response, data } = await reminder;
+    expect(response.status).toBe(200);
+    expect(data).toMatchObject({ outcomes: [{ email: invitedEmail, outcome: 'remind' }] });
     expect(mailer.sendEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toHaveLength(0);
   });
@@ -234,6 +296,25 @@ describe('Resend a pending invitation from the pending list', async () => {
     // The resend is the invitation's last mail: a dispatch of held invitations leaves it alone.
     const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.id));
     expect(resent.remindedAt).not.toBeNull();
+  });
+
+  it('gives the address its day back when the resend mail fails, so the next resend goes out', async () => {
+    const { headers, path } = await setup();
+    const remindedAt = async () =>
+      (
+        await db
+          .select({ remindedAt: inactiveMembershipsTable.remindedAt })
+          .from(inactiveMembershipsTable)
+          .where(eq(inactiveMembershipsTable.id, path.id))
+      )[0].remindedAt;
+
+    failNextMailSend();
+    expect((await call(resendPendingInvitation, { path, headers })).response.status).toBe(204);
+    expect(await remindedAt()).toBeNull();
+
+    expect((await call(resendPendingInvitation, { path, headers })).response.status).toBe(204);
+    expect(mailer.sendEmails).toHaveBeenCalledTimes(2);
+    expect(await remindedAt()).not.toBeNull();
   });
 
   it('must not re-mint a rejected invitation via the pending list', async () => {
