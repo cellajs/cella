@@ -95,7 +95,7 @@ export async function listMachines(auth: ScwAuth, opts: { zone: string; projectI
 }
 
 /** One machine, or undefined once it is gone. */
-async function readMachine(auth: ScwAuth, zone: string, serverId: string): Promise<ScwServer | undefined> {
+export async function readMachine(auth: ScwAuth, zone: string, serverId: string): Promise<ScwServer | undefined> {
   try {
     return (await scwFetch<{ server: ScwServer }>(auth, 'GET', `${instanceApi(zone)}/servers/${serverId}`)).server;
   } catch (error) {
@@ -105,8 +105,8 @@ async function readMachine(auth: ScwAuth, zone: string, serverId: string): Promi
 }
 
 /**
- * Delete a machine: power it off (a shutdown, so its containers get their stop signal), delete it, then the Block Storage root volume it
- * leaves behind, once detached. A machine already gone is deleted as asked.
+ * Delete a machine: power it off (a shutdown, so its containers get their stop signal), delete it, then the root volume it leaves behind,
+ * once detached. A machine or a volume already gone is deleted as asked.
  */
 export async function deleteMachine(auth: ScwAuth, zone: string, serverId: string): Promise<void> {
   const server = await readMachine(auth, zone, serverId);
@@ -124,10 +124,15 @@ export async function deleteMachine(auth: ScwAuth, zone: string, serverId: strin
   }
   await scwSend(auth, 'DELETE', `${instanceApi(zone)}/servers/${server.id}`);
   for (const volume of Object.values(server.volumes ?? {})) {
+    // A local volume, which a machine the Pulumi program made may hold, is the Instance API's; every other one Block Storage's.
+    const url =
+      volume.volume_type === 'l_ssd'
+        ? `${instanceApi(zone)}/volumes/${volume.id}`
+        : `https://api.scaleway.com/block/v1/zones/${zone}/volumes/${volume.id}`;
     for (let tries = 0; tries < 12; tries++) {
-      const done = await scwSend(auth, 'DELETE', `https://api.scaleway.com/block/v1/zones/${zone}/volumes/${volume.id}`).then(
+      const done = await scwSend(auth, 'DELETE', url).then(
         () => true,
-        () => false,
+        (error: unknown) => scwErrorStatus(error) === 404,
       );
       if (done) break;
       await sleep(5_000);

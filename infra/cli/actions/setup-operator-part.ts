@@ -16,12 +16,14 @@ import { controlActor, makeControlClient, recordRotation } from '../../lib/stack
 import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
+import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
@@ -147,6 +149,21 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       env: ctx.childEnv,
       stdio: 'inherit',
     });
+  }
+
+  // A resume of a provisioned stack runs an `up` like an apply: the machines the program made keep their place in the pools and leave the
+  // state live, as every retired resource does.
+  if (!firstProvision) {
+    await moveMachinesOutOfProgram({
+      appConfig: ctx.appConfig,
+      stack: ctx.stackName,
+      secretKey: ctx.secretKey,
+      projectId: ctx.projectId,
+      s3: await makeControlClient(ctx.appConfig.s3.region, ctx.stateKey.accessKey, ctx.stateKey.secretKey),
+      env: ctx.childEnv,
+      log: (message) => console.info(pc.dim(message)),
+    });
+    forgetRetiredResources(ctx.stackName, ctx.childEnv);
   }
 
   // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the operator key.

@@ -12,6 +12,7 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -19,6 +20,7 @@ import { admitOperatorToBuckets, memberShutOut } from '../../tasks/admit-operato
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
+import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
@@ -69,8 +71,8 @@ function infraTask(env: NodeJS.ProcessEnv, args: string[]): Promise<{ status: nu
 
 /**
  * The operator apply shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
- * operator key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
- * apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with an orphan-prune/retry loop.
+ * operator key and the lease, apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with
+ * an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
 export async function runOperatorApply(context: InfraContext, opts: OperatorApplyOptions): Promise<OperatorApplyResult> {
@@ -141,13 +143,24 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         endAction(1);
       }
 
-      // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
-      console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));
-      const forget = await infraTask(env, ['forget-retired-resources', '--stack', stack]);
-      if (forget.status !== 0) {
+      // Resources the program no longer declares and that stay live (machines it made, machine policies, generated secret values): a state
+      // that still holds them would have this `up` delete them. Its machines first keep their place in the pools.
+      console.info(pc.dim('\n→ Taking retired resources out of the state…'));
+      try {
+        await moveMachinesOutOfProgram({
+          appConfig,
+          stack,
+          secretKey: operator.secretKey,
+          projectId,
+          s3: await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey),
+          env,
+          log: (message) => console.info(pc.dim(message)),
+        });
+        forgetRetiredResources(stack, env);
+      } catch (error) {
         await releaseAll();
-        console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing applied.`);
-        endAction(forget.status ?? 1);
+        console.error(`${warningMark} The retired resources could not leave the state (${errorMessage(error)}). Nothing applied.`);
+        endAction(1);
       }
 
       // An errored certificate leaves the state and Scaleway here, so the `up` makes it anew behind its DNS gate; certificates are the apply's (D15).
@@ -159,19 +172,10 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         endAction(repair.status ?? 1);
       }
 
-      // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
-      console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-      const sync = await infraTask(env, ['sync-rollout-config', '--stack', stack]);
-      if (sync.status !== 0) {
-        await releaseAll();
-        console.error(`${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`);
-        endAction(sync.status ?? 1);
-      }
-
       const configFile = await opts.prepare?.(env, stack);
 
       if (opts.confirmPlan) {
-        // Read after the reconcile above: a rollout pointer it corrected changes what the `up` does, so the plan made before it no longer holds.
+        // Read under the lease: another apply's `up` since the review changes what this one does, so the plan made before it no longer holds.
         const outdated = opts.reviewed ? await changesSinceReview(opts.reviewed) : undefined;
         if (outdated?.length === 0) {
           console.info(pc.dim('\nThe stack is as the confirmed plan found it.'));

@@ -20,7 +20,7 @@ import {
 } from '../lib/machine-roles';
 import type { InfraDerivations } from '../lib/naming';
 import type { Foundation } from '../lib/scaleway/foundation';
-import { createMachine, deleteMachine, getUserData, listMachines, setUserData } from '../lib/scaleway/machines';
+import { createMachine, deleteMachine, getUserData, listMachines, readMachine, setUserData } from '../lib/scaleway/machines';
 import type { Presigner } from '../lib/scaleway/presign';
 import type { Environment } from '../lib/stack/bootstrap-stack-state';
 import { deployEvents, emitDeployEvent } from '../lib/telemetry/deploy-telemetry';
@@ -290,6 +290,8 @@ export function liveSwitchEffects(ctx: LiveSwitchContext): SwitchEffects {
       return 'timeout';
     },
     async drain(role, machine) {
+      // A machine already gone is drained as asked: the next step deletes nothing.
+      if (!(await readMachine(auth, ctx.zone, machine))) return;
       const current = await getUserData(auth, ctx.zone, machine, MANIFEST_KEY).catch(() => '');
       let release = '';
       try {

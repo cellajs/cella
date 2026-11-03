@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
+import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
+import { removeMachines } from '../../lib/scaleway/machines';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
@@ -90,14 +92,19 @@ async function destroyStack(context: InfraContext, operator: OperatorKey): Promi
     operation: 'teardown',
   });
 
-  // --refresh first so the destroy plan matches live state; a stale local view of generations/LB would orphan real resources.
+  // --refresh first so the destroy plan matches live state; a stale local view of the load balancer would orphan real resources.
   // The lock releases in a finally so a throw between acquire and release cannot strand it until the TTL.
   let destroy: ReturnType<typeof spawnSync>;
   try {
-    // A builder machine is no resource of the program, and its server holds one of the stack's security groups.
-    const { naming, zones } = deriveInfra(appConfig);
+    // No machine is a resource of the program: the deploy made each role's, and a builder's server holds one of the stack's security groups.
+    const { naming, zones, zone } = deriveInfra(appConfig);
     for (const name of await removeBuilderMachines({ secretKey, projectId: context.projectId, zones, prefix: builderPrefix(naming.resource) })) {
       console.info(`  ${tildeMark} deleted builder ${name}`);
+    }
+    for (const { role } of machineRoles(appConfig)) {
+      for (const name of await removeMachines({ secretKey, projectId: context.projectId, zone, prefix: naming.resource(`${role}-`) })) {
+        console.info(`  ${tildeMark} deleted machine ${name}`);
+      }
     }
     console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));
     destroy = spawnSync('pulumi', ['destroy', '--refresh', '--yes', '--stack', targetStack], { cwd: infraDir, env, stdio: 'inherit' });
