@@ -6,6 +6,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb, getSeedDb } from '#/db/db';
 import type { ActivityRow, ProductActivityEvent } from '#/lib/activity-bus';
+import { mailer } from '#/lib/mailer';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
@@ -455,6 +456,29 @@ describe('Attachment mentions (template notification source)', async () => {
         expect(await inboxOf(other.id, subjectId)).toEqual([{ type: 'mention' }]);
         expect(heard().signalled.toSorted()).toEqual([member.id, other.id].toSorted());
       }
+    });
+
+    it('stamps each mention right after its mail, so a stop before the next send leaves no mailed row for the digest', async () => {
+      const subjectId = await newSubject(mentionsOf([member.id, other.id]));
+      const stampedRows = async () =>
+        (
+          await db
+            .select({ id: notificationsTable.id })
+            .from(notificationsTable)
+            .where(and(eq(notificationsTable.subjectId, subjectId), isNotNull(notificationsTable.emailedAt)))
+        ).length;
+
+      // The second send reads what the first one left, as a process that stopped there would leave it.
+      let stampedAtSecondSend: number | undefined;
+      vi.mocked(mailer.sendEmails)
+        .mockImplementationOnce(async () => undefined)
+        .mockImplementationOnce(async () => {
+          stampedAtSecondSend = await stampedRows();
+        });
+
+      await fanOutNotifications(createdEvent(subjectId));
+      expect(stampedAtSecondSend).toBe(1);
+      expect(await stampedRows()).toBe(2);
     });
 
     it('reads the mentions of each row of an event of several rows by the fields that row changed', async () => {

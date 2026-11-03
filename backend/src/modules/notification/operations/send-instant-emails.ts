@@ -28,8 +28,9 @@ const dbCtx = { var: { db: baseDb } };
 /**
  * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmail`
  * (`instantEmailTypes`), each to a recipient with a verified address who keeps that category on (comment email is
- * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row whose mail
- * went out is stamped `emailedAt`, so the digest skips it; any other row, a failed send included, stays for the digest.
+ * opt-in). The mail is titled with the context name the inbox shows and quotes the subject's body. A row is stamped
+ * `emailedAt` right after its mail went out, so the digest skips it; any other row, a failed send included, stays for
+ * the digest.
  * @param subjects - The subject rows the fan-out read, with their body, keyed by id.
  */
 export async function sendInstantEmails(rows: WrittenNotification[], subjects: Map<string, NotificationSubjectRow>): Promise<void> {
@@ -49,7 +50,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   const channelNames = await findChannelNames(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
   const titles = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
 
-  const mailed: string[] = [];
+  let mailed = 0;
 
   for (const notification of mailable) {
     const user = byUser.get(notification.userId);
@@ -86,14 +87,15 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
           { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
         ]);
       }
-      mailed.push(notification.id);
+      // Per send: a process that stops in the loop leaves only the row in flight for the digest to mail again.
+      await stampEmailed(dbCtx, { ids: [notification.id] });
+      mailed++;
     } catch (err) {
-      log.error('Instant notification email failed', { err, notificationId: notification.id });
+      log.error('Instant notification email or its stamp failed', { err, notificationId: notification.id });
     }
   }
 
-  await stampEmailed(dbCtx, { ids: mailed });
-  if (mailed.length > 0) log.info('Instant notification emails sent', { count: mailed.length });
+  if (mailed > 0) log.info('Instant notification emails sent', { count: mailed });
 }
 
 /** The id a row is titled by: its context, else the subject itself, as the inbox titles it. */

@@ -23,9 +23,9 @@ type BuildDigestOpts = Omit<FindUndigestedNotificationsOpts, 'limit'> & {
 /**
  * Assemble one user's digest sections for the window `[since, before)`; none when nothing in it is left to name.
  *
- * Rows already emailed instantly are excluded, so a mention or comment never arrives twice. So are rows of
- * an organization the user left and rows whose subject the user may no longer read: the digest
- * names only what the recipient can open.
+ * Rows already emailed instantly are excluded, so a mention or comment arrives twice only when its instant mail went
+ * out and its stamp was not written. So are rows of an organization the user left and rows whose subject the user may
+ * no longer read: the digest names only what the recipient can open.
  */
 export async function buildDigestForUser(ctx: DbContext, { userId, since, before, lng }: BuildDigestOpts): Promise<DigestSection[]> {
   const undigested = await findUndigestedNotifications(ctx, { userId, since, before, limit: maxRows });
