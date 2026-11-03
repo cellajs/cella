@@ -756,6 +756,10 @@ export type GetAuthHealthResponses = {
       key: string;
       label: string;
     }>;
+    /**
+     * Whether the server has an email key: without one no email goes out
+     */
+    emailEnabled: boolean;
   };
 };
 

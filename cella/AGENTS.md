@@ -118,6 +118,13 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - PRs: concise description, linked issues, passing checks, scoped changes.
 - **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section: the table `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew saying what those lines are for (for source, how much is comments; for tests, which of the four reasons in [Testing](#testing) each new test file serves). Lines without a reason are the first to cut.
 
+## Worktrees
+
+- A worktree installs its own `node_modules` (`pnpm install`) and never links another checkout's: pnpm links workspace packages by relative path, so a borrowed folder runs the other checkout's code. pnpm clones packages from its store, so an install takes tens of megabytes of disk, whatever `du` reports.
+- At most two worktrees run a stack at once, on the shared database or a throwaway one; a third checks without a stack or waits. Count them first, and stop a stack and its container once the check is done ([Worktree stacks](./skills/verify/SKILL.md#worktree-stacks)).
+- Remove a worktree once its PR merges.
+- An unattended command never waits on a prompt: pass the answers as flags or environment. A background or long-running command that writes to a file pipes through `head -c <bytes>`, since a prompt that asks again at end of input fills the disk.
+
 ## Commands
 
 - `pnpm dev`: dev servers for every package; start PostgreSQL first with `pnpm docker`. A linked git worktree runs on ports of its own: never pass `--port` ([Dev ports](../shared/README.md#dev-ports)).

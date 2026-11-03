@@ -653,6 +653,7 @@ export const zGetAuthHealthResponse = z.object({
       label: z.string(),
     }),
   ),
+  emailEnabled: z.boolean(),
 });
 
 export const zCheckEmailBody = z.object({

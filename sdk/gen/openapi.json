@@ -3244,9 +3244,13 @@
                         "required": ["key", "label"]
                       },
                       "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance"
+                    },
+                    "emailEnabled": {
+                      "type": "boolean",
+                      "description": "Whether the server has an email key: without one no email goes out"
                     }
                   },
-                  "required": ["restrictedMode", "federations"]
+                  "required": ["restrictedMode", "federations", "emailEnabled"]
                 }
               }
             }
