@@ -2,7 +2,6 @@ import type { StreamChange } from 'sdk';
 import { isProduct } from 'shared';
 import { frontendSpanNames } from 'shared/tracing';
 import { withSpanSync } from '~/lib/tracing';
-import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { userStore } from '~/modules/user/user-store';
 import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
@@ -66,7 +65,7 @@ function isOwnEcho(action: StreamChange['action'], { stx, actorId }: StreamChang
 }
 
 function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void {
-  const { productType: entityType, action, organizationId, tenantId, propagation } = change;
+  const { productType: entityType, action, organizationId, propagation } = change;
   const channelId = change.channelId ?? null;
 
   // An own echo fetches nothing: the write's answer brings the stored row. A frame of only own rows fetches nothing.
@@ -77,49 +76,28 @@ function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void 
   });
   if (rows.length === 0) return;
 
-  // Delete-style removal and the seq-less fallback decide from the same tier system the fetch prioritizer uses: the viewing tier acts now, background and muted defer to next access.
-  const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
-
   switch (action) {
     case 'create':
     case 'update': {
-      const seqs = rows.flatMap(({ seq }) => (seq == null ? [] : [seq]));
-      if (seqs.length > 0) {
-        // The range of the rows goes to the lazy path; the watermark advances once its flush settles, since advancing earlier would skip the range forever.
-        enqueueAnnouncedRange(change, { afterSeq: Math.min(...seqs) - 1, untilSeq: Math.max(...seqs) });
-        // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
-        break;
-      }
-
-      if (!isViewing) {
-        // Mark stale only; the next access refetches.
-        for (const { subjectId } of rows) cacheOps.invalidateEntityDetail(subjectId, keys, 'none');
-        cacheOps.invalidateEntityListForOrg(keys, organizationId, 'none');
-      } else {
-        // Propagation is chained after the fetches so fresh source data is in cache.
-        Promise.all(rows.map(({ subjectId }) => cacheOps.fetchEntityAndUpdateList(entityType, subjectId, keys, action, organizationId, tenantId)))
-          .then(() => {
-            if (propagation) propagateEmbeddings(propagation);
-          })
-          .catch((error) => console.warn('[handleProductChange] Entity fetch failed:', error));
-      }
-
-      // Seq-less events have no synced rows, so they trigger an exact unseen-count recount.
-      if (action === 'create') {
-        invalidateUnseenCounts(entityType);
-      }
+      // The range of the rows goes to the lazy path; the watermark advances once its flush settles, since advancing earlier would skip the range forever.
+      const seqs = rows.flatMap(({ seq }) => (seq === null ? [] : [seq]));
+      if (seqs.length > 0) enqueueAnnouncedRange(change, { afterSeq: Math.min(...seqs) - 1, untilSeq: Math.max(...seqs) });
+      // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
       break;
     }
 
-    case 'delete':
+    case 'delete': {
       // Physical deletes and unpublishes leave no fetchable tombstone; soft deletes stay updates reconciled through sequence ranges.
       for (const { subjectId } of rows) {
         cacheOps.invalidateEntityDetail(subjectId, keys, 'none');
         applyUnfetchableRemovalUnseen(entityType, subjectId, channelId);
       }
+      // The tier system the fetch prioritizer uses: the viewing tier refetches its lists now, background and muted on next access.
+      const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
       if (propagation) propagateEmbeddings(propagation);
       break;
+    }
 
     case 'moveOut':
       // A move-out reads as a removal here: this subscriber cannot fetch the new location.
@@ -130,5 +108,5 @@ function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void 
       break;
   }
 
-  console.debug(`[handleProductChange] ${entityType}:${action} rows=${rows.length} viewing=${isViewing}`);
+  console.debug(`[handleProductChange] ${entityType}:${action} rows=${rows.length}`);
 }

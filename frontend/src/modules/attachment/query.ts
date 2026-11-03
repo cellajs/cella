@@ -331,10 +331,10 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
 
 // Mutation defaults (offline persistence): set when the module loads, before the cache restore hydrates a queued mutation.
 queryClient.setQueryDefaults(keys.detail.base, {
-  queryFn: ({ queryKey, meta }) => {
+  queryFn: ({ queryKey }) => {
     const id = queryKey[2] as string;
     const cached = findAttachmentInCache(id);
-    const { organizationId, tenantId } = resolveQueryOrgTenantIds(meta, cached, 'attachment');
+    const { organizationId, tenantId } = resolveQueryOrgTenantIds(cached, 'attachment');
     return getAttachment({ path: { id, organizationId, tenantId } });
   },
 });

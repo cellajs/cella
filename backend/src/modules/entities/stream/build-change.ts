@@ -25,6 +25,7 @@ function computeSpreadWindow(organizationId: string): number {
 
 /** The sequence range a frame over the row cap names: that of a create's or update's rows, none of a delete's. */
 function overflowRange(action: StreamChange['action'], entries: StreamChange['rows']): NonNullable<StreamChange['overflow']> {
+  if (action === 'delete') return { afterSeq: null, untilSeq: null };
   let low = Number.POSITIVE_INFINITY;
   let high = Number.NEGATIVE_INFINITY;
   for (const { seq } of entries) {
@@ -32,7 +33,6 @@ function overflowRange(action: StreamChange['action'], entries: StreamChange['ro
     low = Math.min(low, seq);
     high = Math.max(high, seq);
   }
-  if (action === 'delete' || high < low) return { afterSeq: null, untilSeq: null };
   return { afterSeq: low - 1, untilSeq: high };
 }
 
@@ -40,7 +40,7 @@ function overflowRange(action: StreamChange['action'], entries: StreamChange['ro
  * The change frame of rows of a product event, with no entity data: each row with its seq, its writer and the stx of
  * its write, or past `maxStreamChangeRows` none of them and their range.
  * @param event - The event the rows belong to.
- * @param rows - The rows to name: those of the event its receivers may read.
+ * @param rows - The rows to name: those of the event its receivers may read, a create's or update's each with its seq.
  * @returns What every receiver of these rows gets.
  */
 export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {

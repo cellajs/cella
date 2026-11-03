@@ -29,14 +29,10 @@ function getRouteTenantId(): string | null {
 
 type OrgTenantIdSource = { organizationId?: string | null; tenantId?: string | null };
 
-/** Prefers query meta, then cached entity fields, then the current route. */
-export function resolveQueryOrgTenantIds(
-  meta: OrgTenantIdSource | undefined,
-  cached: OrgTenantIdSource | undefined,
-  resource: string,
-): { organizationId: string; tenantId: string } {
-  const organizationId = meta?.organizationId ?? cached?.organizationId ?? getRouteOrganizationId();
-  const tenantId = meta?.tenantId ?? cached?.tenantId ?? getRouteTenantId();
+/** Prefers cached entity fields, then the current route. */
+export function resolveQueryOrgTenantIds(cached: OrgTenantIdSource | undefined, resource: string): { organizationId: string; tenantId: string } {
+  const organizationId = cached?.organizationId ?? getRouteOrganizationId();
+  const tenantId = cached?.tenantId ?? getRouteTenantId();
   if (!organizationId || !tenantId) {
     throw new Error(`Cannot resolve organizationId/tenantId for ${resource} fetch`);
   }

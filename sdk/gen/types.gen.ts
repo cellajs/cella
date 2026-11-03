@@ -134,7 +134,7 @@ export type StreamChange = {
   rows: Array<{
     subjectId: string;
     /**
-     * Org-sequence position (one order per organization, shared across product entity types); null on a delete
+     * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
      */
     seq: number | null;
     stx: StxBase | null;

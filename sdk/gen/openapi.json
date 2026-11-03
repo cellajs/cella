@@ -854,7 +854,7 @@
                 },
                 "seq": {
                   "type": ["integer", "null"],
-                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete"
+                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table"
                 },
                 "stx": {
                   "anyOf": [

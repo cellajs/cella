@@ -177,6 +177,22 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     ]);
   });
 
+  it('names a created or updated row only with its seq, which the client fetches it by, and a deleted row without one', async () => {
+    const member = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
+    streamSubscriberManager.register(member.subscriber);
+    // A change delivered again after its row left the table: the worker finds no seq to read back.
+    const gone = { rowData: attachmentRow('attachment-gone', orgA) };
+
+    await dispatchChange(attachmentEvent(orgA, [gone, { seq: 9, rowData: attachmentRow('attachment-1', orgA) }]));
+    await dispatchChange(attachmentEvent(orgA, [gone], { type: 'attachment.updated', action: 'update' }));
+    await dispatchChange(attachmentEvent(orgA, [gone], { type: 'attachment.deleted', action: 'delete' }));
+
+    expect(member.received.map(({ action, rows }) => [action, rows.map(({ subjectId, seq }) => [subjectId, seq])])).toEqual([
+      ['create', [['attachment-1', 9]]],
+      ['delete', [['attachment-gone', null]]],
+    ]);
+  });
+
   it('drops draft rows for everyone: author and admin included (defense-in-depth veto)', async () => {
     // The publication row filter keeps drafts out of the stream at the source; this veto is the
     // fail-closed backstop if that filter is missing, and holds for everyone, the author included.

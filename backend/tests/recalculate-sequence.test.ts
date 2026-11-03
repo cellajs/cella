@@ -104,7 +104,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     const orgCounts = orgRow.counts as Record<string, number>;
     // Sequence reservation counter: max stamped value across product tables.
     expect(orgCounts.sequence).toBe(47);
-    // Subtree frontier includes tombstones (they keep their seq for delta reads).
+    // Organization frontier includes tombstones (they keep their seq for delta reads).
     expect(orgCounts[`e:f:${PRODUCT}`]).toBe(47);
     // Subtree live count excludes the soft-deleted row.
     expect(orgCounts[`e:c:${PRODUCT}`]).toBe(2);

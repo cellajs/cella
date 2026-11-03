@@ -170,8 +170,10 @@ export async function dispatchChange(event: AppStreamProductEvent): Promise<void
   const subscribers = organizationSubscribers(event.organizationId);
   if (subscribers.length === 0) return;
 
+  // A create or update row without seq is a redelivery whose row has since left its table: no reader can fetch it.
+  const fetchable = event.action === 'delete' ? event.rows : event.rows.filter(({ seq }) => seq !== undefined);
   await Promise.all(
-    readerFrames(subscribers, event).map(({ rows, readers }) => {
+    readerFrames(subscribers, { ...event, rows: fetchable }).map(({ rows, readers }) => {
       log.trace('Dispatching stream change', { action: event.action, rowCount: rows.length, subscriberCount: readers.length });
       return sendToSubscribers(readers, { event: 'change', data: buildStreamChange(event, rows) }, 'Failed to dispatch stream change');
     }),

@@ -1,4 +1,3 @@
-import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
@@ -19,7 +18,7 @@ import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
-/** Callers skip remote cache writes while this is true, so optimistic state survives; the row the server returns when the mutation settles replaces the cached one. */
+/** A remote write skips the row while this is true, so optimistic state survives; the row the server returns when the mutation settles replaces the cached one. */
 function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
   return hasMutationOfRow(queryClient, entityType, entityId, isPending);
 }
@@ -39,10 +38,6 @@ export function removeEntity(entityType: string, entityId: string, organizationI
 
 export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, refetchType: 'active' | 'none' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
-}
-
-function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active' | 'none' | 'all' = 'active'): void {
-  queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
 }
 
 /** Marks every cached list and detail of an entity type stale and refetches the ones on screen. */
@@ -96,16 +91,10 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
  * Applies server rows of one type and organization to detail and list caches, writing each list once: tombstones remove,
  * new rows enter only home lists, a row with a pending mutation is skipped, and only a cached detail is written, since a
  * detail read without one starts from the list copy. Each cached list row guards its Yjs-owned fields against itself; a
- * detail and rows new to a list guard against `referenceOf`, read before any write.
+ * detail and rows new to a list guard against the cached copy read before any write.
  * @returns The rows every list lacked, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerRows(
-  entityType: string,
-  rows: ItemData[],
-  keys: EntityQueryKeys,
-  organizationId: string | null,
-  referenceOf: (row: ItemData) => ItemData | undefined = (row) => findInCache(entityType, row.id),
-): ItemData[] {
+function applyServerRows(entityType: string, rows: ItemData[], keys: EntityQueryKeys, organizationId: string | null): ItemData[] {
   const tombstones = rows.filter(isSoftDeleted);
   const live = rows.filter((row) => {
     if (isSoftDeleted(row)) return false;
@@ -113,7 +102,7 @@ function applyServerRows(
     console.debug(`[CacheOps] Skipping remote apply for ${entityType}:${row.id}, has pending mutation`);
     return false;
   });
-  const references = new Map(live.map((row) => [row.id, referenceOf(row)]));
+  const references = new Map(live.map((row) => [row.id, findInCache<ItemData>(entityType, row.id)]));
 
   for (const { id } of tombstones) queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
   for (const row of live) {
@@ -142,43 +131,6 @@ function applyServerRows(
   }
 
   return live.filter((row) => !seen.has(row.id));
-}
-
-/** Fetches one entity through registered query defaults and applies it to caches, falling back to list invalidation. Stream org and tenant IDs pass through meta for path resolution. */
-export async function fetchEntityAndUpdateList(
-  entityType: ProductEntityType,
-  entityId: string,
-  keys: EntityQueryKeys,
-  action: 'create' | 'update',
-  organizationId: string,
-  tenantId: string | null,
-): Promise<void> {
-  // Don't even fetch for entities with pending mutations; applyServerRows re-checks on apply.
-  if (hasPendingMutationForEntity(entityType, entityId)) {
-    console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId}, has pending mutation`);
-    return;
-  }
-
-  // Read before the fetch, which writes the detail: without a list copy, the guard compares against the row as it was.
-  const cached = findInCache<ItemData>(entityType, entityId);
-
-  try {
-    const entity = await queryClient.query<ItemData>({
-      queryKey: keys.detail.byId(entityId),
-      staleTime: 0,
-      meta: { organizationId, tenantId: tenantId ?? undefined },
-    });
-    if (!entity) return;
-
-    // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
-    const listCopy = findInCache<ItemData>(entityType, (item) => item.id === entityId);
-    applyServerRows(entityType, [entity], keys, organizationId, () => listCopy ?? cached);
-    // The change says create: active filtered lists refetch to place the new row.
-    if (action === 'create') invalidateFilteredLists(entityType, keys.list.org(organizationId), [entity]);
-  } catch {
-    // Any failure (no query defaults for the type, a network error, a 403 or 404): every list of the type refetches.
-    invalidateEntityList(keys, 'all');
-  }
 }
 
 /** `overflow` and `unsupported` deliver no row and `error` may retry; the caller marks the lists of a range that came back short or not at all. */

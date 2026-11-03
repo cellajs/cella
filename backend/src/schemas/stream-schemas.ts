@@ -20,7 +20,9 @@ const streamChangeRowSchema = z.object({
     .number()
     .int()
     .nullable()
-    .describe('Org-sequence position (one order per organization, shared across product entity types); null on a delete'),
+    .describe(
+      'Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table',
+    ),
   stx: nullableStxBaseSchema,
   actorId: z
     .string()
