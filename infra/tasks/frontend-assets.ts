@@ -4,8 +4,8 @@ import { join, relative } from 'node:path';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 
 // The deploy command owns asset semantics (the SST StaticSite pattern): the
-// hashed bundle uploads before the rollout, entry files publish only after
-// version verification (deploy-run.publishEntryFiles).
+// hashed bundle uploads before the switches, entry files publish only after
+// them (deploy-run.publishEntryFiles).
 
 /** Entry files that must NOT upload with the bundle: they go live last. */
 export const ENTRY_FILE_NAMES = ['index.html', 'sw.js', 'sw.js.map', 'manifest.webmanifest'] as const;

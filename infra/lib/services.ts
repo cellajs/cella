@@ -21,7 +21,7 @@ export function enabledServices(serviceConfig: Record<string, EngineServiceEndpo
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);
 }
 
-/** A service list split by singleVM placement: `vm` owns VMs and IAM principals, `coHosted` folds into the host process, `collocated` runs as a container beside the host. Without singleVM everything is `vm`. */
+/** A service list split by singleVM placement: `vm` gets a machine of its own, `coHosted` folds into the host process, `collocated` runs as a container beside the host. Without singleVM everything is `vm`. */
 export interface PlacedServices {
   vm: readonly ServiceDefinition[];
   coHosted: readonly ServiceDefinition[];
@@ -29,8 +29,8 @@ export interface PlacedServices {
 }
 
 /**
- * Apply singleVM placement to any service list: the enabled set for compute, LB and key handing-over; the full registry for the identities.
- * The identities (applications, policies, conditions) follow the registry, so an `enabled` toggle changes compute only and needs no identity update.
+ * Apply singleVM placement to a service list: which services get a machine of their own, which fold into the host process and which run as
+ * a container beside it.
  */
 export function placeServices(definitions: readonly ServiceDefinition[], singleVM: boolean): PlacedServices {
   if (!singleVM) return { vm: definitions, coHosted: [], collocated: [] };
@@ -48,13 +48,13 @@ export function placeServices(definitions: readonly ServiceDefinition[], singleV
   return { vm, coHosted, collocated };
 }
 
-/** Enabled services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
+/** Enabled services that get a machine of their own. singleVM drops co-hosted workers and host-collocated containers from the machines while keeping their routing through the host target. */
 export function deployedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).vm;
 }
 
 /**
- * The service whose rollout pointer carries `slug`'s release: itself when it boots its own VM, the singleVM host when it runs in the host process or
+ * The service whose machine carries `slug`'s release: itself when it has a machine of its own, the singleVM host when it runs in the host process or
  * as a container beside it, undefined when it is disabled.
  */
 export function rolloutOwner(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean, slug: string): ServiceName | undefined {
@@ -65,12 +65,12 @@ export function rolloutOwner(serviceConfig: Record<string, EngineServiceEndpoint
   return onHost ? placed.vm.find((s) => s.primaryRollout)?.slug : undefined;
 }
 
-/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a stop-first one makes the host a singleton host. */
+/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host machine and a stop-first one makes the host a singleton host. */
 export function coHostedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).coHosted;
 }
 
-/** Enabled `placement: 'host'` containers the agent starts beside the host container under singleVM. Their LB pools follow the host's switch, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
+/** Enabled `placement: 'host'` containers the agent starts beside the host container under singleVM. Their LB pools follow the host's switch, and their secrets union onto the host machine. */
 export function collocatedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
@@ -87,7 +87,7 @@ export function carriedServices(
 }
 
 /**
- * True for the singleVM host when it runs a stop-first worker (the cdc replication slot, the cron maintainer). The host still cuts over start-first:
+ * True for the singleVM host when it runs a stop-first worker (the cdc replication slot, the cron maintainer). The host still switches start-first:
  * PostgreSQL lets one session hold the slot and pg-boss claims each cron period once, so the new machine's copies wait while the old one lives.
  * They take over once the old machine drained and went.
  */

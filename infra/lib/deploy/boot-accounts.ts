@@ -63,7 +63,7 @@ export interface ReleaseAccount {
 
 /**
  * Each service's newest account of release `sha` (may be abbreviated), reading at most `maxScan` of its newest accounts, as keys carry no
- * release. An account of another release is never taken for this one: on a failed rollout it reads like this deploy's boot and hides that
+ * release. An account of another release is never taken for this one: on a failed switch it reads like this deploy's boot and hides that
  * the new machine never reported. An account that cannot be read is skipped.
  */
 export async function releaseAccounts(reader: BootAccountReader, services: readonly string[], sha: string, maxScan = 8): Promise<ReleaseAccount[]> {

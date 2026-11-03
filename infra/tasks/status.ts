@@ -59,7 +59,7 @@ function isNoSuchBucket(err: unknown): boolean {
 
 /**
  * Build the probe session the providers draw on: resolved stack context, the key to probe with (the observer key, else the key the process
- * was started with), and one memoized best-effort read of the state bucket's presence and the control objects (the lease, the live record),
+ * was started with), and one memoized best-effort read of the state bucket's presence and the control records (the lease, the live record, the rotations),
  * shared by the state and live providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
@@ -285,9 +285,9 @@ export async function collectQuickFacts(
   await Promise.all([
     within(
       budgetMs,
-      controlProbe().catch(() => facts.unavailable.push('control objects')),
+      controlProbe().catch(() => facts.unavailable.push('control records')),
     ).then((v) => {
-      if (v === undefined && key && !facts.live && !facts.unavailable.includes('control objects')) facts.unavailable.push('control objects');
+      if (v === undefined && key && !facts.live && !facts.unavailable.includes('control records')) facts.unavailable.push('control records');
     }),
     within(
       budgetMs,
@@ -317,8 +317,8 @@ export function formatQuickFacts(
     lines.push(
       `${expired ? warningMark : pc.yellow('●')} Lock: ${expired ? 'expired lease of' : 'held by'} ${pc.cyan(facts.lock.owner)} (${facts.lock.operation}, since ${facts.lock.acquiredAt.slice(0, 19).replace('T', ' ')} UTC)`,
     );
-  } else if (opts.configured !== 'none' && (facts.live || !facts.unavailable.includes('control objects'))) {
-    // Without a key the control objects were never read, so the lease is unknown and gets no line.
+  } else if (opts.configured !== 'none' && (facts.live || !facts.unavailable.includes('control records'))) {
+    // Without a key the control records were never read, so the lease is unknown and gets no line.
     lines.push(`${pc.green('●')} Lock: free`);
   }
   if (facts.live) {

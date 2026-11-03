@@ -121,7 +121,7 @@ const frontendBucket = needs.spaBucket
     })
   : undefined;
 
-// Public read via bucket policy only: the Caddy frontend VMs proxy the S3 REST endpoint with their own index.html fallback, so no S3 website hosting config is needed.
+// Public read via bucket policy only: the frontend machines' Caddy proxies the S3 REST endpoint with their own index.html fallback, so no S3 website hosting config is needed.
 if (frontendBucket) {
   new scaleway.object.BucketPolicy('frontend-policy', {
     bucket: frontendBucket.name,
@@ -273,7 +273,7 @@ new scaleway.object.BucketPolicy(
       // Four statements of the ten Scaleway allows: machines and the builder write through links the deploy key signs, so no machine is named.
       Statement: pulumi.all([humanAccess(bootDiagBucket.name), observerApplicationId]).apply(([admin, observerId]) => [
         // The observer reads what machines wrote about their boot, every version of a run record, which it reads by the first, and the
-        // control objects (the live record, the lease, the rotations); never an env file, which holds a machine's secret values.
+        // control records (the live record, the lease, the rotations); never an env file, which holds a machine's secret values.
         ...(observerId
           ? [
               {
@@ -290,7 +290,7 @@ new scaleway.object.BucketPolicy(
               },
             ]
           : []),
-        // The release's archives, manifest and builder reports, the env files, the boot accounts, the run records and the control objects.
+        // The release's archives, manifest and builder reports, the env files, the boot accounts, the run records and the control records.
         deployAccess(bootDiagBucket.name, [RELEASES_PREFIX, ENV_PREFIX, BOOT_ACCOUNTS_PREFIX, RUNS_PREFIX, CONTROL_PREFIX]),
         // The deploy deletes a booted machine's env file with its version, which no other object of the bucket may lose.
         {

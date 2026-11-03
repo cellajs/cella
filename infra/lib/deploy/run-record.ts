@@ -87,7 +87,7 @@ export class RunRecorder {
     if (outcome === 'error') this.current.failedStep ??= title;
   }
 
-  /** Name the release's boot accounts, once the rollout failed. */
+  /** Name the release's boot accounts, once a switch failed. */
   boot(accounts: RunBootAccount[]): void {
     this.current.boot = accounts;
   }

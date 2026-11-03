@@ -7,7 +7,7 @@ import { leakableDsn } from '../../tests/helpers/fake-secrets';
 import { boot, waitForPrivateNetwork } from './boot';
 import type { ExecFn, ExecResult } from './exec';
 
-/** The VM's files: the plan cloud-init writes, plus whatever boot writes itself. */
+/** The machine's files: the plan cloud-init writes, plus whatever boot writes itself. */
 const files = vi.hoisted(() => new Map<string, string>());
 
 vi.mock('node:fs/promises', async (importOriginal) => {

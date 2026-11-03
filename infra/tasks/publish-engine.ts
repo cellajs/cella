@@ -96,7 +96,7 @@ function stageContext(root: string): string {
 
 /**
  * A Docker config of its own for the push, deleted after it: the registry's login with the operator's key inline, and the person's CLI
- * plugins (buildx). The key never reaches the person's credential store, and the daemon is the one their current context names.
+ * plugins (buildx). The key never reaches the person's own Docker config, and the daemon is the one their current context names.
  */
 function pushConfig(registry: string, secretKey: string): { dir: string; env: NodeJS.ProcessEnv } {
   const host =

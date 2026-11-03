@@ -11,7 +11,7 @@ export interface PostgresManagedConfig {
 /**
  * Managed Scaleway PostgreSQL store: an RDB instance with logical replication on, binding the runtime/admin/cdc DSNs and the instance CA to
  * their runtime secrets. Its three roles are fixed: `admin` has REPLICATION and owns the RLS tables (Scaleway grants no BYPASSRLS),
- * `runtime` is RLS-subject, and `cdc` reuses admin credentials for the replication slot. Pure at import time.
+ * `runtime` is RLS-subject, and `cdc` connects as the admin role for the replication slot. Pure at import time.
  */
 export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner {
   const consumers = config.secretConsumers;

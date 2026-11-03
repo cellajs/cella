@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 describe('readCustodiedPassphrase', () => {
-  it('reads the passphrase from the engine folder, which no VM may read', async () => {
+  it('reads the passphrase from the engine folder, which no machine reads', async () => {
     client.getSecretByName.mockResolvedValue({ id: 'secret-1' });
     client.accessLatestValue.mockResolvedValue('correct horse');
 

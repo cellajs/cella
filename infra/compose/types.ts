@@ -36,17 +36,17 @@ export interface ReleaseStep {
  * Members mirror {@link AppServiceConfig}, which documents them in full.
  */
 export interface ServiceMeta {
-  /** Canonical service identifier: compose profile, release SHA key, and VM key. May differ from the YAML block name for slot-based services. */
+  /** Canonical service identifier: compose profile, release SHA key, and machine role. May differ from the YAML block name for slot-based services. */
   slug: string;
-  /** Host/exposed port the reconciler probes for the identity health check. */
+  /** The service's port: its pools forward to it, and the agent probes its health path there. */
   healthPort: number;
-  /** Seconds the reconciler waits for the new container to pass its health check. */
+  /** As {@link AppServiceConfig.healthTimeoutSeconds}. */
   healthTimeoutSeconds: number;
-  /** HTTP status a healthy response returns, matched exactly by the LB health check. */
+  /** As {@link AppServiceConfig.healthExpectStatus}. */
   healthExpectStatus: number;
-  /** Whether a one-shot release companion runs before rolling this service (derived from `release`). */
+  /** Whether a one-shot release companion runs before this service starts on a new machine (derived from `release`). */
   runRelease: boolean;
-  /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
+  /** This service's role switches first, as the primary, and under singleVM its machine is the host. At most one enabled service may set this. */
   primaryRollout?: boolean;
   /** `start-first` for LB-exposed services; `stop-first` for the singleton-slot cdc worker. */
   replacementStrategy: ReplacementStrategy;
@@ -68,11 +68,11 @@ export interface ServiceMeta {
   dockerfile?: string;
   /** Build stage (`docker build --target`) within `dockerfile` for multi-target files. Omit for single-target files. */
   target?: string;
-  /** Under `appConfig.singleVM`, this service runs in-process on the host VM. */
+  /** Under `appConfig.singleVM`, this service runs in-process on the host machine. */
   coHosted?: boolean;
-  /** Under `appConfig.singleVM`, `'host'` runs this service as a second container on the host VM. */
+  /** Under `appConfig.singleVM`, `'host'` runs this service as a second container on the host machine. */
   placement?: ServicePlacement;
-  /** Per-service VM size. Required: every service declares its own box. */
+  /** Per-service machine type. Required: every service declares its own. */
   instanceType: PerMode<string>;
   /** This service signs S3 requests with the uploads key, which its env file carries. */
   s3Access?: boolean;
@@ -118,27 +118,27 @@ export interface ComposeFile {
 
 /**
  * Declarative service entry synthesized into Compose and deployment metadata.
- * The engine injects shared ingress, rollout, health, and environment machinery.
- * Entry presence determines whether the service belongs to the fleet.
+ * The engine injects the shared ports, health check, release companion and environment.
+ * Entry presence determines whether the service is deployed.
  */
 export interface AppServiceConfig {
   /** This service signs S3 requests (uploads, presigned URLs) with the uploads key: the upload buckets exist, and S3_ACCESS_KEY_ID/SECRET are in its env file. */
   s3Access?: boolean;
   /** Container image ref, e.g. `'${REGISTRY}/yjs:${YJS_TAG:-latest}'`. */
   image: string;
-  /** The single port this service listens on. Drives the Compose `expose:` and the reconciler's identity healthcheck. */
+  /** The single port this service listens on. Drives its Compose `ports:` and healthcheck, its pools' forward port and its agent port. */
   port: number;
-  /** Seconds the reconciler waits for a new container to answer the health path with the desired version before rolling back. Heavy images need a larger budget. */
+  /** Carried in the `x-service` metadata and the applied description; no deploy step reads it, as the switch waits `SERVING_TIMEOUT_SECONDS` (tasks/switch-machines.ts) for every machine. */
   healthTimeoutSeconds: number;
   /** Compose healthcheck `start_period`: grace window before failing probes count, roughly the container's cold-boot time. */
   startPeriod: string;
-  /** HTTP status this service's health endpoint returns when healthy, matched exactly by the LB health check. Defaults to 200; bodyless API responses use 204. */
+  /** HTTP status this service's health endpoint returns when healthy. Defaults to 200; bodyless API responses use 204. The agent passes any 2xx; a pool matches this exactly only while it still lists a machine the Pulumi program made. */
   healthExpectStatus?: number;
   /** `'start-first'` for LB-exposed services; `'stop-first'` for the singleton-slot cdc worker, which cannot overlap because only one process can consume its PostgreSQL replication slot. */
   replacementStrategy: ReplacementStrategy;
-  /** A one-shot release step run before rolling this service. Presence emits a companion container; see {@link ReleaseStep}. */
+  /** A one-shot release step run at a new machine's boot before this service starts. Presence emits a companion container; see {@link ReleaseStep}. */
   release?: ReleaseStep;
-  /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
+  /** This service's role switches first, as the primary, and under singleVM its machine is the host. At most one enabled service may set this. */
   primaryRollout?: boolean;
   /** How the old machine drains off the LB once its check turns red. Omit for the LB-less `stop-first` worker. */
   drainPolicy?: DrainPolicy;
@@ -166,7 +166,7 @@ export interface AppServiceConfig {
   /** Build stage (`docker build --target`) within `dockerfile` for multi-target files (the root Dockerfile). Omit for single-target files. */
   target?: string;
   /**
-   * Under `appConfig.singleVM`, co-host this service in-process on the host (backend) VM.
+   * Under `appConfig.singleVM`, co-host this service in-process on the host (backend) machine.
    * Set on the backend's worker subsystems (cdc, yjs, mcp), never on the host service or the SPA proxy. Ignored when `singleVM` is false.
    */
   coHosted?: boolean;
@@ -176,7 +176,7 @@ export interface AppServiceConfig {
    * machine. For services that cannot fold in-process (a different runtime than the host); ignored when `singleVM` is false.
    */
   placement?: ServicePlacement;
-  /** Per-service VM size. Required: every service declares its own box, there is no fleet-wide fallback. A single type for all modes, or a per-mode map. */
+  /** Per-service machine type. Required: every service declares its own, there is no shared fallback. A single type for all modes, or a per-mode map. */
   instanceType: PerMode<string>;
   /** Service-specific environment variables. Merged after the standard env so it can override it; do not repeat the engine-injected `NODE_ENV`/`APP_MODE`/`TZ`. */
   env?: Readonly<Record<string, string>>;

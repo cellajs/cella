@@ -141,7 +141,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const defaultBackend = backends.get(defaultService.slug)!;
 
   // A private, ACL-guarded frontend per `internalPort` service gives in-network consumers a stable address that follows every switch.
-  // The LB keeps its DHCP-assigned private-network IP: recreating the attachment severs LB-to-VM traffic.
+  // The LB keeps its DHCP-assigned private-network IP: recreating the attachment severs LB-to-machine traffic.
   // Resolved through the IPAM REST API because the provider's getIps invoke rejects these filters with a detail-less "invalid argument(s)".
   const lbPrivateIp = lb.id.apply(async (lbId) => {
     const bareLbId = lbId.split('/').at(-1) ?? lbId;

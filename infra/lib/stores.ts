@@ -24,7 +24,7 @@ export interface StoreSecretContribution {
   required: boolean;
   /** `'engine'` = the store binds a version; `'operator'` = the operator sets it. */
   valueSource: 'engine' | 'operator';
-  /** Services that receive the secret in their per-VM `.env.runtime`. */
+  /** Services that receive the secret in their machine's `.env.runtime`. */
   services: readonly string[];
   /** A database connection string the operator task ensure-database assembles for this role, never the program. */
   database?: { role: DatabaseRole };

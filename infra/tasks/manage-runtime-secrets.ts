@@ -248,12 +248,12 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     log: options.log ?? defaultLog,
   };
 
-  // Secret Manager writes an immutable version immediately, but services load it only at boot.
+  // Secret Manager writes an immutable version immediately, but a machine gets it only in the env file of the deploy that makes it.
   // The trailing newline separates this warning from the menu.
   ctx.log(
     `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
-      `${pc.dim("container metadata looking unchanged; check the secret's Versions list for the new revision. Running services pick")}\n` +
-      `${pc.dim('up the latest value only on the next VM boot or deploy.')}\n`,
+      `${pc.dim("container metadata looking unchanged; check the secret's Versions list for the new revision. Running machines keep")}\n` +
+      `${pc.dim('the values they booted with: the machines of the next deploy get the latest value.')}\n`,
   );
 
   // Loop the menu so an operator setting up a fresh environment can manage

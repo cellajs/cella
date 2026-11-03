@@ -48,7 +48,7 @@ describe('service registry: enabledServices', () => {
 });
 
 describe('service registry: singleVM (deployedServices / coHostedServices)', () => {
-  it('split-VM (singleVM off) deploys every enabled service on its own VM', () => {
+  it('split mode (singleVM off) deploys every enabled service on its own machine', () => {
     const deployed = deployedServices(allOn, false).map((s) => s.slug);
     expect(deployed).toEqual(enabledServices(allOn).map((s) => s.slug));
     expect(deployed).toContain('cdc');
@@ -56,7 +56,7 @@ describe('service registry: singleVM (deployedServices / coHostedServices)', () 
     expect(deployed).toContain('mcp');
   });
 
-  it('singleVM folds workers and collocates the SPA proxy: only the host VM remains', () => {
+  it('singleVM folds workers and collocates the SPA proxy: only the host machine remains', () => {
     const deployed = deployedServices(allOn, true).map((s) => s.slug);
     expect(deployed).toEqual(['backend']);
   });
@@ -88,7 +88,7 @@ describe('service registry: singleVM (deployedServices / coHostedServices)', () 
 });
 
 describe('rolloutOwner', () => {
-  it('names the service itself when it boots its own VM', () => {
+  it('names the service itself when it has a machine of its own', () => {
     expect(rolloutOwner(allOn, false, 'frontend')).toBe('frontend');
     expect(rolloutOwner(allOn, true, 'backend')).toBe('backend');
   });
@@ -113,7 +113,7 @@ describe('isSingletonHost', () => {
     expect(isSingletonHost(allOn, true, backend)).toBe(true);
   });
 
-  it('is false under split-VM, where cdc and jobs own their VMs', () => {
+  it('is false under split mode, where cdc and jobs have machines of their own', () => {
     expect(isSingletonHost(allOn, false, backend)).toBe(false);
   });
 
@@ -124,7 +124,7 @@ describe('isSingletonHost', () => {
 });
 
 describe('placeServices (placement is independent of enablement)', () => {
-  it('split-VM places every given service on its own VM and folds nothing', () => {
+  it('split mode places every given service on its own machine and folds nothing', () => {
     const placed = placeServices(services, false);
     expect(placed.vm).toEqual(services);
     expect(placed.coHosted).toEqual([]);

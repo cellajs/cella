@@ -33,7 +33,7 @@ export const appServices = defineServices({
     internalPort: 4005,
     // Attachment uploads and presigned URLs are signed with the uploads key, which the deploy puts in this service's env file.
     s3Access: true,
-    // Per-service VM size (required on every service).
+    // Per-service machine type (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: { APP_ORIGIN: '${APP_ORIGIN}' },
   },
@@ -46,7 +46,7 @@ export const appServices = defineServices({
     healthExpectStatus: 204,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    // CDC cuts over exclusively because it owns one PostgreSQL replication slot, and is reached only through the private network.
+    // CDC switches stop-first because it owns one PostgreSQL replication slot, and is reached only through the private network.
     replacementStrategy: 'stop-first',
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then holds the same slot.
@@ -74,7 +74,7 @@ export const appServices = defineServices({
     // The LB keeps these WebSocket connections open for up to an hour.
     lbWebsockets: true,
     instanceType: 'DEV1-S',
-    // singleVM folds it into the backend process; the LB still routes to the host VM.
+    // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
     env: { APP_ORIGIN: '${APP_ORIGIN}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}' },
     // Materialize calls go to the backend's internal listener through the LB's private internal frontend, never the public API.
@@ -96,7 +96,7 @@ export const appServices = defineServices({
     lbRoute: 'path',
     pathPrefix: '/mcp',
     instanceType: 'DEV1-S',
-    // singleVM folds it into the backend process; the LB still routes to the host VM.
+    // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
     env: { SERVICE: 'mcp', APP_ORIGIN: '${APP_ORIGIN}' },
   },
@@ -116,7 +116,7 @@ export const appServices = defineServices({
     lbRoute: 'path',
     pathPrefix: '/oauth',
     instanceType: 'DEV1-S',
-    // singleVM folds it into the backend process; the LB still routes to the host VM.
+    // singleVM folds it into the backend process; the LB still routes to the host machine.
     coHosted: true,
     env: { SERVICE: 'oauth', APP_ORIGIN: '${APP_ORIGIN}' },
   },
@@ -151,7 +151,7 @@ export const appServices = defineServices({
     // The SPA proxy reads no app secret, so it gets no standard env and no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
-    // singleVM runs the Caddy container on the host VM, since a non-Node runtime cannot fold in-process; its LB pool follows the host's switch.
+    // singleVM runs the Caddy container on the host machine, since a non-Node runtime cannot fold in-process; its LB pool follows the host's switch.
     placement: 'host',
     instanceType: 'DEV1-S',
     env: { FRONTEND_CSP: '${FRONTEND_CSP}', ORIGIN_HOST: '${ORIGIN_HOST}' },

@@ -133,7 +133,7 @@ const ROLE_LABELS: Record<PrincipalRole, string> = {
   admin: 'admin application',
   operator: 'operator application',
   observer: 'observer application',
-  'vm-service': 'VM service application',
+  'vm-service': 'retired machine application',
   owner: 'organization Owner',
   member: 'member user',
   application: 'application',
@@ -204,6 +204,6 @@ export async function assertIamManager(opts: {
     if (rules.some((rule) => (rule.permission_set_names ?? []).includes('IAMManager'))) return { desc, role };
   }
   throw new Error(
-    `${formatKeyLine(desc, role)} holds no IAMManager grant, so it cannot reconcile VM policies. Use ${OWNER_KEY_HOWTO}, or grant the application ProjectManager + IAMManager.`,
+    `${formatKeyLine(desc, role)} holds no IAMManager grant, so it cannot write the environment's applications, policies and keys. Use ${OWNER_KEY_HOWTO}, or grant the application ProjectManager + IAMManager.`,
   );
 }

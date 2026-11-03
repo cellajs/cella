@@ -7,7 +7,7 @@ export interface UploadBootDiagnosticsOptions {
   service: string;
   releaseSha: string;
   bootRc: number;
-  /** The boot phase that threw, and its error: the boot log is usually not mounted into the runner, so this is what names a failed boot. */
+  /** The boot phase that threw, and its error: they name a failed boot ahead of the log tail. */
   failedPhase?: string;
   failure?: string;
   logFile: string;
@@ -20,7 +20,7 @@ export interface UploadBootDiagnosticsOptions {
 // Mirrors the cloud-init log scrub (lib/deploy/machine-user-data.ts) so both diagnostic channels drop the same secret-bearing lines.
 const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|X-Amz-Signature/i;
 
-/** Replace secret-bearing lines before a log leaves the VM, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
+/** Replace secret-bearing lines before a log leaves the machine, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
 export function scrubSecretLines(text: string): string {
   return text
     .split('\n')
@@ -28,11 +28,11 @@ export function scrubSecretLines(text: string): string {
     .join('\n');
 }
 
-/** The boot log's tail that travels in a bundle: it accumulates every boot of the VM, and the newest lines name the failure. */
+/** The boot log's tail that travels in the boot account: it accumulates every boot of the machine, and the newest lines name the failure. */
 const bootLogTailChars = 256 * 1024;
 
 /**
- * Read the VM's boot log, mounted read-only into the runner. The runner's own output is still being appended to it, so this takes
+ * Read the machine's boot log, mounted read-only into the agent's container. The agent's own output is still being appended to it, so this takes
  * what is there now: one read, never a wait for the end.
  */
 async function readBootLogTail(logFile: string): Promise<string> {

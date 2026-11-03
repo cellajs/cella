@@ -416,14 +416,14 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   smoke: async (argv) => (await import('./smoke')).main(argv),
 };
 
-/** The deploy key's S3 client on the environment's diagnostics bucket, which holds the records, the control objects and the release. */
+/** The deploy key's S3 client on the environment's diagnostics bucket, which holds the run records, the control records and the release. */
 async function diagnosticsClient(region: string) {
   const { projectAccessKey } = await import('../lib/scaleway/s3-client');
   const { accessKey, secretKey } = deployS3Key();
   return makeS3Client(region, projectAccessKey(accessKey, process.env.SCW_DEFAULT_PROJECT_ID ?? ''), secretKey);
 }
 
-/** The same key on the control objects (the lease, the live record, the rotations). */
+/** The same key on the control records (the lease, the live record, the rotations). */
 async function controlClient(region: string) {
   const [{ projectAccessKey }, { makeControlClient }] = await Promise.all([
     import('../lib/scaleway/s3-client'),

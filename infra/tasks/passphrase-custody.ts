@@ -6,8 +6,8 @@ import { verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 export const PASSPHRASE_SECRET_NAME = 'pulumi-passphrase';
 
 /**
- * Secret Manager container name for the stack's `encryptionsalt`, kept beside the passphrase it verifies against. The main job writes it into
- * the target's stack file, so a deploy of any commit, an older release's too, decrypts the state whatever salt that commit's file holds.
+ * Secret Manager container name for the stack's `encryptionsalt`, kept beside the passphrase it verifies against. The CLI writes it when it
+ * stores the passphrase or a session reads it; no run of the main job reads it, as a deploy plans no stack.
  */
 export const ENCRYPTION_SALT_SECRET_NAME = 'pulumi-encryption-salt';
 
@@ -25,8 +25,8 @@ export interface PassphraseCustodyOptions {
 }
 
 /**
- * The Pulumi passphrase as Secret Manager holds it, in the engine folder: outside every VM condition, readable by the operator key and an
- * Owner API key; the main job reads it by reference. Undefined when the stack has none stored yet.
+ * The Pulumi passphrase as Secret Manager holds it, in the engine folder: the CLI reads it with the operator key or an Owner API key, and
+ * no machine and no run of the main job reads it. Undefined when the stack has none stored yet.
  */
 export async function readCustodiedPassphrase(opts: PassphraseCustodyOptions): Promise<string | undefined> {
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
@@ -64,7 +64,7 @@ async function storeSalt(secrets: ReturnType<typeof createSecretManagerClient>, 
   const container = await secrets.ensureSecret({
     name: ENCRYPTION_SALT_SECRET_NAME,
     path: ENGINE_FOLDER,
-    description: "The stack's encryptionsalt, beside its passphrase: the main job writes it into the target's stack file",
+    description: "The stack's encryptionsalt, beside the passphrase it verifies against",
   });
   await secrets.putSecretValue({ secretId: container.id, value: salt, description: 'Stored by infra cli', disablePrevious: true });
 }

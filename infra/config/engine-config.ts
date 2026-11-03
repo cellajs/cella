@@ -46,7 +46,7 @@ const SLUG_RE = /^[a-z][a-z0-9-]*$/;
 function assertValidSlug(slug: string): void {
   if (!SLUG_RE.test(slug)) {
     throw new Error(
-      `engine-config: slug '${slug}' must be lowercase kebab-case (letters, digits, hyphens; leading letter). It namespaces VM paths and shell markers.`,
+      `engine-config: slug '${slug}' must be lowercase kebab-case (letters, digits, hyphens; leading letter). It namespaces machine paths and shell markers.`,
     );
   }
 }

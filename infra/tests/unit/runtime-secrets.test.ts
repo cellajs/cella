@@ -44,13 +44,13 @@ describe('runtime secret registry', () => {
     }
   });
 
-  it('assigns every runtime secret to at least one known consumer VM', () => {
+  it('assigns every runtime secret to at least one known consumer service', () => {
     const knownConsumers = new Set<string>(runtimeSecretConsumers);
 
     for (const secret of runtimeSecrets) {
-      expect(secret.services.length, `${secret.id} must target at least one VM`).toBeGreaterThan(0);
+      expect(secret.services.length, `${secret.id} must target at least one service`).toBeGreaterThan(0);
       for (const consumer of secret.services) {
-        expect(knownConsumers.has(consumer), `${secret.id} targets unknown VM ${consumer}`).toBe(true);
+        expect(knownConsumers.has(consumer), `${secret.id} targets unknown service ${consumer}`).toBe(true);
       }
     }
   });
@@ -63,7 +63,7 @@ describe('runtime secret registry', () => {
     }
   });
 
-  it('assigns an exact, minimal runtime secret set per VM consumer', () => {
+  it('assigns an exact, minimal runtime secret set per consumer service', () => {
     expect(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar)).toEqual([
       'DATABASE_CDC_URL',
       'DATABASE_SSL_CA',
@@ -96,7 +96,7 @@ describe('runtime secret registry', () => {
     ]);
   });
 
-  it('does not leak service-exclusive secrets across VM boundaries', () => {
+  it('does not leak service-exclusive secrets across machine boundaries', () => {
     const cdcVars = new Set(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar));
     const yjsVars = new Set(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar));
     const backendVars = new Set(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar));
@@ -134,8 +134,8 @@ describe('runtime secret schema alignment', () => {
     }
   });
 
-  // The backend image serves each of these as its own VM under split-VM; the SERVICE its env names picks the process, and
-  // a release companion runs one more process (its own SERVICE) on the same VM with the same secrets.
+  // The backend image serves each of these on a machine of its own in split mode; the SERVICE its env names picks the process, and
+  // a release companion runs one more process (its own SERVICE) on the same machine with the same secrets.
   const backendImageModes = runtimeSecretConsumers
     .filter((slug) => {
       const cfg = appServices[slug];
@@ -148,19 +148,19 @@ describe('runtime secret schema alignment', () => {
       return [slug, [env.SERVICE ?? 'api', ...(releaseEnv.SERVICE ? [releaseEnv.SERVICE] : [])]] as const;
     });
 
-  it('delivers a mode-bound secret to exactly the backend-image VMs whose processes read it', () => {
+  it('delivers a mode-bound secret to exactly the backend-image machines whose processes read it', () => {
     expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth', 'jobs']);
     for (const [service, vmModes] of backendImageModes) {
       const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
       for (const [envVar, modes] of Object.entries(serviceSecrets)) {
         const reads = modes.some((readingMode) => vmModes.includes(readingMode));
-        // Missing, a process's env schema refuses to boot; extra, the VM holds a key none of its processes reads.
+        // Missing, a process's env schema refuses to boot; extra, the machine holds a key none of its processes reads.
         expect(delivered.has(envVar), `${service} (SERVICE=${vmModes.join('+')}) and ${envVar}`).toBe(reads);
       }
     }
   });
 
-  it('delivers the secrets every backend mode requires to each backend-image VM', () => {
+  it('delivers the secrets every backend mode requires to each backend-image machine', () => {
     for (const [service] of backendImageModes) {
       const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
       for (const envVar of ['DATABASE_URL', 'COOKIE_SECRET', 'DATA_ENCRYPTION_KEY']) {

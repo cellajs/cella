@@ -50,7 +50,7 @@ export interface LockFacts {
   stale?: boolean;
 }
 
-/** Facts shared by the state, live and inventory providers (one read): the state bucket's presence and the control objects. */
+/** Facts shared by the state, live and inventory providers (one read): the state bucket's presence and the control records. */
 export interface ScalewayFacts {
   /** undefined = not checked (no creds or error). */
   stateBucketExists?: boolean;

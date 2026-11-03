@@ -51,7 +51,7 @@ export interface HttpResponse {
 /** Performs a single HTTP GET. Injectable so the runner can be unit-tested. */
 export type HttpGet = (url: string) => Promise<HttpResponse>;
 
-/** One enabled rollout service as deploy-env's enabled_services_json lists it. */
+/** One enabled service as deploy-env's enabled_services_json lists it. */
 export interface SmokeService {
   service: string;
   health_url: string;
@@ -78,10 +78,10 @@ export function createFetchGet(timeoutMs: number): HttpGet {
 export interface SmokeOptions {
   /** Public URL of the default-route (browser) service; absent for a frontend-less registry, which skips the SPA and security-header checks. */
   defaultRouteUrl?: string;
-  /** Public URL of the primary-rollout service, which serves the aggregate /health?depth=full and /openapi.json. */
+  /** Public URL of the primary service, which serves the aggregate /health?depth=full and /openapi.json. */
   primaryUrl: string;
   expectedSha: string;
-  /** Enabled rollout services; public services carry health_url, internal-only services have ''. */
+  /** Enabled services; public services carry health_url, internal-only services have ''. */
   services?: readonly SmokeService[];
   /**
    * Hashed entry asset (e.g. /assets/index-abc123.js) from the freshly built local bundle.
@@ -180,7 +180,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       return verdict(missing.length === 0, `missing: ${missing.join(', ')}`);
     });
 
-  // Retry aggregate health across one worker reconnect interval after rollout: the first clean read passes and the
+  // Retry aggregate health across one worker reconnect interval after the switches: the first clean read passes and the
   // budget absorbs transient issues. What is still wrong when it runs out decides the verdict through
   // componentSeverity: only-degraded warns (slow, not down), anything unhealthy fails.
   await check('primary components healthy', async () => {

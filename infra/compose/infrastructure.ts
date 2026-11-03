@@ -77,7 +77,7 @@ function validateAgentPorts(services: AppServices): void {
 /** Standard environment injected into every app service unless opted out. */
 const STANDARD_ENV = { NODE_ENV: 'production', APP_MODE: '${APP_MODE:-production}', TZ: 'UTC' } as const;
 
-/** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the deploy's health gate waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace VM image cannot guarantee. */
+/** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the agent's boot waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace machine image cannot guarantee. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
   return {
     test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}${healthContract.path}`],
@@ -135,7 +135,7 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
     // The app starts once its release companion (migrations) exited 0: one `compose up --wait` runs both, and a failed migration fails it.
     ...(cfg.release ? { depends_on: { [releaseServiceName(slug)]: { condition: 'service_completed_successfully' as const } } } : {}),
     restart: 'unless-stopped',
-    // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
+    // The pools forward to the host ports directly, with no ingress hop on the machine; their check asks the machine's agent, which probes the app's own health path.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
     // SIGTERM drain window for in-flight requests.
     stop_grace_period: '30s',
@@ -219,7 +219,7 @@ export function assembleCompose(appServices: AppServices, options: { processIden
 }
 
 /**
- * Fold co-hosted service environments into the single-VM host block, which supplies their placeholders because worker blocks do not start.
+ * Fold co-hosted service environments into the singleVM host block, which supplies their placeholders because worker blocks do not start.
  * Equal collisions are accepted, conflicting values fail synthesis, and process-identity keys are skipped (folded workers boot under the host's identity).
  */
 function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>, processIdentityEnv: ReadonlySet<string>): void {
@@ -245,7 +245,7 @@ function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, Com
 }
 
 /**
- * Publish co-hosted worker ports on the single-VM host for load-balancer access.
+ * Publish co-hosted worker ports on the singleVM host for load-balancer access.
  * Split mode keeps them in the shared Compose output, where nothing binds them and network policy keeps them unreachable.
  */
 function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {

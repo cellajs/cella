@@ -42,7 +42,7 @@ describe('control-store keys', () => {
     expect(stateBucket('cella')).toBe('cella-pulumi-state');
   });
 
-  it("keeps an environment's control objects in one folder, from a full or bare stack name", () => {
+  it("keeps an environment's control records in one folder, from a full or bare stack name", () => {
     expect(lockKey('organization/infra/production')).toBe('control/production/lock.json');
     expect(rotationsKey('staging')).toBe('control/staging/rotations.json');
   });

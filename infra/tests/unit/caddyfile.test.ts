@@ -11,7 +11,7 @@ const dockerfile = readFileSync(resolve(__dirname, '../../caddy/Dockerfile'), 'u
 // Derived from the canonical fixture so the negative assertion below asserts "no bucket is hardcoded", not "not this slug".
 const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket;
 
-// Pins the Caddyfile contract the rollout and smoke tests depend on.
+// Pins the Caddyfile contract the agent's check and the smoke tests depend on.
 /** The value the global header block sets for a response header, or undefined when the block does not set it. */
 const headerValue = (name: string): string | undefined => caddyfile.match(new RegExp(`^\\s*${name}\\s+"([^"]*)"`, 'm'))?.[1];
 
@@ -37,7 +37,7 @@ describe('frontend Caddyfile', () => {
   });
 
   it('exposes X-App-Version bound to {$RELEASE_SHA} env', () => {
-    // The rollout verifier asserts X-App-Version == the target commit; breaking it hangs every deploy for 5 minutes before failing.
+    // The agent passes the check only when X-App-Version is the machine's release; breaking it fails every switch at its serving wait.
     expect(caddyfile).toMatch(/X-App-Version\s+"\{\$RELEASE_SHA\}"/);
   });
 
@@ -45,7 +45,7 @@ describe('frontend Caddyfile', () => {
     expect(headerValue('Content-Security-Policy')).toBe('{$FRONTEND_CSP}');
   });
 
-  it('serves /health locally (LB + CI rollout verification depend on it)', () => {
+  it("serves /health locally (the agent's check depends on it)", () => {
     expect(caddyfile).toMatch(/handle\s+\/health\s*\{/);
     expect(caddyfile).toMatch(/respond\s+"ok"\s+200/);
   });

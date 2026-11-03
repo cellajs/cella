@@ -125,7 +125,7 @@ export async function hardenStateBucket(
 }
 
 /**
- * Post-condition: the bucket this key sees must live in the expected project, catching a pre-existing bucket in the wrong project that the key-only preflight cannot.
+ * Post-condition: the bucket this key sees must live in the expected project, catching a pre-existing bucket in the wrong project, which the bucket's HEAD alone cannot tell.
  * ListBuckets' Owner ID is the project the key operates in, and the bucket must appear in the listing.
  */
 export async function assertBucketProject(s3: S3Client, bucketName: string, expectedProjectId: string): Promise<void> {
@@ -133,7 +133,7 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
   const ownerId = listing.Owner?.ID ?? '';
   if (!ownerId.startsWith(expectedProjectId)) {
     throw new Error(
-      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}': the key's preferred project points elsewhere. See the remedy in the preflight error above (IAM → API keys → preferred project).`,
+      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}': the key's preferred project points elsewhere. Point it at the app's project (IAM → API keys → preferred project), or check the bucket's project in the console.`,
     );
   }
   if (!listing.Buckets?.some((bucket) => bucket.Name === bucketName)) {

@@ -78,7 +78,7 @@ export function installKeylessMocks(
   return resources;
 }
 
-/** Wait until no new resource has registered for a run of event-loop turns: a VM registers only after its cloud-init's async output chain settles. */
+/** Wait until no new resource has registered for a run of event-loop turns: a resource made inside another's output chain registers only after that chain settles. */
 export async function settleRender(resources: readonly unknown[]): Promise<void> {
   let quiet = 0;
   for (let seen = resources.length; quiet < 25; quiet++) {

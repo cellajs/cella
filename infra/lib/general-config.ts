@@ -5,7 +5,7 @@ export type PerMode<T> = T | Partial<Record<Environment, T>>;
 
 export interface GeneralConfig {
   compute: {
-    /** Baked compute image. A stable NAME resolves to the newest matching Scaleway image at deploy time; a literal UUID pins a specific image. */
+    /** The machines' image, which nothing is baked into: a stable NAME resolves to the newest matching Scaleway image when a deploy makes a machine; a literal UUID pins a specific image. */
     image: string;
   };
   database: {

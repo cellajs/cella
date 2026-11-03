@@ -3,7 +3,7 @@ import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
 /**
- * The control objects of an environment, under `control/<mode>/` of its boot-diagnostics bucket: the live record (lib/deploy/live-record.ts),
+ * The control records of an environment, under `control/<mode>/` of its boot-diagnostics bucket: the live record (lib/deploy/live-record.ts),
  * the lease, the rotations and the applied engine an apply publishes (lib/deploy/applied-engine.ts). The observer reads them all, and the
  * Pulumi program reads the applied engine alone.
  */
@@ -108,10 +108,10 @@ export function stateBucket(slug: string): string {
 /** The mode a full Pulumi stack name (`organization/infra/production`) or a bare mode names. */
 const modeOf = (stack: string): string => stack.split('/').pop() ?? stack;
 
-/** Where every environment's control objects live in its boot-diagnostics bucket. */
+/** Where every environment's control records live in its boot-diagnostics bucket. */
 export const CONTROL_PREFIX = 'control/';
 
-/** The folder of an environment's control objects. */
+/** The folder of an environment's control records. */
 export const controlPrefix = (stack: string): string => `${CONTROL_PREFIX}${modeOf(stack)}/`;
 
 /** The lease one deploy or operator action holds at a time. */

@@ -25,7 +25,7 @@ import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 const LIST_LENGTH = 10;
 const LOG_TAIL = 40;
 
-/** The machines' boot accounts a failed rollout's record names: a failed one's error and the end of its log, a missing one said plainly. */
+/** The machines' boot accounts a failed switch's record names: a failed one's error and the end of its log, a missing one said plainly. */
 async function bootLines(record: RunRecord, store: RunStore): Promise<string[]> {
   const lines: string[] = [];
   for (const entry of record.boot ?? []) {

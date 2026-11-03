@@ -33,7 +33,7 @@ export interface OperatorApplyOptions {
   /** Operation name recorded in the lease (e.g. 'apply', 'expose-db'). */
   operation: string;
   /**
-   * Config mutation applied after the lock is held and rollout config is reconciled, right before `pulumi up`.
+   * Config mutation applied after the lease is held, right before `pulumi up`.
    * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config. A throw ends the run before the `up`.
    */
   prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined | Promise<string | undefined>;

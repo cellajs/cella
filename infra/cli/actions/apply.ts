@@ -59,7 +59,7 @@ export async function runApply(context: InfraContext): Promise<void> {
     `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim(`If it is interrupted, run "${actionLabel('apply')}" again to converge.`)}`,
   );
 
-  // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
+  // An established stack recovers from an interruption by running the apply again; the first-provisioning marker is the setup's alone.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=1) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === '1';
   const { completed, verified, declined } = await runOperatorApply(context, {

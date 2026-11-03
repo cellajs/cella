@@ -53,9 +53,9 @@ describe('Show runs', () => {
     const failed = record('20261015T010000Z-bbbbbbbbbb', {
       startedAt: '2026-10-15T01:00:00.000Z',
       outcome: 'failed',
-      failedStep: 'Waved rollout',
+      failedStep: 'Switch machines',
       error: 'a switch failed',
-      steps: [{ title: 'Waved rollout', seconds: 30, outcome: 'error' }],
+      steps: [{ title: 'Switch machines', seconds: 30, outcome: 'error' }],
       boot: [{ service: 'backend', key: 'backend-20261015T010300Z-boot.log', failed: true }, { service: 'cdc' }],
     });
     const jobRuns = [
@@ -78,7 +78,7 @@ describe('Show runs', () => {
     expect(lines.filter((line) => line.startsWith('  2026-10-15'))).toHaveLength(3);
     expect(lines[0]).toBe('  2026-10-15 02:00  staging  cccccccccc  failed (exit 1), no record');
     const detail = lines.join('\n');
-    expect(detail).toContain('failed at "Waved rollout"');
+    expect(detail).toContain('failed at "Switch machines"');
     expect(detail).toContain('migrate exited 1');
     expect(detail).toContain('cdc: no account of this release');
     expect(detail).toContain('line 2');
