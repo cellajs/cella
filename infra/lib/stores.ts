@@ -42,7 +42,7 @@ export interface ProvisionContext {
   region: string;
   zone: string;
   isProduction: boolean;
-  /** The database size from `config/general.config.ts`, which managed stores consume. */
+  /** The database size from `config/general.config.ts`, resolved for the environment, which managed stores consume. */
   sizing: { dbNodeType: string; dbVolumeSize: number };
   /** The deployment's private network, where managed stores expose endpoints. */
   privateNetworkId: pulumi.Input<string>;

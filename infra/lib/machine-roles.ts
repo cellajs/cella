@@ -2,6 +2,7 @@ import type { ServiceName } from '../compose/compose';
 import { AGENT_PORT_OFFSET } from '../compose/infrastructure';
 import type { ReplacementStrategy } from '../compose/types';
 import type { EngineConfig } from '../config/engine-config';
+import type { PerMode } from './general-config';
 import { carriedServices, deployedServices, type ServiceDefinition, services } from './services';
 import type { Environment } from './stack/bootstrap-stack-state';
 
@@ -104,7 +105,7 @@ export function slotOfMachine(resource: (suffix: string) => string, role: string
 
 /** A role's machine type, from its registry entry. */
 export function instanceTypeOf(role: Pick<ServiceDefinition, 'slug' | 'instanceType'>, mode: Environment): string {
-  const size = role.instanceType;
+  const size: PerMode<string> = role.instanceType;
   const resolved = typeof size === 'string' ? size : size[mode];
   if (resolved === undefined) throw new Error(`Service '${role.slug}' has no instanceType for mode '${mode}' in config/services.config.ts.`);
   return resolved;

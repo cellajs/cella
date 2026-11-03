@@ -4,9 +4,10 @@ import { generalConfig } from '../config/general.config';
 import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
+import { resolvePerMode } from '../lib/general-config';
 import { appStorageNeeds, services } from '../lib/services';
 import { CONTROL_PREFIX } from '../lib/stack/control-store';
-import { naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
+import { deployMode, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
 // The app's buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
@@ -89,7 +90,7 @@ const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
 const kept = { retainOnDelete: true };
 
 // Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
-const assetRetentionDays = generalConfig.assets.retentionDays;
+const assetRetentionDays = resolvePerMode(generalConfig.assets.retentionDays, deployMode);
 
 // Frontend static files bucket, only when a default-route service exists to serve it.
 
