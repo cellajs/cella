@@ -42,9 +42,9 @@ async function startMaintainer() {
 }
 
 /**
- * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, and the
- * jobs and queues modules declare. Its own process (`SERVICE=jobs`) on
- * its configured port, or folded into the API under `singleVM`, where the API's `/health` already
+ * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, the jobs modules declare,
+ * and the declared queues that name a handler; a queue without one is worked elsewhere. Its own process
+ * (`SERVICE=jobs`) on its configured port, or folded into the API under `singleVM`, where the API's `/health` already
  * carries the jobs component and its shutdown stops the store.
  */
 export async function startJobsWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {

@@ -333,7 +333,9 @@ export async function stampEmailed(ctx: DbContext, { ids }: NotificationIdsOpts)
 
 /**
  * Rows a digest may still carry: unread, never mailed, of an organization the recipient still belongs to, created in
- * `[since, before)`. `before` is the run's start, so a row written during a run falls in the recipient's next window.
+ * `[since, before)`. `before` is the run's start and `createdAt` the start of the insert's transaction, so a row whose
+ * insert began during a run falls in the recipient's next window, and one that began before the run and committed after
+ * this read falls in neither.
  */
 const undigestedRows = (since: SQL | string, before: string) => sql`${notificationsTable.readAt} is null
   and ${notificationsTable.emailedAt} is null

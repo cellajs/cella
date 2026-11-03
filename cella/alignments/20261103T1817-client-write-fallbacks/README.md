@@ -36,7 +36,7 @@ No script: manual. Each step is a small edit in an app-owned file, and the deadl
 
 ## Verify
 
-The grep must print nothing outside `frontend/src/query/offline/mutation-variables.ts` (the ladder stays) and the relay's materialize path.
+The grep must print nothing outside `frontend/src/query/offline/mutation-variables.ts` and the template's tests of it (`query/offline/tests/mutation-variables.test.ts`, `query/tests/persister.test.ts`), where the ladder stays, and the relay's materialize path.
 
 ```sh
 grep -rnE 'serverOrigin|effectiveStx|registerVariablesVersion|addMutationRegistrar|initMutationDefaults' backend/src backend/tests frontend/src

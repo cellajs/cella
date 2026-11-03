@@ -86,23 +86,23 @@ Failure handling has three levels. The core records a change once. Whatever fail
 
 The slot is the only durable buffer, and it advances only after a flush committed. Delivery is **at least once**, recording is **once**: a change delivered again changes no activity, counter or sequence value, and its message goes out again with the sequence value its row already holds.
 
-A failure reports degraded at first, so a deploy that brings a change the worker can never process warns in its smoke step and stays deployed, and after a minute clients are told the worker is away. A worker that does not get past a failure for a while reports unhealthy, its log naming the position and the error, while live sync pauses and the REST API goes on. A fix ends it, and so does a dropped slot: by an operator, or by the worker once the WAL behind it reaches its bound, whatever failed, a flush that keeps timing out on a locked database or a send lost while the API was away included.
+A failure reports degraded at first, so a deploy that brings a change the worker can never process warns in its smoke step and stays deployed, and after a minute clients are told the worker is away. A worker that does not get past a failure for a while reports unhealthy, its log naming the position and the error, while live sync pauses and the REST API goes on. A fix ends it, and so does a dropped slot: by an operator, or by the worker once the WAL behind it reaches its bound, whatever failed, a flush that keeps timing out on a locked database or a send lost while the API was away included. The while is counted per process: a worker that crash-loops starts it over at every start, so it never drops its slot, and only its WAL lag in the health answer shows it.
 
-Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)): here the mid level is reading again, the lost case a rebuild. Two failures hold a second answer at the mid level: a failed slot lookup or drop, and a failed read of the sync state at start.
+Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)). Two failures hold a second answer at the mid level, both open findings: a failed slot lookup or drop, and a failed read of the sync state at start.
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
-| A flush fails, whatever the cause: a connection, a lock or statement timeout, a constraint, a send lost when the API left | | The service stops (`onFailed`) and the subscription loop reads again after a growing delay (`subscribeWithReconnect`) | Still failing at the WAL bound: the slot is dropped (`ensureReplicationSlot`) and the books rebuilt |
-| A change can never be processed: refused, unparseable, or a source transaction over the limit | | The same read again, held there and unhealthy | The same drop at the WAL bound |
+| A flush fails, whatever the cause: a connection, a lock or statement timeout, a constraint, a send lost when the API left | | The service stops (`onFailed`) and the subscription loop reads again after a growing delay (`subscribeWithReconnect`) | Still failing at the WAL bound: the slot is dropped (`ensureReplicationSlot`) and the books rebuilt; a restart starts the failure over (`recordFailure`), so a worker that crash-loops never drops it |
+| A change can never be processed: refused, unparseable, or a source transaction over the limit | | The same read again, held there, and unhealthy after a while (`stalled`) | The same drop at the WAL bound |
 | A subscription attempt fails: another worker holds the slot during a deploy, the connection is refused, the slot cannot be made, or it was made by hand before its publication | | The loop records the failure and tries again after the same delay (`recordFailure`) | The same drop at the WAL bound |
-| The slot lookup or the drop at the WAL bound fails | | The attempt subscribes without the check (`ensureReplicationSlot` answers `unknown`), and reads again when the subscribe fails | |
+| The slot lookup or the drop at the WAL bound fails | | The attempt subscribes without the check (`ensureReplicationSlot` answers `unknown`). Open finding, a second answer: a failed subscribe reads again | |
 | The setup does not match: the publication, its row filters, replica identity, `wal_level` or the role | The check before every subscription refuses to read (`checkReplicationSetup`) | Read again until a person reruns the CDC migration; the WAL bound is not checked meanwhile | |
-| A draft would reach the worker | The publication's row filter, which the setup check compares | | |
-| The slot is missing or Postgres invalidated it | | | A new slot (`ensureReplicationSlot`), then a rebuild (`settleLostCases`) |
+| A draft would reach the worker | The publication's row filter, which the setup check compares (`checkReplicationSetup`) | | |
+| The slot is missing or Postgres invalidated it | | | A new slot (`ensureReplicationSlot`), then a rebuild while the database holds activities (`settleLostCases`): a slot lost after a quiet spell longer than activity retention is made without one, and the daily verify finds the books wrong |
 | The API is away | Nothing is recorded and the stream is held until the socket is back (`whenConnected`) | A send lost as the API left fails its flush, which is read again | |
 | A change is delivered again | An activity's id comes from its commit position, so recording inserts and counts nothing twice (`recordFlush`) | | |
 | A recount races the stream | The fence counts a change that commits during the recount once (`fence`) | | |
-| The books are wrong | | | The daily verify finds it (`verifyBooks`) and a rebuild replaces them (`rebuildBooks`) |
+| The books are wrong, as after a `TRUNCATE` of a tracked table, which the worker reads and ignores | | | The daily verify finds it (`verifyBooks`) and a rebuild replaces them (`rebuildBooks`) |
 | The counters are emptied | | | Found before the stream is read, then rebuilt (`settleLostCases`) |
 | Rows were written before a slot existed, as by a seed while the worker starts | | | The seed asks for a rebuild (`requestBooks`) |
 | The worker stops inside a rebuild | | | The fence it stored makes the next start rebuild (`rebuildWasInterrupted`) |
@@ -112,13 +112,13 @@ Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#fail
 | A product row names no organization | A delete is counted under its home channel (`resolveChannelKey`) | A create or update fails its flush (`organizationOf`) | |
 | A channel delete cascades to its rows | The cascaded deletes are dropped and counted on the channel's delete (`isCascadedDelete`); clients hear `channel.deleted` | | |
 | The worker's own write comes back through the WAL, or an update changes no field | Changed fields come from the WAL without `stx`, `seq` and `path`, and an update of only `updatedAt` records nothing (`parseUpdate`); the embedding strip is recognized (`isReferenceCleanupWrite`) | | |
-| An embedded row is deleted while hosts reference it | Its id is stripped from the hosts (`cleanupEmbeddingReferences`) | | |
+| An embedded row is deleted while hosts reference it | Its id is stripped from the hosts (`cleanupEmbeddingReferences`) | | None for a row deleted by its channel's cascade: it is dropped before the cleanup (`isCascadedDelete`), and a host outside that channel keeps its id |
 | An owned embedded row loses its last host | It is soft-deleted (`gcOwnedEmbeddedRows`) | | |
 | A column a migration just added reaches a worker of the previous release | Its key is converted without the schema (`convertRowKeys`) | | |
 | The WAL moves on while the worker has nothing to record | The idle worker acknowledges the keepalive position (`acknowledgeIdlePosition`) | | |
-| A flush outlasts the server's `wal_sender_timeout` | The status timer repeats the last acknowledgement | | |
-| The API cannot read a worker message, as during a deploy | | The API drops and counts it; clients get the change at their next catchup | |
-| The sync state cannot be read when the worker starts | | Taken as generation 1 (`restoreBooksState`), and read again before the lost cases (`ensureBooksStateRestored`) | |
+| A flush outlasts the server's `wal_sender_timeout` | The status timer repeats the last acknowledgement (`createReplicationService`) | | |
+| The API cannot read a worker message, as during a deploy | | The API drops and counts it (`cdcMessageSchema`); clients get the change at their next catchup | |
+| The sync state cannot be read when the worker starts | | Taken as generation 1 (`restoreBooksState`). Open finding, a second answer: read again before the lost cases (`ensureBooksStateRestored`) | |
 | No worker reads for a minute | The API's pings tell clients `worker_away` (`isWorkerAway`) | | |
 
 ## Verify and rebuild

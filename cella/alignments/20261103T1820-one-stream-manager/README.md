@@ -1,7 +1,7 @@
 ---
 breaking: true
 clientCacheBump: false
-caughtBy: compiler
+caughtBy: tests
 grep: StreamConfig, useTabCoordination, BaseStreamSubscriber, isAppStream, onGenerationChange, hostProduct, hostColumn
 ---
 
@@ -28,7 +28,7 @@ No script: manual.
 3. Drop the type argument of `getByTopic` calls, and the `AppStreamSubscriber` import that only served it.
 4. A listener of `onGenerationChange` moves into `noteGeneration` in `backend/src/lib/cdc-websocket.ts`, which now ends the app streams itself.
 5. Every registered stream is an `AppStreamSubscriber` with a session; an app that adds a second stream type adds its subscriber kind to `subscriber-manager.ts` then.
-6. A test that expects `hostProduct` or `hostColumn` on a hint drops them, such as raak `backend/src/modules/label/label-stream.test.ts:34`, which embeds labels in tasks; one that expects a catchup hint per embedding expects one per embedded product. `productEmbeddings` entries keep both keys.
+6. A test that expects `hostProduct` or `hostColumn` on a hint drops them, such as raak `backend/src/modules/label/label-stream.test.ts:34`, which embeds labels in tasks: it still compiles, since `toMatchObject` takes any expected object, and fails at run time. One that expects a catchup hint per embedding expects one per embedded product. `productEmbeddings` entries keep both keys.
 
 ## Verify
 

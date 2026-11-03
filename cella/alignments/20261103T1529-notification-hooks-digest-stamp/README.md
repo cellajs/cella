@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: false
 caughtBy: compiler
-grep: loadPreview, loadRows, mentionable, digestedAt, stampDigested, loadSubjectPreview, findOrCreatePreferences, defaultDigestFrequency, windowStart, buildDigestForUser
+grep: loadPreview, loadRows, mentionable, digestedAt, stampDigested, loadSubjectPreview, findOrCreatePreferences, defaultDigestFrequency
 generate: true
 ---
 

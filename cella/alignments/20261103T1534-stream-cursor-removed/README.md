@@ -7,7 +7,7 @@ grep: clientCacheVersion, getLatestActivityId, findLatestActivityId, lastEventId
 
 # The stream cursor is gone
 
-The catchup body and answer have no `cursor`, a change frame carries no SSE `id`, the `offset` event is empty, and neither the sync store nor the `StreamManager` store holds a stream cursor. `getLatestActivityId`, `findLatestActivityId`, `setCursor` and `StreamFrame`'s `id` are gone. `writeOffset(stream)` takes no cursor, and `processAppCatchup(response)` takes a first catchup from `syncStore.caughtUpAt === null`.
+The catchup body and answer have no top-level `cursor`, a change frame carries no SSE `id`, the `offset` event is empty, and neither the sync store nor the `StreamManager` store holds a stream cursor. `getLatestActivityId`, `findLatestActivityId`, `setCursor` and `StreamFrame`'s `id` are gone. `writeOffset(stream)` takes no cursor, and `processAppCatchup(response)` takes a first catchup from `syncStore.caughtUpAt === null`.
 
 ## What & why
 
@@ -25,7 +25,7 @@ No script: manual.
 
 1. If `shared/config` sets its own `clientCacheVersion`, change its value.
 2. An app test that holds a stream connect through `getLatestActivityId` mocks `writeOffset` from `#/modules/entities/stream/helpers`, as `backend/tests/security/stream-holding.test.ts` does.
-3. App code or a test that posts `cursor` in a catchup body, or reads it from the answer, drops it.
+3. App code or a test that posts a top-level `cursor` in a catchup body, or reads it from the answer, drops it; each view keeps its own `cursor`.
 
 ## Verify
 
