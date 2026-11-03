@@ -679,4 +679,35 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ## Classifier rules
 
-The advisory-to-class mapping lives in `tools/classify.mjs` beside this file (by package, then by CWE), and a new advisory enters the class its rule names. An advisory the rules do not place is read by a person.
+A new advisory enters the class of its first matching rule, read in this order; one no rule places is read by a person.
+
+1. **Malicious code**: CWE-506, and playwright with CWE-347, go to F1.
+2. **A tooling package** goes to F2: vite, storybook and `@storybook/*`, vitest and `@vitest/*`, playwright, `@vitejs/*`, `@faker-js/*`, `@hey-api/*`, `@tanstack/router-generator` and `-plugin`, `@rolldown/*`, `@biomejs/*`, knip, tsx, typescript, `@mdx-js/rollup`, rollup-plugin-visualizer.
+3. **A library feature this repo does not mount** (hono's serveStatic, toSSG, JSX and SSR, the Lambda, Cloudflare, Deno and Bun adapters, proxy helper, language middleware, CORS middleware, API gateway, TrieRouter, ErrorBoundary, `cx()`, named path parameters) is n/a, except as a pattern lesson: JWT and JWK middleware A5, cache middleware C8, conninfo and IP spoofing A6, CORS middleware C7.
+4. **By summary**: a hono cookie advisory A2; SSE B4; an `app.mount` prefix advisory C7.
+5. **By package**: dompurify, sanitize-html, maplibre-gl, jspdf, react-pdf, react, react-dom and i18next C4; pg and drizzle-orm C3; ws C1 on a resource CWE (400, 770, 476, 1050, 345) and otherwise B5; jose C1 on CWE-400 or 834 and otherwise A5; nanoid A1; zod C1; dexie and immer C2; yaml E3 on CWE-248 and otherwise C1; i18next-http-backend C5 on CWE-918 and otherwise C4; `@simplewebauthn/*` A3; `@opentelemetry/*` D1 on CWE-532, C1 on CWE-770, otherwise F1; `@hono/node-server` E3 on CWE-755, C1 on CWE-401 or 770, otherwise C7.
+6. **By CWE**, first match over the advisory's CWE list:
+
+| Class | CWEs |
+| --- | --- |
+| C4 | 79, 80, 116, 94, 95, 96, 74 |
+| C3 | 89 |
+| C6 | 22, 23, 35, 73 |
+| C1 | 400, 770, 1333, 407, 834, 835, 674, 1050, 401 |
+| C2 | 1321, 915, 471, 1285 |
+| C5 | 918 |
+| A6 | 185, 1289, 180, 290, 350 |
+| A5 | 347, 1284 |
+| C7 | 352, 444, 174, 50, 706, 348, 942, 113 |
+| A2 | 613, 294, 640, 384, 1004, 614 |
+| A3 | 295, 296, 287, 308 |
+| A4 | 601 |
+| B1 | 284, 862, 863, 639 |
+| B2 | 269, 285 |
+| D1 | 200, 201, 538, 541, 532, 522, 908 |
+| D2 | 203, 208, 696 |
+| C8 | 524, 488, 362 |
+| B5 | 1385, 346 |
+| B6 | 441 |
+| E3 | 248, 755, 476 |
+| F1 | 506 |
