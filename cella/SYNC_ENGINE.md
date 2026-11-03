@@ -39,12 +39,14 @@ The stream carries two kinds of frame. Both are announcements: what a frame poin
 
 | | Change | Signal |
 | --- | --- | --- |
-| About | A `product` row | A fact of a registered type, such as `membership.changed` |
+| About | A `product` row | A fact of a registered type, such as `membership.changed` or `channel.deleted` |
 | Made by | The CDC worker, from a committed row | API code after its commit, or the CDC worker from a tracked table |
 | Sent to | Subscribers who may read the row | One user, or the readers of a subject |
 | Missed while away | Catchup fetches the sequence gap | Catchup compares a **versioned** signal's version and runs its handler once; an **ephemeral** one is gone |
 
 A signal is versioned when a client that was away must still find out, and then a committed row makes it. A module declares the signals it sends and the handlers that answer them.
+
+The rows below a deleted channel leave by cascade and get no change of their own, however many there are. The channel's delete sends `channel.deleted` to the channel's readers in their place: a client drops what it holds below the channel and marks the lists of every product type below a channel for a refetch. Missed while away, the signal names no channel, and only the marks remain.
 
 ## Selective sync
 
@@ -85,11 +87,11 @@ The server caches enriched product detail responses briefly. A write of the row 
 
 **Row readability** decides whether a user may fetch a row. List reads, range fetches and change frames ask the permission engine about full rows, and a detail-cache hit about the row as it was cached. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
-**Summary answerability** decides whether a user may see a view's frontiers and counts. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
+**Summary answerability** decides whether a user may see a view's frontiers. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
 
 | Status | Meaning | Client behavior |
 | --- | --- | --- |
-| `ok` | Every prefix is proven for the requested depth | Use frontiers, counts, and range fetches |
+| `ok` | Every prefix is proven for the requested depth | Use frontiers and range fetches |
 | `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers. Refetch the cached lists on screen and mark the others: every connection marks them again, so they refetch when opened and the background fill leaves them. |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
 
@@ -103,7 +105,7 @@ A change frame names its rows, each with its sequence position and the write tha
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier and count, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
+Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts its stream cursor and a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
 
 ### SSE wire
 

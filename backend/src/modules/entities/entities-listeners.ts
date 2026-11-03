@@ -1,14 +1,23 @@
-import { appConfig, buildSubject } from 'shared';
-import { activityBus, getEventData } from '#/lib/activity-bus';
+import {
+  actionToVerb,
+  activityActions,
+  appConfig,
+  buildSubject,
+  buildSubjectFromEntity,
+  type EntityType,
+  hierarchy,
+  type ResourceType,
+} from 'shared';
+import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
 import { type AppStreamSubscriber, dispatchChange, dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
-import { toReaders, toUser } from '#/modules/entities/stream/audiences';
+import { type Audience, toReaders, toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
-import { versionedSignals } from '#/modules/entities/stream/versioned-signals';
+import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 
@@ -56,17 +65,35 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
   });
 }
 
-// The live half of a versioned signal: the organization's readers hear of it now, a client that misses it gets the version
-// at catchup. Registered after the membership listeners, so a reader's memberships are current when it is decided.
+// The live half of a versioned signal: its audience hears of it now, a client that misses it gets the version at catchup.
+// Registered after the membership listeners, so a reader's memberships are current when it is decided.
 for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
-  const types = versionedSignals[table];
-  if (!types) continue;
-  for (const verb of ['created', 'updated', 'deleted'] as const) {
-    activityBus.on(`${table}.${verb}`, async ({ organizationId }) => {
+  for (const action of activityActions) {
+    const signals = versionedSignalsOf(table, action);
+    if (signals.length === 0) continue;
+    activityBus.on(`${table}.${actionToVerb(action)}`, async (event) => {
+      const { organizationId } = event;
       if (!organizationId) return;
       const organization = buildSubject('organization', {}, { id: organizationId });
-      for (const type of types) await sendSignal(type, toReaders(organization), { organizationId });
+      const channel = namedChannel(event, table);
+      for (const { type, namesRow } of signals) {
+        if (!namesRow) await sendSignal(type, toReaders(organization), { organizationId });
+        else if (channel) await sendSignal(type, channel.readers, { organizationId, subjectId: channel.id });
+      }
     });
+  }
+}
+
+/** The channel row an event is about and the readers of it, who alone may learn of it; null for any other row, fail-closed. */
+function namedChannel(event: ActivityEvent, table: EntityType | ResourceType): { id: string; readers: Audience } | null {
+  if (event.rows !== null || !hierarchy.isChannel(table)) return null;
+  const channel = getEventData(event, table);
+  if (!channel) return null;
+  try {
+    return { id: channel.id, readers: toReaders(buildSubjectFromEntity(table, channel)) };
+  } catch {
+    log.error('Malformed channel event: missing ancestor scope', { entityType: table, subjectId: channel.id });
+    return null;
   }
 }
 

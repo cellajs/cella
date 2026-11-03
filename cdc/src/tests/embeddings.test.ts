@@ -406,8 +406,9 @@ describe('a channel delete that takes rows with it', () => {
 
     const { countDeltasByChannelKey } = computeBatchUnifiedDeltas(survivors);
 
-    // The project itself, and the item that went with it. The section was the project's home.
-    expect(countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:project': -1, 'e:c:item': -1 });
+    // The project itself, the item that went with it, and the version of the signal that tells readers the item went.
+    // The section was the project's home.
+    expect(countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:project': -1, 'e:c:item': -1, 's:channel.deleted': 1 });
     expect(countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:project': -1, 'e:c:h:project': -1, 'e:c:item': -1 });
   });
 });

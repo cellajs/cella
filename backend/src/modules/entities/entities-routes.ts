@@ -39,7 +39,7 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'App stream catchup',
     description:
-      'Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.',
+      'Fetch what a client missed since its last sync: frontiers per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.',
     request: { body: jsonBody(streamCatchupBodySchema) },
     responses: { 200: json('Catchup summary', appCatchupResponseSchema, mockCatchupResponse()) },
   }),

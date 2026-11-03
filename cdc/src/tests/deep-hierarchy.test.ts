@@ -230,6 +230,31 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
   });
 });
 
+// ── Versioned signals ────────────────────────────────────────────────────────
+
+describe('the version of channel.deleted (getCountDeltas)', () => {
+  const channelChange = (type: string, action: InsertActivityModel['action'], organizationId: string | null = 'o1') =>
+    getCountDeltas(
+      tableMetaOf('entity', type),
+      mockCdcActivity({ action, organizationId }),
+      { id: `${type}-1` },
+      { id: `${type}-1`, organizationId },
+      h,
+    );
+  const versions = (deltas: ReturnType<typeof getCountDeltas>) =>
+    deltas.filter((delta) => Object.keys(delta.deltas).some((key) => key.startsWith('s:')));
+
+  it("moves on the organization's row at the delete of every channel below it, and at no other change of one", () => {
+    for (const type of ['course', 'courseSection', 'project']) {
+      expect(versions(channelChange(type, 'delete'))).toEqual([{ channelKey: 'o1', deltas: { 's:channel.deleted': 1 } }]);
+      expect(versions(channelChange(type, 'create'))).toEqual([]);
+      expect(versions(channelChange(type, 'update'))).toEqual([]);
+    }
+    // An organization's activity names no organization: its delete follows the archive of its tenant.
+    expect(versions(channelChange('organization', 'delete', null))).toEqual([]);
+  });
+});
+
 // ── Nullable-ancestor warnings ───────────────────────────────────────────────
 
 describe('missing-ancestor warnings respect nullableAncestors', () => {

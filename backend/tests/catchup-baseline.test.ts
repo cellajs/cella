@@ -13,7 +13,7 @@ import { setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 // Verifies the view-driven catchup contract end-to-end (sequence sync): signal versions
-// via organizations.signals, product sync via per-view f:/e: answers.
+// via organizations.signals, product sync via per-view frontier answers.
 describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -30,6 +30,7 @@ describe('Catchup (view-driven, sequence)', async () => {
     const counts = {
       sequence: 50,
       's:membership.changed': 3,
+      's:channel.deleted': 2,
       'e:f:attachment': 42,
       'e:c:attachment': 15,
       'e:f:h:attachment': 40,
@@ -56,13 +57,13 @@ describe('Catchup (view-driven, sequence)', async () => {
     const summary = organizations[tenant.organization.id];
     expect(summary).toBeDefined();
     // Keyed by signal type, so the client's catchup and an app's handler read the same key.
-    expect(summary.signals).toEqual({ 'membership.changed': 3 });
+    expect(summary.signals).toEqual({ 'membership.changed': 3, 'channel.deleted': 2 });
     // The org sequence value itself is not exposed on the wire (clients never read it).
     expect(summary).not.toHaveProperty('entitySeqs');
     expect(cursor).toBeDefined();
   });
 
-  it('answers an org view with frontier and count rollups (org member, unconditional read)', async () => {
+  it('answers an org view with its frontier rollup (org member, unconditional read)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
@@ -80,10 +81,9 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(answer.key).toBe(`${orgId}:attachment`);
     expect(answer.status).toBe('ok');
     expect(answer.frontiers).toEqual({ attachment: 42 });
-    expect(answer.counts).toEqual({ attachment: 15 });
   });
 
-  it('answers a SELF view from the fs:/es: family', async () => {
+  it('answers a SELF view from the home frontier', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
       body: {
@@ -98,7 +98,7 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
     expect(views).toHaveLength(1);
-    expect(views![0]).toMatchObject({ key: `${orgId}:attachment:self`, status: 'ok', frontiers: { attachment: 40 }, counts: { attachment: 12 } });
+    expect(views![0]).toMatchObject({ key: `${orgId}:attachment:self`, status: 'ok', frontiers: { attachment: 40 } });
   });
 
   it('a claimed prefix that mismatches the verified path answers opaque, no numbers', async () => {
@@ -146,6 +146,5 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(views![0].status).not.toBe('ok');
     expect(views![1].status).toBe('ok');
     expect(views![0].frontiers).toBeUndefined();
-    expect(views![0].counts).toBeUndefined();
   });
 });

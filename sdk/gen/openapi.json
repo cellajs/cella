@@ -5694,7 +5694,7 @@
         "operationId": "postAppCatchup",
         "tags": ["entities", "cella"],
         "summary": "App stream catchup",
-        "description": "Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.",
+        "description": "Fetch what a client missed since its last sync: frontiers per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5855,13 +5855,6 @@
                               "type": "integer"
                             },
                             "description": "Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})"
-                          },
-                          "counts": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
-                            },
-                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})"
                           }
                         },
                         "required": ["key", "status"]

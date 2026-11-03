@@ -57,19 +57,16 @@ export async function answerCatchupViews(ctx: DbContext, access: Access<ActorBin
 
     const self = depthOf(view) === 'self';
     const frontiers: Record<string, number> = {};
-    const counts: Record<string, number> = {};
     for (const prefix of view.prefixes) {
       const parsed = countersByNode.get(pathHomeId(prefix));
       if (!parsed) continue;
       for (const entityType of view.entityTypes) {
-        // Family per depth: subtree rollups (e:f:, e:c:) or self summaries (e:f:h:, e:c:h:).
+        // Family per depth: the subtree rollup (e:f:) or the self summary (e:f:h:).
         const frontier = self ? parsed.selfFrontiers[entityType] : parsed.frontiers[entityType];
         if (frontier !== undefined) frontiers[entityType] = Math.max(frontiers[entityType] ?? 0, frontier);
-        const count = self ? parsed.selfCounts[entityType] : parsed.entityCounts[entityType];
-        if (count !== undefined) counts[entityType] = (counts[entityType] ?? 0) + count;
       }
     }
-    return { key: view.key, status, frontiers, counts };
+    return { key: view.key, status, frontiers };
   });
 }
 

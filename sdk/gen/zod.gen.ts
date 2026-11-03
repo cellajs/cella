@@ -1083,7 +1083,6 @@ export const zPostAppCatchupResponse = z.object({
         key: z.string(),
         status: z.enum(['ok', 'opaque', 'forbidden']),
         frontiers: z.record(z.string(), z.int()).optional(),
-        counts: z.record(z.string(), z.int()).optional(),
       }),
     )
     .optional(),

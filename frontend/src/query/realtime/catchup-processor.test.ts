@@ -89,7 +89,7 @@ const okViewResponse = (frontier: number): PostAppCatchupResponse =>
   ({
     cursor: 'cursor-1',
     organizations: {},
-    views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier }, counts: { attachment: 1 } }],
+    views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier } }],
   }) as unknown as PostAppCatchupResponse;
 
 describe('catchup processor (view-driven)', () => {

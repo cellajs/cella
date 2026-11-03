@@ -123,9 +123,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const outcome = await flushChannelViewNow(entityType, organizationId, null);
       console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → ${outcome}`);
     }
-
-    // Counts compared server-to-server per (org, entityType): a changed count with a matching frontier means drift.
-    if (!baselineOnly) verifyViewCounts(views);
   }
 
   // Organization-level signal versions and propagation.
@@ -245,32 +242,4 @@ function splitViewKey(key: string): [string | undefined, string | undefined] {
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached, a range fetch has nothing to patch. */
 function hasAnyCachedList(keys: EntityQueryKeys, organizationId: string): boolean {
   return queryClient.getQueriesData({ queryKey: keys.list.org(organizationId) }).some(([, data]) => data !== undefined);
-}
-
-/** Compare per-session server counts only with later server counts, never permission-filtered caches. */
-const lastSeenServerCounts = new Map<string, number>();
-
-/** In-session count drift check per ok view; first sight records without comparing. */
-function verifyViewCounts(views: NonNullable<PostAppCatchupResponse['views']>): void {
-  for (const answer of views) {
-    if (answer.status !== 'ok' || !answer.counts) continue;
-    const [organizationId, entityType] = splitViewKey(answer.key);
-    if (!organizationId || !isProduct(entityType) || !hasEntityQueryKeys(entityType)) continue;
-
-    const serverCount = answer.counts[entityType];
-    if (serverCount === undefined) continue;
-
-    const countKey = `${organizationId}:${entityType}`;
-    const previous = lastSeenServerCounts.get(countKey);
-    lastSeenServerCounts.set(countKey, serverCount);
-    if (previous === undefined || previous === serverCount) continue;
-
-    const keys = getEntityQueryKeys(entityType);
-    if (!hasAnyCachedList(keys, organizationId)) continue;
-
-    cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-    console.debug(
-      `[CatchupProcessor] Integrity: ${entityType} in org ${organizationId} count changed from ${previous} → ${serverCount} → invalidated`,
-    );
-  }
 }

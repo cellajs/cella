@@ -8,7 +8,7 @@ import { answerCatchupViews } from './app-catchup';
 const seedDb = getSeedDb();
 const ctx = { var: { db: baseDb } };
 
-/** Authorization via resolveViewReadStatus, summaries from channel_counters f:/e: rollups. */
+/** Authorization via resolveViewReadStatus, frontiers from channel_counters rollups. */
 
 const org = 'org-catchup-test';
 const otherOrg = 'org-catchup-other';
@@ -52,12 +52,12 @@ afterAll(async () => {
 });
 
 describe('answerCatchupViews', () => {
-  it('answers an authorized org view with frontier/count summaries', async () => {
+  it('answers an authorized org view with its frontier', async () => {
     const answers = await answerCatchupViews(ctx, orgAdmin, [
       { key: 'v1', organizationId: org, prefixes: [org], entityTypes: [productType], cursor: 30 },
     ]);
 
-    expect(answers).toEqual([{ key: 'v1', status: 'ok', frontiers: { [productType]: 37 }, counts: { [productType]: 12 } }]);
+    expect(answers).toEqual([{ key: 'v1', status: 'ok', frontiers: { [productType]: 37 } }]);
   });
 
   it('answers a view outside the caller memberships without leaking numbers', async () => {
@@ -70,7 +70,6 @@ describe('answerCatchupViews', () => {
     expect(answers[0].key).toBe('v2');
     expect(answers[0].status).not.toBe('ok');
     expect(answers[0].frontiers).toBeUndefined();
-    expect(answers[0].counts).toBeUndefined();
   });
 
   it('a mixed request answers each view independently', async () => {
@@ -106,7 +105,7 @@ describe('answerCatchupViews', () => {
       { key: 'v5', organizationId: org, prefixes: [`${org}/${child}`], entityTypes: [productType], cursor: 0 },
     ]);
 
-    expect(answers).toEqual([{ key: 'v5', status: 'ok', frontiers: { [productType]: 21 }, counts: { [productType]: 3 } }]);
+    expect(answers).toEqual([{ key: 'v5', status: 'ok', frontiers: { [productType]: 21 } }]);
   });
 
   it('returns empty for no views', async () => {

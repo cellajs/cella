@@ -126,8 +126,8 @@ const catchupOrganizationSummarySchema = z.object({
 export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSummarySchema>;
 
 /**
- * `frontiers` and `counts` are present only for `status: 'ok'` views (unconditional read of the whole prefix
- * subtree). `opaque` views get no numbers and fall back to normal staleness; `forbidden` views must be dropped.
+ * `frontiers` are present only for `status: 'ok'` views (unconditional read of the whole prefix subtree). `opaque`
+ * views get no numbers and fall back to normal staleness; `forbidden` views must be dropped.
  */
 const catchupViewAnswerSchema = z.object({
   key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
@@ -136,10 +136,6 @@ const catchupViewAnswerSchema = z.object({
     .record(z.string(), z.number().int())
     .optional()
     .openapi({ description: 'Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})' }),
-  counts: z
-    .record(z.string(), z.number().int())
-    .optional()
-    .openapi({ description: 'Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})' }),
 });
 
 export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;

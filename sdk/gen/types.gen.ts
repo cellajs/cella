@@ -2417,12 +2417,6 @@ export type PostAppCatchupResponses = {
       frontiers?: {
         [key: string]: number;
       };
-      /**
-       * Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})
-       */
-      counts?: {
-        [key: string]: number;
-      };
     }>;
     /**
      * Last activity ID (use as offset for next request)

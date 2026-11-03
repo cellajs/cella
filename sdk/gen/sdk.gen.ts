@@ -1352,7 +1352,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
 /**
  * App stream catchup
  *
- * Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.
+ * Fetch what a client missed since its last sync: frontiers per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.
  *
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· _entities · cella_
  *
