@@ -319,7 +319,11 @@ export const PageBranchReclick: Story = {
 const meDetail: GenOperationDetail = {
   operationId: 'getMe',
   responses: [
-    response(200, 'Current user', { schema: schemas[0].schema, example: { id: 'u1' } }),
+    response(200, 'Current user', {
+      schema: schemas[0].schema,
+      example: { id: 'u1' },
+      headers: [{ name: 'X-Total-Count', description: 'Rows in the full list.' }],
+    }),
     response(400, 'Bad request', { name: 'BadRequestError', ref: '#/components/responses/BadRequestError' }),
     response(404, 'Not found'),
   ],
@@ -347,6 +351,8 @@ export const Responses: Story = {
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
     await expect(await canvas.findByRole('radio', { name: /view_format/ })).toHaveAttribute('aria-checked', 'true');
     await expect(canvas.getByRole('radio', { name: /view_example/ })).toHaveAttribute('aria-checked', 'false');
+    // A header a client acts on shows as a line, in the shape the error entries use
+    await expect(canvas.getByText('X-Total-Count').closest('p')).toHaveTextContent(/header.*X-Total-Count.*Rows in the full list\./);
 
     await userEvent.click(errors);
     await expect(await canvas.findByText('The request fails validation.')).toBeVisible();

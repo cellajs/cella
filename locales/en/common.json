@@ -187,6 +187,7 @@
   "docs.entity_tag": "{{name}} entity",
   "docs.errors": "Errors",
   "docs.format": "format",
+  "docs.header": "Header",
   "docs.hidden_operations": "Hidden operations",
   "docs.hide_details": "Hide details",
   "docs.mcp_tool": "MCP tool",

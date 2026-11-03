@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { PanelTopIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
 import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
@@ -10,7 +10,6 @@ import { SchemaLink, useSchemaRefLink } from '~/modules/docs/schemas/schema-deta
 import { SpecText } from '~/modules/docs/spec-text';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -31,18 +30,44 @@ const isSharedError = (response: GenResponseSummary) => response.ref?.startsWith
 
 const isError = (response: GenResponseSummary) => response.status >= 400;
 
-const schemaChipClass = tw('rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs');
+/** Chip of a name under a response: a body schema or a header. */
+const chipClass = tw('rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs');
 
-/** "Body" and a link to the named schema of a response body. */
-function ResponseBody({ schema, className }: { schema: GenComponentSchema; className?: string }) {
-  const { t } = useTranslation();
+interface ResponseLineProps {
+  label: string;
+  chip: ReactNode;
+  text?: string;
+  className?: string;
+}
 
+/** A line under a response, such as "Body Me" or "Header Retry-After" and its text, one shape for both. */
+function ResponseLine({ label, chip, text, className }: ResponseLineProps) {
   return (
-    <p className={cn('flex items-center gap-2 px-3 text-muted-foreground', className)}>
-      {t('c:docs.body')}
-      <SchemaLink schema={schema} className={schemaChipClass} />
+    <p className={cn('text-muted-foreground', className)}>
+      {label} {chip}
+      {text && (
+        <span className="text-foreground-soft">
+          {' '}
+          <SpecText text={text} />
+        </span>
+      )}
     </p>
   );
+}
+
+/** The documented headers of a response, a line each. */
+function ResponseHeaders({ headers, className }: { headers: NonNullable<GenResponseSummary['headers']>; className?: string }) {
+  const { t } = useTranslation();
+
+  return headers.map((header) => (
+    <ResponseLine
+      key={header.name}
+      label={t('c:docs.header')}
+      chip={<code className={chipClass}>{header.name}</code>}
+      text={header.description}
+      className={className}
+    />
+  ));
 }
 
 interface ErrorsItemProps {
@@ -90,7 +115,7 @@ function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: E
                 <dd className="min-w-0 grow">
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="font-medium text-foreground">{response.description}</span>
-                    {body && <SchemaLink schema={body} className={schemaChipClass} />}
+                    {body && <SchemaLink schema={body} className={chipClass} />}
                     {!body && !inlineSchema && <span className="text-muted-foreground text-xs">{t('c:docs.no_response_body')}</span>}
                   </div>
                   {text && (
@@ -98,14 +123,7 @@ function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: E
                       <SpecText text={text} />
                     </p>
                   )}
-                  {response.headers?.map((header) => (
-                    <div key={header.name} className="mt-1.5 flex max-w-measure items-start gap-2 text-foreground-soft">
-                      <PanelTopIcon className="mt-0.5 size-4 shrink-0 text-info" />
-                      <span>
-                        <span className="font-mono text-foreground">{header.name}</span> <SpecText text={header.description} />
-                      </span>
-                    </div>
-                  ))}
+                  {response.headers && <ResponseHeaders headers={response.headers} className="mt-1.5 max-w-measure" />}
                   {inlineSchema && (
                     <div className="mt-2">
                       <ViewerGroup
@@ -180,25 +198,12 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   <SpecText text={response.detail} />
                 </p>
               )}
-              {/* A link cannot sit in the trigger button, so the body's schema link follows the detail in the panel */}
-              {namedBody && <ResponseBody schema={namedBody} className="pt-1 pb-3" />}
-              {response.headers && (
-                // px-3 and leading-normal match the viewer below; a note, since an alert role announces on every opening of the panel
-                <Alert variant="info" role="note" className="mb-2 px-3">
-                  <PanelTopIcon />
-                  <AlertDescription>
-                    <dl className="w-full divide-y divide-foreground/10 leading-normal">
-                      {response.headers.map((header) => (
-                        <div key={header.name} className="flex justify-between gap-x-6 py-1.5 first:pt-0 last:pb-0 max-sm:flex-col">
-                          <dt className="shrink-0 font-mono text-foreground">{header.name}</dt>
-                          <dd className="sm:text-right">
-                            <SpecText text={header.description} />
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </AlertDescription>
-                </Alert>
+              {(namedBody || response.headers) && (
+                <div className="flex max-w-measure flex-col gap-1.5 px-3 pt-1 pb-3">
+                  {/* A link cannot sit in the trigger button, so the body's schema link follows the detail in the panel */}
+                  {namedBody && <ResponseLine label={t('c:docs.body')} chip={<SchemaLink schema={namedBody} className={chipClass} />} />}
+                  {response.headers && <ResponseHeaders headers={response.headers} />}
+                </div>
               )}
               {schema ? (
                 <ViewerGroup
