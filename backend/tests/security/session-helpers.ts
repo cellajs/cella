@@ -64,12 +64,6 @@ export const warmSession = async ({ cookie }: { cookie: string }) => expect((awa
 /** A browser holding `cookie` is refused as signed out, with this error type, one the client signs out on. */
 export const expectSignedOut = async (cookie: string, type: SessionLostType) => expectRefusal(await meWith(cookie), 401, type);
 
-/** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */
-export async function insertImpersonation(admin: TestSession, target: { id: string }): Promise<TestSession> {
-  const { id, cookie } = await insertTestSession(target, { type: 'impersonation', impersonatorSessionId: admin.id });
-  return asSession(id, `${admin.cookie}; ${cookie}`);
-}
-
 /** The session behind a cookie's token: a row stores the token's hash only. */
 const sessionIdFor = async (token: string) => {
   const [row] = await db
@@ -87,12 +81,6 @@ const tokenOf = (pair: string) => decodeURIComponent(pair.slice(pair.indexOf('='
 export async function sessionSetBy(response: Response): Promise<TestSession> {
   const pair = setCookiePair(response, 'session');
   return asSession(await sessionIdFor(tokenOf(pair)), pair);
-}
-
-/** The impersonation a response set, presented as the browser does: on top of the admin session it holds. */
-export async function impersonationSetBy(response: Response, admin: TestSession): Promise<TestSession> {
-  const pair = setCookiePair(response, 'impersonation');
-  return asSession(await sessionIdFor(tokenOf(pair)), `${admin.cookie}; ${pair}`);
 }
 
 export interface OpenStream {

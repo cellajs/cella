@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -25,7 +25,7 @@ interface FindLiveSessionsHeldByUserOpts {
   offset?: number;
 }
 
-/** The live sessions the user holds, newest first: an impersonation of the user is held by its admin and left out. */
+/** The live sessions the user holds, newest first. */
 export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, deviceIdHash, offset = 0 }: FindLiveSessionsHeldByUserOpts) => {
   return ctx.var.db
     .select({ id: sessionsTable.id })
@@ -33,7 +33,6 @@ export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, devic
     .where(
       and(
         eq(sessionsTable.userId, userId),
-        ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
         isNull(sessionsTable.revokedAt),
         deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined,
@@ -49,21 +48,12 @@ interface FindUserSessionsOpts {
   revokedSince: string;
 }
 
-/**
- * The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. An
- * impersonation of the user is held by its admin and left out.
- */
+/** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
 export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) => {
   return ctx.var.db
     .select(sessionSafeColumns)
     .from(sessionsTable)
-    .where(
-      and(
-        eq(sessionsTable.userId, userId),
-        ne(sessionsTable.type, 'impersonation'),
-        or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince)),
-      ),
-    )
+    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
     .orderBy(desc(sessionsTable.createdAt));
 };
 
@@ -98,7 +88,7 @@ interface FindSessionStatesOpts {
   ids: string[];
 }
 
-/** What decides whether these sessions still back a stream: user, revocation, expiry and the admin session behind an impersonation. */
+/** What decides whether these sessions still back a stream: user, revocation and expiry. */
 export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) => {
   return ctx.var.db
     .select({
@@ -107,7 +97,6 @@ export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStat
       revokedAt: sessionsTable.revokedAt,
       revocationReason: sessionsTable.revocationReason,
       expiresAt: sessionsTable.expiresAt,
-      impersonatorSessionId: sessionsTable.impersonatorSessionId,
     })
     .from(sessionsTable)
     .where(inArray(sessionsTable.id, ids));
@@ -137,8 +126,8 @@ export const insertSession = async (ctx: DbContext, { values }: InsertSessionOpt
 };
 
 interface UpdateSessionsRevokedOpts {
-  /** Which sessions: the user's, optionally only these ids or this type, or the impersonations layered on these sessions. */
-  match: { userId: string; ids?: string[]; type?: SessionType } | { impersonatorSessionIds: string[] };
+  /** Which of the user's sessions: optionally only these ids or this type. */
+  match: { userId: string; ids?: string[]; type?: SessionType };
   revokedBy: ActorId | null;
   revocationReason: SessionRevocationReason;
 }
@@ -148,14 +137,11 @@ interface UpdateSessionsRevokedOpts {
  * @returns The stamped sessions, secret stripped.
  */
 export const updateSessionsRevoked = async (ctx: DbContext, { match, revokedBy, revocationReason }: UpdateSessionsRevokedOpts) => {
-  const matched =
-    'userId' in match
-      ? and(
-          eq(sessionsTable.userId, match.userId),
-          match.ids ? inArray(sessionsTable.id, match.ids) : undefined,
-          match.type ? eq(sessionsTable.type, match.type) : undefined,
-        )
-      : inArray(sessionsTable.impersonatorSessionId, match.impersonatorSessionIds);
+  const matched = and(
+    eq(sessionsTable.userId, match.userId),
+    match.ids ? inArray(sessionsTable.id, match.ids) : undefined,
+    match.type ? eq(sessionsTable.type, match.type) : undefined,
+  );
 
   const now = getIsoDate();
   return ctx.var.db
@@ -201,23 +187,15 @@ interface UpdateSessionSteppedUpOpts {
 }
 
 /**
- * Stamps a live session of the user as stepped up now, by the proof given; only the named session, never an
- * impersonation. Undefined when the session ended or belongs to someone else.
+ * Stamps a live session of the user as stepped up now, by the proof given; only the named session. Undefined when the
+ * session ended or belongs to someone else.
  */
 export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via }: UpdateSessionSteppedUpOpts) => {
   const now = getIsoDate();
   const [stamped] = await ctx.var.db
     .update(sessionsTable)
     .set({ steppedUpAt: now, steppedUpVia: via })
-    .where(
-      and(
-        eq(sessionsTable.id, id),
-        eq(sessionsTable.userId, userId),
-        ne(sessionsTable.type, 'impersonation'),
-        isNull(sessionsTable.revokedAt),
-        gt(sessionsTable.expiresAt, now),
-      ),
-    )
+    .where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now)))
     .returning({ id: sessionsTable.id });
   return stamped;
 };

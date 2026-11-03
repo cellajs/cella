@@ -14,7 +14,7 @@ export const stepUpQuerySchema = z.object({
 
 export const stepUpStateSchema = z.object({
   steppedUp: z.boolean().describe('The session proved its user present recently enough for the tier.'),
-  methods: z.array(z.enum(stepUpMethods)).describe('What the user can offer to step up for the tier; empty while impersonating.'),
+  methods: z.array(z.enum(stepUpMethods)).describe('What the user can offer to step up for the tier.'),
 });
 
 /**

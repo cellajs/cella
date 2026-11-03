@@ -9,7 +9,6 @@ import { acceptInvitationTokenOp } from '#/modules/auth/invitations/operations/a
 import { confirmInvitationAddressOp } from '#/modules/auth/invitations/operations/confirm-invitation-address';
 import { getTokenDataOp } from '#/modules/auth/invitations/operations/get-token-data';
 import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
-import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
 import { listSignInFederations } from '#/modules/auth/sso/operations/list-sign-in-federations';
 import '#/modules/auth/sessions/session-listeners';
@@ -73,17 +72,6 @@ app.openapi(authGeneralRoutes.confirmInvitationAddress, async (ctx) => {
   // The new link replaces this browser's token, whose cookie then names nothing.
   await confirmInvitationAddressOp(ctx, tokenRecord);
 
-  return ctx.body(null, 204);
-});
-
-app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
-  const { targetUserId } = ctx.req.valid('json');
-  await startImpersonationOp(ctx, { targetUserId });
-  return ctx.body(null, 204);
-});
-
-app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
-  await stopImpersonationOp(ctx);
   return ctx.body(null, 204);
 });
 

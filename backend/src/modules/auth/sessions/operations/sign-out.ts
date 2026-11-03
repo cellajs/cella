@@ -9,11 +9,10 @@ import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { log } from '#/utils/logger';
 
 /**
- * What a sign-out clears from this browser besides its session cookie: what it holds of a sign-in in progress, an
- * impersonation layered on the session, and an opened invitation, which would show the next person here its address
- * and organization.
+ * What a sign-out clears from this browser besides its session cookie: what it holds of a sign-in in progress, and an
+ * opened invitation, which would show the next person here its address and organization.
  */
-const signedOutCookies = ['magic', 'magic-pending', 'confirm-mfa', 'impersonation', 'invitation'] as const satisfies CookieName[];
+const signedOutCookies = ['magic', 'magic-pending', 'confirm-mfa', 'invitation'] as const satisfies CookieName[];
 
 const deleteSignedOutCookies = (ctx: Context<Env>) => {
   deleteAuthCookie(ctx, 'session');
@@ -22,9 +21,9 @@ const deleteSignedOutCookies = (ctx: Context<Env>) => {
 
 /**
  * Signs this browser out: ends what it holds of a sign-in in progress (an opened magic link, a link held for
- * confirmation, a second-factor challenge), then its session and an impersonation layered on it. Every write runs
- * before any cookie goes, so a failure leaves this browser all its cookies and a retry finishes the job: a spend added
- * here defers its cookie delete as well.
+ * confirmation, a second-factor challenge), then its session. Every write runs before any cookie goes, so a failure
+ * leaves this browser all its cookies and a retry finishes the job: a spend added here defers its cookie delete as
+ * well.
  * @throws AppError 401 when the browser holds no session and no second-factor challenge.
  */
 export const signOutOp = async (ctx: Context<Env>) => {

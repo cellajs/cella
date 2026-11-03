@@ -35,7 +35,7 @@ const errorResponseOptions = [
     name: 'ForbiddenError',
     description: 'Forbidden: insufficient permissions.',
     schemaDescription:
-      'The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.',
+      'The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.',
   },
   {
     code: 404,

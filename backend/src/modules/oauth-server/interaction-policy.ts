@@ -6,8 +6,7 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
 
 /**
  * The user of the live app session a request to the authorization server presents, or null without one. It is read as
- * the API reads it: the session cookie, an impersonation layered on it, and the system access rules for the address.
- * An impersonation counts as nobody: it may not consent for the person, so it may not skip their consent either.
+ * the API reads it, from the session cookie.
  * @param req - The request as Node delivers it; only its cookies, forwarding header and socket are read.
  * @param res - Its response, which the reader never writes.
  */
@@ -19,8 +18,7 @@ async function appSessionUserId(req: IncomingMessage, res: ServerResponse): Prom
   }
   const ctx = new Context(new Request(appConfig.oauthUrl, { headers }), { env: { incoming: req, outgoing: res } });
   const entry = await findSession(ctx);
-  if (!entry || entry.session.type === 'impersonation') return null;
-  return entry.user.id;
+  return entry?.user.id ?? null;
 }
 
 /**

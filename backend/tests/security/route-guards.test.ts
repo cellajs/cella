@@ -68,8 +68,6 @@ const routesWithoutLimiter: Record<string, string> = {
   getPublicCounts: 'counted at most once a minute per process',
   getApiProtectedResourceMetadata: 'static JSON from the path, no database',
   getMcpProtectedResourceMetadata: 'static JSON from the path, no database',
-  startImpersonation: 'system admins only',
-  stopImpersonation: 'needs an impersonation session and writes that one session',
   markNotificationsRead: "one update of at most 200 of the caller's own rows, idempotent",
   updateNotificationPreferences: "one row of the caller's own",
   deletePushSubscription: "deletes the caller's own row only",
@@ -123,7 +121,7 @@ describe('Route guards', async () => {
     // An empty table would pass vacuously: the routes known to sit behind each guard must be in it.
     expect(nonPublic.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getMe', 'getTenants']));
     expect(sysAdminOnly.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getTenants']));
-    expect(sysAdminOnly.length).toBeGreaterThanOrEqual(13);
+    expect(sysAdminOnly.length).toBeGreaterThanOrEqual(12);
   });
 
   it('must not reach any non-public route via a request without a session', async () => {

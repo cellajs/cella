@@ -49,19 +49,19 @@
           },
           "stepUpGuard": {
             "name": "Step-up",
-            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Refused during impersonation."
+            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code."
           },
           "stepUpFactorGuard": {
             "name": "Step-up: second factor",
-            "description": "The user confirms it's them in the last 10 minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first. Refused during impersonation."
+            "description": "The user confirms it's them in the last 10 minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first."
           },
           "stepUpEnrollGuard": {
             "name": "Step-up: new factor",
-            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off. Refused during impersonation."
+            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off."
           },
           "sysAdminGuard": {
             "name": "System admin",
-            "description": "Requires the system admin role and a request from an allowed IP address. Refused during impersonation."
+            "description": "Requires the system admin role and a request from an allowed IP address."
           },
           "tenantGuard": {
             "name": "Tenant",
@@ -243,7 +243,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1136,7 +1136,7 @@
             }
           }
         ],
-        "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
+        "description": "The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.",
         "example": {
           "name": "No access",
           "message": "You don't have permission to do this.",
@@ -1336,21 +1336,10 @@
           "isSystemAdmin": {
             "type": "boolean",
             "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
-          },
-          "impersonator": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The system admin acting as the user through an impersonation; null on the user's own session."
           }
         },
-        "required": ["user", "isSystemAdmin", "impersonator"],
-        "description": "The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.",
+        "required": ["user", "isSystemAdmin"],
+        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
         "example": {
           "user": {
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -1376,8 +1365,7 @@
             "lastSignInAt": "2024-05-02T20:53:18.498Z",
             "lastSeenAt": "2024-05-02T20:53:18.498Z"
           },
-          "isSystemAdmin": false,
-          "impersonator": null
+          "isSystemAdmin": false
         },
         "x-tags": ["data", "me", "cella"]
       },
@@ -1648,7 +1636,7 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["regular", "impersonation", "mfa"]
+                  "enum": ["regular", "mfa"]
                 },
                 "userId": {
                   "type": "string",
@@ -1714,11 +1702,7 @@
                 },
                 "revocationReason": {
                   "type": ["string", "null"],
-                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
-                },
-                "impersonatorSessionId": {
-                  "type": ["string", "null"],
-                  "format": "uuid"
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
                 },
                 "steppedUpAt": {
                   "type": ["string", "null"]
@@ -1755,7 +1739,6 @@
                 "revokedAt",
                 "revokedBy",
                 "revocationReason",
-                "impersonatorSessionId",
                 "steppedUpAt",
                 "steppedUpVia",
                 "isCurrent",
@@ -1838,7 +1821,6 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
-              "impersonatorSessionId": null,
               "steppedUpAt": null,
               "steppedUpVia": null,
               "isCurrent": true,
@@ -3601,92 +3583,6 @@
         }
       }
     },
-    "/auth/impersonation/start": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "startImpersonation",
-        "tags": ["auth", "cella"],
-        "summary": "Start impersonating",
-        "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": ["userGuard", "sysAdminGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "targetUserId": {
-                    "type": "string",
-                    "maxLength": 50
-                  }
-                },
-                "required": ["targetUserId"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Impersonating",
-            "headers": {
-              "Set-Cookie": {
-                "schema": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "required": true
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
-          }
-        }
-      }
-    },
-    "/auth/impersonation/stop": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "stopImpersonation",
-        "tags": ["auth", "cella"],
-        "summary": "Stop impersonating",
-        "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "responses": {
-          "204": {
-            "description": "Stopped impersonating"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          }
-        }
-      }
-    },
     "/auth/resend-invitation": {
       "post": {
         "security": [],
@@ -5363,7 +5259,7 @@
                         "type": "string",
                         "enum": ["passkey", "totp", "email", "enroll"]
                       },
-                      "description": "What the user can offer to step up for the tier; empty while impersonating."
+                      "description": "What the user can offer to step up for the tier."
                     }
                   },
                   "required": ["steppedUp", "methods"]
@@ -6329,7 +6225,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": ["regular", "impersonation", "mfa"]
+                            "enum": ["regular", "mfa"]
                           },
                           "userId": {
                             "type": "string",
@@ -6395,11 +6291,7 @@
                           },
                           "revocationReason": {
                             "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
-                          },
-                          "impersonatorSessionId": {
-                            "type": ["string", "null"],
-                            "format": "uuid"
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
                           },
                           "steppedUpAt": {
                             "type": ["string", "null"]
@@ -6429,7 +6321,6 @@
                           "revokedAt",
                           "revokedBy",
                           "revocationReason",
-                          "impersonatorSessionId",
                           "steppedUpAt",
                           "steppedUpVia"
                         ]

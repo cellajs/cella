@@ -237,7 +237,7 @@ export type UnauthorizedError = ApiError & {
 };
 
 /**
- * The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.
+ * The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
  */
 export type ForbiddenError = ApiError & {
   status?: 403;
@@ -297,7 +297,7 @@ export type SsoEntry = {
 };
 
 /**
- * The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
  */
 export type Me = {
   user: User;
@@ -305,10 +305,6 @@ export type Me = {
    * Whether the user holds the system admin role and the request comes from an allowed IP address.
    */
   isSystemAdmin: boolean;
-  /**
-   * The system admin acting as the user through an impersonation; null on the user's own session.
-   */
-  impersonator: UserMinimalBase | null;
 };
 
 /**
@@ -373,7 +369,7 @@ export type MeAuthData = {
   } | null;
   sessions: Array<{
     id: string;
-    type: 'regular' | 'impersonation' | 'mfa';
+    type: 'regular' | 'mfa';
     userId: string;
     deviceName: string | null;
     deviceType: 'desktop' | 'mobile';
@@ -390,8 +386,7 @@ export type MeAuthData = {
     expiresAt: string;
     revokedAt: string | null;
     revokedBy: string | null;
-    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
-    impersonatorSessionId: string | null;
+    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
     steppedUpAt: string | null;
     steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     isCurrent: boolean;
@@ -1001,74 +996,6 @@ export type ConfirmInvitationAddressResponses = {
 };
 
 export type ConfirmInvitationAddressResponse = ConfirmInvitationAddressResponses[keyof ConfirmInvitationAddressResponses];
-
-export type StartImpersonationData = {
-  body: {
-    targetUserId: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/impersonation/start';
-};
-
-export type StartImpersonationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large: the request body exceeds its limit.
-   */
-  413: PayloadTooLargeError;
-};
-
-export type StartImpersonationError = StartImpersonationErrors[keyof StartImpersonationErrors];
-
-export type StartImpersonationResponses = {
-  /**
-   * Impersonating
-   */
-  204: void;
-};
-
-export type StartImpersonationResponse = StartImpersonationResponses[keyof StartImpersonationResponses];
-
-export type StopImpersonationData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/auth/impersonation/stop';
-};
-
-export type StopImpersonationErrors = {
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-};
-
-export type StopImpersonationError = StopImpersonationErrors[keyof StopImpersonationErrors];
-
-export type StopImpersonationResponses = {
-  /**
-   * Stopped impersonating
-   */
-  204: void;
-};
-
-export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
 
 export type ResendInvitationWithTokenData = {
   body: {
@@ -2071,7 +1998,7 @@ export type GetStepUpResponses = {
      */
     steppedUp: boolean;
     /**
-     * What the user can offer to step up for the tier; empty while impersonating.
+     * What the user can offer to step up for the tier.
      */
     methods: Array<'passkey' | 'totp' | 'email' | 'enroll'>;
   };
@@ -2693,7 +2620,7 @@ export type RevokeMySessionsResponses = {
   200: {
     data: Array<{
       id: string;
-      type: 'regular' | 'impersonation' | 'mfa';
+      type: 'regular' | 'mfa';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
@@ -2710,8 +2637,7 @@ export type RevokeMySessionsResponses = {
       expiresAt: string;
       revokedAt: string | null;
       revokedBy: string | null;
-      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
-      impersonatorSessionId: string | null;
+      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
       steppedUpAt: string | null;
       steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
     }>;

@@ -1,5 +1,3 @@
-import { AppError } from '#/core/error';
-import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -28,17 +26,8 @@ type Factor = Extract<StepUpMethod, 'passkey' | 'totp'>;
 export interface StepUpState {
   /** The session proved its user's presence within the window, well enough for the tier. */
   steppedUp: boolean;
-  /** What the user can offer to step up for the tier; empty for an impersonation. */
+  /** What the user can offer to step up for the tier. */
   methods: StepUpMethod[];
   /** The second factor that proves the session now, by a step-up or by its sign-in; null without one. */
   factor: Factor | null;
 }
-
-/**
- * Refuses an impersonation: the admin acts as the user, never on the account itself, its sessions or how it is
- * protected. The one spelling of this answer.
- * @throws AppError 403 `impersonation_forbidden`.
- */
-export const refuseImpersonation = (session: SessionFacts): void => {
-  if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
-};

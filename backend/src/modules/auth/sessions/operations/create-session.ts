@@ -6,7 +6,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/devices/operations/notify-sign-in';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceColumns } from '#/modules/auth/sessions/helpers/device-info';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
@@ -29,13 +29,10 @@ const dbCtx = { var: { db: baseDb } };
 /** How long a session lasts; the cookie that carries it expires with it. */
 export const sessionLifetime = new TimeSpan(1, 'w');
 
-/** How long an impersonation lasts at most: it also ends with the admin session it is layered on. */
-const impersonationLifetime = new TimeSpan(1, 'h');
-
 /**
  * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
- * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
- * sign-ins may exceed the cap by one.
+ * together, since an mfa session is the full session of a user with MFA on. Concurrent sign-ins may exceed the cap by
+ * one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
@@ -74,15 +71,14 @@ export interface SessionExtras {
 
 /**
  * Stores a session for the user and returns what its cookie needs: the random token, which exists only there, since the
- * row keeps its hash. `strategy` is the method that started the sign-in; a second factor goes in `steppedUpVia`. An
- * impersonation names the admin session it is layered on. Database only, so it runs without a request.
+ * row keeps its hash. `strategy` is the method that started the sign-in; a second factor goes in `steppedUpVia`.
+ * Database only, so it runs without a request.
  */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
   context: SignInContext,
   strategy: AuthStrategy,
   type: SessionType = 'regular',
-  impersonatorSessionId: string | null = null,
   { steppedUpVia = null, connectionId = null }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
@@ -91,8 +87,6 @@ export const createSession = async (
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
   const { raw: sessionToken, hash: secret } = newHashedToken();
-
-  const timeSpan = type === 'impersonation' ? impersonationLifetime : sessionLifetime;
 
   const sessionId = generateId();
   const now = getIsoDate();
@@ -107,39 +101,30 @@ export const createSession = async (
     ipSubnetHash: subnet ? hashSubnet(subnet) : null,
     ipCountry: country,
     ipAsn: asn,
-    deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
+    deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
     createdAt: now,
-    expiresAt: isoDateIn(timeSpan),
-    impersonatorSessionId,
+    expiresAt: isoDateIn(sessionLifetime),
     steppedUpAt: steppedUpVia ? now : null,
     steppedUpVia,
     connectionId,
   };
 
-  if (type !== 'impersonation') {
-    // A browser holds at most one live session, so repeated sign-ins do not stack up.
-    if (session.deviceIdHash) {
-      const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash });
-      const sessionIds = replaced.map(({ id }) => id);
-      await revokeSessions(dbCtx, { userId: user.id, sessionIds, reason: 'replaced', by: null });
-    }
-    await evictExcessSessions(user.id);
-  }
+  // A browser holds at most one live session, so repeated sign-ins do not stack up.
+  const replaced = await findLiveSessionsHeldByUser(dbCtx, { userId: user.id, deviceIdHash: session.deviceIdHash });
+  await revokeSessions(dbCtx, { userId: user.id, sessionIds: replaced.map(({ id }) => id), reason: 'replaced', by: null });
+  await evictExcessSessions(user.id);
 
   await insertSession(dbCtx, { values: session });
 
-  if (type === 'impersonation') return { sessionId, sessionToken, timeSpan, newDevice: null };
-
-  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
+  const newDevice = await enrollNewDevice(user.id, deviceId);
 
   await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
-  return { sessionId, sessionToken, timeSpan, newDevice };
+  return { sessionId, sessionToken, timeSpan: sessionLifetime, newDevice };
 };
 
 /**
- * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. An impersonation
- * gets a cookie of its own, layered over the admin's session cookie, which stays: stopping returns the browser to it.
+ * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices.
  */
 export const setUserSession = async (
   ctx: Context<Env>,
@@ -150,22 +135,14 @@ export const setUserSession = async (
 ): Promise<void> => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));
 
-  if (isSystemAdmin || type === 'impersonation') {
-    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
-  }
+  if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
-  const context = await collectSignInContext(ctx, type);
-  const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
-  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId, extras);
+  const context = await collectSignInContext(ctx);
+  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, extras);
 
-  if (type === 'impersonation') setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
-  else {
-    setAuthCookie(ctx, 'session', sessionToken, timeSpan);
-    // A sign-in replaces whatever this browser held, an impersonation included.
-    if (getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
-  }
+  setAuthCookie(ctx, 'session', sessionToken, timeSpan);
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
 
-  if (type !== 'impersonation') log.info('User signed in', { strategy });
+  log.info('User signed in', { strategy });
 };

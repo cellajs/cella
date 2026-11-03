@@ -26,7 +26,6 @@ import { encodeBase32 } from '#/utils/base32';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
-  createSystemAdminUser,
   createTestOrganization,
   createTestUser,
   createTotpUser,
@@ -40,15 +39,7 @@ import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
-import {
-  asSession,
-  insertImpersonation,
-  insertSession,
-  insertStaleSession,
-  insertSteppedUpSession,
-  stepUpByEmail,
-  type TestSession,
-} from './session-helpers';
+import { asSession, insertSession, insertStaleSession, insertSteppedUpSession, stepUpByEmail, type TestSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
@@ -57,9 +48,9 @@ afterEach(async () => await clearSecurityTestData());
 const expectStepUpRequired = (result: TestResult) => expectRefusal(result, 403, 'step_up_required');
 
 /**
- * Account-security routes need the user present again on the very session: a stale session, an impersonation, a
- * step-up of another session or past its window, and a recent sign-in without the factor the user holds are refused;
- * the same request passes once this session stepped up (the positive control).
+ * Account-security routes need the user present again on the very session: a stale session, a step-up of another
+ * session or past its window, and a recent sign-in without the factor the user holds are refused; the same request
+ * passes once this session stepped up (the positive control).
  */
 describe('account-security routes need a step-up', async () => {
   const call = await createAppClient();
@@ -225,33 +216,6 @@ describe('account-security routes need a step-up', async () => {
     expect(await sessionRow(signingOut.id)).toMatchObject({ revocationReason: 'sign_out' });
   });
 
-  it('must not change account security via an impersonation session, however fresh', async () => {
-    const admin = await createSystemAdminUser('impersonating-admin@security-test.com');
-    const target = await totpHolder('impersonated');
-    const passkey = await insertPasskey(target);
-    const impersonation = await insertImpersonation(await insertSession(admin), target);
-    const headers = impersonation.headers;
-
-    const attempts = [
-      await call(deletePasskey, { path: { id: passkey.id }, headers }),
-      await call(generateTotpKey, { headers }),
-      await call(deleteTotp, { headers }),
-      await call(toggleMfa, { body: { mfaRequired: true }, headers }),
-      await call(startOAuthConnect, { headers }),
-      await call(deleteMe, { headers }),
-    ];
-    for (const attempt of attempts) {
-      await expectRefusal(attempt, 403, 'impersonation_forbidden');
-    }
-    expect(await passkeysOf(target.id)).toHaveLength(1);
-    expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, target.id))).toHaveLength(1);
-
-    // The impersonated user's own stepped-up session passes.
-    const own = await insertStaleSession(target);
-    await stepUpWithTotp(own);
-    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: own.headers })).response.status).toBe(204);
-  });
-
   /** An organization with an admin who has no second factor, and the calls that mint an API key in it. */
   const keyMinting = async (label: string) => {
     const org = await createTestOrganization();
@@ -331,23 +295,6 @@ describe('account-security routes need a step-up', async () => {
     await expectStepUpRequired(await setStatus(stale, 'active'));
     expect((await minting.accounts())[0]?.status).toBe('disabled');
     expect((await setStatus(factor, 'active')).response.status).toBe(200);
-  });
-
-  it('must not mint an API key via an impersonation session, however fresh', async () => {
-    const minting = await keyMinting('impersonated-key-minter');
-    await insertPasskey(minting.admin);
-    const own = await insertSteppedUpSession(minting.admin, 'passkey');
-    const created = await minting.createAccount(own);
-    expect(created.response.status).toBe(201);
-    const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
-
-    const admin = await createSystemAdminUser('key-impersonator@security-test.com');
-    const impersonation = await insertImpersonation(await insertSession(admin), minting.admin);
-    for (const attempt of [await minting.createAccount(impersonation), await minting.createKey(impersonation, accountId)]) {
-      await expectRefusal(attempt, 403, 'impersonation_forbidden');
-    }
-    expect(await minting.accounts()).toHaveLength(1);
-    expect(await minting.keys()).toHaveLength(1);
   });
 
   it("must not pass the guard via a step-up of the user's other session", async () => {

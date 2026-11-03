@@ -15,7 +15,7 @@ type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionTy
  * Revocations where the person leaves (signs out, revokes their other sessions, turns MFA on): the authorization
  * server's sessions of the user are deleted too, so no browser keeps answering OAuth clients for them, and so is the
  * user's opened magic link, so the browser that opened it cannot sign in again from its history. Sign-in
- * housekeeping and a stopped impersonation leave them.
+ * housekeeping leaves them.
  */
 const leavingReasons = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
 
@@ -32,8 +32,7 @@ type RevokeSessionsOpts = SessionSelection & {
  * them; other processes stop serving the session within the session cache's 10 seconds. A revoked session is never
  * re-stamped, so the first revocation is the one the sessions list shows; the row stays until the nightly sweep.
  * `user_deleted` follows the delete, which took the rows along: nothing is stamped, and every stream of the user
- * closes. An impersonation layered on a revoked session is revoked with it as `impersonation_stopped` (a deleted admin's
- * rows take theirs along), since only its admin's session can present it.
+ * closes.
  *
  * The stamps commit inside the caller's transaction when there is one; the cache drop and the streams happen at the
  * call, so call it last in a transaction.
@@ -49,34 +48,26 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
   const ids = 'sessionIds' in opts ? opts.sessionIds : undefined;
   const type = 'all' in opts ? opts.type : undefined;
 
-  const { ended, layered } = await ctx.var.db.transaction(async (tx) => {
+  const ended = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const stamped =
       reason === 'user_deleted' ? [] : await updateSessionsRevoked(txCtx, { match: { userId, ids, type }, revokedBy: by, revocationReason: reason });
-    const endedIds = stamped.map((session) => session.id);
-    const stopped = endedIds.length
-      ? await updateSessionsRevoked(txCtx, { match: { impersonatorSessionIds: endedIds }, revokedBy: by, revocationReason: 'impersonation_stopped' })
-      : [];
 
     if (leavingReasons.has(reason)) {
       await deleteProviderSessionsByUser(txCtx, { userId });
       await deleteOpenedMagicLink(txCtx, userId);
     }
-    return { ended: stamped, layered: stopped };
+    return stamped;
   });
 
   dropCachedSessions(userId);
-  for (const impersonation of layered) dropCachedSessions(impersonation.userId);
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {
     const sessionIds = everySession ? 'all' : ended.map((session) => session.id);
     authEvents.emit('session.revoked', { userId, sessionIds, reason });
   }
-  for (const impersonation of layered) {
-    authEvents.emit('session.revoked', { userId: impersonation.userId, sessionIds: [impersonation.id], reason: 'impersonation_stopped' });
-  }
-  log.info('Sessions revoked', { userId, reason, count: ended.length, impersonationsStopped: layered.length });
+  log.info('Sessions revoked', { userId, reason, count: ended.length });
 
   return ended;
 };
