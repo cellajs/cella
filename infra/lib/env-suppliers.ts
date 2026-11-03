@@ -12,7 +12,7 @@ export interface EnvSupplierContext {
 /** A supplier for one compose `${VAR}` placeholder, called when a deploy writes a machine's static env. */
 export type EnvSupplier = (ctx: EnvSupplierContext) => string;
 
-/** App-owned pool of compose env suppliers for `${VAR}` placeholders that are not service-to-service `bindings`. Preserves literal keys; the engine reads it generically so app-specific values stay out of engine code. */
+/** Typed identity for the pool of compose env suppliers for `${VAR}` placeholders that are not service-to-service `bindings`. Preserves literal keys; the engine reads it generically so app-specific values stay out of engine code. */
 export function defineEnvSuppliers<const T extends Record<string, EnvSupplier>>(suppliers: T): T {
   return suppliers;
 }

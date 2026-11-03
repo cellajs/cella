@@ -18,7 +18,7 @@ function resetMocks() {
 
 const aiKey = managedKeys.find((key) => key.id === 'ai')!;
 
-/** Synthetic two-half definition: the registry's s3 key is retired (REQ-20),
+/** Synthetic two-half definition: the registry's s3 key is retired,
  *  but the accessKey+secretKey assignment path must stay covered. Targets are
  *  real registry ids so runtimeSecretById resolves them. */
 const pairKey = {

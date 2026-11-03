@@ -171,7 +171,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
 }
 
 /**
- * Start the environment's main job again for the target whose last run ended blocked (D21), on the operator key: the apply, or Manage runtime
+ * Start the environment's main job again for the target whose last run ended blocked, on the operator key: the apply, or Manage runtime
  * secrets for a missing secret, does it at its end, as the runner holds rights over jobs only and cannot see either. Nothing when the last
  * run ended otherwise or runs still; a target that moved on since is the runner's.
  */

@@ -54,7 +54,7 @@ if (!declared) {
 } else {
   new scaleway.job.Definition('main-job', {
     name: naming.resource('main'),
-    description: 'One deploy of a target per run (plan §3.5), on the engine image the last apply published',
+    description: 'One deploy of a target per run, on the engine image the last apply published',
     region,
     projectId,
     imageUri: declared.imageUri,

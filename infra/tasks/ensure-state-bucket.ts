@@ -145,7 +145,7 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
 
 /**
  * The setup's step: make the bucket in the environment's project and harden it, on the operator key. `--check` is the deploy's: the bucket
- * must exist in the project, and nothing is made or changed, as a bucket's configuration is the apply's (plan §3.2).
+ * must exist in the project, and nothing is made or changed, as a bucket's configuration is the apply's.
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const accessKey = process.env.SCW_ACCESS_KEY;

@@ -48,7 +48,7 @@ describe('Show runs', () => {
     expect(lines[0]).toContain('the job run ended failed');
   });
 
-  it('lists every run, one that left no record too (D27), and shows the newest in full with a failed machine’s boot error and the end of its log', async () => {
+  it('lists every run, one that left no record too, and shows the newest in full with a failed machine’s boot error and the end of its log', async () => {
     const lines: string[] = [];
     const failed = record('20261015T010000Z-bbbbbbbbbb', {
       startedAt: '2026-10-15T01:00:00.000Z',

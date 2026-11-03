@@ -128,7 +128,7 @@ export async function runDeploy(
   const env = await loadDeployEnv(opts);
   const stack = env.stack;
 
-  // One run, one record (plan §3.8): written at the start, after every step and at the end, so a run killed at the job's limit still shows how far it came.
+  // One run, one record: written at the start, after every step and at the end, so a run killed at the job's limit still shows how far it came.
   const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
   const say = (message: string) => {
     recorder.line(message);

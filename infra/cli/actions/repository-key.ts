@@ -12,9 +12,9 @@ import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 
 /**
- * Store, replace or remove the read-only key a private repository is fetched with (D19), in the runtime folder of this environment's
+ * Store, replace or remove the read-only key a private repository is fetched with, in the runtime folder of this environment's
  * project, on the operator key. The deploy reads it there and writes it into the builder's cloud-init. Where the runner is set up, its project keeps a
- * copy (D22), which Replace the runner gives to the runner machine. A key the repository does not answer is not stored. An empty answer
+ * copy, which Replace the runner gives to the runner machine. A key the repository does not answer is not stored. An empty answer
  * removes a stored key, for a repository anyone may read.
  */
 export async function runRepositoryKey(context: InfraContext): Promise<void> {
@@ -59,7 +59,7 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
     (await secrets.ensureSecret({
       name: REPOSITORY_KEY_NAME,
       path: RUNTIME_FOLDER,
-      description: "Read-only key of the app's repository, for the builder (D19)",
+      description: "Read-only key of the app's repository, for the builder",
     }));
   await secrets.putSecretValue({ secretId: container.id, value: key, description: 'Set by the operator', disablePrevious: true });
   if (runnerSecrets) {
@@ -68,7 +68,7 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
       (await runnerSecrets.ensureSecret({
         name: RUNNER_REPOSITORY_KEY.name,
         path: RUNNER_REPOSITORY_KEY.path,
-        description: "Read-only key of the app's repository, for the runner (D22)",
+        description: "Read-only key of the app's repository, for the runner",
       }));
     await runnerSecrets.putSecretValue({ secretId: runnerContainer.id, value: key, description: 'Set by the operator', disablePrevious: true });
   }

@@ -6,7 +6,7 @@ import { appServices } from '../../config/services.config';
 import { telemetrySink } from '../../config/telemetry.config';
 
 /**
- * The engine reads config only through engine-config, so the app-owned registry repeats what the shared config
+ * The engine reads config only through engine-config, so the registry repeats what the shared config
  * declares: a service's ports, the path it serves under and the telemetry ingest. A local stack, the Vite proxy and a
  * deployed container must agree on them, so a drift fails here.
  */

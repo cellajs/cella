@@ -17,14 +17,14 @@ export interface RunStep {
  */
 export type RunOutcome = 'running' | 'deployed' | 'unchanged' | 'blocked' | 'apply needed' | 'failed';
 
-/** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */
+/** A new machine's account of the run's release: its key under `boot-diag/`, or none when that machine never uploaded one. */
 export interface RunBootAccount {
   service: string;
   key?: string;
   failed?: boolean;
 }
 
-/** One run, one record (plan §3.8): what it deployed where, each step with its duration, the step that failed, and how it ended. */
+/** One run, one record: what it deployed where, each step with its duration, the step that failed, and how it ended. */
 export interface RunRecord {
   run: string;
   environment: string;

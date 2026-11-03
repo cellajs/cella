@@ -229,7 +229,7 @@ export function parseServicesJson(raw: string): Array<SmokeService & { public_ur
 export function parseArgs(argv: string[]): CliArgs {
   const servicesRaw = getFlag(argv, '--services-json');
   const services = servicesRaw ? parseServicesJson(servicesRaw) : undefined;
-  // Roles, not names (S9): the default-route service owns the browser checks, the --primary service owns the aggregate health and OpenAPI checks.
+  // Roles, not names: the default-route service owns the browser checks, the --primary service owns the aggregate health and OpenAPI checks.
   // Without --primary, the first non-default-route service with a health URL stands in.
   const defaultRouteRow = services?.find((service) => service.lb_route === 'default');
   const primarySlug = getFlag(argv, '--primary');

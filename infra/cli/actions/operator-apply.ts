@@ -170,7 +170,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         endAction(1);
       }
 
-      // An errored certificate leaves the state and Scaleway here, so the `up` makes it anew behind its DNS gate; certificates are the apply's (D15).
+      // An errored certificate leaves the state and Scaleway here, so the `up` makes it anew behind its DNS gate; certificates are the apply's.
       console.info(pc.dim('\n→ Clearing errored load balancer certificates (repair-certs)…'));
       const repair = await infraTask(env, ['repair-certs', '--stack', stack]);
       if (repair.status !== 0) {

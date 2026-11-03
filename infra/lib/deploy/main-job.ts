@@ -4,7 +4,7 @@ import { ENGINE_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 
 /**
- * The main job (plan §3.5): one Serverless Jobs definition per environment, made by the operator's apply, that runs one deploy of a target
+ * The main job: one Serverless Jobs definition per environment, made by the operator's apply, that runs one deploy of a target
  * per run on the engine image the apply published. Its keys arrive by secret reference; the target and the retry counter by the start call,
  * which anyone who reads job runs can see, so they are the only values a start carries.
  */
@@ -15,7 +15,7 @@ const DEPLOY_KEY_SECRET_NAME = 'deploy-key';
 /** The folder of the secrets the definition references: the engine's, which only the operator reads. */
 const MAIN_JOB_SECRET_FOLDER = ENGINE_FOLDER.replace(/\/$/, '');
 
-/** How a run ends, as its exit code. The runner starts a target once; a blocked one waits for the operator (D21). */
+/** How a run ends, as its exit code. The runner starts a target once; a blocked one waits for the operator. */
 export const MAIN_JOB_EXIT = {
   /** The target is live: deployed by this run, or already serving (`unchanged` in the record). */
   deployed: 0,

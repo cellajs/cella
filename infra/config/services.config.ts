@@ -2,7 +2,7 @@ import { defineServices } from '../compose/infrastructure';
 import { CRON_HOME_DATABASE } from '../lib/scaleway/db-privileges';
 
 /**
- * App-owned registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing,
+ * Registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing,
  * certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. Each `port`,
  * `internalPort` and `pathPrefix` repeats `services` and `servicePaths` of the shared config, which the engine never
  * imports; `tests/unit/app-config-registry.test.ts` holds the two together.
@@ -112,7 +112,7 @@ export const appServices = defineServices({
     drainSeconds: 10,
     // Reuses the backend image at the same SHA, so CI builds no separate oauth image.
     reusesImageOf: 'backend',
-    // The authorization server (D12): reached at https://<app-host>/oauth/... through an LB path-begin route, same origin as the API so tokens and consent cookies share one issuer.
+    // The authorization server: reached at https://<app-host>/oauth/... through an LB path-begin route, same origin as the API so tokens and consent cookies share one issuer.
     lbRoute: 'path',
     pathPrefix: '/oauth',
     instanceType: 'DEV1-S',

@@ -1,4 +1,4 @@
-/** App-owned health contract every deployed service implements: the engine probes `path` and reads the release version from `versionHeader`. Per-service response codes are `healthExpectStatus` in services.config.ts. */
+/** The health contract every deployed service implements: the engine probes `path` and reads the release version from `versionHeader`. Per-service response codes are `healthExpectStatus` in services.config.ts. */
 export const healthContract = {
   /** Path the health endpoint answers on. */
   path: '/health',

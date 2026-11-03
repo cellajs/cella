@@ -1,4 +1,4 @@
-// Deploy key (`<slug>-<mode>-ci-deploy`): the rights of plan §3.1, built into rules by lib/scaleway/deploy-policy.ts
+// Deploy key (`<slug>-<mode>-ci-deploy`): its rights, built into rules by lib/scaleway/deploy-policy.ts
 
 /**
  * The deploy key's unconditioned project sets: machines and what they attach to (a builder machine among them), the buckets (narrowed per
@@ -70,7 +70,7 @@ export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 /**
  * Project-scoped set for the runner (`<app>-runner`), in each environment it serves: starting and reading the main job's runs. Scaleway has
- * no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference (plan §7). Its one rule carries the
+ * no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference. Its one rule carries the
  * condition of its reserved address.
  */
 export const RUNNER_PROJECT_PERMISSION_SETS = ['ServerlessJobsFullAccess'] as const;

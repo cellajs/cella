@@ -6,10 +6,10 @@ export function runnerName(appSlug: string): string {
   return `${appSlug}-runner`;
 }
 
-/** Where the runner key is kept in the runner's project, for the replace to put into the machine's user data (D28). */
+/** Where the runner key is kept in the runner's project, for the replace to put into the machine's user data. */
 export const RUNNER_KEY = { name: 'runner-key', path: '/runner' } as const;
 
-/** Where a private repository's read key is kept for the runner (D22), beside its key: Set repository read key writes it. */
+/** Where a private repository's read key is kept for the runner, beside its key: Set repository read key writes it. */
 export const RUNNER_REPOSITORY_KEY = { name: 'repository-read-key', path: '/runner' } as const;
 
 /** What the runner machine's script reads from `/etc/runner/env`, a file only root reads. */
@@ -22,13 +22,13 @@ export interface RunnerValues {
   REPO: string;
   /** The `node` image at the root `engines.node`, which has git. */
   NODE_IMAGE: string;
-  /** A private repository's read key (D22), sent as a header with each fetch; empty for a repository anyone may read. */
+  /** A private repository's read key, sent as a header with each fetch; empty for a repository anyone may read. */
   REPOSITORY_READ_KEY: string;
 }
 
 /**
  * The runner's script: in a `node` container, fetch the release's commit and run the runner's program from it, on Node alone. Its output goes
- * to the serial console (D31); systemd starts it again 30 s after it ends, so a fetch that failed is tried again.
+ * to the serial console; systemd starts it again 30 s after it ends, so a fetch that failed is tried again.
  */
 const RUNNER_SCRIPT = `#!/bin/bash
 set -euo pipefail

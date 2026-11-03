@@ -1,5 +1,5 @@
 /**
- * What an environment deploys (D8): production the newest release, any other environment only what its line in the repository's environments
+ * What an environment deploys: production the newest release, any other environment only what its line in the repository's environments
  * file names. A line also pins a release or a commit, or raises the retry counter; an environment that follows the releases takes `releases`
  * or a release tag only. The runner reads this, as data, once a minute.
  */

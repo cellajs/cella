@@ -29,7 +29,7 @@ export interface OwnerKey extends KeyPair {
  * typed at the prompt, never read from the environment.
  * The bearer is validated first: an organization Owner, or a principal holding IAMManager; an application the engine created is refused by name.
  * The key is used as it is: an Owner moment runs no Pulumi and no child process. A durable key (`durableKeyLife`) is refused, as it would
- * write IAM from every address between Owner moments (C1). Every failure names the fix and exits before the stack is touched.
+ * write IAM from every address between Owner moments. Every failure names the fix and exits before the stack is touched.
  * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  * `projectId` is the environment's, when it has one yet: a first setup picks the project with the key.
  */

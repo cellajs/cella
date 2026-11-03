@@ -205,7 +205,7 @@ describe('runDeploy sequencing', () => {
     expect(smoke[smoke.indexOf('--primary') + 1]).toBe('backend');
   });
 
-  it('must not change anything once another run took its lease (C7): the next step stops the run', async () => {
+  it('must not change anything once another run took its lease: the next step stops the run', async () => {
     const { fx, ops } = makeFake({ leaseLost: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/taken by another run/);
     expect(ops.some((op) => op.startsWith('switch:'))).toBe(false);

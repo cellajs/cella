@@ -17,7 +17,7 @@ const expect_ = {
 };
 
 describe('the inventory', () => {
-  it('finds a planted key, a planted machine (a slot machine the live record does not name or a builder too, when no deploy runs), a planted policy and an application that can act here, and nothing that belongs (C11)', () => {
+  it('finds a planted key, a planted machine (a slot machine the live record does not name or a builder too, when no deploy runs), a planted policy and an application that can act here, and nothing that belongs', () => {
     const facts: InventoryFacts = {
       applications: [
         { id: 'boot', name: 'app-staging-boot' },

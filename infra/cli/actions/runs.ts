@@ -75,7 +75,7 @@ async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Prom
 }
 
 /**
- * A job run that left no record (D27), by Scaleway's state, exit code and message: one that runs still, or one that ended before the engine
+ * A job run that left no record, by Scaleway's state, exit code and message: one that runs still, or one that ended before the engine
  * could write its record (in the fetch or the install).
  */
 function runWithoutRecordLine(run: JobRun, environment: string): string {
@@ -113,7 +113,7 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
 /**
  * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. A record is read by its first
  * version, and one whose versions stopped growing is flagged as rewritten. The environment's job runs that left no record are listed beside
- * the records (D27), so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
+ * the records, so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
  * own is flagged.
  */
 export async function showRuns(
@@ -191,7 +191,7 @@ async function showMachines(
 
 /**
  * The environment's runs, on the observer key: what was deployed when, how it ended and where it stopped, read from the records each deploy
- * writes to the diagnostics bucket (plan §3.8), beside the main job's runs that left none. With `--machines` it shows each service's newest
+ * writes to the diagnostics bucket, beside the main job's runs that left none. With `--machines` it shows each service's newest
  * boot account, and with `--sha <sha>` every account of that release with the builder's report. Reads only.
  */
 export async function runRuns(context: InfraContext): Promise<void> {

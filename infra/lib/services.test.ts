@@ -169,7 +169,7 @@ describe('service registry: lbRoute contract', () => {
   });
 });
 
-describe('appStorageNeeds (P2 optional app storage)', () => {
+describe('appStorageNeeds (optional app storage)', () => {
   const svc = (partial: { slug: string; lbRoute?: string; s3Access?: boolean }) => partial as unknown as ServiceDefinition;
 
   it("cella's registry needs everything: SPA bucket, upload buckets, browser origin", () => {

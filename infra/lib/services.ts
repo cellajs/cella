@@ -99,7 +99,7 @@ export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpo
 }
 
 /**
- * App-owned object storage implied by the service registry: the SPA bucket follows the default-route service, the upload buckets follow any `s3Access` service, and browser CORS exists only when both do.
+ * The object storage implied by the service registry: the SPA bucket follows the default-route service, the upload buckets follow any `s3Access` service, and browser CORS exists only when both do.
  * Engine-owned buckets (Pulumi state, boot-diag) are unconditional and absent here, so a registry with neither a default route nor an s3Access service provisions no app buckets.
  */
 export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {

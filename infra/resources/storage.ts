@@ -9,7 +9,7 @@ import { CONTROL_PREFIX } from '../lib/stack/control-store';
 import { naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
-// App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
+// The app's buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
 const browserOrigin = needs.browserOriginSlug ? serviceUrl(needs.browserOriginSlug) : undefined;
 const uploadCorsRules = browserOrigin
@@ -244,7 +244,7 @@ const bootDiagBucket = new scaleway.object.Bucket(
     tags: tagsAsMap,
     // Versioned, so the deploy key, which may delete objects, cannot erase a run record or a boot account: a deleted one stays for 60 days.
     versioning: { enabled: true },
-    // Records, boot accounts and release archives keep as long as Scaleway keeps the job runs they describe (D25). An env file holds a
+    // Records, boot accounts and release archives keep as long as Scaleway keeps the job runs they describe. An env file holds a
     // machine's secret values: it and its versions go within a day, and the deploy deletes it once the machine booted.
     lifecycleRules: [
       {

@@ -7,7 +7,7 @@ import type { ComposeFile } from './types';
 
 const GENERATED_HEADER = [
   '# DO NOT EDIT: generated from infra/compose/ by `pnpm --filter infra compose:generate`.',
-  '# Edit services.config.ts (the app-owned service registry) and re-run synth.',
+  '# Edit services.config.ts (the service registry) and re-run synth.',
   '# Deploy machinery and rationale live in infrastructure.ts.',
 ].join('\n');
 

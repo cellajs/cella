@@ -65,7 +65,7 @@ export interface StoreProvisioner {
   secrets?(): StoreSecretContribution[];
 }
 
-/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. */
+/** Typed identity for the store registry (`config/stores.config.ts`): preserves literal keys so a store id is a compile-time value. */
 export function defineStores<const T extends Record<string, StoreProvisioner>>(stores: T): T {
   return stores;
 }

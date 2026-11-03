@@ -49,7 +49,7 @@ export interface InventoryFacts {
   applied?: AppliedEngine | null;
 }
 
-/** What an environment's code declares (C11): its applications, the ones that hold one key, its project and how its machines are named. */
+/** What an environment's code declares: its applications, the ones that hold one key, its project and how its machines are named. */
 export interface InventoryExpectation {
   projectId: string;
   /** Every application name of this environment starts with it (`<slug>-<mode>-`). */
@@ -78,7 +78,7 @@ export interface InventoryFindings {
 }
 
 /**
- * The difference between what an environment declares and what exists (C11), as an Owner checks after a suspected break-in: an application
+ * The difference between what an environment declares and what exists, as an Owner checks after a suspected break-in: an application
  * the environment does not declare that can act in its project (by a rule on the project or on the organization, its own or a group's), an
  * extra key or policy on one it declares, a person's key without an end date, a key of the operator that outlives a day, and a machine the
  * engine did not make. Policies bound to people are the Owner's to judge in the console.
@@ -249,7 +249,7 @@ async function listAll<T>(auth: { secretKey: string }, url: (page: number) => st
 }
 
 /**
- * The inventory (plan §4.2, phase 8b): what can act in the environment and what runs in its project, against what the code declares, read on
+ * The inventory: what can act in the environment and what runs in its project, against what the code declares, read on
  * the observer key, and the machines on the operator key when the run holds it. Rotate keys deletes every key beside the declared ones; an
  * application, a policy or a machine the engine did not make is removed in the console once it is known who made it.
  */

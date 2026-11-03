@@ -5,7 +5,7 @@ import type { PolicyRule } from './scaleway-iam';
 import { runtimeFolderCondition } from './secret-paths';
 
 /**
- * The deploy key's rules (plan §3.1): machines and buckets in the project, secret metadata, and secret values in the runtime folder only.
+ * The deploy key's rules: machines and buckets in the project, secret metadata, and secret values in the runtime folder only.
  * No IAM, no DNS write (the records follow the load balancer's address, which an apply makes), no load balancer or address write, no
  * secret write, no registry, no console, no snapshot. It reads the environment's runtime secrets and composes them into each machine's env
  * file. Update identities writes these rules.

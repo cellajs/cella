@@ -16,7 +16,7 @@ export interface RotationRecord {
 
 /**
  * The rotations of an environment. `counter` rises with every rotation, and the live record keeps the counter each machine was booted
- * under, so the next deploy replaces every machine and none keeps a key or a value from before. No date is a deadline (D12): the CLI shows
+ * under, so the next deploy replaces every machine and none keeps a key or a value from before. No date is a deadline: the CLI shows
  * the last of each kind.
  */
 export interface Rotations {

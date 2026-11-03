@@ -74,7 +74,7 @@ export interface ServiceMeta {
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box. */
   instanceType: string | Partial<Record<Environment, string>>;
-  /** This service signs S3 requests with the uploads key, which its env file carries (REQ-20). */
+  /** This service signs S3 requests with the uploads key, which its env file carries. */
   s3Access?: boolean;
   /** Deploy-time env bindings resolved into a machine's static env; see {@link AppServiceConfig.bindings}. */
   bindings?: Readonly<Record<string, string>>;
@@ -117,7 +117,7 @@ export interface ComposeFile {
 }
 
 /**
- * Declarative app-owned service entry synthesized into Compose and deployment metadata.
+ * Declarative service entry synthesized into Compose and deployment metadata.
  * The engine injects shared ingress, rollout, health, and environment machinery.
  * Entry presence determines whether the service belongs to the fleet.
  */
@@ -193,5 +193,5 @@ export interface AppServiceConfig {
   includeEnvFile?: boolean;
 }
 
-/** The app-owned service registry: slug → declarative config. */
+/** The service registry: slug → declarative config. */
 export type AppServices = Readonly<Record<string, AppServiceConfig>>;

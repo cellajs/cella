@@ -75,7 +75,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
     expect(rememberedOwnerKey()).toBeUndefined();
   });
 
-  it('must not take a key that writes IAM beyond its moment (C1): one with no expiry, or more than a day left, is refused', async () => {
+  it('must not take a key that writes IAM beyond its moment: one with no expiry, or more than a day left, is refused', async () => {
     for (const expiresAt of [undefined, inHours(24 * 7)]) {
       assertIamManager.mockResolvedValueOnce({ ...application, desc: { ...application.desc, expiresAt } });
       await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });

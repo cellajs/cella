@@ -299,7 +299,7 @@ export async function collectQuickFacts(
   return facts;
 }
 
-/** The last rotation of each kind, "never" where none happened. No date is a deadline (D12): the line only says when. */
+/** The last rotation of each kind, "never" where none happened. No date is a deadline: the line only says when. */
 export function rotationLine(rotations: Rotations | undefined): string {
   const day = (record: RotationRecord | undefined) => (record ? `${record.at.slice(0, 10)} by ${record.by}` : 'never');
   return `Last rotation: keys ${day(rotations?.keys)}, secrets ${day(rotations?.secrets)}`;

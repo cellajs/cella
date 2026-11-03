@@ -25,7 +25,7 @@ import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { acquireIdentityKey, acquireOperatorKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
 
-// Measured in plan §7: a DEV1-S at a reserved address calls the APIs from that address 37 to 48 s after it is created.
+// Measured: a DEV1-S at a reserved address calls the APIs from that address 37 to 48 s after it is created.
 const RUNNER_TYPE = 'DEV1-S';
 const RUNNER_IMAGE = 'docker';
 const RUNNER_DISK_BYTES = 20_000_000_000;
@@ -110,7 +110,7 @@ export function runnerServes(opts: { projectId: string; definition: string }): b
 }
 
 /**
- * Set up the runner, at an Owner moment (D28-D30): the app's runner project and its reserved address, the runner application
+ * Set up the runner, at an Owner moment: the app's runner project and its reserved address, the runner application
  * with the right to start and read job runs in every environment it serves from that address only, the runner key in its project, and the
  * app operator's reach over the runner project; then this environment in `infra/runner.json`. The first run makes the key; a later one
  * extends the policy in place, so the key the running machine holds keeps working. Rotate keys replaces the key. The address is made here,
@@ -234,7 +234,7 @@ async function ensureSecurityGroup(auth: ScwAuth, opts: { zone: string; projectI
 }
 
 /**
- * Replace the runner machine, on the operator key (D24, D28, D30): delete the one that runs and start one at the reserved address that
+ * Replace the runner machine, on the operator key: delete the one that runs and start one at the reserved address that
  * fetches the release `infra/runner.json` pins and serves its environments, with the runner key in its user data. Nothing changes when the
  * machine runs that release and list already. After a rotation of the runner key the machine holds a deleted key, so it is replaced without a
  * question: the rotation asked.

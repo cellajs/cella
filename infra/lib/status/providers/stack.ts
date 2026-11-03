@@ -35,7 +35,7 @@ export interface KeyAge {
  */
 export type IdentityFacts = { observerAppId: string | null; keyAges: KeyAge[] };
 
-/** The keys' ages as one line, oldest first, in days. No age is a deadline (D12): the line only says how old each key is. */
+/** The keys' ages as one line, oldest first, in days. No age is a deadline: the line only says how old each key is. */
 export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
   const days = (createdAt: string) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
   return [...ages]

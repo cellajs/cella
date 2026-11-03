@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { RUNTIME_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 
-/** The repository read key's name in the runtime folder: a read-only key a private repository is fetched with (D19). */
+/** The repository read key's name in the runtime folder: a read-only key a private repository is fetched with. */
 export const REPOSITORY_KEY_NAME = 'repository-read-key';
 
 /** The repository the root `package.json` names, as git reads it: the one a release's commit is fetched from. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { uploadsPolicy } from '../lib/scaleway/declared-identities';
 import { deployRules } from '../lib/scaleway/deploy-policy';
 
-// The deploy key's rights are plan §3.1's: these tests state what it must never hold.
+// The deploy key's rights: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
 const rules = deployRules({ projectId: 'proj' });
 const setsOf = (rule: (typeof rules)[number]) => rule.permission_set_names;
