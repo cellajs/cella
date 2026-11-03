@@ -214,11 +214,11 @@ interface FindInactiveMembershipForUserOpts {
 
 /** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
 export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, userId } = ctx.var;
+  const { db, user } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, user.id), isNull(inactiveMembershipsTable.rejectedAt)))
     .limit(1);
   return membership;
 };
@@ -233,11 +233,11 @@ const claimableBy = (userId: string) =>
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, userId } = ctx.var;
+  const { db, user } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(userId)))
+    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(user.id)))
     .limit(1);
   return membership;
 };

@@ -43,7 +43,6 @@ export const setActorFromToken = async (ctx: Context<Env>, jwt: string, scope: {
     const { user, bindingsVersion } = await resolveUserToken(token);
     const memberships = await loadMemberships(user.id, bindingsVersion);
     ctx.set('user', user);
-    ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
     ctx.set('actor', {
       kind: 'user',

@@ -1,11 +1,10 @@
 import type { z } from '@hono/zod-openapi';
-import { appConfig, type PredicateActor, pathHomeId } from 'shared';
-import type { DbContext, UserContext } from '#/core/context';
+import { type Access, appConfig, pathHomeId } from 'shared';
+import type { ActorBinding, DbContext, UserContext } from '#/core/context';
 import { findChannelCountersByKeys, findLatestActivityId, findSyncGeneration } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { actorFrom } from '#/permissions/access';
+import { accessFrom } from '#/permissions/access';
 import { resolveViewReadStatus } from '#/permissions/view-read-status';
 import type { AppCatchupResponse, CatchupView, CatchupViewAnswer, streamCatchupBodySchema } from '#/schemas';
 
@@ -22,12 +21,7 @@ function depthOf(view: CatchupView) {
  * unconditional subtree read, `opaque` (no numbers) when readable but unproven, `forbidden` with
  * no read route. Summaries come from one channel_counters read over the prefixes' deepest nodes.
  */
-export async function answerCatchupViews(
-  ctx: DbContext,
-  memberships: MembershipBaseModel[],
-  actor: PredicateActor,
-  views: CatchupView[],
-): Promise<CatchupViewAnswer[]> {
+export async function answerCatchupViews(ctx: DbContext, access: Access<ActorBinding>, views: CatchupView[]): Promise<CatchupViewAnswer[]> {
   if (views.length === 0) return [];
 
   // Read before classification so ancestry comes from stored node identity.
@@ -48,7 +42,7 @@ export async function answerCatchupViews(
     for (const prefix of view.prefixes) {
       const truePath = countersByNode.get(pathHomeId(prefix))?.path;
       for (const entityType of view.entityTypes) {
-        const status = resolveViewReadStatus(memberships, entityType, view.organizationId, actor, prefix, depthOf(view), truePath);
+        const status = resolveViewReadStatus(access, entityType, view.organizationId, prefix, depthOf(view), truePath);
         if (status === 'forbidden') return 'forbidden' as const;
         if (status === 'opaque') sawOpaque = true;
         if (status === 'ok') sawOk = true;
@@ -89,7 +83,7 @@ export async function appCatchupOp(ctx: UserContext, { cursor, views }: z.infer<
   const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
 
   // View answers resolve per prefix: an elevated reader holds no child memberships but declares views.
-  const viewAnswers = views?.length ? await answerCatchupViews(ctx, memberships, actorFrom(ctx), views) : undefined;
+  const viewAnswers = views?.length ? await answerCatchupViews(ctx, accessFrom(ctx), views) : undefined;
 
   const generation = await findSyncGeneration(ctx);
 

@@ -9,11 +9,14 @@ vi.mock('./product-cache-store', () => ({
   productCacheStore: { get: (...a: unknown[]) => productCacheGet(...a), set: (...a: unknown[]) => productCacheSet(...a) },
 }));
 const checkAccess = vi.fn();
-vi.mock('#/permissions', () => ({ checkAccess: (...a: unknown[]) => checkAccess(...a) }));
+const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
+vi.mock('shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared')>()),
+  checkAccess: (...a: unknown[]) => checkAccess(...a),
+  buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
+}));
 const accessFrom = vi.fn((): Record<string, unknown> => ({}));
 vi.mock('#/permissions/access', () => ({ accessFrom: () => accessFrom() }));
-const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
-vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a) }));
 
 const { productCache } = await import('./product-cache');
 const { productCacheStore: store } = await vi.importActual<typeof import('./product-cache-store')>('./product-cache-store');

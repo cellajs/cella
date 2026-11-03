@@ -25,9 +25,7 @@ export const userGuard = xMiddleware(
     const { session, user, hasSystemRole, bindingsVersion, impersonator } = await resolveSession(ctx, { clearOnError: true });
 
     ctx.set('user', user);
-    ctx.set('userId', user.id);
     ctx.set('session', session);
-    ctx.set('sessionId', session.id);
     ctx.set('impersonator', impersonator);
     ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
     ctx.set('db', baseDb);

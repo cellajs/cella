@@ -70,18 +70,14 @@ export type Env = {
   Variables: {
     actor: Actor;
     user: UserModel;
-    /** User-only sugar for `actor.id`, kept for the user-only modules. */
-    userId: UserId;
     isSystemAdmin: boolean;
     /** `orgGuard` merges the config defaults under the row's sparse flags. */
     organization: OrganizationModel & { organizationFlags: OrganizationFlags; membership: MembershipBaseModel | null };
     organizationId: string;
     /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
-    /** The authenticated session's facts: its type, how it was proven and when (`userGuard` only). */
+    /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
     session: SessionFacts;
-    /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */
-    sessionId: string;
     /** The system admin acting as `user` through an impersonation; null on a user's own session (`userGuard` only). */
     impersonator: UserModel | null;
     requestId: string;

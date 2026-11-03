@@ -1,8 +1,8 @@
+import { buildSubjectFromEntity } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findServiceAccountInTenant } from '#/modules/service-accounts/service-accounts-queries';
-import { getValidChannel } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 
 /**

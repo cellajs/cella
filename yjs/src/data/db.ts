@@ -17,17 +17,12 @@ interface RlsOptions {
 }
 
 /**
- * Runs `fn` in a transaction that opens with the tenant/user RLS context, as the API's tenant transactions do: set
+ * Runs `fn` in a transaction that opens with the tenant RLS context, as the API's tenant transactions do: set
  * transaction-local, so pooled connections never leak context.
- * @throws An id outside the id alphabet, before a connection is taken.
+ * @throws A tenant id outside the id alphabet, before a connection is taken.
  */
-export async function withRlsTx<T>(
-  tenantId: string,
-  userId: string,
-  fn: (tx: Tx) => Promise<T>,
-  { includeDeleted = false }: RlsOptions = {},
-): Promise<T> {
-  return transactionOpenedWith(db, tenantTransactionOpening({ tenantId, userId, includeDeleted }, false), fn);
+export async function withRlsTx<T>(tenantId: string, fn: (tx: Tx) => Promise<T>, { includeDeleted = false }: RlsOptions = {}): Promise<T> {
+  return transactionOpenedWith(db, tenantTransactionOpening({ tenantId, includeDeleted }, false), fn);
 }
 
 /** The name the log listener's connection carries in `pg_stat_activity`: one per relay process. */

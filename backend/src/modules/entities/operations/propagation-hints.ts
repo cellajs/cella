@@ -3,7 +3,7 @@ import type { UserContext } from '#/core/context';
 import { tenantReadAsIncludingDeleted } from '#/db/tenant-context';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
-import { actorFrom } from '#/permissions/access';
+import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { AppCatchupResponse, CatchupOrganizationSummary, CatchupView } from '#/schemas';
@@ -26,7 +26,7 @@ export async function buildPropagationHints(
 ): Promise<void> {
   if (embeddingsByProduct.size === 0 || !views?.length) return;
   const { memberships } = ctx.var;
-  const actor = actorFrom(ctx);
+  const access = accessFrom(ctx);
   const tenantByOrganization = new Map(memberships.map((membership) => [membership.organizationId, membership.tenantId]));
 
   // Org-view cursors per (org, embeddedProduct).
@@ -54,8 +54,8 @@ export async function buildPropagationHints(
       const frontier = frontiers[embeddedProduct] ?? 0;
       if (frontier <= clientCursor) continue;
 
-      const readFilter = resolveCollectionReadFilter(memberships, embeddedProduct, organizationId, actor);
-      const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProduct), embeddedProduct, actor);
+      const readFilter = resolveCollectionReadFilter(access, embeddedProduct, organizationId);
+      const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProduct), access);
       if (readWhere.kind === 'none') continue;
 
       const { updatedIds, deletedIds } = await tenantReadAsIncludingDeleted(ctx, tenantId, (readCtx) =>

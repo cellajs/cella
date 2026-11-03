@@ -176,7 +176,7 @@ describe('computeCan parity with the engine under home scoping', () => {
   };
 
   const engineCan = (membership: AccessMembership, subject: SubjectForPermission) =>
-    getAllDecisions(policies, [membership], subject, { actorId: actor, elevatedGrants: hierarchy.elevatedGrants, ...overrides }).can;
+    getAllDecisions(policies, [membership], subject, { actorId: actor, ...overrides }).can;
 
   it('must not show a course student (home-scoped) an update affordance the engine refuses on an item homed in a project below', () => {
     const student = membershipAt('course', 'student');
@@ -276,7 +276,7 @@ describe('computeCan over the grants on a channel and above it', () => {
   };
 
   const engineCan = (memberships: AccessMembership[], subject: SubjectForPermission) =>
-    getAllDecisions(policies, memberships, subject, { actorId: actor, elevatedGrants: hierarchy.elevatedGrants, ...overrides }).can;
+    getAllDecisions(policies, memberships, subject, { actorId: actor, ...overrides }).can;
 
   const mapFor = (channelType: DeepChannelType, memberships: AccessMembership[]) =>
     computeCan(policies, channelType as unknown as ChannelEntityType, memberships as unknown as CanGrant[], overrides) as Partial<

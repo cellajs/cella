@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { appConfig, buildSubject } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
@@ -10,7 +10,6 @@ import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/su
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import { versionedSignals } from '#/modules/entities/stream/versioned-signals';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
-import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
 // Activity bus listeners: product events reach authenticated SSE subscribers as changes, membership events as signals.

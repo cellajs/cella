@@ -1,10 +1,10 @@
 import type { SSEStreamingApi } from 'hono/streaming';
+import { buildSubject } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import { buildSubject } from '#/permissions/build-subject';
 import { memberRole } from '../../../../tests/fixtures';
 import { toReaders, toUser } from './audiences';
 import { sendSignal } from './send-signal';

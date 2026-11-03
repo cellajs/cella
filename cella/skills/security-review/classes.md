@@ -133,10 +133,10 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### A6 Address-based trust
 - **Gain:** system admin from a spoofed address.
-- **Merges:** `SYSTEM_ADMIN_IP_ALLOWLIST` through `ipRestriction`, where the client address comes from behind the load balancer (which forwarded header, set by whom), the internal listener's peer check (`internalSourceRefusal`), rate-limiter keys by address, geoip, request details in mails.
+- **Merges:** `SYSTEM_ADMIN_IP_ALLOWLIST` through `isSystemAccessAllowed`, where the client address comes from behind the load balancer (which forwarded header, set by whom), the internal listener's peer check (`internalSourceRefusal`), rate-limiter keys by address, geoip, request details in mails.
 - **Advisories:** 3, plus 1 pattern lesson (hono `ipRestriction` IPv4-mapped IPv6, non-canonical IPv6, IPv4 bypass; pattern: spoofed connection info).
 - **Files:**
-  - `backend/src/middlewares/guard/sys-admin-guard.ts` (the one `ipRestriction` use).
+  - `backend/src/middlewares/guard/sys-admin-guard.ts` (reads the `isSystemAdmin` that `userGuard` sets only from an allowed address).
   - `backend/src/lib/listeners.ts` (`internalSourceRefusal`), `backend/src/lib/request-details.ts` (country, browser, os; no address), `backend/src/lib/geoip.ts`, `backend/src/middlewares/rate-limiter/` (`helpers.ts`, `core.ts`).
   - Added files: `backend/src/utils/get-ip.ts` (the one function that yields the client address), `backend/src/utils/system-access.ts` (allowlist parsing and `isSystemAccessAllowed`), `backend/src/utils/ip-subnet.ts` (`toRateLimitIp`, `isPublicIp`, `unmapIPv4`).
   - Other call sites: `middlewares/guard/user-guard.ts` (sets `isSystemAdmin`), `modules/auth/sessions/operations/{resolve-session,create-session}.ts`, `modules/entities/entities-handlers.ts` (reports `systemAccessAllowed`), `modules/mcp/mcp-tools.ts` (copies `x-forwarded-for` and `authorization` into the in-process request), `modules/oauth-server/interaction-policy.ts` (rebuilds a Context from `cookie`, `x-forwarded-for` and the node socket).

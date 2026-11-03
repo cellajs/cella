@@ -5,7 +5,7 @@ import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferr
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { toOrganizationResponse } from '#/modules/organization/operations/to-organization-response';
 import { publishOrganization } from '#/modules/organization/organization-queries';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
 /**

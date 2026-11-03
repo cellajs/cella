@@ -52,8 +52,8 @@ describe('checkAccess with a scoped key or token', () => {
     expect(checkAccess(systemAdmin(['attachment:read']), 'delete', subject()).allowed).toBe(false);
     expect(checkAccess(systemAdmin(['organization:write']), 'read', subject()).allowed).toBe(false);
     // The batch and fan-out entry points mask the bypass alike.
-    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).results.get('a1')?.allowed).toBe(false);
-    expect(checkAccessFanout([systemAdmin(['attachment:read'])], 'update', subject())[0].allowed).toBe(false);
+    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).get('a1')?.allowed).toBe(false);
+    expect(checkAccessFanout([systemAdmin(['attachment:read'])], 'update', subject())[0]).toBe(false);
   });
 
   it('the membership is still reported when the mask denies, so callers can tell the two apart', () => {
@@ -65,14 +65,13 @@ describe('checkAccess with a scoped key or token', () => {
 
 describe('the mask applies per row in batch and fan-out', () => {
   it('batch: every row of the type is masked the same way', () => {
-    const { results } = checkAccessBatch(admin(['attachment:read']), 'update', [subject('a1'), subject('a2')]);
-    expect([...results.values()].map((result) => result.allowed)).toEqual([false, false]);
+    const updates = checkAccessBatch(admin(['attachment:read']), 'update', [subject('a1'), subject('a2')]);
+    expect([...updates.values()].map((result) => result.allowed)).toEqual([false, false]);
     const reads = checkAccessBatch(admin(['attachment:read']), 'read', [subject('a1'), subject('a2')]);
-    expect([...reads.results.values()].map((result) => result.allowed)).toEqual([true, true]);
+    expect([...reads.values()].map((result) => result.allowed)).toEqual([true, true]);
   });
 
   it('fan-out: each access carries its own mask', () => {
-    const results = checkAccessFanout([admin(null), admin(['attachment:read']), { anonymous: true }], 'update', subject());
-    expect(results.map((result) => result.allowed)).toEqual([true, false, false]);
+    expect(checkAccessFanout([admin(null), admin(['attachment:read']), { anonymous: true }], 'update', subject())).toEqual([true, false, false]);
   });
 });

@@ -30,8 +30,8 @@ const extensionValueMetadata = new Map<ExtensionType, Map<string, ExtensionValue
 /** What every marked middleware documented, for the spec's `x-extensions`. */
 export const getExtensionValueMetadata = () => extensionValueMetadata;
 
-/** Sets `.name`, `.__extensionType`, `.__description`, `.__errors` and the guard metadata for OpenAPI introspection; for composed middlewares such as `every()`. */
-export const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandler<E>, options: XMiddlewareOptions): XMiddlewareHandler<E> => {
+/** Sets `.name`, `.__extensionType`, `.__description`, `.__errors` and the guard metadata for OpenAPI introspection. */
+const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandler<E>, options: XMiddlewareOptions): XMiddlewareHandler<E> => {
   const { functionName, type, name, description, errors, security, provides, requires } = options;
 
   if (description) {

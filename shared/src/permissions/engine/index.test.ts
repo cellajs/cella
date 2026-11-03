@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, type WideChannelType, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
+import {
+  configureWidePermissions,
+  makeWideHierarchy,
+  type WideChannelType,
+  wideMembership,
+  wideOverrides,
+  wideSubject,
+} from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
 import type { AccessMembership, SubjectForPermission } from './types.ts';
 
@@ -106,10 +113,10 @@ describe('engine decisions (getAllDecisions)', () => {
   });
 });
 
-// With `elevatedGrants` set (what checkAccess passes), a product grant reaches rows homed below the granting channel
-// only through an elevated role; any other role's grant stops at the rows homed at that channel. The other describes
-// leave it undefined, which makes every grant subtree-wide.
-describe('home scoping under elevatedGrants', () => {
+// A product grant reaches rows homed below the granting channel only through a role the hierarchy elevates; any other
+// role's grant stops at the rows homed at that channel. The other describes elevate no role and decide on rows homed
+// at the granting channel.
+describe('home scoping under elevated roles', () => {
   const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
     switch (entityType) {
       case 'attachment':
@@ -118,15 +125,14 @@ describe('home scoping under elevatedGrants', () => {
         break;
     }
   });
-  const options = { ...wideOverrides, elevatedGrants: new Set(['organization:admin']) };
+  const options = { hierarchy: makeWideHierarchy({ organization: ['admin'] }) };
   const projectAttachment = attachmentSubject('att1', 'org1', { project: 'p1' });
 
   it('must not let an organization member reach a project-homed attachment via an organization grant', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const { can, actions } = getAllDecisions(policies, memberships, projectAttachment, options);
+    const { can } = getAllDecisions(policies, memberships, projectAttachment, options);
 
     expect([can.read, can.update, can.delete]).toEqual([false, false, false]);
-    expect(actions.read.grantedBy).toEqual([]);
   });
 
   it('the elevated admin keeps the grant on that row, and the member keeps it on an organization-homed row', () => {
@@ -139,7 +145,7 @@ describe('home scoping under elevatedGrants', () => {
   });
 });
 
-describe('PermissionDecision action attribution', () => {
+describe('roles held together', () => {
   const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
     switch (entityType) {
       case 'attachment':
@@ -149,46 +155,11 @@ describe('PermissionDecision action attribution', () => {
     }
   });
 
-  it('returns action attribution with grantedBy details', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
-
-    expect(decision.actions).toBeDefined();
-    expect(decision.actions.create).toBeDefined();
-    expect(decision.actions.read).toBeDefined();
-
-    expect(decision.actions.create.allowed).toBe(true);
-    expect(decision.actions.create.grantedBy).toHaveLength(1);
-    expect(decision.actions.create.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-
-    expect(decision.actions.delete.allowed).toBe(false);
-    expect(decision.actions.delete.grantedBy).toHaveLength(0);
-  });
-
-  it('returns subject channel IDs for debugging', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
-
-    expect(decision.subject.entityType).toBe('attachment');
-    expect(decision.subject.id).toBe('att1');
-    expect(decision.subject.channelIds).toEqual({ organization: 'org1' });
-  });
-
-  it('accumulates multiple grants for same action from different roles', () => {
+  it('grants what either role on the channel grants', () => {
     const memberships = [wideMembership('organization', 'org1', 'admin'), wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
+    const { can } = getAllDecisions(policies, memberships, attachmentSubject('att1', 'org1'), { ...wideOverrides });
 
-    expect(decision.actions.read.allowed).toBe(true);
-    expect(decision.actions.read.grantedBy).toHaveLength(2);
-    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'admin' });
-    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-
-    expect(decision.actions.delete.allowed).toBe(true);
-    expect(decision.actions.delete.grantedBy).toHaveLength(1);
-    expect(decision.actions.delete.grantedBy[0]).toMatchObject({ type: 'membership', role: 'admin' });
+    expect(can).toEqual({ create: true, read: true, update: true, delete: true });
   });
 });
 
@@ -286,62 +257,6 @@ describe('own permission policy, ownership-scoped access', () => {
     expect(can.read).toBe(false);
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
-  });
-});
-
-describe('own permission, grant attribution', () => {
-  const { policyMatrix: ownPolicies } = configureWidePermissions(({ entityType, channels }) => {
-    switch (entityType) {
-      case 'attachment':
-        channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        channels.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
-        break;
-    }
-  });
-
-  const actorId = 'user-actor';
-
-  it('attributes own-granted actions to the condition name (relation:own)', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(true);
-    expect(decision.actions.update.grantedBy).toHaveLength(1);
-    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
-
-    expect(decision.actions.delete.allowed).toBe(true);
-    expect(decision.actions.delete.grantedBy).toHaveLength(1);
-    expect(decision.actions.delete.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
-  });
-
-  it('attributes unconditional grants to membership (not relation)', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.create.grantedBy).toHaveLength(1);
-    expect(decision.actions.create.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-  });
-
-  it('does not attribute own grants when ownership check fails', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(false);
-    expect(decision.actions.update.grantedBy).toHaveLength(0);
-    expect(decision.actions.delete.allowed).toBe(false);
-    expect(decision.actions.delete.grantedBy).toHaveLength(0);
-  });
-
-  it('admin gets membership grant (not relation) even with createdBy set', () => {
-    const memberships = [wideMembership('organization', 'org1', 'admin')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(true);
-    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'admin' });
   });
 });
 

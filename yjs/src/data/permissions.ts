@@ -83,7 +83,6 @@ export async function authorizeDocument(userId: string, requested: YjsDocScope):
 
   return withRlsTx(
     requested.tenantId,
-    userId,
     async (tx): Promise<DocumentAuthorization> => {
       const [entity, memberships] = await Promise.all([findEntityScope(tx, entityType, requested.entityId), findMemberships(tx, userId)]);
 

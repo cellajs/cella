@@ -2,16 +2,7 @@ export { accessScopes, policyMatrix, publicReadGrants } from '../../config/permi
 export type { AccessScope, AccessScopedEntityType } from './access-scopes.ts';
 export { allActionsAllowed, type CanHome, isUnconditionalCan, resolveCan } from './action-helpers.ts';
 export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
-export {
-  type Access,
-  type BatchPermissionResult,
-  checkAccess,
-  checkAccessBatch,
-  checkAccessFanout,
-  checkRoleGrant,
-  type PermissionResult,
-  type PredicateActor,
-} from './check-access.ts';
+export { type Access, checkAccess, checkAccessBatch, checkAccessFanout, checkRoleGrant, type PermissionResult } from './check-access.ts';
 export type { EntityCanMap } from './compute-can.ts';
 export { computeCan } from './compute-can.ts';
 export { getAllDecisions } from './engine/check.ts';

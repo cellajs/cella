@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { hierarchy, isChannelArchivable } from 'shared';
+import { buildSubjectFromEntity, hierarchy, isChannelArchivable } from 'shared';
 import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -9,8 +9,7 @@ import { withActorRef } from '#/modules/actors/actor-refs';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
-import { getValidChannel } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 

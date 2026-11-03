@@ -1,9 +1,9 @@
 import type { ChannelEntityType } from 'shared';
+import { buildSubjectFromEntity } from 'shared';
 import type { UserContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
-import { getValidChannel } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 

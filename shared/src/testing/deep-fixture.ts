@@ -48,6 +48,12 @@ export const makeDeepHierarchy = (
 /** `item` attaches at any depth. */
 export const deepHierarchy = makeDeepHierarchy();
 
+/** `deepHierarchy` with organization admins and course and section staff elevated. */
+export const deepElevatedHierarchy = makeDeepHierarchy(undefined, { organization: ['admin'], course: ['staff'], courseSection: ['staff'] });
+
+/** `deepHierarchy` with every role elevated: each product grant reaches its channel's whole subtree. */
+export const deepSubtreeHierarchy = makeDeepHierarchy(undefined, deepChannelRoles);
+
 /** Passed to the permission engine and the scope compiler. */
 export const deepOverrides: HierarchyOverrides = { hierarchy: deepHierarchy };
 

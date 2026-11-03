@@ -15,10 +15,7 @@ export const isBenchTraffic = (userId?: string, tenantId?: string): boolean => {
 };
 
 /** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
-type LogContext =
-  | Context<Env>
-  | { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> }
-  | null;
+type LogContext = Context<Env> | { var: Partial<Pick<Env['Variables'], 'tenantId' | 'user' | 'organizationId' | 'requestId' | 'session'>> } | null;
 
 const logContextStorage = new AsyncLocalStorage<LogContext>();
 
@@ -37,8 +34,8 @@ export const ambientRequest = (): Context<Env> | null => {
 const extractBase = (ctx: LogContext) => {
   if (!ctx?.var) return {};
   // Pino leaves undefined values out of the line, so unset ids need no guard.
-  const { tenantId, userId, organizationId, requestId, sessionId } = ctx.var;
-  return { tenantId, userId, organizationId, requestId, sessionId };
+  const { tenantId, user, organizationId, requestId, session } = ctx.var;
+  return { tenantId, userId: user?.id, organizationId, requestId, sessionId: session?.id };
 };
 
 const logAt =
@@ -49,7 +46,7 @@ const logAt =
 
     // Always log errors; for everything else, suppress bench traffic.
     const isError = severity === 'error' || severity === 'fatal';
-    if (!isError && ctx?.var && isBenchTraffic(ctx.var.userId, ctx.var.tenantId)) return;
+    if (!isError && ctx?.var && isBenchTraffic(ctx.var.user?.id, ctx.var.tenantId)) return;
 
     baseLog[severity](msg, { ...extractBase(ctx), ...meta });
   };

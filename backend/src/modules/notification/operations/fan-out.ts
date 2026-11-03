@@ -1,4 +1,4 @@
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig, buildSubjectFromEntity, checkAccessFanout, type ProductEntityType } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import { baseDb } from '#/db/db';
@@ -17,8 +17,6 @@ import {
 import { getNotificationSource, loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
 import { instantEmailTypes, type NotificationType } from '#/modules/notification/notification-types';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
-import { checkAccessFanout } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
 type Candidate = { userId: string; type: NotificationType };
@@ -185,10 +183,10 @@ async function filterByReadAccess(
   });
 
   const accesses = known.map(({ access }) => access);
-  const decisions = checkAccessFanout(accesses, 'read', buildSubjectFromEntity(entityType, row), { onInvalidMembership: 'deny' });
+  const decisions = checkAccessFanout(accesses, 'read', buildSubjectFromEntity(entityType, row));
 
   return known.flatMap(({ candidate, access }, index) => {
-    if (!decisions[index]?.allowed) return [];
+    if (!decisions[index]) return [];
     // A mention is addressed to the user, so a muted membership never silences it.
     if (candidate.type === 'mention') return [candidate];
 

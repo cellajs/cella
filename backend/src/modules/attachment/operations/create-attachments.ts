@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { buildSubjectFromEntity } from 'shared';
 import { uploadStorage } from 'shared/utils/upload-visibility';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -12,7 +13,6 @@ import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/mo
 import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
 import { storedFileSize } from '#/modules/attachment/helpers/stored-file';
 import { insertWithinTenantQuota } from '#/modules/tenants/quota-lock';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { resolvePlacement } from '#/permissions/product-placement';
 import { checkIdempotency } from '#/utils/idempotency';

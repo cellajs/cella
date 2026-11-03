@@ -4,7 +4,7 @@ import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpe
 import { findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
 import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { type InvitationMailsContext, refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**
  * Resends the invitation email for a pending membership, named by the pending row's own id; the caller needs `update`

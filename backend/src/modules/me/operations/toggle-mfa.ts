@@ -33,7 +33,7 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
     const updated = await updateUserMfa(txCtx, { id: user.id, mfaRequired });
     if (updated.mfaRequired) {
       // This browser's session gives way to the mfa session minted below; every other regular session ends.
-      await revokeSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
+      await revokeSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.session.id], reason: 'replaced', by: user.id });
       await revokeSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
     }
     return { updatedUser: updated, changed };

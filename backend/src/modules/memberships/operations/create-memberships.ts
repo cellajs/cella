@@ -1,4 +1,4 @@
-import { type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
+import { buildSubject, buildSubjectFromEntity, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -16,8 +16,7 @@ import { mailInvitations } from '#/modules/memberships/operations/mail-invitatio
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
-import { getValidChannel } from '#/permissions';
-import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 

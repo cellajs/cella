@@ -155,7 +155,7 @@ export const setUserSession = async (
   }
 
   const context = await collectSignInContext(ctx, type);
-  const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
+  const impersonatorSessionId = type === 'impersonation' ? ctx.var.session.id : null;
   const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId, extras);
 
   if (type === 'impersonation') setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);

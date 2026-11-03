@@ -223,7 +223,7 @@ interface GetUserAccessOpts {
  * Build permission `Access` objects for arbitrary users, connected or not. An id that names no user gets none: a
  * mention is written by a client, and an author can be a service account, which has no inbox.
  *
- * `actorFrom`/`accessFrom` read the request context, so they only ever describe the caller, and
+ * `accessFrom` reads the request context, so it only ever describes the caller, and
  * stream fan-out only sees users with an open SSE connection. Notifications must decide what an
  * offline user may read, which needs memberships and system-admin status loaded by user id.
  *

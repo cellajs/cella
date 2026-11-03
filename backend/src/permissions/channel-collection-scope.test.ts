@@ -1,13 +1,9 @@
-import type { ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix, PredicateActor } from 'shared';
+import type { Access, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix } from 'shared';
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { describe, expect, it } from 'vitest';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import {
-  type ChannelCollectionReadScope,
-  draftChannelVisibleToForPolicies,
-  resolveChannelCollectionReadScopeForPolicies,
-} from '#/permissions/channel-collection-scope';
+import { type ChannelCollectionReadScope, draftChannelVisibleTo, resolveChannelCollectionReadScope } from '#/permissions/channel-collection-scope';
 
 const orgId = 'org-1';
 
@@ -35,21 +31,21 @@ const membership = (channelType: string, channelId: string, role: string): Membe
     role,
   }) as unknown as MembershipBaseModel;
 
-const actor: PredicateActor = { actorId: 'actor', isSystemAdmin: false, scopes: null };
+const accessOf = (memberships: MembershipBaseModel[], isSystemAdmin = false): Access<MembershipBaseModel> => ({
+  actorId: 'actor',
+  isSystemAdmin,
+  memberships,
+  scopes: null,
+});
 
-const resolve = (memberships: MembershipBaseModel[], asActor: PredicateActor = actor): ChannelCollectionReadScope =>
-  resolveChannelCollectionReadScopeForPolicies({
-    policies,
-    memberships,
-    channelType: 'project' as Exclude<ChannelEntityType, 'organization'>,
-    organizationId: orgId,
-    actor: asActor,
-    hierarchy: deepHierarchy as unknown as EntityHierarchy,
-  });
+const rules = { policies, hierarchy: deepHierarchy as unknown as EntityHierarchy };
+
+const resolve = (memberships: MembershipBaseModel[], isSystemAdmin = false): ChannelCollectionReadScope =>
+  resolveChannelCollectionReadScope(accessOf(memberships, isSystemAdmin), 'project' as Exclude<ChannelEntityType, 'organization'>, orgId, rules);
 
 describe('resolveChannelCollectionReadScope', () => {
   it('system admin resolves to unconditional org-wide', () => {
-    const scope = resolve([], { actorId: 'admin', isSystemAdmin: true, scopes: null });
+    const scope = resolve([], true);
     expect(scope).toEqual({ orgWide: 'all', ancestorScopes: [] });
   });
 
@@ -94,15 +90,8 @@ describe('draftChannelVisibleTo', () => {
     courseSectionId: 'section-1',
   });
 
-  const shows = (memberships: MembershipBaseModel[], publishedAt: string | null = null, asActor: PredicateActor = actor) =>
-    draftChannelVisibleToForPolicies({
-      policies,
-      memberships,
-      channelType: 'project' as ChannelEntityType,
-      channel: project(publishedAt),
-      actor: asActor,
-      hierarchy: deepHierarchy as unknown as EntityHierarchy,
-    });
+  const shows = (memberships: MembershipBaseModel[], publishedAt: string | null = null, access = accessOf(memberships)) =>
+    draftChannelVisibleTo('project' as ChannelEntityType, project(publishedAt), access, rules);
 
   it('shows a published channel whatever the grant: the read check is the caller', () => {
     expect(shows([], '2026-01-01T00:00:00.000Z')).toBe(true);
@@ -122,7 +111,7 @@ describe('draftChannelVisibleTo', () => {
   });
 
   it('shows a draft to a system admin and to no one without a grant', () => {
-    expect(shows([], null, { actorId: 'admin', isSystemAdmin: true, scopes: null })).toBe(true);
+    expect(shows([], null, accessOf([], true))).toBe(true);
     expect(shows([])).toBe(false);
     expect(shows([], null, { anonymous: true })).toBe(false);
   });
@@ -130,7 +119,7 @@ describe('draftChannelVisibleTo', () => {
   it('shows a draft organization to its own members alone', () => {
     const organization = { id: orgId, publishedAt: null };
     const showsOrganization = (memberships: MembershipBaseModel[]) =>
-      draftChannelVisibleToForPolicies({ policies, memberships, channelType: 'organization', channel: organization, actor });
+      draftChannelVisibleTo('organization', organization, accessOf(memberships), { policies });
     expect(showsOrganization([membership('organization', orgId, 'member')])).toBe(true);
     expect(showsOrganization([membership('organization', 'org-2', 'admin')])).toBe(false);
   });

@@ -176,7 +176,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     const appended = Promise.withResolvers<void>();
     const released = Promise.withResolvers<void>();
     const done = baseDb.transaction(async (tx) => {
-      await tx.execute(sql`SELECT set_config('app.tenant_id', ${scope.tenantId}, true), set_config('app.user_id', '', true)`);
+      await tx.execute(sql`SELECT set_config('app.tenant_id', ${scope.tenantId}, true)`);
       const result = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: tenant.user.id, generation, notify: false });
       appended.resolve();
       await released.promise;

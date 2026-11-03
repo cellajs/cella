@@ -1,7 +1,7 @@
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { appConfig, type Severity } from 'shared';
+import { appConfig, MissingAncestorError, type Severity } from 'shared';
 import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
@@ -94,21 +94,30 @@ interface ToClientErrorOptions {
   exposeServerMessage?: boolean;
 }
 
+/** The shared engine's refusal of a subject built without a required ancestor id. */
+const missingAncestorError = (err: MissingAncestorError) =>
+  new AppError(400, 'missing_ancestor', 'error', {
+    entityType: err.entityType,
+    meta: { missingChannel: err.missingChannel, missingKey: err.missingKey },
+  });
+
 /**
- * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through; a Postgres
- * error with a known code maps to its status and a fixed message; pool exhaustion answers 503; anything else is a 500
- * whose message (for a failed query: the SQL and its parameters) reaches the client only with `exposeServerMessage`.
+ * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through, and so does a
+ * `MissingAncestorError`, as a 400; a Postgres error with a known code maps to its status and a fixed message; pool
+ * exhaustion answers 503; anything else is a 500 whose message (for a failed query: the SQL and its parameters)
+ * reaches the client only with `exposeServerMessage`.
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
- * @param err - The thrown value.
+ * @param thrown - The thrown value.
  * @param logFields - Request facts for the log line.
  * @param options - Message exposure; defaults to showing 5xx messages in development and test only.
  * @returns The client-facing error.
  */
 export function toClientError(
-  err: unknown,
+  thrown: unknown,
   logFields: ErrorLogFields = {},
   { exposeServerMessage = exposesServerMessages() }: ToClientErrorOptions = {},
 ): ClientError {
+  const err = thrown instanceof MissingAncestorError ? missingAncestorError(thrown) : thrown;
   const fields = Object.fromEntries(Object.entries(logFields).filter(([, value]) => value !== undefined));
   const hideIfServerError = (status: number, message: string) => (status >= 500 && !exposeServerMessage ? 'Internal server error' : message);
 

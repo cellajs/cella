@@ -35,7 +35,7 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │      │       condition   → grant iff the row matches            │            │
 │      │       0           → nothing                              │            │
 │      │  4. public read      widens `read` only                  │            │
-│      │  5. emit `can` + why each action was granted             │            │
+│      │  5. emit `can`       one boolean per action              │            │
 │      └───┬───────────┬────────────────┬────────────────┬────────┘            │
 │          │           │                │                │                     │
 │   ┌──────▼─────┐ ┌───▼──────────┐ ┌───▼───────────┐ ┌──▼─────────────┐       │
@@ -64,7 +64,6 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | **Subject** | What is acted on: entity type, optional id, its ancestor channel ids, optionally the row. |
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'`: allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete`. |
-| **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
 | **Access scope** | The mask an API key or access token puts over its actor's bindings. |
 
 ## The access you present
@@ -119,8 +118,8 @@ The **`checkAccess*` family** is what every tier calls:
 
 ```ts
 checkAccess(access, action, subject); // → PermissionResult: the request-path check
-checkAccessBatch(access, action, subjects); // → BatchPermissionResult: one actor, many rows (list splitting)
-checkAccessFanout(accesses, action, subject, options?); // → PermissionResult[]: many actors, one row (stream fan-out)
+checkAccessBatch(access, action, subjects); // → Map of PermissionResult by subject id: one actor, many rows (list splitting)
+checkAccessFanout(accesses, action, subject); // → boolean[]: many actors, one row (stream fan-out)
 ```
 
 A subject's ancestor scope is **tri-state**: a channel id, `null` for explicitly not scoped to that ancestor, or `undefined` for a required scope left out, which throws. A missing scope never defaults to unscoped, which would bypass permissions.
@@ -171,12 +170,12 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `act
 | `tokenGuard` | An access token only, for the MCP face | 401 |
 | `actorGuard` | Any of the three proofs | 401, 403 |
 | `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's sign-in policy | 403 `forbidden`, `sso_required` |
-| `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin | 404 |
+| `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |
 | `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks | 403 `step_up_required`, `impersonation_forbidden` |
 | `sysAdminGuard` | A system admin from an allowed IP address, never an impersonation | 403 |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
-`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above.
+`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above. A tenant holds one organization, so an actor bound to nothing in it gets `tenantGuard`'s 403; `orgGuard`'s 404 remains for the tenant's creator racing the first organization.
 
 ## Refusals
 
@@ -185,7 +184,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | Situation | Answer | Why |
 | --- | --- | --- |
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
-| Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
+| Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `meta.reason: 'role_exceeds_actor'`, `meta.role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |

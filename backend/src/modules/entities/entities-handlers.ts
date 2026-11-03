@@ -68,7 +68,7 @@ async function membershipsChangedSince(userId: string, registered: readonly Memb
 }
 
 app.openapi(entityRoutes.appStream, async (ctx) => {
-  const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
+  const { user, memberships, isSystemAdmin, session } = ctx.var;
 
   const admitted = admittedStreams.get(user.id) ?? 0;
   if (
@@ -98,7 +98,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       topic: userTopic(user.id),
       stream,
       userId: user.id,
-      sessionId,
+      sessionId: session.id,
       organizationIds,
       isSystemAdmin,
       systemAccessAllowed: isSystemAccessAllowed(ctx),

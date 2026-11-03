@@ -1,4 +1,3 @@
-import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { missingRouteParam } from '#/middlewares/guard/route-target';
@@ -7,8 +6,9 @@ import { withOrganizationDefaults } from '#/modules/organization/helpers/select'
 import { loadOrganization } from '#/modules/organization/load-organization';
 
 /**
- * Grants org-scoped routes to system admins and to anyone holding a membership inside the
- * organization, at organization level or in any channel below it. A caller without one gets the
+ * Resolves the URL's organization in the tenant the actor was admitted to, for a system admin and for anyone bound
+ * inside it, at organization level or in a channel below. An outsider of the tenant's one organization was refused by
+ * `tenantGuard`; a tenant creator admitted by the no-organization foothold meets this check. A refused caller gets the
  * answer a missing organization gets, so an id is never confirmed.
  */
 export const orgGuard = xMiddleware(
@@ -25,16 +25,8 @@ export const orgGuard = xMiddleware(
     const organizationId = ctx.req.param('organizationId')?.toLowerCase();
     if (!organizationId) throw missingRouteParam('organizationId');
 
-    const { isSystemAdmin, tenantId } = ctx.var;
-    const bindings: readonly ActorBinding[] | undefined = ctx.var.actor?.bindings;
-
-    if (!tenantId) {
-      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires tenantGuard middleware' });
-    }
-
-    if (bindings === undefined) {
-      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires userGuard or serviceGuard' });
-    }
+    const { isSystemAdmin, tenantId, actor } = ctx.var;
+    const { bindings } = actor;
 
     const missing = () => new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 

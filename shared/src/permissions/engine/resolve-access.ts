@@ -1,11 +1,11 @@
-import type { ChannelEntityType } from '../../../types.ts';
+import type { ChannelEntityType, EntityActionType } from '../../../types.ts';
 import { appConfig } from '../../config-builder/app-config.ts';
-import { allActionsDenied, createActionRecord } from '../action-helpers.ts';
+import { allActionsDenied } from '../action-helpers.ts';
 import { conditionRowOf, isRowCondition, matchesRowCondition, type RowConditionName } from '../row-conditions.ts';
 import type { PolicyMatrix } from '../types.ts';
 import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId, type MembershipIndex } from './check.ts';
 import { resolveHierarchy } from './resolve-hierarchy.ts';
-import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types.ts';
+import type { AccessMembership, PermissionCheckOptions, SubjectForPermission } from './types.ts';
 import { validateSubject } from './validation.ts';
 
 /**
@@ -19,36 +19,20 @@ export interface EngineAccess<T extends AccessMembership = AccessMembership> {
   isSystemAdmin?: boolean;
 }
 
-export interface ResolveAccessOptions extends PermissionCheckOptions {
-  /**
-   * When an access's memberships fail `validateMembership`: `'throw'` (default) raises, matching
-   * the single-access path, since a malformed membership on a request is a bug. `'deny'`
-   * fail-closes that one access and keeps resolving the rest, so one corrupt stream subscriber
-   * does not take the batch down with it.
-   */
-  onInvalidMembership?: 'throw' | 'deny';
-}
-
-/** Fail-closed decision for an access the engine refuses to evaluate. */
-const deniedDecision = <T extends AccessMembership>(subject: SubjectForPermission): PermissionDecision<T> => ({
-  subject: { entityType: subject.entityType, id: subject.id, channelIds: {} },
-  actions: createActionRecord(() => ({ allowed: false, grantedBy: [] })),
-  can: { ...allActionsDenied },
-  membership: null,
-});
-
 /**
  * Many actors against one subject, grouping accesses the policy engine cannot tell apart. Keys
  * cover system-admin state, referenced row conditions and roles at each subject channel level.
- * Each class result is then paired with the access's own membership.
+ * An access whose memberships fail `validateMembership` is denied every action, and the rest
+ * still resolve, so one corrupt stream subscriber does not take the batch down with it.
+ * @returns One action record per access, in their order.
  */
 export const getDecisionsForAccesses = <T extends AccessMembership>(
   policies: PolicyMatrix,
   accesses: EngineAccess<T>[],
   subject: SubjectForPermission,
-  options?: ResolveAccessOptions,
-): PermissionDecision<T>[] => {
-  const { hierarchy, getRoles, orderedChannels } = resolveHierarchy(options);
+  options?: PermissionCheckOptions,
+): Record<EntityActionType, boolean>[] => {
+  const { hierarchy, orderedChannels } = resolveHierarchy(options);
   validateSubject(subject, undefined, hierarchy);
 
   const channels = orderedChannels(subject.entityType);
@@ -71,18 +55,15 @@ export const getDecisionsForAccesses = <T extends AccessMembership>(
     const channelId = getSubjectChannelId(subject, channelType);
     if (channelId) channelLevels.push([channelType, channelId]);
   }
-  const primaryChannel = channels[0];
-  const primaryChannelId = primaryChannel ? getSubjectChannelId(subject, primaryChannel) : undefined;
 
-  const memo = new Map<string, PermissionDecision<T>>();
+  const memo = new Map<string, Record<EntityActionType, boolean>>();
 
   return accesses.map((access) => {
     let membershipIndex: MembershipIndex<T>;
     try {
       membershipIndex = getMembershipIndex(access.memberships);
-    } catch (error) {
-      if (options?.onInvalidMembership === 'deny') return deniedDecision<T>(subject);
-      throw error;
+    } catch {
+      return allActionsDenied;
     }
 
     let key: string;
@@ -103,19 +84,15 @@ export const getDecisionsForAccesses = <T extends AccessMembership>(
       }
     }
 
-    let decision = memo.get(key);
-    if (!decision) {
-      decision = checkWithIndices(membershipIndex, policyIndex, subject, channels, getRoles, {
+    let can = memo.get(key);
+    if (!can) {
+      can = checkWithIndices(membershipIndex, policyIndex, subject, channels, hierarchy, {
         actorId: access.actorId,
         isSystemAdmin: access.isSystemAdmin,
         publicGrants: options?.publicGrants,
-        elevatedGrants: options?.elevatedGrants,
-      });
-      memo.set(key, decision);
+      }).can;
+      memo.set(key, can);
     }
-
-    // Re-personalize: the class decision's membership belongs to the class representative.
-    const membership = primaryChannelId ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`)?.[0] ?? null) : null;
-    return decision.membership === membership ? decision : { ...decision, membership };
+    return can;
   });
 };

@@ -1,12 +1,11 @@
 import type { UploadTemplateId } from 'shared';
+import { buildSubject, checkAccessBatch } from 'shared';
 import { isSystemUploadTemplate, systemUploadPrefix, uploadStorage } from 'shared/utils/upload-visibility';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { signedUploadParams } from '#/lib/transloadit';
-import { checkAccessBatch } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
-import { buildSubject } from '#/permissions/build-subject';
 
 interface GetUploadTokenOpts {
   organizationId?: string;
@@ -45,7 +44,7 @@ const assertMayUploadAttachments = (ctx: UserContext, organizationId?: string) =
   const homes = ctx.var.memberships
     .filter((membership) => membership.organizationId === organizationId)
     .map((membership) => buildSubject('attachment', membership));
-  const { results } = checkAccessBatch(accessFrom(ctx), 'create', homes);
+  const results = checkAccessBatch(accessFrom(ctx), 'create', homes);
   if (![...results.values()].some(({ allowed }) => allowed)) throw new AppError(403, 'forbidden', 'warn', { entityType: 'attachment' });
 };
 

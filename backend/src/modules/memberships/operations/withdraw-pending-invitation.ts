@@ -1,7 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
 /**

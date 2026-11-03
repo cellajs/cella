@@ -1,11 +1,9 @@
-import { appConfig, type EntityActionType, isUnpublishedDraft, type SubjectForPermission } from 'shared';
+import { appConfig, buildSubject, checkAccessFanout, type EntityActionType, isUnpublishedDraft, type SubjectForPermission } from 'shared';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { AppStreamProductEvent, BaseStreamSubscriber } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { checkAccessFanout } from '#/permissions';
-import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 
 /** A signed-in user's stream: its own signals on its user topic, changes and reader signals on each of its organizations' topics. */
@@ -65,8 +63,7 @@ export function accessDecisions(subscribers: readonly SubscriberAccess[], action
       memberships: subscriber.memberships,
       scopes: null,
     }));
-    const results = checkAccessFanout(accesses, action, subject, { onInvalidMembership: 'deny' });
-    return results.map((result) => result.allowed);
+    return checkAccessFanout(accesses, action, subject);
   } catch {
     log.error('Stream access decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id, action });
     return subscribers.map(() => false);

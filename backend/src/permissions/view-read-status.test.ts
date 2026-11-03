@@ -1,19 +1,15 @@
-import { createEntityHierarchy, type HierarchyOverrides, type PolicyCellInput, type ProductEntityType } from 'shared';
+import { createEntityHierarchy, type EntityHierarchy, type PolicyCellInput, type ProductEntityType } from 'shared';
 import {
   type DeepChannelType,
   deepChannelRoles,
-  deepHierarchy,
-  deepOverrides,
+  deepElevatedHierarchy,
   deepRoles,
+  deepSubtreeHierarchy,
   deepReadPolicies as policies,
 } from 'shared/testing/deep-fixture';
-import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
-
-const deepElevated = elevateAcross(deepHierarchy, ['admin', 'staff']);
-
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { resolveViewReadStatusForPolicies } from './view-read-status';
+import { resolveViewReadStatus } from './view-read-status';
 
 /**
  * Catchup prefix authorization: `ok` requires PROOF of unconditional subtree read on the prefix's
@@ -33,32 +29,29 @@ const membership = (channelType: DeepChannelType, channelId: string, role: strin
     role,
   }) as unknown as MembershipBaseModel;
 
+/** Every role is elevated unless a case passes the hierarchy it needs. */
 const statusFor = (
   prefix: string,
   opts: {
     read?: (channelType: DeepChannelType, role: string) => PolicyCellInput;
     memberships?: MembershipBaseModel[];
     isSystemAdmin?: boolean;
-    elevatedGrants?: ReadonlySet<string>;
     depth?: 'self' | 'subtree';
     truePath?: string | null;
-    overrides?: HierarchyOverrides;
+    hierarchy?: EntityHierarchy;
   } = {},
-) =>
-  resolveViewReadStatusForPolicies(
-    {
-      policies: policies(opts.read ?? (() => 0), opts.overrides),
-      memberships: opts.memberships ?? [],
-      entityType: item,
-      organizationId: rootId,
-      actor: { actorId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null },
-      elevatedGrants: opts.elevatedGrants,
-      ...(opts.overrides ?? deepOverrides),
-    },
+) => {
+  const hierarchy = opts.hierarchy ?? deepSubtreeHierarchy;
+  return resolveViewReadStatus(
+    { actorId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false, memberships: opts.memberships ?? [], scopes: null },
+    item,
+    rootId,
     prefix,
     opts.depth,
     opts.truePath,
+    { policies: policies(opts.read ?? (() => 0), { hierarchy }), publicGrants: {}, hierarchy },
   );
+};
 
 describe('resolveViewReadStatus', () => {
   const orgAdminRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'organization' && role === 'admin' ? 1 : 0);
@@ -114,12 +107,7 @@ describe('resolveViewReadStatus', () => {
       .product('item', { parent: 'organization' })
       .build();
     const orgMemberRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'organization' && role === 'member' ? 1 : 0);
-    const opts = {
-      read: orgMemberRead,
-      memberships: [membership('organization', rootId, 'member')],
-      elevatedGrants: flatHierarchy.elevatedGrants,
-      overrides: { hierarchy: flatHierarchy },
-    };
+    const opts = { read: orgMemberRead, memberships: [membership('organization', rootId, 'member')], hierarchy: flatHierarchy };
     expect(statusFor(rootId, opts)).toBe('ok');
   });
 
@@ -129,10 +117,10 @@ describe('resolveViewReadStatus', () => {
     expect(statusFor(`${rootId}/c1`, opts)).toBe('opaque');
   });
 
-  it('SELF views: a home-scoped grant (non-elevated under elevatedGrants) answers its own node', () => {
-    // Course student read=1 with elevatedGrants configured: the home-scoped grant covers exactly the course wall (rows homed at c1).
+  it('SELF views: a home-scoped grant (a role not elevated) answers its own node', () => {
+    // Course student read=1, students not elevated: the home-scoped grant covers exactly the course wall (rows homed at c1).
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'course' && role === 'student' ? 1 : 0);
-    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: deepElevated };
+    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], hierarchy: deepElevatedHierarchy };
 
     // Self view on the granted node: provable because homed rows are exactly the grant.
     expect(statusFor(`${rootId}/c1`, { ...opts, depth: 'self' })).toBe('ok');
@@ -143,7 +131,7 @@ describe('resolveViewReadStatus', () => {
   });
 
   it('SELF views: subtree-scoped proofs still apply (self ⊂ subtree)', () => {
-    const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')], elevatedGrants: deepElevated };
+    const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')], hierarchy: deepElevatedHierarchy };
     expect(statusFor(`${rootId}/c1`, { ...opts, depth: 'self' })).toBe('ok');
   });
 
@@ -171,7 +159,7 @@ describe('resolveViewReadStatus', () => {
 
   it('VERIFIED ancestry: ancestor HOME-grants still never prove deeper self views', () => {
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'course' && role === 'student' ? 1 : 0);
-    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: deepElevated };
+    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], hierarchy: deepElevatedHierarchy };
     const deep = `${rootId}/c1/s1/p1`;
     // The student's course home-grant covers the course WALL, not project walls below.
     expect(statusFor(deep, { ...opts, depth: 'self', truePath: deep })).toBe('opaque');

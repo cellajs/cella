@@ -1,9 +1,8 @@
-import type { EntityActionType } from 'shared';
+import { checkAccessBatch, type EntityActionType } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { checkAccessBatch } from '#/permissions';
 import { splitByPermission } from '#/permissions/split-by-permission';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
@@ -11,9 +10,11 @@ vi.mock('#/db/tenant-context', () => ({
   tenantReadUnlessInTransaction: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
 }));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntities: vi.fn() }));
-vi.mock('#/permissions', () => ({ checkAccessBatch: vi.fn() }));
-vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})), actorFrom: vi.fn(() => ({ actorId: 'user-1', scopes: null })) }));
-vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
+vi.mock('shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared')>()),
+  checkAccessBatch: vi.fn(),
+  buildSubjectFromEntity: vi.fn(() => ({})),
+}));
 
 const tenant = 'tenant-a';
 const org = 'org-a';
@@ -37,7 +38,7 @@ describe('splitByPermission', () => {
   /** The engine's answer per action: every row passes, but the ids listed under the action. */
   const engineDenies = (denied: Partial<Record<EntityActionType, string[]>>) =>
     vi.mocked(checkAccessBatch).mockImplementation(((_access: unknown, action: EntityActionType) => ({
-      results: { get: (id: string) => ({ allowed: !denied[action]?.includes(id) }) },
+      get: (id: string) => ({ allowed: !denied[action]?.includes(id) }),
     })) as never);
 
   beforeEach(() => {

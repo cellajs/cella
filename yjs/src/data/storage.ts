@@ -16,7 +16,7 @@ import { logNotifier } from './log-notifier';
  * fail-closed under RLS: a contextless query on the runtime role returns zero rows and no error.
  */
 function asSystem<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return withRlsTx(tenantId, '', fn);
+  return withRlsTx(tenantId, fn);
 }
 
 /**

@@ -1,9 +1,9 @@
+import { checkAccess } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { checkAccess } from '#/permissions';
 import { getValidProduct } from '#/permissions/get-valid-product';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
@@ -11,9 +11,12 @@ vi.mock('#/db/tenant-context', () => ({
   tenantReadUnlessInTransaction: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
 }));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
-vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
+vi.mock('shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared')>()),
+  checkAccess: vi.fn(),
+  buildSubjectFromEntity: vi.fn(() => ({})),
+}));
 vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})) }));
-vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
 
 const tenant = 'tenant-a';
 const org = 'org-a';
