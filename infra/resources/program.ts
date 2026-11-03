@@ -33,7 +33,7 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 export const bootDiagBucketName = storage.bootDiagBucketName;
 export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint;
 
-// Generic store outputs addressed `storeOutputs.<storeId>.<key>`; the db-exposure and seed CLI reads the primary store's keys from here.
+// Generic store outputs addressed `storeOutputs.<storeId>.<key>`; the database actions and ensure-database read the database store's keys from here.
 export const storeOutputs = stores.allStoreOutputs;
 
 export const serviceDomainUrls = lb.serviceDomainUrls;

@@ -63,7 +63,7 @@ export interface StoreProvisioner {
   secrets?(): StoreSecretContribution[];
 }
 
-/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. The first registered store is primary: the database access actions read its outputs. */
+/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. */
 export function defineStores<const T extends Record<string, StoreProvisioner>>(stores: T): T {
   return stores;
 }

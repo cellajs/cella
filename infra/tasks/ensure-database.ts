@@ -5,7 +5,7 @@ import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-pr
 import { createRdbClient, type RdbUser } from '../lib/scaleway/scaleway-rdb';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
-import { readStoreOutputs } from '../lib/stack/store-outputs';
+import { readDatabaseOutputs } from '../lib/stack/store-outputs';
 import type { DatabaseRole } from '../lib/stores';
 
 /** The database API calls the task needs, so a test passes its own. */
@@ -181,10 +181,8 @@ export async function ensureDatabaseForStack(opts: {
 }): Promise<void> {
   const log = opts.log ?? ((message) => console.info(message));
   if (databaseRuntimeSecrets().length === 0) return;
-  const store = Object.values(readStoreOutputs(opts.env, opts.stack)).find(
-    (outputs) => outputs.instanceId && outputs.privateIp && outputs.databaseName,
-  );
-  if (!store?.instanceId || !store.privateIp || !store.databaseName) {
+  const store = readDatabaseOutputs(opts.env, opts.stack);
+  if (!store.instanceId || !store.privateIp || !store.databaseName) {
     log('[ensure-database] the stack has no managed database endpoint yet');
     return;
   }

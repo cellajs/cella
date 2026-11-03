@@ -18,7 +18,7 @@ function yjsTokenPublicKey(material: string): string {
  * App-owned mapping from runtime secrets to their consuming services: the deploy composes each machine's env file from the values its
  * services consume, and no other. Each value has one container in the runtime folder, which only the deploy key reads. The backend image
  * checks the same assignment per process mode (backend/src/env-service-secrets.ts, pinned by the tests).
- * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
+ * Database DSN and CA secrets are declared by the PostgreSQL store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   cookieSecret: {

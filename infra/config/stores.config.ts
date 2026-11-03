@@ -2,9 +2,9 @@ import { defineStores } from '../lib/stores';
 import { postgresManaged } from '../resources/stores/catalog';
 
 /**
- * App-owned registry of stateful backing resources, reaching services through runtime secrets. The first entry is the primary store, whose
- * outputs the database access actions read. One managed PostgreSQL with row-level security and the CDC logical-replication slot; a second
- * store is one more entry, and as the applied description holds each entry's kind and settings, adding one deploys after an apply.
+ * App-owned registry of stateful backing resources, reaching services through runtime secrets: one managed PostgreSQL with row-level
+ * security and the CDC logical-replication slot. Another store is an entry of a kind of its own; as the applied description holds each
+ * entry's kind and settings, adding one deploys after an apply.
  */
 export const appStores = defineStores({
   primary: postgresManaged({

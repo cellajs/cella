@@ -18,7 +18,7 @@ const provisionContext: ProvisionContext = {
   privateNetworkId,
 };
 
-// Importing this module provisions every registered store exactly once. Registry order is stable and the first store is primary.
+// Importing this module provisions every registered store exactly once, in registry order.
 const results = Object.entries(appStores).map(([id, store]) => [id, store.provision(provisionContext)] as const);
 
 /** Every store's outputs, keyed by store id; the stack exports these as one `storeOutputs` object addressed `<storeId>.<key>`. */

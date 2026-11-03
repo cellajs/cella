@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { infraDir } from '../utils/paths';
 
 /** The `storeOutputs` stack output: each store's outputs by store id. Empty when the stack has none or cannot be read. */
-export function readStoreOutputs(env: NodeJS.ProcessEnv, stack: string): Record<string, Record<string, string>> {
+function readStoreOutputs(env: NodeJS.ProcessEnv, stack: string): Record<string, Record<string, string>> {
   const result = spawnSync('pulumi', ['stack', 'output', 'storeOutputs', '--json', '--stack', stack], { cwd: infraDir, env, encoding: 'utf8' });
   if (result.status !== 0) return {};
   try {
@@ -18,4 +18,9 @@ export function readStoreOutputs(env: NodeJS.ProcessEnv, stack: string): Record<
   } catch {
     return {};
   }
+}
+
+/** The outputs of the store that holds the database, the one with a `databaseName`. Empty when the stack has none or cannot be read. */
+export function readDatabaseOutputs(env: NodeJS.ProcessEnv, stack: string): Record<string, string> {
+  return Object.values(readStoreOutputs(env, stack)).find((outputs) => outputs.databaseName) ?? {};
 }
