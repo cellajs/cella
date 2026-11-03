@@ -120,6 +120,8 @@ export const config = {
   description: '__project_name__: powered by Cella.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
+  /** Startup banner in the browser console and the API log, one string per line; empty prints none. */
+  asciiArt: [],
 
   // Origin & services
 
