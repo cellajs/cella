@@ -1,5 +1,5 @@
 import { actionCommand, menuPath } from '../operator-actions';
-import type { Check, CheckStatus, CredentialTier, NextAction } from './types';
+import type { Check, CheckStatus, KeyTier, NextAction } from './types';
 
 /** The local setup/manage entrypoint. */
 export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
@@ -40,10 +40,10 @@ export interface CheckBuilder {
 
 /** One verdict closure per status, so each check branch is a single call
  *  without repeating the object literal. */
-export function check(id: string, title: string, credential: CredentialTier = 'none'): CheckBuilder {
+export function check(id: string, title: string, key: KeyTier = 'none'): CheckBuilder {
   const verdict =
     (status: CheckStatus): Verdict =>
-    (detail, nextAction) => ({ id, title, status, detail, credential, ...(nextAction ? { nextAction } : {}) });
+    (detail, nextAction) => ({ id, title, status, detail, key, ...(nextAction ? { nextAction } : {}) });
   return { ok: verdict('ok'), warn: verdict('warn'), missing: verdict('missing'), error: verdict('error'), unknown: verdict('unknown') };
 }
 

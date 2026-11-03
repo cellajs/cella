@@ -9,7 +9,6 @@ import { secretsProvider } from './providers/secrets';
 import { identityProvider, stackProvider } from './providers/stack';
 import { stateProvider } from './providers/state';
 import type { Check, CheckStatus, NextAction, ProbeSession, StatusProvider, StatusReport } from './types';
-import { STATUS_SCHEMA_VERSION } from './types';
 
 /** The registered status providers, in report order. Each owns its domain's gather and evaluate; this module owns the envelope, summary, and cross-domain next-action priority. */
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous provider fact types collapse at the registry boundary
@@ -52,12 +51,11 @@ function pickNextAction(checks: Check[]): NextAction | undefined {
   return undefined;
 }
 
-/** The pure envelope over evaluated checks: schema version, summary counts, and the highest-priority pending action. Never throws. */
+/** The pure envelope over evaluated checks: summary counts and the highest-priority pending action. Never throws. */
 export function assembleReport(session: Pick<ProbeSession, 'mode' | 'stackState'>, checks: Check[]): Omit<StatusReport, 'generatedAt'> {
   const summary: Record<CheckStatus, number> = { ok: 0, warn: 0, missing: 0, unknown: 0, error: 0 };
   for (const item of checks) summary[item.status]++;
   return {
-    schemaVersion: STATUS_SCHEMA_VERSION,
     mode: session.mode,
     stackState: session.stackState,
     checks,

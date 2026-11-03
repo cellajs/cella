@@ -67,27 +67,11 @@ Every deploy writes a run record. With a telemetry sink, a deploy also exports a
 pnpm --filter infra status [--mode <production|staging>] [--json]
 ```
 
-Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` emits the versioned contract below; a breaking shape change bumps `schemaVersion`.
+Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` prints the report as JSON, shaped as [lib/status/types.ts](lib/status/types.ts) declares it.
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
 The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name, a main job that runs another image than the digest the last apply recorded, or another command, env or secret references. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
-
-```jsonc
-{
-  "schemaVersion": 3,
-  "mode": "staging",
-  "generatedAt": "<iso>",
-  "stackState": "fresh | partial | bootstrapped",
-  "checks": [
-    { "id": "live.backend", "title": "Service backend", "status": "ok",
-      "detail": "serving 58d6ab0", "credential": "none",
-      "nextAction": { "description": "...", "command": "..." } } // present only when actionable
-  ],
-  "nextAction": { "description": "...", "command": "..." }, // absent when nothing needs doing
-  "summary": { "ok": 17, "warn": 0, "missing": 0, "error": 0, "unknown": 0 }
-}
-```
 
 Stable check `id`s:
 

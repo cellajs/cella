@@ -82,15 +82,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
 
 const find = (checks: Check[], id: string): Check | undefined => checks.find((c) => c.id === id);
 
-describe('report envelope (public contract)', () => {
-  it('has the documented top-level shape and schema version', () => {
-    const report = reportFor(base());
-    expect(Object.keys(report).sort()).toEqual(['checks', 'mode', 'nextAction', 'schemaVersion', 'stackState', 'summary']);
-    expect(report.schemaVersion).toBe(3);
-    expect(report.mode).toBe('staging');
-    expect(report.stackState).toBe('bootstrapped');
-  });
-
+describe('report envelope', () => {
   it('summary counts every status bucket and sums to the check count', () => {
     const report = reportFor(base());
     expect(Object.keys(report.summary).sort()).toEqual(['error', 'missing', 'ok', 'unknown', 'warn']);
@@ -98,12 +90,12 @@ describe('report envelope (public contract)', () => {
     expect(total).toBe(report.checks.length);
   });
 
-  it('every check carries id, title, status, detail, credential', () => {
+  it('every check carries id, title, status, detail, key', () => {
     for (const check of reportFor(base()).checks) {
       expect(check.id).toBeTruthy();
       expect(check.title).toBeTruthy();
       expect(['ok', 'warn', 'missing', 'unknown', 'error']).toContain(check.status);
-      expect(['none', 'scaleway']).toContain(check.credential);
+      expect(['none', 'scaleway']).toContain(check.key);
     }
   });
 
@@ -120,7 +112,7 @@ describe('key degradation', () => {
     for (const id of ['runs.last', 'identity.keyAges', 'state.bucket', 'state.lock', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
-      expect(check?.credential).toBe('scaleway');
+      expect(check?.key).toBe('scaleway');
     }
     // Public HTTP checks still evaluate, so nothing scaleway drives nextAction.
     expect(report.nextAction).toBeUndefined();
@@ -339,7 +331,7 @@ describe('database public endpoint', () => {
   const live = (endpoints: string[], aclRules?: number): DbEndpointFacts => ({ instance: 'cella-postgres', found: true, endpoints, aclRules });
 
   it('a private-only instance with exposure off is ok', () => {
-    expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', credential: 'scaleway' });
+    expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', key: 'scaleway' });
   });
 
   it('warns about a public endpoint left open while exposure is off', () => {

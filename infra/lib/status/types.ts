@@ -3,14 +3,11 @@ import type { LiveRecord } from '../deploy/live-record';
 import type { KeyPair } from '../scaleway/operator-identity';
 import type { StackState } from '../stack/bootstrap-stack-state';
 
-/** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
-export const STATUS_SCHEMA_VERSION = 3;
-
 /** A check's verdict. `unknown` means "could not be evaluated", usually a missing key; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
 
-/** Key tier a check needs, in the JSON field `credential`: renaming the field is a breaking change of the contract. `none` reads local files or public HTTP; `scaleway` needs an API key with Object Storage, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
-export type CredentialTier = 'none' | 'scaleway';
+/** Key tier a check needs: `none` reads local files or public HTTP; `scaleway` needs an API key with Object Storage, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
+export type KeyTier = 'none' | 'scaleway';
 
 /** A runnable remediation: a one-line description and the exact command. */
 export interface NextAction {
@@ -18,19 +15,18 @@ export interface NextAction {
   command: string;
 }
 
-/** One evaluated check. `id` is stable and part of the public contract. */
+/** One evaluated check. `id` is stable across releases. */
 export interface Check {
   id: string;
   title: string;
   status: CheckStatus;
   detail: string;
-  credential: CredentialTier;
+  key: KeyTier;
   nextAction?: NextAction;
 }
 
 /** The full report emitted by `infra status` (the `--json` envelope). */
 export interface StatusReport {
-  schemaVersion: number;
   mode: string;
   /** ISO timestamp; stamped by the task, not the pure evaluator. */
   generatedAt: string;
