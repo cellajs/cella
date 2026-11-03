@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import type { EngineConfig } from '../config/engine-config';
 import { readLiveRecord, recordRole } from '../lib/deploy/live-record';
-import { isRouted, machineRoles, SLOTS, slotName, slotOfMachine } from '../lib/machine-roles';
+import { machineRoles, slotOfMachine } from '../lib/machine-roles';
 import { deriveInfra } from '../lib/naming';
+import { readLoadBalancer, readSlotAddresses } from '../lib/scaleway/foundation';
 import { deleteMachine, listMachines } from '../lib/scaleway/machines';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 import { controlActor, putJsonObject, readObjectText, readRotations, rotationsKey, type S3Like, stateBucket } from '../lib/stack/control-store';
@@ -97,35 +98,17 @@ export async function moveMachinesOutOfProgram(ctx: MoveContext): Promise<'prepa
   });
 
   if (step === 'prepare') {
-    const lbApi = `https://api.scaleway.com/lb/v1/zones/${zone}`;
-    const { lbs } = await scwFetch<{ lbs: Array<{ id: string; name: string }> }>(
-      auth,
-      'GET',
-      `${lbApi}/lbs?project_id=${ctx.projectId}&name=${encodeURIComponent(naming.resource('lb'))}`,
-    );
-    const lb = lbs.find((candidate) => candidate.name === naming.resource('lb'));
+    const lb = await readLoadBalancer(auth, { zone, projectId: ctx.projectId, naming });
     if (!lb) throw new Error(`no load balancer ${naming.resource('lb')} to read the serving machines from`);
-    const { backends } = await scwFetch<{ backends: Array<{ name: string; pool?: string[] }> }>(
-      auth,
-      'GET',
-      `${lbApi}/lbs/${lb.id}/backends?per_page=100`,
-    );
     // A pool that lists a reserved address already, after a half-done move, keeps that one as its own: only the program's machines are legacy.
-    const reserved = new Set<string>();
-    for (const role of roles.filter(isRouted)) {
-      for (const slot of SLOTS) {
-        const tag = slotName(naming.slug, mode, role.role, slot);
-        const { ips } = await scwFetch<{ ips: Array<{ address: string }> }>(
-          auth,
-          'GET',
-          `https://api.scaleway.com/ipam/v1/regions/${region}/ips?project_id=${ctx.projectId}&tags=${encodeURIComponent(tag)}&is_ipv6=false`,
-        );
-        for (const ip of ips) reserved.add(ip.address.split('/')[0] ?? ip.address);
-      }
-    }
+    const reserved = new Set(
+      Object.values(await readSlotAddresses(auth, { region, projectId: ctx.projectId, naming, mode, roles })).flatMap((bySlot) =>
+        Object.values(bySlot).map((slot) => slot.address),
+      ),
+    );
     const legacy: Record<string, string[]> = {};
     for (const pool of roles.flatMap((role) => role.pools)) {
-      const servers = (backends.find((backend) => backend.name === naming.resource(pool.key))?.pool ?? []).filter((ip) => !reserved.has(ip));
+      const servers = (lb.backends.find((backend) => backend.name === naming.resource(pool.key))?.pool ?? []).filter((ip) => !reserved.has(ip));
       if (servers.length > 0) legacy[pool.key] = servers;
     }
     write(['set', LEGACY_SERVERS_KEY, JSON.stringify(legacy)]);
