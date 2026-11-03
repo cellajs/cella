@@ -9,11 +9,9 @@ import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-coll
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
-import type { EnrichedChannel } from '~/modules/entities/types';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
+import { useCan } from '~/modules/entities/use-can';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import type { Member } from '~/modules/memberships/types';
-import { findInCache } from '~/query/basic/find-in-list-cache';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
@@ -26,8 +24,8 @@ interface AttachmentDescriptionFormProps {
 }
 
 /**
- * Collaborative description editor for one attachment, read-only without update permission. Grants and the mention audience
- * come from the row's home channel (its deepest ancestor), so an app that re-homes attachments needs no change here. The
+ * Collaborative description editor for one attachment, read-only without update permission. The mention audience comes
+ * from the row's home channel (its deepest ancestor), so an app that re-homes attachments needs no change here. The
  * relay saves a collaborative session; with Yjs off, the update mutation saves.
  */
 function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescriptionFormProps) {
@@ -43,10 +41,8 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
   const homeId = home?.id ?? organizationId;
   const homeType = home?.type ?? 'organization';
 
-  const resolveCan = useResolveCan();
-  const channel = findInCache<EnrichedChannel>(homeType, homeId);
-  // The map is the home channel's own, so the row is at home for a home-scoped grant; the relay grants a system admin no bypass.
-  const canEdit = resolveCan(channel?.memberCan?.attachment?.update, attachment.createdBy, { row: homeId, channel: homeId });
+  const canAsMember = useCan({ asMember: true });
+  const canEdit = canAsMember('update', 'attachment', attachment);
 
   const membersQuery = useInfiniteQuery(membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }));
   const members = flattenInfiniteData<Member>(membersQuery.data);

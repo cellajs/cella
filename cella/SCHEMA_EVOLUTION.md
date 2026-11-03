@@ -63,7 +63,7 @@ A `delta` renames, adds, drops or retypes a field ([define.ts](../shared/src/sch
 | **Channel** (`organization`) | Reduced: body widening and normalization, cache and mutation migration. No key maps: a plain `PUT` body has no per-field merge. |
 | **Frozen envelope** | None: changes only through `apiVersion` |
 
-Membership fields, enrichment output (`membership`, `can`) and Yjs-edited descriptions sit outside the lens system.
+Membership fields, enrichment output (`ancestorSlugs`) and Yjs-edited descriptions sit outside the lens system.
 
 ## Evolution contract
 

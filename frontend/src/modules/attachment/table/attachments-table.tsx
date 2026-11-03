@@ -3,7 +3,7 @@ import { PaperclipIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
-import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
+import { useCanUploadAttachments } from '~/modules/attachment/helpers/use-can-upload-attachments';
 import { attachmentsCanonicalOptions, attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -35,7 +35,8 @@ export interface AttachmentsTableProps {
 }
 
 export function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  const allowUpload = canUpload ?? canUploadAttachments(channel);
+  const uploadAllowed = useCanUploadAttachments(channel);
+  const allowUpload = canUpload ?? uploadAllowed;
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 

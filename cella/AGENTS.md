@@ -34,7 +34,7 @@ Throw `AppError` with an i18n `type` from `locales/en/error` (an app's own in `l
 
 Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Decisions: [Permissions](./PERMISSIONS.md). Database backstop: [Multi-tenancy](./MULTI_TENANCY.md).
 
-- Every check takes an `Access` from `accessFrom(ctx)`; never assemble one by hand. The frontend `can` map shapes the interface only, the backend decides.
+- Every check takes an `Access` from `accessFrom(ctx)` on the backend and from `useCan` on the frontend; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
 - Tokens are issued, redeemed and spent through `auth/tokens/`, the only importer of `tokens-db`.
 - Name the proof: session, API key or access token. `credential` is the WebAuthn word (passkeys) and nothing else. Machine-access terms: API key, access scope, binding, OAuth client.
 

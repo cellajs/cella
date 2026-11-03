@@ -60,4 +60,26 @@ describe('the deepest non-null ancestor rule of EntityHierarchy', () => {
       expect(h.possibleHomeChannels('task')).toEqual(['project']);
     });
   });
+
+  describe('ancestorIdsHomedAt', () => {
+    // A project of the organization itself: no course or section above it.
+    const organizationProject = { id: 'p1', courseSectionId: null, courseId: null, organizationId: 'o1' };
+
+    it('homes a new row at the channel: the ids above it copied, a null one too, the levels below it null', () => {
+      expect(h.ancestorIdsHomedAt('item', 'project', organizationProject)).toEqual({
+        projectId: 'p1',
+        courseSectionId: null,
+        courseId: null,
+        organizationId: 'o1',
+      });
+      const atCourse = h.ancestorIdsHomedAt('item', 'course', { id: 'c1', organizationId: 'o1' });
+      expect(atCourse).toEqual({ projectId: null, courseSectionId: null, courseId: 'c1', organizationId: 'o1' });
+      expect(atCourse && h.resolveDeepestAncestorId('item', atCourse)).toBe('c1');
+    });
+
+    it('leaves out a column the channel row lacks, and is null for a channel off the chain', () => {
+      expect(h.ancestorIdsHomedAt('item', 'project', { id: 'p1', organizationId: 'o1' })).toEqual({ projectId: 'p1', organizationId: 'o1' });
+      expect(h.ancestorIdsHomedAt('course', 'project', organizationProject)).toBeNull();
+    });
+  });
 });

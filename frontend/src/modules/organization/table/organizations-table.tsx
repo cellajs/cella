@@ -12,7 +12,7 @@ import { useChangeEntityRoleMutation } from '~/modules/memberships/query-mutatio
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
 import { useColumns } from '~/modules/organization/table/organizations-columns';
-import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
+import type { OrganizationRow, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 
 export function OrganizationsTable() {
   const { t } = useTranslation();
@@ -30,13 +30,13 @@ export function OrganizationsTable() {
   const list = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(list.rows);
 
-  const onRowsChange = (changedRows: EnrichedOrganization[], { column, indexes }: RowsChangeData<EnrichedOrganization>) => {
+  const onRowsChange = (changedRows: OrganizationRow[], { column, indexes }: RowsChangeData<OrganizationRow>) => {
     if (column.key !== 'role') return;
 
     return Promise.all(
       indexes.map((index) => {
-        const entity = changedRows[index];
-        return entity.membership?.role && changeRole.mutateAsync({ entity, role: entity.membership.role });
+        const { role, ...entity } = changedRows[index];
+        return role && changeRole.mutateAsync({ entity, role });
       }),
     );
   };
@@ -53,7 +53,7 @@ export function OrganizationsTable() {
         clearSelection={clearSelection}
       />
       <SearchScope q={q}>
-        <DataTable<EnrichedOrganization>
+        <DataTable<OrganizationRow>
           {...{
             ...list,
             onRowsChange,

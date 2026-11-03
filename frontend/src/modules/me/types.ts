@@ -1,6 +1,6 @@
-import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, User } from 'sdk';
+import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, MembershipBase, User } from 'sdk';
 import type { appConfig } from 'shared';
-import type { EnrichedChannel, WithRequired } from '~/modules/entities/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 
 export type Session = MeAuthData['sessions'][number];
 export type Passkey = MeAuthData['passkeys'][number];
@@ -11,7 +11,8 @@ export type MeUser = User;
 type MenuEntityType = (typeof appConfig.menuStructure)[number]['entityType'];
 export type UserMenu = Record<MenuEntityType, UserMenuItem[]>;
 
-export type UserMenuItem = WithRequired<EnrichedChannel, 'membership'> & { submenu?: UserMenuItem[] };
+/** A channel the user is a member of, joined with that membership when the menu is built. */
+export type UserMenuItem = EnrichedChannel & { membership: MembershipBase; submenu?: UserMenuItem[] };
 
 export type UploadTokenQuery = GetUploadTokenData['query'];
 

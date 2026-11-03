@@ -2,14 +2,11 @@ import type { EntityActionType, EntityType } from '../../types.ts';
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy.ts';
 import {
   type AccessMembership,
-  type CanState,
-  computeCan,
   configurePermissions,
   type HierarchyOverrides,
   type PermissionsConfigResult,
   type PolicyCallback,
   type PolicyCellInput,
-  type PolicyMatrix,
   type PublicReadGrants,
   type SubjectForPermission,
 } from '../permissions/index.ts';
@@ -85,14 +82,3 @@ export const wideSubject = (input: {
 
 /** For the engine's `publicGrants` option. */
 export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants => grants as PublicReadGrants;
-
-/** Keyed by the wide vocabulary, so tests read `.task` cast-free. */
-export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, CanState>>>;
-
-export const computeWideCan = (channelType: WideChannelType, membership: AccessMembership | undefined | null, policies: PolicyMatrix): WideCanMap =>
-  computeCan(
-    policies,
-    channelType as unknown as Parameters<typeof computeCan>[1],
-    membership as unknown as Parameters<typeof computeCan>[2],
-    wideOverrides,
-  ) as unknown as WideCanMap;

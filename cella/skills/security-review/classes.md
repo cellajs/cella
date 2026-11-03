@@ -203,8 +203,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/integration/system-roles-write-guard`: `runtime_role` cannot insert, update or delete `system_roles` even with the grant open; the admin connection and the user-delete cascade still work.
   - `impersonation`: the cookie alone does nothing, a second impersonation is refused, it ends with the admin session or role.
   - `user-list-system-role` (B3 field visibility, listed because the plan names it); `tests/system-update-user`; `tests/tenants`.
-  - The frontend parity test of the `can` map.
-- **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table; the parity test under an app's hierarchy.
+- **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table.
 - **Not this class:** field visibility of `role` and the system role in user lists belongs to B3. Cross-tenant and object reads belong to B1. Invitation address takeover belongs to C7. API key hashing and token signing belong to A5. Session cache and bindings cache staleness belong to C8. SSE and catchup grants belong to B1 and B4.
 
 ### B3 Property-level access

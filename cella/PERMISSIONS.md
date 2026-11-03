@@ -41,9 +41,9 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │   ┌──────▼─────┐ ┌───▼──────────┐ ┌───▼───────────┐ ┌──▼─────────────┐       │
 │   │ Backend    │ │ SSE dispatch │ │ Yjs relay     │ │ Frontend       │       │
 │   │ routes     │ │              │ │               │ │                │       │
-│   │ single row │ │ per change,  │ │ WS upgrade,   │ │ `can` map      │       │
-│   │ + compiled │ │ every        │ │ no backend    │ │ drives UI      │       │
-│   │ SQL for    │ │ subscriber   │ │ round-trip    │ │ controls       │       │
+│   │ single row │ │ per change,  │ │ WS upgrade,   │ │ `useCan` per   │       │
+│   │ + compiled │ │ every        │ │ no backend    │ │ control, over  │       │
+│   │ SQL for    │ │ subscriber   │ │ round-trip    │ │ memberships    │       │
 │   │ list reads │ │ at once      │ │               │ │ (never trusted)│       │
 │   └────────────┘ └──────────────┘ └───────────────┘ └────────────────┘       │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -134,11 +134,11 @@ Public read is declared per subject with `publicRead()` and holds for any actor,
 
 A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone. A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish, except those for its `prepareRoles`, which go out at once so those people can set it up.
 
-## Frontend map
+## In the interface
 
-The UI reads a `can` map per channel (`entity.can[entityType][action]`), built by `computeCan` from the same policy matrix and the actor's grants on the channel and above it. A cell is `true`, `false` or a condition `resolveCan` checks per row: `'own'` for the creator's rows, `'home'` for rows homed at the map's channel, or both combined. A row control passes the row and the channel; a channel-wide feature asks `isUnconditionalCan`.
+The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone.
 
-A route gate (`requireEntityAction`) asks the same map before the page loads, and lets the page load when it cannot read the memberships (offline with none cached): the server decides. The map shapes the interface only, and a parity test checks it against the engine for every combination of roles.
+A route gate (`requireEntityAction`) asks the same question before the page loads. Where the memberships cannot be read (offline with none cached), the gate lets the user through, and the server decides.
 
 ## Enforcement paths
 
@@ -209,6 +209,6 @@ Users who share an organization see each other's `UserBase` fields, email addres
 
 | Scenario | Outcome |
 | --- | --- |
-| Member with `update: 'own'` edits someone else's row | Denied: the UI resolves `'own'` against the row's creator, and the backend refuses a save all the same |
+| Member with `update: 'own'` edits someone else's row | Denied: the UI asks the engine on the row, and the backend refuses a save all the same |
 | Actor loses access mid-Yjs-session | The socket closes when its short-lived token expires, and a reconnect is authorized again |
 | System admin joins a Yjs collab session | No bypass: authorized as the acting user |

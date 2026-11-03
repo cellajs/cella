@@ -1,6 +1,5 @@
 export interface ItemData {
   id: string;
-  membership?: { id: string } | null;
 }
 
 /** Entity fields needed to resolve its registered cache keys and canonical home list. */

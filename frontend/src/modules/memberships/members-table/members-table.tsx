@@ -1,6 +1,5 @@
 import { UsersIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { isUnconditionalCan } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -11,6 +10,7 @@ import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { useCan } from '~/modules/entities/use-can';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -31,8 +31,8 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const { id: entityId, entityType, tenantId } = channel;
   const organizationId = channelOrganizationId(channel);
 
-  // Members are managed per channel and the channel has no `createdBy` to resolve `'own'`, so require an unconditional grant.
-  const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
+  const can = useCan();
+  const canUpdate = can('update', channel.entityType, channel);
 
   const { q, role, sort, order } = search;
 

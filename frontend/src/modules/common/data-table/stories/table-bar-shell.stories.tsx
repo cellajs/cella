@@ -1,16 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
+import { hierarchy } from 'shared';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { meKeys } from '~/modules/me/query';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
+import { userStore } from '~/modules/user/user-store';
 import { withApp } from '~/stories/with-app';
 
 // Bars read their count from this cached list; the rows are stand-ins, the bars read only ids and a few fields.
@@ -19,13 +22,17 @@ const rows = [
   { id: 'r1', name: 'One', email: 'one@example.com', type: 'waitlist', wasInvited: false, createdBy: null },
   { id: 'r2', name: 'Two', email: 'two@example.com', type: 'waitlist', wasInvited: true, createdBy: null },
 ];
+// The attachment bar asks the engine per row, as the signed-in user over `memberships`.
+const attachmentRows = rows.map((row) => ({ ...row, entityType: 'attachment', organizationId: 'org-1' }));
+const memberships = {
+  items: [{ channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: hierarchy.getMostPrivilegedRole('organization') }],
+};
 // A stand-in channel with the fields the bars read; the cast skips the rest of the enriched row.
 const channel = {
   id: 'org-1',
   entityType: 'organization',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
-  can: { attachment: { delete: true } },
 } as unknown as EnrichedChannel;
 
 type BarArgs = {
@@ -78,9 +85,20 @@ const meta = {
   beforeEach: () => {
     // Story tests run without the app's translations; the counts read through these two
     i18n.addResourceBundle('en', 'c', { resource_count: '{{count}} {{resource, lowercase}}' }, true, true);
-    return () => i18n.removeResourceBundle('en', 'c');
+    userStore.setState({ user: { id: 'me' } as never });
+    return () => {
+      i18n.removeResourceBundle('en', 'c');
+      userStore.setState({ user: null });
+    };
   },
-  parameters: { app: { queryData: [[listKey, { items: rows, total: 2 }]] } },
+  parameters: {
+    app: {
+      queryData: [
+        [listKey, { items: rows, total: 2 }],
+        [meKeys.memberships, memberships],
+      ],
+    },
+  },
   args: { setSearch: fn(), clearSelection: fn(), bar: 'users' },
 } satisfies Meta<typeof Bar>;
 
@@ -202,7 +220,7 @@ export const MembersReadOnly: Story = {
 };
 
 export const AttachmentsSheet: Story = {
-  args: { bar: 'attachments', isSheet: true, selected: rows },
+  args: { bar: 'attachments', isSheet: true, selected: attachmentRows },
   play: async ({ canvasElement }) => {
     await expect(searchInput(canvasElement, 'attachmentSearch')).not.toBeNull();
     await expect(within(canvasElement).getByRole('button', { name: 'upload' })).toBeInTheDocument();

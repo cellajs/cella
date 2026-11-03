@@ -5,7 +5,6 @@ import {
   appConfig,
   type ChannelEntityType,
   checkAccess,
-  computeCan,
   type EntityHierarchy,
   type EntityRole,
   getAllDecisions,
@@ -14,7 +13,6 @@ import {
   type PolicyMatrix,
   type ProductEntityType,
   type PublicReadGrants,
-  resolveCan,
   type SubjectForPermission,
   toColumnName,
 } from 'shared';
@@ -255,7 +253,7 @@ afterAll(async () => {
   await seedDb.execute(sql`drop table if exists test_permission_parity_rows`);
 });
 
-describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-can', () => {
+describe('row-condition parity: engine check ⊆⊇ compiled SQL', () => {
   it('agrees on every row across random policies, memberships and actors', async () => {
     const random = mulberry32(0xa11ce);
 
@@ -271,20 +269,6 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       const fromEngine = engineReadableIds(scenario);
       const fromSql = await sqlReadableIds(scenario);
       expect(fromSql, label).toEqual(fromEngine);
-
-      // Frontend vs engine per membership and in-scope row; both omit system-admin and public grants, as `computeCan` models one membership.
-      for (const m of scenario.memberships) {
-        const canMap = computeCan(scenario.policies, m.channelType as ChannelEntityType, m);
-        const state = canMap.attachment?.read ?? false;
-        const rowsInScope = m.channelType === root ? parityRows : parityRows.filter((r) => r.homeChannelId === m.channelId);
-
-        for (const row of rowsInScope) {
-          const home = { row: row.homeChannelId ?? rootId, channel: m.channelId };
-          const resolved = resolveCan(state, row.createdBy, scenario.userId, home);
-          const { can } = getAllDecisions(scenario.policies, [m], rowSubject(row), { actorId: scenario.userId });
-          expect(resolved, `${label}; membership ${m.channelType}:${m.channelId}:${m.role}; row ${row.id}`).toBe(can.read);
-        }
-      }
     }
   });
 

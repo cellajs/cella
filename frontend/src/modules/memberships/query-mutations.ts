@@ -18,11 +18,9 @@ import type {
   UpdateMembershipVariables,
 } from '~/modules/memberships/types';
 import { getCurrentUser } from '~/modules/user/user-store';
-import { cacheUpdate } from '~/query/basic/cache-mutations';
-import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
 import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
-import { getCachedMemberships } from '~/query/enrichment/helpers';
+import { findMembership, getCachedMemberships } from '~/query/enrichment/helpers';
 import { queryClient } from '~/query/query-client';
 
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
@@ -33,7 +31,7 @@ type ApiResponseWithIncludedMembership = { included?: { membership?: MembershipB
 /** Extract API-only included membership data for seeding the myMemberships cache. */
 export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
 
-/** Writes to myMemberships, which the global subscriber enriches entity lists from. An uncached list starts empty unless `onlyIfCached`. */
+/** Writes to myMemberships, which every membership reader looks up. An uncached list starts empty unless `onlyIfCached`. */
 const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[], onlyIfCached = false) => {
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
     if (!oldData) return onlyIfCached ? oldData : { items: write([]) };
@@ -172,7 +170,7 @@ export const useMemberUpdateMutation = () =>
       toaster.success(toastMessage);
     },
     onError: (_, __, context) => {
-      // Invalidate memberships to undo the optimistic update; the enrichment subscriber rebuilds the entity lists from them.
+      // Invalidate memberships to undo the optimistic update.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
       restoreMemberLists(context?.previousLists);
     },
@@ -215,23 +213,23 @@ const hasPersonalView = (membership: Partial<MembershipBase>): membership is Mem
 
 type ChangeEntityRoleVariables = { entity: EnrichedChannel; role: MembershipBase['role'] };
 
-type ChangeEntityRoleResult = { entity: EnrichedChannel; membership: MembershipBase; wasNew: boolean };
-
+/** Sets the caller's own role on a channel, joining it without a membership; answers the membership. */
 export const useChangeEntityRoleMutation = () =>
-  useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
+  useMutation<MembershipBase, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {
       if (!onlineManager.isOnline()) {
         toastOffline();
         throw new Error('offline');
       }
 
-      const { id: entityId, entityType, tenantId, membership } = entity;
+      const { id: entityId, entityType, tenantId } = entity;
+      const membership = findMembership(getCachedMemberships() ?? [], entityId);
       const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
-      if (membership?.id) {
+      if (membership) {
         const updated = await updateMembership({ body: { role }, path: { id: membership.id, tenantId, organizationId } });
-        return { entity, membership: { ...membership, ...updated }, wasNew: false };
+        return { ...membership, ...updated };
       }
 
       const { email } = getCurrentUser();
@@ -243,12 +241,7 @@ export const useChangeEntityRoleMutation = () =>
 
       const created = result.data?.[0];
       if (!created || !hasPersonalView(created)) throw new Error('Failed to create membership');
-      return { entity, membership: created, wasNew: true };
+      return created;
     },
-    onSuccess: ({ entity, membership }) => {
-      upsertMyMembershipCache(membership);
-
-      const updatedEntity = { ...entity, membership };
-      cacheUpdate(getEntityQueryKeys(entity.entityType).list.base, [updatedEntity]);
-    },
+    onSuccess: (membership) => upsertMyMembershipCache(membership),
   });

@@ -10,12 +10,12 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { openCreateOrganizationDialog } from '~/modules/organization/create-organization-form';
 import { fetchOrganizationsForExport } from '~/modules/organization/query';
-import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
+import type { OrganizationRow, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm, newsletterFormId } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams>;
+type OrganizationsTableBarProps = BaseTableBarProps<OrganizationRow, OrganizationsRouteSearchParams>;
 
 export function OrganizationsTableBar({
   selected,

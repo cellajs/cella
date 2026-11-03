@@ -64,7 +64,7 @@ A cache write keeps a mark: one that changes nothing writes nothing, and a real 
 Cache subscribers, not extra stores:
 
 - **Signal handlers** invalidate the queries a signal names, such as memberships or the inbox.
-- **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map with a permission per action, and `ancestorSlugs` for URLs. It never replaces backend permission checks.
+- **Enrichment** adds `ancestorSlugs` for URLs to every cached channel row. A row carries no membership or permission: a reader looks the membership up in `meKeys.memberships` and asks the engine through `useCan` ([Permissions](./PERMISSIONS.md#in-the-interface)).
 - **Unseen counts**: sync-delivered rows bump badge counts.
 
 ## Mutations

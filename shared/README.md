@@ -56,7 +56,7 @@ shared
 └── src/
     ├── config-builder/            Merges base + mode config → appConfig, service paths, entity hierarchy, load-time config checks
     ├── local-database.ts          The compose databases' ports and URLs, by purpose and app number
-    ├── permissions/               Access policies, computeCan, shared by backend & frontend
+    ├── permissions/               Access policies and the permission engine, shared by backend & frontend
     ├── tracing/                   OpenTelemetry setup, span names, span processor
     ├── utils/                     Display order, entity IDs, nanoid, worker lifecycle, etc.
     ├── otel.ts                    OpenTelemetry SDK of a service (traces, metrics)

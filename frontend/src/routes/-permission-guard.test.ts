@@ -16,9 +16,9 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const adminRole = hierarchy.getMostPrivilegedRole('organization');
 const membership = (role: string, channelId = 'org-1') => ({ channelType: 'organization', channelId, organizationId: channelId, role });
 
-// The row a slug fetch returns on a cold load: the API's own, before the enrichment pipeline put a membership on it.
-const organization = { id: 'org-1', slug: 'acme' };
-const settingsGate = () => requireEntityAction(organization, 'organization', 'organization', 'update', '/organization');
+// The row a slug fetch returns on a cold load, before the memberships are cached.
+const organization = { id: 'org-1', entityType: 'organization', slug: 'acme' };
+const settingsGate = () => requireEntityAction(organization, 'organization', 'update', '/organization');
 const redirected = { redirect: { to: '/organization', params: true, replace: true } };
 
 describe('requireEntityAction', () => {
@@ -27,7 +27,7 @@ describe('requireEntityAction', () => {
     getMyMemberships.mockReset();
   });
 
-  it('lets an admin through on a cold load: it fetches the memberships the row does not carry yet', async () => {
+  it('lets an admin through on a cold load: it fetches the memberships first', async () => {
     getMyMemberships.mockResolvedValue({ items: [membership(adminRole)] });
 
     await expect(settingsGate()).resolves.toBeUndefined();

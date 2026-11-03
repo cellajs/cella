@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { EntityActionType, EntityType } from '../../../types.ts';
+import { appConfig } from '../../config-builder/app-config.ts';
+import { type DeepChannelType, deepChannelRoles, deepElevatedHierarchy, deepEntityTypes } from '../../testing/deep-fixture.ts';
+import { configurePolicyMatrix } from '../../testing/policies.ts';
 import {
   configureWidePermissions,
   makeWideHierarchy,
@@ -142,6 +146,100 @@ describe('home scoping under elevated roles', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const atHome = getAllDecisions(policies, memberships, attachmentSubject('att2', 'org1'), options);
     expect(atHome.can.delete).toBe(true);
+  });
+});
+
+// The same rule on four levels, where a course or section role sits between the organization and the item's project.
+// The deep vocabulary is typed independently of the app config, so subjects, memberships and builders are cast to it.
+describe('home scoping on a deep chain', () => {
+  const hierarchy = deepElevatedHierarchy;
+  const actor = 'actor';
+  type Cells = Partial<Record<EntityActionType, 0 | 1 | 'own'>>;
+  // Organization admins and course and section staff are elevated; members and students are not.
+  const cellsByRole: Record<string, Cells> = {
+    admin: { create: 1, read: 1, update: 'own', delete: 0 },
+    staff: { create: 0, read: 1, update: 'own', delete: 'own' },
+    owner: { create: 1, read: 1, update: 1, delete: 0 },
+    member: { create: 1, read: 1, update: 'own', delete: 0 },
+    student: { create: 1, read: 1, update: 1, delete: 'own' },
+    follower: { read: 1, update: 'own' },
+  };
+
+  // Every entity type gets the role's cells on each channel of its chain.
+  const policies = configurePolicyMatrix(
+    deepEntityTypes as unknown as readonly EntityType[],
+    ({ entityType, channels }) => {
+      if ((entityType as string) === 'user') return;
+      const builders = channels as unknown as Record<string, Record<string, (cells: Cells) => void>>;
+      const chain = [...(hierarchy.isChannel(entityType) ? [entityType as string] : []), ...hierarchy.getOrderedAncestors(entityType)];
+      for (const channelType of chain) {
+        for (const role of deepChannelRoles[channelType as DeepChannelType]) builders[channelType][role]?.(cellsByRole[role]);
+      }
+    },
+    { hierarchy },
+  );
+
+  const at = (channelType: DeepChannelType, role: string): AccessMembership =>
+    ({ channelType, channelId: `${channelType}1`, role }) as unknown as AccessMembership;
+
+  /** The ids of `${type}1` from the organization down to `home`, null below it. */
+  const subjectHomedAt = (entityType: string, home: DeepChannelType, createdBy: string): SubjectForPermission => {
+    const ancestors = hierarchy.getOrderedAncestors(entityType);
+    const depth = ancestors.indexOf(home);
+    const channelIds = Object.fromEntries(ancestors.map((type, i) => [type, i >= depth ? `${type}1` : null]));
+    return { entityType, id: `${entityType}-${home}-${createdBy}`, createdBy, channelIds } as unknown as SubjectForPermission;
+  };
+
+  const can = (memberships: AccessMembership[], subject: SubjectForPermission) =>
+    getAllDecisions(policies, memberships, subject, { hierarchy, actorId: actor }).can;
+
+  it('must not let a course student (home-scoped) update or delete their own item homed in a project below', () => {
+    const student = [at('course', 'student')];
+    expect(can(student, subjectHomedAt('item', 'project', actor))).toMatchObject({ update: false, delete: false });
+
+    // Positive controls: the same item homed at the course, and the elevated course staff below.
+    expect(can(student, subjectHomedAt('item', 'course', actor))).toMatchObject({ update: true, delete: true });
+    expect(can([at('course', 'staff')], subjectHomedAt('item', 'project', actor))).toMatchObject({ update: true, delete: true });
+  });
+
+  it("takes either grant when a home-scoped grant on the channel meets an elevated 'own' cell above it", () => {
+    const memberships = [at('course', 'student'), at('organization', 'admin')];
+
+    expect(can(memberships, subjectHomedAt('item', 'course', 'other')).update).toBe(true);
+    expect(can(memberships, subjectHomedAt('item', 'project', actor)).update).toBe(true);
+    expect(can(memberships, subjectHomedAt('item', 'project', 'other')).update).toBe(false);
+  });
+
+  it('counts every grant above for a channel subject, and only an elevated one for the product rows below it', () => {
+    const project = subjectHomedAt('project', 'courseSection', 'other');
+    const item = subjectHomedAt('item', 'project', 'other');
+
+    expect(can([at('organization', 'admin')], project)).toEqual({ create: true, read: true, update: false, delete: false });
+    expect(can([at('organization', 'admin')], subjectHomedAt('project', 'courseSection', actor)).update).toBe(true);
+    expect(can([at('organization', 'admin')], item).read).toBe(true);
+
+    expect(can([at('organization', 'member')], project).read).toBe(true);
+    expect(can([at('organization', 'member')], item)).toEqual({ create: false, read: false, update: false, delete: false });
+  });
+
+  it('grants each role its cells on rows homed at its channel, and on rows homed below only when the role is elevated', () => {
+    for (const channelType of hierarchy.channelTypes as readonly DeepChannelType[]) {
+      for (const role of deepChannelRoles[channelType]) {
+        const elevated = hierarchy.elevatedGrants.has(`${channelType}:${role}`);
+        const homes: DeepChannelType[] = channelType === 'project' ? ['project'] : [channelType, 'project'];
+        for (const home of homes) {
+          for (const createdBy of [actor, 'other']) {
+            const decided = can([at(channelType, role)], subjectHomedAt('item', home, createdBy));
+            for (const action of appConfig.entityActions) {
+              const cell = cellsByRole[role][action] ?? 0;
+              const cellAllows = cell === 1 || (cell === 'own' && createdBy === actor);
+              const label = `${channelType} ${role}: ${action} on an item homed at ${home} created by ${createdBy}`;
+              expect(decided[action], label).toBe(cellAllows && (home === channelType || elevated));
+            }
+          }
+        }
+      }
+    }
   });
 });
 
