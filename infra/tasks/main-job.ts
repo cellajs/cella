@@ -9,9 +9,9 @@ const runTask: RunTask = (script, args) =>
   spawnSync('pnpm', ['--silent', 'run', script, ...args], { cwd: infraDir, stdio: 'inherit', env: process.env }).status ?? MAIN_JOB_EXIT.failed;
 
 /**
- * One run of the main job, on the target commit's own engine (plan §3.5): the deploy of `TARGET_SHA` to `MODE`, the reap of the generation it
- * displaced included. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed; blocked, when the deploy stopped on identities, a
- * privileged change or a required secret the operator owes, which its record names; or failed.
+ * One run of the main job, on the target commit's own engine (plan §3.5): the deploy of `TARGET_SHA` under the retry counter `RETRY` to
+ * `MODE`. Resolves to the run's exit code (lib/deploy/main-job.ts): deployed, the target serving already included; blocked, when a required
+ * secret the operator owes stopped it, which its record names; or failed.
  */
 export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number {
   const mode = env.MODE;
@@ -21,11 +21,10 @@ export function mainJob(env: NodeJS.ProcessEnv, run: RunTask = runTask): number 
     return MAIN_JOB_EXIT.failed;
   }
   console.info(`[main-job] ${mode}: ${sha} (retry ${env.RETRY ?? '0'})`);
-  const deployed = run('deploy', ['--mode', mode, '--sha', sha]);
+  const retry = env.RETRY && /^\d+$/.test(env.RETRY) ? env.RETRY : '0';
+  const deployed = run('deploy', ['--mode', mode, '--sha', sha, '--retry', retry]);
   if (deployed === MAIN_JOB_EXIT.blocked) {
-    console.info(
-      '[main-job] blocked: the record names what is owed, an identity update, an apply or a secret; the runner does not start this target again',
-    );
+    console.info('[main-job] blocked: the record names the runtime value owed; the runner does not start this target again');
     return MAIN_JOB_EXIT.blocked;
   }
   if (deployed !== MAIN_JOB_EXIT.deployed) return MAIN_JOB_EXIT.failed;

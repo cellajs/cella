@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ENCRYPTION_SALT_SECRET_NAME, PASSPHRASE_SECRET_NAME } from '../../tasks/passphrase-custody';
 import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 import { defaultRule } from './target';
@@ -19,14 +18,13 @@ const MAIN_JOB_SECRET_FOLDER = ENGINE_FOLDER.replace(/\/$/, '');
 
 /** How a run ends, as its exit code. The runner starts a target once; a blocked one waits for the operator (D21). */
 export const MAIN_JOB_EXIT = {
-  /** The target is live. */
+  /** The target is live: deployed by this run, or already serving (`unchanged` in the record). */
   deployed: 0,
-  /** The deploy failed; the running release is untouched or rolled back. A failed target is not started again by itself. */
+  /** The deploy failed; a role it had not switched still serves the release before. A failed target is not started again by itself. */
   failed: 1,
   /**
-   * Something only the operator makes is owed, and the run's record names it: identities, which Update identities writes, a privileged change,
-   * which the apply makes, or a required secret, which Manage runtime secrets stores. The apply and Manage runtime secrets start the target
-   * again at their end; after Update identities, Start deploy does.
+   * A required runtime value is missing, and the run's record names it: Manage runtime secrets stores it, or the apply for one it makes, and
+   * both start the target again at their end.
    */
   blocked: 2,
 } as const;
@@ -74,15 +72,14 @@ fi`;
 
 /**
  * The run's first program, written into the definition at the apply: it fetches the target commit (with the repository read key for a
- * private repository, read with the deploy key), installs the engine's workspace from the frozen lockfile and the Pulumi CLI at its SDK
- * version, and hands over to the target's own `main-job` task, whose exit code is the run's; a failure before it ends the run with 1, so a
+ * private repository, read with the deploy key), installs the engine's workspace from the frozen lockfile, and hands over to the target's own `main-job` task, whose exit code is the run's; a failure before it ends the run with 1, so a
  * tool's own exit code is never read as blocked. Written with String.raw: the one dollar-brace places {@link RELEASE_CHECK}, no other may
  * appear, and keys are never echoed.
  */
 export const MAIN_JOB_SCRIPT = String.raw`set -euo pipefail
 # A failure before the deploy task ends the run as failed: only the task's own exit code says deployed (0) or blocked (2).
 trap 'code=$?; echo "== $(date -u +%FT%TZ) the run stopped before the deploy (exit $code)" >&2; exit 1' ERR
-: "$TARGET_SHA" "$MODE" "$REPO" "$REGION" "$DEPLOY_KEY_JSON" "$PULUMI_CONFIG_PASSPHRASE"
+: "$TARGET_SHA" "$MODE" "$REPO" "$REGION" "$DEPLOY_KEY_JSON"
 export HOME=/root GIT_TERMINAL_PROMPT=0
 export SCW_ACCESS_KEY=$(node -e 'process.stdout.write(JSON.parse(process.env.DEPLOY_KEY_JSON).accessKey)')
 export SCW_SECRET_KEY=$(node -e 'process.stdout.write(JSON.parse(process.env.DEPLOY_KEY_JSON).secretKey)')
@@ -118,19 +115,10 @@ unset REPO_KEY
 git -C /work checkout -q FETCH_HEAD
 cd /work
 echo "== $(date -u +%FT%TZ) install"
-# Install scripts run without the deploy key or the passphrase in their environment.
-keyless() { env -u SCW_ACCESS_KEY -u SCW_SECRET_KEY -u PULUMI_CONFIG_PASSPHRASE "$@"; }
+# Install scripts run without the deploy key in their environment.
+keyless() { env -u SCW_ACCESS_KEY -u SCW_SECRET_KEY "$@"; }
 keyless npm install -g --silent "$(node -p 'require("./package.json").packageManager.replace(/\+.*$/, "")')"
 keyless pnpm install --frozen-lockfile --filter 'infra...' --filter 'shared...'
-PULUMI_VERSION=$(node -p 'require("./infra/node_modules/@pulumi/pulumi/package.json").version')
-# The CLI at the SDK's version, from its release archive. A job runs as root with no capability, so tar must not try to restore owners.
-curl -fsSL "https://get.pulumi.com/releases/sdk/pulumi-v$PULUMI_VERSION-linux-x64.tar.gz" | tar -xz --no-same-owner -C /usr/local
-export PATH="/usr/local/pulumi:$PATH"
-# The salt kept beside the passphrase goes into the target's stack file, so any commit decrypts the state, an older release's too.
-SALT=$(printenv PULUMI_ENCRYPTION_SALT || true)
-if [ -n "$SALT" ]; then
-  node -e 'const fs = require("fs"); const [file, salt] = process.argv.slice(1); const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""; fs.writeFileSync(file, /^encryptionsalt:.*$/m.test(text) ? text.replace(/^encryptionsalt:.*$/m, "encryptionsalt: " + salt) : "encryptionsalt: " + salt + "\n" + text)' "infra/Pulumi.$MODE.yaml" "$SALT"
-fi
 echo "== $(date -u +%FT%TZ) deploy"
 exec pnpm --silent --filter infra main-job
 `;
@@ -166,12 +154,8 @@ export function declaredMainJob(opts: {
       SCW_DEFAULT_ORGANIZATION_ID: opts.organizationId,
       ...(defaultRule(opts.mode)?.kind === 'releases' ? { RELEASES_ONLY: '1' } : {}),
     },
-    secretReferences: {
-      DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME },
-      PULUMI_CONFIG_PASSPHRASE: { name: PASSPHRASE_SECRET_NAME },
-      // A stack set up before the salt was kept beside the passphrase has none yet: its runs read the target's stack file.
-      PULUMI_ENCRYPTION_SALT: { name: ENCRYPTION_SALT_SECRET_NAME, optional: true },
-    },
+    // The deploy key only: a deploy plans no stack, so its runs read no passphrase.
+    secretReferences: { DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME } },
     secretFolder: MAIN_JOB_SECRET_FOLDER,
   };
 }

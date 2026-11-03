@@ -1,6 +1,8 @@
+import type { EngineConfig } from '../../../config/engine-config';
 import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
 import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
 import { repositoryUrl } from '../../deploy/repository-key';
+import { machineRoles } from '../../machine-roles';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
@@ -28,9 +30,9 @@ export interface InventoryFacts {
   /** The policies bound to an application or a group, with their rules. */
   policies: InventoryPolicy[];
   /** The project's machines, in every zone of the region; undefined when the run holds no operator key to list them with. */
-  machines?: string[];
-  /** Each service's active generation, from the control object. */
-  activeGenerations: Record<string, string>;
+  machines?: Array<{ id: string; name: string }>;
+  /** Each role's machine that serves, from the live record. */
+  liveMachines: Record<string, string>;
   /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
   mainJob?: {
     running: boolean;
@@ -55,6 +57,8 @@ export interface InventoryExpectation {
   oneKey: readonly string[];
   /** Every machine of this environment starts with it (`<slug>-`). */
   machinePrefix: string;
+  /** The environment's machine roles: a machine named for one of their slots is the engine's. */
+  roles: readonly string[];
   /** The app's operator: every key of it ends within a day, and one that does not is deleted in the console. */
   operator: string;
 }
@@ -68,7 +72,7 @@ export interface InventoryFindings {
   policies: string[];
   /** A machine the engine did not make. */
   machines: string[];
-  /** A machine the engine made that is not live while a deploy runs: a generation not yet reaped, or a builder. */
+  /** A machine the engine made that is not live while a deploy runs: one of a switch not finished, or a builder. */
   passing: string[];
 }
 
@@ -129,20 +133,20 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
       found.keys.push(`${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`);
     }
   }
-  const live = new Set(Object.entries(facts.activeGenerations).map(([service, id]) => `${expect.machinePrefix}${service}-${id}`));
-  const services = Object.keys(facts.activeGenerations);
-  // A deploy reaps what it displaced and deletes its builder before it ends, so with no run going on such a machine is a finding too.
+  const live = new Set(Object.values(facts.liveMachines));
+  const slotNames = new Set(expect.roles.flatMap((role) => ['a', 'b'].map((slot) => `${expect.machinePrefix}${role}-${slot}`)));
+  // A deploy deletes the machine it switched from and its builder before it ends, so with no run going on such a machine is a finding too.
   const deploying = facts.mainJob?.running === true;
-  for (const machine of facts.machines ?? []) {
-    if (live.has(machine)) continue;
-    const kind = machine.startsWith(`${expect.machinePrefix}builder-`)
+  for (const { id, name } of facts.machines ?? []) {
+    if (live.has(id)) continue;
+    const kind = name.startsWith(`${expect.machinePrefix}builder-`)
       ? 'a builder'
-      : services.some((service) => machine.startsWith(`${expect.machinePrefix}${service}-`))
-        ? 'a generation that is not active'
+      : slotNames.has(name)
+        ? 'a machine the live record does not name'
         : undefined;
-    if (!kind) found.machines.push(`${machine}: not made by the engine`);
-    else if (deploying) found.passing.push(`${machine}: ${kind}, while a deploy runs`);
-    else found.machines.push(`${machine}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
+    if (!kind) found.machines.push(`${name}: not made by the engine`);
+    else if (deploying) found.passing.push(`${name}: ${kind}, while a deploy runs`);
+    else found.machines.push(`${name}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
   }
   return found;
 }
@@ -197,7 +201,11 @@ function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'
 }
 
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
-function expectationOf(appConfig: { slug: string; appSlug: string }, mode: string, projectId: string): InventoryExpectation {
+function expectationOf(
+  appConfig: Pick<EngineConfig, 'slug' | 'appSlug' | 'services' | 'singleVM'>,
+  mode: string,
+  projectId: string,
+): InventoryExpectation {
   const app = appPrincipalNames(appConfig.appSlug);
   const appLevel = [app.operator, app.observer, runnerName(appConfig.appSlug)];
   const declared = Object.fromEntries([
@@ -213,6 +221,7 @@ function expectationOf(appConfig: { slug: string; appSlug: string }, mode: strin
     declared,
     oneKey: Object.keys(declared).filter((name) => name !== app.observer && name !== app.operator),
     machinePrefix: `${appConfig.slug}-`,
+    roles: machineRoles(appConfig).map((role) => role.role),
     operator: app.operator,
   };
 }
@@ -243,8 +252,8 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const auth = { secretKey: session.secretKey };
       const operatorSecretKey = session.operatorKey?.secretKey;
       const { naming, region, zones } = deriveInfra(session.appConfig);
-      const rollout = (await session.scalewayFacts()).rollout;
-      if (!rollout) return undefined;
+      const live = (await session.scalewayFacts()).live;
+      if (!live) return undefined;
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
       // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
       const secretPlace = (secretId: string) =>
@@ -267,7 +276,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         operatorSecretKey
           ? Promise.all(
               zones.map((zone) =>
-                listAll<{ name: string }>(
+                listAll<{ id: string; name: string }>(
                   { secretKey: operatorSecretKey },
                   (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
                   'servers',
@@ -301,9 +310,9 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
               [],
           })),
       );
-      const activeGenerations = Object.fromEntries(rollout.flatMap((row) => (row.activeGeneration ? [[row.slug, row.activeGeneration]] : [])));
-      const machines = servers?.map((server) => server.name);
-      return { applications, groups, apiKeys, policies: withRules, machines, activeGenerations, mainJob, organizationId };
+      const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
+      const machines = servers?.map(({ id, name }) => ({ id, name }));
+      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, mainJob, organizationId };
     } catch {
       return undefined;
     }
@@ -339,7 +348,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
             ? b.error(found.machines.join('; '))
             : found.passing.length > 0
               ? b.warn(found.passing.join('; '))
-              : b.ok(`${facts.machines.length} machine(s), each an active generation`),
+              : b.ok(`${facts.machines.length} machine(s), each one the live record names`),
       ),
       item('inventory.mainJob', 'Main job', (b, { facts }) =>
         mainJobVerdict(b, facts.mainJob, () =>

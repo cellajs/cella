@@ -32,12 +32,10 @@ describe('buildDeployEnv', () => {
     expect(buildDeployEnv(fakeAppConfig)).toEqual({
       environment: 'production',
       image_tag: '',
-      pulumi_stack: 'production',
+      stack: 'production',
       region: 'nl-ams',
-      registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       public_bucket: 'cella-public',
-      state_bucket: 'cella-pulumi-state',
       diag_bucket: 'cella-boot-diag',
       enabled_services_json: JSON.stringify([
         {
@@ -66,18 +64,8 @@ describe('buildDeployEnv', () => {
         { service: 'cdc', dockerfile: 'Dockerfile', target: 'cdc' },
         { service: 'frontend', dockerfile: 'infra/caddy/Dockerfile', target: '' },
       ]),
-      primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
-      roll_rest_matrix: JSON.stringify([
-        { service: 'cdc', health_url: '' },
-        { service: 'jobs', health_url: '' },
-        { service: 'frontend', health_url: 'https://www.cella.example' },
-      ]),
+      primary_role: 'backend',
     });
-  });
-
-  it('strips hyphens from registry_ns', () => {
-    const cfg = { ...fakeAppConfig, slug: 'my-cool-app' };
-    expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp');
   });
 
   it('emits the supplied image tag', () => {

@@ -38,12 +38,10 @@ const NEXT_ACTION_PRIORITY = [
   'state.bucket',
   'secrets.required',
   'runs.last',
-  'rollout',
   'live.',
   'db.publicEndpoint',
   'dns.zone',
   'state.lock',
-  'state.pendingOperations',
 ];
 
 /** A check contributes a top-level action only when it actually needs doing. */

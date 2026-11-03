@@ -6,8 +6,8 @@ export const RELEASES_PREFIX = 'releases/';
 /** Where the deploy writes each machine's composed env file, deleted once the machine booted and within a day by the bucket's rule. */
 export const ENV_PREFIX = 'env/';
 
-/** Name of the boot runner's image repository, and of its archive. */
-export const BOOT_IMAGE_NAME = 'infra-boot';
+/** Name of the agent's image repository, and of its archive. */
+export const AGENT_IMAGE_NAME = 'infra-agent';
 
 export const releaseArchiveKey = (sha: string, name: string) => `${RELEASES_PREFIX}${sha}/images/${name}.tar`;
 export const releaseManifestKey = (sha: string) => `${RELEASES_PREFIX}${sha}/manifest.json`;

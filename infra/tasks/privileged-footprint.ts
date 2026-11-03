@@ -9,8 +9,8 @@ const ORGANIZATION = 'organization';
 
 /**
  * Render what one environment's code declares that only an Owner moment or an apply writes, without a key and without Scaleway: the
- * identities with their policies, and the Pulumi program's privileged resources with their inputs, under mocks (lib/stack/keyless-render.ts).
- * Compute is left out, as a deploy makes it. The stack file is not read: the committed one holds markers only, and a database's exposure lives
+ * identities with their policies, and every resource of the Pulumi program with its inputs, under mocks (lib/stack/keyless-render.ts): the
+ * program holds the foundation only, as a deploy makes the machines. The stack file is not read: the committed one holds markers only, and a database's exposure lives
  * in the operator's own overlay. Writes JSON to `--out`; the pull request check compares a base's with a head's (tasks/privileged-check.ts).
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
@@ -24,7 +24,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   process.env.APP_MODE = mode;
   process.env.SCW_DEFAULT_PROJECT_ID = PROJECT;
   process.env.SCW_DEFAULT_ORGANIZATION_ID = ORGANIZATION;
-  process.env.PULUMI_CONFIG = JSON.stringify({ 'bootstrap:computeDeferred': 'keyless render' });
   // The program sends a key with its IPAM read; keylessFetch answers that read itself, so this word goes nowhere.
   process.env.SCW_SECRET_KEY = 'keyless';
 
@@ -32,7 +31,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const appConfig = await loadEngineConfig();
   const pulumi = await import('@pulumi/pulumi');
   const { installKeylessMocks, keylessFetch, settleRender } = await import('../lib/stack/keyless-render');
-  const { isPrivilegedType } = await import('./preflight-privileged');
   const { declaredIdentities } = await import('../lib/scaleway/declared-identities');
 
   globalThis.fetch = keylessFetch;
@@ -44,7 +42,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     environment: mode,
     identities: declaredIdentities(appConfig, { projectId: PROJECT, organizationId: ORGANIZATION }),
     resources: rendered
-      .filter((resource) => isPrivilegedType(resource.type))
       .map(({ type, name, inputs }) => ({ type, name, inputs }))
       .sort((a, b) => `${a.type} ${a.name}`.localeCompare(`${b.type} ${b.name}`)),
   };

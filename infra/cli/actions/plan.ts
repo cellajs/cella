@@ -6,6 +6,7 @@ import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
+import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -75,11 +76,10 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
       operation: 'forget-retired-resources',
     });
     try {
-      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-retired-resources', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
-      if (forget.status !== 0) {
-        console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing was planned or applied.`);
-        endAction(forget.status ?? 1);
-      }
+      forgetRetiredResources(stack, env);
+    } catch (error) {
+      console.error(`${warningMark} The retired resources could not leave the state (${errorMessage(error)}). Nothing was planned or applied.`);
+      endAction(1);
     } finally {
       await lock.release();
     }

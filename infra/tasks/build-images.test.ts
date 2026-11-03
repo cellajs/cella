@@ -18,25 +18,25 @@ describe('bakeDefinition', () => {
     expect((target.backend as { target?: string }).target).toBe('backend');
     expect((target.yjs as { target?: string }).target).toBe('yjs');
     expect(target.frontend).not.toHaveProperty('target');
-    expect((target['boot-runner'] as { context: string }).context).toBe('/build/infra/boot');
+    expect((target.agent as { context: string }).context).toBe('/build/infra/agent');
   });
 
-  it('builds every image, the boot runner included, on a node base pinned by digest at the root engines.node: a moved tag reaches none', () => {
+  it('builds every image, the agent included, on a node base pinned by digest at the root engines.node: a moved tag reaches none', () => {
     const rows = parseBuildRows(JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]));
     const { target } = bakeDefinition(rows, base);
     expect(target.backend).toMatchObject({ args: { RELEASE_SHA: 'abc', NODE_IMAGE: expect.stringMatching(/-alpine@sha256:[0-9a-f]{64}$/) } });
-    expect(target['boot-runner']).toMatchObject({ args: { NODE_IMAGE: expect.stringMatching(/-bookworm-slim@sha256:[0-9a-f]{64}$/) } });
+    expect(target.agent).toMatchObject({ args: { NODE_IMAGE: expect.stringMatching(/-bookworm-slim@sha256:[0-9a-f]{64}$/) } });
   });
 
   it('writes every image as an archive under the tag the compose file names, and pushes none to the registry', () => {
     const rows = parseBuildRows(JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]));
     const bake = bakeDefinition(rows, base);
-    expect(bake.group).toMatchObject({ services: { targets: ['backend'] }, boot: { targets: ['boot-runner'] } });
+    expect(bake.group).toMatchObject({ services: { targets: ['backend'] }, agent: { targets: ['agent'] } });
     expect(bake.target.backend).toMatchObject({
       tags: ['rg.nl-ams.scw.cloud/app/backend:abc'],
       output: ['type=docker,dest=/run/images/backend.tar'],
     });
-    expect(bake.target['boot-runner']).toMatchObject({ output: ['type=docker,dest=/run/images/infra-boot.tar'] });
+    expect(bake.target.agent).toMatchObject({ output: ['type=docker,dest=/run/images/infra-agent.tar'] });
     expect(JSON.stringify(bake)).not.toMatch(/cache-|push|type=registry/);
   });
 });

@@ -13,7 +13,7 @@ import { startBlockedTarget } from './start-deploy';
  * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
  * The declared applications and their policies are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
  * The plan is made before the stack lock, so the lock is taken only for a plan the operator said yes to.
- * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
+ * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
   console.info(

@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import { isRecord } from '../../lib/utils/guards';
 
-export const supportedSchemaVersion = 2;
+export const supportedSchemaVersion = 3;
 export const supportedImageContract = 'docker-node-boot-v1';
 
 /** One image archive of the release: the image it holds, the link it is fetched through and the sha256 it must have. */
@@ -12,6 +12,13 @@ export interface ReleaseArchive {
   sha256: string;
 }
 
+/** One service the agent answers the load balancer's check for: on `agentPort`, from the service's own `/health` on `port`. */
+export interface AgentPort {
+  service: string;
+  agentPort: number;
+  port: number;
+}
+
 export interface BootPlan {
   schemaVersion: typeof supportedSchemaVersion;
   service: string;
@@ -19,7 +26,7 @@ export interface BootPlan {
   /** Compose services to start, named explicitly; the one-shot release companion starts as their dependency. */
   services: [string, ...string[]];
   releaseSha: string;
-  /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
+  /** W3C traceparent of the deploy that made this machine; boot telemetry joins that trace. */
   traceparent?: string;
   /** App-declared telemetry sink: boot events export here once the env file delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
   telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
@@ -30,9 +37,11 @@ export interface BootPlan {
    */
   links: { env: string; bootAccount: string; archives: ReleaseArchive[] };
   bootDiagnostics: { logFile: string };
+  /** The compose file cloud-init wrote beside the static `.env`. */
   docker: { composeFile: string };
-  files: { compose: string; env: string };
-  /** `composeWaitSeconds` bounds the release companion and the start together; see resources/cloud-init.ts for how it fits the deploy's health gate. */
+  /** The health ports the agent serves, and how long a drain keeps connections before the containers stop. */
+  agent: { ports: AgentPort[]; drainSeconds: number };
+  /** `composeWaitSeconds` bounds the release companion and the start together; see lib/deploy/machine-user-data.ts for how it fits the deploy's wait. */
   timeouts: { privateNetworkSeconds: number; fetchAttempts: number; fetchRetrySeconds: number; composeWaitSeconds: number };
 }
 
@@ -48,7 +57,7 @@ const topLevelKeys = new Set([
   'links',
   'bootDiagnostics',
   'docker',
-  'files',
+  'agent',
   'timeouts',
 ]);
 
@@ -105,6 +114,27 @@ function servicesField(obj: Record<string, unknown>): [string, ...string[]] {
   return services as [string, ...string[]];
 }
 
+function portField(obj: Record<string, unknown>, key: string): number {
+  const value = obj[key];
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65535) throw new Error(`boot plan: '${key}' must be a port`);
+  return value;
+}
+
+function agentField(obj: Record<string, unknown>): BootPlan['agent'] {
+  const agent = objectField(obj, 'agent');
+  if (!Array.isArray(agent.ports)) throw new Error("boot plan: 'agent.ports' must be an array");
+  const ports = agent.ports.map((entry, index) => {
+    if (!isRecord(entry)) throw new Error(`boot plan: agent.ports[${index}] must be an object`);
+    const service = stringField(entry, 'service');
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(service)) throw new Error(`boot plan: agent port of '${service}' names no service`);
+    return { service, agentPort: portField(entry, 'agentPort'), port: portField(entry, 'port') };
+  });
+  const drainSeconds = agent.drainSeconds;
+  if (typeof drainSeconds !== 'number' || !Number.isFinite(drainSeconds) || drainSeconds < 0)
+    throw new Error("boot plan: 'agent.drainSeconds' must be a number");
+  return { ports, drainSeconds };
+}
+
 function archivesField(links: Record<string, unknown>): ReleaseArchive[] {
   const value = links.archives;
   if (!Array.isArray(value)) throw new Error("boot plan: 'archives' must be an array");
@@ -133,7 +163,6 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   const links = objectField(parsed, 'links');
   const bootDiagnostics = objectField(parsed, 'bootDiagnostics');
   const docker = objectField(parsed, 'docker');
-  const files = objectField(parsed, 'files');
   const timeouts = objectField(parsed, 'timeouts');
 
   const logFile = stringField(bootDiagnostics, 'logFile');
@@ -160,7 +189,7 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
     links: { env: linkField(links, 'env'), bootAccount: linkField(links, 'bootAccount'), archives: archivesField(links) },
     bootDiagnostics: { logFile },
     docker: { composeFile },
-    files: { compose: stringField(files, 'compose'), env: stringField(files, 'env') },
+    agent: agentField(parsed),
     timeouts: {
       privateNetworkSeconds: numberField(timeouts, 'privateNetworkSeconds'),
       fetchAttempts: numberField(timeouts, 'fetchAttempts'),

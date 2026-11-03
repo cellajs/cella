@@ -6,12 +6,12 @@ const appConfig = engineConfig();
 
 import type { ServiceName } from '../compose/compose';
 import { healthContract } from '../config/health.config';
-import { enabledServices } from '../lib/services';
+import { agentHealthPath, agentPort, internalLbPort } from '../lib/machine-roles';
+import { enabledServices, type ServiceDefinition } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
-import { serviceGenerationIps } from './compute';
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
-import { internalLbPort, publishLbInternalAddress } from './lb-internal';
 import { privateNetworkId, privateNetworkSubnet } from './network';
+import { legacyServers, poolServers } from './slots';
 
 /**
  * A frontend whose ACLs are `Acl` resources of their own. The provider reads a frontend's live ACLs into its `acls` field, which this program
@@ -30,6 +30,33 @@ interface LoadBalancerOutputs {
   serviceUrls: Record<string, pulumi.Output<string>>;
   lbId: pulumi.Output<string>;
   lbBackendIds: pulumi.Output<Record<string, string>>;
+  /** The LB's private-network IPv4 address, without a CIDR suffix. */
+  lbPrivateAddress: pulumi.Output<string>;
+}
+
+/**
+ * A pool's health check. It asks the machine's agent, which answers 200 only while the service serves the release the machine was made for
+ * and is not draining; at the shortest check the API takes, the load balancer stops routing to a server about a second and a half after
+ * its answer turned 503 (M1), so a deploy moves traffic by health and never edits a pool. While a migration keeps legacy machines in the
+ * pools, which run no agent, every pool asks the service's own health path, which both kinds of machine answer.
+ */
+function healthCheck(service: ServiceDefinition) {
+  if (Object.keys(legacyServers).length > 0) {
+    return {
+      healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
+      healthCheckDelay: '3s',
+      healthCheckTimeout: '2s',
+      healthCheckMaxRetries: 2,
+    };
+  }
+  return {
+    healthCheckPort: agentPort(service.slug),
+    healthCheckHttp: { uri: agentHealthPath(service.slug), code: 200 },
+    healthCheckDelay: '1s',
+    healthCheckTimeout: '1s',
+    healthCheckMaxRetries: 2,
+    healthCheckTransientDelay: '0.5s',
+  };
 }
 
 /** Provision the LB + DNS + certs + backends/frontends and return the outputs. */
@@ -127,37 +154,30 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }));
   }
 
-  // Pulumi seeds backend IPs, then cutover owns expand, health, and contract changes. Drain policy either preserves HTTP requests or closes WebSockets so clients reconnect to the new generation.
+  // Every pool lists its role's two reserved addresses for good, and the health check decides which serves. A drain either lets HTTP
+  // requests finish or closes WebSockets so clients reconnect to the new machine.
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>();
   for (const service of lbServices) {
-    // healthExpectStatus is per service: API services answer 204, the SPA proxy 200.
     backends.set(
       service.slug,
-      new scaleway.loadbalancers.Backend(
-        `${service.slug}-lb-backend`,
-        {
-          lbId: lb.id,
-          name: naming.resource(service.slug),
-          forwardProtocol: 'http',
-          forwardPort: service.healthPort,
-          serverIps: serviceGenerationIps(service.slug),
-          onMarkedDownAction: service.drainPolicy === 'reconnect' ? 'shutdown_sessions' : 'none',
-          healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
-          healthCheckDelay: '3s',
-          healthCheckTimeout: '2s',
-          healthCheckMaxRetries: 2,
-          // Long timeouts keep WebSocket connections open.
-          ...(service.lbWebsockets ? { timeoutServer: '1h', timeoutTunnel: '1h' } : {}),
-        },
-        { ignoreChanges: ['serverIps'] },
-      ),
+      new scaleway.loadbalancers.Backend(`${service.slug}-lb-backend`, {
+        lbId: lb.id,
+        name: naming.resource(service.slug),
+        forwardProtocol: 'http',
+        forwardPort: service.healthPort,
+        serverIps: poolServers(service.slug),
+        onMarkedDownAction: service.drainPolicy === 'reconnect' ? 'shutdown_sessions' : 'none',
+        ...healthCheck(service),
+        // Long timeouts keep WebSocket connections open.
+        ...(service.lbWebsockets ? { timeoutServer: '1h', timeoutTunnel: '1h' } : {}),
+      }),
     );
   }
 
   const defaultBackend = backends.get(defaultService.slug)!;
 
-  // A private, ACL-guarded frontend per `internalPort` service gives in-network consumers a stable address that follows every cutover.
+  // A private, ACL-guarded frontend per `internalPort` service gives in-network consumers a stable address that follows every switch.
   // The LB keeps its DHCP-assigned private-network IP: recreating the attachment severs LB-to-VM traffic.
   // Resolved through the IPAM REST API because the provider's getIps invoke rejects these filters with a detail-less "invalid argument(s)".
   const lbPrivateIp = lb.id.apply(async (lbId) => {
@@ -170,34 +190,27 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     const body = (await res.json()) as { ips?: Array<{ address?: string }> };
     const address = body.ips?.[0]?.address;
     if (!address) throw new Error('loadbalancer: could not resolve the LB private-network IP from IPAM (resource type lb_server).');
-    return address;
+    return address.split('/')[0] ?? address;
   });
-  publishLbInternalAddress(lbPrivateIp);
 
   const internalBackends = new Map<string, scaleway.loadbalancers.Backend>();
   const internalServices = enabledServices(appConfig.services).flatMap((s) =>
     s.internalPort === undefined ? [] : [{ service: s, internalPort: s.internalPort }],
   );
   for (const { service, internalPort } of internalServices) {
-    // Its own pool over the same generation IPs, forwarding to (and health-checking) the internal listener only, with 1h timeouts and session kill on mark-down so internal WebSocket consumers re-dial the new generation.
-    const internalBackend = new scaleway.loadbalancers.Backend(
-      `${service.slug}-internal-lb-backend`,
-      {
-        lbId: lb.id,
-        name: naming.resource(`${service.slug}-internal`),
-        forwardProtocol: 'http',
-        forwardPort: internalPort,
-        serverIps: serviceGenerationIps(service.slug),
-        onMarkedDownAction: 'shutdown_sessions',
-        healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
-        healthCheckDelay: '3s',
-        healthCheckTimeout: '2s',
-        healthCheckMaxRetries: 2,
-        timeoutServer: '1h',
-        timeoutTunnel: '1h',
-      },
-      { ignoreChanges: ['serverIps'] },
-    );
+    // Its own pool over the same addresses, forwarding to the internal listener only and checked like the public one, with 1h timeouts and
+    // session kill on mark-down so internal WebSocket consumers re-dial the new machine.
+    const internalBackend = new scaleway.loadbalancers.Backend(`${service.slug}-internal-lb-backend`, {
+      lbId: lb.id,
+      name: naming.resource(`${service.slug}-internal`),
+      forwardProtocol: 'http',
+      forwardPort: internalPort,
+      serverIps: poolServers(`${service.slug}-internal`),
+      onMarkedDownAction: 'shutdown_sessions',
+      ...healthCheck(service),
+      timeoutServer: '1h',
+      timeoutTunnel: '1h',
+    });
     internalBackends.set(`${service.slug}-internal`, internalBackend);
 
     const internalFrontend = new scaleway.loadbalancers.Frontend(
@@ -318,6 +331,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   return {
     serviceUrls,
     lbId: lb.id,
+    lbPrivateAddress: lbPrivateIp,
     lbBackendIds: pulumi.output(
       Object.fromEntries([
         ...[...backends.entries()].map(([service, backend]) => [service, backend.id] as const),
@@ -327,11 +341,12 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   };
 }
 
-// Made by the setup's first apply, before any machine, with empty pools: its records and certificates are then in place for the first deploy,
-// whose key writes no DNS. The cutover fills the pools.
+// Made by the setup's first apply, before any machine: its records and certificates are then in place for the first deploy, whose key
+// writes no DNS and no pool.
 const outputs = provisionLoadBalancer();
 
 /** Public URL per LB-exposed service slug. */
 export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = outputs.serviceUrls;
 export const lbId = outputs.lbId;
 export const lbBackendIds = outputs.lbBackendIds;
+export const lbPrivateAddress = outputs.lbPrivateAddress;

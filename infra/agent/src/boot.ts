@@ -5,7 +5,6 @@ import { errorMessage } from '../../lib/utils/errors';
 import { loadArchives } from './archives';
 import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics';
 import { type ExecFn, execCommand, mustExec } from './exec';
-import { writeFileMode } from './fs-utils';
 import { createJsonLogger } from './logger';
 import { type BootPlan, parseBootPlanJson } from './plan';
 import { envFileValues, fetchRuntimeEnv } from './runtime-secrets';
@@ -57,11 +56,6 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
   throw new Error(`private network did not become ready within ${opts.timeoutSeconds}s`);
 }
 
-async function writeAppFiles(plan: BootPlan): Promise<void> {
-  await writeFileMode(plan.docker.composeFile, plan.files.compose, 0o600);
-  await writeFileMode('/opt/app/.env', plan.files.env, 0o600);
-}
-
 /** `--profile` for every service started: each runs in its own profile, the release companion in its service's. */
 function profileArgs(plan: BootPlan): string[] {
   return plan.services.flatMap((service) => ['--profile', service]);
@@ -106,7 +100,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   redactor.add(plan.links.env, plan.links.bootAccount, ...plan.links.archives.map((archive) => archive.url));
   // Build-only until the env file delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
   const telemetry: Telemetry = createTelemetry({
-    resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
+    resource: { 'service.name': 'infra-agent', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
     traceparent: plan.traceparent,
     onError: (message) => logger.log('warn', 'telemetry-export-failed', { message }),
     redact: redactor.redact,
@@ -163,7 +157,6 @@ export async function boot(opts: BootOptions): Promise<void> {
 
   try {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
-    await phase('write-app-files', () => writeAppFiles(plan));
     let runtimeEnv = '';
     await phase('fetch-env', async () => {
       const env = await fetchRuntimeEnv({

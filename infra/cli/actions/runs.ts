@@ -99,7 +99,9 @@ function wroteRecord(run: JobRun, record: RunRecord): boolean {
 function disagreement(record: RunRecord, run: JobRun | undefined): string {
   if (!run || !runEnded(run)) return '';
   const outcome = mainJobOutcome(run);
-  return outcome === record.outcome ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
+  // A run that found the target serving exits as a deploy does.
+  const recorded = record.outcome === 'unchanged' ? 'deployed' : record.outcome;
+  return outcome === recorded ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
 }
 
 /** A run started with values or a command of its own, which no start of the engine sets (D-b): flagged, as only a key holder's start does it. */

@@ -85,20 +85,20 @@ docker buildx create --use --name release --driver docker-container \
   --driver-opt image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea >/dev/null
 
 step build
-# The frontend builds on a copy made before anything runs: the app's dependencies reach neither the images' source nor the boot bundle.
+# The frontend builds on a copy made before anything runs: the app's dependencies reach neither the images' source nor the agent bundle.
 if [ -n "$FRONTEND" ]; then cp -a /build /frontend; fi
 mkdir -p /var/lib/release/images
 docker buildx bake --file /etc/builder-bake.json services &
 SERVICES=$!
-# Keyless containers: the engine's workspace builds the boot bundle in the checkout, the app's the frontend in its copy.
-docker run --rm -v /build:/build -v /etc/builder-boot.sh:/script.sh:ro -w /build "$NODE_IMAGE" bash -eo pipefail /script.sh
-docker buildx bake --file /etc/builder-bake.json boot &
-BOOT=$!
+# Keyless containers: the engine's workspace builds the agent bundle in the checkout, the app's the frontend in its copy.
+docker run --rm -v /build:/build -v /etc/builder-agent.sh:/script.sh:ro -w /build "$NODE_IMAGE" bash -eo pipefail /script.sh
+docker buildx bake --file /etc/builder-bake.json agent &
+AGENT=$!
 if [ -n "$FRONTEND" ]; then
   docker run --rm -v /frontend:/build -v /etc/builder-frontend.sh:/script.sh:ro -w /build --env-file /etc/builder-frontend.env "$NODE_IMAGE" bash -eo pipefail /script.sh
 fi
 wait "$SERVICES"
-wait "$BOOT"
+wait "$AGENT"
 
 step archives
 # The manifest goes last: once it is there, every archive it names is.
@@ -122,12 +122,12 @@ put manifest /run/manifest.json
 finish ok
 `;
 
-/** The keyless container that builds the boot bundle: the engine's workspace only. */
-export function bootBundleScript(pnpmVersion: string): string {
+/** The keyless container that builds the agent bundle: the engine's workspace only. */
+export function agentBundleScript(pnpmVersion: string): string {
   return [
     `npm install -g --silent pnpm@${pnpmVersion}`,
     "pnpm install --frozen-lockfile --filter 'infra...'",
-    'pnpm --filter infra boot:build',
+    'pnpm --filter infra agent:build',
     '',
   ].join('\n');
 }
@@ -161,7 +161,7 @@ const UNIT = [
 /**
  * The builder machine's cloud-init: the values (a private repository's read key among them), the links it writes through, the bake file,
  * the commands of its keyless containers, the script, and a unit started once. The script runs on Scaleway's `docker` image: it fetches the
- * release's commit, builds the images, the boot bundle and the frontend in containers that hold no key, then writes each archive, the
+ * release's commit, builds the images, the agent bundle and the frontend in containers that hold no key, then writes each archive, the
  * frontend's archive and the manifest through their links, and reports each step to the boot-diagnostics bucket the same way.
  */
 export function builderCloudConfig(opts: {
@@ -169,7 +169,7 @@ export function builderCloudConfig(opts: {
   links: BuilderLinks;
   frontendEnv: Record<string, string>;
   bake: unknown;
-  boot: string;
+  agent: string;
   frontend: string;
 }): string {
   const files: CloudConfigFile[] = [
@@ -195,7 +195,7 @@ export function builderCloudConfig(opts: {
         .join('\n'),
     },
     { path: '/etc/builder-bake.json', permissions: '0644', content: JSON.stringify(opts.bake, null, 2) },
-    { path: '/etc/builder-boot.sh', permissions: '0644', content: opts.boot.trimEnd() },
+    { path: '/etc/builder-agent.sh', permissions: '0644', content: opts.agent.trimEnd() },
     { path: '/etc/builder-frontend.sh', permissions: '0644', content: opts.frontend.trimEnd() },
     { path: '/usr/local/bin/builder.sh', permissions: '0755', content: BUILDER_SCRIPT.trimEnd() },
     { path: '/etc/systemd/system/builder.service', permissions: '0644', content: UNIT },

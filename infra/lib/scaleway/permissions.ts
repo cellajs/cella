@@ -3,7 +3,8 @@
 /**
  * The deploy key's unconditioned project sets: machines and what they attach to (a builder machine among them), the buckets (narrowed per
  * bucket by their policies), and reads of what is privileged. Machines are granular: no serial console, no image, no snapshot and no
- * security group is written. No registry set: a release travels as archives in the boot-diag bucket, through links the deploy key signs.
+ * security group is written. The load balancer and the reserved addresses are only read: a deploy moves traffic by health and attaches a
+ * machine to an address the apply reserved. No registry set: a release travels as archives in the boot-diag bucket.
  */
 export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesReadOnly',
@@ -15,8 +16,7 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesIpCreate',
   'InstancesIpWrite',
   'InstancesIpDelete',
-  // The provider uses both Instance APIs for a private NIC: it creates one through v2 (`InstancesPrivateNetworkInterface*`) and detaches it
-  // through v1 (`InstancesPrivateNic*`) when a machine is reaped. Neither family covers the other.
+  // A v1 private NIC at a reserved address needs both families and the private network's write set (M2); no v2 path exists.
   'InstancesPrivateNetworkInterfaceCreate',
   'InstancesPrivateNetworkInterfaceWrite',
   'InstancesPrivateNetworkInterfaceDelete',
@@ -27,8 +27,8 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesVolumeWrite',
   'InstancesVolumeDelete',
   'BlockStorageFullAccess',
-  'IPAMFullAccess',
-  'LoadBalancersFullAccess',
+  'IPAMReadOnly',
+  'LoadBalancersReadOnly',
   'PrivateNetworksFullAccess',
   'ObjectStorageFullAccess',
   'VPCReadOnly',
@@ -47,9 +47,6 @@ export const DEPLOY_SECRET_VALUE_SETS = ['SecretManagerSecretAccess'] as const;
 
 /** DNS permission set, "Scoped by Project" on Scaleway: the operator's, in the serving zone's project. The deploy key writes no DNS. */
 export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
-
-/** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A rule holds sets of one scope type only. */
-export const DEPLOY_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // Observer app (`<app>-observer`): reads, from any address
 

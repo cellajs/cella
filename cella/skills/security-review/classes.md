@@ -628,7 +628,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `package.json` (`packageManager`).
   - `.github/workflows/ci.yml`, `.github/workflows/release.yml` (no `.github/actions`); `lefthook.yaml`.
   - `infra/config/frontend-csp.config.ts`, set by `infra/caddy/Caddyfile` from `{$FRONTEND_CSP}`.
-  - Dockerfiles: `Dockerfile`, `infra/boot/Dockerfile`, `infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
+  - Dockerfiles: `Dockerfile`, `infra/agent/Dockerfile`, `infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
   - `pnpm cella audit` lives in `@cellajs/cli` (not in this repo; `cella/SECURITY.md` names it); the repo config is the `updateConfig` block in `pnpm-workspace.yaml`. Root `SECURITY.md` exists.
   - CI has no merge queue (`ci.yml` says so).
 - **Holds:**

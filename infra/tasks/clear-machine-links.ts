@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import type { GenerationMetadata } from '../lib/generation-metadata';
 import { deriveInfra } from '../lib/naming';
+import { getUserData, setUserData } from '../lib/scaleway/machines';
 import { withoutLinks } from '../lib/scaleway/presign';
 import { deployS3Key, makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { errorMessage } from '../lib/utils/errors';
@@ -8,10 +8,14 @@ import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 import type { MachineEnv } from './compose-env';
 
+/** A machine a deploy made, by its role. */
+export interface MadeMachine {
+  role: string;
+  machine: string;
+}
+
 /** What clearing a release's links does outside this module, so a test passes its own. */
 export interface ClearLinksEffects {
-  /** The release's machines of a service, by server id. */
-  machines(service: string): Promise<string[]>;
   /** True once the machine's boot account is in the bucket. */
   accountArrived(key: string): Promise<boolean>;
   userData(serverId: string): Promise<string>;
@@ -23,29 +27,31 @@ export interface ClearLinksEffects {
 }
 
 /**
- * Take the links out of each new machine's user data once its boot account arrived, and delete its env file: the machine fetched what it
- * needs, and the metadata service then serves its plan and nothing that fetches or writes. With `waitMs` 0, as at the end of a run, it waits
- * for no account. A machine that is gone, a user data that cannot be read, an env file already deleted is said and passed over. Returns the
- * services cleared.
+ * Take the links out of each new machine's cloud-init once its boot account arrived, and delete every env file of the run: the machine
+ * fetched what it needs, and the metadata service then serves its plan and manifest and nothing that fetches or writes. With `waitMs` 0, as
+ * at the end of a run, it waits for no account. A machine that is gone, a user data that cannot be read, an env file already deleted is
+ * said and passed over. Returns the roles cleared.
  */
 export async function clearMachineLinks(
   envs: readonly MachineEnv[],
+  machines: readonly MadeMachine[],
   fx: ClearLinksEffects,
   opts: { waitMs: number; pollMs?: number },
 ): Promise<string[]> {
   const cleared: string[] = [];
   const deadline = Date.now() + opts.waitMs;
   for (const env of envs) {
-    while (opts.waitMs > 0 && Date.now() < deadline && !(await fx.accountArrived(env.bootAccount).catch(() => false))) {
+    const made = machines.filter((entry) => entry.role === env.service);
+    while (made.length > 0 && opts.waitMs > 0 && Date.now() < deadline && !(await fx.accountArrived(env.bootAccount).catch(() => false))) {
       await fx.sleep(opts.pollMs ?? 5_000);
     }
-    for (const serverId of await fx.machines(env.service).catch(() => [])) {
+    for (const { machine } of made) {
       try {
-        const text = await fx.userData(serverId);
+        const text = await fx.userData(machine);
         const stripped = withoutLinks(text);
-        if (stripped !== text) await fx.setUserData(serverId, stripped);
+        if (stripped !== text) await fx.setUserData(machine, stripped);
       } catch (error) {
-        fx.log(`[links] ${env.service}: the user data of ${serverId} kept its links (${errorMessage(error)}); they end by themselves`);
+        fx.log(`[links] ${env.service}: the user data of ${machine} kept its links (${errorMessage(error)}); they end by themselves`);
       }
     }
     await fx.deleteEnv(env).catch((error) => fx.log(`[links] ${env.service}: ${env.env} stays until the bucket's rule (${errorMessage(error)})`));
@@ -55,46 +61,33 @@ export async function clearMachineLinks(
 }
 
 /**
- * The deploy's step after the rollout, and its last act: `--envs` the compose step's output, `--stack` whose generations name the machines,
- * `--sha` the release. `--no-wait` at the end of a run, where a machine that never reported loses its links all the same.
+ * The deploy's step after the switches, and its last act: `--envs` the compose step's output, `--machines` the machines the switches made.
+ * `--no-wait` at the end of a run, where a machine that never reported loses its links all the same.
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const stack = getFlag(argv, '--stack');
-  const sha = getFlag(argv, '--sha');
   const envsFile = getFlag(argv, '--envs');
+  const machinesFile = getFlag(argv, '--machines');
   const projectId = process.env.SCW_DEFAULT_PROJECT_ID;
   const { accessKey, secretKey } = deployS3Key();
-  if (!stack || !sha || !envsFile || !projectId || !secretKey)
-    throw new Error('Required: SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID, --stack, --sha, --envs');
+  if (!envsFile || !machinesFile || !projectId || !secretKey) throw new Error('Required: SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID, --envs, --machines');
   const envs = JSON.parse(await readFile(envsFile, 'utf8')) as MachineEnv[];
+  const machines = JSON.parse(await readFile(machinesFile, 'utf8').catch(() => '[]')) as MadeMachine[];
   const { loadEngineConfig } = await import('../config/engine-config');
   const { naming, region, zone } = deriveInfra(await loadEngineConfig());
   const { DeleteObjectCommand, HeadObjectCommand } = await import('@aws-sdk/client-s3');
-  const { createPulumiDriver } = await import('../lib/stack/pulumi-driver');
   const s3 = await makeS3Client(region, projectAccessKey(accessKey, projectId), secretKey);
-  const instance = `https://api.scaleway.com/instance/v1/zones/${zone}/servers`;
-  let generations: Promise<GenerationMetadata[]> | undefined;
-  const call = async (method: string, url: string, body?: string) => {
-    const res = await fetch(url, { method, headers: { 'X-Auth-Token': secretKey, 'Content-Type': 'text/plain' }, body });
-    if (!res.ok) throw new Error(`${method} ${url} → ${res.status}`);
-    return res.text();
-  };
+  const auth = { secretKey };
   await clearMachineLinks(
     envs,
+    machines,
     {
-      machines: async (service) => {
-        generations ??= createPulumiDriver(stack).output<GenerationMetadata[]>('computeGenerationMetadata');
-        return (await generations).filter((gen) => gen.service === service && gen.sha === sha).map((gen) => gen.serverId);
-      },
       accountArrived: (key) =>
         s3.send(new HeadObjectCommand({ Bucket: naming.bootDiagBucket, Key: key })).then(
           () => true,
           () => false,
         ),
-      userData: (serverId) => call('GET', `${instance}/${serverId}/user_data/cloud-init`),
-      setUserData: async (serverId, text) => {
-        await call('PATCH', `${instance}/${serverId}/user_data/cloud-init`, text);
-      },
+      userData: (serverId) => getUserData(auth, zone, serverId, 'cloud-init'),
+      setUserData: (serverId, text) => setUserData(auth, zone, serverId, 'cloud-init', text),
       // A version an earlier attempt deleted is gone as asked.
       deleteEnv: async (env) => {
         const version = env.envVersion ? { VersionId: env.envVersion } : {};

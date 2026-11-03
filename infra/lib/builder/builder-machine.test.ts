@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseReleaseManifest } from '../deploy/release-archives';
-import { BUILDER_ARCHIVE_DIR, BUILDER_SCRIPT, type BuilderValues, bootBundleScript, builderCloudConfig, frontendScript } from './builder-machine';
+import { agentBundleScript, BUILDER_ARCHIVE_DIR, BUILDER_SCRIPT, type BuilderValues, builderCloudConfig, frontendScript } from './builder-machine';
 
 const values: BuilderValues = {
   SHA: 'a'.repeat(40),
@@ -37,13 +37,13 @@ describe('the builder machine', () => {
       links,
       frontendEnv: { APP_MODE: 'staging' },
       bake: { group: {} },
-      boot: 'true\n',
+      agent: 'true\n',
       frontend: 'true\n',
     });
     expect(document).not.toMatch(/SCW[A-Z0-9]{17}|S3_AK|S3_SK|BUILDER_SK|docker login|--push/);
     const lines = BUILDER_SCRIPT.split('\n');
     for (const run of lines.filter((line) => line.trim().startsWith('docker run'))) expect(run).not.toMatch(/\s-e\s|--env\s/);
-    for (const script of [bootBundleScript('11.8.0'), frontendScript('11.8.0')]) expect(script).not.toMatch(/SCW_|_AK|_SK|AWS_/);
+    for (const script of [agentBundleScript('11.8.0'), frontendScript('11.8.0')]) expect(script).not.toMatch(/SCW_|_AK|_SK|AWS_/);
     const block = lines.findIndex((line) => line.includes('-d 169.254.42.42 -j DROP'));
     expect(block).toBeGreaterThan(-1);
     expect(block).toBeLessThan(lines.findIndex((line) => line.startsWith('docker run')));
@@ -55,7 +55,7 @@ describe('the builder machine', () => {
       links,
       frontendEnv: { APP_MODE: 'staging' },
       bake: { group: {} },
-      boot: 'true\n',
+      agent: 'true\n',
       frontend: 'true\n',
     });
     const files = document.split('\n  - path: ').slice(1);
@@ -96,7 +96,7 @@ describe('the builder machine', () => {
   });
 
   it('builds the boot bundle with the engine only, apart from the frontend', () => {
-    expect(bootBundleScript('11.8.0')).toContain('pnpm --filter infra boot:build');
-    expect(bootBundleScript('11.8.0')).not.toContain('frontend');
+    expect(agentBundleScript('11.8.0')).toContain('pnpm --filter infra agent:build');
+    expect(agentBundleScript('11.8.0')).not.toContain('frontend');
   });
 });

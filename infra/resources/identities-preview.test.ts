@@ -7,7 +7,6 @@ let looked = false;
 // The uploads application before the identity update that makes it, as right after an upgrade that declares it: a plan must still render.
 beforeAll(async () => {
   h = await installPulumiMocks({
-    deferCompute: true,
     preview: true,
     absentApplication: (name) => {
       if (!name.endsWith('-uploads')) return false;

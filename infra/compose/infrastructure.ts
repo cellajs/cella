@@ -141,10 +141,38 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   };
 }
 
+/** The agent's compose service, which every machine runs beside its app (agent/): the launcher starts it, and it starts the rest. */
+export const AGENT_SERVICE = 'infra-agent';
+
+/**
+ * The agent: on the host network, where it answers the load balancer on each service's agent port and reads its manifest from the metadata
+ * service, which answers only a source port below 1024, so it keeps that one capability and drops the rest. It drives the host's Docker
+ * daemon through its socket, reads its plan from `AGENT_DIR` (`/etc/<slug>`, set in the machine's static env) and the boot log read-only.
+ * The machine's unit supervises it, so Docker restarts it never.
+ */
+function agentBlock(): ComposeService {
+  return {
+    image: '${REGISTRY}/infra-agent:${AGENT_TAG}',
+    pull_policy: 'never',
+    profiles: ['agent'],
+    restart: 'no',
+    command: ['agent', '--plan', '${AGENT_DIR}/boot-plan.json'],
+    network_mode: 'host',
+    cap_drop: ['ALL'],
+    cap_add: ['NET_BIND_SERVICE'],
+    volumes: [
+      '/var/run/docker.sock:/var/run/docker.sock',
+      '/opt/app:/opt/app',
+      '${AGENT_DIR}:${AGENT_DIR}',
+      '/var/log/infra-boot.log:/var/log/infra-boot.log:ro',
+    ],
+  };
+}
+
 /**
  * Assemble the full `ComposeFile` from the app's service registry. Each service is one app block binding the host
- * port directly; zero-downtime overlap happens at the load balancer between VM generations, not inside the VM.
- * A `release` step additionally emits a one-shot companion run at the new generation's boot before the app starts.
+ * port directly; zero-downtime overlap happens at the load balancer between two machines, not inside one.
+ * A `release` step additionally emits a one-shot companion run at the new machine's boot before the app starts.
  * `processIdentityEnv` names the env keys selecting a container's process identity (which service, which port);
  * they are never folded from a co-hosted worker into the singleVM host.
  */
@@ -155,6 +183,8 @@ export function assembleCompose(appServices: AppServices, options: { processIden
     services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv });
     if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg);
   }
+  if (AGENT_SERVICE in services) throw new Error(`services config: '${AGENT_SERVICE}' is the engine's agent and no app service name.`);
+  services[AGENT_SERVICE] = agentBlock();
   publishCoHostedPorts(appServices, services);
   publishCoHostedEnv(appServices, services, processIdentityEnv);
   return { services };

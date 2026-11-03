@@ -1,4 +1,4 @@
-import { scrubSecretLines } from '../../boot/src/diagnostics';
+import { scrubSecretLines } from '../../agent/src/diagnostics';
 
 /** Where runs are kept in the environment's diagnostics bucket: one folder per run, `runs/<run>/`. */
 export const RUNS_PREFIX = 'runs/';
@@ -10,8 +10,11 @@ export interface RunStep {
   outcome: 'ok' | 'error';
 }
 
-/** How a run ended; `running` while it runs. Blocked: identities, a privileged change or a required secret is owed, which the operator settles. */
-export type RunOutcome = 'running' | 'deployed' | 'blocked' | 'failed';
+/**
+ * How a run ended; `running` while it runs. Unchanged: every role served the target already, under the same retry counter and rotation.
+ * Blocked: a required runtime value is missing, which the operator stores.
+ */
+export type RunOutcome = 'running' | 'deployed' | 'unchanged' | 'blocked' | 'failed';
 
 /** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */
 export interface RunBootAccount {
@@ -31,7 +34,7 @@ export interface RunRecord {
   steps: RunStep[];
   failedStep?: string;
   error?: string;
-  /** Set when the rollout failed: each service's account of the release, which Show runs prints for a failed boot. */
+  /** Set when a switch failed: each role's account of the release, which Show runs prints for a failed boot. */
   boot?: RunBootAccount[];
 }
 

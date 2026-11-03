@@ -5,6 +5,7 @@ import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
 import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
 import { RUNS_PREFIX } from '../lib/deploy/run-record';
 import { appStorageNeeds, services } from '../lib/services';
+import { CONTROL_PREFIX } from '../lib/stack/control-store';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
@@ -258,8 +259,8 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
     Version: '2023-04-17',
     // Four statements of the ten Scaleway allows: machines and the builder write through links the deploy key signs, so no machine is named.
     Statement: pulumi.all([humanAccess(bootDiagBucket.name), observerApplicationId]).apply(([admin, observerId]) => [
-      // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first; never an
-      // env file, which holds a machine's secret values.
+      // The observer reads what machines wrote about their boot, every version of a run record, which it reads by the first, and the control
+      // objects (the live record, the lease, the rotations); never an env file, which holds a machine's secret values.
       ...(observerId
         ? [
             {
@@ -271,6 +272,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
                 bootDiagBucket.name,
                 pulumi.interpolate`${bootDiagBucket.name}/${BOOT_ACCOUNTS_PREFIX}*`,
                 pulumi.interpolate`${bootDiagBucket.name}/${RUNS_PREFIX}*`,
+                pulumi.interpolate`${bootDiagBucket.name}/${CONTROL_PREFIX}*`,
               ],
             },
           ]

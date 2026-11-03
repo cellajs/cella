@@ -99,6 +99,11 @@ export interface ComposeService {
   depends_on?: Readonly<Record<string, { condition: 'service_completed_successfully' }>>;
   restart: 'unless-stopped' | 'no' | 'always' | 'on-failure';
   command?: readonly string[];
+  /** `host` for the agent, which answers health checks on the machine's own addresses and reads the metadata service. */
+  network_mode?: 'host';
+  cap_add?: readonly string[];
+  cap_drop?: readonly string[];
+  volumes?: readonly string[];
   ports?: readonly string[];
   stop_grace_period?: string;
   env_file?: readonly string[];

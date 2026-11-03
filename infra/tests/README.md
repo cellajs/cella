@@ -2,7 +2,7 @@
 
 ## Co-located `*.test.ts` (next to the module): the default
 
-A test that imports **one** module and exercises its exported behaviour lives beside that module (`lib/**`, `tasks/**`, `boot/src/**`, `cli/**`, `compose/**`, `runner/**`).
+A test that imports **one** module and exercises its exported behaviour lives beside that module (`lib/**`, `tasks/**`, `agent/src/**`, `cli/**`, `compose/**`, `runner/**`).
 
 Modules under `resources/` construct live Pulumi resources at import time, so their co-located test primes the mock runtime and dynamic-imports the module. It is still a single-module test and lives beside the source (`resources/loadbalancer.test.ts`, `resources/compute.test.ts`, `resources/stores/*.test.ts`).
 

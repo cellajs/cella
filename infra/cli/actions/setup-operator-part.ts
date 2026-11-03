@@ -12,7 +12,7 @@ import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
-import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
+import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
 import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -22,7 +22,6 @@ import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { recordRotation } from '../../tasks/record-rotation';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
@@ -141,7 +140,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     console.info(
       `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
     );
-    // Fresh provision: no images exist yet, so compute is deferred until a deploy builds them (helpers gate on this marker).
+    // Fresh provision: the marker says the first provisioning has not finished, until its `up` succeeds (lib/stack/bootstrap-stack-state.ts).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
       cwd: infraDir,
@@ -331,7 +330,7 @@ export async function recordKeyRotation(context: InfraContext, operatorKey: Oper
   const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'rotate-keys' });
   try {
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
-    const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'keys', by: controlActor() });
+    const rotations = await recordRotation({ s3, bucket: deriveInfra(appConfig).naming.bootDiagBucket, stack, kind: 'keys', by: controlActor() });
     console.info(
       `${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine, the backend's with the new uploads key.`,
     );

@@ -133,8 +133,8 @@ function printStackNotices(context: InfraContext): void {
   const deferredSince = detectComputeDeferred(context.stackYaml);
   if (deferredSince) {
     console.warn(
-      `${warningMark} ${pc.bold('Compute is currently deferred')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
-        '  A fresh provision sets this so VMs are not declared until images exist;\n' +
+      `${warningMark} ${pc.bold('The first provisioning has not finished')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
+        '  A fresh provision sets this before its first `pulumi up`;\n' +
         '  it clears automatically on the next successful provisioning `pulumi up`.\n',
     );
   }

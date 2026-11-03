@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
+import { type LiveRecord, readLiveRecord } from '../lib/deploy/live-record';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { menuPath } from '../lib/operator-actions';
 import {
@@ -19,18 +20,15 @@ import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
-  type ControlState,
-  controlKey,
   type LockInfo,
   lockKey,
   makeControlClient,
   peekLock,
   type RotationRecord,
   type Rotations,
-  readControlState,
+  readRotations,
   stateBucket,
 } from '../lib/stack/control-store';
-import { readPendingOperations } from '../lib/stack/pending-operations';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
@@ -48,21 +46,20 @@ export interface StatusContext {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
-  /** The operator key, when the run holds it: the machines are listed and the checkpoint read with it. */
+  /** The operator key, when the run holds it: the machines are listed with it. */
   operatorKey?: KeyPair;
 }
 
-/** An S3-style NoSuchBucket, distinct from a missing control object (bucket exists). */
+/** An S3-style NoSuchBucket, distinct from a refused read (bucket exists). */
 function isNoSuchBucket(err: unknown): boolean {
   const e = err as { name?: string };
   return e?.name === 'NoSuchBucket';
 }
 
 /**
- * Build the probe session the providers draw on: resolved stack context, the
- * key to probe with (the observer key, else the key the process was
- * started with), and one memoized best-effort state-bucket read (control
- * object, lock, checkpoint) shared by the state and live providers.
+ * Build the probe session the providers draw on: resolved stack context, the key to probe with (the observer key, else the key the process
+ * was started with), and one memoized best-effort read of the state bucket's presence and the control objects (the lease, the live record),
+ * shared by the state and live providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
   const identity = resolveOperatorIdentity();
@@ -88,52 +85,35 @@ export function buildSession(ctx: StatusContext): ProbeSession {
       const out: ScalewayFacts = {};
       if (!scalewayKeyAvailable || !accessKey || !secretKey) return out;
       try {
-        // The state bucket is in the environment's project, which a key made in another one names as `<access key>@<project id>`.
+        // The buckets are in the environment's project, which a key made in another one names as `<access key>@<project id>`.
         const s3 = await makeControlClient(ctx.appConfig.s3.region, projectId ? projectAccessKey(accessKey, projectId) : accessKey, secretKey);
-        const bucket = stateBucket(ctx.appConfig.slug);
+        const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
         try {
-          const { state } = await readControlState(s3, bucket, controlKey(ctx.mode));
+          await s3.send(new ListObjectsV2Command({ Bucket: stateBucket(ctx.appConfig.slug), MaxKeys: 1 }));
           out.stateBucketExists = true;
-          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
-            slug,
-            activeSha: r.active?.sha,
-            activeGeneration: r.active?.id,
-            pendingSha: r.pendingSha,
-          }));
         } catch (err) {
           if (isNoSuchBucket(err)) out.stateBucketExists = false;
         }
-        if (out.stateBucketExists) {
-          try {
-            const info = await peekLock(s3, bucket, lockKey(ctx.mode));
-            out.lock = info
-              ? {
-                  held: true,
-                  owner: info.owner,
-                  operation: info.operation,
-                  acquiredAt: info.acquiredAt,
-                  expiresAt: info.expiresAt,
-                  stale: Date.parse(info.expiresAt) < Date.now(),
-                }
-              : { held: false };
-          } catch {
-            // Leave lock undefined (reported as unknown).
-          }
-          try {
-            // One GET of the checkpoint the state backend stores here, which only the deploy key and the operator read; no checkpoint stays
-            // undefined (reported as unknown).
-            const { operatorKey } = ctx;
-            if (operatorKey) {
-              const operator = await makeControlClient(
-                ctx.appConfig.s3.region,
-                projectId ? projectAccessKey(operatorKey.accessKey, projectId) : operatorKey.accessKey,
-                operatorKey.secretKey,
-              );
-              out.pendingOperations = await readPendingOperations(operator, bucket, ctx.mode);
-            }
-          } catch {
-            // Leave pendingOperations undefined (reported as unknown).
-          }
+        const controlBucket = deriveInfra(ctx.appConfig).naming.bootDiagBucket;
+        try {
+          const info = await peekLock(s3, controlBucket, lockKey(ctx.mode));
+          out.lock = info
+            ? {
+                held: true,
+                owner: info.owner,
+                operation: info.operation,
+                acquiredAt: info.acquiredAt,
+                expiresAt: info.expiresAt,
+                stale: Date.parse(info.expiresAt) < Date.now(),
+              }
+            : { held: false };
+        } catch {
+          // Leave lock undefined (reported as unknown).
+        }
+        try {
+          out.live = (await readLiveRecord(s3, controlBucket, ctx.mode)).record;
+        } catch {
+          // Leave live undefined (reported as unknown).
         }
       } catch {
         // Leave every field undefined (reported as unknown).
@@ -257,7 +237,8 @@ export type KeySlot = 'observer' | 'ambient';
 /** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
 export interface QuickFacts {
   lock?: LockInfo;
-  control?: ControlState;
+  live?: LiveRecord;
+  rotations?: Rotations;
   /** The key's bearer and role, when it can describe itself, and the slot it came from. */
   key?: { desc: KeyDescription; role: PrincipalRole; slot: KeySlot };
   /** Probes that did not answer within the budget or errored, by name. */
@@ -273,21 +254,23 @@ export async function collectQuickFacts(
   const identity = resolveOperatorIdentity();
   const slot: KeySlot | undefined = identity.observer ? 'observer' : identity.ambient ? 'ambient' : undefined;
   const key = identity.observer ?? identity.ambient;
-  const bucket = stateBucket(ctx.appConfig.slug);
+  const bucket = deriveInfra(ctx.appConfig).naming.bootDiagBucket;
 
-  const stateProbe = async () => {
+  const controlProbe = async () => {
     if (!key) return;
     const s3 = await makeControlClient(
       ctx.appConfig.s3.region,
       ctx.projectId ? projectAccessKey(key.accessKey, ctx.projectId) : key.accessKey,
       key.secretKey,
     );
-    const [lock, control] = await Promise.all([
+    const [lock, live, rotations] = await Promise.all([
       peekLock(s3, bucket, lockKey(ctx.environment)),
-      readControlState(s3, bucket, controlKey(ctx.environment)).then((result) => result.state),
+      readLiveRecord(s3, bucket, ctx.environment).then((result) => result.record),
+      readRotations(s3, bucket, ctx.environment).then((result) => result.rotations),
     ]);
     facts.lock = lock;
-    facts.control = control;
+    facts.live = live;
+    facts.rotations = rotations;
   };
   const keyProbe = async () => {
     if (!key || !slot) return;
@@ -297,9 +280,9 @@ export async function collectQuickFacts(
   await Promise.all([
     within(
       budgetMs,
-      stateProbe().catch(() => facts.unavailable.push('state bucket')),
+      controlProbe().catch(() => facts.unavailable.push('control objects')),
     ).then((v) => {
-      if (v === undefined && key && !facts.control && !facts.unavailable.includes('state bucket')) facts.unavailable.push('state bucket');
+      if (v === undefined && key && !facts.live && !facts.unavailable.includes('control objects')) facts.unavailable.push('control objects');
     }),
     within(
       budgetMs,
@@ -329,23 +312,18 @@ export function formatQuickFacts(
     lines.push(
       `${expired ? warningMark : pc.yellow('●')} Lock: ${expired ? 'expired lease of' : 'held by'} ${pc.cyan(facts.lock.owner)} (${facts.lock.operation}, since ${facts.lock.acquiredAt.slice(0, 19).replace('T', ' ')} UTC)`,
     );
-  } else if (opts.configured !== 'none' && (facts.control || !facts.unavailable.includes('state bucket'))) {
-    // Without a key the state bucket was never read, so the lock is unknown and gets no line.
+  } else if (opts.configured !== 'none' && (facts.live || !facts.unavailable.includes('control objects'))) {
+    // Without a key the control objects were never read, so the lease is unknown and gets no line.
     lines.push(`${pc.green('●')} Lock: free`);
   }
-  if (facts.control) {
-    const active = Object.entries(facts.control.rollout)
-      .filter(([, rollout]) => rollout.active)
-      .map(([slug, rollout]) => `${slug} ${rollout.active?.sha.slice(0, 7)}`);
-    const pending = Object.entries(facts.control.rollout)
-      .filter(([, rollout]) => rollout.pendingSha)
-      .map(([slug, rollout]) => `${slug} ${rollout.pendingSha?.slice(0, 7)} pending`);
-    const when = facts.control.updatedAt
-      ? ` (updated ${facts.control.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.control.updatedBy ?? '?'})`
+  if (facts.live) {
+    const serving = Object.entries(facts.live.roles).map(([role, entry]) => `${role} ${entry.commit.slice(0, 7)} (${entry.slot})`);
+    const when = facts.live.updatedAt
+      ? ` (updated ${facts.live.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.live.updatedBy ?? '?'})`
       : '';
-    lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
-    lines.push(`${pc.green('●')} ${rotationLine(facts.control.rotations)}`);
+    lines.push(`${pc.green('●')} Live: ${serving.join(', ') || 'nothing deployed'}${when}`);
   }
+  if (facts.rotations) lines.push(`${pc.green('●')} ${rotationLine(facts.rotations)}`);
   const fetchHint = `${menuPath('identity')} puts it on this machine`;
   const named = opts.observerApplication ? ` ('${opts.observerApplication}')` : '';
   if (facts.key) {

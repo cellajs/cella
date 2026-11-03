@@ -1,5 +1,5 @@
 import { pinnedNodeImage } from '../lib/deploy/node-image';
-import { BOOT_IMAGE_NAME } from '../lib/deploy/release-archives';
+import { AGENT_IMAGE_NAME } from '../lib/deploy/release-archives';
 import { parseServiceRows } from '../lib/utils/service-rows';
 
 // The bake definition the builder machine runs: targets derive from the deploy's build matrix, and each image is written as an archive.
@@ -29,8 +29,8 @@ export interface BakeOptions {
 }
 
 /**
- * A `docker buildx bake` definition covering every app image and the boot runner, in two groups: `services` bakes while the boot bundle is
- * built, `boot` after it. Each image is written to `<archiveDir>/<name>.tar` in the format `docker load` reads, tagged as the release's
+ * A `docker buildx bake` definition covering every app image and the agent, in two groups: `services` bakes while the agent bundle is
+ * built, `agent` after it. Each image is written to `<archiveDir>/<name>.tar` in the format `docker load` reads, tagged as the release's
  * compose file names it, and pushed nowhere.
  */
 export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { group: unknown; target: Record<string, unknown> } {
@@ -48,16 +48,16 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
       output: archive(row.service),
     };
   }
-  target['boot-runner'] = {
-    context: `${context === '.' ? '' : `${context}/`}infra/boot`,
+  target.agent = {
+    context: `${context === '.' ? '' : `${context}/`}infra/agent`,
     dockerfile: 'Dockerfile',
-    tags: [image(BOOT_IMAGE_NAME)],
+    tags: [image(AGENT_IMAGE_NAME)],
     args: { NODE_IMAGE: pinnedNodeImage(opts.nodeVersion, 'bookworm-slim') },
-    output: archive(BOOT_IMAGE_NAME),
+    output: archive(AGENT_IMAGE_NAME),
   };
   const services = rows.map((row) => row.service);
   return {
-    group: { default: { targets: [...services, 'boot-runner'] }, services: { targets: services }, boot: { targets: ['boot-runner'] } },
+    group: { default: { targets: [...services, 'agent'] }, services: { targets: services }, agent: { targets: ['agent'] } },
     target,
   };
 }

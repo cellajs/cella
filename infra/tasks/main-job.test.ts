@@ -23,7 +23,7 @@ describe('a main job run', () => {
   it('ends as the deploy did: 0 deployed, 2 blocked (the runner and the apply read it so), anything else failed', () => {
     const { calls, run } = runs({});
     expect(mainJob(env, run)).toBe(0);
-    expect(calls).toEqual([`deploy --mode staging --sha ${env.TARGET_SHA}`]);
+    expect(calls).toEqual([`deploy --mode staging --sha ${env.TARGET_SHA} --retry 1`]);
     expect(mainJob(env, runs({ deploy: 2 }).run)).toBe(2);
     expect(mainJob(env, runs({ deploy: 1 }).run)).toBe(1);
     expect(mainJob(env, runs({ deploy: 137 }).run)).toBe(1);

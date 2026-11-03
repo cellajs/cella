@@ -8,16 +8,12 @@ export const manageSecrets: NextAction = {
   command: actionCommand('secrets'),
 };
 export const unlock: NextAction = {
-  description: `Clear the stale stack lock via "${menuPath('unlock')}" (only when no run is in progress)`,
+  description: `Clear the stale lease via "${menuPath('unlock')}" (only when no run is in progress)`,
   command: actionCommand('unlock'),
 };
 export const manageDbEndpoint: NextAction = {
   description: `Close the public DB endpoint via "${menuPath('db-close')}"`,
   command: actionCommand('db-close'),
-};
-export const clearPending: NextAction = {
-  description: `Review the interrupted Pulumi operations via "${menuPath('unlock')}" (only when no run is in progress)`,
-  command: actionCommand('unlock'),
 };
 
 /** Deploy the environment's target: the runner does once its target moves, this starts a run now. */

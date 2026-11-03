@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Engine-purity gate (.todos/INFRA.md): the deploy engine (resources/,
-# compose/, lib/, boot/src/) must not contain app knowledge. Refined per
+# compose/, lib/, agent/src/) must not contain app knowledge. Refined per
 # P-F1 so it can actually go green: case-sensitive \bMODE\b (lowercase "mode"
 # is a legitimate engine concept), the quoted literal '/health' (import paths
 # and prose don't count), and service(Url|Host) called with a literal service
@@ -18,7 +18,7 @@ PATTERNS=(
 )
 violations=0
 for pattern in "${PATTERNS[@]}"; do
-  hits=$(grep -rEn "$pattern" resources compose lib boot/src \
+  hits=$(grep -rEn "$pattern" resources compose lib agent/src \
     --include='*.ts' --exclude='*.test.ts' || true)
   if [ -n "$hits" ]; then
     echo "── pattern: $pattern"

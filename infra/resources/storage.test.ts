@@ -7,7 +7,7 @@ let h: MockHarness;
 
 beforeAll(async () => {
   // The mock IAM API supplies the application IDs normally absent from stack config.
-  h = await installPulumiMocks({ deferCompute: true });
+  h = await installPulumiMocks();
   await import('./storage');
   await h.settle();
 });

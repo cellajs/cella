@@ -1,52 +1,53 @@
-import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { healthContract } from '../config/health.config';
-import { parseReleaseManifest } from '../lib/deploy/release-archives';
-import { releasePlan } from '../lib/deploy/release-plan';
+import type { DeployTarget, LiveRecord } from '../lib/deploy/live-record';
+import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
 import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
+import type { MachineRole } from '../lib/machine-roles';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
-import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
-import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
+import type { MachineEnv } from './compose-env';
 import { type AllowedKey, buildDeployEnv } from './deploy-env';
-import { main as runWavedRolloutCli } from './deploy-rollout';
-import { createFetchProbe, pollForVersion } from './wait-for-version';
+import type { SwitchResult } from './switch-machines';
 
 /**
- * The whole deploy, in order: preflights, stack lock, each machine's env file, the build, base stack update, waved rollout, the links taken
- * off the new machines, public version verification, atomic frontend entry publish, smoke checks, the reap, and boot diagnostics on failure.
- * The main job runs this with the deploy key in `SCW_*`, the one key it needs.
+ * The whole deploy, in order: the lease, the live record's verdict, each role's env file, the build, the switch of every role that does not
+ * serve the target, the links taken off the new machines, the frontend entry files, the smoke checks, and boot accounts on failure. The
+ * main job runs this with the deploy key in `SCW_*`, the one key it needs; it touches no Pulumi state, no network and no pool.
  */
 export interface DeployOptions {
   mode: string;
   sha: string;
+  /** The retry counter of the environment's line: a raised one deploys the target again, onto new machines. */
+  retry: number;
   /** The run's id in its record; a new one (start time and target) when not given. */
   run?: string;
 }
 
 /** Deploy step tasks runnable in-process (tasks/<name>.ts, main(argv) throws on failure). */
-export type TaskName =
-  | 'ensure-state-bucket'
-  | 'install-pulumi-providers'
-  | 'forget-retired-resources'
-  | 'preflight-privileged'
-  | 'build-release'
-  | 'sync-rollout-config'
-  | 'identity-plan'
-  | 'compose-env'
-  | 'clear-machine-links'
-  | 'geoip-refresh'
-  | 'smoke';
+export type TaskName = 'build-release' | 'compose-env' | 'clear-machine-links' | 'geoip-refresh' | 'smoke';
 
-/** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select). */
+/** What the switch step is handed: the roles to switch, the record they switch from, the target, and the release the build checked. */
+export interface SwitchRequest {
+  stack: string;
+  roles: readonly MachineRole[];
+  pending: readonly string[];
+  record: LiveRecord;
+  target: DeployTarget;
+  manifest: ReleaseManifest;
+  envs: readonly MachineEnv[];
+  /** Each role as it switches, so a failed run still names its new machines. */
+  switched: SwitchResult[];
+}
+
+/** One executed step. Steps run in-process via `task`. */
 export interface DeployEffects {
   /** Create the deploy emitter (OTLP config resolution may hit Secret Manager). */
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;
@@ -54,16 +55,14 @@ export interface DeployEffects {
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** A file a task wrote for the steps after it. */
   readFile(path: string): Promise<string>;
-  /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
+  /** Hold the environment's lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
   lease(stack: string, operation: 'deploy'): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
-  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async, so the stack lease keeps renewing while it runs. */
-  exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): Promise<void>;
-  /** One full stack update through the configured Pulumi driver. */
-  update(stack: string): Promise<void>;
-  rollout(argv: string[]): Promise<void>;
-  verifyVersion(url: string, sha: string): Promise<boolean>;
+  /** The environment's machine roles, the live record and the rotation counter. */
+  readLive(stack: string): Promise<{ roles: MachineRole[]; record: LiveRecord; rotation: number }>;
+  /** Switch the roles given (tasks/switch-machines.ts). */
+  switchMachines(request: SwitchRequest): Promise<void>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
-  /** The boot accounts of release `sha`, one per service that boots a machine of its own. */
+  /** The boot accounts of release `sha`, one per role. */
   bootAccounts(opts: { mode: string; sha: string }): Promise<RunBootAccount[]>;
   /** Write a run's record and log to the environment's diagnostics bucket. */
   writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
@@ -72,27 +71,16 @@ export interface DeployEffects {
   info(msg: string): void;
 }
 
-interface RolloutRow {
-  service: string;
-  health_url: string;
-}
-
-/** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
-const STEPS_WITH_MACHINES = new Set([
-  'Base stack update',
-  'Waved rollout',
-  'Take the links off the new machines',
-  'Verify public versions',
-  'Smoke tests',
-]);
+/** The steps from which a release's machines have booted: their boot accounts say why one did not come up. */
+const STEPS_WITH_MACHINES = new Set(['Switch machines', 'Take the links off the new machines', 'Smoke tests']);
 
 /** What a failed deploy says last: the step it stopped at, and where to read the machines' boot accounts only when machines of the release booted. */
 export function deployFailureHint(err: unknown, mode: string): { description: string; command?: string } {
   const step = (err as { deployStep?: string } | undefined)?.deployStep;
   const where = step ? `It stopped at "${step}". ` : '';
-  if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: generations are content-addressed.` };
+  if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: the live record says what serves.` };
   return {
-    description: `${where}Re-running is safe (generations are content-addressed). The run's record names each new machine's boot account, and Show runs prints a failed one:`,
+    description: `${where}Re-running is safe: a role that switched serves the target and is left as it is. The run's record names each new machine's boot account, and Show runs prints a failed one:`,
     command: `pnpm infra runs --mode ${mode}`,
   };
 }
@@ -100,13 +88,11 @@ export function deployFailureHint(err: unknown, mode: string): { description: st
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha>');
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--retry <n>]');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
-  return {
-    mode,
-    sha,
-    run: getFlag(argv, '--run'),
-  };
+  const retry = Number(getFlag(argv, '--retry') ?? '0');
+  if (!Number.isInteger(retry) || retry < 0) throw new Error('--retry must be a whole number');
+  return { mode, sha, retry, run: getFlag(argv, '--run') };
 }
 
 /** Derive the deploy env table from the app config for the requested mode. */
@@ -124,10 +110,7 @@ export async function runDeploy(
   loadDeployEnv: (opts: DeployOptions) => Promise<Record<AllowedKey, string>> = loadDeployEnvFromConfig,
 ): Promise<void> {
   const env = await loadDeployEnv(opts);
-  const stack = env.pulumi_stack;
-
-  // The state backend reads AWS_* and region conventions; derived once here.
-  adoptStateBackendEnv(env.region);
+  const stack = env.stack;
 
   // One run, one record (plan §3.8): written at the start, after every step and at the end, so a run killed at the job's limit still shows how far it came.
   const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
@@ -141,18 +124,18 @@ export async function runDeploy(
       if (!recordUnwritable) fx.info(`[deploy] the record of run ${recorder.record().run} could not be written: ${errorMessage(err)}`);
       recordUnwritable = true;
     });
-  say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode}`);
+  say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode} (retry ${opts.retry})`);
   await persist();
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
   const telemetry = deployTelemetry();
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
-  // New generations bake this context into their boot plans, so VM boot spans join the deploy trace; the pulumi program inherits this env.
+  // New machines bake this context into their boot plans, so their boot spans join the deploy trace.
   if (deploySpan) process.env.TRACEPARENT = deploySpan.traceparent();
   telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha });
 
   const step = async (title: string, run: () => void | Promise<void>): Promise<void> => {
-    // A run whose lease another took must change nothing more: the other run holds the stack now.
-    if (lease?.lost) throw new Error(`the stack lock was taken by another run before "${title}": this run stops`);
+    // A run whose lease another took must change nothing more: the other run holds the environment now.
+    if (lease?.lost) throw new Error(`the lease was taken by another run before "${title}": this run stops`);
     fx.group(title);
     const span = telemetry?.startSpan(title, { step: title }, deploySpan?.ctx);
     const startedAt = Date.now();
@@ -180,161 +163,137 @@ export async function runDeploy(
   };
 
   let lease: { release(): Promise<void>; readonly lost: boolean } | undefined;
-  // Each machine's env file and boot account, as the compose step wrote them; cleared at the end of the run whatever stopped it.
+  // Each role's env file and boot account, as the compose step wrote them; cleared at the end of the run whatever stopped it.
   const work = await mkdtemp(join(tmpdir(), 'deploy-'));
   const envsFile = join(work, 'envs.json');
+  const machinesFile = join(work, 'machines.json');
+  const switched: SwitchResult[] = [];
   let envsWritten = false;
   let linksCleared = false;
+  let unchanged = false;
   let outcome: 'ok' | 'error' = 'ok';
   let failure: unknown;
   try {
-    // Identities are IAM, which only an Owner moment writes: one that differs from the declared ones ends the run blocked before it starts.
-    await step('Check identities', () =>
-      fx.task('identity-plan', [
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--organization-id',
-        process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-      ]),
-    );
-    await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
-    await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
-    await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
-    await step('Acquire stack lock', async () => {
+    await step('Acquire the lease', async () => {
       lease = await fx.lease(stack, 'deploy');
     });
-    await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
-    // Under the lock, before anything plans the stack: drop pointers a failed deploy left behind, so neither the preflight nor the stack update
-    // plans that release's generation again, and adopt the live VM as the overlap partner. The rollout rows name the services with a VM of their own;
-    // every other service's pointers are dropped.
-    const deployed = [...(JSON.parse(env.primary_rollout_matrix) as RolloutRow[]), ...(JSON.parse(env.roll_rest_matrix) as RolloutRow[])];
-    await step('Reconcile rollout pointers', () =>
-      fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending', '--deployed', deployed.map((row) => row.service).join(',')]),
-    );
-    // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
-    // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
-    await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
-    await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
-    // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
-    // runtime folder and writes each machine's env file, which only it reads; a required value that is missing ends the run blocked before
-    // any machine exists, the builder included, and storing it starts the target again.
-    await step('Compose runtime env', async () => {
-      await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
-      envsWritten = true;
+    // The live record decides what this run does: every role that serves the target, under the same retry counter and rotation, is left
+    // as it is, so running the same deploy twice changes nothing.
+    let live: Awaited<ReturnType<DeployEffects['readLive']>> | undefined;
+    let target: DeployTarget = { commit: opts.sha, retry: opts.retry, rotation: 0 };
+    let pending: string[] = [];
+    await step('Read the live record', async () => {
+      live = await fx.readLive(stack);
+      target = { ...target, rotation: live.rotation };
+      const { rolesToReplace } = await import('../lib/deploy/live-record');
+      pending = rolesToReplace(
+        live.record,
+        live.roles.map((role) => role.role),
+        target,
+      );
+      const retired = Object.keys(live.record.roles).filter((role) => !live?.roles.some((declared) => declared.role === role));
+      unchanged = pending.length === 0 && retired.length === 0;
+      say(
+        unchanged
+          ? `[deploy] every role serves ${opts.sha.slice(0, 10)} (retry ${opts.retry}, rotation ${live.rotation}): unchanged`
+          : `[deploy] to switch: ${[...pending, ...retired.map((role) => `${role} (retired)`)].join(', ')}`,
+      );
     });
 
-    // The release's archives and frontend files: a builder machine makes the missing ones and writes them through links, then the release's
-    // entry files wait in a folder of their own for the publish below. No app code runs beside the deploy key.
-    const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
-    const manifestFile = join(work, 'manifest.json');
-    await step('Build the release', async () => {
-      await fx.task('build-release', [
-        '--sha',
-        opts.sha,
-        '--mode',
-        opts.mode,
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--build-images-json',
-        env.build_images_matrix,
-        '--services-json',
-        env.enabled_services_json,
-        '--dist',
-        distDir,
-        '--manifest-out',
-        manifestFile,
-      ]);
-      // The plan the stack update makes the new machines from: their env files and the archives' digests; the program signs the links.
-      const manifest = parseReleaseManifest(await fx.readFile(manifestFile), opts.sha);
-      const planFile = join(work, 'plan.json');
-      await writeFile(planFile, JSON.stringify(releasePlan(opts.sha, manifest, JSON.parse(await fx.readFile(envsFile)))), { mode: 0o600 });
-      // The pulumi child (fx.update) inherits this env.
-      process.env.INFRA_RELEASE_PLAN_FILE = planFile;
-    });
-
-    // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
-    // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
-    if (env.public_bucket) {
-      await step('Ensure GeoIP data', async () => {
-        try {
-          await fx.task('geoip-refresh', ['--bucket', env.public_bucket, '--region', env.region, '--max-age-days', '35']);
-        } catch (err) {
-          say(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
-        }
+    if (!unchanged && live) {
+      // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
+      // runtime folder and writes each role's env file, which only it reads; a required value that is missing ends the run blocked before
+      // any machine exists, the builder included, and storing it starts the target again.
+      await step('Compose runtime env', async () => {
+        await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
+        envsWritten = true;
       });
-    }
 
-    // A stack that never had a machine plans its first generation in the base update below, before the rollout names one: it is this release.
-    process.env.INFRA_RELEASE_SHA = opts.sha;
-
-    await step('Base stack update', () => fx.update(stack));
-    try {
-      await step('Waved rollout', () =>
-        fx.rollout([
-          '--stack',
-          stack,
+      // The release's archives and frontend files: a builder machine makes the missing ones and writes them through links, then the release's
+      // entry files wait in a folder of their own for the publish below. No app code runs beside the deploy key.
+      const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
+      const manifestFile = join(work, 'manifest.json');
+      let manifest: ReleaseManifest | undefined;
+      await step('Build the release', async () => {
+        await fx.task('build-release', [
           '--sha',
           opts.sha,
-          '--primary-json',
-          env.primary_rollout_matrix,
-          '--rest-json',
-          env.roll_rest_matrix,
-          // The displaced generations stay off every pool and are reaped last, once smoke passed.
-          '--skip-reap',
+          '--mode',
+          opts.mode,
+          '--project-id',
+          process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+          '--build-images-json',
+          env.build_images_matrix,
+          '--services-json',
+          env.enabled_services_json,
+          '--dist',
+          distDir,
+          '--manifest-out',
+          manifestFile,
+        ]);
+        manifest = parseReleaseManifest(await fx.readFile(manifestFile), opts.sha);
+      });
+
+      // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
+      // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
+      if (env.public_bucket) {
+        await step('Ensure GeoIP data', async () => {
+          try {
+            await fx.task('geoip-refresh', ['--bucket', env.public_bucket, '--region', env.region, '--max-age-days', '35']);
+          } catch (err) {
+            say(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
+          }
+        });
+      }
+
+      try {
+        await step('Switch machines', async () => {
+          const envs = JSON.parse(await fx.readFile(envsFile)) as MachineEnv[];
+          if (!manifest || !live) throw new Error('the switch runs after the build');
+          await fx.switchMachines({ stack, roles: live.roles, pending, record: live.record, target, manifest, envs, switched });
+        });
+      } catch (err) {
+        telemetry?.event(deployEvents.switchFailed, { error: errorMessage(err) }, { severity: 'error' });
+        say("[deploy] a switch failed; reading the release's boot accounts");
+        const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha }).catch((diagErr) => {
+          say(`[deploy] the boot accounts could not be read: ${errorMessage(diagErr)}`);
+          return undefined;
+        });
+        if (accounts) {
+          recorder.boot(accounts);
+          for (const account of accounts) {
+            say(
+              `[deploy] ${account.service}: ${account.key ? `${account.failed ? 'boot failed' : 'booted'} (${account.key})` : 'no account of this release: its agent has not finished'}`,
+            );
+          }
+        }
+        throw err;
+      } finally {
+        await writeFile(machinesFile, JSON.stringify(switched.map(({ role, machine }) => ({ role, machine }))), { mode: 0o600 });
+      }
+      // Each new machine fetched its env file and archives: once its boot account arrived, its user data keeps no link and its env file goes.
+      await step('Take the links off the new machines', async () => {
+        await fx.task('clear-machine-links', ['--envs', envsFile, '--machines', machinesFile]);
+        linksCleared = true;
+      });
+
+      // Strictly after the switches, so users only load the new entry files once every pool serves the new release. Skipped for a frontend-less registry.
+      if (env.frontend_bucket) {
+        await step('Publish frontend entry files', () => fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }));
+      }
+      await step('Smoke tests', () =>
+        fx.task('smoke', [
+          '--sha',
+          opts.sha,
+          '--services-json',
+          env.enabled_services_json,
+          // The primary role owns smoke's aggregate-health and OpenAPI checks, with no service-name literal.
+          ...(env.primary_role ? ['--primary', env.primary_role] : []),
+          // A provided-but-unreadable --dist is a hard failure in smoke, so a frontend-less registry omits the flag.
+          ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
         ]),
       );
-    } catch (err) {
-      telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
-      say("[deploy] rollout failed; reading the release's boot accounts");
-      const accounts = await fx.bootAccounts({ mode: opts.mode, sha: opts.sha }).catch((diagErr) => {
-        say(`[deploy] the boot accounts could not be read: ${errorMessage(diagErr)}`);
-        return undefined;
-      });
-      if (accounts) {
-        recorder.boot(accounts);
-        for (const account of accounts) {
-          say(
-            `[deploy] ${account.service}: ${account.key ? `${account.failed ? 'boot failed' : 'booted'} (${account.key})` : 'no account of this release: its boot runner has not finished'}`,
-          );
-        }
-      }
-      throw err;
     }
-    // Each new machine fetched its env file and archives: once its boot account arrived, its user data keeps no link and its env file goes.
-    await step('Take the links off the new machines', async () => {
-      await fx.task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile]);
-      linksCleared = true;
-    });
-
-    await step('Verify public versions', async () => {
-      // Every LB-exposed service, not just the VM-owning rollout rows: co-hosted and collocated followers are repointed by cutover without their own version probe.
-      const rows: RolloutRow[] = JSON.parse(env.enabled_services_json);
-      for (const row of rows) {
-        if (!row.health_url) continue;
-        const ok = await fx.verifyVersion(`${row.health_url.replace(/\/$/, '')}${healthContract.path}`, opts.sha);
-        if (!ok) throw new Error(`Service '${row.service}' does not serve ${opts.sha}`);
-      }
-    });
-
-    // Strictly after rollout verification, so users only load the new entry files once every service serves the new release. Skipped for a frontend-less registry.
-    if (env.frontend_bucket) {
-      await step('Publish frontend entry files', () => fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }));
-    }
-    await step('Smoke tests', () =>
-      fx.task('smoke', [
-        '--sha',
-        opts.sha,
-        '--services-json',
-        env.enabled_services_json,
-        // The primary-rollout service owns smoke's aggregate-health and OpenAPI checks, derived from the rollout matrix, with no service-name literal.
-        ...((JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]
-          ? ['--primary', (JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]!.service]
-          : []),
-        // A provided-but-unreadable --dist is a hard failure in smoke, so a frontend-less registry omits the flag.
-        ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
-      ]),
-    );
-    await step('Reap displaced generations', () => fx.update(stack));
   } catch (err) {
     outcome = 'error';
     failure = err;
@@ -343,14 +302,16 @@ export async function runDeploy(
     // Whatever stopped the run before its step did, no env file outlives it and no machine of it keeps a link.
     if (envsWritten && !linksCleared) {
       await fx
-        .task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile, '--no-wait'])
+        .task('clear-machine-links', ['--envs', envsFile, '--machines', machinesFile, '--no-wait'])
         .catch((err) => say(`[deploy] the links stay until they end, the env files until the bucket's rule: ${errorMessage(err)}`));
     }
-    await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
-    // A step that found identities, a privileged change or a required secret owed ends the run blocked, not failed: the operator settles it,
-    // then the same target.
+    await lease?.release().catch((err) => say(`[deploy] lease release failed: ${errorMessage(err)}`));
+    // A required secret owed ends the run blocked, not failed: the operator stores it, then the same target.
     const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
-    recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
+    recorder.finish(
+      outcome === 'ok' ? (unchanged ? 'unchanged' : 'deployed') : blocked ? 'blocked' : 'failed',
+      outcome === 'ok' ? undefined : errorMessage(failure),
+    );
     const run = recorder.record().run;
     await persist();
     if (!recordUnwritable) fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`);
@@ -363,14 +324,6 @@ export async function runDeploy(
     await telemetry?.flush();
   }
 }
-
-/** The environment `exec` hands a child: the deploy's own, with `env` layered on top. */
-export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string> }): NodeJS.ProcessEnv {
-  return opts.env ? { ...parentEnv, ...opts.env } : parentEnv;
-}
-
-// Real effects: subprocesses in the infra dir, S3 entry publish, log grouping. Every ordering and failure decision lives in runDeploy.
-
 const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
   { name: 'index.html', contentType: 'text/html; charset=utf-8' },
   { name: 'sw.js', contentType: 'text/javascript; charset=utf-8' },
@@ -417,18 +370,29 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
-  'ensure-state-bucket': async (argv) => (await import('./ensure-state-bucket')).main(argv),
-  'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
-  'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
-  'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
-  'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
-  'identity-plan': async (argv) => (await import('./identity-plan')).main(argv),
   'compose-env': async (argv) => (await import('./compose-env')).main(argv),
   'clear-machine-links': async (argv) => (await import('./clear-machine-links')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
 };
+
+/** The deploy key's S3 client on the environment's diagnostics bucket, which holds the records, the control objects and the release. */
+async function diagnosticsClient(region: string) {
+  const { projectAccessKey } = await import('../lib/scaleway/s3-client');
+  const { accessKey, secretKey } = deployS3Key();
+  return makeS3Client(region, projectAccessKey(accessKey, process.env.SCW_DEFAULT_PROJECT_ID ?? ''), secretKey);
+}
+
+/** The same key on the control objects (the lease, the live record, the rotations). */
+async function controlClient(region: string) {
+  const [{ projectAccessKey }, { makeControlClient }] = await Promise.all([
+    import('../lib/scaleway/s3-client'),
+    import('../lib/stack/control-store'),
+  ]);
+  const { accessKey, secretKey } = deployS3Key();
+  return makeControlClient(region, projectAccessKey(accessKey, process.env.SCW_DEFAULT_PROJECT_ID ?? ''), secretKey);
+}
 
 function createRealEffects(): DeployEffects {
   return {
@@ -461,17 +425,18 @@ function createRealEffects(): DeployEffects {
     task: (name, argv = []) => taskRunners[name](argv),
     readFile: (path) => readFile(path, 'utf8'),
     async lease(stack, operation) {
-      const [{ controlActor, controlContextForStack }, { acquireLease, installSignalRelease }] = await Promise.all([
+      const [{ controlActor, lockKey }, { acquireLease, installSignalRelease }, { loadEngineConfig }, { deriveInfra }] = await Promise.all([
         import('../lib/stack/control-store'),
         import('../lib/stack/stack-lease'),
+        import('../config/engine-config'),
+        import('../lib/naming'),
       ]);
-      const ctx = await controlContextForStack(stack);
-      if (!ctx) throw new Error('stack lease: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required');
-      // A CI run queues behind another deploy for a while; a dead holder's lease lapses within its lifetime.
+      const { naming, region } = deriveInfra(await loadEngineConfig());
+      // A deploy queues behind another one for a while; a dead holder's lease lapses within its lifetime.
       const result = await acquireLease({
-        s3: ctx.s3,
-        bucket: ctx.bucket,
-        key: ctx.lockKey,
+        s3: await controlClient(region),
+        bucket: naming.bootDiagBucket,
+        key: lockKey(stack),
         owner: controlActor(),
         operation,
         ttlMs: 5 * 60_000,
@@ -480,13 +445,13 @@ function createRealEffects(): DeployEffects {
         pollMs: 15_000,
         onWait: (held, remainingMs) =>
           console.info(
-            `[${operation}] stack locked by ${held.owner} (${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min`,
+            `[${operation}] the lease is held by ${held.owner} (${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min`,
           ),
-        onRenewFailed: (reason, lost) => console.warn(`[${operation}] lease renewal failed: ${reason}${lost ? ' (lock lost)' : ''}`),
+        onRenewFailed: (reason, lost) => console.warn(`[${operation}] lease renewal failed: ${reason}${lost ? ' (lease lost)' : ''}`),
       });
       if (!result.acquired) {
         throw new Error(
-          `stack ${stack} is locked by ${result.held.owner} (operation: ${result.held.operation}, since ${result.held.acquiredAt}). If that run is dead, clear it with \`${actionCommand('unlock')}\`.`,
+          `${stack} is leased by ${result.held.owner} (operation: ${result.held.operation}, since ${result.held.acquiredAt}). If that run is dead, clear it with \`${actionCommand('unlock')}\`.`,
         );
       }
       const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`[${operation}] ${msg}`) });
@@ -500,53 +465,113 @@ function createRealEffects(): DeployEffects {
         },
       };
     },
-    exec(cmd, args, opts = {}) {
-      // spawn, not spawnSync: a synchronous child blocks the event loop, and with it the stack lease's renewal.
-      return new Promise((done, fail) => {
-        const child = spawn(cmd, args, {
-          cwd: infraDir,
-          env: execEnv(process.env, opts),
-          stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
-        });
-        if (opts.stdin !== undefined) child.stdin?.end(opts.stdin);
-        child.once('error', (err) => {
-          if (opts.allowFailure) done();
-          else fail(new Error(`${cmd} ${args[0] ?? ''} failed to start: ${errorMessage(err)}`));
-        });
-        child.once('close', (status) => {
-          if (status !== 0 && !opts.allowFailure) fail(new Error(`${cmd} ${args[0] ?? ''} failed with exit ${status}`));
-          else done();
-        });
+    async readLive(stack) {
+      const [{ loadEngineConfig }, { deriveInfra }, { machineRoles }, { readLiveRecord }, { readRotations }] = await Promise.all([
+        import('../config/engine-config'),
+        import('../lib/naming'),
+        import('../lib/machine-roles'),
+        import('../lib/deploy/live-record'),
+        import('../lib/stack/control-store'),
+      ]);
+      const appConfig = await loadEngineConfig();
+      const { naming, region } = deriveInfra(appConfig);
+      const s3 = await controlClient(region);
+      const [{ record }, { rotations }] = await Promise.all([
+        readLiveRecord(s3, naming.bootDiagBucket, stack),
+        readRotations(s3, naming.bootDiagBucket, stack),
+      ]);
+      return { roles: machineRoles(appConfig), record, rotation: rotations.counter };
+    },
+    async switchMachines(request) {
+      const [
+        { loadEngineConfig },
+        { deriveInfra },
+        { readFoundation },
+        { bucketPresigner },
+        { recordRole },
+        { controlActor },
+        { liveSwitchEffects, switchMachines },
+        { appEnvSuppliers },
+        { telemetrySink },
+        { serviceEndpoints },
+        { projectAccessKey },
+      ] = await Promise.all([
+        import('../config/engine-config'),
+        import('../lib/naming'),
+        import('../lib/scaleway/foundation'),
+        import('../lib/scaleway/presign'),
+        import('../lib/deploy/live-record'),
+        import('../lib/stack/control-store'),
+        import('./switch-machines'),
+        import('../config/env-suppliers.config'),
+        import('../config/telemetry.config'),
+        import('../lib/services'),
+        import('../lib/scaleway/s3-client'),
+      ]);
+      const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+      const appConfig = await loadEngineConfig();
+      const { naming, region, zone } = deriveInfra(appConfig);
+      const projectId = process.env.SCW_DEFAULT_PROJECT_ID ?? '';
+      const { accessKey, secretKey } = deployS3Key();
+      const mode = appConfig.mode;
+      if (mode !== 'production' && mode !== 'staging') throw new Error(`a deploy goes to production or staging, not '${mode}'`);
+      const s3 = await diagnosticsClient(region);
+      const control = await controlClient(region);
+      const urls = new Map(serviceEndpoints(appConfig).map((endpoint) => [endpoint.slug as string, endpoint.url]));
+      const foundation = await readFoundation({ secretKey }, { region, zone, projectId, naming, mode, roles: request.roles });
+      const composeContent = await readFile(resolve(import.meta.dirname, '../compose.gen.yml'), 'utf8');
+      const effects = liveSwitchEffects({
+        secretKey,
+        projectId,
+        zone,
+        mode,
+        naming,
+        foundation,
+        sha: request.target.commit,
+        manifest: request.manifest,
+        envs: request.envs,
+        presigner: await bucketPresigner({ region, bucket: naming.bootDiagBucket, accessKey: projectAccessKey(accessKey, projectId), secretKey }),
+        readAccount: (key) =>
+          s3.send(new GetObjectCommand({ Bucket: naming.bootDiagBucket, Key: key })).then(
+            (object) => object.Body?.transformToString(),
+            () => undefined,
+          ),
+        record: (role, entry) => recordRole(control, naming.bootDiagBucket, request.stack, role, entry, { by: controlActor() }),
+        suppliers: appEnvSuppliers,
+        supplierContext: {
+          naming,
+          region,
+          mode,
+          serviceUrl: (slug) => {
+            const url = urls.get(slug);
+            if (!url) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`);
+            return url;
+          },
+        },
+        composeContent,
+        traceparent: process.env.TRACEPARENT,
+        telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },
+        log: (message) => console.info(message),
       });
-    },
-    update: async (stack) => {
-      const { createPulumiDriver } = await import('../lib/stack/pulumi-driver');
-      await createPulumiDriver(stack).update();
-    },
-    rollout: (argv) => runWavedRolloutCli(argv),
-    async verifyVersion(url, sha) {
-      const out = await pollForVersion({ url, expectedSha: sha, probe: createFetchProbe(8000), attempts: 40, intervalMs: 3000 });
-      return out.ok;
+      await switchMachines(
+        { roles: request.roles, pending: request.pending, record: request.record, target: request.target, switched: request.switched },
+        effects,
+      );
     },
     publishEntryFiles: publishEntryFilesToBucket,
     writeRunRecord: writeRunRecordToBucket,
     async bootAccounts({ sha }) {
-      const [{ bucketBootAccountReader, releaseAccounts }, { loadEngineConfig }, { deriveInfra }, { deployedServices }, { projectAccessKey }] =
-        await Promise.all([
-          import('../lib/deploy/boot-accounts'),
-          import('../config/engine-config'),
-          import('../lib/naming'),
-          import('../lib/services'),
-          import('../lib/scaleway/s3-client'),
-        ]);
+      const [{ bucketBootAccountReader, releaseAccounts }, { loadEngineConfig }, { deriveInfra }, { machineRoles }] = await Promise.all([
+        import('../lib/deploy/boot-accounts'),
+        import('../config/engine-config'),
+        import('../lib/naming'),
+        import('../lib/machine-roles'),
+      ]);
       const appConfig = await loadEngineConfig();
       const { naming, region } = deriveInfra(appConfig);
-      const { accessKey, secretKey } = deployS3Key();
-      const s3 = await makeS3Client(region, projectAccessKey(accessKey, process.env.SCW_DEFAULT_PROJECT_ID ?? ''), secretKey);
-      // Only services that boot a machine of their own give an account: under singleVM, the host alone.
-      const services = deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug);
-      return (await releaseAccounts(bucketBootAccountReader(s3, naming.bootDiagBucket), services, sha)).map(({ service, account }) =>
-        account ? { service, key: account.key, failed: account.failed } : { service },
+      const roles = machineRoles(appConfig).map((role) => role.role);
+      return (await releaseAccounts(bucketBootAccountReader(await diagnosticsClient(region), naming.bootDiagBucket), roles, sha)).map(
+        ({ service, account }) => (account ? { service, key: account.key, failed: account.failed } : { service }),
       );
     },
     group: (title) => console.info(`\n=== ${title} ===`),

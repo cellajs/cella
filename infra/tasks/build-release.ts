@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  agentBundleScript,
   BUILDER_ARCHIVE_DIR,
   type BuilderLinks,
-  bootBundleScript,
   builderCloudConfig,
   builderReportPrefix,
   frontendScript,
@@ -13,8 +13,8 @@ import {
 import { readUstar, writeArchiveFiles } from '../lib/deploy/frontend-archive';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
 import {
+  AGENT_IMAGE_NAME,
   type ArchiveDigest,
-  BOOT_IMAGE_NAME,
   frontendArchiveKey,
   parseReleaseManifest,
   type ReleaseManifest,
@@ -24,11 +24,11 @@ import {
 import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand } from '../lib/operator-actions';
-import { removeMachines, type ScwServer } from '../lib/scaleway/machines';
+import { createMachine, removeMachines } from '../lib/scaleway/machines';
 import { bucketPresigner } from '../lib/scaleway/presign';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { scwErrorStatus, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { scwErrorStatus, scwFetch } from '../lib/scaleway/scw-fetch';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -74,7 +74,7 @@ export interface BuildReleaseOptions {
   builderName: string;
   /** The zones the builder may be made in, in the order tried. */
   zones: readonly string[];
-  /** Every archive the release has, by image repository name, the boot runner's included. */
+  /** Every archive the release has, by image repository name, the agent's included. */
   archives: readonly string[];
   /** Whether the release has frontend files. */
   withFrontend: boolean;
@@ -305,24 +305,17 @@ function liveEffects(opts: {
       );
       const securityGroup = security_groups.find((group) => group.name === opts.securityGroupName);
       if (!securityGroup) throw new Error(`no security group '${opts.securityGroupName}' in ${zone} to put the builder in: an apply makes one`);
-      const { server } = await scwFetch<{ server: ScwServer }>(auth, 'POST', `${instance(zone)}/servers`, {
+      // An address for egress only: the closed security group drops every inbound packet.
+      await createMachine(auth, zone, {
         name,
-        commercial_type: BUILDER_TYPE,
+        type: BUILDER_TYPE,
         image: BUILDER_IMAGE,
-        project: opts.projectId,
-        // An address for egress only: the closed security group drops every inbound packet.
-        dynamic_ip_required: true,
-        security_group: securityGroup.id,
+        projectId: opts.projectId,
+        securityGroupId: securityGroup.id,
         tags: ['builder', `sha=${opts.sha}`],
-        volumes: { 0: { size: BUILDER_DISK_BYTES, volume_type: 'sbs_volume' } },
+        volumeBytes: BUILDER_DISK_BYTES,
+        userData: { 'cloud-init': cloudConfig },
       });
-      const set = await fetch(`${instance(zone)}/servers/${server.id}/user_data/cloud-init`, {
-        method: 'PATCH',
-        headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'text/plain' },
-        body: cloudConfig,
-      });
-      if (!set.ok) throw new Error(`setting the builder's cloud-init → ${set.status}: ${await set.text()}`);
-      await scwSend(auth, 'POST', `${instance(zone)}/servers/${server.id}/action`, { action: 'poweron' });
     },
     report: async (name) => {
       try {
@@ -377,7 +370,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       sha,
       builderName: `${prefix}${sha.slice(0, 10)}`,
       zones,
-      archives: [...rows.map((row) => row.service), BOOT_IMAGE_NAME],
+      archives: [...rows.map((row) => row.service), AGENT_IMAGE_NAME],
       withFrontend: Boolean(frontendBucket),
       distDir,
       cloudConfig: ({ links, repositoryKey }) =>
@@ -386,7 +379,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             SHA: sha,
             REPO: repository,
             REPO_KEY: repositoryKey ?? '',
-            // The boot image's base, at the root `engines.node`, by digest.
+            // The agent image's base, at the root `engines.node`, by digest.
             NODE_IMAGE: pinnedNodeImage(nodeVersion, 'bookworm-slim'),
             FRONTEND: frontendBucket ? '1' : '',
           },
@@ -400,7 +393,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             context: '/build',
             archiveDir: BUILDER_ARCHIVE_DIR,
           }),
-          boot: bootBundleScript(pnpmVersion),
+          agent: agentBundleScript(pnpmVersion),
           frontend: frontendBucket ? frontendScript(pnpmVersion) : '',
         }),
     },

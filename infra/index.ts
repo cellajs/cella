@@ -25,8 +25,6 @@ export const bootDiagBucketEndpoint = program.bootDiagBucketEndpoint;
 // Generic per-store outputs (S11): `storeOutputs.<storeId>.<key>`. The flat
 // db* outputs were retired in the 2026-08 planned break.
 export const storeOutputs = program.storeOutputs;
-export const computeInstances = program.computeInstances;
-export const computeGenerationMetadata = program.computeGenerationMetadata;
 export const serviceDomainUrls = program.serviceDomainUrls;
 export const lbId = program.lbId;
 export const lbBackendIds = program.lbBackendIds;

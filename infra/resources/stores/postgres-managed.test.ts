@@ -10,7 +10,7 @@ let harness: MockHarness;
 let ctx: ProvisionContext;
 
 beforeAll(async () => {
-  harness = await installPulumiMocks({ deferCompute: true });
+  harness = await installPulumiMocks();
   ({ postgresManaged } = await import('./postgres-managed'));
   const { pulumi } = harness;
   ctx = {

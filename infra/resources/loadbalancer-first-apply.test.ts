@@ -19,7 +19,7 @@ describe('the load balancer on a setup that has no machine yet', () => {
   it('is made with its records and certificates and empty pools, so the first deploy writes no DNS', async () => {
     vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
     vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);
-    const h = await installPulumiMocks({ deferCompute: true });
+    const h = await installPulumiMocks();
     await import('./loadbalancer');
     await h.settle();
 

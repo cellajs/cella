@@ -1,14 +1,14 @@
+import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
+import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { recordRotation } from '../../tasks/record-rotation';
 import {
   acquireStackLockOrExit,
   confirmOrDefault,
@@ -63,7 +63,7 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
     const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
     const rotated = await ensureSecrets({ client, rotate: true, log });
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
-    const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'secrets', by: controlActor() });
+    const rotations = await recordRotation({ s3, bucket: deriveInfra(appConfig).naming.bootDiagBucket, stack, kind: 'secrets', by: controlActor() });
     console.info(
       `\n${checkMark} Database role passwords and ${rotated.length} generated secret(s) rotated; rotation ${rotations.counter} recorded. Keys that protect stored data were left as they are.`,
     );

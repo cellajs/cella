@@ -6,8 +6,8 @@ import { actionCommand } from '../lib/operator-actions';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { mode, naming, organizationId, projectId, region } from '../pulumi-context';
 
-// The main job (plan §3.5): one definition per environment, privileged like the rest of what decides who may do what. Its keys are
-// referenced, never copied: the deploy key and the passphrase, both in the engine folder. A run gets its target from the start call.
+// The main job (plan §3.5): one definition per environment, privileged like the rest of what decides who may do what. Its key is
+// referenced, never copied: the deploy key, in the engine folder. A run gets its target from the start call.
 // The secrets are found with this run's own key, as the provider has no lookup that answers "not there": a stack whose deploy key has no
 // copy yet (one made before the main job) gets the definition after its next rotation of keys, and a warning until then.
 const declared = declaredMainJob({
