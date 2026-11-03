@@ -43,85 +43,77 @@ const base: RunRecord = {
   outcome: 'running',
   steps: [],
 };
-
-// A deploy's versions: written at the start, after each step and at the end.
-const honest: StoredVersion<RunRecord>[] = [
-  { at: '2026-10-15T00:00:00.000Z', body: base },
-  { at: '2026-10-15T00:02:00.000Z', body: { ...base, steps: [{ title: 'Build the release', seconds: 120, outcome: 'ok' }] } },
-  {
-    at: '2026-10-15T00:05:00.000Z',
-    body: {
-      ...base,
-      steps: [
-        { title: 'Build the release', seconds: 120, outcome: 'ok' },
-        { title: 'Waved rollout', seconds: 180, outcome: 'error' },
-      ],
-      failedStep: 'Waved rollout',
-      boot: [{ service: 'backend', key: 'backend-20261015T000400Z-boot.log', failed: true }],
-    },
-  },
-  {
-    at: '2026-10-15T00:05:01.000Z',
-    body: {
-      ...base,
-      steps: [
-        { title: 'Build the release', seconds: 120, outcome: 'ok' },
-        { title: 'Waved rollout', seconds: 180, outcome: 'error' },
-      ],
-      failedStep: 'Waved rollout',
-      boot: [{ service: 'backend', key: 'backend-20261015T000400Z-boot.log', failed: true }],
-      outcome: 'failed',
-      endedAt: '2026-10-15T00:05:01.000Z',
-      error: 'cutover failed',
-    },
-  },
+const steps: RunRecord['steps'] = [
+  { title: 'Build the release', seconds: 120, outcome: 'ok' },
+  { title: 'Waved rollout', seconds: 180, outcome: 'error' },
 ];
+const boot = [{ service: 'backend', key: 'backend-20261015T000400Z-boot.log', failed: true }];
+// A deploy's versions: written at the start, after each step and at the end.
+const started: StoredVersion<RunRecord> = { at: '2026-10-15T00:00:00.000Z', body: base };
+const built: StoredVersion<RunRecord> = { at: '2026-10-15T00:02:00.000Z', body: { ...base, steps: steps.slice(0, 1) } };
+const failing: RunRecord = { ...base, steps, failedStep: 'Waved rollout', boot };
+const rolledOut: StoredVersion<RunRecord> = { at: '2026-10-15T00:05:00.000Z', body: failing };
+const ended: RunRecord = { ...failing, outcome: 'failed', endedAt: '2026-10-15T00:05:01.000Z', error: 'cutover failed' };
+const finished: StoredVersion<RunRecord> = { at: '2026-10-15T00:05:01.000Z', body: ended };
+const honest = [started, built, rolledOut, finished];
+const later = '2026-10-15T03:00:00.000Z';
 
 describe('a run record read by its first version', () => {
-  it('reads a deploy that only grew its record as its newest version', () => {
-    expect(readByGrowth(honest, recordGrows)).toEqual({ newest: honest[3]?.body });
+  it('reads a deploy that only grew its record as its newest version', async () => {
+    expect(await readByGrowth(honest, recordGrows, 'the record')).toEqual({ newest: ended });
   });
 
-  it('must not let a key that may write the bucket turn a failed run into a deployed one: the version is named, the run shown as it stood', () => {
-    const forged: RunRecord = {
-      ...base,
-      steps: [
-        { title: 'Build the release', seconds: 120, outcome: 'ok' },
-        { title: 'Waved rollout', seconds: 180, outcome: 'ok' },
-      ],
-      outcome: 'deployed',
-      endedAt: '2026-10-15T00:05:01.000Z',
-    };
-    const reading = readByGrowth([...honest, { at: '2026-10-15T03:00:00.000Z', body: forged }], recordGrows);
-    expect(reading?.newest).toEqual(honest[3]?.body);
-    expect(reading?.rewrite).toEqual({ at: '2026-10-15T03:00:00.000Z', detail: 'changed step "Waved rollout"' });
+  it('must not let a key that may write the bucket turn a failed run into a deployed one: the version is named, the run shown as it stood', async () => {
+    const forged: RunRecord = { ...base, steps: steps.map((step) => ({ ...step, outcome: 'ok' })), outcome: 'deployed', endedAt: later };
+    // While the run was still open, the forged version changes a step; after the end, nothing but the same record again grows it.
+    expect(await readByGrowth([started, built, rolledOut, { at: later, body: forged }], recordGrows, 'the record')).toEqual({
+      newest: failing,
+      rewrite: { at: later, detail: 'changed step "Waved rollout"' },
+    });
+    expect(await readByGrowth([...honest, { at: later, body: forged }], recordGrows, 'the record')).toEqual({
+      newest: ended,
+      rewrite: { at: later, detail: 'changed the record after its end' },
+    });
+    expect(await readByGrowth([...honest, { at: later, body: { ...ended, boot: [] } }], recordGrows, 'the record')).toEqual({
+      newest: ended,
+      rewrite: { at: later, detail: 'changed the record after its end' },
+    });
   });
 
-  it('names a version that changes the end, drops a step, replaces the target or deletes the record, and ignores what follows it', () => {
-    const ended = honest[3]?.body as RunRecord;
+  it('names a version that drops a step, replaces the target, is no record or deletes the record, and reads no version after it', async () => {
     const cases: [StoredVersion<RunRecord>, string][] = [
-      [{ at: '2026-10-15T03:00:00.000Z', body: { ...ended, outcome: 'deployed', error: undefined } }, 'changed the outcome from failed to deployed'],
-      [{ at: '2026-10-15T03:00:00.000Z', body: { ...ended, steps: ended.steps.slice(0, 1) } }, 'dropped step "Waved rollout"'],
-      [{ at: '2026-10-15T03:00:00.000Z', body: { ...ended, target: 'c'.repeat(40) } }, 'changed target'],
-      [{ at: '2026-10-15T03:00:00.000Z' }, 'deleted the record'],
+      [{ at: later, body: { ...failing, steps: steps.slice(0, 1) } }, 'dropped step "Waved rollout"'],
+      [{ at: later, body: { ...failing, target: 'c'.repeat(40) } }, 'changed target'],
+      [{ at: later, fault: 'is not a record' }, 'is not a record'],
+      [{ at: later }, 'deleted the record'],
     ];
     for (const [version, detail] of cases) {
-      const reading = readByGrowth([...honest, version, { at: '2026-10-15T04:00:00.000Z', body: ended }], recordGrows);
-      expect(reading?.newest, detail).toEqual(ended);
-      expect(reading?.rewrite, detail).toEqual({ at: '2026-10-15T03:00:00.000Z', detail });
+      let read = 0;
+      const versions = (async function* () {
+        for (const each of [started, built, rolledOut, version, finished]) {
+          read++;
+          yield each;
+        }
+      })();
+      expect(await readByGrowth(versions, recordGrows, 'the record'), detail).toEqual({ newest: failing, rewrite: { at: later, detail } });
+      expect(read, detail).toBe(4);
     }
   });
 
-  it('reads a log by the same rule: a version that is not the one before plus more lines is a rewrite', () => {
+  it('reads a log by the same rule: a version that is not the one before plus more lines, or a deletion, is a rewrite', async () => {
     const grown = [
       { at: '2026-10-15T00:00:00.000Z', body: '[deploy] run x\n' },
       { at: '2026-10-15T00:02:00.000Z', body: '[deploy] run x\n[deploy] Build the release: ok\n' },
     ];
-    expect(readByGrowth(grown, logGrows)).toEqual({ newest: grown[1]?.body });
-    const shortened = [...grown, { at: '2026-10-15T03:00:00.000Z', body: '[deploy] run x\n[deploy] Build the release: failed\n' }];
-    expect(readByGrowth(shortened, logGrows)).toEqual({
+    expect(await readByGrowth(grown, logGrows, 'the log')).toEqual({ newest: grown[1]?.body });
+    const shortened = { at: later, body: '[deploy] run x\n[deploy] Build the release: failed\n' };
+    expect(await readByGrowth([...grown, shortened], logGrows, 'the log')).toEqual({
       newest: grown[1]?.body,
-      rewrite: { at: '2026-10-15T03:00:00.000Z', detail: 'changed the log' },
+      rewrite: { at: later, detail: 'changed the log' },
+    });
+    expect(await readByGrowth([...grown, { at: later }], logGrows, 'the log')).toEqual({
+      newest: grown[1]?.body,
+      rewrite: { at: later, detail: 'deleted the log' },
     });
   });
 });

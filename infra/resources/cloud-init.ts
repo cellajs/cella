@@ -174,13 +174,14 @@ const metadataAddress = '169.254.42.42';
  * Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts.
  * The boot log is mounted read-only for the diagnostics upload; `touch` first, because Docker creates a missing bind source as a directory. The registry host and boot-image ref arrive via the EnvironmentFile (bootEnv), so this script is fixed apart from the slug-namespaced paths.
  * The unit runs it at every boot, so the rule that keeps app containers off the metadata service is set here, before any container
- * starts; the boot runner is on the host network, which the rule leaves alone. A rule that cannot be set ends the boot.
+ * starts, in DOCKER-USER, the one chain Docker consults before its own rules; the boot runner is on the host network, which the rule
+ * leaves alone. A rule that cannot be set ends the boot.
  */
 const bootLauncher = (p: CloudInitParams): string => {
   const paths = bootPaths(p.slug);
   return `#!/bin/bash
 set -uo pipefail
-iptables -I DOCKER-USER -d ${metadataAddress} -j DROP || iptables -I FORWARD -d ${metadataAddress} -j DROP || exit 1
+iptables -I DOCKER-USER -d ${metadataAddress} -j DROP || exit 1
 docker login "$REGISTRY_HOST" -u nologin --password-stdin < ${paths.secretKey}
 touch ${bootLogPath}
 exec docker run --rm --network host \\

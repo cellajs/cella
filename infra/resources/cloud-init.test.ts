@@ -102,7 +102,8 @@ describe('renderCloudInit', () => {
     const lines = launcher.split('\n');
     const block = lines.findIndex((line) => line.startsWith('iptables -I DOCKER-USER -d 169.254.42.42 -j DROP'));
     expect(block).toBeGreaterThan(-1);
-    expect(lines[block]).toContain('|| exit 1');
+    // Only DOCKER-USER runs ahead of Docker's own ACCEPT rules: there is no other chain to fall back to, so a failure ends the boot.
+    expect(lines[block]).toBe('iptables -I DOCKER-USER -d 169.254.42.42 -j DROP || exit 1');
     // Set before the runner starts, and by the launcher the enabled unit runs again after a reboot, which keeps no iptables rule.
     expect(block).toBeLessThan(lines.findIndex((line) => line.startsWith('exec docker run')));
     expect(out).toContain('systemctl enable infra-boot.service');

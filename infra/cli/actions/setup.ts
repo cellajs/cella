@@ -4,7 +4,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { printInventory } from '../../tasks/status';
 import { isPromptAbort } from '../prompts/abort';
 import { rememberOperatorKey } from '../session';
-import type { InfraContext } from '../shared';
+import { endsAction, type InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 import { runRunnerReplace } from './runner';
 import { copyDeployKeyForMainJob, recordKeyRotation, runOperatorPart } from './setup-operator-part';
@@ -38,7 +38,7 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
       });
     }
     await redeployAfterRotation(context, operatorKey).catch((error) => {
-      if (isPromptAbort(error)) throw error;
+      if (endsAction(error)) throw error;
       console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
     });
     // After a compromise the rotation is followed by a look at what an intruder may have left: the inventory, on the observer key and, for

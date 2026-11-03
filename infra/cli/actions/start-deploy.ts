@@ -12,6 +12,7 @@ import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
 import { controlKey, makeControlClient, readControlState, stateBucket } from '../../lib/stack/control-store';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { acquirePrivilegedKey } from './operator-unlock';
@@ -50,19 +51,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
     );
     return endAction(1);
   }
-  const started = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
-  console.info(`  ${checkMark} Run ${started.id} started.`);
-  const run = await followRun(auth, region, started);
-  const outcome = mainJobOutcome(run);
-  if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
-  else if (outcome === 'blocked')
-    console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either starts this target again. Identities are written with \`${actionCommand('identity')}\`, and this action starts the target after it.`,
-    );
-  else
-    console.error(
-      `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
-    );
+  const outcome = await deployAndFollow(context, auth, definitionId, target, 'started');
   if (outcome !== 'deployed') endAction(1);
 }
 
@@ -89,6 +78,35 @@ async function followRun(auth: { secretKey: string }, region: string, started: J
   return run;
 }
 
+/**
+ * Start a run of the main job for one commit and follow it to its end, reporting how it ended: a blocked run names what the operator owes
+ * and which action deploys the commit again, a failed one where its log is.
+ * @param started what the run does, after "Run <id>".
+ */
+async function deployAndFollow(
+  context: InfraContext,
+  auth: { secretKey: string },
+  definitionId: string,
+  commit: { sha: string; retry: number },
+  started: string,
+): Promise<ReturnType<typeof mainJobOutcome>> {
+  const { region } = deriveInfra(context.appConfig);
+  const first = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
+  console.info(`  ${checkMark} Run ${first.id} ${started}.`);
+  const run = await followRun(auth, region, first);
+  const outcome = mainJobOutcome(run);
+  if (outcome === 'deployed') console.info(`${checkMark} ${context.environment} runs ${commit.sha.slice(0, 10)}.`);
+  else if (outcome === 'blocked')
+    console.warn(
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either deploys this commit again. Identities are written with \`${actionCommand('identity')}\`; \`${actionCommand('start-deploy')}\` deploys the target after it.`,
+    );
+  else
+    console.error(
+      `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
+    );
+  return outcome;
+}
+
 /** The commit the environment runs: the primary service's active generation in the control object, none before the first deploy. */
 async function liveCommit(context: InfraContext, key: KeyPair): Promise<string | undefined> {
   const { appConfig, projectId } = context;
@@ -104,8 +122,9 @@ async function liveCommit(context: InfraContext, key: KeyPair): Promise<string |
  * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, then start
  * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and the runner starts
  * a run only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
- * becomes of the target. The live run is followed to its end, as the target's run would wait on the stack lock behind it, and when it fails
- * the target is left for `start-deploy`. Before the first deploy there is no live commit, and the target alone is started.
+ * becomes of the target. The live run is followed to its end, as the target's run would wait on the stack lock behind it, and when it does
+ * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
+ * and when the control object cannot be read there is none known: the target alone is started.
  */
 export async function redeployAfterRotation(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };
@@ -117,7 +136,10 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
     );
     return;
   }
-  const live = await liveCommit(context, key);
+  const live = await liveCommit(context, key).catch((error) => {
+    console.warn(`${warningMark} The live commit could not be read (${errorMessage(error)}): the target alone is started.`);
+    return undefined;
+  });
   const target = await environmentTarget(context);
   if (!live && !target) {
     console.warn(
@@ -126,18 +148,17 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
     return;
   }
   if (live) {
-    const started = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: live, RETRY: '0' } });
-    console.info(
-      `  ${checkMark} Run ${started.id} deploys the live ${live.slice(0, 10)} again, replacing every machine with the rotated keys and values.`,
+    const outcome = await deployAndFollow(
+      context,
+      auth,
+      definitionId,
+      { sha: live, retry: 0 },
+      `deploys the live ${live.slice(0, 10)} again, replacing every machine with the rotated keys and values`,
     );
-    const run = await followRun(auth, region, started);
-    if (mainJobOutcome(run) !== 'deployed') {
-      console.error(
-        `${crossMark} The run ended ${run.state}: the machines keep what the rotation replaced until a deploy succeeds. \`${actionCommand('runs')}\` shows how it ended; \`${actionCommand('start-deploy')}\` deploys the target.`,
-      );
+    if (outcome !== 'deployed') {
+      console.warn(`${warningMark} The machines keep what the rotation replaced until a deploy succeeds; the target is not started.`);
       return;
     }
-    console.info(`${checkMark} ${context.environment} runs ${live.slice(0, 10)} with the rotated keys and values.`);
     if (!target || target.sha === live) return;
   }
   if (!target) return;
