@@ -24,6 +24,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
 
   return {
     kind: 'redis-managed',
+    settings: config,
 
     validate(): void {
       if (!tls && config.secretConsumers?.ca?.length) {

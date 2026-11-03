@@ -1,3 +1,4 @@
+import type { AppliedEngine } from '../deploy/applied-engine';
 import type { LiveRecord } from '../deploy/live-record';
 import type { KeyPair } from '../scaleway/operator-identity';
 import type { StackState } from '../stack/bootstrap-stack-state';
@@ -60,6 +61,8 @@ export interface ScalewayFacts {
   lock?: LockFacts;
   /** undefined = the live record could not be read. */
   live?: LiveRecord;
+  /** The engine the last apply published; null before the first, undefined when it could not be read. */
+  applied?: AppliedEngine | null;
 }
 
 /** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-object read the providers share. */

@@ -25,6 +25,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
+import { type PublishedEngine, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
 import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
@@ -121,6 +122,14 @@ async function adoptKept(ctx: SetupContext): Promise<void> {
   console.info(`  ${checkMark} Adopted: the \`up\` updates them in place.`);
 }
 
+/** The engine image of this checkout, published on the operator key; undefined while the registry does not exist or when the build failed. */
+async function publishEngineOrWarn(ctx: SetupContext): Promise<PublishedEngine | undefined> {
+  return publishEngine({ appConfig: ctx.appConfig, projectId: ctx.projectId, secretKey: ctx.secretKey }).catch((error) => {
+    console.warn(`${warningMark} The engine image could not be published (${errorMessage(error)}): \`${actionCommand('apply')}\` publishes it.`);
+    return undefined;
+  });
+}
+
 /**
  * Validate DNS, lock the stack, defer fresh compute, and converge Pulumi, on the operator key.
  * Once secret containers exist, seed the operator's values.
@@ -188,6 +197,10 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     forgetRetiredResources(ctx.stackName, ctx.childEnv);
   }
 
+  // The engine the main job runs: built and pushed before the `up` once the registry exists, as on a resume, and after the first one else.
+  let engine = await publishEngineOrWarn(ctx);
+  if (engine) ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
+
   // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the operator key.
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
@@ -207,6 +220,22 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       env: ctx.childEnv,
       stdio: 'ignore',
     });
+  }
+  if (!engine) {
+    engine = await publishEngineOrWarn(ctx);
+    if (engine) {
+      ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
+      const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
+      if (code !== 0) {
+        console.warn(`${warningMark} The main job's definition waits for \`${actionCommand('apply')}\` (pulumi up exited ${code}).`);
+        engine = undefined;
+      }
+    }
+  }
+  if (engine) {
+    await recordAppliedEngine({ appConfig: ctx.appConfig, stack: ctx.stackName, projectId: ctx.projectId, key: ctx.stateKey, engine }).catch(
+      (error) => console.warn(`${warningMark} Could not record the applied engine (${errorMessage(error)}): \`${actionCommand('apply')}\` does.`),
+    );
   }
   console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
 

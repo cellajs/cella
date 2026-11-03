@@ -86,21 +86,18 @@ describe('the inventory', () => {
     ]);
   });
 
-  it("finds a main job edited to read the database's password and to fetch another repository (D-b): the runner key may edit a definition", () => {
+  it("finds a main job edited to read the database's password and to run another image (D-b): the runner key may edit a definition", () => {
     const mainJob = declaredMainJob({
-      mode: 'staging',
       projectId: 'p-staging',
       organizationId: 'o',
-      region: 'nl-ams',
-      repository: 'https://github.com/example/app.git',
-      nodeVersion: '26.12.1',
+      image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`,
     });
     const engine = mainJob.secretFolder;
     const live = {
       running: false,
-      imageUri: mainJob.imageUri,
+      imageUri: 'rg.nl-ams.scw.cloud/app/infra-engine:latest',
       command: mainJob.startupCommands.join('\n'),
-      env: { ...mainJob.env, REPO: 'https://github.com/mallory/app.git' },
+      env: { ...mainJob.env, NODE_OPTIONS: '--import=data:text/javascript,0' },
       secretReferences: [
         { env: 'DEPLOY_KEY_JSON', secretId: 's1', name: 'deploy-key', path: engine },
         { env: 'PULUMI_CONFIG_PASSPHRASE', secretId: 's2', name: 'pulumi-passphrase', path: engine },
@@ -109,7 +106,8 @@ describe('the inventory', () => {
     };
     // A definition from before the deploy left the state still reads the passphrase: an apply writes it without.
     expect(mainJobDifferences(live, mainJob)).toEqual([
-      'env REPO differs',
+      'image rg.nl-ams.scw.cloud/app/infra-engine:latest',
+      'an extra env var NODE_OPTIONS',
       'an extra secret reference PULUMI_CONFIG_PASSPHRASE (pulumi-passphrase)',
       'an extra secret reference DB_PASSWORD (database-admin-password)',
     ]);

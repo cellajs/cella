@@ -7,6 +7,7 @@ const reviewPlan = vi.fn();
 const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
 const openDbEndpoints = vi.fn();
+const publishEngine = vi.fn();
 
 vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
 vi.mock('../shared', () => ({
@@ -24,12 +25,14 @@ vi.mock('./operator-apply', () => ({
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
+vi.mock('../../tasks/publish-engine', () => ({ publishEngine: (...args: unknown[]) => publishEngine(...args) }));
 
 const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
 const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
 const reviewed = { passphrase: 'correct horse', basis: { checkpoint: '"aaa"', control: '"bbb"' } };
+const engine = { image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`, imageDigest: `sha256:${'1'.repeat(64)}` };
 
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -38,6 +41,7 @@ beforeEach(() => {
   openDbEndpoints.mockResolvedValue([]);
   reviewPlan.mockResolvedValue(reviewed);
   runOperatorApply.mockResolvedValue({ completed: true, verified: true });
+  publishEngine.mockResolvedValue(engine);
 });
 
 afterEach(() => {
@@ -61,7 +65,7 @@ describe('runApply', () => {
 
     await runApply(context);
 
-    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true });
+    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true, engineImage: engine.image });
     expect(runOperatorApply).not.toHaveBeenCalled();
   });
 
@@ -85,7 +89,7 @@ describe('runApply', () => {
 
     await runApply(context);
 
-    expect(runOperatorApply).toHaveBeenCalledWith(context, expect.objectContaining({ operation: 'apply', confirmPlan: true, reviewed }));
+    expect(runOperatorApply).toHaveBeenCalledWith(context, expect.objectContaining({ operation: 'apply', confirmPlan: true, reviewed, engine }));
   });
 
   it('ends with a failure when the up completed but the live grants still differ', async () => {

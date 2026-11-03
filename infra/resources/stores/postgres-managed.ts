@@ -21,6 +21,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
   return {
     kind: 'postgres-managed',
+    settings: config,
 
     secrets(): StoreSecretContribution[] {
       const consumers = config.secretConsumers;

@@ -42,7 +42,11 @@ export interface ReviewedPlan {
  * (organization id, privileged marker). A deploy applies only the part of such a diff that is not privileged, and stops while a privileged
  * change is pending. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
  */
-export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { forgetRetired?: boolean } = {}): Promise<ReviewedPlan> {
+export async function reviewPlan(
+  context: InfraContext,
+  key: KeyPair,
+  opts: { forgetRetired?: boolean; engineImage?: string } = {},
+): Promise<ReviewedPlan> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} A plan needs a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
@@ -64,6 +68,8 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
 
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
+  // The engine image the apply just pushed, which the plan shows on the main job; without one the program keeps the applied engine's.
+  if (opts.engineImage) env.INFRA_ENGINE_IMAGE = opts.engineImage;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // An apply first takes retired resources out of the state, under the lease, so its plan shows none of them as deleted: they stay live

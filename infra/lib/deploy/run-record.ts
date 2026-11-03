@@ -12,9 +12,10 @@ export interface RunStep {
 
 /**
  * How a run ended; `running` while it runs. Unchanged: every role served the target already, under the same retry counter and rotation.
- * Blocked: a required runtime value is missing, which the operator stores.
+ * Blocked: a required runtime value is missing, which the operator stores. Apply needed: the target describes the app otherwise than the
+ * applied engine, and an apply from it publishes its description. A job run ended either way exits blocked.
  */
-export type RunOutcome = 'running' | 'deployed' | 'unchanged' | 'blocked' | 'failed';
+export type RunOutcome = 'running' | 'deployed' | 'unchanged' | 'blocked' | 'apply needed' | 'failed';
 
 /** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */
 export interface RunBootAccount {

@@ -91,6 +91,15 @@ function tagCommit(refs: readonly RemoteRef[], tag: string): string | undefined 
   return refs.find((ref) => ref.ref === `refs/tags/${tag}^{}`)?.sha ?? refs.find((ref) => ref.ref === `refs/tags/${tag}`)?.sha;
 }
 
+/**
+ * Whether a release names the commit: a tag of the form `X.Y.Z` that points to it, an annotated tag by the commit on its peeled line. The
+ * tag object of an annotated tag is no release commit.
+ */
+export function isReleaseCommit(refs: readonly RemoteRef[], sha: string): boolean {
+  const tags = new Set(refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag)));
+  return [...tags].some((tag) => tagCommit(refs, tag) === sha);
+}
+
 interface TargetQuery {
   environment: string;
   line?: EnvironmentLine;

@@ -9,6 +9,8 @@ export interface BuilderValues {
   NODE_IMAGE: string;
   /** `1` when the release has frontend files, else empty. */
   FRONTEND: string;
+  /** The environment whose description of the app the release reports. */
+  APP_MODE: string;
 }
 
 /**
@@ -99,6 +101,14 @@ if [ -n "$FRONTEND" ]; then
 fi
 wait "$SERVICES"
 wait "$AGENT"
+# The release's own description of the app, which the deploy holds against the applied engine's: the target's script, in a keyless
+# container on the engine workspace the agent bundle installed. A commit older than the script reports none.
+DESCRIPTION_FIELD=''
+if [ -f /build/infra/tasks/description-hash.ts ]; then
+  DESCRIPTION=$(docker run --rm -e APP_MODE -v /build:/build:ro -w /build/infra "$NODE_IMAGE" node_modules/.bin/tsx tasks/description-hash.ts)
+  printf '%s' "$DESCRIPTION" | grep -Eqx '[0-9a-f]{64}' || { echo "the release's description hash is no hash: $DESCRIPTION"; false; }
+  DESCRIPTION_FIELD=",\"description\":\"$DESCRIPTION\""
+fi
 
 step archives
 # The manifest goes last: once it is there, every archive it names is.
@@ -116,7 +126,7 @@ if [ -n "$FRONTEND" ]; then
   put frontend /var/lib/release/frontend.tar
   FRONTEND_DIGEST=",\"frontend\":$(digest /var/lib/release/frontend.tar)"
 fi
-printf '{"release":"%s","images":{%s}%s}\n' "$SHA" "$IMAGES" "$FRONTEND_DIGEST" > /run/manifest.json
+printf '{"release":"%s","images":{%s}%s%s}\n' "$SHA" "$IMAGES" "$FRONTEND_DIGEST" "$DESCRIPTION_FIELD" > /run/manifest.json
 put manifest /run/manifest.json
 
 finish ok

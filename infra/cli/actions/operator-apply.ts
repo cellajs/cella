@@ -21,6 +21,7 @@ import { admitOperatorToBuckets, shutOutOfBuckets } from '../../tasks/admit-oper
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
+import { type PublishedEngine, recordAppliedEngine } from '../../tasks/publish-engine';
 import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -52,6 +53,8 @@ export interface OperatorApplyOptions {
   debugProvider?: boolean;
   /** Read-only check after a completed `up`, while the run's privileged key is still valid; a throw is reported as a warning. */
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
+  /** The engine image this apply published: the `up` points the main job at it, and `applied.json` records it once the `up` completed. */
+  engine?: PublishedEngine;
 }
 
 export interface OperatorApplyResult {
@@ -89,6 +92,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
   await admitOperatorOrExit(context, operator);
   const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
+  if (opts.engine) env.INFRA_ENGINE_IMAGE = opts.engine.image;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
@@ -238,6 +242,17 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       }
     } finally {
       await releaseLock();
+    }
+
+    if (completed && opts.engine) {
+      const { engine } = opts;
+      await recordAppliedEngine({ appConfig, stack, projectId, key: operator, engine }).then(
+        () =>
+          console.info(
+            `${checkMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, describing the app as ${engine.descriptionHash.slice(0, 12)}.`,
+          ),
+        (error) => console.warn(`${warningMark} Could not record the applied engine (${errorMessage(error)}); run the apply again.`),
+      );
     }
 
     if (completed) {

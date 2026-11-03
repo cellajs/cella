@@ -99,8 +99,8 @@ function wroteRecord(run: JobRun, record: RunRecord): boolean {
 function disagreement(record: RunRecord, run: JobRun | undefined): string {
   if (!run || !runEnded(run)) return '';
   const outcome = mainJobOutcome(run);
-  // A run that found the target serving exits as a deploy does.
-  const recorded = record.outcome === 'unchanged' ? 'deployed' : record.outcome;
+  // A run that found the target serving exits as a deploy does, one that needs an apply as a blocked one.
+  const recorded = record.outcome === 'unchanged' ? 'deployed' : record.outcome === 'apply needed' ? 'blocked' : record.outcome;
   return outcome === recorded ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
 }
 

@@ -3,9 +3,9 @@ import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
 /**
- * The control objects of an environment, under `control/<mode>/` of its boot-diagnostics bucket: the live record the deploy writes
- * (lib/deploy/live-record.ts), the lease one deploy or operator action holds at a time, and the rotations an operator records. The deploy
- * key reads and writes them there, the observer reads them, and the Pulumi program reads none.
+ * The control objects of an environment, under `control/<mode>/` of its boot-diagnostics bucket: the live record (lib/deploy/live-record.ts),
+ * the lease, the rotations and the applied engine an apply publishes (lib/deploy/applied-engine.ts). The observer reads them all, and the
+ * Pulumi program reads the applied engine alone.
  */
 
 /** One rotation: when, and who ran it. */

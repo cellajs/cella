@@ -29,6 +29,7 @@ interface ExternalUrlDefaults {
 export function externalUrl(defaults: ExternalUrlDefaults, config: ExternalUrlConfig): StoreProvisioner {
   return {
     kind: defaults.kind,
+    settings: config,
 
     provision(): ProvisionedStore {
       return { outputs: {}, secretValues: {} };

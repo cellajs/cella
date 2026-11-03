@@ -39,14 +39,7 @@ describe('the Serverless Jobs calls', () => {
   });
 
   it("reads the main job's startup command and each run's, so a run started with its own is flagged (D-b, measured 2026-10-29)", async () => {
-    const declared = declaredMainJob({
-      mode: 'staging',
-      projectId: 'p',
-      organizationId: 'o',
-      region: 'nl-ams',
-      repository: 'https://github.com/example/app.git',
-      nodeVersion: '26.12.1',
-    });
+    const declared = declaredMainJob({ projectId: 'p', organizationId: 'o', image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}` });
     // As Scaleway answered: v1alpha1 gives the definition and every run an empty command and no startup command.
     const command = (url: string, startup_command: string[]) =>
       url.includes('/v1alpha2/') ? { command: '', startup_command, args: [] } : { command: '' };

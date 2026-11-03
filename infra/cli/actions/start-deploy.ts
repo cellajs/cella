@@ -99,7 +99,7 @@ async function deployAndFollow(
   if (outcome === 'deployed') console.info(`${checkMark} ${context.environment} runs ${commit.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
     console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names the runtime value owed. \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes: either deploys this commit again.`,
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A runtime value: \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes. "apply needed": \`${actionCommand('apply')}\` from a checkout at this commit. Either deploys this commit again.`,
     );
   else
     console.error(

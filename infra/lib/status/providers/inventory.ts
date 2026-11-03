@@ -1,6 +1,6 @@
+import { type AppliedEngine, engineImageRef, engineImageRepository } from '../../deploy/applied-engine';
 import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
-import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
-import { repositoryUrl } from '../../deploy/repository-key';
+import { declaredMainJob, type MainJobDeclaration } from '../../deploy/main-job';
 import { machineRoles } from '../../machine-roles';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
@@ -45,6 +45,8 @@ export interface InventoryFacts {
   };
   /** The organization the key belongs to, which the main job's definition names. */
   organizationId: string;
+  /** The engine the last apply published, which the definition must run; null before the first, undefined when it could not be read. */
+  applied?: AppliedEngine | null;
 }
 
 /** What an environment's code declares (C11): its applications, the ones that hold one key, its project and how its machines are named. */
@@ -184,11 +186,26 @@ export function mainJobDifferences(live: NonNullable<InventoryFacts['mainJob']>,
   return differs;
 }
 
-/** Whether the main job's definition runs what this checkout declares: a difference is an apply owed, or an edit nobody declared. */
-function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'], declared: () => MainJobDeclaration): Check {
+/**
+ * Whether the main job's definition runs the engine the last apply published, by the digest `applied.json` names, with the script and env
+ * this checkout declares: a difference is an apply owed, or an edit nobody declared.
+ */
+function mainJobVerdict(
+  builder: CheckBuilder,
+  mainJob: InventoryFacts['mainJob'],
+  applied: InventoryFacts['applied'],
+  declared: (applied: AppliedEngine) => MainJobDeclaration,
+): Check {
   if (!mainJob) return builder.ok('no main job yet');
   if (!mainJob.command || !mainJob.imageUri) return builder.warn('its command or image could not be read');
-  const differs = mainJobDifferences(mainJob, declared());
+  if (applied === undefined) return builder.warn('the applied engine (applied.json) could not be read');
+  if (applied === null) {
+    return builder.error(`runs ${mainJob.imageUri}, which no apply recorded publishing`, {
+      description: 'Review & apply changes publishes the engine image and points the main job at it',
+      command: actionCommand('apply'),
+    });
+  }
+  const differs = mainJobDifferences(mainJob, declared(applied));
   if (differs.length > 0) {
     return builder.error(`${differs.join('; ')}: an apply is owed, or someone edited the definition`, {
       description: 'An apply writes the declared definition again',
@@ -246,7 +263,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const auth = { secretKey: session.secretKey };
       const operatorSecretKey = session.operatorKey?.secretKey;
       const { naming, region, zones } = deriveInfra(session.appConfig);
-      const live = (await session.scalewayFacts()).live;
+      const { live, applied } = await session.scalewayFacts();
       if (!live) return undefined;
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
       // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
@@ -307,7 +324,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
       const machines = servers?.map(({ id, name }) => ({ id, name }));
       const roles = machineRoles(session.appConfig).map((role) => role.role);
-      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId };
+      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId, applied };
     } catch {
       return undefined;
     }
@@ -346,16 +363,14 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
               : b.ok(`${facts.machines.length} machine(s), each one the live record names`),
       ),
       item('inventory.mainJob', 'Main job', (b, { facts }) =>
-        mainJobVerdict(b, facts.mainJob, () =>
-          declaredMainJob({
-            mode: session.mode,
+        mainJobVerdict(b, facts.mainJob, facts.applied, (applied) => {
+          const { naming, region } = deriveInfra(session.appConfig);
+          return declaredMainJob({
             projectId: session.projectId ?? '',
             organizationId: facts.organizationId,
-            region: deriveInfra(session.appConfig).region,
-            repository: repositoryUrl(),
-            nodeVersion: rootNodeVersion(),
-          }),
-        ),
+            image: engineImageRef(engineImageRepository(region, naming.registryNamespace), applied.imageDigest),
+          });
+        }),
       ),
     ];
   },

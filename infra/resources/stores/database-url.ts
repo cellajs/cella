@@ -22,6 +22,7 @@ export interface DatabaseUrlConfig {
 export function databaseUrl(config: DatabaseUrlConfig): StoreProvisioner {
   return {
     kind: 'database-url',
+    settings: config,
 
     provision(): ProvisionedStore {
       return { outputs: {}, secretValues: {} };

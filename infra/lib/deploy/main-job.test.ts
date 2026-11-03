@@ -1,70 +1,49 @@
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MAIN_JOB_EXIT, MAIN_JOB_SCRIPT, mainJobOutcome, RELEASE_CHECK, storeDeployKeyCopy } from './main-job';
+import { declaredMainJob, MAIN_JOB_ENV_NAMES, MAIN_JOB_EXIT, MAIN_JOB_SCRIPT, mainJobOutcome, storeDeployKeyCopy } from './main-job';
 
-/** Run the release check in bash, against a `git` on PATH whose `ls-remote` lists a lightweight and an annotated release tag. */
-function releaseCheck(targetSha: string) {
-  const bin = mkdtempSync(join(tmpdir(), 'release-check-'));
-  const refs = [
-    `${'1'.repeat(40)}\trefs/tags/0.25.0`,
-    `${'2'.repeat(40)}\trefs/tags/0.26.0`,
-    `${'3'.repeat(40)}\trefs/tags/0.26.0^{}`,
-    `${'4'.repeat(40)}\trefs/tags/nightly`,
-  ];
-  writeFileSync(join(bin, 'git'), `#!/bin/sh\nprintf '%s\\n' ${refs.map((ref) => `'${ref}'`).join(' ')}\n`);
-  chmodSync(join(bin, 'git'), 0o755);
-  const script = `set -euo pipefail\ngit_read() { git "$@"; }\n${RELEASE_CHECK}\necho checked`;
-  return spawnSync('bash', ['-c', script], {
-    encoding: 'utf8',
-    env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, RELEASES_ONLY: '1', MODE: 'production', TARGET_SHA: targetSha },
-  });
-}
+const DIGEST = `sha256:${'1'.repeat(64)}`;
 
 describe('the main job', () => {
-  it('runs a script bash accepts', () => {
-    const check = spawnSync('bash', ['-n'], { input: MAIN_JOB_SCRIPT, encoding: 'utf8' });
+  it('runs a script sh accepts', () => {
+    const check = spawnSync('sh', ['-n'], { input: MAIN_JOB_SCRIPT, encoding: 'utf8' });
     expect(check.stderr).toBe('');
     expect(check.status).toBe(0);
   });
 
-  it('must not echo a key, and drops the deploy key and the repository key from its environment once read', () => {
-    const lines = MAIN_JOB_SCRIPT.split('\n');
-    expect(lines.filter((line) => line.startsWith('echo')).every((line) => !/KEY|PASSPHRASE/.test(line))).toBe(true);
-    expect(lines).toContain('unset DEPLOY_KEY_JSON');
-    expect(lines).toContain('unset REPO_KEY');
-    expect(lines.at(-2)).toBe('exec pnpm --silent --filter infra main-job');
+  it("hands the engine the names it lists alone: a start call's NODE_OPTIONS, GIT_CONFIG_* or RELEASES_ONLY never reach it", () => {
+    // The script as it runs, with env printing what the engine would start with: no /engine here, and env takes pnpm's place.
+    const script = MAIN_JOB_SCRIPT.replace('cd /engine || exit 1', 'true').replace(' pnpm --silent --filter infra main-job', ' /usr/bin/env');
+    const started = spawnSync('sh', ['-c', script], {
+      encoding: 'utf8',
+      env: {
+        TARGET_SHA: 'a'.repeat(40),
+        RETRY: '0',
+        DEPLOY_KEY_JSON: '{}',
+        SCW_DEFAULT_PROJECT_ID: 'p',
+        SCW_DEFAULT_ORGANIZATION_ID: 'o',
+        NODE_OPTIONS: '--import=data:text/javascript,process.exit(0)',
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'url.https://mallory.example/app.git.insteadOf',
+        GIT_CONFIG_VALUE_0: 'https://github.com/example/app.git',
+        RELEASES_ONLY: '0',
+        MODE: 'staging',
+        LD_PRELOAD: '/tmp/x.so',
+      },
+    });
+    expect(started.status).toBe(0);
+    const names = started.stdout
+      .trim()
+      .split('\n')
+      .map((line) => line.slice(0, line.indexOf('=')));
+    expect(names.sort()).toEqual(['HOME', 'PATH', ...MAIN_JOB_ENV_NAMES].sort());
   });
 
-  it('ends a run that fails before the deploy task as failed: a tool exiting 2, as tar does, must not read as blocked', () => {
-    const lines = MAIN_JOB_SCRIPT.split('\n');
-    const prologue = lines.slice(0, lines.findIndex((line) => line.startsWith('trap ')) + 1).join('\n');
-    const run = spawnSync('bash', ['-c', `${prologue}\nsh -c 'exit 2'\necho unreachable`], { encoding: 'utf8' });
-    expect(run.status).toBe(MAIN_JOB_EXIT.failed);
-    expect(run.stdout).not.toContain('unreachable');
-    expect(run.stderr).toContain('the run stopped before the deploy (exit 2)');
-  });
-
-  it('pipes no script into a shell, and reads no passphrase: a deploy plans no stack', () => {
-    expect(MAIN_JOB_SCRIPT).not.toMatch(/\|\s*(ba)?sh\b/);
-    expect(MAIN_JOB_SCRIPT).not.toMatch(/PULUMI|pulumi/);
-  });
-
-  it('must not fetch a commit no release names where the environment deploys releases only (D-f): a hand-started run is refused', () => {
-    const refused = releaseCheck('a'.repeat(40));
-    expect(refused.status).toBe(MAIN_JOB_EXIT.failed);
-    expect(refused.stderr).toContain(`production deploys releases only: ${'a'.repeat(40)} is no release`);
-    expect(refused.stdout).not.toContain('checked');
-    // An annotated tag names its commit on the peeled line; the tag object itself is no release commit.
-    expect(releaseCheck('2'.repeat(40)).status).toBe(MAIN_JOB_EXIT.failed);
-    expect(releaseCheck('4'.repeat(40)).status).toBe(MAIN_JOB_EXIT.failed);
-    for (const release of ['1'.repeat(40), '3'.repeat(40)]) {
-      const passed = releaseCheck(release);
-      expect(passed.status).toBe(0);
-      expect(passed.stdout).toContain('checked');
-    }
+  it('names the engine image by its digest, never by a tag, which can move to another image', () => {
+    const image = `rg.nl-ams.scw.cloud/app/infra-engine@${DIGEST}`;
+    expect(declaredMainJob({ projectId: 'p', organizationId: 'o', image }).imageUri).toBe(image);
+    expect(() => declaredMainJob({ projectId: 'p', organizationId: 'o', image: 'rg.nl-ams.scw.cloud/app/infra-engine:0.34.0' })).toThrow(/digest/);
+    expect(() => declaredMainJob({ projectId: 'p', organizationId: 'o', image: `rg.nl-ams.scw.cloud/app/infra-engine:${DIGEST}` })).toThrow(/digest/);
   });
 
   it('reads a succeeded run as deployed: Scaleway reports a run that exited 0 with no exit code (staging, 2026-10-20)', () => {

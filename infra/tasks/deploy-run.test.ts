@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ServiceName } from '../compose/compose';
+import type { EngineStamp } from '../lib/deploy/applied-engine';
 import type { LiveRecord } from '../lib/deploy/live-record';
 import type { RunRecord } from '../lib/deploy/run-record';
 import type { MachineRole } from '../lib/machine-roles';
@@ -8,6 +9,7 @@ import type { AllowedKey } from './deploy-env';
 import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, runDeploy, type SwitchRequest } from './deploy-run';
 
 const SHA = 'abc1230000000000000000000000000000000000';
+const DESCRIPTION = 'd'.repeat(64);
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -43,7 +45,9 @@ const serving = (commit: string, retry = 0, rotation = 0): LiveRecord => ({
   roles: Object.fromEntries(ROLES.map((r, index) => [r.role, { slot: 'a', machine: `srv-${index}`, commit, retry, rotation }])),
 });
 
-function makeFake(opts: { live?: LiveRecord; rotation?: number; switchFails?: boolean; leaseLost?: boolean } = {}) {
+function makeFake(
+  opts: { live?: LiveRecord; rotation?: number; switchFails?: boolean; leaseLost?: boolean; stamp?: EngineStamp | null; description?: string } = {},
+) {
   const ops: string[] = [];
   const taskArgs: Record<string, string[]> = {};
   const switches: SwitchRequest[] = [];
@@ -56,7 +60,8 @@ function makeFake(opts: { live?: LiveRecord; rotation?: number; switchFails?: bo
       ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}`);
       taskArgs[name] = [...argv];
     },
-    readFile: async (path) => (path.endsWith('manifest.json') ? JSON.stringify({ release: SHA, images: {} }) : '[]'),
+    readFile: async (path) =>
+      path.endsWith('manifest.json') ? JSON.stringify({ release: SHA, images: {}, description: opts.description ?? DESCRIPTION }) : '[]',
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
       return {
@@ -70,6 +75,7 @@ function makeFake(opts: { live?: LiveRecord; rotation?: number; switchFails?: bo
       ops.push('live:read');
       return { roles: ROLES, record: opts.live ?? { schemaVersion: 1, roles: {} }, rotation: opts.rotation ?? 0 };
     },
+    engineStamp: () => (opts.stamp === null ? undefined : (opts.stamp ?? { mode: 'production', descriptionHash: DESCRIPTION })),
     switchMachines: async (request) => {
       ops.push(`switch:${request.pending.join(',')}`);
       switches.push(request);
@@ -106,15 +112,15 @@ describe('parseDeployArgs', () => {
 });
 
 describe('runDeploy sequencing', () => {
-  it('takes the lease, reads the live record, composes, builds, switches, takes the links off, publishes, smoke-tests, then releases the lease', async () => {
+  it('takes the lease, reads the live record, builds, composes, switches, takes the links off, publishes, smoke-tests, then releases the lease', async () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const spine = [
       'lease:acquire:deploy',
       'live:read',
-      // A missing secret blocks the run before any machine exists, the builder included.
-      'task:compose-env',
+      // The build reports the target's description, which is checked before any value is read.
       'task:build-release',
+      'task:compose-env',
       'switch:backend,cdc,frontend',
       'task:clear-machine-links',
       'publish-entry',
@@ -237,7 +243,7 @@ describe('the run record', () => {
     expect(records.at(-1)?.log).toContain('[deploy] Switch machines: failed');
   });
 
-  it('ends blocked, not failed, when a required runtime value is missing, before any machine exists', async () => {
+  it('ends blocked, not failed, when a required runtime value is missing, before any machine of the release exists', async () => {
     const { fx, records, ops } = makeFake();
     const task = fx.task;
     fx.task = async (name, argv) => {
@@ -246,7 +252,24 @@ describe('the run record', () => {
     };
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/not set/);
     expect(records.at(-1)?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Compose runtime env' });
-    expect(ops.some((op) => op.startsWith('task:build-release') || op.startsWith('switch:'))).toBe(false);
+    expect(ops.some((op) => op.startsWith('switch:'))).toBe(false);
+  });
+
+  it('ends "apply needed", exit 2, before any value is read, for a target whose description differs from the applied engine\'s', async () => {
+    for (const fake of [
+      makeFake({ description: 'e'.repeat(64) }),
+      // A run that did not start from an engine image, as one on a definition from before the apply, and one built for another environment.
+      makeFake({ stamp: null }),
+      makeFake({ stamp: { mode: 'staging', descriptionHash: DESCRIPTION } }),
+    ]) {
+      const error = await runDeploy(baseOpts, fake.fx, fakeDeployEnv).catch((err: unknown) => err);
+      expect(error).toBeInstanceOf(ExitCodeError);
+      expect((error as ExitCodeError).exitCode).toBe(2);
+      expect(fake.records.at(-1)?.record).toMatchObject({ outcome: 'apply needed', failedStep: 'Check the description' });
+      expect(fake.records.at(-1)?.record.error).toMatch(/^apply needed: /);
+      expect(fake.ops.some((op) => op === 'task:compose-env' || op.startsWith('switch:'))).toBe(false);
+      expect(deployFailureHint(error, 'production')).toMatchObject({ command: 'pnpm infra apply --mode production' });
+    }
   });
 
   it('must not fail a deploy whose record cannot be written', async () => {

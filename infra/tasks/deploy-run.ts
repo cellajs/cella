@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { APPLY_NEEDED, applyNeeded, type EngineStamp, readEngineStamp } from '../lib/deploy/applied-engine';
 import { type DeployTarget, type LiveRecord, rolesToReplace } from '../lib/deploy/live-record';
+import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
 import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import type { MachineRole } from '../lib/machine-roles';
@@ -18,9 +20,10 @@ import { type AllowedKey, buildDeployEnv } from './deploy-env';
 import type { SwitchResult } from './switch-machines';
 
 /**
- * The whole deploy, in order: the lease, the live record's verdict, each role's env file, the build, the switch of every role that does not
- * serve the target, the links taken off the new machines, the frontend entry files, the smoke checks, and boot accounts on failure. The
- * main job runs this with the deploy key in `SCW_*`, the one key it needs; it touches no Pulumi state, no network and no pool.
+ * The whole deploy, in order: the lease, the live record's verdict, the build, the target's description held against the applied engine's,
+ * each role's env file, the switch of every role that does not serve the target, the links taken off the new machines, the frontend entry
+ * files, the smoke checks, and boot accounts on failure. The main job runs this with the deploy key in `SCW_*`, the one key it needs; it
+ * touches no Pulumi state, no network and no pool.
  */
 export interface DeployOptions {
   mode: string;
@@ -61,6 +64,8 @@ export interface DeployEffects {
   lease(stack: string, operation: 'deploy'): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
   /** The environment's machine roles, the live record and the rotation counter. */
   readLive(stack: string): Promise<{ roles: MachineRole[]; record: LiveRecord; rotation: number }>;
+  /** The stamp of the engine image the run started from; undefined outside one. */
+  engineStamp(): EngineStamp | undefined;
   /** Switch the roles given (tasks/switch-machines.ts). */
   switchMachines(request: SwitchRequest): Promise<void>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
@@ -80,6 +85,12 @@ const STEPS_WITH_MACHINES = new Set(['Switch machines', 'Take the links off the 
 export function deployFailureHint(err: unknown, mode: string): { description: string; command?: string } {
   const step = (err as { deployStep?: string } | undefined)?.deployStep;
   const where = step ? `It stopped at "${step}". ` : '';
+  if (errorMessage(err).startsWith(APPLY_NEEDED)) {
+    return {
+      description: `${where}An apply from a checkout at the target publishes its engine and description, then starts the target again:`,
+      command: `${actionCommand('apply')} --mode ${mode}`,
+    };
+  }
   if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: the live record says what serves.` };
   return {
     description: `${where}Re-running is safe: a role that switched serves the target and is left as it is. The run's record names each new machine's boot account, and Show runs prints a failed one:`,
@@ -203,14 +214,6 @@ export async function runDeploy(
     });
 
     if (!unchanged && live) {
-      // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
-      // runtime folder and writes each role's env file, which only it reads; a required value that is missing ends the run blocked before
-      // any machine exists, the builder included, and storing it starts the target again.
-      await step('Compose runtime env', async () => {
-        await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
-        envsWritten = true;
-      });
-
       // The release's archives and frontend files: a builder machine makes the missing ones and writes them through links, then the release's
       // entry files wait in a folder of their own for the publish below. No app code runs beside the deploy key.
       const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
@@ -234,6 +237,22 @@ export async function runDeploy(
           manifestFile,
         ]);
         manifest = parseReleaseManifest(await fx.readFile(manifestFile), opts.sha);
+      });
+
+      // The engine composes, boots and switches as its own description says: a target that describes the app otherwise ends the run
+      // before any value is read, and the apply that publishes its description starts it again.
+      await step('Check the description', () => {
+        const owed = applyNeeded({ stamp: fx.engineStamp(), mode: opts.mode, sha: opts.sha, description: manifest?.description });
+        if (owed) throw new ExitCodeError(owed, MAIN_JOB_EXIT.blocked);
+        say(`[deploy] ${opts.sha.slice(0, 10)} describes the app as the applied engine does`);
+      });
+
+      // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
+      // runtime folder and writes each role's env file, which only it reads; a required value that is missing ends the run blocked before
+      // any machine of the release exists, and storing it starts the target again.
+      await step('Compose runtime env', async () => {
+        await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
+        envsWritten = true;
       });
 
       // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
@@ -314,12 +333,10 @@ export async function runDeploy(
         .catch((err) => say(`[deploy] the links stay until they end, the env files until the bucket's rule: ${errorMessage(err)}`));
     }
     await lease?.release().catch((err) => say(`[deploy] lease release failed: ${errorMessage(err)}`));
-    // A required secret owed ends the run blocked, not failed: the operator stores it, then the same target.
-    const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
-    recorder.finish(
-      outcome === 'ok' ? (unchanged ? 'unchanged' : 'deployed') : blocked ? 'blocked' : 'failed',
-      outcome === 'ok' ? undefined : errorMessage(failure),
-    );
+    // A required secret or an apply owed ends the run blocked, not failed: the operator stores it or applies, then the same target.
+    const blocked = failure instanceof ExitCodeError && failure.exitCode === MAIN_JOB_EXIT.blocked;
+    const ended = blocked ? (errorMessage(failure).startsWith(APPLY_NEEDED) ? APPLY_NEEDED : 'blocked') : 'failed';
+    recorder.finish(outcome === 'ok' ? (unchanged ? 'unchanged' : 'deployed') : ended, outcome === 'ok' ? undefined : errorMessage(failure));
     const run = recorder.record().run;
     await persist();
     if (!recordUnwritable) fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`);
@@ -490,6 +507,7 @@ function createRealEffects(): DeployEffects {
       ]);
       return { roles: machineRoles(appConfig), record, rotation: rotations.counter };
     },
+    engineStamp: () => readEngineStamp(),
     async switchMachines(request) {
       const [
         { loadEngineConfig },
@@ -501,7 +519,7 @@ function createRealEffects(): DeployEffects {
         { liveSwitchEffects, switchMachines },
         { appEnvSuppliers },
         { telemetrySink },
-        { serviceEndpoints },
+        { supplierContext },
         { projectAccessKey },
       ] = await Promise.all([
         import('../config/engine-config'),
@@ -513,7 +531,7 @@ function createRealEffects(): DeployEffects {
         import('./switch-machines'),
         import('../config/env-suppliers.config'),
         import('../config/telemetry.config'),
-        import('../lib/services'),
+        import('../lib/env-suppliers'),
         import('../lib/scaleway/s3-client'),
       ]);
       const { GetObjectCommand } = await import('@aws-sdk/client-s3');
@@ -525,7 +543,6 @@ function createRealEffects(): DeployEffects {
       if (mode !== 'production' && mode !== 'staging') throw new Error(`a deploy goes to production or staging, not '${mode}'`);
       const s3 = await diagnosticsClient(region);
       const control = await controlClient(region);
-      const urls = new Map(serviceEndpoints(appConfig).map((endpoint) => [endpoint.slug as string, endpoint.url]));
       const foundation = await readFoundation({ secretKey }, { region, zone, projectId, naming, mode, roles: request.roles });
       const composeContent = await readFile(resolve(import.meta.dirname, '../compose.gen.yml'), 'utf8');
       const effects = liveSwitchEffects({
@@ -546,16 +563,7 @@ function createRealEffects(): DeployEffects {
           ),
         record: (role, entry) => recordRole(control, naming.bootDiagBucket, request.stack, role, entry, { by: controlActor() }),
         suppliers: appEnvSuppliers,
-        supplierContext: {
-          naming,
-          region,
-          mode,
-          serviceUrl: (slug) => {
-            const url = urls.get(slug);
-            if (!url) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`);
-            return url;
-          },
-        },
+        supplierContext: supplierContext(appConfig),
         composeContent,
         traceparent: process.env.TRACEPARENT,
         telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },

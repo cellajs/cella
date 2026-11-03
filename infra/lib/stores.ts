@@ -64,6 +64,8 @@ export interface StoreOps {
 export interface StoreProvisioner {
   /** Plugin discriminator, e.g. `'postgres-managed'`, `'database-url'`. */
   readonly kind: string;
+  /** The factory's own config, which the applied description holds: a change to it owes an apply. Plain data; no secret value. */
+  readonly settings?: object;
   /** Create the store's cloud resources (none for an external URL) and return its outputs and secret values. Called once by `resources/stores`; a rerun duplicates Pulumi resources. */
   provision(ctx: ProvisionContext): ProvisionedStore;
   /** Runtime-secret declarations this store owns, merged ahead of `runtime-secrets.config.ts`. Must be pure with no Pulumi access: it runs in CLI tasks too. */

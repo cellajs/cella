@@ -382,6 +382,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             // The agent image's base, at the root `engines.node`, by digest.
             NODE_IMAGE: pinnedNodeImage(nodeVersion, 'bookworm-slim'),
             FRONTEND: frontendBucket ? '1' : '',
+            APP_MODE: mode,
           },
           links,
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},

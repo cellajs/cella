@@ -29,11 +29,15 @@ export interface ArchiveDigest {
   bytes: number;
 }
 
-/** A release's manifest, `releases/<sha>/manifest.json`: every image archive by its repository name, and the frontend archive. */
+/**
+ * A release's manifest, `releases/<sha>/manifest.json`: every image archive by its repository name, the frontend archive, and the hash of
+ * the release's own description of the app for the environment (lib/deploy/app-description.ts), absent for a commit older than it.
+ */
 export interface ReleaseManifest {
   release: string;
   images: Record<string, ArchiveDigest>;
   frontend?: ArchiveDigest;
+  description?: string;
 }
 
 function digestOf(value: unknown, where: string): ArchiveDigest {
@@ -58,7 +62,16 @@ export function parseReleaseManifest(text: string, sha: string): ReleaseManifest
     if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`release manifest: '${name}' is no image name`);
     images[name] = digestOf(digest, name);
   }
-  return { release: sha, images, ...(parsed.frontend === undefined ? {} : { frontend: digestOf(parsed.frontend, 'frontend') }) };
+  const { description } = parsed;
+  if (description !== undefined && (typeof description !== 'string' || !/^[0-9a-f]{64}$/.test(description))) {
+    throw new Error('release manifest: description is no sha256');
+  }
+  return {
+    release: sha,
+    images,
+    ...(parsed.frontend === undefined ? {} : { frontend: digestOf(parsed.frontend, 'frontend') }),
+    ...(description === undefined ? {} : { description }),
+  };
 }
 
 /**

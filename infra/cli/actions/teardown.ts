@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { input } from '@inquirer/prompts';
+import { deleteAppliedEngine } from '../../lib/deploy/applied-engine';
 import { deleteLiveRecord } from '../../lib/deploy/live-record';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
@@ -182,10 +183,11 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
       }
       if (machines.length > 0) done.push(`deleted the machine(s) ${machines.join(', ')}`);
       // The kept boot-diag bucket keeps the rotations; the live record names machines that are gone, so the next setup's first deploy
-      // boots every role anew.
+      // boots every role anew, and the applied engine an image the registry loses with its namespace.
       const state = stateKeyOf(owner, projectId);
       const control = await makeControlClient(region, state.accessKey, state.secretKey);
       await deleteLiveRecord(control, naming.bootDiagBucket, stack);
+      await deleteAppliedEngine(control, naming.bootDiagBucket, stack);
       dump = await finalDump(context, owner);
       if (dump) done.push(`wrote the final dump ${naming.bootDiagBucket}/${dump}`);
       prepareState(stack, env, kept, done);

@@ -1,6 +1,7 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
 import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { exitOnIdentityChanges } from './identity';
@@ -10,7 +11,8 @@ import { askToApply, reviewPlan } from './plan';
 import { startBlockedTarget } from './start-deploy';
 
 /**
- * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
+ * Publish the engine image of this checkout, plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged
+ * resources (DB, VPC, private network, buckets, DNS, the main job and its engine) the read-only CI key cannot make.
  * The declared applications and their policies are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
  * The plan is made before the lease is taken, so it is taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
@@ -33,7 +35,18 @@ export async function runApply(context: InfraContext): Promise<void> {
   await admitOperatorOrExit(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);
-  const reviewed = await reviewPlan(context, operator, { forgetRetired: true });
+  // Built and pushed before the plan, so the plan shows the main job's new image: until the `up` names it, nothing runs it.
+  let engine: PublishedEngine | undefined;
+  try {
+    engine = await publishEngine({ appConfig: context.appConfig, projectId: context.projectId, secretKey: operator.secretKey });
+  } catch (error) {
+    console.error(`${crossMark} The engine image could not be published (${errorMessage(error)}). Nothing applied.`);
+    return endAction(1);
+  }
+  if (!engine) {
+    console.warn(`${warningMark} The registry has no namespace yet: this apply makes it, and the next one publishes the engine the main job runs.`);
+  }
+  const reviewed = await reviewPlan(context, operator, { forgetRetired: true, engineImage: engine?.image });
   if (!(await askToApply(context.environment))) {
     console.info('Declined; nothing applied.');
     return;
@@ -52,6 +65,7 @@ export async function runApply(context: InfraContext): Promise<void> {
     reviewed,
     verifyAfter: true,
     debugProvider,
+    engine,
   });
   if (completed && verified === false) endAction(1);
   if (completed) {

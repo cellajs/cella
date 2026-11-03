@@ -12,6 +12,7 @@ const values: BuilderValues = {
   REPO_KEY: 'github_pat_read_only',
   NODE_IMAGE: 'node:26-bookworm-slim',
   FRONTEND: '1',
+  APP_MODE: 'staging',
 };
 const links = { step: 'https://diag.s3.nl-ams.scw.cloud/boot-diag/builder/a/step?X-Amz-Signature=00', 'image:backend': 'https://x?y=1&z=2' };
 

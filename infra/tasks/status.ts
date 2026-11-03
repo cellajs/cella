@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
+import { readAppliedEngine } from '../lib/deploy/applied-engine';
 import { type LiveRecord, readLiveRecord } from '../lib/deploy/live-record';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { menuPath } from '../lib/operator-actions';
@@ -114,6 +115,11 @@ export function buildSession(ctx: StatusContext): ProbeSession {
           out.live = (await readLiveRecord(s3, controlBucket, ctx.mode)).record;
         } catch {
           // Leave live undefined (reported as unknown).
+        }
+        try {
+          out.applied = (await readAppliedEngine(s3, controlBucket, ctx.mode)) ?? null;
+        } catch {
+          // Leave applied undefined (reported as unknown).
         }
       } catch {
         // Leave every field undefined (reported as unknown).

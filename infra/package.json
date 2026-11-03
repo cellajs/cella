@@ -9,6 +9,7 @@
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
     "deploy": "tsx tasks/deploy.ts",
     "main-job": "tsx tasks/main-job.ts",
+    "description-hash": "tsx tasks/description-hash.ts",
     "status": "tsx tasks/status.ts",
     "repair-certs": "tsx tasks/repair-certs.ts",
     "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && rolldown agent/src/entry.ts --format cjs --platform node --file agent/dist/entry.cjs",
