@@ -51,8 +51,11 @@ Ship the alignment in the same PR as the breaking change:
    needs no `grep`. A behavior change is `caughtBy: nothing` and lists in `grep` what an app's own
    queries, parsers or tests would name: a table they join, a schema they parse, a config key.
 3. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
-   via a flag (e.g. `--extra-renames`) without editing the shipped script. Apps run the codemod
-   from an extracted copy, so it must not import from other folders of this repo.
+   via a flag without editing the shipped script; parse flags with `node:util` `parseArgs`. The
+   CLI's contract: it runs the codemod with `pnpm exec tsx` from the app root, passing
+   `<inventory|rewrite> <roots…>` (`--run` alone passes `inventory`), so those are the mode names.
+   Apps run an extracted copy, so it imports only `node:*` and the root devDependencies, never
+   another folder of this repo. The shipped copies of 2026-10 show the shape to copy.
 4. A schema change sets `generate: true` and ships what a combined generate needs: `hints.json`,
    the `--hints` array that answers drizzle's rename-or-create questions (a `create` hint for every
    new table or column in a diff that also drops one), and `data.sql`, the hand-written
