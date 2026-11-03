@@ -6,14 +6,14 @@ type Cfg = EngineConfig;
 /** Whether the config names a DNS zone to deploy under; a local mode leaves it empty. */
 export const hasDomain = (appConfig: Pick<Cfg, 'domain'>): boolean => appConfig.domain !== '';
 
-/** Report a frontend configured at the zone apex, where the load balancer creates no DNS record, certificate, or host route. Deploy paths require a subdomain. */
+/** Report a frontend configured at the zone apex, where the load balancer creates no DNS record or certificate. Deploy paths require a subdomain. */
 export function frontendApexIssue(appConfig: Cfg): string | undefined {
   const frontend = appConfig.services.frontend;
   if (!hasDomain(appConfig) || !frontend?.publicUrl || frontend.enabled === false) return undefined;
   const frontendHost = new URL(frontend.publicUrl).hostname;
   if (frontendHost !== appConfig.domain) return undefined;
   return (
-    `The app cannot be served at the zone apex ('${appConfig.domain}'): the load balancer gives an apex-hosted app no DNS record, TLS certificate, or host route. ` +
+    `The app cannot be served at the zone apex ('${appConfig.domain}'): the load balancer gives an apex-hosted app no DNS record or TLS certificate. ` +
     `Set origin (shared/config) to a subdomain, e.g. 'https://www.${appConfig.domain}'; the apex then 301-redirects to it automatically, preserving path and query.`
   );
 }

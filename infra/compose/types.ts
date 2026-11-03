@@ -10,8 +10,8 @@ export type ReplacementStrategy = 'start-first' | 'stop-first';
  */
 export type DrainPolicy = 'requests' | 'reconnect';
 
-/** Public load-balancer route: fallback app origin, dedicated host, or shared-host path. Absent keeps the service internal. */
-export type LbRoute = 'default' | 'host' | 'path';
+/** Public load-balancer route on the app origin: the fallback backend, or a path prefix. Absent keeps the service internal. */
+export type LbRoute = 'default' | 'path';
 
 /** Shared-host path prefix matched without stripping: leading slash, no trailing slash, and the service must serve under it. */
 export type PathPrefix = `/${string}`;
@@ -146,7 +146,7 @@ export interface AppServiceConfig {
   drainPolicy?: DrainPolicy;
   /** Drain window (seconds) a draining machine keeps its connections after its check turned red; defaults to 0. */
   drainSeconds?: number;
-  /** How the LB exposes this service publicly: `'default'` = fallback backend, `'host'` = own DNS record + cert + route. Omit for internal-only. */
+  /** How the LB exposes this service publicly: `'default'` = fallback backend, `'path'` = its `pathPrefix` on the app origin. Omit for internal-only. */
   lbRoute?: LbRoute;
   /** Additionally route `<prefix>` path-begins on the shared HTTPS frontend to this service. Only meaningful with `lbRoute`; see PathPrefix. */
   pathPrefix?: PathPrefix;

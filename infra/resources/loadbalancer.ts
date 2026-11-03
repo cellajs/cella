@@ -57,23 +57,13 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   // The default-route service owns the app host; the engine never names a service literal.
   const appHost = serviceHost(defaultService.slug);
+  // Every routed service shares the app host under its own path prefix, so one record and one certificate serve them all.
+  const elsewhere = lbServices.filter((s) => serviceHost(s.slug) !== appHost).map((s) => s.slug);
+  if (elsewhere.length > 0)
+    throw new Error(`loadbalancer: ${elsewhere.join(', ')} not on the app host '${appHost}': every routed service shares it under a path prefix.`);
   // Zone-apex resources belong to exactly one stack per zone, the one serving `www.<zone>`: a second stack's apex A record would round-robin production traffic to it.
   const managesApex = appHost === `www.${dnsZone}`;
-
-  // DNS and certificates are per unique hostname, not per service; the first service claims the resource name so shared same-origin hosts keep their URNs.
-
-  interface PublicHost {
-    host: string;
-    /** Resource base name of the first service carrying this host. */
-    base: string;
-  }
-
-  const hostEntries = new Map<string, PublicHost>();
-  for (const service of [defaultService, ...lbServices.filter((s) => s !== defaultService)]) {
-    const host = serviceHost(service.slug);
-    if (!hostEntries.has(host)) hostEntries.set(host, { host, base: baseName(service.slug) });
-  }
-  const publicHosts = [...hostEntries.values()];
+  const appBase = baseName(defaultService.slug);
 
   const lbIp = new scaleway.loadbalancers.Ip('lb-ip', { zone });
 
@@ -90,22 +80,15 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const lbPublicIp = lb.ipAddress;
 
-  const dnsRecords = new Map<string, scaleway.domain.Record>();
-  const dnsGates = new Map<string, DnsPropagationGate>();
-  for (const { host, base } of publicHosts) {
-    // A host that is the zone apex gets no own record, cert, or route; the apex handling below covers it.
-    if (host === dnsZone) continue;
-    const record = new scaleway.domain.Record(`${base}-dns`, {
-      dnsZone,
-      name: host.replace(`.${dnsZone}`, ''),
-      type: 'A',
-      data: lbPublicIp,
-      ttl: 300,
-    });
-    dnsRecords.set(host, record);
-    // Hold the cert request until the record answers on public resolvers, so ACME validation never races propagation.
-    dnsGates.set(host, new DnsPropagationGate(`${base}-dns-gate`, { fqdn: host, expectedIp: lbPublicIp }, { dependsOn: [record] }));
-  }
+  const appDns = new scaleway.domain.Record(`${appBase}-dns`, {
+    dnsZone,
+    name: appHost.replace(`.${dnsZone}`, ''),
+    type: 'A',
+    data: lbPublicIp,
+    ttl: 300,
+  });
+  // Hold the cert request until the record answers on public resolvers, so ACME validation never races propagation.
+  const appDnsGate = new DnsPropagationGate(`${appBase}-dns-gate`, { fqdn: appHost, expectedIp: lbPublicIp }, { dependsOn: [appDns] });
 
   // The apex points at the LB so the apex-to-www redirect ACL below can answer.
   let apexDns: scaleway.domain.Record | undefined;
@@ -117,19 +100,12 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   // Wait for public DNS resolution before ACME, then for certificate readiness before attachment, so issuance failures report certificate-level detail.
 
-  const certs = new Map<string, scaleway.loadbalancers.Certificate>();
-  const certGates: CertReadyGate[] = [];
-  for (const { host, base } of publicHosts) {
-    const dns = dnsRecords.get(host);
-    if (!dns) continue; // apex-hosted: covered by the apex cert below
-    const cert = new scaleway.loadbalancers.Certificate(
-      `${base}-cert`,
-      { lbId: lb.id, name: naming.resource(`${base}-cert`), letsencrypt: { commonName: host } },
-      { dependsOn: [dns, dnsGates.get(host)!] },
-    );
-    certs.set(host, cert);
-    certGates.push(new CertReadyGate(`${base}-cert-ready`, { certificateId: cert.id }, { dependsOn: [cert] }));
-  }
+  const appCert = new scaleway.loadbalancers.Certificate(
+    `${appBase}-cert`,
+    { lbId: lb.id, name: naming.resource(`${appBase}-cert`), letsencrypt: { commonName: appHost } },
+    { dependsOn: [appDns, appDnsGate] },
+  );
+  const certGates = [new CertReadyGate(`${appBase}-cert-ready`, { certificateId: appCert.id }, { dependsOn: [appCert] })];
 
   let apexCert: scaleway.loadbalancers.Certificate | undefined;
   if (managesApex && apexDns && apexDnsGate) {
@@ -228,7 +204,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     });
   }
 
-  const allCertIds: pulumi.Input<string>[] = [...certs.values()].map((cert) => cert.id);
+  const allCertIds: pulumi.Input<string>[] = [appCert.id];
   if (apexCert) allCertIds.push(apexCert.id);
 
   const httpsFrontend = new scaleway.loadbalancers.Frontend(
@@ -246,16 +222,6 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       dependsOn: certGates,
     },
   );
-
-  // Host-header routes for every host-routed service with a DNS record.
-  for (const service of lbServices) {
-    if (service.lbRoute !== 'host' || !dnsRecords.has(serviceHost(service.slug))) continue;
-    new scaleway.loadbalancers.Route(`${baseName(service.slug)}-route`, {
-      frontendId: httpsFrontend.id,
-      backendId: backends.get(service.slug)!.id,
-      matchHostHeader: serviceHost(service.slug),
-    });
-  }
 
   // Same-origin path routes keep their prefix and otherwise fall through to the app backend. A Scaleway route matches one criterion, so prefixes are registry-declared and validated.
   for (const service of lbServices) {
