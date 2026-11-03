@@ -9,7 +9,7 @@ import {
 } from '../../lib/deploy/boot-accounts';
 import { findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
-import { type RunRecord, runSummaryLine } from '../../lib/deploy/run-record';
+import { type Growth, type RunRecord, rewriteNote, runSummaryLine } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -41,11 +41,21 @@ async function bootLines(record: RunRecord, store: RunStore): Promise<string[]> 
   return lines;
 }
 
-/** One run in full: its steps with their durations, how it ended, a failed machine's boot account, and the end of its log. */
-async function runDetailLines(record: RunRecord, store: RunStore): Promise<string[]> {
+/** A record or a log whose versions stopped growing: what is shown is the newest version before that. */
+function rewriteLines(what: string, growth: Growth<unknown> | undefined): string[] {
+  return growth?.rewrite ? [`  ${warningMark} ${what} ${rewriteNote(growth.rewrite)}; shown as it stood before`] : [];
+}
+
+/**
+ * One run in full: its steps with their durations, how it ended, a failed machine's boot account, and the end of its log, each read by its
+ * first version.
+ */
+async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Promise<string[]> {
+  const record = reading.newest;
   const log = await store.readLog(record.run);
   return [
     `${pc.bold(record.run)}: ${record.target} to ${record.environment}, ${record.outcome}${record.failedStep ? ` at "${record.failedStep}"` : ''}`,
+    ...rewriteLines('the record was', reading),
     ...record.steps.map((step) => `  ${step.outcome === 'ok' ? ' ' : crossMark} ${step.title.padEnd(40)} ${String(step.seconds).padStart(4)} s`),
     ...(record.error ? ['', `  ${record.error}`] : []),
     ...(await bootLines(record, store)),
@@ -53,7 +63,8 @@ async function runDetailLines(record: RunRecord, store: RunStore): Promise<strin
       ? [
           '',
           pc.dim(`  The end of its log (${LOG_TAIL} lines):`),
-          ...log
+          ...rewriteLines('the log was', log),
+          ...log.newest
             .trimEnd()
             .split('\n')
             .slice(-LOG_TAIL)
@@ -98,26 +109,29 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
 }
 
 /**
- * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. The environment's job runs that left
- * no record are listed beside the records (D27), so a run is never missing from the list. With the main job's definition, a run started with
- * values or a command of its own is flagged.
+ * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. A record is read by its first
+ * version, and one whose versions stopped growing is flagged as rewritten. The environment's job runs that left no record are listed beside
+ * the records (D27), so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
+ * own is flagged.
  */
 export async function showRuns(
   store: RunStore,
   opts: { pick: boolean; print?: (line: string) => void; jobRuns?: readonly JobRun[]; definition?: JobDefinitionFacts; environment?: string },
 ): Promise<void> {
   const print = opts.print ?? ((line: string) => console.info(line));
-  const records = (await Promise.all((await store.listRuns(LIST_LENGTH)).map((run) => store.readRecord(run)))).filter((record): record is RunRecord =>
-    Boolean(record),
+  const readings = (await Promise.all((await store.listRuns(LIST_LENGTH)).map((run) => store.readRecord(run)))).filter(
+    (reading): reading is Growth<RunRecord> => Boolean(reading),
   );
+  const records = readings.map((reading) => reading.newest);
   const jobRuns = opts.jobRuns ?? [];
   // A full list's oldest record bounds the job runs: an older run's record is past the list, not missing.
   const since = records.length === LIST_LENGTH ? (records.at(-1)?.startedAt ?? '') : '';
   const unrecorded = jobRuns.filter((run) => (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record)));
   const rows = [
-    ...records.map((record) => {
+    ...readings.map(({ newest: record, rewrite }) => {
       const run = jobRuns.find((candidate) => wroteRecord(candidate, record));
-      return { at: record.startedAt, line: `${runSummaryLine(record)}${disagreement(record, run)}${ownValues(run, opts.definition)}` };
+      const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
+      return { at: record.startedAt, line: `${runSummaryLine(record)}${rewritten}${disagreement(record, run)}${ownValues(run, opts.definition)}` };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
@@ -126,10 +140,10 @@ export async function showRuns(
   ].sort((a, b) => b.at.localeCompare(a.at));
   if (rows.length === 0) return print('No run has left a record yet.');
   for (const row of rows.slice(0, LIST_LENGTH)) print(`  ${row.line}`);
-  const [newest] = records;
+  const [newest] = readings;
   if (!newest) return;
   const chosen = opts.pick
-    ? await select({ message: 'Show which run?', choices: records.map((record) => ({ name: runSummaryLine(record), value: record })) })
+    ? await select({ message: 'Show which run?', choices: readings.map((reading) => ({ name: runSummaryLine(reading.newest), value: reading })) })
     : newest;
   print('');
   for (const line of await runDetailLines(chosen, store)) print(line);

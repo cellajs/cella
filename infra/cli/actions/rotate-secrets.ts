@@ -12,6 +12,7 @@ import { recordRotation } from '../../tasks/record-rotation';
 import {
   acquireStackLockOrExit,
   confirmOrDefault,
+  endsAction,
   type InfraContext,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
@@ -19,18 +20,20 @@ import {
 } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
-import { startTargetAfterRotation } from './start-deploy';
+import { redeployAfterRotation } from './start-deploy';
 
 /**
  * Rotate the secrets the engine checks, on the operator key: a fresh password for every database role (set on the live role through the
  * database API) and a fresh value for every rotatable generated secret, every consumer's copy rewritten. A key that protects stored data is
- * not rotatable here (lib/runtime-secrets.ts). The rotation is recorded in the control object, and its counter makes the deploy it starts at
- * its end replace every machine. Third-party keys are pasted anew in "Manage runtime secrets".
+ * not rotatable here (lib/runtime-secrets.ts). The rotation is recorded in the control object, and its counter makes the deploys it starts
+ * at its end (the live release again, then the target) replace every machine. Third-party keys are pasted anew in "Manage runtime secrets".
  */
 export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(
-    pc.dim(`\n${actionLabel('rotate-secrets')}: fresh database role passwords and generated values, then a deploy that replaces every machine.\n`),
+    pc.dim(
+      `\n${actionLabel('rotate-secrets')}: fresh database role passwords and generated values, then the live release deployed again, which replaces every machine.\n`,
+    ),
   );
   console.warn(
     `${warningMark} The running machines keep the old values until that deploy replaces them, and the database refuses the new connections they open with the old passwords.`,
@@ -68,7 +71,8 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   } finally {
     await lock.release();
   }
-  await startTargetAfterRotation(context, operator).catch((error) =>
-    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
-  );
+  await redeployAfterRotation(context, operator).catch((error) => {
+    if (endsAction(error)) throw error;
+    console.warn(`${warningMark} Could not start the deploy (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`);
+  });
 }
