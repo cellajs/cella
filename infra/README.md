@@ -145,7 +145,7 @@ One name per concept across code and docs:
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links, holds no key, and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
 | **env file** | One machine's `.env.runtime`, composed by the deploy from the runtime folder, fetched once through a link and kept on the machine. |
-| **link** | A presigned Object Storage URL the deploy key signs: one call on one object, until it ends within minutes. |
+| **link** | A presigned Object Storage URL the deploy key signs: one call on one object, until it ends within the hour. |
 | **role** | A kind of machine: a service with a machine of its own, or under `singleVM` the host, which carries every service. |
 | **machine** | One server a deploy made for one release and one role, named `<slug>-<role>-<slot>`; deleted with the release it runs. |
 | **slot** | `a` or `b`: one of a routed role's two reserved addresses, which its pools list for good. A deploy boots on the slot that does not serve. |
