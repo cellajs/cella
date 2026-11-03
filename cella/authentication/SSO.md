@@ -44,7 +44,7 @@ A person who signed up before their institution was connected, or whose identifi
 
 ## Tenant sign-in policy
 
-`tenants.authStrategies` (empty = every enabled method) is enforced by `tenantGuard`. A person who holds an identity through the tenant's connection must act with an allowed method, and with a federation only through that connection, by session or by an access token, which carries the method and connection of the session that consented. Otherwise the request is refused with `sso_required`. Externals without such an identity are untouched. System admins are exempt, also while they act as a user through an impersonation.
+`tenants.authStrategies` (empty = every enabled method) is enforced by `tenantGuard`. A person who holds an identity through the tenant's connection must act with an allowed method, and with a federation only through that connection, by session or by an access token, which carries the method and connection of the session that consented. Otherwise the request is refused with `sso_required`. Externals without such an identity are untouched. System admins are exempt.
 
 The policy guards tenant routes only. Under a refused method the person still reads their own inbox (`GET /notifications`, which names the tenant's channels and items), their organizations (`GET /organizations`), their memberships (`/me/memberships`) and the profiles of their co-members (`GET /users/{id}`).
 

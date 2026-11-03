@@ -29,11 +29,11 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### A2 Sessions and cookies
 - **Gain:** account takeover.
-- **Merges:** the cookie MAC, attributes, injection through a name or attribute value, fixation at sign-in, the session cap, sign-out ending the stream and the cache entry, impersonation, last-seen, session cache races.
+- **Merges:** the cookie MAC, attributes, injection through a name or attribute value, fixation at sign-in, the session cap, sign-out ending the stream and the cache entry, last-seen, session cache races.
 - **Advisories:** 5 (hono cookie name and attribute injection, NBSP prefix on read).
 - **Files:**
   - `backend/src/modules/auth/general/helpers/cookie.ts`: the only module importing `hono/cookie` (`setCookie`, `getCookie`, `deleteCookie`).
-  - `backend/src/modules/auth/sessions/`: `operations/{create-session,resolve-session,sign-out,impersonation,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
+  - `backend/src/modules/auth/sessions/`: `operations/{create-session,resolve-session,sign-out,revoke-sessions}.ts`, `helpers/sign-in-context.ts`, `sessions-queries.ts`, `session-listeners.ts`.
   - `backend/src/middlewares/guard/session-cache.ts` (TTL 10 s), `backend/src/middlewares/update-last-seen.ts`.
   - Other session writers: `modules/me/me-handlers.ts`, `modules/me/operations/{revoke-my-sessions,toggle-mfa}.ts`, `modules/user/operations/delete-accounts.ts`, `modules/entities/entities-listeners.ts`, `modules/entities/operations/stream-session-sweep.ts`.
   - `backend/src/modules/oauth-server/provider.ts`: oidc-provider's own cookies, signed with `cookieSecrets`.
@@ -41,11 +41,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `cella/authentication/SESSIONS.md`. The `Set-Cookie` mentions in `auth/{oauth,totps,passkeys,general}/*-routes.ts` are OpenAPI header documentation only.
 - **Holds:**
   - `cookie-integrity`: an unsigned cookie, a value signed for another cookie name, a past max age, a foreign secret.
-  - `session-model`: a forged secret via a cached session id, the stored hash replayed as a cookie, an expired session via a warm cache, a failed lookup that must not sign out, a forged `adminUserId` at stop.
+  - `session-model`: a forged secret via a cached session id, the stored hash replayed as a cookie, an expired session via a warm cache, a failed lookup that must not sign out.
   - `session-cache-race`: a revoked session kept by an in-flight lookup.
-  - `session-endings`: sign-out, revoke from another device, MFA on, cap eviction, same-browser replace, stopped impersonation, deleted account; the open stream and cache entry die with the session.
-  - `session-sweep`: a session revoked on another instance, expired, user deleted outside the API, impersonation whose admin lost session or role.
-  - `impersonation` (cookie without the admin session, disallowed address, no second impersonation, role loss) and `impersonation-last-seen`.
+  - `session-endings`: sign-out, revoke from another device, MFA on, cap eviction, same-browser replace, deleted account; the open stream and cache entry die with the session.
+  - `session-sweep`: a session revoked on another instance, expired, user deleted outside the API.
   - `tests/sign-in/session-cap` (oldest beyond the cap evicted) and `tests/sign-in/sign-out` (a forged cookie naming the victim's session id revokes nothing).
   - `auth/tokens/token-policies.test.ts`: SameSite per policy.
 - **Asks:** every `setCookie` call's name and attribute values against the five advisories (does any value come from a request?); a new session id at sign-in; what a stolen cookie does after sign-out.
@@ -53,7 +52,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### A3 Second factors and step-up
 - **Gain:** account takeover.
-- **Merges:** WebAuthn verification (origin, rpId, one purpose and one answer per challenge, counter, attestation), TOTP (encrypted secret, lockout in every process, replay), the step-up window and its methods, the factor race, MFA on and off, the lost-factor path, no step-up under impersonation.
+- **Merges:** WebAuthn verification (origin, rpId, one purpose and one answer per challenge, counter, attestation), TOTP (encrypted secret, lockout in every process, replay), the step-up window and its methods, the factor race, MFA on and off, the lost-factor path.
 - **Advisories:** 1 (simplewebauthn attestation chain).
 - **Files:**
   - `backend/src/modules/auth/{passkeys,totps,mfa,step-up}/`. `auth/mfa` has no routes file: `mfa-queries.ts`, `operations/{factor-rules,mfa-challenge}.ts`; the toggle route is in `me-routes.ts` with `modules/me/operations/toggle-mfa.ts`.
@@ -69,8 +68,8 @@ One class is one review iteration. The scout verifies every path below at the re
   - `mfa-challenge`: a second session via a completed challenge's cookie; a wrong factor keeps the challenge open.
   - `totp-replay`: a replayed code on MFA, a sign-in code reused as step-up, a setup code reused as second factor, one code sent twice at once.
   - `brute-force-limits`: guessing codes via `/auth/step-up`, many accounts from one address, one account from many addresses, a lockout ended in the database but still held in a process.
-  - `step-up`: a sign-in or MFA passkey response used as step-up, a wrong code, impersonation with a factor or emailed code, a code mailed to another session, no mail code with MFA on.
-  - `step-up-routes`: stale session, impersonation, another session's step-up, expired window, recent sign-in without a held factor, SSO without MFA, for every guarded route.
+  - `step-up`: a sign-in or MFA passkey response used as step-up, a wrong code, a code mailed to another session, no mail code with MFA on.
+  - `step-up-routes`: stale session, another session's step-up, expired window, recent sign-in without a held factor, SSO without MFA, for every guarded route.
   - `step-up-db-failure`: a pool timeout or deadlock answers 503 or 409, never a 401 that counts as a wrong code, and stamps nothing.
   - `mfa-factor-race` (factor delete racing the MFA toggle), `mfa-step-up` (the toggle needs step-up, MFA on needs both factors, an SSO session cannot turn MFA on).
   - `tests/sign-in/{totp,passkey}` (another user's passkey id on delete, a second key refused); `tests/sign-in/devices*` and `device-id` cover new-browser notices and device cookies.
@@ -185,7 +184,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B2 Roles and function-level access
 - **Gain:** escalation inside a tenant.
-- **Merges:** role escalation on a membership update, the last admin, invitations (role against the inviter's, resend, pending, rejected, draft), the service-account role cap and bindings, `system_roles` written by the admin connection only, the system role in user lists, tenant lifecycle actions, impersonation scope, app-defined roles (`elevated`, `prepareRoles`).
+- **Merges:** role escalation on a membership update, the last admin, invitations (role against the inviter's, resend, pending, rejected, draft), the service-account role cap and bindings, `system_roles` written by the admin connection only, the system role in user lists, tenant lifecycle actions, app-defined roles (`elevated`, `prepareRoles`).
 - **Advisories:** 2 (hono improper authorization, JWT scheme).
 - **Files:**
   - `backend/src/modules/memberships/` (also holds the invitation routes in `memberships-routes.ts`).
@@ -193,7 +192,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
   - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
-  - Call sites: `startImpersonation` in `auth/general/general-routes.ts`; `deleteMyMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
+  - Call sites: `deleteMyMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
   - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
@@ -201,7 +200,6 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/invitations/*`: draft invites held, only `prepareRoles` dispatch, a member cannot publish; invite and accept flows.
   - `tests/service-accounts`: a member cannot create an account, key scopes mask grants, revoke through another account, no grant at the tenant door, quota.
   - `tests/integration/system-roles-write-guard`: `runtime_role` cannot insert, update or delete `system_roles` even with the grant open; the admin connection and the user-delete cascade still work.
-  - `impersonation`: the cookie alone does nothing, a second impersonation is refused, it ends with the admin session or role.
   - `user-list-system-role` (B3 field visibility, listed because the plan names it); `tests/system-update-user`; `tests/tenants`.
   - The frontend parity test of the `can` map.
 - **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table; the parity test under an app's hierarchy.
@@ -243,8 +241,8 @@ One class is one review iteration. The scout verifies every path below at the re
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{app-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
 - **Holds:**
-  - `session-endings`: a signed-out, revoked, evicted, replaced, MFA-superseded, impersonation or deleted-account session keeps streaming.
-  - `session-sweep`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role, an impersonation whose admin lost the session; a stalled reader stalls the sweep.
+  - `session-endings`: a signed-out, revoked, evicted, replaced, MFA-superseded or deleted-account session keeps streaming.
+  - `session-sweep`: a session revoked on another instance, expired, deleted outside the API, a removed system role, a gained role; a stalled reader stalls the sweep.
   - `outside-writes`: a removed member keeps reading through a cached session after a CDC membership event; the bindings version moves at every membership write.
   - `entities/stream/dispatch-mirror.test.ts`: a removed member still receives, draft rows reach anyone, a several-row event misses its second-row reader.
   - `entities/stream/send-signal.test.ts`: a signal reaching another user, a stream whose membership is gone, another organization or an undeclared type.
@@ -473,7 +471,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Session expiry is rechecked outside the cache (`resolve-session.ts`); the token grant is read per use (`service-guard.ts`).
   - `points-cache.test.ts`: window and debt.
 - **Asks:** a cache inventory: key, what the answer depends on, invalidation source, TTL, test; a grep for module-level mutable state in request paths.
-- **Not this class:** who may read an entity belongs to B1. Token lifetimes and the key cache TTL belong to A5. Session lifecycle, impersonation and revoke belong to A2. Yjs relay socket authorization held for a socket's life (`yjs/src/sync/session-manager.ts`) belongs to B5. SSE subscriber state (`entities/stream/subscriber-manager.ts`) belongs to B4 and A2. HLC state belongs to C1 and E2.
+- **Not this class:** who may read an entity belongs to B1. Token lifetimes and the key cache TTL belong to A5. Session lifecycle and revoke belong to A2. Yjs relay socket authorization held for a socket's life (`yjs/src/sync/session-manager.ts`) belongs to B5. SSE subscriber state (`entities/stream/subscriber-manager.ts`) belongs to B4 and A2. HLC state belongs to C1 and E2.
 
 ## D. What comes out
 
@@ -537,7 +535,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/push/{push-sender,push-queries,push-schema,push-routes,push-handlers}.ts`, `helpers/push-service-endpoint.ts`.
   - `backend/src/modules/requests/helpers/send-matrix-message.ts` (caller `requests/operations/create-request.ts`).
   - `mailer.sendEmails` callers: `send-invitation-mails.ts`, `send-magic-link.ts`, `send-step-up-code.ts`, `send-oauth-verification-email.ts`, `send-account-security-email.ts`, `confirm-invitation-address.ts`, `create-request.ts`, `remove-archived-tenants.ts`, `send-newsletter.ts`, `run-digest.ts`, `send-instant-emails.ts`.
-  - `sendInvitationMails` callers: `create-memberships.ts`, `deferred-invites.ts`, `resend-pending-invitation.ts`, `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `impersonation.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
+  - `sendInvitationMails` callers: `create-memberships.ts`, `deferred-invites.ts`, `resend-pending-invitation.ts`, `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
   - CSRF skip: `backend/src/middlewares/app.ts`. Limiters: `backend/src/middlewares/rate-limiter/limiters.ts` (`spamLimiter`), `core.ts`.
 - **Holds:**
   - Brevo tag injection: `neutralizeBrevoTags` breaks every opener except the mailer's nonce-keyed placeholders (`tests/emails/brevo-send`).
@@ -563,11 +561,11 @@ One class is one review iteration. The scout verifies every path below at the re
   - Declared in routes through `xRateLimiter` and exported to the OpenAPI document as `x-rate-limiter` (`backend/src/core/openapi-extensions.ts`); `route-guards.test.ts` reads `x-guard` and `x-enabled-by` from `app.getOpenAPI31Document`. `insertEntityLock` is listed as a rate limiter (`backend/src/middlewares/insert-entity-lock.ts`).
   - Limiters outside routes: `serviceBurstLimiter` in `service-guard.ts`; `totp-budget.ts` (account tier); `create-request.ts` (one account-exists mail per address per day); `notify-sign-in.ts` (daily sign-in notice budget per user); `clientMetadataFetchLimiter` through `chargeLimiter`.
 - **Holds:**
-  - `brute-force-limits`: a magic-link mail flood from new client addresses; the cap telling no account from none and letting the owner sign in; step-up guessing and impersonation refusals not spending the budget; check-email lookups; many accounts from one address, with a shared-address positive control; one account from many addresses; a parallel burst on TOTP; a lockout ended in the database but held in a process; navigation past the budget redirects.
+  - `brute-force-limits`: a magic-link mail flood from new client addresses; the cap telling no account from none and letting the owner sign in; step-up guessing; check-email lookups; many accounts from one address, with a shared-address positive control; one account from many addresses; a parallel burst on TOTP; a lockout ended in the database but held in a process; navigation past the budget redirects.
   - `rate-limiter/tests/burst-budgets.test.ts`: a parallel burst cannot pass a failure, send or points budget. `budget-enforcement.test.ts`: tenant budget exact, clamped to the ceiling, 0 means ceiling, no second budget inside a window.
   - `tiers.test.ts`: failures counted in hourly and daily tiers, the 24 h tier holds, a failing store gives no 500 (attempt uncounted), error redirects counted.
   - `identifier-validation.test.ts`: no address in the clear in the key, IPv6 /64 and case share one bucket, an empty key refused. `points-cache.test.ts`: fast-path accounting. `limiter-scope.test.ts`: `chargeLimiter` outside a request refuses.
-  - `tests/sign-in/session-cap`: the per-user session cap evicts the oldest sessions, counts MFA sessions, spares impersonation.
+  - `tests/sign-in/session-cap`: the per-user session cap evicts the oldest sessions, counts MFA sessions.
   - `tests/tenants` (a retry of `selfCreateTenant` reuses the orphan tenant).
 - **Asks:** route x limiter from the OpenAPI document, as route-guards.test does, with the reason each unlimited route is cheap; the store-down decision; budgets against code spaces.
 - **Not this class:** entropy and guessability of tokens belong to A1 and A5. The TOTP window and daily restart belong to A3. The stream cap belongs to B4. MCP tool charges belong to B6. Body and batch caps belong to C1. Invitation address takeover belongs to C7. Upload content and size belong to C6.
