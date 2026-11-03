@@ -148,7 +148,12 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              {/* A link cannot sit in the trigger button, so the body's schema link leads the panel */}
+              {response.detail && (
+                <p className="max-w-measure px-3 pt-1 pb-3 text-foreground-soft">
+                  <SpecText text={response.detail} />
+                </p>
+              )}
+              {/* A link cannot sit in the trigger button, so the body's schema link follows the detail in the panel */}
               {namedBody && <ResponseBody schema={namedBody} className="pt-1 pb-3" />}
               {response.headers && (
                 // px-3 and leading-normal match the viewer below; a note, since an alert role announces on every opening of the panel

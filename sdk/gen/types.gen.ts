@@ -789,7 +789,9 @@ export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
 
 export type CheckEmailResponses = {
   /**
-   * Whether this browser is recognized for the address
+   * Browser recognition
+   *
+   * Whether this browser signed in to the account with this address before, by its device cookie.
    */
   200: {
     recognized: boolean;
@@ -816,7 +818,9 @@ export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
 
 export type GetPendingMfaResponses = {
   /**
-   * The address of the account the held challenge signs in to
+   * Pending sign-in address
+   *
+   * The address of the account the held MFA challenge signs in to.
    */
   200: {
     email: string;
@@ -990,7 +994,9 @@ export type ConfirmInvitationAddressError = ConfirmInvitationAddressErrors[keyof
 
 export type ConfirmInvitationAddressResponses = {
   /**
-   * Confirmation link sent to the invited address
+   * Confirmation link sent
+   *
+   * A new link, bound to the signed-in account, went to the invited address. Every older link stops working.
    */
   204: void;
 };
@@ -1025,7 +1031,9 @@ export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[key
 
 export type ResendInvitationWithTokenResponses = {
   /**
-   * Invitation email sent when the invitation is pending
+   * Accepted
+   *
+   * An email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist.
    */
   204: void;
 };
@@ -1090,7 +1098,9 @@ export type SendMagicLinkError = SendMagicLinkErrors[keyof SendMagicLinkErrors];
 
 export type SendMagicLinkResponses = {
   /**
-   * Accepted alike whether a link, a pointer to the institution or nothing was mailed
+   * Accepted
+   *
+   * The same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account.
    */
   204: void;
 };
@@ -1123,7 +1133,9 @@ export type GetPendingMagicLinkError = GetPendingMagicLinkErrors[keyof GetPendin
 
 export type GetPendingMagicLinkResponses = {
   /**
-   * The full address the held link signs in, as the confirm page shows it
+   * Pending sign-in address
+   *
+   * The full address the held link signs in to, as the confirm page shows it.
    */
   200: {
     email: string;
@@ -1954,7 +1966,9 @@ export type SendSsoRecoveryLinkError = SendSsoRecoveryLinkErrors[keyof SendSsoRe
 
 export type SendSsoRecoveryLinkResponses = {
   /**
-   * The address the link was sent to
+   * Recovery link sent
+   *
+   * The body names the address the link went to.
    */
   200: {
     email: string;
@@ -2737,7 +2751,9 @@ export type GetUploadTokenError = GetUploadTokenErrors[keyof GetUploadTokenError
 
 export type GetUploadTokenResponses = {
   /**
-   * Upload token with a scope for a user or organization
+   * Upload token
+   *
+   * Its storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.
    */
   200: UploadToken;
 };
@@ -2971,7 +2987,9 @@ export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkN
 
 export type MarkNotificationsReadResponses = {
   /**
-   * Number of notifications marked read
+   * Marked read
+   *
+   * `updated` is the number of notifications this request marked read.
    */
   200: {
     updated: number;
@@ -3039,7 +3057,7 @@ export type UpdateNotificationPreferencesError = UpdateNotificationPreferencesEr
 
 export type UpdateNotificationPreferencesResponses = {
   /**
-   * Updated notification preferences
+   * Preferences updated
    */
   200: {
     mentionEmail: boolean;
@@ -3207,7 +3225,9 @@ export type DeletePushSubscriptionError = DeletePushSubscriptionErrors[keyof Del
 
 export type DeletePushSubscriptionResponses = {
   /**
-   * Number of subscriptions removed
+   * Subscriptions removed
+   *
+   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
    */
   200: {
     deleted: number;
@@ -3426,7 +3446,9 @@ export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsEr
 
 export type GetUnseenCountsResponses = {
   /**
-   * Unseen counts per parent channel entity per entity type
+   * Unseen counts
+   *
+   * Keyed by parent channel entity id, then by product entity type.
    */
   200: {
     [key: string]: {
@@ -4768,7 +4790,9 @@ export type CreateAttachmentsError = CreateAttachmentsErrors[keyof CreateAttachm
 
 export type CreateAttachmentsResponses = {
   /**
-   * Nothing created: rows an earlier attempt created (idempotent), and rejected ids
+   * Nothing created
+   *
+   * This request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.
    */
   200: {
     data: Array<Attachment>;
@@ -5022,7 +5046,7 @@ export type LinkAttachmentKeysError = LinkAttachmentKeysErrors[keyof LinkAttachm
 
 export type LinkAttachmentKeysResponses = {
   /**
-   * Attachment with its stored file
+   * Attachment with stored file
    */
   200: Attachment;
 };
@@ -5081,7 +5105,9 @@ export type HandleMcpErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names
+   * Insufficient scope
+   *
+   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
    */
   403: {
     jsonrpc: '2.0';
@@ -5303,7 +5329,9 @@ export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof Check
 
 export type CheckMembershipInviteResponses = {
   /**
-   * What an invite would do with each address
+   * Invite outcomes
+   *
+   * One outcome per address, judged from the members and invitations the caller can see.
    */
   200: {
     outcomes: Array<InviteOutcome>;

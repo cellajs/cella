@@ -660,14 +660,18 @@ export const zCheckEmailBody = z.object({
 });
 
 /**
- * Whether this browser is recognized for the address
+ * Browser recognition
+ *
+ * Whether this browser signed in to the account with this address before, by its device cookie.
  */
 export const zCheckEmailResponse = z.object({
   recognized: z.boolean(),
 });
 
 /**
- * The address of the account the held challenge signs in to
+ * Pending sign-in address
+ *
+ * The address of the account the held MFA challenge signs in to.
  */
 export const zGetPendingMfaResponse = z.object({
   email: z.string(),
@@ -707,7 +711,9 @@ export const zGetTokenDataResponse = z.object({
 export const zAcceptInvitationTokenResponse = zChannelBase;
 
 /**
- * Confirmation link sent to the invited address
+ * Confirmation link sent
+ *
+ * A new link, bound to the signed-in account, went to the invited address. Every older link stops working.
  */
 export const zConfirmInvitationAddressResponse = z.void();
 
@@ -716,7 +722,9 @@ export const zResendInvitationWithTokenBody = z.object({
 });
 
 /**
- * Invitation email sent when the invitation is pending
+ * Accepted
+ *
+ * An email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist.
  */
 export const zResendInvitationWithTokenResponse = z.void();
 
@@ -731,12 +739,16 @@ export const zSendMagicLinkBody = z.object({
 });
 
 /**
- * Accepted alike whether a link, a pointer to the institution or nothing was mailed
+ * Accepted
+ *
+ * The same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account.
  */
 export const zSendMagicLinkResponse = z.void();
 
 /**
- * The full address the held link signs in, as the confirm page shows it
+ * Pending sign-in address
+ *
+ * The full address the held link signs in to, as the confirm page shows it.
  */
 export const zGetPendingMagicLinkResponse = z.object({
   email: z.string(),
@@ -930,7 +942,9 @@ export const zSsoCallbackQuery = z.object({
 });
 
 /**
- * The address the link was sent to
+ * Recovery link sent
+ *
+ * The body names the address the link went to.
  */
 export const zSendSsoRecoveryLinkResponse = z.object({
   email: z.string(),
@@ -1194,7 +1208,9 @@ export const zGetUploadTokenQuery = z.object({
 });
 
 /**
- * Upload token with a scope for a user or organization
+ * Upload token
+ *
+ * Its storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.
  */
 export const zGetUploadTokenResponse = zUploadToken;
 
@@ -1274,7 +1290,9 @@ export const zMarkNotificationsReadBody = z.object({
 });
 
 /**
- * Number of notifications marked read
+ * Marked read
+ *
+ * `updated` is the number of notifications this request marked read.
  */
 export const zMarkNotificationsReadResponse = z.object({
   updated: z.int().gte(0),
@@ -1296,7 +1314,7 @@ export const zUpdateNotificationPreferencesBody = z.object({
 });
 
 /**
- * Updated notification preferences
+ * Preferences updated
  */
 export const zUpdateNotificationPreferencesResponse = z.object({
   mentionEmail: z.boolean(),
@@ -1344,7 +1362,9 @@ export const zDeletePushSubscriptionQuery = z.object({
 });
 
 /**
- * Number of subscriptions removed
+ * Subscriptions removed
+ *
+ * `deleted` is the number removed, 0 when the endpoint belongs to another user.
  */
 export const zDeletePushSubscriptionResponse = z.object({
   deleted: z.int().gte(0),
@@ -1408,7 +1428,9 @@ export const zCreateRequestBody = z.object({
 export const zCreateRequestResponse = z.void();
 
 /**
- * Unseen counts per parent channel entity per entity type
+ * Unseen counts
+ *
+ * Keyed by parent channel entity id, then by product entity type.
  */
 export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
 
@@ -2099,7 +2121,7 @@ export const zLinkAttachmentKeysPath = z.object({
 });
 
 /**
- * Attachment with its stored file
+ * Attachment with stored file
  */
 export const zLinkAttachmentKeysResponse = zAttachment;
 
@@ -2195,7 +2217,9 @@ export const zCheckMembershipInviteQuery = z.object({
 });
 
 /**
- * What an invite would do with each address
+ * Invite outcomes
+ *
+ * One outcome per address, judged from the members and invitations the caller can see.
  */
 export const zCheckMembershipInviteResponse = z.object({
   outcomes: z.array(zInviteOutcome),

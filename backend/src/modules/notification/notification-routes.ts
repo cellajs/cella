@@ -38,7 +38,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     description:
       'Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.',
     request: { body: jsonBody(markReadBodySchema) },
-    responses: { 200: json('Number of notifications marked read', markReadResponseSchema) },
+    responses: { 200: json('Marked read\n\n`updated` is the number of notifications this request marked read.', markReadResponseSchema) },
   }),
   getNotificationPreferences: xRoute({
     method: 'get',
@@ -55,7 +55,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     summary: 'Update notification preferences',
     description: 'Partial update; unspecified keys keep their stored value.',
     request: { body: jsonBody(updatePreferencesBodySchema) },
-    responses: { 200: json('Updated notification preferences', preferencesSchema) },
+    responses: { 200: json('Preferences updated', preferencesSchema) },
   }),
   openUnsubscribeLink: xRoute({
     method: 'get',
@@ -67,7 +67,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
       'Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners ' +
       'and link previews open links on their own. No auth.',
     request: { query: unsubscribeQuerySchema },
-    responses: { 302: { description: 'Redirect to the confirmation page', headers: locationSchema } },
+    responses: { 302: { description: 'Redirect to confirmation', headers: locationSchema } },
   }),
   unsubscribeNotifications: xRoute({
     method: 'post',
