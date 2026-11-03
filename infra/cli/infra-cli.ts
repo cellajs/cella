@@ -12,23 +12,11 @@ import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpi
 import { dropPromptOnlyEnv, loadBaseEnvFiles, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
-import { within } from '../lib/utils/retry';
 import { runAction } from './actions';
 import { liveDbEndpoints } from './actions/db-exposure';
-import { addressVerdict, installPassphraseCustody, operatorLock, publicAddress } from './actions/operator-unlock';
+import { installPassphraseCustody } from './actions/operator-unlock';
 import { parseCliArgs } from './args';
-import {
-  BACK,
-  disabledReason,
-  formatAccessLines,
-  formatStackLine,
-  type MenuState,
-  mainMenuItems,
-  type OperatorFacts,
-  pickItems,
-  QUIT,
-  visibleRows,
-} from './menu';
+import { BACK, disabledReason, formatAccessLines, formatStackLine, type MenuState, mainMenuItems, pickItems, QUIT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import { setPassphraseCustody } from './session';
@@ -153,7 +141,7 @@ function printStackNotices(context: InfraContext): void {
 }
 
 /**
- * What an operator wants to know before choosing: is the stack locked, what is live, which keys this machine holds, and whether the
+ * What an operator wants to know before choosing: is the stack locked, what is live, which key this machine holds, and whether the
  * database has a public endpoint. One bounded, best-effort read; resolves to the live DB endpoints for the menu's DB access row.
  */
 async function printStackFacts(context: InfraContext): Promise<string[] | undefined> {
@@ -173,7 +161,6 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
     for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   }
   const access = formatAccessLines({
-    operator: await operatorFacts(context),
     stackState: context.state,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints,
@@ -181,20 +168,6 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
   for (const line of access) console.info(line);
   console.info('');
   return liveEndpoints;
-}
-
-/** How long the header waits for the operator application's policy and this machine's address. */
-const OPERATOR_FACTS_BUDGET_MS = 4_000;
-
-/** The operator key's address lock against this machine's address, for the header. Undefined on a fresh stack and when it is not known in time. */
-async function operatorFacts(context: InfraContext): Promise<OperatorFacts | undefined> {
-  if (context.state === 'fresh' || !context.projectId) return undefined;
-  const read = Promise.all([operatorLock(context), publicAddress()]).then(([lock, address]) => ({
-    lock,
-    address,
-    verdict: addressVerdict(address, lock),
-  }));
-  return within(OPERATOR_FACTS_BUDGET_MS, read);
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */

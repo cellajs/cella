@@ -219,7 +219,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
-  // operator lets it in first.
+  // operator application lets it in first.
   if (!firstSetup) await admitOperatorOrExit(context, operatorKey);
   const stateKey: KeyPair = stateKeyOf(operatorKey, projectId);
   const childEnv = buildProviderEnv(infraDir, {

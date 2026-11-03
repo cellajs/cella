@@ -37,8 +37,6 @@ export interface CiKeyResult {
 export interface OwnerMomentResult {
   projectId: string;
   ciKey: CiKeyResult;
-  /** The operator key, when this moment created the app's operator: the operator part runs on it without asking. */
-  operatorKey?: KeyPair;
   /** True when the rotation replaced the runner key: the runner machine still holds the deleted one until it is replaced. */
   runnerKeyRotated: boolean;
 }
@@ -136,7 +134,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt and checked as every Owner
  * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The machine identities with their policies and
- * standing keys (in the deploy folder), the deploy key (its copy for the main job), and the app's operator and observer: created when the
+ * standing keys (in the deploy folder), the deploy key (its copy for the main job), and the app's operators and observer: created when the
  * app has none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces
  * the deploy key and every machine key, the runner's too when the runner serves this environment. Undefined when declined.
  */
@@ -191,8 +189,8 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
 
   console.info('\n→ Deploy key');
   const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
-  console.info('\n→ Operator');
-  const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
+  console.info('\n→ Operators');
+  await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
 
   // A new observer reaches the projects the operator does, so it follows the operator.
   console.info('\n→ Observer');
@@ -217,5 +215,5 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
   await offerOwnerKeyRevoke(pair);
-  return { projectId, ciKey, operatorKey, runnerKeyRotated };
+  return { projectId, ciKey, runnerKeyRotated };
 }

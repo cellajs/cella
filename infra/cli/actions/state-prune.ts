@@ -14,7 +14,7 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 
 /**
  * Remove one resource from the environment's Pulumi state, on the operator key: a resource the program no longer declares whose live object is
@@ -33,7 +33,7 @@ export async function runStatePrune(context: InfraContext): Promise<void> {
   }
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const stack = stackNameFor(context);
   const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);

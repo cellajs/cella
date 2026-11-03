@@ -47,7 +47,7 @@ Three rules:
 ## Security boundaries
 
 - **The deploy path reads; it does not rule.** A deploy reads its environment's runtime secrets, and writes no IAM, database instance, VPC, DNS, bucket policy or secret of the app's. Its walls stand at the edges of its [zone](../cella/deployment/KEYS.md#zones), none inside.
-- **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes the operator key.
+- **A person writes identities.** IAM changes only at an Owner moment, with an Owner API key that ends within a day: a durable one is refused. Every other privileged run takes a one-day operator key, refused on the same rule.
 - **Each machine reads its own secrets.** A service's folder holds its own copy of every secret it consumes, only its machine key reads it, and the deploy writes that key into the cloud-init of the machines that run the service.
 - **Buckets deny by default**, the Owner's key included, and a leaked deploy key cannot delete a versioned bucket's history.
 - **Builds hold no key where the app's code runs.**
@@ -68,7 +68,7 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; **Set up operator key** replaces the operator's; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine that is no active generation, a main job whose image, command, env or secret references changed. It reads the active generations from the control object, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine or stack checkpoint, so `inventory.machines` and `state.pendingOperations` read with the operator key once a session holds it, and are `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a machine key, beside the declared one. Remove anything else in the console once you know who made it.
 
 ```jsonc
 {
@@ -98,7 +98,7 @@ Stable check `id`s:
 
 `infra/.env.<mode>` holds this machine's observer key (`SCW_OBSERVER_*`); the environment's Scaleway project is committed in `infra/Pulumi.<mode>.yaml`, as `infra:projectId`. The file overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A bare `infra/.env` is never read.
 
-The CLI reads no privileged key and no passphrase from a file or the environment, in any form: it drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` with a notice, so nothing on the machine can change infrastructure with nobody at the prompt. The operator key comes from the prompt, and the passphrase from Secret Manager with it.
+The CLI reads no privileged key and no passphrase from a file or the environment, in any form: it drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` with a notice, so nothing on the machine can change infrastructure with nobody at the prompt. A one-day operator key comes from the prompt, and the passphrase from Secret Manager with it.
 
 ## Extending
 
@@ -145,7 +145,7 @@ One name per concept across code and docs:
 | **stack lock** | `control/<stack>.lock.json`: the lock that lets one deploy or operator action run at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not VM boot. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
-| **operator key** | The `<app>-operator` key for privileged work: no IAM write, accepted from your dedicated IP address only. |
+| **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write, made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **privileged** | A resource only an apply on the operator key changes. |

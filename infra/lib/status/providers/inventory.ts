@@ -2,11 +2,11 @@ import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDe
 import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
 import { repositoryUrl } from '../../deploy/repository-key';
 import { deriveInfra } from '../../naming';
-import { actionCommand, actionLabel } from '../../operator-actions';
+import { actionCommand } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
-import { organizationIdOfKey } from '../../scaleway/operator-identity';
+import { DURABLE_KEY_HOURS, organizationIdOfKey } from '../../scaleway/operator-identity';
 import { appPrincipalNames } from '../../scaleway/principals';
 import { scwFetch } from '../../scaleway/scw-fetch';
 import { type CheckBuilder, check, probed } from '../check';
@@ -51,11 +51,11 @@ export interface InventoryExpectation {
   environmentPrefix: string;
   /** This environment's applications and the app's own (operator, observer, runner), each with the name of its one policy. */
   declared: Readonly<Record<string, string>>;
-  /** Applications that hold exactly one key; the observer holds one per machine it was put on. */
+  /** Applications that hold exactly one key; the observer holds one per machine, the operator one per sitting. */
   oneKey: readonly string[];
   /** Every machine of this environment starts with it (`<slug>-`). */
   machinePrefix: string;
-  /** The app's operator: Set up operator key removes its extra key, Rotate keys every other. */
+  /** The app's operator: every key of it ends within a day, and one that does not is deleted in the console. */
   operator: string;
 }
 
@@ -63,7 +63,7 @@ export interface InventoryFindings {
   applications: string[];
   /** An extra key that Rotate keys removes, or a person's key without an end date. */
   keys: string[];
-  /** An extra key of the operator, which Set up operator key replaces. */
+  /** A key of the operator that outlives a day, which the console deletes: the CLI takes none such. */
   operatorKeys: string[];
   policies: string[];
   /** A machine the engine did not make. */
@@ -75,10 +75,10 @@ export interface InventoryFindings {
 /**
  * The difference between what an environment declares and what exists (C11), as an Owner checks after a suspected break-in: an application
  * the environment does not declare that can act in its project (by a rule on the project or on the organization, its own or a group's), an
- * extra key or policy on one it declares, a person's key without an end date, and a machine the engine did not make. Policies bound to
- * people are the Owner's to judge in the console.
+ * extra key or policy on one it declares, a person's key without an end date, a key of the operator that outlives a day, and a machine the
+ * engine did not make. Policies bound to people are the Owner's to judge in the console.
  */
-export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpectation): InventoryFindings {
+export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpectation, now = Date.now()): InventoryFindings {
   const found: InventoryFindings = { applications: [], keys: [], operatorKeys: [], policies: [], machines: [], passing: [] };
   const nameOf = new Map(facts.applications.map((application) => [application.id, application.name]));
   const own = new Set(facts.applications.filter((application) => application.name in expect.declared).map((application) => application.id));
@@ -113,17 +113,21 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
     }
   }
   const keysOf = new Map<string, typeof facts.apiKeys>();
+  const describe = (key: InventoryFacts['apiKeys'][number]) => `${key.access_key} (${key.description || 'no description'})`;
   for (const key of facts.apiKeys) {
-    if (key.user_id && !key.expires_at)
-      found.keys.push(`a person's key without an end date: ${key.access_key} (${key.description || 'no description'})`);
+    if (key.user_id && !key.expires_at) found.keys.push(`a person's key without an end date: ${describe(key)}`);
     if (key.application_id && own.has(key.application_id)) keysOf.set(key.application_id, [...(keysOf.get(key.application_id) ?? []), key]);
   }
   for (const [id, keys] of keysOf) {
     const name = nameOf.get(id) ?? id;
-    if (expect.oneKey.includes(name) && keys.length > 1) {
-      (name === expect.operator ? found.operatorKeys : found.keys).push(
-        `${name} holds ${keys.length} keys: ${keys.map((key) => `${key.access_key} (${key.description || 'no description'})`).join(', ')}`,
-      );
+    if (name === expect.operator) {
+      for (const key of keys) {
+        if (!key.expires_at || Date.parse(key.expires_at) - now > DURABLE_KEY_HOURS * 3_600_000) {
+          found.operatorKeys.push(`${name} holds a key that outlives a day: ${describe(key)}`);
+        }
+      }
+    } else if (expect.oneKey.includes(name) && keys.length > 1) {
+      found.keys.push(`${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`);
     }
   }
   const live = new Set(Object.entries(facts.activeGenerations).map(([service, id]) => `${expect.machinePrefix}${service}-${id}`));
@@ -208,7 +212,7 @@ function expectationOf(appConfig: { slug: string; appSlug: string }, mode: strin
     projectId,
     environmentPrefix: `${appConfig.slug}-${mode}-`,
     declared,
-    oneKey: Object.keys(declared).filter((name) => name !== app.observer),
+    oneKey: Object.keys(declared).filter((name) => name !== app.observer && name !== app.operator),
     machinePrefix: `${appConfig.slug}-`,
     operator: app.operator,
   };
@@ -317,21 +321,20 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     const listed = (builder: CheckBuilder, lines: string[], fine: string, nextAction?: NextAction) =>
       lines.length === 0 ? builder.ok(fine) : builder.error(lines.join('; '), nextAction);
     const rotate = { description: 'Rotate keys deletes every key beside the declared ones', command: actionCommand('rotate-keys') };
-    const operatorKey = { description: `${actionLabel('operator-key')} replaces every key of the operator`, command: actionCommand('operator-key') };
     return [
       item('inventory.applications', 'Applications', (b, { found }) => listed(b, found.applications, 'only the declared ones can act here')),
       item('inventory.keys', 'API keys', (b, { found }) =>
         listed(
           b,
-          [...found.keys, ...found.operatorKeys.map((line) => `${line}, which ${actionLabel('operator-key')} removes`)],
-          'one key per identity, as declared',
-          found.keys.length > 0 ? rotate : operatorKey,
+          [...found.keys, ...found.operatorKeys.map((line) => `${line}: delete it in the console`)],
+          'one key per identity, as declared, and every operator key ends within a day',
+          found.keys.length > 0 ? rotate : undefined,
         ),
       ),
       item('inventory.policies', 'Policies', (b, { found }) => listed(b, found.policies, 'one per identity, as declared')),
       item('inventory.machines', 'Machines', (b, { facts, found }) =>
         !facts.machines
-          ? b.unknown('not read: machines are listed with the operator key, from the dedicated address')
+          ? b.unknown('not read: machines are listed with the operator key, once a session holds it')
           : found.machines.length > 0
             ? b.error(found.machines.join('; '))
             : found.passing.length > 0

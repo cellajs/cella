@@ -21,7 +21,7 @@ import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface OperatorApplyOptions {
@@ -81,7 +81,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   const passphrase = opts.reviewed?.passphrase ?? (await resolveVerifiedPassphrase(context.stackYaml));
   const { projectId, appConfig } = context;
 
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const { organizationId } = operator;
   const stack = stackNameFor(context);
 

@@ -51,6 +51,11 @@ export function installKeylessMocks(
           if (opts.absentApplication?.(name)) return { id: '', applicationId: '', name };
           return { id: `${name}-id`, applicationId: `${name}-id`, name };
         }
+        // The operators group holds one member, so the bucket policies render a member's statement.
+        if (args.token.includes('getGroup')) {
+          const name = String((args.inputs as { name?: string }).name ?? 'group');
+          return { id: `${name}-id`, groupId: `${name}-id`, name, userIds: [`${name}-member-id`], applicationIds: [] };
+        }
         if (args.token.includes('getApiKey')) {
           return { id: 'mock-access-key', applicationId: 'mock-application-id', userId: 'mock-user-id', defaultProjectId: 'mock-project-id' };
         }

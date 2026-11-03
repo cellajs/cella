@@ -2,135 +2,73 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
-import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scaleway/iam-client';
-import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
-import { describeKey, type KeyDescription, type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
+import { findGroup } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
+import { scwErrorStatus } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { moveSecretPaths } from '../../tasks/move-secret-paths';
 import { ensureCustodiedSalt, readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { maskedSecret } from '../prompts/masked-secret';
-import {
-  forgetOperatorKey,
-  type OperatorLock,
-  rememberedOperatorKey,
-  rememberedOperatorLock,
-  rememberOperatorKey,
-  rememberOperatorLock,
-  setPassphraseCustody,
-} from '../session';
+import { forgetOperatorKey, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
 type StackRef = Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>;
 
-/**
- * What the operator application's rules say about its address lock. Every rule must carry the same readable condition: one rule without it
- * admits the key from every address, so that policy counts as open and names no address.
- */
-export function readOperatorLock(rules: readonly Pick<GrantedRule, 'condition'>[]): { cidrs: string[]; open: boolean } {
-  const conditions = new Set(rules.map((rule) => rule.condition));
-  const [only] = [...conditions];
-  const cidrs = conditions.size === 1 ? ipConditionCidrs(only) : [];
-  return { cidrs, open: rules.length > 0 && cidrs.length === 0 };
+/** Where a person makes the key a session takes, for every refusal that sends them there. */
+export function oneDayKeyHowto(names: AppPrincipalNames): string {
+  return `Make a one-day key in the console: IAM → Applications → '${names.operator}' → API keys → Generate API key, with an expiration of a day at most; or, as a member of the group '${names.operators}', one of your own (your user → API keys) with the same expiration.`;
 }
 
 /**
- * Whether the stack has an operator application and which addresses its policy names, read with the observer key (IAM read). Kept for
- * the run: an action that changes it calls `forgetOperatorLock`. Without an observer key on this machine the answer is `unknown`.
+ * Why Scaleway refused the key pasted at the prompt, in words the operator can act on. A 401 is a key Scaleway does not know; a 403 is a
+ * key that reads no IAM, so it is neither the operator application's nor an operators group member's.
  */
-export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
-  const known = rememberedOperatorLock();
-  if (known) return known;
-  const { observer } = resolveOperatorIdentity();
-  let lock: OperatorLock = { state: 'unknown', cidrs: [], open: false };
-  if (observer && stack.projectId) {
-    try {
-      const organizationId = await organizationIdOfKey(observer, stack.projectId);
-      const names = appPrincipalNames(stack.appConfig.appSlug);
-      const rules = await fetchAppRulesByName({
-        secretKey: observer.secretKey,
-        projectId: stack.projectId,
-        applicationName: names.operator,
-        organizationId,
-      });
-      lock = rules === null ? { state: 'absent', cidrs: [], open: false } : { state: 'present', ...readOperatorLock(rules) };
-    } catch {
-      // Left unknown: the observer key could not read IAM just now.
-    }
-  }
-  rememberOperatorLock(lock);
-  return lock;
-}
-
-/** One line on where this machine stands against the address lock, for a refusal message and the menu header. */
-export function addressVerdict(address: string | undefined, lock: OperatorLock): 'inside' | 'outside' | 'unknown' {
-  if (!address || lock.cidrs.length === 0) return 'unknown';
-  return ipAllowed(address, lock.cidrs) ? 'inside' : 'outside';
-}
-
-/**
- * Why Scaleway refused a call made with the operator key, in words the operator can act on. A 401 is a key Scaleway does not know. A 403 is
- * most often the address: the key works from the dedicated address only, and from elsewhere the answer is the same as for a missing right.
- */
-export function refusalLines(opts: {
-  status: number | undefined;
-  detail: string;
-  names: AppPrincipalNames;
-  address?: string;
-  lock: OperatorLock;
-}): string[] {
-  const { names, address, lock } = opts;
-  if (opts.status === 401) {
-    return [`Scaleway does not know that secret key. Paste the key of '${names.operator}' from your password manager.`];
-  }
-  if (opts.status === 404) {
-    return [`Scaleway knows no such access key. Paste the key of '${names.operator}' from your password manager.`];
-  }
-  if (opts.status !== 403) return [`Scaleway did not take the operator key: ${opts.detail}`];
-  const from = address ? `This machine reaches the internet as ${address}` : 'The address of this machine could not be detected';
-  const allowed =
-    lock.cidrs.length > 0
-      ? `the key works from ${lock.cidrs.join(', ')} only`
-      : `the key works from the dedicated address of '${names.operator}' only`;
-  const verdict = addressVerdict(address, lock);
+export function refusalLines(opts: { status: number | undefined; detail: string; names: AppPrincipalNames }): string[] {
+  const { names } = opts;
+  if (opts.status === 401) return ['Scaleway does not know that secret key.', oneDayKeyHowto(names)];
+  if (opts.status === 404) return ['Scaleway knows no such access key.', oneDayKeyHowto(names)];
+  if (opts.status !== 403) return [`Scaleway did not take the key: ${opts.detail}`];
   return [
-    'Scaleway refused the operator key.',
-    `${from}; ${allowed}.`,
-    verdict === 'inside'
-      ? 'The address is on the list, so this is not the address: a policy change can take a few minutes to hold, or the key is not the operator key.'
-      : 'Connect through the dedicated address and try again.',
-    `If the dedicated address changed, the organization Owner sets the new one: \`${actionCommand('operator-key')}\`.`,
+    `Scaleway refused the key: it reads no IAM, so it is no key of '${names.operator}' and none of a member of '${names.operators}'.`,
+    `A policy change can take a few minutes to hold. The organization Owner makes both: \`${actionCommand('operator-key')}\`.`,
   ];
 }
 
-let detectedAddress: Promise<string | undefined> | undefined;
-
-/** This machine's public IPv4 address, asked from a public echo service once per run. */
-export function publicAddress(): Promise<string | undefined> {
-  detectedAddress ??= fetch('https://api.ipify.org', { signal: AbortSignal.timeout(5000) }).then(
-    async (res) => (res.ok ? (await res.text()).trim() || undefined : undefined),
-    () => undefined,
-  );
-  return detectedAddress;
+/**
+ * Why a described key cannot unlock the session, or undefined when it can: it is the operator application's or a user's who is in the
+ * operators group, and it ends within a day (`durableKeyLife`). The group is read with the key itself, which the group's policy lets it do.
+ */
+async function bearerRefusal(desc: KeyDescription, pair: KeyPair, names: AppPrincipalNames): Promise<string | undefined> {
+  const { organizationId } = desc;
+  if (!organizationId) return `${pair.accessKey} names no organization.`;
+  if (desc.bearer === 'application') {
+    if (desc.name !== names.operator) return `${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. ${oneDayKeyHowto(names)}`;
+  } else {
+    const group = await findGroup(pair.secretKey, organizationId, names.operators).catch(() => undefined);
+    if (!group) {
+      return `The app has no operators group ('${names.operators}') that ${desc.name} could be in, or the key cannot read it. The organization Owner makes it: \`${actionCommand('operator-key')}\`.`;
+    }
+    if (!(group.user_ids ?? []).includes(desc.bearerId)) {
+      return `${desc.name} is no member of '${names.operators}': the organization Owner adds members in the console (IAM → Groups → ${names.operators}), or paste a key of '${names.operator}'.`;
+    }
+  }
+  const life = durableKeyLife(desc);
+  if (life) {
+    return `${pair.accessKey} would work ${life}, and a key that leaks must die within the day, so the session refuses it. ${oneDayKeyHowto(names)}`;
+  }
+  return undefined;
 }
 
-/** Print why a call with the operator key failed, drop the key from the session, and end the action. */
-async function endOnRefusal(stack: StackRef, names: AppPrincipalNames, error: unknown): Promise<never> {
+/** Print why the key pasted at the prompt failed, drop it from the session, and end the action. */
+function endOnRefusal(names: AppPrincipalNames, error: unknown): never {
   forgetOperatorKey();
-  const status = scwErrorStatus(error);
-  const [first, ...rest] = refusalLines({
-    status,
-    detail: errorMessage(error),
-    names,
-    address: status === 403 ? await publicAddress() : undefined,
-    lock: await operatorLock(stack),
-  });
+  const [first, ...rest] = refusalLines({ status: scwErrorStatus(error), detail: errorMessage(error), names });
   console.error(`${crossMark} ${first}`);
   for (const line of rest) console.error(`  ${line}`);
   return endAction(1);
@@ -141,19 +79,18 @@ interface Unlocked {
   accessKey: string;
   secret: string;
   organizationId: string;
-  applicationId: string;
 }
 
 /**
  * Unlock the session: the operator key, both halves, typed once per run. It is proven by asking IAM who bears it, with the key itself: that
- * names the application and its organization, and needs no right beyond the IAM read the operator holds. With `optional`, an empty access
- * key returns undefined: the caller then asks for what it needs in another way.
+ * names the application or the user and its organization, and needs no right beyond the IAM read the operators hold. With `optional`, an
+ * empty access key returns undefined: the caller then asks for what it needs in another way.
  */
 async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
   const names = appPrincipalNames(stack.appConfig.appSlug);
   let pair = rememberedOperatorKey();
   if (!pair) {
-    const label = `Operator key of '${names.operator}'`;
+    const label = `One-day operator key ('${names.operator}', or your own as a member of '${names.operators}')`;
     const accessKey = (await input({ message: `${label}, access key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })).trim();
     const secretKey = accessKey ? (await maskedSecret({ message: `${label}, secret key` })).trim() : '';
     if (!accessKey || !secretKey) {
@@ -167,18 +104,17 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
   try {
     desc = await describeKey(pair);
   } catch (error) {
-    return endOnRefusal(stack, names, error);
+    return endOnRefusal(names, error);
   }
-  if (desc.bearer !== 'application' || desc.name !== names.operator || !desc.organizationId) {
+  const refusal = await bearerRefusal(desc, pair, names);
+  if (refusal || !desc.organizationId) {
     forgetOperatorKey();
-    console.error(
-      `${crossMark} ${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. The operator key is created once per app with your Owner API key: \`${actionCommand('operator-key')}\`.`,
-    );
+    console.error(`${crossMark} ${refusal}`);
     return endAction(1);
   }
   rememberOperatorKey(pair);
   await moveSecretsOutOfPrefix(stack, pair.secretKey);
-  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId, applicationId: desc.bearerId };
+  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId };
 }
 
 /** The projects whose secrets this run has moved out of their environment's prefix. */
@@ -205,51 +141,27 @@ async function moveSecretsOutOfPrefix(stack: StackRef, secretKey: string): Promi
   unprefixedProjects.add(stack.projectId);
 }
 
-/** One IAM read with a key: true when Scaleway accepts it from this address. */
-export async function keyAccepted(secretKey: string, organizationId: string): Promise<true | undefined> {
-  return scwFetch({ secretKey }, 'GET', `${IAM_BASE}/applications?organization_id=${organizationId}&page_size=1`).then(
-    () => true as const,
-    () => undefined,
-  );
-}
-
 let operatorNoticeShown = false;
 
-/** The operator key a run holds: works from the dedicated address only, writes no IAM, and is kept in memory for the session. */
+/** The operator key a run holds: it ends within the day, writes no IAM, and is kept in memory for the session. */
 export interface OperatorKey extends KeyPair {
   organizationId: string;
 }
 
 /**
- * The key for a privileged action under the operator application: the operator key itself, pasted once per session and kept in this
- * process's memory. Scaleway accepts it from the dedicated address only, and it holds no IAM write, so nothing is minted from it and nothing
- * is left to revoke when the action ends.
+ * The key every privileged action runs on: a one-day key of the operator application, or of a member of the operators group, pasted once
+ * per session and kept in this process's memory. It holds no IAM write, so nothing is minted from it, and it ends by itself within the
+ * day, so nothing is left to revoke when the action ends. An Owner key never runs one, as the buckets admit no Owner; an app without
+ * operators gets them from `operator-key` or its setup, with an Owner API key.
  */
 export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
-  const names = appPrincipalNames(stack.appConfig.appSlug);
   const unlocked = await unlock(stack);
   if (!unlocked) return endAction(1);
   if (!operatorNoticeShown) {
     operatorNoticeShown = true;
-    console.info(`${pc.dim('Operator key:')} ${names.operator} ${pc.dim(unlocked.accessKey)}`);
+    console.info(`${pc.dim('Operator key:')} ${unlocked.accessKey}`);
   }
   return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
-}
-
-/**
- * The key a privileged action runs on: the operator key, which works from the dedicated address only. An Owner key never runs one, as the
- * buckets admit no person; an app without an operator gets one from `operator-key` or its setup, with an Owner API key.
- */
-export async function acquirePrivilegedKey(stack: StackRef): Promise<OperatorKey> {
-  const lock = await operatorLock(stack);
-  if (lock.state === 'absent') {
-    const names = appPrincipalNames(stack.appConfig.appSlug);
-    console.error(
-      `${crossMark} The app has no operator ('${names.operator}') yet: \`${actionCommand('operator-key')}\` makes it, with your Owner API key.`,
-    );
-    return endAction(1);
-  }
-  return acquireOperatorKey(stack);
 }
 
 /**
@@ -257,7 +169,7 @@ export async function acquirePrivilegedKey(stack: StackRef): Promise<OperatorKey
  * in a key's preferred project otherwise. The provider takes the plain key and finds the project by itself.
  */
 export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; state: KeyPair }> {
-  const { accessKey, secretKey } = await acquirePrivilegedKey(stack);
+  const { accessKey, secretKey } = await acquireOperatorKey(stack);
   return { key: { accessKey, secretKey }, state: stateKeyOf({ accessKey, secretKey }, stack.projectId) };
 }
 
@@ -272,9 +184,9 @@ export async function acquireIdentityKey(stack: StackRef, why: string): Promise<
 }
 
 /**
- * Let the passphrase come from Secret Manager for this run. Reading it unlocks the session, so nobody types the passphrase; a stack without
- * an operator application has nothing to unlock with, and the passphrase is typed as before. A passphrase typed while the session is
- * unlocked is stored, which is how an existing stack gets its copy; the stack file's salt goes beside it, from this checkout when it verifies.
+ * Let the passphrase come from Secret Manager for this run. Reading it unlocks the session, so nobody types the passphrase; a person without
+ * a key at hand leaves the prompt empty and types the passphrase as before. A passphrase typed while the session is unlocked is stored, which
+ * is how an existing stack gets its copy; the stack file's salt goes beside it, from this checkout when it verifies.
  */
 export function installPassphraseCustody(stack: StackRef): void {
   const stackYaml = () => {
@@ -288,7 +200,6 @@ export function installPassphraseCustody(stack: StackRef): void {
   };
   setPassphraseCustody({
     async read() {
-      if ((await operatorLock(stack)).state === 'absent') return undefined;
       const unlocked = await unlock(stack, { optional: 'Enter to type the Pulumi passphrase' });
       if (!unlocked) return undefined;
       const passphrase = await readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {

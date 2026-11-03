@@ -1,5 +1,4 @@
 import {
-  actionCommand,
   actionDescription,
   actionHint,
   actionLabel,
@@ -136,45 +135,12 @@ export function formatStackLine(stack: { slug: string; environment: Environment;
   return `${pc.bold(stack.slug)} · ${mode} · ${stack.state}${file}`;
 }
 
-/** What the header knows about the operator key: the application's address lock, and this machine's public address when it was found. */
-export interface OperatorFacts {
-  lock: { state: 'present' | 'absent' | 'unknown'; cidrs: string[]; open: boolean };
-  /** Whether this machine's address is on the list; `unknown` without an address or a readable list. */
-  verdict: 'inside' | 'outside' | 'unknown';
-  address?: string;
-}
-
 /**
- * The header line on the operator key: whether the stack has one, and whether Scaleway takes it from this machine. A key refused for its
- * address looks like an empty stack on some APIs, so the operator reads here, before any action, that the address is the cause.
+ * The header lines about what this machine can reach: whether the database has a public endpoint. `liveEndpoints` is undefined when the
+ * instance was not read; the local exposure config then stands in, and a closed config gets no line.
  */
-export function formatOperatorLine(operator: OperatorFacts | undefined): string {
-  const asked = `${pc.dim('○')} Operator key: asked when an action needs it`;
-  if (!operator || operator.lock.state === 'unknown') return asked;
-  const { lock, verdict, address } = operator;
-  if (lock.state === 'absent') {
-    return `${pc.dim('○')} Operator key: none yet, so privileged actions ask for your Owner API key ${pc.dim(`(${actionCommand('operator-key')} sets one up)`)}`;
-  }
-  if (lock.open) return `${pc.red('●')} Operator key: ${pc.red('works from every address')}: a rule of its policy has no address condition`;
-  if (lock.cidrs.length === 0) return asked;
-  const list = lock.cidrs.join(', ');
-  if (verdict === 'outside') return `${pc.yellow('●')} Operator key: works from ${list} only; ${pc.yellow(`this machine is ${address}`)}`;
-  return verdict === 'inside'
-    ? `${pc.green('●')} Operator key: works from this address (${list})`
-    : `${pc.dim('○')} Operator key: works from ${list}`;
-}
-
-/**
- * The header lines about what this machine can reach: where the operator key works, and whether the database has a public endpoint.
- * `liveEndpoints` is undefined when the instance was not read; the local exposure config then stands in, and a closed config gets no line.
- */
-export function formatAccessLines(facts: {
-  operator?: OperatorFacts;
-  stackState: StackState;
-  dbExposed: boolean;
-  liveEndpoints?: string[];
-}): string[] {
-  const lines = [formatOperatorLine(facts.operator)];
+export function formatAccessLines(facts: { stackState: StackState; dbExposed: boolean; liveEndpoints?: string[] }): string[] {
+  const lines: string[] = [];
   if (facts.stackState !== 'bootstrapped') return lines;
   const live = facts.liveEndpoints;
   if (live && live.length > 0) {

@@ -14,7 +14,7 @@ beforeAll(async () => {
   await h.settle();
 });
 
-type Statement = { Principal: { SCW: string }; Action: string[]; Resource: string[] };
+type Statement = { Principal: { SCW: string | string[] }; Action: string[]; Resource: string[] };
 
 const glob = (pattern: string, value: string) => new RegExp(`^${pattern.split('*').map(escapeRegExp).join('.*')}$`).test(value);
 
@@ -23,7 +23,7 @@ function readers(statements: readonly Statement[], object: string): string[] {
   return statements
     .filter((statement) => statement.Action.some((action) => glob(action, 's3:GetObject') || glob(action, 's3:GetObjectVersion')))
     .filter((statement) => statement.Resource.some((resource) => glob(resource, object)))
-    .map((statement) => statement.Principal.SCW)
+    .flatMap((statement) => [statement.Principal.SCW].flat())
     .sort();
 }
 
@@ -34,9 +34,9 @@ describe('the state bucket policy', () => {
     const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
     const app = appPrincipalNames(engineConfig().appSlug);
     const deploy = `application_id:${principalNames(engineConfig().slug, 'production').ciDeploy}-id`;
-    const operator = `application_id:${app.operator}-id`;
-    expect(readers(Statement, `${bucket}/${checkpointKey('production')}`)).toEqual([deploy, operator].sort());
+    const operators = [`application_id:${app.operator}-id`, `user_id:${app.operators}-member-id`];
+    expect(readers(Statement, `${bucket}/${checkpointKey('production')}`)).toEqual([deploy, ...operators].sort());
     // Positive control: the observer reads the rollout record beside it.
-    expect(readers(Statement, `${bucket}/${controlKey('production')}`)).toEqual([deploy, `application_id:${app.observer}-id`, operator].sort());
+    expect(readers(Statement, `${bucket}/${controlKey('production')}`)).toEqual([deploy, `application_id:${app.observer}-id`, ...operators].sort());
   });
 });

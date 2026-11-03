@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InfraContext } from '../shared';
 
-const acquirePrivilegedKey = vi.fn();
+const acquireOperatorKey = vi.fn();
 const admitOperatorOrExit = vi.fn();
 const reviewPlan = vi.fn();
 const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
 const openDbEndpoints = vi.fn();
 
-vi.mock('./operator-unlock', () => ({ acquirePrivilegedKey: (...args: unknown[]) => acquirePrivilegedKey(...args) }));
+vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
 vi.mock('../shared', () => ({
   endAction: (code: number) => {
     throw Object.assign(new Error('ended'), { name: 'ActionEnded', exitCode: code });
@@ -34,7 +34,7 @@ const reviewed = { passphrase: 'correct horse', basis: { checkpoint: '"aaa"', co
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  acquirePrivilegedKey.mockResolvedValue(operator);
+  acquireOperatorKey.mockResolvedValue(operator);
   openDbEndpoints.mockResolvedValue([]);
   reviewPlan.mockResolvedValue(reviewed);
   runOperatorApply.mockResolvedValue({ completed: true, verified: true });

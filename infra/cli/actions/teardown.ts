@@ -12,7 +12,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
-import { acquireIdentityKey, acquirePrivilegedKey, type OperatorKey } from './operator-unlock';
+import { acquireIdentityKey, acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
@@ -51,7 +51,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     return;
   }
 
-  if (!(await destroyStack(context, await acquirePrivilegedKey(context)))) return;
+  if (!(await destroyStack(context, await acquireOperatorKey(context)))) return;
 
   // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing.
   const cleanupIam = await confirm({
