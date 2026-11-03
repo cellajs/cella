@@ -22,7 +22,8 @@ vi.mock('shared', async (importOriginal) => {
       policies,
       accesses.map((access) => ('anonymous' in access ? { memberships: [] } : access)),
       subject,
-      { publicGrants: publicReadGrants },
+      // Cella grants no public read on attachments, so the sweep's public bit pins a decision only with one granted here.
+      { publicGrants: { ...publicReadGrants, attachment: true } },
     ).map((can) => can[action]);
   return { ...shared, checkAccessFanout };
 });

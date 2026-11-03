@@ -11,6 +11,8 @@ const TIER_MAX_MS = 30_000;
 interface StreamChange {
   productType: string;
   rows: { seq: number | null }[];
+  /** Set past the frame's row cap: the rows' range, nulls for a delete. */
+  overflow: { afterSeq: number | null; untilSeq: number | null } | null;
   spreadWindow: number | null;
   channelId: string | null;
   organizationId: string | null;
@@ -67,6 +69,7 @@ export default defineScenario({
 
         const onChange = (n: StreamChange) => {
           const seqs = n.rows.flatMap(({ seq }) => (seq == null ? [] : [seq]));
+          if (n.overflow?.untilSeq != null) seqs.push((n.overflow.afterSeq ?? 0) + 1, n.overflow.untilSeq);
           if (seqs.length === 0) return;
           vu.counter('sse.changes');
           const from = Math.min(...seqs);

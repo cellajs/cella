@@ -15,7 +15,7 @@ The CDC worker groups the rows of several transactions into one message, and eve
 
 ## Blast radius
 
-Breaking for app code that builds or reads product events or change frames, mostly tests. During a deploy the API refuses a message of the other worker release. Until it reloads, a tab on the old bundle finds no `seq` or `subjectId` in a frame: an edit in the channel it views fails its detail fetch with an error toast and refetches every list of the type, an edit elsewhere marks the lists stale, a delete refetches them, and a move-out leaves the row in its cache. No database, cache or lens change. Traces lose two attributes: the client span's `sync.entity_id` is `sync.row_count`, and a product event's bus span has no `event.subject_id`.
+Breaking for app code that builds or reads product events or change frames, mostly tests. During a deploy the API refuses a message of the other worker release. Until it reloads, a tab on the old bundle finds no `seq` or `subjectId` in a frame: an edit in the channel it views fails its detail fetch with an error toast and refetches every list of the type, an edit elsewhere marks the lists stale, a delete refetches them, and a move-out leaves the row in its cache. Rolling the API back to a release before this change while the new bundle is served makes every change frame fail in a new tab until its stream circuit opens: roll the frontend back with it. No database, cache or lens change. Traces lose two attributes: the client span's `sync.entity_id` is `sync.row_count`, and a product event's bus span has no `event.subject_id`.
 
 ## Run
 
