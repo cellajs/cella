@@ -150,7 +150,7 @@ describe('what the leader tells the other tabs', () => {
 
   it('reaches the handlers of a follower tab as the leader posted it: a catchup answer, a signal and the health of its stream', async () => {
     const answer: PostAppCatchupResponse = { cursor: 'c9', organizations: {}, generation: 7 };
-    const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null, version: null };
+    const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
 
     // This tab leads, and posts.
     await initTabCoordinator();
@@ -192,5 +192,31 @@ describe('what the leader tells the other tabs', () => {
 
     expect(posted.filter((message) => (message as { type: string }).type === 'sync-health')).toHaveLength(saidBefore + 1);
     expect(posted.at(-1)).toEqual({ type: 'sync-health', health: down });
+  });
+
+  it('posts the health of its stream once it leads again after another leader spoke, also when it posted that health before', async () => {
+    const up = { streamHealthy: true, workerAway: false };
+    const healthPosts = () => (FakeBroadcastChannel.opened?.posted ?? []).filter((message) => (message as { type: string }).type === 'sync-health');
+    await initTabCoordinator();
+    broadcastSyncHealth(up);
+    broadcastSyncHealth(up);
+    const posts = healthPosts().length;
+
+    // Another tab leads and tells of a failed stream, which this one, following, now holds.
+    releaseTabLeadership();
+    await tick();
+    let releaseOther: () => void = () => {};
+    fakeLocks.request('tab-leader', () => new Promise<void>((resolve) => (releaseOther = resolve)));
+    await initTabCoordinator();
+    receive({ type: 'sync-health', health: down });
+
+    // That tab closes: this one leads again, and its stream says what it said as leader before.
+    releaseOther();
+    await tick();
+    expect(isLeader()).toBe(true);
+    broadcastSyncHealth(up);
+
+    expect(healthPosts()).toHaveLength(posts + 1);
+    expect(healthPosts().at(-1)).toEqual({ type: 'sync-health', health: up });
   });
 });

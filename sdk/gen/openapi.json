@@ -828,7 +828,7 @@
           "action": {
             "type": "string",
             "enum": ["create", "update", "delete", "moveOut"],
-            "description": "Change kind; moveOut = the row left this path (reparent) and is no longer readable there"
+            "description": "Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there"
           },
           "productType": {
             "type": "string",
@@ -839,10 +839,6 @@
           },
           "tenantId": {
             "type": ["string", "null"]
-          },
-          "path": {
-            "type": ["string", "null"],
-            "description": "Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path"
           },
           "channelId": {
             "type": ["string", "null"],
@@ -932,14 +928,13 @@
             "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
-        "required": ["action", "productType", "organizationId", "tenantId", "path", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
-        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
+        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
+        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
           "action": "update",
           "productType": "attachment",
           "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
           "tenantId": "3u2416jc9qhf837vvzoiw8kv",
-          "path": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
           "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
           "rows": [
             {
@@ -972,19 +967,14 @@
           "subjectId": {
             "type": ["string", "null"],
             "description": "The one row the signal is about; null when it is about the organization as a whole"
-          },
-          "version": {
-            "type": ["integer", "null"],
-            "description": "Counter value of a versioned signal, when the sender knows it; catchup returns the stored one"
           }
         },
-        "required": ["type", "organizationId", "subjectId", "version"],
+        "required": ["type", "organizationId", "subjectId"],
         "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.",
         "example": {
           "type": "membership.changed",
           "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
-          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f",
-          "version": null
+          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
         },
         "x-tags": ["data", "entities", "cella"]
       },

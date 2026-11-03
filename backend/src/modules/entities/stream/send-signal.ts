@@ -40,6 +40,6 @@ export async function sendSignal(
   const subscribers = audienceSubscribers(audience);
   if (subscribers.length === 0) return;
 
-  const signal: StreamSignal = { type, organizationId: about.organizationId ?? null, subjectId: about.subjectId ?? null, version: null };
+  const signal: StreamSignal = { type, organizationId: about.organizationId ?? null, subjectId: about.subjectId ?? null };
   await sendToSubscribers(subscribers, { event: 'signal', data: signal }, 'Failed to send stream signal');
 }

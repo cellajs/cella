@@ -114,20 +114,16 @@ export type StxBase = {
 };
 
 /**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
   /**
-   * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
+   * Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment';
   organizationId: string;
   tenantId: string | null;
-  /**
-   * Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
-   */
-  path: string | null;
   /**
    * Deepest channel entity ID above the rows, which groups unseen counts
    */
@@ -198,10 +194,6 @@ export type StreamSignal = {
    * The one row the signal is about; null when it is about the organization as a whole
    */
   subjectId: string | null;
-  /**
-   * Counter value of a versioned signal, when the sender knows it; catchup returns the stored one
-   */
-  version: number | null;
 };
 
 /**

@@ -7,10 +7,10 @@ import { organizationTopic, streamSubscriberManager } from '#/modules/entities/s
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { StreamChange } from '#/schemas';
 
-/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
+/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
 const spreadMsPerSubscriber = 20;
-/** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
-const maxSpreadWindowMs = 120_000;
+/** The client's background tier waits at most this long, so a wider window would pile the slots past it at its end. */
+const maxSpreadWindowMs = 30_000;
 
 /**
  * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for
@@ -80,8 +80,6 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
     productType: entityType,
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
-    // The rows of an event share one path.
-    path: named[0] ? hierarchy.computeProductPath(entityType, named[0].rowData) : null,
     channelId,
     rows: overflowed ? [] : entries,
     overflow: overflowed ? overflowRange(event.action, entries) : null,
@@ -103,7 +101,6 @@ export function buildMoveOut(event: AppStreamProductEvent, row: ActivityRow, mov
   return {
     ...base,
     action: 'moveOut',
-    path: oldPath,
     // The old path's deepest segment is the old home channel (unseen grouping).
     channelId: oldPath ? pathHomeId(oldPath) : base.channelId,
     // The removal is the payload: no tab takes it for its own echo.

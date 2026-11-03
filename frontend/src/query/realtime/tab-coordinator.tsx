@@ -43,7 +43,7 @@ const streamChangeEmitter = createEmitter<StreamChange>('TabStreamChange');
 const streamSignalEmitter = createEmitter<StreamSignal>('TabStreamSignal');
 const catchupEmitter = createEmitter<{ response: PostAppCatchupResponse; baselineOnly: boolean }>('TabCatchup');
 const syncHealthEmitter = createEmitter<SyncHealth>('TabSyncHealth');
-/** What this tab last broadcast as leader, said again to a tab that opens later. */
+/** What this tab last broadcast as leader, said again to a tab that opens later; null once it heard another leader's. */
 let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
 
@@ -177,7 +177,10 @@ function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
 
   // The leader acts on its own stream: its changes and signals as they arrive, a catchup answer where its request returns.
   if (store.isLeader) return;
-  if (message.type === 'sync-health') syncHealthEmitter.publish(message.health);
+  if (message.type === 'sync-health') {
+    lastSyncHealth = null;
+    syncHealthEmitter.publish(message.health);
+  }
   if (message.type === 'stream-change') streamChangeEmitter.publish(message.change);
   if (message.type === 'stream-signal') streamSignalEmitter.publish(message.signal);
   if (message.type === 'catchup') catchupEmitter.publish({ response: message.response, baselineOnly: message.baselineOnly });
@@ -191,8 +194,9 @@ export function broadcastCatchup(response: PostAppCatchupResponse, baselineOnly:
 /** Followers register here to receive the leader's catchup answers. */
 export const onCatchup = catchupEmitter.subscribe;
 
-/** Called by the leader when the health of its stream changes: a follower has no stream of its own to judge by. */
+/** Called by the leader with the health of its stream, posted only when it changed: a follower has no stream of its own to judge by. */
 export function broadcastSyncHealth(health: SyncHealth): void {
+  if (lastSyncHealth?.streamHealthy === health.streamHealthy && lastSyncHealth.workerAway === health.workerAway) return;
   lastSyncHealth = health;
   broadcastChannel?.postMessage({ type: 'sync-health', health } satisfies BroadcastMessage);
 }

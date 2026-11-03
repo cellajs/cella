@@ -33,11 +33,10 @@ export const streamChangeSchema = z
   .object({
     action: z
       .enum([...activityActions, 'moveOut'] as const)
-      .describe('Change kind; moveOut = the row left this path (reparent) and is no longer readable there'),
+      .describe('Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there'),
     productType: z.enum(appConfig.productEntityTypes),
     organizationId: z.string(),
     tenantId: z.string().nullable(),
-    path: z.string().nullable().describe('Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path'),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
     rows: z
       .array(streamChangeRowSchema)
@@ -61,7 +60,7 @@ export const streamChangeSchema = z
   })
   .openapi('StreamChange', {
     description:
-      'A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
+      'A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
     example: mockStreamChange(),
     'x-tags': schemaTags('data', 'entities', 'cella'),
   });
@@ -74,7 +73,6 @@ export const streamSignalSchema = z
     type: z.string().describe('Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)'),
     organizationId: z.string().nullable(),
     subjectId: z.string().nullable().describe('The one row the signal is about; null when it is about the organization as a whole'),
-    version: z.number().int().nullable().describe('Counter value of a versioned signal, when the sender knows it; catchup returns the stored one'),
   })
   .openapi('StreamSignal', {
     description:

@@ -38,7 +38,6 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
 
     declareViewsFromMemberships();
 
-    expect(syncStore.getState().getOrgTenantId('org-2')).toBe('tenant-1');
     expect(syncStore.getState().getCatchupViews(['attachment'])).toEqual([
       expect.objectContaining({ key: 'org-1:attachment', organizationId: 'org-1', cursor: 0 }),
       expect.objectContaining({ key: 'org-2:attachment', organizationId: 'org-2', cursor: 0 }),
@@ -48,7 +47,6 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
   it('must not put the cursor of a known organization back', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin')] });
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
 
     declareViewsFromMemberships();

@@ -139,9 +139,7 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     await dispatchChange(attachmentEvent(orgA, [{ seq: 7, stx, userId: 'writer-user', rowData: attachmentRow('attachment-1', orgA) }]));
 
     // The tab that wrote the row recognises its own write by the stx and fetches nothing.
-    expect(member.received).toEqual([
-      expect.objectContaining({ path: orgA, rows: [{ subjectId: 'attachment-1', seq: 7, stx, actorId: 'writer-user' }] }),
-    ]);
+    expect(member.received).toEqual([expect.objectContaining({ rows: [{ subjectId: 'attachment-1', seq: 7, stx, actorId: 'writer-user' }] })]);
   });
 
   it('tells a reader of an event of several rows each row with its own seq and write, in event order', async () => {

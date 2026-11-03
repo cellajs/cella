@@ -206,7 +206,7 @@ export async function fetchEntityAndUpdateList(
   }
 }
 
-/** Only `ok` permits cursor advancement; `overflow` and `unsupported` require list invalidation, `error` may retry. */
+/** `overflow` and `unsupported` deliver no row and `error` may retry; the caller marks the lists of a range that came back short or not at all. */
 export interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
   items: ItemData[];
@@ -243,7 +243,7 @@ export async function fetchRangeAndPatch(
   try {
     const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: syncChunkSize } });
 
-    // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
+    // A full chunk may truncate the range: report overflow so the caller marks the lists before it moves past unseen rows.
     if (items.length >= syncChunkSize) {
       console.debug(`[CacheOps] Range fetch: ${label} overflows one chunk → invalidation`);
       return failedRange('overflow');

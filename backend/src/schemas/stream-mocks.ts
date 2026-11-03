@@ -11,8 +11,6 @@ export const mockStreamChange = (key = 'stream-change:default') =>
       productType: 'attachment' as const,
       organizationId,
       tenantId: mockNanoid(),
-      // An attachment's path is its organization id.
-      path: organizationId,
       channelId: mockUuid(),
       rows: [{ subjectId: mockUuid(), seq: faker.number.int({ min: 1, max: 500 }), stx: mockStxBase(`${key}:stx`), actorId: mockUuid() }],
       overflow: null,
@@ -21,11 +19,10 @@ export const mockStreamChange = (key = 'stream-change:default') =>
     };
   });
 
-/** The user's own membership changed: an ephemeral signal to one user, version unknown to the sender. */
+/** The user's own membership changed: an ephemeral signal to one user. */
 export const mockStreamSignal = (key = 'stream-signal:default') =>
   withFakerSeed(key, () => ({
     type: 'membership.changed',
     organizationId: mockUuid(),
     subjectId: mockUuid(),
-    version: null,
   }));

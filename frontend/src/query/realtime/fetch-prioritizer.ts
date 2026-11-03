@@ -3,7 +3,6 @@ import type { StreamChange } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { sourceId } from '~/query/offline/hlc';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from '~/query/realtime/cache-ops';
@@ -219,13 +218,6 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   return common.length > 1 ? common[common.length - 1] : undefined;
 }
 
-/** A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles; logs once per drop of trust. */
-function enterBasicFetchMode(context: Record<string, unknown>): void {
-  if (!isSyncDeliveryTrusted()) return;
-  setSyncDeliveryTrusted(false);
-  console.warn('[SyncTrust] delivery shortfall; switching to basic-fetch mode', context);
-}
-
 /** Flush one covering group: fetch the merged range once, then settle every entry from it. */
 async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'requeued'> {
   const { entityType, organizationId } = entries[0];
@@ -247,20 +239,15 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     return 'requeued';
   }
 
-  if (result.status === 'ok') {
-    if (result.reachedSeq < untilSeq) {
-      // Short delivery: do not advance the cursor, so catchup re-checks the gap; heal the visible view once and degrade sync trust.
-      cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-      enterBasicFetchMode({ entityType, organizationId, promisedSeq: untilSeq, reachedSeq: result.reachedSeq });
-    } else {
-      // The fetch covered (afterSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
-      for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
-    }
-    // The org id is the fallback home for rows without ancestor ids.
-    publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
-  } else {
-    // Overflow, unsupported, or exhausted retries: the watermark advances to prevent a fetch loop.
-    for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+  // Each due channel advances to the shared upper bound, also past a range not delivered whole: its refetch mark recovers it, and no later catchup fetches it again.
+  for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
+
+  // The org id is the fallback home for rows without ancestor ids.
+  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
+
+  // Overflow, unsupported, exhausted retries, or fewer rows than announced: a row changed again since, one this reader may not read, or one deleted with its channel.
+  const undelivered = result.status !== 'ok' || result.reachedSeq < untilSeq;
+  if (undelivered) {
     invalidateUndelivered(
       entityType,
       organizationId,
@@ -274,7 +261,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     for (const propagation of entry.propagations) propagateEmbeddings(propagation);
   }
 
-  return result.status === 'ok' ? 'ok' : 'fallback';
+  return undelivered ? 'fallback' : 'ok';
 }
 
 /**

@@ -12,17 +12,14 @@ import { enqueueRange, invalidateUndelivered } from '~/query/realtime/fetch-prio
 import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/propagation';
 import { publishChangeEvent } from '~/query/realtime/sync-events';
 import { getSyncTier } from '~/query/realtime/sync-priority';
-import { syncStore } from '~/query/realtime/sync-store';
 
 /** Changes carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
 export function handleStreamChange(change: StreamChange): void {
-  const { productType: entityType, action, organizationId, tenantId, rows } = change;
+  const { productType: entityType, action, organizationId, rows } = change;
 
   const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.row_count': rows.length };
 
   withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
-    if (tenantId) syncStore.getState().trackOrg(organizationId, tenantId);
-
     // The check guards a product type this bundle does not know.
     if (!isProduct(entityType)) return console.error('Unknown entityType in app stream change:', entityType);
 
@@ -89,7 +86,7 @@ function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void 
     case 'update': {
       const seqs = rows.flatMap(({ seq }) => (seq == null ? [] : [seq]));
       if (seqs.length > 0) {
-        // The range of the rows goes to the lazy path; the watermark advances only after a successful flush, since advancing earlier would skip the range forever.
+        // The range of the rows goes to the lazy path; the watermark advances once its flush settles, since advancing earlier would skip the range forever.
         enqueueAnnouncedRange(change, { afterSeq: Math.min(...seqs) - 1, untilSeq: Math.max(...seqs) });
         // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
         break;

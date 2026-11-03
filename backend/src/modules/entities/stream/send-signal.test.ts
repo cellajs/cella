@@ -57,7 +57,7 @@ describe('sendSignal: who hears it', () => {
     for (const frames of own) {
       // A signal carries no id: the client's stream cursor is an activity id, and a signal must not move it.
       expect(frames).toEqual([{ event: 'signal', id: undefined, data: expect.any(String) }]);
-      expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1', version: null });
+      expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1' });
     }
     expect(bystander).toEqual([]);
   });
@@ -72,9 +72,7 @@ describe('sendSignal: who hears it', () => {
 
     await sendSignal('signal-test.changed', toReaders(buildSubject('organization', {}, { id: org })), { organizationId: org });
 
-    expect(member.map(({ data }) => JSON.parse(data))).toEqual([
-      { type: 'signal-test.changed', organizationId: org, subjectId: null, version: null },
-    ]);
+    expect(member.map(({ data }) => JSON.parse(data))).toEqual([{ type: 'signal-test.changed', organizationId: org, subjectId: null }]);
     expect(removed).toEqual([]);
     expect(otherOrg).toEqual([]);
   });

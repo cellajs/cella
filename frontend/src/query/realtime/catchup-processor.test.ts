@@ -1,3 +1,4 @@
+import { QueryObserver } from '@tanstack/react-query';
 import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
@@ -48,16 +49,12 @@ vi.mock('~/query/realtime/membership-ops', () => ({
   fetchMemberships: vi.fn(),
 }));
 
-vi.mock('~/query/realtime/sync-priority', async () => {
-  const { syncStore } = await import('~/query/realtime/sync-store');
-  return {
-    // The persisted sync store answers, as it does before the memberships cache hydrates.
-    getTenantIdForOrg: (organizationId: string) => syncStore.getState().getOrgTenantId(organizationId),
-    // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
-    getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
-    isViewingChannel: () => true,
-  };
-});
+vi.mock('~/query/realtime/sync-priority', () => ({
+  getTenantIdForOrg: () => 'tenant-1',
+  // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
+  getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
+  isViewingChannel: () => true,
+}));
 
 // The real fetch prioritizer runs as the single fetch path; only its outward boundaries are mocked.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
@@ -92,6 +89,13 @@ const okViewResponse = (frontier: number): PostAppCatchupResponse =>
     views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier } }],
   }) as unknown as PostAppCatchupResponse;
 
+/** The org-1 list mounted, as on screen, counting the list requests it sends. */
+const observeList = (queryKey: readonly unknown[]) => {
+  const listFetch = vi.fn(async () => ({ items: [], total: 0 }));
+  const unsubscribe = new QueryObserver(queryClient, { queryKey, queryFn: listFetch, staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
+  return { listFetch, unsubscribe };
+};
+
 describe('catchup processor (view-driven)', () => {
   afterEach(() => {
     queryClient.clear();
@@ -110,7 +114,6 @@ describe('catchup processor (view-driven)', () => {
     const answer = okViewResponse(6);
 
     // The leader was at 5 when it sent the request this answers.
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
     await processAppCatchup(answer);
@@ -124,6 +127,22 @@ describe('catchup processor (view-driven)', () => {
     expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(2, 6));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toMatchObject({ items: [{ id: 'attachment-1', name: 'fresh' }] });
+  });
+
+  // A cascaded delete stamps no seq, so a read of the range never reaches a frontier row that left with its channel.
+  it('must not hold the cursor at a frontier no fetch can deliver: the next catchup fetches nothing', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-6', organizationId: 'org-1', seq: 6 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+
+    await processAppCatchup(okViewResponse(9));
+    await processAppCatchup(okViewResponse(9));
+
+    expect(rangeFetch).toHaveBeenCalledExactlyOnceWith(rangeRequest(4, 9));
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
 
   it('a first connection refetches a list that was read before its stream was live, and stores the frontier', async () => {
@@ -165,35 +184,58 @@ describe('catchup processor (view-driven)', () => {
 describe('catchup after the server rebuilt its sync books', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     queryClient.clear();
     syncStore.getState().reset();
     vi.clearAllMocks();
   });
 
-  const cached = (keys: { list: { org: (id: string) => readonly unknown[] }; detail: { byId: (id: string) => readonly unknown[] } }) => {
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
-    queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', name: 'stale' });
-  };
-
-  it('must not fetch a range from a cursor of the old books: it refetches what is cached and takes the frontier as its baseline', async () => {
+  /** A store of generation 1 whose cursor of the old books is 40, with the list on screen and a detail cached. */
+  const startOnOldBooks = () => {
     vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
-    cached(keys);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
+    queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', name: 'stale' });
+    return { keys, rangeFetch, ...observeList(keys.list.org('org-1')) };
+  };
+
+  it('must not fetch a range from a cursor of the old books: it refetches what is cached once, at its share of the spread, and takes the frontier as its baseline', async () => {
+    const { keys, rangeFetch, listFetch, unsubscribe } = startOnOldBooks();
 
     await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    // Every client hears of the rebuild at once: none refetches before its share of the spread.
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(listFetch).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(10_000);
 
+    expect(listFetch).toHaveBeenCalledOnce();
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().generation).toBe(2);
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
-    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(keys.detail.byId('attachment-1'))?.isInvalidated).toBe(true);
+    unsubscribe();
+  });
+
+  it('must not lose the refetch to a reload before its share of the spread: the next catchup arms it again, the one after does not repeat it', async () => {
+    const { listFetch, unsubscribe } = startOnOldBooks();
+
+    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    // The tab reloads: its timer is gone, the store it persisted with the cursor reset is not.
+    vi.clearAllTimers();
+    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(listFetch).toHaveBeenCalledOnce();
+
+    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(listFetch).toHaveBeenCalledOnce();
+    unsubscribe();
   });
 });
 
@@ -206,24 +248,27 @@ describe('catchup after the device was away longer than the activity window', ()
   });
 
   // The server removes tombstones older than the deleted-items period, so a range from a cursor that old can miss deletes.
-  it('must not fetch a range from its old cursor: it refetches what is cached and takes the frontier as its baseline', async () => {
+  it('must not fetch a range from its old cursor: it refetches what is cached once, at once, and takes the frontier as its baseline', async () => {
     vi.useFakeTimers();
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     syncStore.getState().markCaughtUp();
     queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
+    const { listFetch, unsubscribe } = observeList(keys.list.org('org-1'));
 
     vi.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000);
     await processAppCatchup({ ...okViewResponse(52), generation: 1 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(listFetch).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(10_000);
 
+    expect(listFetch).toHaveBeenCalledOnce();
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(52);
-    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
+    unsubscribe();
   });
 });
 
@@ -285,7 +330,6 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
@@ -312,7 +356,6 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 

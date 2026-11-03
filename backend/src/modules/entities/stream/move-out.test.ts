@@ -11,7 +11,7 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
 
 /**
- * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates
+ * Only subscribers losing read access receive `moveOut`, under the old home channel. The draft veto creates
  * a configuration-independent visibility difference through the same permission path.
  */
 const org = 'org-moveout-a';
@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe('dispatchMoveOuts', () => {
-  it('sends moveOut with the OLD path to subscribers who lost readability', async () => {
+  it('sends moveOut to subscribers who lost readability', async () => {
     const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
@@ -112,7 +112,7 @@ describe('dispatchMoveOuts', () => {
       action: 'moveOut',
       productType: 'attachment',
       // Computed from movedFrom's ancestor ids; org-homed attachments resolve to the org id.
-      path: org,
+      channelId: org,
       // The removal is the payload: no stx or writer although the row has them, so no tab takes it for its echo.
       rows: [{ subjectId: 'att-1', seq: 7, stx: null, actorId: null }],
     });
@@ -163,6 +163,6 @@ describe('dispatchMoveOuts', () => {
 
     expect(member.received).toHaveLength(1);
     // It names the moved row alone, with its own seq.
-    expect(member.received[0]).toMatchObject({ action: 'moveOut', path: org, rows: [{ subjectId: 'att-2', seq: 8 }] });
+    expect(member.received[0]).toMatchObject({ action: 'moveOut', rows: [{ subjectId: 'att-2', seq: 8 }] });
   });
 });

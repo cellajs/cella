@@ -88,7 +88,6 @@ const signal = (overrides: Partial<StreamSignal> = {}): StreamSignal => ({
   type: 'channel.deleted',
   organizationId: 'org-1',
   subjectId: 'p1',
-  version: null,
   ...overrides,
 });
 
@@ -152,7 +151,7 @@ describe('channel.deleted', () => {
   it('missed while away, it names no channel: the lists of every type below a channel take the mark, and no row is dropped', () => {
     seedCache();
 
-    handleChannelDeleted(signal({ subjectId: null, version: 4 }));
+    handleChannelDeleted(signal({ subjectId: null }));
     cascadeSettles();
 
     expect(idsOf(homeOfP1)).toEqual(['t1', 't2']);

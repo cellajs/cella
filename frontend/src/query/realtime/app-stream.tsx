@@ -5,15 +5,10 @@ import { runSyncService } from '~/query/realtime/sync-service';
 
 const debugLabel = 'AppStream';
 
-/** Connects the app stream and seeds offline caches once it is live; StreamManager owns every reconnect, visibility and leader changes included. Mount in AppLayout. */
+/** Seeds offline caches once the app stream is live: the app route's `beforeLoad` connects it, and StreamManager owns every reconnect. Mount in AppLayout. */
 export function AppStream() {
   // Only the connection state: the cursor advances on every event and nothing here renders it.
   const streamState = useStore(appStreamManager.store, (state) => state.state);
-
-  // Route beforeLoad owns the disconnect lifecycle.
-  useEffect(() => {
-    appStreamManager.connect();
-  }, []);
 
   useEffect(() => {
     if (streamState === 'live') console.debug(`[${debugLabel}] Connected and live`);

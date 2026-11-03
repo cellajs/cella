@@ -95,14 +95,13 @@ export const zStxBase = z.object({
 });
 
 /**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, and their path, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export const zStreamChange = z.object({
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
   productType: z.enum(['attachment']),
   organizationId: z.string(),
   tenantId: z.string().nullable(),
-  path: z.string().nullable(),
   channelId: z.string().nullable(),
   rows: z.array(
     z.object({
@@ -137,7 +136,6 @@ export const zStreamSignal = z.object({
   type: z.string(),
   organizationId: z.string().nullable(),
   subjectId: z.string().nullable(),
-  version: z.int().nullable(),
 });
 
 /**

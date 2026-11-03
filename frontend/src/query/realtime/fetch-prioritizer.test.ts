@@ -3,7 +3,6 @@ import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { syncStore } from '~/query/realtime/sync-store';
 
 // Mock the boundaries: fetch/invalidate, tiers, propagation, unseen recount, router.
@@ -44,7 +43,6 @@ describe('fetch-prioritizer', () => {
     vi.useFakeTimers();
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     syncStore.getState().reset();
-    setSyncDeliveryTrusted(true);
     // reachedSeq Infinity = full delivery (reaches any untilSeq) unless a test overrides it.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: Number.POSITIVE_INFINITY });
     getSyncTier.mockReturnValue(background);
@@ -56,27 +54,35 @@ describe('fetch-prioritizer', () => {
     vi.useRealTimers();
   });
 
-  it('reads a range from the cursor catchup keeps and moves the cursor only past a range it delivered in full', async () => {
+  it('reads a range from the cursor catchup keeps and settles one that came back short as one it could not fetch: rows patched, lists marked, cursor moved on', async () => {
+    const syncedRows = vi.fn();
+    const off = onSyncedRows(syncedRows);
     // Catchup left the organization's cursor at 3; an org-homed row's notification names the organization as its channel.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 3);
 
-    // Seqs 4 and 5 were never notified, and the fetch delivers only up to 5 of the promised 7.
-    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 5 });
+    // Seqs 4 and 5 were never notified, and the fetch delivers only up to 5 of the promised 7: the row at 7 changed again since.
+    const items = [{ id: 'a5' }];
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items, reachedSeq: 5 });
     enqueueRange({ ...base, channelId: 'org-1', afterSeq: 5, untilSeq: 7 });
     await flushAllNow();
+    off();
 
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
-    // A short delivery holds the cursor, refetches the lists and stops trusting sync until a clean catchup.
-    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(3);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
     expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
-    expect(isSyncDeliveryTrusted()).toBe(false);
+    expect(syncedRows.mock.calls).toEqual([
+      [{ entityType: 'attachment', organizationId: 'org-1', rows: items, degraded: false }],
+      [{ entityType: 'attachment', organizationId: 'org-1', rows: [], degraded: true }],
+    ]);
 
-    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 7 });
-    enqueueRange({ ...base, channelId: 'org-1', afterSeq: 6, untilSeq: 7 });
+    // The row's next change names its new position, and its range starts where the cursor moved to.
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 9 });
+    enqueueRange({ ...base, channelId: 'org-1', afterSeq: 8, untilSeq: 9 });
     await flushAllNow();
 
-    expect(fetchRangeAndPatch.mock.calls[1][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
-    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
+    expect(fetchRangeAndPatch.mock.calls[1][3]).toEqual({ afterSeq: 7, untilSeq: 9 });
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+    expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
   });
 
   it.each(['overflow', 'error'] as const)(

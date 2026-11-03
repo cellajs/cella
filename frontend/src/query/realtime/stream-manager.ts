@@ -697,7 +697,6 @@ export const appStreamManager = new StreamManager('AppStream', {
 
 /** What the app stream last said of the server's CDC worker. A stream that is down says nothing new, and the first ping of the next one does. */
 let workerAway = false;
-let publishedHealth: SyncHealth | null = null;
 
 /** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
 function applySyncHealth(health: SyncHealth): void {
@@ -709,8 +708,6 @@ function applySyncHealth(health: SyncHealth): void {
 function publishSyncHealth(): void {
   if (!isLeader()) return;
   const health: SyncHealth = { streamHealthy: appStreamManager.store.getState().state !== 'error', workerAway };
-  if (publishedHealth?.streamHealthy === health.streamHealthy && publishedHealth.workerAway === health.workerAway) return;
-  publishedHealth = health;
   applySyncHealth(health);
   broadcastSyncHealth(health);
 }
@@ -718,9 +715,7 @@ function publishSyncHealth(): void {
 appStreamManager.store.subscribe(publishSyncHealth);
 // A follower takes the leader's word. Once it leads, its own stream connects and says, whatever it last heard.
 onSyncHealth((health) => {
-  if (isLeader()) return;
-  publishedHealth = null;
-  applySyncHealth(health);
+  if (!isLeader()) applySyncHealth(health);
 });
 
 /**

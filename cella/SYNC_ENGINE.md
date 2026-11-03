@@ -21,7 +21,7 @@ tab A ──PATCH──▶ API ──UPDATE──▶ Postgres
                                API activityBus .......... an event
                                     │ who may read the row?
                                     ▼
-tab B ◀────── SSE ─────────── change frame .............. path, rows with seq and write
+tab B ◀────── SSE ─────────── change frame .............. rows with seq and write
   │
   └── GET ?afterSeq=6&untilSeq=7 ──▶ API ──▶ rows ──▶ tab B's cache
 ```
@@ -77,7 +77,7 @@ A product table that opts into drafts is published with a row filter, so sync se
 
 ### Moves
 
-When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` with the old path and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update.
+When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` under its old home channel and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update.
 
 ### Detail cache
 
@@ -119,7 +119,7 @@ Apps derive per-user state from `query/realtime/sync-events.ts`, never from queu
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, also when the app comes back online. A failed stream, a delivery shortfall or an absent CDC worker lets them go stale with time until a clean catchup ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, also when the app comes back online. A failed stream or an absent CDC worker lets them go stale with time until the stream delivers again ([REST fallback](#rest-fallback)). Other queries keep the global stale time, infinite while offline.
 
 A list the engine cannot patch whole, such as one a range overflowed or a filtered list a new row may belong to, carries a **refetch mark**: it refetches when it is opened or when the [background fill](./CLIENT.md#cold-start-to-live) reads it. The mark outlives later patches and a reload, and only that refetch clears it. A full read of a canonical list merges the range announced while it ran before it is cached.
 
@@ -182,7 +182,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | One change can never be processed | Live updates pause; then every client refetches once | The worker skips the backlog and rebuilds the books | Activities and notifications of that backlog |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
-A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache: the lists on screen at once, the others through their [refetch mark](#freshness).
+A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache once, each client at its own moment within a few seconds: what is on screen then, the rest through its [refetch mark](#freshness).
 
 ### Multiple tabs
 
