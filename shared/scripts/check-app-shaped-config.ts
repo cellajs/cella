@@ -16,7 +16,7 @@ const edits: { files: string[]; from: string; to: string }[] = [
     from: 'surfaces: {} as',
     to: "surfaces: { 'organization.tabs': ['members', 'settings'], 'user.profile': ['organizations'] } as",
   },
-  { files: configFiles, from: 'commentEmail: false as boolean', to: 'commentEmail: true as boolean' },
+  { files: configFiles, from: 'commentEmail: false,', to: 'commentEmail: true,' },
   // An app without a federation runs without the sso strategy; the template keeps it on.
   {
     files: ['config.default.ts'],
