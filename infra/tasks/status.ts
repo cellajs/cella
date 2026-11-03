@@ -19,7 +19,7 @@ import {
 import { allPrincipalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
-import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
+import { pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
   type LockInfo,
   lockKey,
@@ -140,7 +140,6 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     secretKey,
     operatorKey: ctx.operatorKey,
     hasDomain,
-    computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
     dbExposureConfigured: dbExposureConfigured(ctx.mode, ctx.stackYaml),
     scalewayFacts,
   };

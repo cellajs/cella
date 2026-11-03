@@ -79,7 +79,6 @@ export interface ProbeSession {
   /** The operator key the run holds, which lists the machines: the observer key reads none. Absent outside a session unlocked with it. */
   operatorKey?: KeyPair;
   hasDomain: boolean;
-  computeDeferredSince?: string;
   /** True when the exposure overlay or stack config turns the public DB endpoint on. */
   dbExposureConfigured?: boolean;
   /** Memoized best-effort control-store read; never rejects. */
