@@ -62,7 +62,7 @@ describe('isHealthy', () => {
 describe('the pool read', () => {
   const stat = (backend_id: string, ip: string, server_state: string) => ({ backend_id, ip, server_state, last_health_check_status: 'failed' });
 
-  it('counts an address as serving only while its pool holds it running, whatever the last check status says (M1)', () => {
+  it('counts an address as serving only while its pool holds it running, whatever the last check status says', () => {
     const stats = [stat('pool', '10.0.0.3', 'running'), stat('pool', '10.0.0.4', 'stopped'), stat('other', '10.0.0.4', 'running')];
     expect(isServing(stats, 'pool', '10.0.0.3')).toBe(true);
     expect(isServing(stats, 'pool', '10.0.0.4')).toBe(false);

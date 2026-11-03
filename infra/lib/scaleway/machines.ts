@@ -31,7 +31,7 @@ export interface MachineSpec {
   privateNic?: { privateNetworkId: string; ipamIpId?: string };
 }
 
-/** Write one key of a machine's user data; the metadata service serves it to the machine within about a second (M3). */
+/** Write one key of a machine's user data; the metadata service serves it to the machine within about a second (0.7 to 1.3 s measured). */
 export async function setUserData(auth: ScwAuth, zone: string, serverId: string, key: string, text: string): Promise<void> {
   const res = await resolveFetch(auth.fetchImpl)(`${instanceApi(zone)}/servers/${serverId}/user_data/${key}`, {
     method: 'PATCH',

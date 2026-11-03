@@ -48,7 +48,7 @@ describe('deploy key rights', () => {
     const all = rules.flatMap(setsOf);
     expect(all.filter((set) => set.startsWith('LoadBalancers'))).toEqual(['LoadBalancersReadOnly']);
     expect(all.filter((set) => set.startsWith('IPAM'))).toEqual(['IPAMReadOnly']);
-    // M2: a private NIC at a reserved address takes the private network's write set and both NIC families.
+    // Measured with the deploy key: a private NIC at a reserved address is refused (403) without the private network's write set or either NIC family.
     expect(all).toEqual(expect.arrayContaining(['PrivateNetworksFullAccess', 'InstancesPrivateNicCreate', 'InstancesPrivateNetworkInterfaceCreate']));
   });
 

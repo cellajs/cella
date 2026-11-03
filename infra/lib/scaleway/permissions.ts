@@ -16,7 +16,8 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesIpCreate',
   'InstancesIpWrite',
   'InstancesIpDelete',
-  // A v1 private NIC at a reserved address needs both families and the private network's write set (M2); no v2 path exists.
+  // A v1 private NIC at a reserved address needs both families and the private network's write set: a measured create without any one
+  // of them was refused 403, and the v2 path answers 404.
   'InstancesPrivateNetworkInterfaceCreate',
   'InstancesPrivateNetworkInterfaceWrite',
   'InstancesPrivateNetworkInterfaceDelete',

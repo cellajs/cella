@@ -34,7 +34,7 @@ import { lbServerStats, waitForPools } from './wait-for-version';
  */
 export const SERVING_TIMEOUT_SECONDS = 480;
 
-/** How long a deploy waits for a drained machine's check to turn red: the agent's next manifest read plus the load balancer's 1.3 s (M1). */
+/** How long a deploy waits for a drained machine's check to turn red: the agent's next manifest read plus the 1.3 s a measured pool took to stop routing to a failing server. */
 export const OUT_TIMEOUT_SECONDS = 60;
 
 /** Time a drained machine gets past its drain seconds to stop its containers, before the deploy powers it off. */

@@ -44,7 +44,7 @@ export interface PoolServerStat {
 
 /**
  * Whether a pool routes to an address: its server there is `running`. The agent answers 200 only for the release its machine was made for,
- * so a running server is that release serving. `last_health_check_status` is no guide: it read `failed` while the server ran (M1).
+ * so a running server is that release serving. `last_health_check_status` is no guide: in a measured switch it read `failed` while the server ran.
  */
 export function isServing(stats: readonly PoolServerStat[], backendId: string, address: string): boolean {
   return stats.some((stat) => stat.backend_id === backendId && stat.ip === address && stat.server_state === 'running');

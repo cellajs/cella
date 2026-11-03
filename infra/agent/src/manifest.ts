@@ -8,7 +8,7 @@ export interface Manifest {
   drain: boolean;
 }
 
-/** The metadata service, which serves user data only to a request from a source port below 1024 (M3). */
+/** The metadata service, which serves user data only to a request from a source port below 1024: a higher port is answered 400. */
 const METADATA_HOST = '169.254.42.42';
 
 /** Parse the manifest; a malformed one is refused, and the agent keeps the state it had. */
