@@ -326,8 +326,8 @@ const meDetail: GenOperationDetail = {
 };
 
 /**
- * Every response is listed collapsed, in format view; a response without a schema says so. The shared errors share one
- * row, which lists each status with its text and links the body they extend.
+ * A success response is listed collapsed, in format view. Every error shares one row, which lists each status with its
+ * text and, at the end of its label line, its body or that it has none.
  */
 export const Responses: Story = {
   parameters: { app: { queryData: docsQueries([meDetail]) } },
@@ -340,21 +340,18 @@ export const Responses: Story = {
     const canvas = within(canvasElement);
 
     const ok = await canvas.findByRole('button', { name: /200\s*Current user/ });
-    const sharedErrors = canvas.getByRole('button', { name: /4xx.*errors.*400/ });
-    const notFound = canvas.getByRole('button', { name: /404\s*Not found/ });
-    for (const trigger of [ok, sharedErrors, notFound]) await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    const errors = canvas.getByRole('button', { name: /4xx.*errors.*400.*404/ });
+    for (const trigger of [ok, errors]) await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await userEvent.click(ok);
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
     await expect(await canvas.findByRole('radio', { name: /view_format/ })).toHaveAttribute('aria-checked', 'true');
     await expect(canvas.getByRole('radio', { name: /view_example/ })).toHaveAttribute('aria-checked', 'false');
 
-    await userEvent.click(notFound);
-    await expect(await canvas.findByText(/no_response_body/)).toBeVisible();
-
-    await userEvent.click(sharedErrors);
+    await userEvent.click(errors);
     await expect(await canvas.findByText('The request fails validation.')).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'ApiError' })).toHaveAttribute('href', '/docs/schemas?schemaTag=data#/components/schemas/ApiError');
+    await expect(canvas.getByText(/no_response_body/)).toBeVisible();
   },
 };
 

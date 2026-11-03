@@ -29,6 +29,10 @@ function resolveResponseSchema(response: GenResponseSummary, schemas: GenCompone
 /** A response that refers to a shared error component, which the backend documents once for every route answering that status. */
 const isSharedError = (response: GenResponseSummary) => response.ref?.startsWith('#/components/responses/') ?? false;
 
+const isError = (response: GenResponseSummary) => response.status >= 400;
+
+const schemaChipClass = tw('rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs');
+
 /** "Body" and a link to the named schema of a response body. */
 function ResponseBody({ schema, className }: { schema: GenComponentSchema; className?: string }) {
   const { t } = useTranslation();
@@ -36,25 +40,25 @@ function ResponseBody({ schema, className }: { schema: GenComponentSchema; class
   return (
     <p className={cn('flex items-center gap-2 px-3 text-muted-foreground', className)}>
       {t('c:docs.body')}
-      <SchemaLink schema={schema} className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs" />
+      <SchemaLink schema={schema} className={schemaChipClass} />
     </p>
   );
 }
 
-interface SharedErrorsItemProps {
+interface ErrorsItemProps {
   responses: GenResponseSummary[];
   schemas: GenComponentSchema[];
+  operationId: string;
+  zodIndex: DefinitionIndex;
+  typesIndex: DefinitionIndex;
 }
 
-/** One row for the shared errors: each status with its label and text, and a link to the body they all extend. */
-function SharedErrorsItem({ responses, schemas }: SharedErrorsItemProps) {
+/** One row for every error response: each status with its label, text and headers, and its body at the end of its label line. */
+function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: ErrorsItemProps) {
   const { t } = useTranslation();
+  const renderRef = useSchemaRefLink();
 
-  const errorSchemas = responses.map((response) => schemas.find((schema) => schema.name === response.name));
   const statusClasses = new Set(responses.map((response) => Math.floor(response.status / 100)));
-  const baseRefs = new Set(errorSchemas.map((schema) => schema?.extendsRef));
-  const [baseRef] = baseRefs;
-  const body = baseRefs.size === 1 ? schemas.find((schema) => schema.ref === baseRef) : undefined;
 
   return (
     <AccordionItem value="errors">
@@ -73,29 +77,52 @@ function SharedErrorsItem({ responses, schemas }: SharedErrorsItemProps) {
       </AccordionTrigger>
       <AccordionContent>
         <dl className="flex flex-col gap-4 px-3 pt-1">
-          {responses.map((response, index) => (
-            <div key={response.status} className="flex items-start gap-3">
-              <dt className={cn(statusBadgeClass, getStatusColor(response.status))}>{response.status}</dt>
-              <dd className="max-w-measure">
-                <div className="font-medium text-foreground">{response.description}</div>
-                {errorSchemas[index]?.description && (
-                  <p className="mt-0.5 text-foreground-soft">
-                    <SpecText text={errorSchemas[index].description} />
-                  </p>
-                )}
-                {response.headers?.map((header) => (
-                  <div key={header.name} className="mt-1.5 flex items-start gap-2 text-foreground-soft">
-                    <PanelTopIcon className="mt-0.5 size-4 shrink-0 text-info" />
-                    <span>
-                      <span className="font-mono text-foreground">{header.name}</span> <SpecText text={header.description} />
-                    </span>
+          {responses.map((response) => {
+            const named = response.name ? schemas.find((schema) => schema.name === response.name) : undefined;
+            const shared = isSharedError(response);
+            // A shared error's text is the description of its body schema, which extends the body all of them share
+            const text = shared ? named?.description : response.detail;
+            const body = shared && named?.extendsRef ? (schemas.find((schema) => schema.ref === named.extendsRef) ?? named) : named;
+            const inlineSchema = named ? undefined : response.schema;
+            return (
+              <div key={response.status} className="flex items-start gap-3">
+                <dt className={cn(statusBadgeClass, getStatusColor(response.status))}>{response.status}</dt>
+                <dd className="min-w-0 grow">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-medium text-foreground">{response.description}</span>
+                    {body && <SchemaLink schema={body} className={schemaChipClass} />}
+                    {!body && !inlineSchema && <span className="text-muted-foreground text-xs">{t('c:docs.no_response_body')}</span>}
                   </div>
-                ))}
-              </dd>
-            </div>
-          ))}
+                  {text && (
+                    <p className="mt-0.5 max-w-measure text-foreground-soft">
+                      <SpecText text={text} />
+                    </p>
+                  )}
+                  {response.headers?.map((header) => (
+                    <div key={header.name} className="mt-1.5 flex max-w-measure items-start gap-2 text-foreground-soft">
+                      <PanelTopIcon className="mt-0.5 size-4 shrink-0 text-info" />
+                      <span>
+                        <span className="font-mono text-foreground">{header.name}</span> <SpecText text={header.description} />
+                      </span>
+                    </div>
+                  ))}
+                  {inlineSchema && (
+                    <div className="mt-2">
+                      <ViewerGroup
+                        schema={inlineSchema}
+                        zodCode={getZodCodeForResponse(zodIndex, operationId, response.status, response.name)}
+                        typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
+                        example={response.example}
+                        descriptionToggle
+                        renderRef={renderRef}
+                      />
+                    </div>
+                  )}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
-        {body && <ResponseBody schema={body} className="mt-4 border-t pt-3" />}
       </AccordionContent>
     </AccordionItem>
   );
@@ -116,8 +143,8 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   const renderRef = useSchemaRefLink();
 
   const responses = examplesOnly ? allResponses.filter((response) => response.example !== undefined) : allResponses;
-  const rows = responses.filter((response) => !isSharedError(response));
-  const sharedErrors = responses.filter(isSharedError);
+  const rows = responses.filter((response) => !isError(response));
+  const errors = responses.filter(isError);
 
   if (responses.length === 0) {
     return (
@@ -190,7 +217,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
           </AccordionItem>
         );
       })}
-      {sharedErrors.length > 0 && <SharedErrorsItem responses={sharedErrors} schemas={schemas} />}
+      {errors.length > 0 && <ErrorsItem responses={errors} schemas={schemas} operationId={operationId} zodIndex={zodIndex} typesIndex={typesIndex} />}
     </Accordion>
   );
 }
