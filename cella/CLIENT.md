@@ -36,7 +36,7 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
         ▼                  ▼                  ▼
    enrichment         localUserDb        download queue
    unseen deltas      (queries, meta,    + blob storage
-   blob cleanup       kv, failed sync)   (blobs table)
+   blob cleanup       kv)                (blobs table)
 ```
 
 ## Inside the cache

@@ -97,7 +97,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Link attachment keys',
     description:
-      'Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
+      'Stores the storage keys of a file its uploader uploaded after creating the attachment, as a file added offline is. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
     request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
     responses: { 200: json('Attachment with its stored file', attachmentSchema), ...errors(409) },
   }),

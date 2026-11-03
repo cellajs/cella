@@ -234,10 +234,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/stream/`: audiences, build-change, helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
   - `backend/src/modules/entities/entities-handlers.ts` (stream handler, catchup), `backend/src/schemas/stream-schemas.ts`.
   - `sync-events.ts` is the frontend prioritizer file; the backend equivalents are `modules/entities/entities-listeners.ts` and `stream/send-signal.ts`.
-  - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/pipeline/parse-message.ts` (draft filter).
+  - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `organizationSubscribers`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
-  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal, generation resync.
-  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStream`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
+  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every app stream on a new generation).
+  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStreams`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{app-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
@@ -427,7 +427,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `deleted-storage` and `replaced-images`: a sweep or release deleting a key a live row, a seed or another holder names.
   - A missing storage key in the bucket is refused (`storedFileSize` HEADs every variant, 400 `missing_object`). Signed upload params expire in 15 minutes with a nonce per token; the token route is limited per user (`limiters.ts`).
 - **Asks:** a presigned URL for another tenant's key; a key with `..`; a file declared `text/html` on the public bucket; what the bucket origin shares with the app origin (with C4).
-- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. A product cache serving a deleted attachment belongs to C8. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
+- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
 
 ### C7 Request parsing, routing and cross-site differentials
 - **Gain:** guard bypass, reaching internal routes.
@@ -614,7 +614,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `failed-query-redaction` (D1): logs and spans carry no request value from a failed query.
   - In code: a session read failure stays the request's failure, never "signed out" (`resolve-session.ts`); the cookie is kept on a failed read. Yjs authorization failure closes the socket 4503; its connection limiter refuses on any error. CDC: an unknown flush failure never acknowledges; the setup check keeps the stream stopped while replica identity or the publication is wrong. The Matrix helper never throws; a failed mail send throws to its caller, and a request that stored its rows before the mail logs it. `@hono/node-server` answers an unparsable Host with 400, not a throw.
 - **Asks:** a dependency outage table (dependency -> request outcome -> closed or open -> test); process-level handlers; what pages an operator.
-- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows and the product cache belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health gate, rollout and runbooks belong to the infra review.
+- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health gate, rollout and runbooks belong to the infra review.
 
 ## F. Platform
 

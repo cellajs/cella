@@ -109,7 +109,7 @@ Beside change and signal frames the stream sends a periodic `ping`, which also s
 
 An announced range is queued, not fetched at once. A viewed channel fetches immediately, a muted or archived one when it is opened, and any other in the background, spread over a window that grows with the organization's online audience.
 
-Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces every readable change, ids only, before any tier decision, and delivers each settled range's rows.
+Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces each row a change frame names, ids only, before any tier decision, and delivers each settled range's rows. A frame past the row cap names no row, and a range the client cannot deliver row by row arrives as a degraded event without rows.
 
 ### Freshness
 
@@ -136,7 +136,7 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 ## Writes
 
-A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once, except a gateway's answer to a replay, as during a deploy: the replay stays queued and is sent again until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt, or once the stream stops reconnecting; an edit paused in the open page resumes as soon as the app is back online or regains focus. Online writes never wait.
+A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit retries network errors only, then pauses in the persisted replay queue; an HTTP error settles at once, except a gateway's answer to a replay, as during a deploy: the replay stays queued and is sent again until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt, or once the stream stops reconnecting; an edit paused in the open page resumes as soon as the app is back online or regains focus. The attachment module runs a tab's attachment writes one at a time, in order, so an online write waits behind a queued one, such as a restored queue that waits for the first catchup.
 
 ### Merge metadata
 
@@ -177,6 +177,38 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
 A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache once, each client at its own moment within a few seconds: what is on screen then, the rest through its [refetch mark](#freshness).
+
+### Failure modes
+
+The model allows each failure at most one answer per level. The **core** is the normal path, built to absorb it; the **mid** level is the one recovery when the core cannot, catchup on the client and reading again in the worker; the **lost case** starts over, a client by refetching once and the worker by rebuilding its books. A change that adds an answer to a failure edits its row here, in the [CDC worker's table](../cdc/README.md#failure-and-recovery) or in the [notifications table](../backend/src/modules/notification/README.md#failure-modes), and names its level.
+
+| What fails | Core | Mid | Lost case |
+| --- | --- | --- | --- |
+| A readable row changes | A `change` frame names it and a range fetch patches the caches (`fetchRangeAndPatch`); the writing tab fetches nothing for its own write (`isOwnEcho`) | | |
+| A change commits while catchup reads | The stream opens before catchup and buffers its frames until catchup ends; a full buffer runs catchup once more (`runCatchupCycle`) | | |
+| Frames are missed: the stream was down, or the API restarted, lost a frame or closed a client that stopped reading | | Catchup fetches each view's sequence gap (`processAppCatchup`) | |
+| A range fetch fails | Retried with a growing delay (`flushGroup`) | The cursor moves past the range and its lists get a refetch mark (`invalidateUndelivered`) | |
+| A range returns fewer rows than announced: a row changed again, became unreadable or left with its channel | | Refetch mark (`invalidateUndelivered`) | |
+| A change has more rows than a frame names | An `overflow` frame names their sequence range, fetched as any other | A delete past the cap marks the lists (`invalidateUndelivered`) | |
+| A row moves where a reader cannot read it | A `moveOut` frame removes it from the caches (`removeEntity`) | | |
+| A row is hard-deleted or unpublished | A `delete` frame drops its detail and marks its lists | | |
+| A channel is deleted and its rows leave by cascade | `channel.deleted` drops what is cached below it (`handleChannelDeleted`) | Missed while away: catchup finds a new signal version and marks the lists | |
+| An embedded row changes while hosts hold copies | The frame's `propagation` hint patches the copies (`propagateEmbeddings`) | Missed while away: the catchup's hints (`buildPropagationHints`); past a hint's or a frame's cap the host lists refetch (`invalidateEmbeddingHosts`) | |
+| A list read overlaps live patches | The canonical read merges the ranges the cursor moved past while it ran (`readAgainstDeltas`) | | |
+| A membership changes while the stream connects | The memberships are read again once the stream registers, and a change closes it with `access_changed` (`membershipsChangedSince`) | | |
+| A membership changes while the stream is live | The subscriber's memberships update and `membership.changed` tells the user | Missed while away: catchup's signal versions and its read of the memberships, which drops a lost organization's caches | |
+| A session is revoked | `session.revoked` closes its streams | | |
+| A session expires or a system role changes | A sweep each minute closes the stream (`ensureAppStreamSessionSweep`) | | |
+| The tenant is archived or restored | Its streams close with `access_changed` (`endOrganizationStreams`) | | |
+| The stream errors, ends or falls silent | The silence watchdog and a reconnect with backoff, at once when the app is back online or a tab takes over (`handleStreamFailure`) | Repeated failures open the circuit, which a passing health check closes (`openCircuit`) | |
+| A catchup hangs or fails | Bounded, then the stream's failure path (`handleCatchupFailure`); the writes waiting for it go ahead (`waitForActiveCatchup`) | The same circuit | |
+| No CDC worker reads | `worker_away` pings put synced queries back on a stale time (`setSyncWorkerAway`) | | |
+| Rows are readable but the summary is unproven (`opaque`) | | Every connection marks the view's lists (`isOpaqueScope`) | |
+| The leader tab closes | Web Locks hand the stream to another tab, which reconnects (`initTabCoordinator`) | | |
+| The books get a new generation | | | The API ends every stream with `resync`; each client resets its cursors and refetches once at its share of a spread (`adoptGeneration`) |
+| A device was away longer than the activity window | | | It resets its cursors and refetches at once (`startOverIfAway`) |
+| A create or update reaches the API after its row left the table | The API sends no frame for it (`dispatchChange`) | | |
+| A frame or signal of a type the bundle does not know | Skipped (`handleStreamChange`, `handleStreamSignal`) | | |
 
 ### Multiple tabs
 

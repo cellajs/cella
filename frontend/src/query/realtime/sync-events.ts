@@ -49,7 +49,7 @@ function createEmitter<T>(name: string) {
 const changeEvent = createEmitter<AnnouncedChange>('AnnouncedChange');
 const syncedRows = createEmitter<SyncedRows>('SyncedRows');
 
-/** Subscribe to announced changes to trigger work: every readable change, before any tier decision, muted and archived channels included. */
+/** Subscribe to announced changes to trigger work: each row a change frame names, before any tier decision, muted and archived channels included. */
 export const onChangeEvent = changeEvent.subscribe;
 export const publishChangeEvent = changeEvent.publish;
 

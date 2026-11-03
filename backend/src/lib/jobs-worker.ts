@@ -42,8 +42,8 @@ async function startMaintainer() {
 }
 
 /**
- * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, works
- * the template's queues and creates queues declared by modules. Its own process (`SERVICE=jobs`) on
+ * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, and the
+ * jobs and queues modules declare. Its own process (`SERVICE=jobs`) on
  * its configured port, or folded into the API under `singleVM`, where the API's `/health` already
  * carries the jobs component and its shutdown stops the store.
  */

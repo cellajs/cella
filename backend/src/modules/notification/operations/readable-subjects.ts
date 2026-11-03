@@ -9,8 +9,8 @@ type NotificationRef = Pick<NotificationModel, 'tenantId' | 'entityType' | 'subj
 
 /**
  * The subjects among `refs` that `access` may read now: the row is live and the permission engine allows read. A
- * notification went only to readers, but access can end afterwards, so the inbox, the digest and the mention mail ask
- * again before they name a subject or its channel.
+ * notification went only to readers, but access can end afterwards, so the inbox and the digest ask again before they
+ * name a subject or its channel.
  */
 export async function findReadableSubjectIds(access: Access, refs: NotificationRef[]): Promise<Set<string>> {
   const readable = new Set<string>();

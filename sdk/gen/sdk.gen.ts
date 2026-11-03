@@ -2700,7 +2700,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Link attachment keys
  *
- * Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
+ * Stores the storage keys of a file its uploader uploaded after creating the attachment, as a file added offline is. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
  *
  * **PUT /{tenantId}/{organizationId}/attachments/{id}/keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· _attachments · cella · product_
  *

@@ -34,7 +34,7 @@ Throw `AppError` with an i18n `type` from `locales/en/error` (an app's own in `l
 
 Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Decisions: [Permissions](./PERMISSIONS.md). Database backstop: [Multi-tenancy](./MULTI_TENANCY.md).
 
-- Every check takes an `Access` from `accessFrom(ctx)` on the backend and from `useCan` on the frontend; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
+- A backend check takes its `Access` from `accessFrom(ctx)` and a frontend check goes through `useCan`; never assemble one by hand. The frontend asks the engine only to shape the interface; the backend decides.
 - Tokens are issued, redeemed and spent through `auth/tokens/`, the only importer of `tokens-db`.
 - Name the proof: session, API key or access token. `credential` is the WebAuthn word (passkeys) and nothing else. Machine-access terms: API key, access scope, binding, OAuth client.
 
@@ -48,7 +48,7 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [In
 - **DB schemas**: Drizzle tables live in module `*-db.ts` files, registered in the pinned `channel-tables.ts` or `product-tables.ts`. Entity ids are UUID v7; nanoid only for short ids (tenant ids) or ids longer than a UUID.
 - **Validation**: Zod schemas in `<module>-schema.ts`, shared ones in `backend/src/schemas/`. A request string takes `.max()` (a `maxLength` constant or its column's length) before any refinement; a request array takes `.max()` before any refinement; a request record is a `boundedRecord` or a `z.partialRecord` over an enum.
 - **Types**: infer them from Zod. Avoid `as`; prefer `Object.assign`, `satisfies` or `as const`. **Never use `as unknown as`** without explicit permission: try `isNull()`, a generic type parameter or a dedicated type, and where nothing fits (a library type gap, a test mock) comment why.
-- **Query modules**: keys, cache writes, optimistic placeholders, invalidation and slug resolution use the helpers in `frontend/src/query/basic/`, and mutation defaults are set with `setMutationDefaults` at the top of a `query.ts` that the module's `<name>-module.ts` imports ([add-entity](./skills/add-entity/SKILL.md)). Read a queued mutation through the `mutation-variables.ts` shapes, never a cast, and register a version (`registerVariablesVersion`) when its shape changes ([Paused writes](./SYNC_ENGINE.md#paused-writes)).
+- **Query modules**: keys, cache writes, optimistic placeholders, invalidation and slug resolution use the helpers in `frontend/src/query/basic/`, and mutation defaults are set with `setMutationDefaults` at the top level of a `query.ts` that the module's `<name>-module.ts` imports ([add-entity](./skills/add-entity/SKILL.md)). Read a queued mutation through the `mutation-variables.ts` shapes, never a cast, and register a version (`registerVariablesVersion`) when its shape changes ([Paused writes](./SYNC_ENGINE.md#paused-writes)).
 
 ## OpenAPI & mocks
 
