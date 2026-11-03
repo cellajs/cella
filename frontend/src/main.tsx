@@ -12,7 +12,6 @@ import '~/lib/otel';
 import '~/modules'; // Composition root: registers every frontend module before first render
 import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
-import { renderAscii } from 'shared/utils/ascii';
 import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError, reportRejectedResponse } from '~/lib/maple';
@@ -45,7 +44,7 @@ if (!root) throw new Error('Root element not found');
 // Both the module registry and the route tree are populated by now, so every listed id can be checked.
 assertSurfaces();
 
-renderAscii();
+if (appConfig.asciiArt.length) console.info(appConfig.asciiArt.join('\n'));
 
 initFaviconBadge(appConfig.mode);
 

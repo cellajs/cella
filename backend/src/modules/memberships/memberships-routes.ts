@@ -54,7 +54,13 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCheckBodySchema) },
-    responses: { 200: json('What an invite would do with each address', membershipCheckResponseSchema, mockMembershipCheckResponse()) },
+    responses: {
+      200: json(
+        'Invite outcomes\n\nOne outcome per address, judged from the members and invitations the caller can see.',
+        membershipCheckResponseSchema,
+        mockMembershipCheckResponse(),
+      ),
+    },
   }),
   deleteMemberships: xRoute({
     method: 'delete',

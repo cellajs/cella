@@ -57,6 +57,13 @@ function documentedHeaders(headers: OpenApiResponseObject['headers'], sharedHead
   });
 }
 
+/** Splits a response description at its first blank line into the label and the detail after it. */
+function splitDescription(description: string): [label: string, detail?: string] {
+  const blankLine = /\n[ \t]*\n/.exec(description);
+  if (!blankLine) return [description.trim()];
+  return [description.slice(0, blankLine.index).trim(), description.slice(blankLine.index + blankLine[0].length).trim()];
+}
+
 /** Resolves one response entry: a `$ref` to a component response, or an inline response with its schema and example. */
 function summarizeResponse(
   statusCode: string,
@@ -105,7 +112,9 @@ function summarizeResponse(
     }
   }
 
-  const summary: GenResponseSummary = { status: Number.parseInt(statusCode, 10), description };
+  const [label, detail] = splitDescription(description);
+  const summary: GenResponseSummary = { status: Number.parseInt(statusCode, 10), description: label };
+  if (detail) summary.detail = detail;
   if (name) summary.name = name;
   if (ref) summary.ref = ref;
   if (contentType) summary.contentType = contentType;

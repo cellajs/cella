@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { mailer } from '#/lib/mailer';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
@@ -23,7 +24,7 @@ app.openapi(authGeneralRoutes.health, async (ctx) => {
   // Check emailEnum rate limit status without consuming points
   const [{ isLimited, retryAfter }, federations] = await Promise.all([checkIpRateLimitStatus(ctx, emailEnumLimiter), listSignInFederations()]);
 
-  return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }), federations }, 200);
+  return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }), federations, emailEnabled: mailer.enabled }, 200);
 });
 
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {

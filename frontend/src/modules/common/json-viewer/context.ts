@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import type { DataType } from '~/modules/common/json-viewer/types';
 import type { JsonPath } from '~/modules/common/json-viewer/utils';
 
@@ -16,6 +16,8 @@ export interface JsonViewerContextValue {
   showKeyQuotes: boolean;
   hideDescriptions: boolean;
   openapiMode?: 'spec' | 'schema';
+  renderRef?: (ref: string) => ReactNode;
+  renderDescription?: (text: string) => ReactNode;
 }
 
 export const JsonViewerContext = createContext<JsonViewerContextValue | null>(null);

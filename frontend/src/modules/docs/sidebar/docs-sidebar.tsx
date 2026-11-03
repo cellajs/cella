@@ -34,7 +34,8 @@ export function DocsSidebar() {
             <LogoMark className="size-7" />
           </Link>
         </TooltipButton>
-        <div aria-hidden="true" className="h-6 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
+        {/* 0.75rem each side: the Docs link's own padding adds to the gap after the line */}
+        <div aria-hidden="true" className="ml-1 h-6 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
         <TooltipButton toolTipContent={t('c:go_to_docs')}>
           <Link
             to="/docs"

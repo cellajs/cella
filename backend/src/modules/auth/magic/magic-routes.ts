@@ -18,7 +18,13 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     description:
       "Sends a magic link sign-in email to the specified address. Returns 204 whether or not the address has an account. An account whose organization requires its institution's sign-in gets a mail pointing there; only a browser that signed in to that account gets 403 `sso_required` instead.",
     request: { body: jsonBody(magicLinkBodySchema) },
-    responses: { 204: { description: 'Accepted alike whether a link, a pointer to the institution or nothing was mailed' }, ...errors(403) },
+    responses: {
+      204: {
+        description:
+          "Accepted\n\nThe same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account.",
+      },
+      ...errors(403),
+    },
   }),
   getPendingMagicLink: xRoute({
     method: 'get',
@@ -30,7 +36,10 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.',
     responses: {
-      200: json('The full address the held link signs in, as the confirm page shows it', z.object({ email: z.string() })),
+      200: json(
+        'Pending sign-in address\n\nThe full address the held link signs in to, as the confirm page shows it.',
+        z.object({ email: z.string() }),
+      ),
       ...errors(401),
     },
   }),

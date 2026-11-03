@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
@@ -6,6 +7,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { extensionLabel } from '~/modules/docs/helpers/extension-label';
+import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { AccessCell, type AccessValue } from '~/modules/docs/operations/access-explanation';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
@@ -15,6 +17,7 @@ import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { TagBadges } from '~/modules/docs/tag-table';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { isModifiedClick } from '~/utils/is-modified-click';
 
 /** Tag kinds whose columns start hidden, to keep the default table narrow; the columns menu shows them. */
 const hiddenTagKinds = new Set(['owner', 'entity']);
@@ -113,10 +116,19 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         <Button
           variant="cell"
           size="cell"
-          tabIndex={tabIndex}
           title={row.path}
           className="min-w-0 font-mono text-foreground text-xs"
-          onClick={(event) => openOperationSheet(row, event.currentTarget)}
+          render={
+            <Link
+              {...operationLinkOptions(row)}
+              tabIndex={tabIndex}
+              onClick={(event) => {
+                if (isModifiedClick(event)) return;
+                event.preventDefault();
+                openOperationSheet(row, event.currentTarget);
+              }}
+            />
+          }
         >
           {/* The underline sits on the path alone: on the button it would reach the badge too */}
           <span dir="rtl" className={cn(cellLinkTextClass, 'min-w-0 flex-1 text-left')}>

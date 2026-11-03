@@ -40,7 +40,8 @@ export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
               {/* A menu's items are one group of rows; a panel (a form) lays out its own. */}
               <div ref={contentRef} className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
                 {/* A pushed confirmation asks its own question about the same thing */}
-                {lead && !history.length && <DrawerLead>{lead}</DrawerLead>}
+                {/* Two lines at most, so a long name leaves the rows in view; a confirmation's question shows whole */}
+                {lead && !history.length && <DrawerLead className="line-clamp-2">{lead}</DrawerLead>}
                 {kind === 'menu' ? <DrawerRowGroup>{content}</DrawerRowGroup> : content}
               </div>
             </div>

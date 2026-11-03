@@ -53,7 +53,10 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     responses: {
       200: json('JSON-RPC response', z.any()),
       403: {
-        ...json('Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names', jsonRpcErrorSchema),
+        ...json(
+          'Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.',
+          jsonRpcErrorSchema,
+        ),
         headers: z.object({
           'WWW-Authenticate': z.string().openapi({ description: "The scope to step up to, and where to find the authorization server's metadata." }),
         }),

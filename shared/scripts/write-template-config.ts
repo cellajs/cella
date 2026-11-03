@@ -25,6 +25,7 @@ export const templateLeaves: readonly TemplateLeaf[] = [
   { path: 'slug', value: `'${slug}'` },
   { path: 'domain', value: `'${domain}'` },
   { path: 'description', value: `'${name}: powered by Cella.'` },
+  { path: 'asciiArt', value: '[]' },
   { path: 'origin', value: `'https://www.${domain}'` },
   // Off until the app runs a relay of its own.
   { path: 'services.yjs', replace: ['enabled: true', 'enabled: false'] },

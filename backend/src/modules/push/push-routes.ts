@@ -39,7 +39,12 @@ const pushRoutes = createXRoutes(['push', 'cella'], {
     summary: 'Remove a Web Push subscription',
     description: 'Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.',
     request: { query: deletePushSubscriptionQuerySchema },
-    responses: { 200: json('Number of subscriptions removed', deletePushSubscriptionResponseSchema) },
+    responses: {
+      200: json(
+        'Subscriptions removed\n\n`deleted` is the number removed, 0 when the endpoint belongs to another user.',
+        deletePushSubscriptionResponseSchema,
+      ),
+    },
   }),
 });
 

@@ -1,13 +1,15 @@
-import { ArrowLeftIcon, MailIcon } from 'lucide-react';
+import { ArrowLeftIcon, InfoIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { NamedText } from '~/modules/common/named-text';
 import { SuccessCheckmark } from '~/modules/common/success-checkmark';
+import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 
-export function MagicLinkSentStep() {
+/** `emailEnabled` comes from the auth health answer: undefined until it arrives, so the dev note waits for a known false. */
+export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) {
   const { t } = useTranslation();
   const email = useAuthStore((state) => state.email);
   const resetAuthStore = useAuthStore((state) => state.reset);
@@ -29,8 +31,14 @@ export function MagicLinkSentStep() {
         <p>
           <NamedText i18nKey={isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text'} values={{ email }} />
         </p>
-        {appConfig.mode === 'development' && <p className="mt-2">{t('c:magic_link_check_email.development.text')}</p>}
       </AuthHeader>
+      {appConfig.mode === 'development' && emailEnabled === false && (
+        <Alert variant="info" className="mt-2">
+          <InfoIcon />
+          <AlertTitle>{t('c:dev_only')}</AlertTitle>
+          <AlertDescription>{t('c:magic_link_check_email.development.text')}</AlertDescription>
+        </Alert>
+      )}
       {!isSignup && (
         <Button variant="secondary" onClick={resetAuthStore} className="mt-2">
           <ArrowLeftIcon />

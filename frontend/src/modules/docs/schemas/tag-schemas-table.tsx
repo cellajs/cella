@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { schemaAnchor } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { TagBadges, TagHashLink, TagTable } from '~/modules/docs/tag-table';
 

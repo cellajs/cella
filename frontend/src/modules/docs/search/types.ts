@@ -11,6 +11,8 @@ export type DocsSearchResult = {
   breadcrumbs: string[];
   to: string;
   params?: { _splat: string };
+  /** Opens the tag section that holds the result, on an API reference page. */
+  search?: Record<string, string>;
   /** Bare section id (scroll-spy convention: no `spy-` DOM prefix). */
   hash?: string;
   method?: string;

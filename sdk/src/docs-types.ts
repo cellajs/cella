@@ -124,7 +124,10 @@ export interface GenSchema {
 
 export interface GenResponseSummary {
   status: number;
+  /** The first paragraph of the response description: a label of a few words. */
   description: string;
+  /** The paragraphs after the label, shown when the docs row opens. */
+  detail?: string;
   name?: string;
   ref?: string;
   /** Content type of the response (e.g., 'application/json') */

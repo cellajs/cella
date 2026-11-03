@@ -10,7 +10,7 @@ import { InlinePrimitiveValue, PrimitiveValue } from '~/modules/common/json-view
 import { SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { useNodeExpansion } from '~/modules/common/json-viewer/use-node-expansion';
-import { describeNode, getValueType, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
+import { describeNode, getValueType, isDescriptionKeyword, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -39,6 +39,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
     showKeyQuotes,
     hideDescriptions,
     openapiMode,
+    renderDescription,
   } = useJsonViewerContext();
 
   // Flattened nodes render always expanded and without a key.
@@ -70,6 +71,15 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
       <div {...rowProps} className={labelRowClass}>
         <NodeKey {...keyProps} />
         <customType.Component value={value} path={path} />
+      </div>
+    );
+  }
+
+  // Schema mode: a description reads as prose under its field, whole and without its key
+  if (openapiMode === 'schema' && keyName !== false && isDescriptionKeyword(keyName, value)) {
+    return (
+      <div {...rowProps} className="max-w-measure py-0.5 font-sans text-foreground-soft">
+        {renderDescription ? renderDescription(value) : value}
       </div>
     );
   }
