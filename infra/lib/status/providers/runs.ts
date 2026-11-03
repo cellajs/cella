@@ -1,12 +1,29 @@
 import { commandOf, findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../deploy/job-runs';
 import { mainJobOutcome } from '../../deploy/main-job';
+import { type Rewrite, rewriteNote } from '../../deploy/run-record';
+import { bucketRunStore } from '../../deploy/run-store';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
+import { makeS3Client, projectAccessKey } from '../../scaleway/s3-client';
 import { check, probed } from '../check';
-import type { StatusProvider } from '../types';
+import type { ProbeSession, StatusProvider } from '../types';
 
-/** The main job's newest run and its definition, or null and undefined when the environment has none yet. */
-export type RunsFacts = { last: JobRun | null; definition?: JobDefinitionFacts };
+/**
+ * The main job's newest run and its definition, or null and undefined when the environment has none yet; `rewrite` when a version of the
+ * newest record broke the growth from its first.
+ */
+export type RunsFacts = { last: JobRun | null; definition?: JobDefinitionFacts; rewrite?: Rewrite & { run: string } };
+
+/** The newest record's rewrite, read from the diagnostics bucket on the session's key; undefined without one or when nothing was rewritten. */
+async function newestRewrite(session: ProbeSession): Promise<RunsFacts['rewrite']> {
+  if (!session.accessKey || !session.secretKey || !session.projectId) return undefined;
+  const { naming } = deriveInfra(session.appConfig);
+  const s3 = await makeS3Client(session.appConfig.s3.region, projectAccessKey(session.accessKey, session.projectId), session.secretKey);
+  const store = bucketRunStore(s3, naming.bootDiagBucket);
+  const [run] = await store.listRuns(1);
+  const reading = run ? await store.readRecord(run) : undefined;
+  return run && reading?.rewrite ? { run, ...reading.rewrite } : undefined;
+}
 
 /** The values every start of the engine sets: the target and the retry counter. */
 const START_VALUES = new Set(['TARGET_SHA', 'RETRY']);
@@ -46,7 +63,9 @@ export const runsProvider: StatusProvider<RunsFacts> = {
         listJobRuns(auth, { region, projectId: session.projectId, definitionId }),
         readJobDefinition(auth, { region, definitionId }),
       ]);
-      return { last: last ?? null, definition };
+      // A bucket an apply has not yet opened to the observer's version reads leaves the record unread, never the check.
+      const rewrite = await newestRewrite(session).catch(() => undefined);
+      return { last: last ?? null, definition, ...(rewrite ? { rewrite } : {}) };
     } catch {
       return undefined;
     }
@@ -55,13 +74,19 @@ export const runsProvider: StatusProvider<RunsFacts> = {
     if (session.stackState !== 'bootstrapped') return [];
     const runs = check('runs.last', 'Last deploy', 'scaleway');
     return [
-      probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ last, definition }) => {
+      probed(runs, session.scalewayKeyAvailable, facts, "could not read the main job's runs", ({ last, definition, rewrite }) => {
         if (!last) return runs.ok('no run yet');
         const sha = last.environment_variables?.TARGET_SHA?.slice(0, 10) ?? '?';
         const own = definition ? runOverrides(last, definition) : [];
         if (own.length > 0) {
           return runs.error(`${sha} was started with its own values (${own.join(', ')}): no start of the engine does that`, {
             description: 'Read the run, then rotate the keys that may start one',
+            command: actionCommand('runs'),
+          });
+        }
+        if (rewrite) {
+          return runs.error(`the record of run ${rewrite.run} was ${rewriteNote(rewrite)}: only a key that may write the bucket does that`, {
+            description: 'Read the run as it stood, then rotate the keys',
             command: actionCommand('runs'),
           });
         }

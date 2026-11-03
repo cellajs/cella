@@ -39,13 +39,14 @@ export const OPERATOR_ACTIONS = {
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description: 'Replace the deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine.',
+    description:
+      'Replace the deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; the next deploy replaces every machine. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
+      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'operator-key': {
     label: 'Set up operator key',

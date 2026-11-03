@@ -104,6 +104,71 @@ export class RunRecorder {
   }
 }
 
+/** One version of a record or a log as the versioned bucket keeps it, in the order written; `body` is absent for a delete marker. */
+export interface StoredVersion<T> {
+  at: string;
+  body?: T;
+}
+
+/** The first version that broke the chain of versions growing from the first: when it was written and what it changed. */
+export interface Rewrite {
+  at: string;
+  detail: string;
+}
+
+/** What a run's versions say: the newest version that grows the chain from the first, and the version that broke it when one did. */
+export interface Growth<T> {
+  newest: T;
+  rewrite?: Rewrite;
+}
+
+/**
+ * Read a record or a log by its first version: the deploy rewrites both after every step and nothing else writes them, so each version
+ * grows the one before it. The reading is the newest version on that chain; the first version off it is named as a rewrite, as only a key
+ * that may write the bucket (the deploy key or a stolen copy) wrote it. Undefined without a version that has a body.
+ * @param grows what `next` changed of `prev`, or undefined when it only grew it.
+ */
+export function readByGrowth<T>(versions: readonly StoredVersion<T>[], grows: (prev: T, next: T) => string | undefined): Growth<T> | undefined {
+  const first = versions.find((version) => version.body !== undefined);
+  if (first?.body === undefined) return undefined;
+  let newest = first.body;
+  for (const version of versions.slice(versions.indexOf(first) + 1)) {
+    const { body } = version;
+    if (body === undefined) return { newest, rewrite: { at: version.at, detail: 'deleted the record' } };
+    const detail = grows(newest, body);
+    if (detail !== undefined) return { newest, rewrite: { at: version.at, detail } };
+    newest = body;
+  }
+  return { newest };
+}
+
+/** What a later version of a record changed of an earlier one, or undefined when it only added steps, the boot accounts or the end. */
+export function recordGrows(prev: RunRecord, next: RunRecord): string | undefined {
+  for (const key of ['run', 'environment', 'target', 'startedAt'] as const) if (prev[key] !== next[key]) return `changed ${key}`;
+  for (const [index, step] of prev.steps.entries()) {
+    const later = next.steps[index];
+    if (!later) return `dropped step "${step.title}"`;
+    if (later.title !== step.title || later.seconds !== step.seconds || later.outcome !== step.outcome) return `changed step "${step.title}"`;
+  }
+  if (prev.failedStep && next.failedStep !== prev.failedStep) return 'changed the failed step';
+  if (prev.boot && JSON.stringify(next.boot) !== JSON.stringify(prev.boot)) return 'changed the boot accounts';
+  if (prev.outcome === 'running') return undefined;
+  if (next.outcome !== prev.outcome) return `changed the outcome from ${prev.outcome} to ${next.outcome}`;
+  if (next.steps.length !== prev.steps.length) return 'added a step after the end';
+  if (next.endedAt !== prev.endedAt || next.error !== prev.error) return 'changed the end';
+  return undefined;
+}
+
+/** What a later version of a log changed of an earlier one, or undefined when it only appended lines. */
+export function logGrows(prev: string, next: string): string | undefined {
+  return next.startsWith(prev) ? undefined : 'changed the log';
+}
+
+/** The rewrite, said for a list line or a status check. */
+export function rewriteNote(rewrite: Rewrite): string {
+  return `rewritten: the version at ${rewrite.at.slice(0, 16).replace('T', ' ')} ${rewrite.detail}`;
+}
+
 /** One line per run for a list: when, what, how it ended, and where it stopped. */
 export function runSummaryLine(record: RunRecord): string {
   const seconds = record.endedAt ? Math.round((Date.parse(record.endedAt) - Date.parse(record.startedAt)) / 1000) : undefined;

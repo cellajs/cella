@@ -281,14 +281,14 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
           Action: ['s3:PutObject'],
           Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/builder/*`],
         },
-        // The observer reads what machines wrote about their boot.
+        // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first.
         ...(observerId
           ? [
               {
                 Sid: 'ObserverReadBootDiagnostics',
                 Effect: 'Allow',
                 Principal: { SCW: `application_id:${observerId}` },
-                Action: ['s3:ListBucket', 's3:GetObject'],
+                Action: ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
                 Resource: [bootDiagBucket.name, pulumi.interpolate`${bootDiagBucket.name}/*`],
               },
             ]
