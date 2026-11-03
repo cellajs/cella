@@ -111,7 +111,7 @@ async function deployAndFollow(
 /** The commit the environment runs: the primary role's in the live record, none before the first deploy. */
 async function liveCommit(context: InfraContext, key: KeyPair): Promise<string | undefined> {
   const { appConfig, projectId } = context;
-  const [primary] = machineRoles(appConfig);
+  const primary = machineRoles(appConfig).find((role) => role.primary);
   if (!primary) return undefined;
   const state = stateKeyOf(key, projectId);
   const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);

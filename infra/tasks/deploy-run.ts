@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import type { DeployTarget, LiveRecord } from '../lib/deploy/live-record';
+import { type DeployTarget, type LiveRecord, rolesToReplace } from '../lib/deploy/live-record';
 import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
 import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import type { MachineRole } from '../lib/machine-roles';
@@ -185,7 +185,6 @@ export async function runDeploy(
     await step('Read the live record', async () => {
       live = await fx.readLive(stack);
       target = { ...target, rotation: live.rotation };
-      const { rolesToReplace } = await import('../lib/deploy/live-record');
       pending = rolesToReplace(
         live.record,
         live.roles.map((role) => role.role),
