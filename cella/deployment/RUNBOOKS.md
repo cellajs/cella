@@ -50,6 +50,7 @@ A deploy or an operator action that dies holds its lease, `control/<mode>/lock.j
 2. A deploy that died mid-switch may have left a machine on the idle slot: the next deploy drains and deletes it before it boots there, so nothing is owed for it.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them and keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first: a create that went through left a resource the state does not track.
 4. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints, logged in with the operator key and with the passphrase from the environment's `/engine/` secret folder.
+5. An apply that cannot delete a resource the program no longer declares, as its live object is gone already: **Remove from state** (`pnpm infra state-prune`) takes its URN out of the state.
 
 ## GeoIP data
 
