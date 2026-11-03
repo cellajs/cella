@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: true
 caughtBy: compiler
-grep: clientCacheVersion, declareSyncView, RegisteredSyncView, truePath, selfFrontiers, frontierNodeKeys, mirrorChannelPaths, frontiers, e:f:h:
+grep: clientCacheVersion, elevateAcross, declareSyncView, RegisteredSyncView, truePath, selfFrontiers, frontierNodeKeys, mirrorChannelPaths, frontiers, e:f:h:
 generate: true
 ---
 
