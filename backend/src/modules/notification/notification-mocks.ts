@@ -22,8 +22,8 @@ function seedNotificationDate(subjectAt: string): string {
 
 /**
  * An inbox row for a seeded subject, shaped as the fan-out would write it: home channel is the
- * deepest non-null ancestor, `seed:<subjectId>` is the dedupe activity id, `digestedAt` (and
- * `emailedAt` on mentions) is stamped so the digest and instant-email jobs never mail seeded
+ * deepest non-null ancestor, `seed:<subjectId>` is the activity id the seed finds its rows by, `digestedAt` (and
+ * `emailedAt` on mentions) is stamped so the digest and the fan-out's mail never mail seeded
  * activity. Seed scripts skip the actor themselves; this only shapes the row.
  */
 export function mockSeedNotification(

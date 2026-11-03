@@ -10,7 +10,6 @@ import { log } from '#/utils/logger';
 /**
  * Wire payload for one push, `{ t: 'notif', ... }`. Ids only, never content: the service worker
  * recounts through the API (always current, and nothing sensitive rides the push service).
- * `activityId` doubles as the dedupe key against at-least-once CDC redelivery.
  */
 export interface NotificationPushPayload {
   t: 'notif';

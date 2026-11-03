@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
-import { appConfig, isValidEventType } from 'shared';
+import { appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { serviceSecret } from '#/env';
@@ -195,12 +195,6 @@ class CdcWebSocketServer {
       const event = eventOf(result.data);
       this.messagesReceived++;
       this.lastMessageAt = new Date();
-
-      if (!isValidEventType(event.type)) {
-        this.parseErrors++;
-        log.error('Unknown event type in CDC message - message dropped', { type: event.type });
-        return;
-      }
 
       // Drop the detail cache entry of each changed product row, so a later detail fetch re-enriches (entity-keyed cache, no token)
       for (const { rowData } of event.rows ?? []) {

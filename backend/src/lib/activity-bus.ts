@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { isValidEventType, type ProductEntityType, type TrackedEventType } from 'shared';
+import type { ProductEntityType, TrackedEventType } from 'shared';
 import type { SyncTraceContext } from '#/lib/sync-metrics';
 import { eventAttrs, recordMessageReceived, startSyncSpan, syncSpanNames } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
@@ -86,11 +86,6 @@ class ActivityBus {
 
   /** Called by the CDC WebSocket handler for each arriving message. */
   emit(event: ActivityEvent): void {
-    if (!isValidEventType(event.type)) {
-      log.warn('Unknown activity event type from CDC message', { type: event.type });
-      return;
-    }
-
     const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace);
 
     recordMessageReceived(event.entityType || 'unknown');

@@ -1,16 +1,18 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
+import { publicReadGrants } from 'shared';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import type { ProductActivityEvent } from '#/lib/activity-bus';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { notificationPreferencesTable, notificationsTable } from '#/modules/notification/notification-db';
+import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { runDigest } from '#/modules/notification/operations/run-digest';
-import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders, memberRole } from '../fixtures';
+import { defaultHeaders, memberRole, overrideConfig } from '../fixtures';
 import { adminDb, mailsTo } from '../helpers';
 import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
@@ -33,7 +35,7 @@ describe('Notification access', async () => {
   let tenant: TestTenant;
   let leaver: { id: string; email: string; sessionCookie: string };
   let stayer: { id: string; email: string; sessionCookie: string };
-  const attachmentIds = { secret: generateId(), old: generateId(), fresh: generateId() };
+  const attachmentIds = { secret: generateId(), old: generateId(), fresh: generateId(), mentioning: generateId() };
 
   const insertNotification = async (userId: string, subjectId: string, createdAt: Date) => {
     const [row] = await db
@@ -54,6 +56,24 @@ describe('Notification access', async () => {
       })
       .returning();
     return row;
+  };
+
+  /** The create of an attachment by the admin, as the bus delivers it to the fan-out. */
+  const createdEvent = (subjectId: string): ProductActivityEvent =>
+    // Test mock: the CDC worker fills the remaining columns; the fan-out reads only these.
+    ({
+      type: 'attachment.created',
+      action: 'create',
+      entityType: 'attachment',
+      tenantId: tenant.tenantId,
+      organizationId: tenant.organization.id,
+      rows: [{ activityId: `act:${generateId()}`, userId: tenant.user.id, changedFields: null, stx: null, rowData: { id: subjectId } }],
+    }) as unknown as ProductActivityEvent;
+
+  /** Fans out the admin's item that mentions both users, then forgets the rows it wrote. */
+  const fanOutMention = async () => {
+    onTestFinished(async () => void (await db.delete(notificationsTable).where(eq(notificationsTable.subjectId, attachmentIds.mentioning))));
+    await fanOutNotifications(createdEvent(attachmentIds.mentioning));
   };
 
   const inbox = async (as: { sessionCookie: string }) => {
@@ -84,6 +104,19 @@ describe('Notification access', async () => {
     expect(response.status).toBe(201);
     await adminDb.update(attachmentsTable).set({ name: 'Old item' }).where(eq(attachmentsTable.id, attachmentIds.old));
     await adminDb.update(attachmentsTable).set({ name: 'Fresh item' }).where(eq(attachmentsTable.id, attachmentIds.fresh));
+    const mentions = [
+      {
+        id: generateId(),
+        type: 'paragraph',
+        props: {},
+        content: [leaver, stayer].map(({ id }) => ({ type: 'mention', props: { id, name: 'someone', slug: 'someone' } })),
+        children: [],
+      },
+    ];
+    await adminDb
+      .update(attachmentsTable)
+      .set({ name: 'Mentioning item', description: JSON.stringify(mentions) })
+      .where(eq(attachmentsTable.id, attachmentIds.mentioning));
 
     const now = noon();
     // The leaver was told about an item while a member; a daily digest and mention mails are on for both users.
@@ -127,13 +160,20 @@ describe('Notification access', async () => {
     expect(fresh).toMatchObject({ subjectTitle: 'Fresh item', channelName: 'Renamed organization' });
   });
 
-  it("must not mail a left organization's mention via the instant email", async () => {
-    await sendPendingInstantEmails(tenant.organization.id);
-    expect(mailsTo(leaver.email)).toEqual([]);
-    // A current member's pending mention goes out (positive control).
-    expect(mailsTo(stayer.email).map(({ recipient }) => 'subjectTitle' in recipient && recipient.subjectTitle)).toEqual(
-      expect.arrayContaining(['Fresh item']),
+  it("must not mail a left organization's mention via the instant email, even on a row anyone may read", async () => {
+    // A public row reads for any account, so only the organization's membership keeps the leaver out.
+    onTestFinished(overrideConfig(publicReadGrants, { attachment: true }));
+    await adminDb.update(attachmentsTable).set({ public: true }).where(eq(attachmentsTable.id, attachmentIds.mentioning));
+    onTestFinished(
+      async () => void (await adminDb.update(attachmentsTable).set({ public: false }).where(eq(attachmentsTable.id, attachmentIds.mentioning))),
     );
+
+    await fanOutMention();
+    expect(mailsTo(leaver.email)).toEqual([]);
+    const leaverRows = await db.select().from(notificationsTable).where(eq(notificationsTable.userId, leaver.id));
+    expect(leaverRows.map((row) => row.subjectId)).toEqual([attachmentIds.secret]);
+    // A current member's mention goes out (positive control).
+    expect(mailsTo(stayer.email).map(({ recipient }) => 'subjectTitle' in recipient && recipient.subjectTitle)).toEqual(['Mentioning item']);
   });
 
   it("must not mail a left organization's items, nor reach past the first window, via the digest", async () => {
@@ -159,7 +199,7 @@ describe('Notification access', async () => {
       expect(unreadCount).toBe(2);
       for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '' });
 
-      await sendPendingInstantEmails(tenant.organization.id);
+      await fanOutMention();
       expect(mailsTo(stayer.email)).toEqual([]);
 
       await runDigest(noon());

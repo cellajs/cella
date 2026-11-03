@@ -7,7 +7,7 @@ import { findReadableSubjectIds } from '#/modules/notification/operations/readab
 /** Rows quoted per channel before the section collapses into "and N more". */
 const rowsPerChannel = 5;
 
-/** Rows read per digest, oldest activity first; the overflow counts cover these, and rows past them are left out. */
+/** Rows read per digest, oldest first; the overflow counts cover these, and rows past them are left out. */
 const maxRows = 500;
 
 interface DigestContent {

@@ -9,89 +9,76 @@ import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-to
 import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import {
   findChannelNames,
-  findPendingInstantEmails,
   findUsersMinimal,
   findVerifiedRecipients,
-  getUserAccess,
   stampEmailed,
+  type WrittenNotification,
 } from '#/modules/notification/notification-queries';
 import { getNotificationSource, loadSubjectPreview } from '#/modules/notification/notification-sources';
-import { findReadableSubjectIds } from '#/modules/notification/operations/readable-subjects';
+import { instantEmailTypes } from '#/modules/notification/notification-types';
 import { log } from '#/utils/logger';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const excerptLength = 250;
 
-/**
- * Notifications handled per pass. A pass runs after each fan-out in the organization that wrote a
- * mailable row, so a backlog beyond this drains on the next one.
- */
-const maxPerRun = 200;
-
-/** Runs after a fan-out, outside any request. */
+/** Runs from the fan-out, outside any request. */
 const dbCtx = { var: { db: baseDb } };
 
-type PendingEmail = Awaited<ReturnType<typeof findPendingInstantEmails>>[number];
-
 /**
- * Send instant emails for freshly created mention notifications, and for comment and reply
- * notifications when the app sets `has.commentEmail` (`instantEmailTypes`).
- *
- * A row mails only when the recipient has not opted out (comment email is opt-in) and may still
- * read the subject: access can end between the fan-out and this pass. One mail per recipient and
- * subject, a mention before a comment or reply. Every row the pass takes is stamped `emailedAt`,
- * mailed, folded into another row's mail or skipped for good (no verified address, access or
- * subject gone): the digest never repeats a mailed row, and a skipped row never holds up the next
- * pass. The rows of a mail that failed stay unstamped, for a later pass or the digest.
+ * Mails the rows a fan-out just wrote: a mention, and a comment or reply when the app sets `has.commentEmail`
+ * (`instantEmailTypes`), each to a recipient with a verified address who keeps that category on (comment email is
+ * opt-in). A row whose mail went out is stamped `emailedAt`, so the digest skips it; any other row, a failed send
+ * included, stays for the digest.
  */
-export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
-  const pending = await findPendingInstantEmails(dbCtx, { organizationId, limit: maxPerRun });
-  if (pending.length === 0) return;
+export async function sendInstantEmails(rows: WrittenNotification[]): Promise<void> {
+  const types = instantEmailTypes();
+  const typed = rows.filter((row) => types.includes(row.type));
+  if (typed.length === 0) return;
 
-  const recipients = await findVerifiedRecipients(dbCtx, { userIds: pending.map((row) => row.userId) });
+  const recipients = await findVerifiedRecipients(dbCtx, { userIds: typed.map((row) => row.userId) });
   const byUser = new Map(recipients.map((row) => [row.id, row]));
-  const readableByUser = await findReadableByUser(pending);
+  const mailable = typed.filter((row) => {
+    const user = byUser.get(row.userId);
+    return row.type === 'mention' ? user?.mentionEmail : user?.commentEmail;
+  });
+  if (mailable.length === 0) return;
 
-  const actors = await findUsersMinimal(dbCtx, { userIds: pending.map((row) => row.actorId).filter((id): id is string => id !== null) });
-  const channelNames = await findChannelNames(dbCtx, { channelIds: pending.map((row) => row.channelId) });
+  const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
+  const channelNames = await findChannelNames(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
 
-  let sent = 0;
-  const failed = new Set<string>();
+  const mailed: string[] = [];
 
-  for (const notification of oneRowPerSubject(pending)) {
+  for (const notification of mailable) {
     const user = byUser.get(notification.userId);
-    if (!user) continue;
-    if (!readableByUser.get(notification.userId)?.has(notification.subjectId)) continue;
-
     const source = getNotificationSource(notification.entityType);
-    if (!source) continue;
-
-    const preview = await tenantReadById(notification.tenantId, (tx) => loadSubjectPreview(source, tx, notification.subjectId));
-    if (!preview) continue;
-
-    const statics = {
-      actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
-      channelName: channelNames.get(notification.channelId) ?? '',
-    };
-    const recipient = {
-      email: user.email,
-      lng: user.language,
-      name: user.name,
-      subjectTitle: preview.title,
-      excerpt: htmlToExcerpt(preview.body, excerptLength),
-      link: buildNotificationLink(appConfig.frontendUrl, {
-        tenantId: notification.tenantId,
-        organizationId: notification.organizationId,
-        channelId: notification.channelId,
-        channelType: notification.channelType,
-        entityType: notification.entityType,
-        subjectId: notification.subjectId,
-        contextId: notification.contextId ?? undefined,
-        nid: notification.id,
-      }),
-    };
+    if (!user || !source) continue;
 
     try {
+      const preview = await tenantReadById(notification.tenantId, (tx) => loadSubjectPreview(source, tx, notification.subjectId));
+      if (!preview) continue;
+
+      const statics = {
+        actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
+        channelName: channelNames.get(notification.channelId) ?? '',
+      };
+      const recipient = {
+        email: user.email,
+        lng: user.language,
+        name: user.name,
+        subjectTitle: preview.title,
+        excerpt: htmlToExcerpt(preview.body, excerptLength),
+        link: buildNotificationLink(appConfig.frontendUrl, {
+          tenantId: notification.tenantId,
+          organizationId: notification.organizationId,
+          channelId: notification.channelId,
+          channelType: notification.channelType,
+          entityType: notification.entityType,
+          subjectId: notification.subjectId,
+          contextId: notification.contextId ?? undefined,
+          nid: notification.id,
+        }),
+      };
+
       if (notification.type === 'mention') {
         await mailer.sendEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
       } else {
@@ -99,37 +86,12 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
           { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },
         ]);
       }
-      sent++;
+      mailed.push(notification.id);
     } catch (err) {
-      failed.add(subjectKey(notification));
       log.error('Instant notification email failed', { err, notificationId: notification.id });
     }
   }
 
-  await stampEmailed(dbCtx, { ids: pending.flatMap((row) => (failed.has(subjectKey(row)) ? [] : [row.id])) });
-  if (sent > 0) log.info('Instant notification emails sent', { count: sent, organizationId });
-}
-
-const subjectKey = (row: PendingEmail) => `${row.userId}:${row.subjectId}`;
-
-/** The row each recipient and subject is mailed for: the first mention, else the first comment or reply. */
-function oneRowPerSubject(pending: PendingEmail[]): PendingEmail[] {
-  const chosen = new Map<string, PendingEmail>();
-  for (const row of pending) {
-    const key = subjectKey(row);
-    const current = chosen.get(key);
-    if (!current || (current.type !== 'mention' && row.type === 'mention')) chosen.set(key, row);
-  }
-  return [...chosen.values()];
-}
-
-/** Per recipient, the subjects of their pending rows they may read now. */
-async function findReadableByUser(pending: PendingEmail[]) {
-  const accessByUser = await getUserAccess(dbCtx, { userIds: pending.map((row) => row.userId) });
-  const pendingByUser = Map.groupBy(pending, (row) => row.userId);
-  const readableByUser = new Map<string, Set<string>>();
-  for (const [userId, access] of accessByUser) {
-    readableByUser.set(userId, await findReadableSubjectIds(access, pendingByUser.get(userId) ?? []));
-  }
-  return readableByUser;
+  await stampEmailed(dbCtx, { ids: mailed });
+  if (mailed.length > 0) log.info('Instant notification emails sent', { count: mailed.length });
 }

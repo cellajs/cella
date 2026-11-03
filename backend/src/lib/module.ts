@@ -86,8 +86,8 @@ export interface NotificationCandidate {
  *
  * The fan-out runs after commit off the CDC activity stream, so an operation needs no call for it. On a
  * mentionable source it reads mentions from the stored `description` of a created row, or of an
- * updated one whose changed fields include it, and notifies the mentioned users who may read the
- * row and were not told about it before. Deep links need no declaration: emails and push carry
+ * updated one whose changed fields include it, and notifies the mentioned users of its organization
+ * who may read the row and were not told about it before. Deep links need no declaration: emails and push carry
  * the subject's location for the frontend `/n` route.
  */
 export interface ModuleNotifications<TRow extends NotificationSubjectRow = NotificationSubjectRow> {

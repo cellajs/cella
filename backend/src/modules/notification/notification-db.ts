@@ -21,9 +21,9 @@ export const defaultDigestFrequency: DigestFrequency = 'weekly';
  *
  * Partitioned by `created_at` (weekly, kept `retention.activityDays`) like `seen_by`, so clearing is automatic. Two
  * consequences follow from that and must not be undone: the primary key has to include the partition column, and no
- * other unique constraint may exist. Redelivery is therefore deduped by an `INSERT ... WHERE NOT EXISTS` guard over
- * `(user_id, activity_id, type)` in `insertNotificationsIgnoringDuplicates`. Excluded from CDC: it is per-user state,
- * not synced content.
+ * other unique constraint may exist. A user is therefore told of a subject once by an `INSERT ... WHERE NOT EXISTS`
+ * guard over `(user_id, subject_id)` in `insertNotificationsIgnoringDuplicates`. Excluded from CDC: it is per-user
+ * state, not synced content.
  */
 export const notificationsTable = snakeCase.table(
   'notifications',
@@ -44,16 +44,15 @@ export const notificationsTable = snakeCase.table(
     channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar({ length: tenantIdLength }).notNull(),
-    /** CDC activity id: the dedupe key for at-least-once delivery. */
+    /** The CDC activity of the write that told the user. */
     activityId: varchar({ length: 64 }).notNull(),
     readAt: isoTimestamp(),
-    /** Set once the instant-mail pass took the row, mailed or skipped for good; the pass and the digest skip it. */
+    /** Set once the row's instant mail went out; the digest skips it. */
     emailedAt: isoTimestamp(),
     digestedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.id, table.createdAt] }),
-    index('notifications_user_activity_index').on(table.userId, table.activityId, table.type),
     index('notifications_user_unread_index').on(table.userId, table.readAt),
     index('notifications_user_created_index').on(table.userId, table.createdAt.desc()),
     index('notifications_subject_index').on(table.subjectId),
