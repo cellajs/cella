@@ -8,7 +8,7 @@ import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 import type { MachineEnv } from './compose-env';
 
-/** A machine a deploy made, by its role; `kept` when a failed stop-first switch left it, perhaps still booting. */
+/** A machine a deploy made, by its role; `kept` when a failed stop-first switch left it, as a late boot may still serve. */
 export interface MadeMachine {
   role: string;
   machine: string;

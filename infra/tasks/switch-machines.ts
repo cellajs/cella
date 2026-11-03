@@ -72,7 +72,7 @@ export interface SwitchResult {
   machine: string;
 }
 
-/** A switch that failed after its stop-first role lost the old machine: the new one stays, still booting perhaps, with its env file. */
+/** A switch that failed after its stop-first role lost the old machine: the new one stays with its env file, as a late boot may still serve. */
 export class KeptMachineError extends Error {
   constructor(
     message: string,
