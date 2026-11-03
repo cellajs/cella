@@ -12,7 +12,6 @@ import { metrics } from '../services/cdc-metrics';
 import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
 import type { PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
-import { mirrorChannelPaths } from '../utils/channel-paths';
 import { computeBatchUnifiedDeltas, isStampable } from '../utils/compute-unified-deltas';
 
 /** A change with the activity it is recorded as: the parsed activity plus its id. */
@@ -97,8 +96,8 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
  *   1. wait for the API: a change the worker cannot hand over is left in the WAL
  *   2. record it in one transaction, in commit order across entity types and actions: activity rows, sequence values,
  *      counters, row stamps
- *   3. mirror channel paths, then hand the changes to the API: the rows that are no product in commit order, then the
- *      product rows per type and action, each group followed by its embedding cleanup
+ *   3. hand the changes to the API: the rows that are no product in commit order, then the product rows per type and
+ *      action, each group followed by its embedding cleanup
  *
  * Step 2 happens exactly once per change however often the change is delivered; step 3 repeats when it is delivered
  * again, and each part of it is safe to repeat. Whatever fails rejects the flush: the caller then acknowledges nothing
@@ -113,9 +112,6 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
     .map((event) => ({ event, activity: { ...event.result.activity, id: generateActivityId(event) } }));
 
   await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activity), () => recordFlush(prepared));
-
-  // Mirror channel paths onto counters rows: the view-ancestry verification source.
-  await mirrorChannelPaths(prepared.map((item) => item.event));
 
   // A row that is no product goes to the API alone and in commit order: its listeners act on that one row.
   for (const { event, activity } of prepared) {

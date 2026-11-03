@@ -52,7 +52,7 @@ describe('Catchup propagation hints', async () => {
   };
 
   const hintsOf = async (as: { sessionCookie: string }) => {
-    const view = { key: 'organization', organizationId: organization.id, prefixes: [organization.id], entityTypes: ['attachment' as const], cursor };
+    const view = { organizationId: organization.id, entityType: 'attachment' as const, cursor };
     const { data, response } = await call(postAppCatchup, { body: { views: [view] }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
     return (data as AppCatchupResponse).organizations[organization.id]?.propagation;
@@ -70,9 +70,7 @@ describe('Catchup propagation hints', async () => {
     readable = await insertAttachment(member.id, cursor + 1);
     hidden = await insertAttachment(admin.id, cursor + 2);
     removed = await insertAttachment(member.id, cursor + 3, { deletedAt: new Date().toISOString(), deletedBy: member.id });
-    await adminDb
-      .insert(channelCountersTable)
-      .values({ channelKey: organization.id, counts: { 'e:f:attachment': cursor + 3 }, path: organization.id });
+    await adminDb.insert(channelCountersTable).values({ channelKey: organization.id, counts: { 'e:f:attachment': cursor + 3 } });
   });
 
   afterAll(async () => {

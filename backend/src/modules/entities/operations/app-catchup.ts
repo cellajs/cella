@@ -1,104 +1,45 @@
 import type { z } from '@hono/zod-openapi';
-import { type Access, pathHomeId } from 'shared';
-import type { ActorBinding, DbContext, UserContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { findChannelCountersByKeys, findSyncGeneration } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
 import { accessFrom } from '#/permissions/access';
 import { resolveViewReadStatus } from '#/permissions/view-read-status';
-import type { AppCatchupResponse, CatchupView, CatchupViewAnswer, streamCatchupBodySchema } from '#/schemas';
-
-/** The most channel nodes one catchup reads summaries for; the nodes past it are proven by id alone. */
-const maxSummaryNodes = 1024;
-
-/** A view's depth: `subtree` when it names none. */
-function depthOf(view: CatchupView) {
-  return view.depth ?? 'subtree';
-}
+import type { AppCatchupResponse, streamCatchupBodySchema } from '#/schemas';
 
 /**
- * Authorization runs first, per (prefix, entityType): `ok` only when every pair proves
- * unconditional subtree read, `opaque` (no numbers) when readable but unproven, `forbidden` with
- * no read route. Summaries come from one channel_counters read over the prefixes' deepest nodes.
+ * Answers each declared view from its organization's counter row: authorization runs first, `ok` carries the
+ * organization's frontier of the type, `opaque` and `forbidden` no number. The per-org `organizations` block carries
+ * the versions of the versioned signals and embedding propagation hints.
  */
-export async function answerCatchupViews(ctx: DbContext, access: Access<ActorBinding>, views: CatchupView[]): Promise<CatchupViewAnswer[]> {
-  if (views.length === 0) return [];
-
-  // Read before classification so ancestry comes from stored node identity.
-  const nodeKeys = new Set<string>();
-  for (const view of views) {
-    for (const prefix of view.prefixes) {
-      if (nodeKeys.size >= maxSummaryNodes) break;
-      nodeKeys.add(pathHomeId(prefix));
-    }
-  }
-  const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(ctx, { keys: [...nodeKeys] }) : [];
-  const countersByNode = new Map(counterRows.map((row) => [row.channelKey, { ...parseCounterCounts(row.counts), path: row.path }]));
-
-  // Authorize each pair at the view's depth, against the verified path when the row has one.
-  const statuses = views.map((view) => {
-    let sawOpaque = false;
-    let sawOk = false;
-    for (const prefix of view.prefixes) {
-      const truePath = countersByNode.get(pathHomeId(prefix))?.path;
-      for (const entityType of view.entityTypes) {
-        const status = resolveViewReadStatus(access, entityType, view.organizationId, prefix, depthOf(view), truePath);
-        if (status === 'forbidden') return 'forbidden' as const;
-        if (status === 'opaque') sawOpaque = true;
-        if (status === 'ok') sawOk = true;
-      }
-    }
-    return sawOpaque || !sawOk ? ('opaque' as const) : ('ok' as const);
-  });
-
-  return views.map((view, index) => {
-    const status = statuses[index];
-    if (status !== 'ok') return { key: view.key, status };
-
-    const self = depthOf(view) === 'self';
-    const frontiers: Record<string, number> = {};
-    for (const prefix of view.prefixes) {
-      const parsed = countersByNode.get(pathHomeId(prefix));
-      if (!parsed) continue;
-      for (const entityType of view.entityTypes) {
-        // Family per depth: the subtree rollup (e:f:) or the self summary (e:f:h:).
-        const frontier = self ? parsed.selfFrontiers[entityType] : parsed.frontiers[entityType];
-        if (frontier !== undefined) frontiers[entityType] = Math.max(frontiers[entityType] ?? 0, frontier);
-      }
-    }
-    return { key: view.key, status, frontiers };
-  });
-}
-
-/**
- * Product entity sync is answered per client-declared view by `answerCatchupViews`; the per-org
- * `organizations` block carries the versions of the versioned signals and embedding propagation hints.
- */
-export async function appCatchupOp(ctx: UserContext, { views }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
+export async function appCatchupOp(ctx: UserContext, { views = [] }: z.infer<typeof streamCatchupBodySchema>): Promise<AppCatchupResponse> {
   const { memberships } = ctx.var;
-  const organizationIds = new Set(memberships.map((membership) => membership.organizationId));
+  const access = accessFrom(ctx);
+  const organizationIds = [...new Set(memberships.map((membership) => membership.organizationId))];
 
-  // View answers resolve per prefix: an elevated reader holds no child memberships but declares views.
-  const viewAnswers = views?.length ? await answerCatchupViews(ctx, accessFrom(ctx), views) : undefined;
+  // One read of the counter rows: a system admin may declare views on organizations it holds no membership in.
+  const keys = [...new Set([...organizationIds, ...views.map((view) => view.organizationId)])];
+  const counterRows = keys.length > 0 ? await findChannelCountersByKeys(ctx, { keys }) : [];
+  const counters = new Map(counterRows.map((row) => [row.channelKey, parseCounterCounts(row.counts)]));
+
+  const viewAnswers = views.length
+    ? views.map(({ organizationId, entityType }) => {
+        const status = resolveViewReadStatus(access, entityType, organizationId);
+        if (status !== 'ok') return { organizationId, entityType, status };
+        return { organizationId, entityType, status, frontier: counters.get(organizationId)?.frontiers[entityType] };
+      })
+    : undefined;
 
   const generation = await findSyncGeneration(ctx);
 
-  if (organizationIds.size === 0) return { organizations: {}, views: viewAnswers, generation };
-
-  const organizationIdArray = Array.from(organizationIds);
-
-  // One query for all org counter rows: signal versions plus frontier rollups for hints.
-  const allCounterRows = await findChannelCountersByKeys(ctx, { keys: organizationIdArray });
-  const allCounters = new Map(allCounterRows.map((row) => [row.channelKey, row.counts]));
-
   const organizations: AppCatchupResponse['organizations'] = {};
-  for (const organizationId of organizationIdArray) {
-    const { signals } = parseCounterCounts(allCounters.get(organizationId));
+  for (const organizationId of organizationIds) {
+    const signals = counters.get(organizationId)?.signals ?? {};
     organizations[organizationId] = { signals: Object.keys(signals).length > 0 ? signals : undefined };
   }
 
   // Embedding propagation hints: frontiers vs the client's org-view cursors.
-  await buildPropagationHints(ctx, organizations, views, allCounters);
+  await buildPropagationHints(ctx, organizations, views, counters);
 
   return { organizations, views: viewAnswers, generation };
 }

@@ -172,9 +172,9 @@ One class is one review iteration. The scout verifies every path below at the re
   - `cross-tenant`: a user of tenant A listing or reading tenant B attachments and organization, or signing tenant A's attachment from B's session.
   - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`getUsers` outside a shared org, a cache warmed on org A's path served on org B's.
   - `defense-in-depth`: `getOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
-  - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; forged prefixes and cross-org claims on counters.
+  - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; a grant below the organization or a row condition proving no catchup frontier.
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
-  - `entities/operations/app-catchup.test.ts`, `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a forged prefix, a hint naming an unreadable row.
+  - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
   - `notification-access`: inbox, instant mail and digest naming a left organization's items. `mark-seen`: confirming a deleted or hidden attachment.
   - `relatable-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
   - `yjs-token` and `tests/yjs-http`: token or pull/push for an entity the caller may not update; `tests/mcp` and `mcp-server.test.ts`: a call outside scopes.
@@ -337,7 +337,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Zod 4 drops `__proto__` from record and object input.
   - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
   - jsonb merge is done in SQL from `JSON.stringify` of the parsed value, so a JS object merge never sees stored keys.
-  - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` and `views` maps; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
+  - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` map; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).
 - **Asks:** a record with `__proto__` through every record-taking route; the JSON column table; the dexie and immer version minimums.
 - **Not this class:** block JSON walking and HTML sanitizing belong to C4. The metadata document fetch by `oidc-provider` (`modules/oauth-server/provider.ts`) belongs to C5 and C7. Rate limit on that fetch belongs to C1. `sql.raw` keys (counter keys in `modules/entities/counters-queries.ts`) belong to C3. Record size caps belong to C1. Yjs map keys: no app code reads user map keys; document size belongs to C1.

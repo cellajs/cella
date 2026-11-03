@@ -6,8 +6,7 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
  *
  * Increments apply with a floor of 0 (no negative counters). `e:li:` (last insert) / `e:lu:`
  * (last update) keys are epoch-ms activity stamps and `e:f:` keys are org-sequence
- * frontiers (subtree `e:f:` and self `e:f:h:`), not deltas: they merge via GREATEST so the
- * signal only moves forward.
+ * frontiers, not deltas: they merge via GREATEST so the signal only moves forward.
  */
 async function run(): Promise<SideEffectBlock> {
   const migrationSql = `-- Counter Functions Setup

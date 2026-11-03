@@ -1,5 +1,5 @@
 import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
-import { appConfig, isProduct } from 'shared';
+import { appConfig } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
 import { type EntityQueryKeys, getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -40,7 +40,7 @@ const opaqueScopes = new Set<string>();
 export const isOpaqueScope = (organizationId: string, entityType: string): boolean => opaqueScopes.has(`${organizationId}:${entityType}`);
 
 /**
- * Readable views fetch their gap when their frontier advances; other statuses expose no summaries.
+ * Readable views fetch their gap when their frontier advances; other statuses expose no frontier.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
 export async function processAppCatchup(response: PostAppCatchupResponse): Promise<void> {
@@ -62,33 +62,28 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
     if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
-      // Registered grant-boundary views (views.ts) take precedence over org-view keys.
-      if (syncState.getView(answer.key)) {
-        if (!baselineOnly) processRegisteredViewAnswer(answer, syncState, refetchPending);
-        continue;
-      }
-
-      const [organizationId, entityType] = splitViewKey(answer.key);
-      if (!organizationId || !isProduct(entityType) || !hasEntityQueryKeys(entityType)) continue;
+      const { organizationId, entityType } = answer;
+      if (!hasEntityQueryKeys(entityType)) continue;
+      const viewKey = `${organizationId}:${entityType}`;
 
       if (answer.status === 'forbidden') {
-        console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → dropped`);
+        console.debug(`[CatchupProcessor] View ${viewKey}: forbidden → dropped`);
         continue;
       }
 
       const keys = getEntityQueryKeys(entityType);
 
       if (answer.status === 'opaque') {
-        opaqueScopes.add(`${organizationId}:${entityType}`);
+        opaqueScopes.add(viewKey);
         // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
         if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
         }
-        console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
+        console.debug(`[CatchupProcessor] View ${viewKey}: opaque → staleness fallback`);
         continue;
       }
 
-      const frontier = answer.frontiers?.[entityType] ?? 0;
+      const frontier = answer.frontier ?? 0;
       const clientCursor = syncState.getOrgSeq(organizationId, entityType);
 
       // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it
@@ -96,7 +91,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
       if (baselineOnly || clientCursor === 0) {
         if (!refetchPending && frontier > 0 && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-          console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
+          console.debug(`[CatchupProcessor] View ${viewKey}: first session → full refetch`);
         }
         syncState.setOrgSeq(organizationId, entityType, frontier);
         continue;
@@ -109,7 +104,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
       // A connection waits for the bound database's restore, so no list of this scope is on disk either: the next read fetches it whole.
       if (!hasAnyCachedList(keys, organizationId)) {
         syncState.setOrgSeq(organizationId, entityType, frontier);
-        console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip range fetch`);
+        console.debug(`[CatchupProcessor] View ${viewKey}: no cached list → skip range fetch`);
         continue;
       }
 
@@ -125,12 +120,12 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
       });
 
       if (getSyncTier(entityType, organizationId, null).min > 0) {
-        console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → enqueued`);
+        console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → enqueued`);
         continue;
       }
 
       const outcome = await flushChannelViewNow(entityType, organizationId, null);
-      console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → ${outcome}`);
+      console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → ${outcome}`);
     }
   }
 
@@ -185,59 +180,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
 function membershipChannelKeys(): Set<string> {
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   return new Set((data?.items ?? []).map((membership) => `${membership.organizationId}:${membership.channelId}`));
-}
-
-/** Grant-boundary answers refine org-view ingestion: unchanged skips work, opaque falls back to staleness, forbidden drops the view. */
-function processRegisteredViewAnswer(
-  answer: NonNullable<PostAppCatchupResponse['views']>[number],
-  syncState: ReturnType<typeof syncStore.getState>,
-  refetchPending: boolean,
-): void {
-  const view = syncState.getView(answer.key);
-  if (!view) return;
-
-  if (answer.status === 'forbidden') {
-    syncState.removeSyncView(answer.key);
-    console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → removed`);
-    return;
-  }
-
-  const invalidateTypes = () => {
-    for (const entityType of view.entityTypes) {
-      if (!hasEntityQueryKeys(entityType)) continue;
-      const keys = getEntityQueryKeys(entityType);
-      if (hasAnyCachedList(keys, view.organizationId)) {
-        cacheOps.invalidateEntityListForOrg(keys, view.organizationId, 'active');
-      }
-    }
-  };
-
-  if (answer.status === 'opaque') {
-    for (const entityType of view.entityTypes) opaqueScopes.add(`${view.organizationId}:${entityType}`);
-    if (!refetchPending) invalidateTypes();
-    console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
-    return;
-  }
-
-  const frontier = Math.max(0, ...Object.values(answer.frontiers ?? {}));
-  if (view.cursor === 0) {
-    // Baseline: adopt frontier; hydration/route loaders supply the data.
-    syncState.setViewCursor(answer.key, frontier);
-    console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
-    return;
-  }
-  if (frontier <= view.cursor) return;
-
-  invalidateTypes();
-  syncState.setViewCursor(answer.key, frontier);
-  console.debug(`[CatchupProcessor] View ${answer.key}: frontier ${view.cursor} → ${frontier} → invalidated`);
-}
-
-/** View keys are `${organizationId}:${entityType}` (see sync-store.getCatchupViews). */
-function splitViewKey(key: string): [string | undefined, string | undefined] {
-  const separatorIndex = key.lastIndexOf(':');
-  if (separatorIndex <= 0) return [undefined, undefined];
-  return [key.slice(0, separatorIndex), key.slice(separatorIndex + 1)];
 }
 
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached, a range fetch has nothing to patch. */

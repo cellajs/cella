@@ -87,7 +87,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 /** Views-contract response with one org view answer for attachment. */
 const okViewResponse = (frontier: number): PostAppCatchupResponse => ({
   organizations: {},
-  views: [{ key: 'org-1:attachment', status: 'ok', frontiers: { attachment: frontier } }],
+  views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'ok', frontier }],
 });
 
 /** The org-1 list mounted, as on screen, counting the list requests it sends. */
@@ -178,7 +178,7 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup({ organizations: {}, views: [{ key: 'org-1:attachment', status: 'opaque' }] });
+    await processAppCatchup({ organizations: {}, views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }] });
 
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
@@ -275,48 +275,6 @@ describe('catchup after the device was away longer than the activity window', ()
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(52);
     unsubscribe();
-  });
-});
-
-describe('registered grant-boundary views', () => {
-  afterEach(() => {
-    queryClient.clear();
-    syncStore.getState().reset();
-    vi.clearAllMocks();
-  });
-
-  const declare = () =>
-    syncStore.getState().declareSyncView('org-1:attachment:subtree', {
-      organizationId: 'org-1',
-      prefixes: ['org-1/c1'],
-      entityTypes: ['attachment'],
-      depth: 'subtree',
-    });
-
-  const answer = (over: Record<string, unknown>): PostAppCatchupResponse =>
-    ({
-      organizations: {},
-      views: [{ key: 'org-1:attachment:subtree', ...over }],
-    }) as unknown as PostAppCatchupResponse;
-
-  it('ok + unchanged frontier skips refetches; changed frontier invalidates and advances', async () => {
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    registerEntityQueryKeys(
-      'attachment',
-      keys,
-      vi.fn(async () => ({ items: [], total: 0 })),
-    );
-    declare();
-    syncStore.getState().setViewCursor('org-1:attachment:subtree', 10);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-
-    await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 10 } }));
-    expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
-
-    await processAppCatchup(answer({ status: 'ok', frontiers: { attachment: 15 } }));
-    expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
-    expect(syncStore.getState().getView('org-1:attachment:subtree')?.cursor).toBe(15);
   });
 });
 

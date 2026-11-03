@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
 import { createActivity } from '../services/create-activity';
-import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
 import { changeEvent, mockCdcActivity, tableMetaOf } from './factories';
 
@@ -73,11 +73,6 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
     const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })], h);
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
-  });
-
-  it('frontierNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
-    expect(frontierNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
-    expect(frontierNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
   });
 
   it('an org-less row fails the batch loudly instead of inventing a scope', () => {

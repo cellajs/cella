@@ -4,9 +4,9 @@ import type { HierarchyOverrides, PolicyCellInput, PolicyMatrix } from '../permi
 import { configurePolicyMatrix } from '../permissions/policy-matrix.ts';
 
 // Deep synthetic hierarchy: 4 channel levels with an `item` product whose rows attach at any
-// depth, typed independently of any app config. The path, home-resolution, counter, permission
-// and view-derivation suites all run against this one hierarchy, so every subsystem that must
-// agree on path semantics is tested against the same shape.
+// depth, typed independently of any app config. The path, home-resolution, counter and permission
+// suites all run against this one hierarchy, so every subsystem that must agree on path semantics
+// is tested against the same shape.
 export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
 export type DeepNullableAncestor = 'project' | 'courseSection' | 'course';
 

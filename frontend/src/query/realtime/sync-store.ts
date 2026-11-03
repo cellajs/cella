@@ -1,3 +1,5 @@
+import type { PostAppCatchupData } from 'sdk';
+import type { ProductEntityType } from 'shared';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { createStore } from 'zustand/vanilla';
@@ -13,24 +15,7 @@ interface OrgSyncState {
   channels: Record<string, Record<string, number>>;
 }
 
-/** One catchup view request: org-sequence cursor over a prefix set (see streamCatchupBodySchema). */
-export interface CatchupViewRequest {
-  key: string;
-  organizationId: string;
-  prefixes: string[];
-  entityTypes: string[];
-  depth?: 'self' | 'subtree';
-  cursor: number;
-}
-
-/** A registered grant-boundary view (see views.ts): identity = prefix set + types + depth. */
-export interface RegisteredSyncView {
-  organizationId: string;
-  prefixes: string[];
-  entityTypes: string[];
-  depth: 'self' | 'subtree';
-  cursor: number;
-}
+type CatchupView = NonNullable<PostAppCatchupData['body']['views']>[number];
 
 interface SyncStoreState {
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
@@ -40,8 +25,6 @@ interface SyncStoreState {
   /** When this device refetches its synced cache after a start over, on its own clock in epoch ms; null when none waits. */
   refetchDueAt: number | null;
   orgs: Record<string, OrgSyncState>;
-  /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
-  views: Record<string, RegisteredSyncView>;
 
   /**
    * Takes the generation a catchup answered with. Another one than the client held means the server corrected or
@@ -59,7 +42,7 @@ interface SyncStoreState {
   markRefetched: () => void;
   /** Creates the org entry the next catchup declares views for. */
   trackOrg: (organizationId: string) => void;
-  /** Drop a stale org (and its views) from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
+  /** Drop a stale org from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
   removeOrg: (organizationId: string) => void;
   setOrgSeq: (organizationId: string, entityType: string, seq: number) => void;
   getOrgSeq: (organizationId: string, entityType: string) => number;
@@ -67,25 +50,16 @@ interface SyncStoreState {
   getSignalVersion: (organizationId: string, type: string) => number;
   setChannelSeq: (organizationId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (organizationId: string, channelId: string, entityType: string) => number;
-  /**
-   * Register a grant-boundary view. Identity is prefix set plus entity types plus depth, and any identity change resets the cursor to 0:
-   * a grown prefix set has history predating the cursor that a range fetch would skip.
-   */
-  declareSyncView: (key: string, view: Omit<RegisteredSyncView, 'cursor'>) => void;
-  removeSyncView: (key: string) => void;
-  setViewCursor: (key: string, cursor: number) => void;
-  getView: (key: string) => RegisteredSyncView | undefined;
-  /** Build the view-driven catchup body: org views per (org, entityType) + registered views. */
-  getCatchupViews: (entityTypes: readonly string[]) => CatchupViewRequest[];
+  /** Build the view-driven catchup body: one org view per (org, entityType). */
+  getCatchupViews: (entityTypes: readonly ProductEntityType[]) => CatchupView[];
   reset: () => void;
 }
 
-const initStore: Pick<SyncStoreState, 'generation' | 'caughtUpAt' | 'refetchDueAt' | 'orgs' | 'views'> = {
+const initStore: Pick<SyncStoreState, 'generation' | 'caughtUpAt' | 'refetchDueAt' | 'orgs'> = {
   generation: null,
   caughtUpAt: null,
   refetchDueAt: null,
   orgs: {},
-  views: {},
 };
 
 /** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
@@ -94,21 +68,15 @@ const generationRefetchSpreadMs = 10_000;
 /** The server's cap on catchup views (`streamCatchupBodySchema`): a longer body fails the SDK's validation, and with it the whole catchup. */
 const maxCatchupViews = 256;
 
-/** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
-function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
-  return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
-}
-
 /**
- * Puts every org, channel and view cursor back at 0 and records when the synced cache refetches. Signal versions stay:
+ * Puts every org and channel cursor back at 0 and records when the synced cache refetches. Signal versions stay:
  * they only count up, so the next catchup runs only the handlers of signals sent meanwhile.
  */
-function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'views' | 'refetchDueAt'>, refetchDueAt: number): void {
+function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'refetchDueAt'>, refetchDueAt: number): void {
   for (const org of Object.values(state.orgs)) {
     for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
     org.channels = {};
   }
-  for (const view of Object.values(state.views)) view.cursor = 0;
   state.refetchDueAt = refetchDueAt;
 }
 
@@ -117,7 +85,7 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string): 
   return orgs[organizationId];
 }
 
-/** This user's sync cursors, persisted: the org and channel sequences and the registered views. */
+/** This user's sync cursors, persisted: the org and channel sequences. */
 export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
@@ -156,9 +124,6 @@ export const syncStore = createStore<SyncStoreState>()(
         removeOrg: (organizationId) =>
           set((state) => {
             delete state.orgs[organizationId];
-            for (const [key, view] of Object.entries(state.views)) {
-              if (view.organizationId === organizationId) delete state.views[key];
-            }
           }),
 
         setOrgSeq: (organizationId, entityType, seq) =>
@@ -191,40 +156,17 @@ export const syncStore = createStore<SyncStoreState>()(
             ? (get().orgs[organizationId]?.seqs[entityType] ?? 0)
             : (get().orgs[organizationId]?.channels[channelId]?.[entityType] ?? 0),
 
-        declareSyncView: (key, view) =>
-          set((state) => {
-            const existing = state.views[key];
-            const cursor = existing && viewIdentity(existing) === viewIdentity(view) ? existing.cursor : 0;
-            state.views[key] = { ...view, cursor };
-          }),
-        removeSyncView: (key) =>
-          set((state) => {
-            delete state.views[key];
-          }),
-        setViewCursor: (key, cursor) =>
-          set((state) => {
-            if (state.views[key]) state.views[key].cursor = cursor;
-          }),
-        getView: (key) => get().views[key],
-
         getCatchupViews: (entityTypes) => {
-          const { orgs } = get();
-          const views: CatchupViewRequest[] = [];
-          for (const [organizationId, org] of Object.entries(orgs)) {
+          const views: CatchupView[] = [];
+          for (const [organizationId, org] of Object.entries(get().orgs)) {
             for (const entityType of entityTypes) {
               views.push({
-                key: `${organizationId}:${entityType}`,
                 organizationId,
-                prefixes: [organizationId],
-                entityTypes: [entityType],
+                entityType,
                 // Only the org slot proves org-wide ingestion, since child-channel cursors cover their own subtree; 0 means no baseline, so catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
               });
             }
-          }
-          // Registered grant-boundary views ride the same request, adding precision over the org-view baseline.
-          for (const [key, view] of Object.entries(get().views)) {
-            views.push({ key, ...view });
           }
           // A partial sync beats none: the dropped views do not advance this cycle, and org pruning keeps this unreachable.
           if (views.length > maxCatchupViews) {
@@ -248,7 +190,6 @@ export const syncStore = createStore<SyncStoreState>()(
           caughtUpAt: state.caughtUpAt,
           refetchDueAt: state.refetchDueAt,
           orgs: state.orgs,
-          views: state.views,
         }),
       },
     ),

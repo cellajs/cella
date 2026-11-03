@@ -2,7 +2,6 @@ import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantReadAsIncludingDeleted } from '#/db/tenant-context';
 import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
-import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
@@ -13,29 +12,27 @@ import { getEntityTable } from '#/tables';
 const embeddingsByProduct = Map.groupBy(appConfig.productEmbeddings, (embedding) => embedding.embeddedProduct);
 
 /**
- * An embedded product changed when the org's `e:f:{embeddedProduct}` rollup exceeds the client's org-view cursor. The
+ * An embedded product changed when the org's `e:f:{embeddedProduct}` frontier exceeds the client's org-view cursor. The
  * ids come from a delta read in the caller's tenant that keeps the rows the caller may read, as a list does, so a hint
  * names no row the caller cannot fetch; tombstones return as removal hints.
- * @param orgCounters - The counter row of each organization in `organizations`.
+ * @param orgCounters - The parsed counter row of each organization in `organizations`.
  */
 export async function buildPropagationHints(
   ctx: UserContext,
   organizations: AppCatchupResponse['organizations'],
-  views: CatchupView[] | undefined,
-  orgCounters: Map<string, Record<string, number> | null>,
+  views: CatchupView[],
+  orgCounters: Map<string, { frontiers: Record<string, number> }>,
 ): Promise<void> {
-  if (embeddingsByProduct.size === 0 || !views?.length) return;
+  if (embeddingsByProduct.size === 0 || views.length === 0) return;
   const { memberships } = ctx.var;
   const access = accessFrom(ctx);
   const tenantByOrganization = new Map(memberships.map((membership) => [membership.organizationId, membership.tenantId]));
 
   // Org-view cursors per (org, embeddedProduct).
   const cursorFor = new Map<string, number>();
-  for (const view of views) {
-    for (const entityType of view.entityTypes) {
-      const key = `${view.organizationId}:${entityType}`;
-      cursorFor.set(key, Math.min(cursorFor.get(key) ?? Number.POSITIVE_INFINITY, view.cursor));
-    }
+  for (const { organizationId, entityType, cursor } of views) {
+    const key = `${organizationId}:${entityType}`;
+    cursorFor.set(key, Math.min(cursorFor.get(key) ?? Number.POSITIVE_INFINITY, cursor));
   }
 
   for (const [organizationId, scope] of Object.entries(organizations)) {
@@ -44,7 +41,7 @@ export async function buildPropagationHints(
     if (!tenantId) continue;
 
     const hints: CatchupOrganizationSummary['propagation'] = [];
-    const { frontiers } = parseCounterCounts(orgCounters.get(organizationId));
+    const frontiers = orgCounters.get(organizationId)?.frontiers ?? {};
 
     for (const [embeddedProduct, embeddings] of embeddingsByProduct) {
       const clientCursor = cursorFor.get(`${organizationId}:${embeddedProduct}`);

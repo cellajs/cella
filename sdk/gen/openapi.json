@@ -5684,7 +5684,7 @@
         "operationId": "postAppCatchup",
         "tags": ["entities", "cella"],
         "summary": "App stream catchup",
-        "description": "Fetch what a client missed since its last sync: frontiers per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.",
+        "description": "Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5700,38 +5700,13 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "key": {
-                          "type": "string",
-                          "maxLength": 512,
-                          "description": "Client-chosen stable view key, echoed back verbatim to correlate responses"
-                        },
                         "organizationId": {
                           "type": "string",
                           "maxLength": 50
                         },
-                        "prefixes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "maxLength": 512
-                          },
-                          "minItems": 1,
-                          "maxItems": 64,
-                          "description": "Id path prefixes this view covers (root-first ids, slash-joined)"
-                        },
-                        "entityTypes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": ["attachment"]
-                          },
-                          "minItems": 1,
-                          "maxItems": 64
-                        },
-                        "depth": {
+                        "entityType": {
                           "type": "string",
-                          "enum": ["self", "subtree"],
-                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships."
+                          "enum": ["attachment"]
                         },
                         "cursor": {
                           "type": "integer",
@@ -5739,10 +5714,10 @@
                           "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)"
                         }
                       },
-                      "required": ["key", "organizationId", "prefixes", "entityTypes", "cursor"]
+                      "required": ["organizationId", "entityType", "cursor"]
                     },
                     "maxItems": 256,
-                    "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view"
+                    "description": "Client-declared views: an organization, a product type and its org-sequence cursor per view"
                   }
                 }
               }
@@ -5824,23 +5799,23 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "key": {
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "entityType": {
                             "type": "string",
-                            "description": "The client-supplied view key, echoed verbatim"
+                            "enum": ["attachment"]
                           },
                           "status": {
                             "type": "string",
                             "enum": ["ok", "opaque", "forbidden"]
                           },
-                          "frontiers": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
-                            },
-                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})"
+                          "frontier": {
+                            "type": "integer",
+                            "description": "Newest sequence position of the type in the organization"
                           }
                         },
-                        "required": ["key", "status"]
+                        "required": ["organizationId", "entityType", "status"]
                       },
                       "description": "Per-view answers for client-declared views (same order as the request)"
                     },

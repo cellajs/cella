@@ -2301,23 +2301,11 @@ export type GetAppStreamResponses = {
 export type PostAppCatchupData = {
   body: {
     /**
-     * Client-declared views: prefix set + entity types + org-sequence cursor per view
+     * Client-declared views: an organization, a product type and its org-sequence cursor per view
      */
     views?: Array<{
-      /**
-       * Client-chosen stable view key, echoed back verbatim to correlate responses
-       */
-      key: string;
       organizationId: string;
-      /**
-       * Id path prefixes this view covers (root-first ids, slash-joined)
-       */
-      prefixes: Array<string>;
-      entityTypes: Array<'attachment'>;
-      /**
-       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.
-       */
-      depth?: 'self' | 'subtree';
+      entityType: 'attachment';
       /**
        * Org-sequence position this view has fully ingested (0 = baseline not yet established)
        */
@@ -2394,17 +2382,13 @@ export type PostAppCatchupResponses = {
      * Per-view answers for client-declared views (same order as the request)
      */
     views?: Array<{
-      /**
-       * The client-supplied view key, echoed verbatim
-       */
-      key: string;
+      organizationId: string;
+      entityType: 'attachment';
       status: 'ok' | 'opaque' | 'forbidden';
       /**
-       * Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})
+       * Newest sequence position of the type in the organization
        */
-      frontiers?: {
-        [key: string]: number;
-      };
+      frontier?: number;
     }>;
     /**
      * Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines

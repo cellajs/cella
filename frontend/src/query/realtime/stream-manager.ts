@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { type PostAppCatchupResponse, postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
-import { appConfig, isProduct } from 'shared';
+import { appConfig } from 'shared';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
@@ -13,7 +13,7 @@ import { queryClient } from '~/query/query-client';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
-import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
+import { syncStore } from '~/query/realtime/sync-store';
 import {
   broadcastCatchup,
   broadcastStreamChange,
@@ -634,28 +634,13 @@ export class StreamManager {
   }
 }
 
-type CatchupBody = NonNullable<Parameters<typeof postAppCatchup>[0]>['body'];
-type CatchupView = NonNullable<CatchupBody['views']>[number];
-
-/** Drop runtime entity types the catchup endpoint rejects: one unrecognized type would fail the whole request and stall catchup for every view. */
-function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
-  const accepted: CatchupView[] = [];
-  for (const view of views) {
-    const entityTypes = view.entityTypes.filter(isProduct);
-    if (entityTypes.length === 0) continue;
-    accepted.push({ ...view, entityTypes });
-  }
-  return accepted;
-}
-
 export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
   fetchAndProcessCatchup: async (signal) => {
-    // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
-    const views = toCatchupViews(syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes()));
+    const views = syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes());
     const response = await postAppCatchup({ body: { views: views.length > 0 ? views : undefined }, signal });
     signal.throwIfAborted();
     // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing fails.

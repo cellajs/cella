@@ -2,10 +2,8 @@
 export const entityCountPrefix = 'e:c:';
 /** The live rows of a type homed at the channel itself: `e:c:h:{type}`. */
 export const entityCountHomePrefix = 'e:c:h:';
-/** The newest sequence position of a type in a channel's subtree: `e:f:{type}`. */
+/** The newest sequence position of a type in an organization, on its row: `e:f:{type}`. */
 export const frontierPrefix = 'e:f:';
-/** The newest sequence position of a type's rows homed at the channel itself: `e:f:h:{type}`. */
-export const frontierHomePrefix = 'e:f:h:';
 /** The version of a versioned signal on its organization's row, `s:{signal type}`: it only counts up, and a recount leaves it alone. */
 export const signalVersionPrefix = 's:';
 
@@ -28,7 +26,7 @@ const likeAny = (column: string, prefixes: string[]) => prefixes.map((prefix) =>
 export const isPlainCountKey = (key: string): boolean => startsWithAny(key, plainCountPrefixes);
 
 /**
- * Whether a counter key keeps the highest value it was given: a frontier (`e:f:`, `e:f:h:`) or an activity stamp
+ * Whether a counter key keeps the highest value it was given: a frontier (`e:f:`) or an activity stamp
  * (`e:li:`, `e:lu:`). Two deltas for it merge as their maximum, never as their sum. The `apply_count_deltas` function
  * in Postgres holds the same rule for the stored value.
  * @param key - A key of `channel_counters.counts`.

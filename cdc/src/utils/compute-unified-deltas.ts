@@ -33,18 +33,6 @@ export function resolveChannelKey(entityType: string, rowData: CdcRowData, activ
   throw new Error(`No channel for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
 }
 
-/**
- * Channel-counter nodes a stamped row's frontier propagates to: the organization plus every non-null
- * ancestor, so `e:f:{type}` at any node answers "did anything of this type change at or below here".
- */
-export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organizationId: string, h: EntityHierarchy = hierarchy): string[] {
-  const nodes = [organizationId];
-  for (const ancestor of h.resolveNonNullAncestors(entityType, rowData)) {
-    if (ancestor.id !== organizationId) nodes.push(ancestor.id);
-  }
-  return nodes;
-}
-
 /** Merges deltas into those of a channel key: a count adds up, a stamp or a frontier keeps the highest value. */
 export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);

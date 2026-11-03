@@ -27,11 +27,7 @@ interface FindChannelCountersByKeysOpts {
 export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
   const { db } = ctx.var;
   return db
-    .select({
-      channelKey: channelCountersTable.channelKey,
-      counts: channelCountersTable.counts,
-      path: channelCountersTable.path,
-    })
+    .select({ channelKey: channelCountersTable.channelKey, counts: channelCountersTable.counts })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));
 };

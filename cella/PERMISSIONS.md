@@ -150,7 +150,7 @@ A route gate (`requireEntityAction`) asks the same question before the page load
 | Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed; 403 only when nothing is allowed |
 | Collection read | `buildCollectionReadWhere` | Compiles readable scope, row conditions, and public read into one SQL predicate. Never loads rows to reject them. | An empty list |
 | SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
-| Catchup views | `resolveViewReadStatus` | May the caller see a subtree's frontiers | `opaque` or `forbidden` |
+| Catchup views | `resolveViewReadStatus` | May the caller see an organization's frontier of a type | `opaque` or `forbidden` |
 
 Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
 

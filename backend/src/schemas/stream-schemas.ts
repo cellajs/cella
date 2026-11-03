@@ -83,28 +83,22 @@ export const streamSignalSchema = z
 
 export type StreamSignal = z.infer<typeof streamSignalSchema>;
 
-/** One client view: a prefix set + entity types + the org-sequence cursor it has caught up to. */
+/** One client view: the org-sequence cursor it has caught up to for one product type of one organization. */
 const catchupViewSchema = z.object({
-  key: z.string().max(512).openapi({ description: 'Client-chosen stable view key, echoed back verbatim to correlate responses' }),
   organizationId: validIdSchema,
-  prefixes: z.array(z.string().max(512)).min(1).max(64).openapi({ description: 'Id path prefixes this view covers (root-first ids, slash-joined)' }),
-  entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1).max(64),
-  depth: z.enum(['self', 'subtree']).optional().openapi({
-    description:
-      'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.',
-  }),
+  entityType: z.enum(appConfig.productEntityTypes),
   cursor: z.number().int().min(0).openapi({ description: 'Org-sequence position this view has fully ingested (0 = baseline not yet established)' }),
 });
 
 export type CatchupView = z.infer<typeof catchupViewSchema>;
 
-/** `views` is the sequence-sync contract: prefix views with org-sequence cursors, answered after prefix authorization. */
+/** `views` is the sequence-sync contract: one view per organization and product type, answered after authorization. */
 export const streamCatchupBodySchema = z.object({
   views: z
     .array(catchupViewSchema)
     .max(256)
     .optional()
-    .openapi({ description: 'Client-declared views: prefix set + entity types + org-sequence cursor per view' }),
+    .openapi({ description: 'Client-declared views: an organization, a product type and its org-sequence cursor per view' }),
 });
 
 /** Product entity sync is answered per view (`catchupViewAnswerSchema`); this carries the org-level concerns. */
@@ -120,19 +114,15 @@ const catchupOrganizationSummarySchema = z.object({
 export type CatchupOrganizationSummary = z.infer<typeof catchupOrganizationSummarySchema>;
 
 /**
- * `frontiers` are present only for `status: 'ok'` views (unconditional read of the whole prefix subtree). `opaque`
- * views get no numbers and fall back to normal staleness; `forbidden` views must be dropped.
+ * `frontier` is present only for `status: 'ok'` (unconditional read of every row of the type in the organization).
+ * `opaque` views get no number and fall back to normal staleness; `forbidden` views must be dropped.
  */
 const catchupViewAnswerSchema = z.object({
-  key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
+  organizationId: z.string(),
+  entityType: z.enum(appConfig.productEntityTypes),
   status: z.enum(['ok', 'opaque', 'forbidden']),
-  frontiers: z
-    .record(z.string(), z.number().int())
-    .optional()
-    .openapi({ description: 'Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})' }),
+  frontier: z.number().int().optional().openapi({ description: 'Newest sequence position of the type in the organization' }),
 });
-
-export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;
 
 /** `views` answers the client-declared views; `organizations` holds per organization its signal versions and propagation hints. */
 export const appCatchupResponseSchema = z.object({

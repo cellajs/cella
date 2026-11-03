@@ -13,7 +13,7 @@ import { setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 // Verifies the view-driven catchup contract end-to-end (sequence sync): signal versions
-// via organizations.signals, product sync via per-view frontier answers.
+// via organizations.signals, product sync via a frontier answer per organization view.
 describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -23,9 +23,7 @@ describe('Catchup (view-driven, sequence)', async () => {
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'catchup-baseline');
     otherOrgId = (await createTestOrganization()).id;
-    await db
-      .insert(channelCountersTable)
-      .values({ channelKey: otherOrgId, counts: { sequence: 9, 'e:f:attachment': 7, 'e:c:attachment': 3 }, path: otherOrgId });
+    await db.insert(channelCountersTable).values({ channelKey: otherOrgId, counts: { sequence: 9, 'e:f:attachment': 7, 'e:c:attachment': 3 } });
 
     const counts = {
       sequence: 50,
@@ -33,14 +31,13 @@ describe('Catchup (view-driven, sequence)', async () => {
       's:channel.deleted': 2,
       'e:f:attachment': 42,
       'e:c:attachment': 15,
-      'e:f:h:attachment': 40,
       'e:c:h:attachment': 12,
       'm:c:admin': 1,
     };
     await db
       .insert(channelCountersTable)
-      .values({ channelKey: tenant.organization.id, counts, path: tenant.organization.id })
-      .onConflictDoUpdate({ target: channelCountersTable.channelKey, set: { counts, path: tenant.organization.id } });
+      .values({ channelKey: tenant.organization.id, counts })
+      .onConflictDoUpdate({ target: channelCountersTable.channelKey, set: { counts } });
   });
 
   afterAll(async () => {
@@ -62,64 +59,16 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(summary).not.toHaveProperty('entitySeqs');
   });
 
-  it('answers an org view with its frontier rollup (org member, unconditional read)', async () => {
+  it('answers an org view with its frontier (org member, unconditional read)', async () => {
     const orgId = tenant.organization.id;
     const result = await call(postAppCatchup, {
-      body: {
-        views: [{ key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 40 }],
-      },
+      body: { views: [{ organizationId: orgId, entityType: 'attachment', cursor: 40 }] },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
-    expect(views).toBeDefined();
-    expect(views).toHaveLength(1);
-    const [answer] = views!;
-    expect(answer.key).toBe(`${orgId}:attachment`);
-    expect(answer.status).toBe('ok');
-    expect(answer.frontiers).toEqual({ attachment: 42 });
-  });
-
-  it('answers a SELF view from the home frontier', async () => {
-    const orgId = tenant.organization.id;
-    const result = await call(postAppCatchup, {
-      body: {
-        views: [
-          { key: `${orgId}:attachment:self`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], depth: 'self', cursor: 39 },
-        ],
-      },
-      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-    });
-
-    expect(result.response.status).toBe(200);
-    const { views } = result.data as AppCatchupResponse;
-    expect(views).toHaveLength(1);
-    expect(views![0]).toMatchObject({ key: `${orgId}:attachment:self`, status: 'ok', frontiers: { attachment: 40 } });
-  });
-
-  it('a claimed prefix that mismatches the verified path answers opaque, no numbers', async () => {
-    const orgId = tenant.organization.id;
-    const result = await call(postAppCatchup, {
-      body: {
-        views: [
-          {
-            // Node id is the org (counters row exists, path = orgId), but the claim
-            // dresses it up as a deeper node: verified path !== claim → opaque.
-            key: 'forged',
-            organizationId: orgId,
-            prefixes: [`${orgId}/fake-course/${orgId}`],
-            entityTypes: ['attachment'],
-            cursor: 0,
-          },
-        ],
-      },
-      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-    });
-
-    expect(result.response.status).toBe(200);
-    const { views } = result.data as AppCatchupResponse;
-    expect(views![0]).toEqual({ key: 'forged', status: 'opaque' });
+    expect(views).toEqual([{ organizationId: orgId, entityType: 'attachment', status: 'ok', frontier: 42 }]);
   });
 
   it('answers a view on an org the caller is no part of, without leaking numbers', async () => {
@@ -127,8 +76,8 @@ describe('Catchup (view-driven, sequence)', async () => {
     const result = await call(postAppCatchup, {
       body: {
         views: [
-          { key: 'other:attachment', organizationId: otherOrgId, prefixes: [otherOrgId], entityTypes: ['attachment'], cursor: 0 },
-          { key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 42 },
+          { organizationId: otherOrgId, entityType: 'attachment', cursor: 0 },
+          { organizationId: orgId, entityType: 'attachment', cursor: 42 },
         ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -137,9 +86,9 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
     // The exact non-'ok' status is app-dependent; the shared guarantee is: not 'ok', no numbers.
-    expect(views!.map((v) => v.key)).toEqual(['other:attachment', `${orgId}:attachment`]);
+    expect(views!.map((v) => v.organizationId)).toEqual([otherOrgId, orgId]);
     expect(views![0].status).not.toBe('ok');
     expect(views![1].status).toBe('ok');
-    expect(views![0].frontiers).toBeUndefined();
+    expect(views![0].frontier).toBeUndefined();
   });
 });

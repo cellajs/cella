@@ -1038,14 +1038,8 @@ export const zPostAppCatchupBody = z.object({
   views: z
     .array(
       z.object({
-        key: z.string().max(512),
         organizationId: z.string().max(50),
-        prefixes: z.array(z.string().max(512)).min(1).max(64),
-        entityTypes: z
-          .array(z.enum(['attachment']))
-          .min(1)
-          .max(64),
-        depth: z.enum(['self', 'subtree']).optional(),
+        entityType: z.enum(['attachment']),
         cursor: z.int().gte(0),
       }),
     )
@@ -1077,9 +1071,10 @@ export const zPostAppCatchupResponse = z.object({
   views: z
     .array(
       z.object({
-        key: z.string(),
+        organizationId: z.string(),
+        entityType: z.enum(['attachment']),
         status: z.enum(['ok', 'opaque', 'forbidden']),
-        frontiers: z.record(z.string(), z.int()).optional(),
+        frontier: z.int().optional(),
       }),
     )
     .optional(),

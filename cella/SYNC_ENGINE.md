@@ -57,9 +57,9 @@ Only product rows sync: channels are containers, products are synced content. Th
 | **Sequence** | One monotonic counter per organization, shared by all product entity types |
 | **Path** | Root-first channel ID path of a row. A **subtree** (a channel and everything below it) is a path prefix. |
 | **Home** | Deepest non-null channel ancestor of a product row, with organization as fallback |
-| **Summary** | Frontier, counts and timestamps on a channel row, so one read answers for a subtree |
-| **Frontier** | Newest sequence position in a summary. It only moves forward. |
-| **View** | The subtrees and entity types a client tracks. Catchup authorizes and answers per view. |
+| **Summary** | Counts and timestamps on a channel row, so one read answers for a subtree. The organization's row also holds the frontiers. |
+| **Frontier** | Newest sequence position of a product type in an organization. It only moves forward. |
+| **View** | An organization and a product type a client tracks. Catchup authorizes and answers per view. |
 | **Cursor** | Latest sequence position a view has ingested |
 | **Range fetch** | Ordinary list request for the rows stamped between `afterSeq` and `untilSeq`, deleted rows included |
 | **Tombstone** | Soft-deleted row as a range fetch returns it for the deleted-items period: its id, position and place, never its content, so absent clients learn the deletion |
@@ -87,15 +87,13 @@ The server caches enriched product detail responses briefly. A write of the row 
 
 **Row readability** decides whether a user may fetch a row. List reads, range fetches and change frames ask the permission engine about full rows, and a detail-cache hit about the row as it was cached. A grant reaches down, never up: an elevated role reads the rows below its channel, any other role only the rows homed at it.
 
-**Summary answerability** decides whether a user may see a view's frontiers. Summaries reveal that activity exists, so they need stronger proof. Catchup gives each view one status:
+**Summary answerability** decides whether a user may see a view's frontier. A frontier reveals that activity exists, so it needs stronger proof. Catchup gives each view one status:
 
 | Status | Meaning | Client behavior |
 | --- | --- | --- |
-| `ok` | Every prefix is proven for the requested depth | Use frontiers and range fetches |
-| `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers. Refetch the cached lists on screen and mark the others: every connection marks them again, so they refetch when opened and the background fill leaves them. |
+| `ok` | The user reads every row of the type in the organization | Use the frontier and range fetches |
+| `opaque` | The user reads some rows: its grants reach part of the organization or carry a row condition | Reveal no numbers. Refetch the cached lists on screen and mark the others: every connection marks them again, so they refetch when opened and the background fill leaves them. |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
-
-The client derives its views from the user's memberships and the policy matrix. Apps declare none by hand.
 
 ## Client
 
@@ -105,7 +103,7 @@ A change frame names its rows, each with its sequence position and the write tha
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts a view per organization the user belongs to, and gets each view's status, an `ok` view's frontier, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
+Catchup runs on every connection before the stream goes live, and only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts a view per product type of each organization the user belongs to, and gets each view's status, an `ok` view's frontier, and each organization's signal versions. A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there, unless nothing has changed there yet.
 
 ### SSE wire
 
