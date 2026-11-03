@@ -7,7 +7,7 @@ import { backupName, ResetIrrecoverableError, type ResetTarget, rebuildSteps, re
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 
-/** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
+/** Roles the operator task ensure-database makes on the instance (`tasks/ensure-database.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
 
 /** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */

@@ -168,7 +168,7 @@ export async function ensureDatabase(opts: {
 
 /**
  * Run `ensureDatabase` for a stack whose `pulumi up` completed: the endpoint from its store outputs, the operator key for the database API and
- * Secret Manager. Nothing when the app declares no database connection string or the stack has no managed database yet.
+ * Secret Manager. Nothing when the stack has no managed database yet.
  */
 export async function ensureDatabaseForStack(opts: {
   env: NodeJS.ProcessEnv;
@@ -180,7 +180,6 @@ export async function ensureDatabaseForStack(opts: {
   log?: (message: string) => void;
 }): Promise<void> {
   const log = opts.log ?? ((message) => console.info(message));
-  if (databaseRuntimeSecrets().length === 0) return;
   const store = readDatabaseOutputs(opts.env, opts.stack);
   if (!store.instanceId || !store.privateIp || !store.databaseName) {
     log('[ensure-database] the stack has no managed database endpoint yet');
