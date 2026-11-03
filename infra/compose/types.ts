@@ -76,7 +76,7 @@ export interface ServiceMeta {
   placement?: ServicePlacement;
   /** Per-service VM size. Required: every service declares its own box. */
   instanceType: PerMode<string>;
-  /** This service signs S3 requests with its own standing service key (REQ-20). */
+  /** This service signs S3 requests with the uploads key, which its env file carries (REQ-20). */
   s3Access?: boolean;
   /** Deploy-time env bindings resolved by the compute module; see {@link AppServiceConfig.bindings}. */
   bindings?: Readonly<Record<string, string>>;

@@ -40,13 +40,13 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
+      'Replace the deploy key, the uploads key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
+      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'operator-key': {
     label: 'Set up operators',
@@ -58,7 +58,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs, write the machine policies and the observer policy, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin and boot applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the uploads application and its key, write the deploy, uploads and observer policies, put the observer key on this machine, and delete the retired admin and machine applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   'start-deploy': {
     label: 'Start a deploy',

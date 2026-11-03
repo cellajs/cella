@@ -7,9 +7,7 @@ import {
   enabledServices,
   isSingletonHost,
   placeServices,
-  principalServices,
   rolloutOwner,
-  runningServices,
   type ServiceDefinition,
   services,
 } from './services';
@@ -145,16 +143,6 @@ describe('placeServices (placement is independent of enablement)', () => {
     expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
     expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'jobs']);
     expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
-  });
-});
-
-describe('registry view: privileged IAM ignores enablement and placement', () => {
-  it('every registry service owns a principal, whatever appConfig enables and wherever it runs', () => {
-    expect(principalServices().map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
-  });
-
-  it('every enabled service runs, on its own machine or on the singleVM host, so each needs its key', () => {
-    expect(runningServices(allOff).map((s) => s.slug)).toEqual(enabledServices(allOff).map((s) => s.slug));
   });
 });
 

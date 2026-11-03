@@ -55,7 +55,7 @@ export interface Telemetry {
     opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
   ): void;
   event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void;
-  /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
+  /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only from its env file, and earlier records still export. */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void;
   /** Export the spans + events buffered since the last export over OTLP/HTTP. Swallows failures; calls queue behind each other, so concurrent ones never export a record twice. */
   flush(): Promise<void>;

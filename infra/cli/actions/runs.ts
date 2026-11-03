@@ -151,7 +151,7 @@ export async function showRuns(
 
 /**
  * The machines' own accounts, beside the runs: with `sha`, each service's account of that release and the builder's report; without, each
- * service's newest account, a boot outside any run included (a reboot that could not hydrate).
+ * service's newest account, a boot outside any run included.
  */
 async function showMachines(
   reader: BootAccountReader,

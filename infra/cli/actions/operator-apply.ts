@@ -18,7 +18,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets, memberShutOut } from '../../tasks/admit-operator-buckets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { moveSecretPaths } from '../../tasks/move-secret-paths';
+import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
@@ -134,7 +134,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       console.info(pc.dim('\n→ Moving runtime secrets to one container each (move-secret-paths)…'));
       try {
         const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-        await moveSecretPaths({ client, secrets: runtimeSecrets, log: (message) => console.info(pc.dim(message)) });
+        await moveToRuntimeFolder({ client, secrets: runtimeSecrets, log: (message) => console.info(pc.dim(message)) });
       } catch (error) {
         await releaseAll();
         console.error(`${warningMark} move-secret-paths failed (${errorMessage(error)}). Nothing applied.`);

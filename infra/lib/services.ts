@@ -99,20 +99,6 @@ export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpo
 }
 
 /**
- * Services owning an IAM principal and a policy: every registry service, wherever it runs. A host that carries several services receives one
- * key per service, so placement (singleVM, a worker folded into the host process) never changes an identity. Registry-derived on purpose, so
- * `enabled` never touches IAM: a registry service that is not enabled keeps its principal and its standing key, and nothing hands the key over.
- */
-export function principalServices(): readonly ServiceDefinition[] {
-  return services;
-}
-
-/** The services that run somewhere, each needing its key: every enabled service, on its own machine or on the singleVM host. */
-export function runningServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
-  return enabledServices(serviceConfig);
-}
-
-/**
  * App-owned object storage implied by the service registry: the SPA bucket follows the default-route service, the upload buckets follow any `s3Access` service, and browser CORS exists only when both do.
  * Engine-owned buckets (Pulumi state, boot-diag) are unconditional and absent here, so a registry with neither a default route nor an s3Access service provisions no app buckets.
  */

@@ -1,5 +1,5 @@
 import type { EngineConfig } from '../../config/engine-config';
-import { appStorageNeeds, principalServices } from '../services';
+import { appStorageNeeds, services } from '../services';
 import { deployPolicy } from './deploy-policy';
 import { UPLOADS_PERMISSION_SETS } from './permissions';
 import { principalNames, principalTags } from './principals';
@@ -33,9 +33,12 @@ export function uploadsPolicy(opts: { slug: string; mode: string; projectId: str
   };
 }
 
-/** Whether the registry declares an uploads application: a service signs uploads, so the upload buckets exist. */
+/**
+ * Whether the registry declares an uploads application: a service signs uploads, so the upload buckets exist. Registry-derived, as the
+ * buckets are, so `enabled` and `singleVM` never touch IAM.
+ */
 export function declaresUploads(): boolean {
-  return appStorageNeeds(principalServices()).uploadBuckets;
+  return appStorageNeeds(services).uploadBuckets;
 }
 
 /** Every identity an environment's code declares: the deploy key and, with upload buckets, the uploads application, with their policies. */

@@ -3,7 +3,7 @@ import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 
-/** The Secret Manager calls the move makes, so a test passes its own. */
+/** The Secret Manager calls the moves make, so a test passes its own. */
 export interface MoveSecretsClient {
   listSecrets(): Promise<SecretManagerSecret[]>;
   accessLatestValue(secretId: string): Promise<string>;
@@ -15,7 +15,7 @@ export interface MoveSecretsClient {
 /** The folder a secret sits in, in one form: `/backend/` and `/backend` are the same folder. */
 const folderOf = (secret: Pick<SecretManagerSecret, 'path'>) => `/${secret.path.split('/').filter(Boolean).join('/')}/`.replace(/^\/\/$/, '/');
 
-/** The folder the deploy read its values from before the runtime folder, its standing machine keys among them. */
+/** The folder the deploy read its values from before the runtime folder, the retired machine identities' keys among them. */
 const RETIRED_DEPLOY_FOLDER = '/deploy/';
 
 /** One secret's move: the container that moves to the runtime folder, the value it is given first, and the containers deleted. */
@@ -28,6 +28,54 @@ export interface SecretMove {
 }
 
 const hasValue = (secret: SecretManagerSecret) => (secret.version_count ?? 0) > 0;
+
+const trimmed = (path: string) => path.replace(/\/+$/, '');
+
+/** A secret's place as `<folder>/<name>`, whatever trailing slash its folder carries. */
+const placeOf = (name: string, path: string) => `${trimmed(path)}/${name}`;
+
+/**
+ * The folder a secret of an environment moves to: the folder it had under the `/<slug>-<mode>` prefix, from the project's root
+ * (`/cella-production/backend` → `/backend/`, `/cella-production` → `/`). Undefined for a folder outside the prefix, which stays.
+ */
+export function unprefixedPath(path: string, slug: string, mode: string): string | undefined {
+  const prefix = `/${slug}-${mode}`;
+  const folder = trimmed(path);
+  if (folder !== prefix && !folder.startsWith(`${prefix}/`)) return undefined;
+  return `${folder.slice(prefix.length)}/`;
+}
+
+/**
+ * Move every secret of an environment out of its `/<slug>-<mode>/` prefix, in place, before anything of a session reads a folder: the id
+ * and the versions stay. A secret whose new folder already holds one of the same name stays under the prefix and is reported. Idempotent: a
+ * moved secret is outside the prefix. Returns the secrets left under it, as `<folder>/<name>`.
+ */
+export async function moveSecretsOutOfPrefix(opts: {
+  client: Pick<MoveSecretsClient, 'listSecrets' | 'moveSecret'>;
+  slug: string;
+  mode: string;
+  log?: (message: string) => void;
+}): Promise<string[]> {
+  const log = opts.log ?? ((message) => console.info(message));
+  const listed = await opts.client.listSecrets();
+  const taken = new Set(listed.map((secret) => placeOf(secret.name, secret.path)));
+  const left: string[] = [];
+  for (const secret of listed) {
+    const target = unprefixedPath(secret.path, opts.slug, opts.mode);
+    if (target === undefined) continue;
+    const from = placeOf(secret.name, secret.path);
+    const to = placeOf(secret.name, target);
+    if (taken.has(to)) {
+      log(`[move-secret-paths] ${from} stays: ${to} exists already, delete the one that is stale`);
+      left.push(from);
+      continue;
+    }
+    await opts.client.moveSecret(secret.id, target);
+    taken.add(to);
+    log(`[move-secret-paths] ${from} → ${to}`);
+  }
+  return left;
+}
 
 /**
  * Where one secret's containers go: the one in the runtime folder stays when there is one, else the copy of the first consumer, which the
@@ -50,7 +98,7 @@ export function secretMove(name: string, containers: readonly SecretManagerSecre
  * go. A secret's id and versions stay with the container that moves, so the program adopts it. The engine folder is left alone. Idempotent:
  * once the runtime folder holds the only container of each name, nothing is left to move. Returns the names moved.
  */
-export async function moveSecretPaths(opts: {
+export async function moveToRuntimeFolder(opts: {
   client: MoveSecretsClient;
   secrets: readonly Pick<RuntimeSecretDefinition, 'secretName' | 'services'>[];
   log?: (message: string) => void;
