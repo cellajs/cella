@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { renderAscii } from 'shared/utils/ascii';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { registerOpenApiDocs } from '#/core/openapi-registration';
 import { baseDb } from '#/db/db';
@@ -92,7 +91,7 @@ const main = async () => {
 
     const tunnelUrl = await startTunnel();
 
-    renderAscii();
+    if (appConfig.asciiArt.length) console.info(appConfig.asciiArt.join('\n'));
     console.info(' ');
 
     console.info(`${pc.bold(pc.greenBright(appConfig.name))} 
