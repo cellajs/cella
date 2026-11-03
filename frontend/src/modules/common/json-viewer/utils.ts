@@ -74,7 +74,7 @@ interface NodeDescription {
 }
 
 /** A description keyword. Always a string, so a parameter or property named `description`, which holds a schema, never matches. */
-const isDescriptionKeyword = (key: string | number, value: unknown) =>
+export const isDescriptionKeyword = (key: string | number, value: unknown): value is string =>
   (key === 'description' || key === 'refDescription') && typeof value === 'string';
 
 /** Whether a schema holds a description keyword at any depth. */

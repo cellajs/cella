@@ -58,6 +58,7 @@ export function JsonViewer({
   showKeyQuotes = true,
   hideDescriptions = false,
   renderRef,
+  renderDescription,
 }: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
 
@@ -85,6 +86,7 @@ export function JsonViewer({
     hideDescriptions,
     openapiMode,
     renderRef,
+    renderDescription,
   };
 
   return (

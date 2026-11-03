@@ -8,11 +8,14 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { hasDescriptionKeyword } from '~/modules/common/json-viewer/utils';
 import { CodeViewer } from '~/modules/docs/code-viewer';
+import { SpecText } from '~/modules/docs/spec-text';
 import { CodeBlock } from '~/modules/ui/code-block';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
+
+const renderSpecText = (text: string) => <SpecText text={text} />;
 
 interface ViewerGroupProps {
   schema: GenSchema | GenRequest;
@@ -91,6 +94,7 @@ export function ViewerGroup({
                 indentWidth={3}
                 hideDescriptions={descriptionToggle && !descriptionsOpen}
                 renderRef={renderRef}
+                renderDescription={renderSpecText}
               />
             )}
             {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
