@@ -16,7 +16,7 @@ export interface SinkKeyLookupOptions {
 }
 
 /** Read the telemetry ingest key from the runtime folder, whose values the deploy key reads. */
-export async function lookupSinkIngestKey(opts: SinkKeyLookupOptions): Promise<SinkKeyLookup> {
+async function lookupSinkIngestKey(opts: SinkKeyLookupOptions): Promise<SinkKeyLookup> {
   const secretName = opts.secretName ?? telemetrySink.keySecretName;
   const container = await opts.client.getSecretByName(secretName, RUNTIME_FOLDER);
   if (!container || (container.version_count ?? 0) === 0)

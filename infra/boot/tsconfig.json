@@ -21,7 +21,6 @@
     "../lib/utils/fetch-like.ts",
     "../lib/utils/guards.ts",
     "../lib/utils/is-main.ts",
-    "../lib/utils/json.ts",
     "../lib/utils/retry.ts"
   ],
   "exclude": ["src/**/*.test.ts"]

@@ -5,7 +5,7 @@ const appConfig = engineConfig();
 import { composeConfig } from '../compose/compose';
 import { sizing } from '../config/sizing';
 import { deriveGenId } from '../lib/gen-id';
-import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
+import { runtimeEnvEntries } from '../lib/runtime-secrets';
 import { type Generation, selectGenerations } from '../lib/select-generations';
 import { carriedServices, coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
 import { controlState } from './control';
@@ -20,11 +20,6 @@ export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM)
 export const collocated = collocatedServices(appConfig.services, appConfig.singleVM);
 export const hostSlug = enabled.find((s) => s.primaryRollout)?.slug;
 
-/** Runtime-secret consumers a service's VM must carry; under singleVM the host also carries every co-hosted worker's and collocated container's secrets. */
-export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsumer[] {
-  return carriedServices(appConfig.services, appConfig.singleVM, svc).map((carried) => carried.slug);
-}
-
 export type { Generation } from '../lib/select-generations';
 
 /** Static configuration that defines a generation, hashed into the genId so any change here rolls a new generation. Excludes the rendered cloud-init (a Pulumi Output, unavailable at plan time) and all secret values. */
@@ -35,12 +30,8 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   const blocks = Object.values(composeConfig.services)
     .filter((block) => block.profiles.some((profile) => blockOwners.has(profile)))
     .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }));
-  // Union across secret consumers so the singleVM host's genId also covers the co-hosted workers' secret manifest.
-  const secrets = unionRuntimeSecrets(secretConsumersFor(svc)).map((definition) => ({
-    secretName: definition.secretName,
-    envVar: definition.envVar,
-    required: definition.required,
-  }));
+  // The names of the machine's env file, so the singleVM host's genId also covers the co-hosted workers' secrets.
+  const secrets = runtimeEnvEntries(carriedServices(appConfig.services, appConfig.singleVM, svc));
   return {
     slug: svc.slug,
     port: svc.healthPort,

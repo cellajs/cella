@@ -102,7 +102,10 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
   };
   const block: ComposeService = {
     image: cfg.image,
+    pull_policy: 'never',
     profiles: [slug],
+    // The app starts once its release companion (migrations) exited 0: one `compose up --wait` runs both, and a failed migration fails it.
+    ...(cfg.release ? { depends_on: { [releaseServiceName(slug)]: { condition: 'service_completed_successfully' as const } } } : {}),
     restart: 'unless-stopped',
     // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
@@ -122,13 +125,14 @@ function releaseServiceName(slug: string): string {
 
 /**
  * One-shot release companion for a service that declares a `release` step: the service image with the app's
- * release command/env, run at the new generation's boot BEFORE the app starts and gated on exit 0.
+ * release command/env, run at the new generation's boot BEFORE the app starts, which depends on its exit 0.
  * It shares the service's profile because profile membership is genId-fingerprinted; a separate profile would re-roll every generation.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const release = cfg.release;
   return {
     image: cfg.image,
+    pull_policy: 'never',
     profiles: [slug],
     restart: 'no',
     ...(release?.command ? { command: release.command } : {}),

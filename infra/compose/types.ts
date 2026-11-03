@@ -92,7 +92,11 @@ export interface HealthCheck {
 
 export interface ComposeService {
   image: string;
+  /** `never`: a machine runs only the images it loaded from the release's archives, and never reaches a registry. */
+  pull_policy: 'never';
   profiles: readonly string[];
+  /** The release companion the app starts after, once it exited 0. */
+  depends_on?: Readonly<Record<string, { condition: 'service_completed_successfully' }>>;
   restart: 'unless-stopped' | 'no' | 'always' | 'on-failure';
   command?: readonly string[];
   ports?: readonly string[];
@@ -114,7 +118,7 @@ export interface ComposeFile {
  * Entry presence determines whether the service belongs to the fleet.
  */
 export interface AppServiceConfig {
-  /** This service signs S3 requests (uploads, presigned URLs) with its own standing service key: IAM grants, bucket policy, and S3_ACCESS_KEY_ID/SECRET in its runtime env. */
+  /** This service signs S3 requests (uploads, presigned URLs) with the uploads key: the upload buckets exist, and S3_ACCESS_KEY_ID/SECRET are in its env file. */
   s3Access?: boolean;
   /** Container image ref, e.g. `'${REGISTRY}/yjs:${YJS_TAG:-latest}'`. */
   image: string;

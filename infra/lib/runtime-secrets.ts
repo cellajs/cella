@@ -157,7 +157,7 @@ export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): Runt
 }
 
 /** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order. That order is hashed into each generation's genId, so reordering re-rolls every generation. */
-export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
+function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
   const seen = new Set<string>();
   return consumers
     .flatMap((consumer) => runtimeSecretsForConsumer(consumer))

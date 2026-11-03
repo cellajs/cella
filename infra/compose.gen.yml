@@ -5,7 +5,11 @@
 services:
   backend:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    pull_policy: never
     profiles: [backend]
+    depends_on:
+      backend-release:
+        condition: service_completed_successfully
     restart: unless-stopped
     ports:
       - '4000:4000'
@@ -54,6 +58,7 @@ services:
       s3Access: true
   backend-release:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    pull_policy: never
     profiles: [backend]
     restart: 'no'
     env_file:
@@ -68,6 +73,7 @@ services:
       APP_ORIGIN: ${APP_ORIGIN}
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
+    pull_policy: never
     profiles: [cdc]
     restart: unless-stopped
     ports:
@@ -104,6 +110,7 @@ services:
         BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
+    pull_policy: never
     profiles: [yjs]
     restart: unless-stopped
     ports:
@@ -144,6 +151,7 @@ services:
         BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   mcp:
     image: ${REGISTRY}/backend:${MCP_TAG:-latest}
+    pull_policy: never
     profiles: [mcp]
     restart: unless-stopped
     ports:
@@ -180,6 +188,7 @@ services:
       coHosted: true
   oauth:
     image: ${REGISTRY}/backend:${OAUTH_TAG:-latest}
+    pull_policy: never
     profiles: [oauth]
     restart: unless-stopped
     ports:
@@ -216,6 +225,7 @@ services:
       coHosted: true
   jobs:
     image: ${REGISTRY}/backend:${JOBS_TAG:-latest}
+    pull_policy: never
     profiles: [jobs]
     restart: unless-stopped
     ports:
@@ -249,6 +259,7 @@ services:
       coHosted: true
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
+    pull_policy: never
     profiles: [frontend]
     restart: unless-stopped
     ports:
