@@ -137,7 +137,8 @@ export async function publishEngine(opts: {
   const git = (args: string[]) => (spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout ?? '').trim();
   const commit = git(['rev-parse', 'HEAD']);
   if (!COMMIT.test(commit)) throw new Error('the engine image names the commit it is built from: run the apply from a git checkout');
-  if (git(['status', '--porcelain', '--', ...CONTEXT_PATHS])) {
+  // Tracked files only, as the image holds no untracked one.
+  if (git(['status', '--porcelain', '--untracked-files=no', '--', ...CONTEXT_PATHS])) {
     log(`  The engine image carries changes ${commit.slice(0, 10)} does not hold; applied.json names that commit all the same.`);
   }
   const descriptionHash = await appDescriptionHash(root);
