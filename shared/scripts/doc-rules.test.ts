@@ -3,8 +3,7 @@ import { docFindings } from './doc-rules.ts';
 
 const singular = ['invar', 'iant'].join('');
 const dash = '\u2014';
-const found = (file: string, source: string) =>
-  docFindings(file, source).map(({ line, column, rule, term, review }) => ({ line, column, rule, term, review }));
+const found = (file: string, source: string) => docFindings(file, source).map(({ line, column, rule, term }) => ({ line, column, rule, term }));
 
 describe('docFindings', () => {
   it('finds the concrete-language term in any case or plural, never inside longer words', () => {
@@ -27,19 +26,11 @@ describe('docFindings', () => {
       '```',
     ].join('\n');
 
-    expect(found('guide.mdx', source)).toEqual([{ line: 1, column: 14, rule: 'em-dash', term: dash, review: false }]);
+    expect(found('guide.mdx', source)).toEqual([{ line: 1, column: 14, rule: 'em-dash', term: dash }]);
   });
 
-  it('marks lower-confidence vocabulary as review and load-bearing as required', () => {
-    const source = 'The wiring is load bearing and silently surfaces a seam.';
-
-    expect(found('guide.md', source).map(({ term, review }) => `${term}:${review}`)).toEqual([
-      'load bearing:false',
-      'seam:true',
-      'surfaces:true',
-      'wiring:true',
-      'silently:true',
-    ]);
+  it('reads the agent wording rules in docs prose', () => {
+    expect(found('guide.md', 'The result is load bearing and authoritative.').map(({ term }) => term)).toEqual(['load bearing', 'authoritative']);
   });
 
   it('finds inline code in a link label, outside fenced code, double-backtick examples and image alt text', () => {
