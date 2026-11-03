@@ -25,7 +25,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { type PublishedEngine, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
+import { type PublishedEngine, pruneEngines, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
 import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
@@ -244,6 +244,9 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
         1,
       );
     }
+    await pruneEngines({ appConfig: ctx.appConfig, projectId: ctx.projectId, secretKey: ctx.secretKey, applied: engine }).catch((error) =>
+      console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
+    );
   }
   console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
 

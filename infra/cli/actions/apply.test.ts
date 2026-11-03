@@ -8,6 +8,7 @@ const askToApply = vi.fn();
 const runOperatorApply = vi.fn();
 const openDbEndpoints = vi.fn();
 const publishEngine = vi.fn();
+const discardEngine = vi.fn();
 
 vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
 vi.mock('../shared', () => ({
@@ -25,7 +26,10 @@ vi.mock('./operator-apply', () => ({
 vi.mock('./db-exposure', () => ({ openDbEndpoints: (...args: unknown[]) => openDbEndpoints(...args) }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
 vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
-vi.mock('../../tasks/publish-engine', () => ({ publishEngine: (...args: unknown[]) => publishEngine(...args) }));
+vi.mock('../../tasks/publish-engine', () => ({
+  publishEngine: (...args: unknown[]) => publishEngine(...args),
+  discardEngine: (...args: unknown[]) => discardEngine(...args),
+}));
 
 const { runApply } = await import('./apply');
 
@@ -67,6 +71,8 @@ describe('runApply', () => {
 
     expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true, engineImage: engine.image });
     expect(runOperatorApply).not.toHaveBeenCalled();
+    // The image pushed for the plan goes with it: no definition names it.
+    expect(discardEngine).toHaveBeenCalledWith(expect.objectContaining({ engine }));
   });
 
   it('lets the operator into older bucket policies before it plans: the plan reads the state', async () => {

@@ -1,7 +1,7 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
+import { discardEngine, type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
 import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { exitOnIdentityChanges } from './identity';
@@ -47,7 +47,10 @@ export async function runApply(context: InfraContext): Promise<void> {
     console.warn(`${warningMark} The registry has no namespace yet: this apply makes it, and the next one publishes the engine the main job runs.`);
   }
   const reviewed = await reviewPlan(context, operator, { forgetRetired: true, engineImage: engine?.image });
+  // A declined plan leaves no engine image behind: no definition names the one pushed for it.
+  const discard = () => (engine ? discardEngine({ appConfig: context.appConfig, secretKey: operator.secretKey, engine }) : undefined);
   if (!(await askToApply(context.environment))) {
+    await discard();
     console.info('Declined; nothing applied.');
     return;
   }
@@ -59,7 +62,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=1) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === '1';
-  const { completed, verified } = await runOperatorApply(context, {
+  const { completed, verified, declined } = await runOperatorApply(context, {
     operation: 'apply',
     confirmPlan: true,
     reviewed,
@@ -67,6 +70,7 @@ export async function runApply(context: InfraContext): Promise<void> {
     debugProvider,
     engine,
   });
+  if (declined) await discard();
   if (completed && verified === false) endAction(1);
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>

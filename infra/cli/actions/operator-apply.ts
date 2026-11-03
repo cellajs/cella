@@ -21,7 +21,7 @@ import { admitOperatorToBuckets, shutOutOfBuckets } from '../../tasks/admit-oper
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { moveToRuntimeFolder } from '../../tasks/move-secret-paths';
-import { type PublishedEngine, recordAppliedEngine } from '../../tasks/publish-engine';
+import { type PublishedEngine, pruneEngines, recordAppliedEngine } from '../../tasks/publish-engine';
 import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -62,6 +62,8 @@ export interface OperatorApplyResult {
   stack: string;
   /** False when the operator declined the retry loop before `up` converged. */
   completed: boolean;
+  /** True when the operator declined the plan under the lock, before any `up` ran. */
+  declined?: boolean;
   /** Set only with `verifyAfter`: false when the live database privileges still differ from the program after a completed `up`. */
   verified?: boolean;
 }
@@ -195,7 +197,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
           }
           if (!(await askToApply(context.environment))) {
             console.info('Declined; nothing applied.');
-            return { env, stack, completed: false };
+            return { env, stack, completed: false, declined: true };
           }
         }
       }
@@ -257,6 +259,10 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         }
         console.info(
           `${checkMark} The main job runs the engine of ${engine.commit.slice(0, 10)}, describing the app as ${engine.descriptionHash.slice(0, 12)}.`,
+        );
+        await pruneEngines({ appConfig, projectId, secretKey: operator.secretKey, applied: engine }).then(
+          (deleted) => deleted.length > 0 && console.info(pc.dim(`  Deleted ${deleted.length} earlier engine image(s) from the registry.`)),
+          (error) => console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
         );
       }
     } finally {

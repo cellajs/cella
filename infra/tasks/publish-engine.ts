@@ -10,9 +10,10 @@ import { pinnedNodeImage } from '../lib/deploy/node-image';
 import { COMMIT } from '../lib/deploy/target';
 import { deriveInfra } from '../lib/naming';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
-import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
+import { type ScwAuth, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 import { makeControlClient } from '../lib/stack/control-store';
 import { exitCodeOf } from '../lib/utils/child-exit';
+import { errorMessage } from '../lib/utils/errors';
 import { infraDir } from '../lib/utils/paths';
 
 /** What the image copies of the checkout (infra/Dockerfile), relative to its root. */
@@ -25,6 +26,19 @@ export interface PublishedEngine {
   imageDigest: string;
   descriptionHash: string;
   commit: string;
+  /** The registry's tag of this push, which a declined plan deletes. */
+  tagId: string;
+}
+
+/** How many engine images beside the applied one the registry keeps, newest first: a run started before the apply may still pull one. */
+const KEPT_EARLIER_ENGINES = 2;
+
+/** One tag of the engine image as the registry lists it. */
+interface EngineTag {
+  id: string;
+  name: string;
+  digest?: string;
+  created_at?: string;
 }
 
 const registryBase = (region: string) => `https://api.scaleway.com/registry/v1/regions/${region}`;
@@ -39,24 +53,30 @@ async function findNamespace(auth: ScwAuth, region: string, projectId: string, n
   return namespaces.find((namespace) => namespace.name === name);
 }
 
-/** The digest the registry serves for a tag: the manifest the push left, whatever the local builder calls its image. */
-async function tagDigest(auth: ScwAuth, region: string, namespaceId: string, tag: string): Promise<string> {
+/** The engine image's tags in the namespace, newest first; none before the first push. */
+async function engineTags(auth: ScwAuth, region: string, namespaceId: string, name?: string): Promise<EngineTag[]> {
   const { images = [] } = await scwFetch<{ images?: Array<{ id: string; name: string }> }>(
     auth,
     'GET',
     `${registryBase(region)}/images?namespace_id=${namespaceId}&name=${ENGINE_IMAGE_NAME}`,
   );
   const image = images.find((candidate) => candidate.name === ENGINE_IMAGE_NAME);
-  if (!image) throw new Error(`the registry lists no ${ENGINE_IMAGE_NAME} image after the push`);
-  const { tags = [] } = await scwFetch<{ tags?: Array<{ name: string; digest?: string }> }>(
-    auth,
-    'GET',
-    `${registryBase(region)}/images/${image.id}/tags?name=${encodeURIComponent(tag)}`,
-  );
-  const digest = tags.find((candidate) => candidate.name === tag)?.digest;
-  if (!digest) throw new Error(`the registry has no digest for ${ENGINE_IMAGE_NAME}:${tag} after the push`);
-  return digest;
+  if (!image) return [];
+  const tags: EngineTag[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const { tags: listed = [], total_count = 0 } = await scwFetch<{ tags?: EngineTag[]; total_count?: number }>(
+      auth,
+      'GET',
+      `${registryBase(region)}/images/${image.id}/tags?page=${page}&page_size=100${name ? `&name=${encodeURIComponent(name)}` : ''}`,
+    );
+    tags.push(...listed);
+    if (listed.length === 0 || tags.length >= total_count) break;
+  }
+  return tags.sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
 }
+
+/** Delete one tag; one that shares its image with another tag stays, as the registry refuses that without force, which is never sent. */
+const deleteTag = (auth: ScwAuth, region: string, tagId: string) => scwSend(auth, 'DELETE', `${registryBase(region)}/tags/${tagId}`);
 
 /**
  * The build context: the checkout's tracked files under {@link CONTEXT_PATHS}, as they stand in the working tree. An untracked file stays
@@ -122,6 +142,11 @@ export async function publishEngine(opts: {
   }
   const descriptionHash = await appDescriptionHash(root);
   const repository = engineImageRepository(region, naming.registryNamespace);
+  // A tag per push: one pushed again would move off the image the main job may still run, which no other tag then keeps.
+  const tag = `${commit}-${new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d+Z$/, 'Z')}`;
   const context = stageContext(root);
   const docker = pushConfig(`rg.${region}.scw.cloud`, opts.secretKey);
   try {
@@ -143,14 +168,15 @@ export async function publishEngine(opts: {
       '--build-arg',
       `DESCRIPTION_HASH=${descriptionHash}`,
       '--tag',
-      `${repository}:${commit}`,
+      `${repository}:${tag}`,
       '--push',
       '.',
     ];
     const status = await exitCodeOf(spawn('docker', args, { cwd: context, env: docker.env, stdio: ['ignore', 'inherit', 'inherit'] }));
     if (status !== 0) throw new Error(`docker buildx build exited ${status}: the apply builds the engine image with Docker and buildx`);
-    const imageDigest = await tagDigest(auth, region, namespace.id, commit);
-    return { image: engineImageRef(repository, imageDigest), imageDigest, descriptionHash, commit };
+    const pushed = (await engineTags(auth, region, namespace.id, tag)).find((candidate) => candidate.name === tag);
+    if (!pushed?.digest) throw new Error(`the registry has no digest for ${ENGINE_IMAGE_NAME}:${tag} after the push`);
+    return { image: engineImageRef(repository, pushed.digest), imageDigest: pushed.digest, descriptionHash, commit, tagId: pushed.id };
   } finally {
     rmSync(docker.dir, { recursive: true, force: true });
     rmSync(context, { recursive: true, force: true });
@@ -175,4 +201,37 @@ export async function recordAppliedEngine(opts: {
   };
   await writeAppliedEngine(s3, naming.bootDiagBucket, opts.stack, applied);
   return applied;
+}
+
+/** Delete the tag a push left for a plan the operator declined: no definition names its image. A tag that shares its image stays. */
+export async function discardEngine(opts: { appConfig: EngineConfig; secretKey: string; engine: PublishedEngine }): Promise<void> {
+  const { region } = deriveInfra(opts.appConfig);
+  await deleteTag({ secretKey: opts.secretKey }, region, opts.engine.tagId).catch((error: unknown) =>
+    console.info(`  The engine image pushed for this plan stays in the registry (${errorMessage(error)}).`),
+  );
+}
+
+/**
+ * Delete the engine images an apply no longer returns to, once it recorded its own: every tag but the ones of the applied image and the
+ * {@link KEPT_EARLIER_ENGINES} newest others. Returns the tags deleted; one the registry refuses stays.
+ */
+export async function pruneEngines(opts: {
+  appConfig: EngineConfig;
+  projectId: string;
+  secretKey: string;
+  applied: PublishedEngine;
+}): Promise<string[]> {
+  const auth = { secretKey: opts.secretKey };
+  const { naming, region } = deriveInfra(opts.appConfig);
+  const namespace = await findNamespace(auth, region, opts.projectId, naming.registryNamespace);
+  if (!namespace) return [];
+  const earlier = (await engineTags(auth, region, namespace.id)).filter((tag) => tag.digest !== opts.applied.imageDigest);
+  const deleted: string[] = [];
+  for (const tag of earlier.slice(KEPT_EARLIER_ENGINES)) {
+    await deleteTag(auth, region, tag.id).then(
+      () => deleted.push(tag.name),
+      (error: unknown) => console.info(`  ${ENGINE_IMAGE_NAME}:${tag.name} stays (${errorMessage(error)}).`),
+    );
+  }
+  return deleted;
 }
