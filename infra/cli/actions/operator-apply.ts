@@ -12,6 +12,7 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { exitCodeOf } from '../../lib/utils/child-exit';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -61,10 +62,8 @@ export interface OperatorApplyResult {
 }
 
 /** One infra task under the lock, as a child that leaves the event loop free, so the stack lease keeps renewing while it runs. */
-function infraTask(env: NodeJS.ProcessEnv, args: string[]): Promise<{ status: number }> {
-  return new Promise((done) => {
-    spawn('pnpm', ['--filter', 'infra', ...args], { cwd: infraDir, env, stdio: 'inherit' }).once('close', (code) => done({ status: code ?? 1 }));
-  });
+async function infraTask(env: NodeJS.ProcessEnv, args: string[]): Promise<{ status: number }> {
+  return { status: await exitCodeOf(spawn('pnpm', ['--filter', 'infra', ...args], { cwd: infraDir, env, stdio: 'inherit' })) };
 }
 
 /**

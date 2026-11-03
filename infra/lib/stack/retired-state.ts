@@ -45,6 +45,12 @@ export function retiredUrns(exported: unknown, generated: ReadonlySet<string>): 
   return urnsOf(exported).filter((urn) => isRetired(urn, generated));
 }
 
+/** A stack export with `edit` applied to each of its resources; everything else is kept as exported. */
+export function withResources(exported: unknown, edit: (resource: Record<string, unknown>) => Record<string, unknown>): unknown {
+  const deployment = deploymentOf(exported);
+  return { ...(exported as Record<string, unknown>), deployment: { ...deployment, resources: resourcesOf(deployment).map(edit) } };
+}
+
 /**
  * A stack export without the given resources, and without any mention of them in the other resources. Everything else is kept as exported.
  * Removing a resource from the state, and not from Scaleway, lets the program stop declaring it: a resource the program drops is otherwise

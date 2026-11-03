@@ -1,9 +1,10 @@
 import { extname } from 'node:path';
 import { Readable } from 'node:stream';
+import type { ReadableStream } from 'node:stream/web';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { type RdbClient, waitForBackupReady } from '../lib/scaleway/scaleway-rdb';
 
-/** The prefix of the private uploads bucket that holds the final dumps, one folder per environment. */
+/** The prefix of the boot-diag bucket that holds the final dumps, one folder per environment. */
 export const DUMPS_PREFIX = 'dumps/';
 
 /** Days Scaleway keeps the backup a dump is exported from, as a second copy. */
@@ -17,8 +18,8 @@ export interface FinalDumpOptions {
   instanceName: string;
   databaseName: string;
   environment: string;
-  /** The private uploads bucket, written with a client whose key its policy admits; undefined for an app that declares none. */
-  bucket: string | undefined;
+  /** The boot-diag bucket, which every environment has and a teardown keeps, written with a client whose key its policy admits. */
+  bucket: string;
   s3: S3Client;
   download?: typeof fetch;
   now?: Date;
@@ -26,16 +27,15 @@ export interface FinalDumpOptions {
 }
 
 /**
- * Write a final dump of the environment's database into the private uploads bucket, before a teardown deletes the instance: a backup made
- * through the managed database's API, exported, and streamed from its download link to `dumps/<environment>/<time><ext>`, the extension
- * being the exported file's (`.dump` when its link names none).
+ * Write a final dump of the environment's database into the boot-diag bucket, before a teardown deletes the instance: a backup made through
+ * the managed database's API, exported, and streamed from its download link to `dumps/<environment>/<time><ext>`, the extension being the
+ * exported file's (`.dump` when its link names none). No statement of the bucket's policy lets the uploads key or the observer read there.
  * @returns the object's key, or undefined when the environment has no managed database instance.
- * @throws when the app declares no private uploads bucket, or when the backup, its export or the upload fails: the teardown then deletes nothing.
+ * @throws when the backup, its export or the upload fails: the teardown then destroys nothing.
  */
 export async function writeFinalDump(opts: FinalDumpOptions): Promise<string | undefined> {
   const instance = await opts.rdb.findInstance(opts.instanceName);
   if (!instance) return undefined;
-  if (!opts.bucket) throw new Error(`the app declares no private uploads bucket to hold the final dump of ${opts.databaseName}`);
   const now = opts.now ?? new Date();
   const stamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
   opts.log(`Backing up ${opts.databaseName} on ${opts.instanceName}...`);
@@ -62,7 +62,8 @@ export async function writeFinalDump(opts: FinalDumpOptions): Promise<string | u
     new PutObjectCommand({
       Bucket: opts.bucket,
       Key: key,
-      Body: Readable.from(response.body),
+      // fetch's body is typed by the DOM library, and node:stream/web names the same object.
+      Body: Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
       ContentLength: length,
       ContentType: 'application/octet-stream',
     }),

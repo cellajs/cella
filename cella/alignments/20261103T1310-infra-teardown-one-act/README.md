@@ -7,7 +7,7 @@ grep: protect, memberShutOut, operatorSecretImports, OPERATOR_SECRET_IMPORTS, op
 
 # Teardown in one act
 
-A teardown (**Tear down stack**) now takes the typed `<slug>-<mode>` and one Owner API key, writes a final dump of the database into the private uploads bucket, deletes everything that runs or costs with the environment's identities, and keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which the next setup adopts. No step is owed for a running environment. An app resource in `infra/resources/` that sets `protect` fails `tests/unit/resource-contracts.test.ts`.
+A teardown (**Tear down stack**) now takes the typed `<slug>-<mode>` and one Owner API key, writes a final dump of the database into the boot-diag bucket, deletes everything that runs or costs with the environment's identities, and keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which the next setup adopts. No step is owed for a running environment. An app resource in `infra/resources/` that sets `protect` fails `tests/unit/resource-contracts.test.ts`.
 
 ## What & why
 
@@ -23,10 +23,11 @@ No script: manual.
 
 ## Manual steps
 
-1. No step for a running environment: a teardown takes the kept resources out of the state and lifts the protections an older program recorded, so it keeps the same set before and after the next apply.
-2. An app resource in `infra/resources/` drops `protect`; one a teardown must keep goes in `keptResources` (`infra/lib/stack/kept-resources.ts`) and takes `retainOnDelete: true`.
-3. An app script that called `memberShutOut` calls `shutOutOfBuckets` with the key and `principal` set to `user_id:<id>`.
-4. Before a teardown, the person holding the Owner key is a member of `<app>-operators` with an apply since joining: the bucket policies shut out every other key.
+1. No step for a running environment: a teardown takes the kept resources out of the state, empties every other bucket on delete and lifts the protections an older program recorded, so it keeps the same set before and after the next apply.
+2. A destroy that stops halfway leaves what it had not reached, still in the state, with the kept resources already out of it: tear down again to finish, which writes a dump first while the database lives.
+3. An app resource in `infra/resources/` drops `protect`; one a teardown must keep goes in `keptResources` (`infra/lib/stack/kept-resources.ts`) and takes `retainOnDelete: true`.
+4. An app script that called `memberShutOut` calls `shutOutOfBuckets` with the key and `principal` set to `user_id:<id>`.
+5. Before a teardown, the person holding the Owner key is a member of `<app>-operators` with an apply since joining: the bucket policies shut out every other key.
 
 ## Verify
 

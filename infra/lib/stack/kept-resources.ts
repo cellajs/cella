@@ -3,9 +3,9 @@ import type { EngineConfig } from '../../config/engine-config';
 import { deriveInfra } from '../naming';
 import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import type { SecretManagerSecret } from '../scaleway/scaleway-secret-manager';
-import { RUNTIME_FOLDER } from '../scaleway/secret-paths';
-import { appStorageNeeds, services } from '../services';
-import { urnsOf } from './retired-state';
+import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../scaleway/secret-paths';
+import { appStorageNeeds, serviceNames, services } from '../services';
+import { urnsOf, withoutUrns, withResources } from './retired-state';
 
 const BUCKET = 'scaleway:object/bucket:Bucket';
 const BUCKET_POLICY = 'scaleway:object/bucketPolicy:BucketPolicy';
@@ -23,8 +23,8 @@ type ListedSecret = Pick<SecretManagerSecret, 'id' | 'name' | 'path'>;
 
 /**
  * What a teardown keeps and a setup adopts: the upload buckets and the boot-diag bucket with their policies, the state bucket's policy, and
- * the containers of the values that protect stored data, which the final dump in the private uploads bucket needs. The program declares
- * each with `retainOnDelete`; the state bucket itself is no resource of the program.
+ * the containers of the values that protect stored data, which the final dump in the boot-diag bucket needs. The program declares each
+ * with `retainOnDelete`; the state bucket itself is no resource of the program.
  */
 export function keptResources(appConfig: EngineConfig, definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): KeptResource[] {
   const { naming } = deriveInfra(appConfig);
@@ -58,18 +58,46 @@ function keptContainer(listed: readonly ListedSecret[], name: string): ListedSec
   return listed.find((secret) => secret.name === name && trimSlashes(secret.path) === trimSlashes(RUNTIME_FOLDER));
 }
 
-/** The URNs of a stack export that are kept resources: a teardown takes them out of the state before its destroy, so they stay live. */
-export function keptUrns(exported: unknown, kept: readonly KeptResource[]): string[] {
+/**
+ * A stack export ready for a teardown's destroy: without the kept resources, which so stay live, and with every other bucket emptied on
+ * delete, as a state an older program wrote records `forceDestroy: false` for a bucket the destroy would then fail on. `kept` and
+ * `emptied` name the resources each edit touched.
+ */
+export function destroyableState(exported: unknown, kept: readonly KeptResource[]): { document: unknown; kept: string[]; emptied: string[] } {
   const keys = new Set(kept.map(keyOf));
-  return urnsOf(exported).filter((urn) => keys.has(urnKey(urn)));
+  const urns = urnsOf(exported).filter((urn) => keys.has(urnKey(urn)));
+  const emptied: string[] = [];
+  const forced = (properties: unknown) =>
+    typeof properties === 'object' && properties !== null ? { ...properties, forceDestroy: true } : properties;
+  const document = withResources(withoutUrns(exported, urns), (resource) => {
+    if (resource.type !== BUCKET) return resource;
+    emptied.push(urnKey(String(resource.urn)).split('::')[1] ?? '');
+    return { ...resource, inputs: forced(resource.inputs), outputs: forced(resource.outputs) };
+  });
+  return { document, kept: urns.map((urn) => urnKey(urn).split('::')[1] ?? urn), emptied };
 }
 
-/** The secret containers a teardown deletes: every one of the project but the kept values' containers. */
-export function sweptSecrets<Secret extends ListedSecret>(listed: readonly Secret[], kept: readonly KeptResource[]): Secret[] {
+/**
+ * The folders a teardown empties: the runtime and engine folders, and the ones the engine wrote secrets into before them (each consumer's,
+ * the shared ones, the deploy folder, the handoff bundles, the environment's prefix). A container outside them is none of the engine's.
+ */
+export function engineFolders(appConfig: Pick<EngineConfig, 'slug' | 'mode'>): string[] {
+  const retired = ['/deploy/', '/handoff/', '/shared/', ...serviceNames.map((name) => `/${name}/`), `/${appConfig.slug}-${appConfig.mode}/`];
+  return [RUNTIME_FOLDER, ENGINE_FOLDER, ...retired];
+}
+
+/** The secret containers a teardown deletes: every one in the engine's folders, or below them, but the kept values' containers. */
+export function sweptSecrets<Secret extends ListedSecret>(
+  listed: readonly Secret[],
+  kept: readonly KeptResource[],
+  folders: readonly string[],
+): Secret[] {
   const keep = new Set(
     kept.flatMap(({ adopt }) => (adopt && 'secret' in adopt ? [keptContainer(listed, adopt.secret)?.id ?? ''] : [])).filter(Boolean),
   );
-  return listed.filter((secret) => !keep.has(secret.id));
+  const roots = folders.map(trimSlashes);
+  const inFolders = (path: string) => roots.some((root) => trimSlashes(path) === root || trimSlashes(path).startsWith(`${root}/`));
+  return listed.filter((secret) => !keep.has(secret.id) && inFolders(secret.path));
 }
 
 /** What a setup finds live in the environment's project: the bucket names, and the secret containers. */

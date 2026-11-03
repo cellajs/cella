@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { actionCommand } from '../lib/operator-actions';
 import { adoptStateBackendEnv, PLAN_LIVE_ONLY_ENV, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
+import { exitCodeOf } from '../lib/utils/child-exit';
 import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -170,7 +171,7 @@ export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv
   child.stderr.on('data', (chunk: Buffer) => {
     stderr += chunk.toString();
   });
-  const code = await new Promise<number | null>((done) => child.once('close', done));
+  const code = await exitCodeOf(child);
   if (code !== 0) throw new Error(previewFailureMessage(code, stdout, stderr));
   const parsed = JSON.parse(stdout) as { steps?: PreviewStep[] };
   return parsed.steps ?? [];

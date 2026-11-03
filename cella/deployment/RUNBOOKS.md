@@ -127,7 +127,9 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 It deletes the machines, the load balancer with its address, the DNS records, the private network, the security groups, the database, the main job, the registry namespace, every secret container but the keys that protect stored data, and the environment's identities: the deploy and uploads applications with their policies and keys, and the `<slug>-<mode>` group. The app's operators, observer and runner stay: they serve the other environments.
 
-Before the database goes, it writes a **final dump** into the private uploads bucket, under `dumps/<mode>/<time>`, from a backup Scaleway makes and keeps a few days. When the dump fails, nothing is deleted. A write the app takes after the dump is lost, so stop traffic first.
+Before the database goes, it writes a **final dump** into the boot-diag bucket, under `dumps/<mode>/<time>`, from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there. When the dump fails, nothing of the stack is destroyed, and the teardown says what it did before. A write the app takes after the dump is lost, so stop traffic first.
+
+A destroy that stops halfway leaves what it had not reached, still in the state, and the kept resources already out of it: tear down again to finish.
 
 It keeps, with their contents: the two upload buckets, the boot-diag bucket with the run records, the state bucket, and the `data-encryption-key` and `pii-hash-secret` containers in `/runtime/`, without which the dump's encrypted and hashed fields no longer read. Each kept bucket keeps its policy. Third-party keys go with the other secrets: a setup again asks for them.
 
@@ -135,7 +137,7 @@ The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulum
 
 ## Restore the final dump
 
-The dump is the file Scaleway exports from a backup, a `pg_dump` archive. Download it with a key the private bucket admits (the operator key, or the console: Object Storage → the private bucket → `dumps/`), open the database ([Open the database](#open-the-database)) and restore it as the admin role:
+The dump is the file Scaleway exports from a backup, a `pg_dump` archive. Download it with a key the boot-diag bucket admits (the operator key, or the console: Object Storage → `<slug>-boot-diag` → `dumps/`), open the database ([Open the database](#open-the-database)) and restore it as the admin role:
 
 ```bash
 pg_restore --no-owner --no-privileges --dbname "<admin connection string>" <file>

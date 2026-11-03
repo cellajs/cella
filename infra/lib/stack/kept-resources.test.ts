@@ -29,7 +29,7 @@ describe('the kept set', () => {
     for (const resource of kept) expect(declared, resource.name).toContain(`${resource.type}::${resource.name}`);
   });
 
-  it('keeps no value a person pastes or a rotation replaces, and no container of a kept name in another folder', async () => {
+  it("keeps no value a person pastes or a rotation replaces, and deletes no container outside the engine's folders", async () => {
     const { runtimeSecrets } = await import('../runtime-secrets');
     const secrets = kept.flatMap((resource) => adoptedSecret(resource) ?? []);
     expect(secrets.length).toBeGreaterThan(0);
@@ -38,12 +38,42 @@ describe('the kept set', () => {
       expect(definition?.valueSource, name).toBe('engine');
       expect(definition?.rotatable, name).not.toBe(true);
     }
+    const { engineConfig } = await import('../../config/engine-config');
     const listed = [
       { id: 'kept', name: secrets[0] ?? '', path: '/runtime' },
       { id: 'elsewhere', name: secrets[0] ?? '', path: '/engine' },
       { id: 'cookie', name: 'cookie-secret', path: '/runtime' },
+      { id: 'copy', name: 'cookie-secret', path: '/shared/backend/jobs' },
+      { id: 'foreign', name: 'cookie-secret', path: '/someone-elses' },
     ];
-    expect(mod.sweptSecrets(listed, kept).map((secret) => secret.id)).toEqual(['elsewhere', 'cookie']);
+    expect(mod.sweptSecrets(listed, kept, mod.engineFolders(engineConfig())).map((secret) => secret.id)).toEqual(['elsewhere', 'cookie', 'copy']);
+  });
+
+  it('readies a state for the destroy whatever an older program recorded: the kept resources leave it, every other bucket empties on delete', () => {
+    const keptBucket = kept.find((resource) => adoptedBucket(resource));
+    const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
+    const frontend = { urn: urn('scaleway:object/bucket:Bucket', 'frontend-bucket'), type: 'scaleway:object/bucket:Bucket' };
+    const ready = mod.destroyableState(
+      {
+        deployment: {
+          resources: [
+            { urn: urn(keptBucket?.type ?? '', keptBucket?.name ?? ''), type: keptBucket?.type },
+            { ...frontend, inputs: { name: 'f', forceDestroy: false }, outputs: { name: 'f', forceDestroy: false } },
+            { urn: urn('scaleway:databases/instance:Instance', 'main-postgres'), type: 'scaleway:databases/instance:Instance', inputs: {} },
+          ],
+        },
+      },
+      kept,
+    );
+    expect([ready.kept, ready.emptied]).toEqual([[keptBucket?.name], ['frontend-bucket']]);
+    expect(ready.document).toMatchObject({
+      deployment: {
+        resources: [
+          { ...frontend, inputs: { forceDestroy: true }, outputs: { forceDestroy: true } },
+          { type: 'scaleway:databases/instance:Instance', inputs: {} },
+        ],
+      },
+    });
   });
 });
 
