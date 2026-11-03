@@ -49,23 +49,20 @@ interface CdcProductMessage {
  */
 export type CdcOutboundMessage = CdcRowMessage | CdcProductMessage;
 
-/** Both halves of an LSN zero-padded to eight digits and dash-joined; null for a string that is no LSN. */
-function padLsn(lsn: string): string | null {
+/** Both halves of an LSN zero-padded to eight digits and dash-joined. */
+function padLsn(lsn: string): string {
   const [hi, lo] = lsn.split('/');
-  return lo === undefined ? null : `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
+  return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
 }
 
 /**
  * Activity id of a change: the commit position of its transaction and its index in that transaction. Both are the
  * same on every delivery, which makes replay idempotent, no two changes share them, and padding keeps ids in commit
- * order under lexical comparison. An event outside a transaction takes its own position.
- * @param event - The change: its LSN, and its transaction's commit LSN and its index there when it has one.
+ * order under lexical comparison.
  * @returns Zero-padded, dash-joined commit LSN and index.
  */
-export function generateActivityId({ lsn, commitLsn, index = 0 }: Pick<PendingEvent, 'lsn' | 'commitLsn' | 'index'>): string {
-  const position = padLsn(commitLsn ?? lsn);
-  if (position === null) return lsn; // Not in LSN format.
-  return `${position}-${String(index).padStart(8, '0')}`;
+export function generateActivityId({ commitLsn, index }: Pick<PendingEvent, 'commitLsn' | 'index'>): string {
+  return `${padLsn(commitLsn)}-${String(index).padStart(8, '0')}`;
 }
 
 /**

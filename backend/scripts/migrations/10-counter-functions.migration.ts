@@ -1,12 +1,11 @@
+import { maxMergeKeySql } from '#/modules/entities/counter-keys';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
  * PL/pgSQL function merging JSONB count deltas into channel_counters rows. Fixed-shape SQL
  * lets the CDC worker use prepared statements for counter upserts.
  *
- * Increments add up with no floor: a count below zero is a counting bug the verify finds. `e:li:`
- * (last insert) / `e:lu:` (last update) keys are epoch-ms activity stamps and `e:f:` keys are
- * org-sequence frontiers, not deltas: they merge via GREATEST so the signal only moves forward.
+ * Increments add up with no floor: a count below zero is a counting bug the verify finds.
  */
 async function run(): Promise<SideEffectBlock> {
   const migrationSql = `-- Counter Functions Setup
@@ -24,7 +23,7 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    IF k LIKE 'e:li:%' OR k LIKE 'e:lu:%' OR k LIKE 'e:f:%' THEN
+    IF ${maxMergeKeySql('k')} THEN
       -- Activity stamps (epoch ms) and the organization's sequence frontiers:
       -- keep the max, the signal only moves forward
       result := result || jsonb_build_object(

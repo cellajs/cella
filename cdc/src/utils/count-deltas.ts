@@ -84,10 +84,8 @@ function getTableDeltas(
  * = null (invisible to counters and stamps).
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
-  if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
-  if (action === 'delete') return isCountableRow(newRow) ? 'delete' : null;
-  // REPLICA IDENTITY FULL always carries the old row on updates; fallback only.
-  if (!oldRow) return isCountableRow(newRow) ? 'update' : null;
+  // A create or a delete carries one row image; the parser refuses an update without its old one.
+  if (action !== 'update' || !oldRow) return isCountableRow(newRow) ? action : null;
   const wasCountable = isCountableRow(oldRow);
   const nowCountable = isCountableRow(newRow);
   if (wasCountable && !nowCountable) return 'delete';

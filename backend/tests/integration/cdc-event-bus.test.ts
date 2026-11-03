@@ -165,10 +165,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       return row?.s ?? 0;
     };
     const readAttachment = async () => {
-      const [row] = await db
-        .select({ seq: attachmentsTable.seq, stx: attachmentsTable.stx })
-        .from(attachmentsTable)
-        .where(eq(attachmentsTable.id, attachmentId));
+      const [row] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
       return row;
     };
 
@@ -186,13 +183,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const beforeCounter = await readCounter();
     const beforeSeq = inserted!.seq;
 
-    // CDC only processes an update that sets stx.changedFields.
-    await db.execute(sql`
-      UPDATE attachments
-      SET name = 'cdc-seq-test-updated',
-          stx = jsonb_set(stx, '{changedFields}', '["summary","updatedAt"]'::jsonb)
-      WHERE id = ${attachmentId}
-    `);
+    await db.execute(sql`UPDATE attachments SET name = 'cdc-seq-test-updated' WHERE id = ${attachmentId}`);
 
     let stamped: Awaited<ReturnType<typeof readAttachment>> | undefined;
     await waitFor(
@@ -210,8 +201,5 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const afterCounter = await readCounter();
     expect(afterCounter, 'organization f:attachment frontier should advance').toBe(beforeCounter + 1);
     expect(stamped!.seq, 'attachment.seq should equal new f:attachment frontier').toBe(afterCounter);
-
-    const stx = stamped!.stx as { changedFields?: unknown } | null;
-    expect(stx?.changedFields, 'stx.changedFields should be removed').toBeUndefined();
   });
 });

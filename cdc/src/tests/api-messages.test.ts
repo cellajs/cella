@@ -8,7 +8,7 @@ import { wsClient } from '../network/websocket-client';
 import { generateActivityId, sendMessageToApi, sendProductMessagesToApi } from '../services/api-messages';
 
 describe('generateActivityId', () => {
-  const idOf = (commitLsn: string, index = 0) => generateActivityId({ lsn: '0/1', commitLsn, index });
+  const idOf = (commitLsn: string, index = 0) => generateActivityId({ commitLsn, index });
 
   it('joins the padded commit position and the padded index into a fixed 26-char id', () => {
     expect(idOf('0/16B3748')).toBe('00000000-016B3748-00000000');
@@ -21,7 +21,7 @@ describe('generateActivityId', () => {
   });
 
   it('tells the changes of one transaction apart, also the rows of one WAL record, which share an LSN', () => {
-    const rows = [0, 1, 2, 11].map((index) => generateActivityId({ lsn: '0/50', commitLsn: '0/90', index }));
+    const rows = [0, 1, 2, 11].map((index) => idOf('0/90', index));
 
     expect(new Set(rows).size).toBe(4);
     expect([...rows].sort()).toEqual(rows);
@@ -29,8 +29,8 @@ describe('generateActivityId', () => {
 
   it('sorts in commit order, whatever the positions of the changes themselves', () => {
     // A long transaction wrote first (0/10) and committed last (0/200); a short one wrote later and committed first.
-    const long = generateActivityId({ lsn: '0/10', commitLsn: '0/200', index: 0 });
-    const short = generateActivityId({ lsn: '0/50', commitLsn: '0/9F', index: 7 });
+    const long = idOf('0/200');
+    const short = idOf('0/9F', 7);
 
     expect(short < long).toBe(true);
   });
@@ -38,10 +38,6 @@ describe('generateActivityId', () => {
   it('sorts correctly across digit-width changes and a 32-bit segment rollover', () => {
     expect(idOf('0/9F') < idOf('0/100')).toBe(true);
     expect(idOf('0/FFFFFFFF', 99) < idOf('1/00000000')).toBe(true);
-  });
-
-  it('takes the position of the change itself for an event outside a transaction', () => {
-    expect(generateActivityId({ lsn: '0/16B3748' })).toBe('00000000-016B3748-00000000');
   });
 });
 

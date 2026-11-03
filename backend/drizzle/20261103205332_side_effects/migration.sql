@@ -83,7 +83,7 @@ DECLARE
 BEGIN
   FOR k, v IN SELECT * FROM jsonb_each_text(deltas)
   LOOP
-    IF k LIKE 'e:li:%' OR k LIKE 'e:lu:%' OR k LIKE 'e:f:%' THEN
+    IF (k LIKE 'e:li:%' OR k LIKE 'e:lu:%' OR k LIKE 'e:f:%') THEN
       -- Activity stamps (epoch ms) and the organization's sequence frontiers:
       -- keep the max, the signal only moves forward
       result := result || jsonb_build_object(

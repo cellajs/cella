@@ -8,8 +8,8 @@ import { type BatchUnifiedDeltaPlan, mergeDelta } from './compute-unified-deltas
 const stampChunkSize = 5000;
 
 /**
- * UPSERTs one channel_counters row through apply_count_deltas, which adds JSONB deltas per key and max-merges
- * `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is fixed so PostgreSQL can cache the plan.
+ * UPSERTs one channel_counters row through apply_count_deltas, which adds JSONB deltas per key and max-merges the keys
+ * `isMaxMergeKey` names. The SQL shape is fixed so PostgreSQL can cache the plan.
  */
 async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
@@ -89,7 +89,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
       const valuesList = chunk.map((id) => sql`(${id}::uuid, ${rows.get(id)}::bigint)`);
       await db.execute(sql`
         UPDATE ${sql.identifier(tableName)} AS t
-        SET seq = v.seq, stx = t.stx - 'changedFields'
+        SET seq = v.seq
         FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
         WHERE t.id = v.id
       `);

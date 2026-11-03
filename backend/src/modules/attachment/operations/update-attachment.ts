@@ -36,8 +36,8 @@ export async function updateAttachmentOp(ctx: ActorContext, id: string, input: U
       // A changed document re-derives the search column, on client edits and Yjs materializations alike.
       ...(resolved.changed && resolved.values.description !== undefined ? { keywords: deriveDocument(resolved.values.description).keywords } : {}),
       ...updateStamps(actorId),
-      // The stx names the fields this write wrote, for CDC and the yjs module's handler: a write that changes none keeps
-      // the stored stx without the earlier write's set.
+      // The stx names the fields this write wrote, for the yjs module's handler: a write that changes none keeps the
+      // stored stx without the earlier write's set.
       stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
     };
     const updated = await updateAttachment(txCtx, { id, values });

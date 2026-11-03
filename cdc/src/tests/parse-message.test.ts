@@ -28,3 +28,21 @@ describe('parseMessage: removed tombstones', () => {
     expect(live?.activity.action).toBe('delete');
   });
 });
+
+describe('parseMessage: updates', () => {
+  // A write that changes no field still moves updated_at, and the list a write stored in stx stays on the row.
+  it('records no activity for an update of only updatedAt and the stamp, and the fields of the diff for any other', () => {
+    const stored = attachmentRow({
+      name: 'Report',
+      updated_at: '2026-07-01T10:00:00.000Z',
+      stx: { mutationId: 'm1', sourceId: 'tab-1', fieldTimestamps: {}, changedFields: ['description'] },
+    });
+    const touched = { ...stored, updated_at: '2026-07-01T10:05:00.000Z', stx: { mutationId: 'm2', sourceId: 'tab-1', fieldTimestamps: {} } };
+
+    expect(parseMessage(dmlMessage('update', 'attachments', touched, stored))).toBeNull();
+    expect(parseMessage(dmlMessage('update', 'attachments', { ...touched, name: 'Renamed' }, stored))?.activity.changedFields).toEqual([
+      'name',
+      'updatedAt',
+    ]);
+  });
+});

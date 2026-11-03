@@ -111,7 +111,7 @@ What a lost case costs: rows changed between the old slot's last acknowledged po
 ## Operational constraints
 
 - **Adding a tracked table, or drafts to a product table, takes two steps:** the backend's entity or resource table map (or the table's `publishedAt` column), then rerunning the CDC migration, which builds the publication with its row filters. While the two do not match, the worker reads nothing and reports unhealthy with what is wrong.
-- **`REPLICA IDENTITY FULL` is mandatory:** a delete needs the old row, so the worker strips large columns itself, and a consumer must tolerate their absence from the row data.
+- **`REPLICA IDENTITY FULL` is mandatory:** an update's changed fields and a delete's row come from the old row, so the worker strips large columns itself, and a consumer must tolerate their absence from the row data.
 - **Only one worker may read the slot.**
 - **A source transaction is held whole, up to a limit.** A larger one is a change the worker can never process. Write a backfill in smaller transactions.
 - **WAL retention is the recovery margin.** A worker that is down, waits for the API or stops on a setup problem keeps WAL until the disk is full unless the database bounds it: [Deployment](../cella/DEPLOYMENT.md#overview).

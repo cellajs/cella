@@ -573,7 +573,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### E2 Write integrity and the sync engine
 - **Gain:** integrity, cross-tenant write.
-- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, CDC attribution (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
+- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
 - **Advisories:** none.
 - **Files:**
   - `backend/tests/security/attachment-idempotency.test.ts`; in `backend/tests/`: `attachment-overlapping-edits.test.ts`, `attachment-seq-reads.test.ts`, `recalculate-sequence.test.ts`, `filter-existing-product-ids.test.ts`, `catchup-baseline.test.ts`, `catchup-propagation.test.ts`.

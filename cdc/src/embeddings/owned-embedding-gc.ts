@@ -114,10 +114,7 @@ export async function gcOwnedEmbeddedRows(
     for (const { result } of events) {
       const newRow = result.rowData;
       const oldRow = result.oldRowData;
-      // No old image (REPLICA IDENTITY not FULL): nothing safe to diff.
-      if (!oldRow) continue;
-
-      const oldIds = toIdArray(oldRow[hostColumnName]);
+      const oldIds = toIdArray(oldRow?.[hostColumnName]);
       if (oldIds.length === 0) continue;
 
       const kept = new Set(toIdArray(newRow[hostColumnName]));

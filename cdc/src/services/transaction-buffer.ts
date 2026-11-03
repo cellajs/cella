@@ -2,7 +2,6 @@ import type { Pgoutput } from 'pg-logical-replication';
 import { isChannel } from 'shared';
 import { entityCountPrefix } from '#/modules/entities/counter-keys';
 import { resourceLimits } from '../constants';
-import { suppressEmbeddingPropagation } from '../embeddings/embedding-hooks';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
@@ -11,25 +10,32 @@ import { commitTimeMs } from '../utils/commit-time';
 import { mergeDelta } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
 
+/** What a BEGIN tells of its source transaction, and so of each of its changes. */
+interface OpenTransaction {
+  xid: number;
+  /** Commit position: with a change's index it is the change's identity. */
+  commitLsn: string;
+  /**
+   * When it committed. Its activities take this as `createdAt`: the activities key is (id, createdAt), so a change
+   * delivered twice has to carry the same time both times to be recorded once.
+   */
+  commitTime: string | null;
+}
+
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
- * deleted channel ids bounds memory to surviving changes regardless of cascade size; changes outside
- * a transaction pass through directly. A transaction leaves the buffer whole, at its COMMIT, however long it takes to
- * arrive: a part of one is never emitted. Past `maxTransactionEvents` kept changes, `onEvent` throws.
+ * deleted channel ids bounds memory to surviving changes regardless of cascade size. A transaction leaves the buffer
+ * whole, at its COMMIT, however long it takes to arrive: a part of one is never emitted. Past `maxTransactionEvents`
+ * kept changes `onEvent` throws, and so does a change outside a transaction, which the stream never sends.
  *
  * A suppressed delete is no activity, and it still counted: its row leaves the counts of every channel above the one
  * that was deleted. Those counts are summed per channel as the deletes arrive and leave with the channel's own delete.
  */
 export class TransactionBuffer {
-  private activeXid: number | null = null;
-  /**
-   * When the transaction being buffered committed. Its activities take this as `createdAt`: the activities key is
-   * (id, createdAt), so a change delivered twice has to carry the same time both times to be recorded once.
-   */
-  private commitTime: string | null = null;
-  /** Commit position of the transaction being buffered: with a change's index it is the change's identity. */
-  private commitLsn: string | null = null;
-  private pendingEvents: PendingEvent[] = [];
+  /** The source transaction being buffered; null between two. */
+  private transaction: OpenTransaction | null = null;
+  /** Its kept changes, which take the end of its commit record at the COMMIT. */
+  private pendingEvents: Omit<PendingEvent, 'commitEndLsn'>[] = [];
 
   /** Channel entity IDs deleted in the current transaction (streaming suppression). */
   private deletedChannelIds = new Set<string>();
@@ -57,33 +63,20 @@ export class TransactionBuffer {
    * @returns When it committed, in Unix milliseconds; null when its BEGIN carries no time.
    */
   onBegin(msg: Pgoutput.MessageBegin): number | null {
-    // A stream sends BEGIN and COMMIT in pairs and every subscription starts with `reset`, so an open transaction
-    // here is one whose COMMIT never came. It was not acknowledged: its changes go, and the slot delivers it again.
-    if (this.activeXid !== null) {
-      log.warn('BEGIN received while a transaction is open: dropping its events', {
-        prevXid: this.activeXid,
-        newXid: msg.xid,
-        pendingCount: this.pendingEvents.length,
-      });
-    }
-
-    this.reset();
-    this.activeXid = msg.xid;
+    // The replication client reads position 0/0 as null, and no commit lies there.
+    if (msg.commitLsn === null) throw new Error(`BEGIN of transaction ${msg.xid} carries no commit position`);
     const committedAt = commitTimeMs(msg);
-    this.commitTime = committedAt === null ? null : new Date(committedAt).toISOString();
-    this.commitLsn = msg.commitLsn;
+    this.transaction = { xid: msg.xid, commitLsn: msg.commitLsn, commitTime: committedAt === null ? null : new Date(committedAt).toISOString() };
     return committedAt;
   }
 
   /** Drops cascaded child deletes inline once the parent channel entity delete has been seen. */
-  async onEvent(lsn: string, result: ParseMessageResult, index = 0): Promise<void> {
-    if (this.activeXid === null) {
-      await this.onSurvivingEvents([{ lsn, index, result }]);
-      return;
-    }
+  async onEvent(lsn: string, result: ParseMessageResult, index: number): Promise<void> {
+    const { transaction } = this;
+    if (!transaction) throw new Error(`The change at ${lsn} arrived outside a transaction`);
 
     const { activity } = result;
-    if (this.commitTime) activity.createdAt = this.commitTime;
+    if (transaction.commitTime) activity.createdAt = transaction.commitTime;
 
     if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
@@ -95,13 +88,14 @@ export class TransactionBuffer {
       return;
     }
 
-    this.pendingEvents.push({ lsn, commitLsn: this.commitLsn, index, xid: this.activeXid, result });
+    this.pendingEvents.push({ lsn, commitLsn: transaction.commitLsn, index, xid: transaction.xid, result });
 
     // The transaction is held whole until its commit: past the limit it would take the process's memory with it.
     if (this.pendingEvents.length > this.maxEvents) {
-      const xid = this.activeXid;
       this.reset();
-      throw new Error(`Transaction ${xid ?? ''} holds more than ${this.maxEvents} changes: the worker buffers a transaction whole and stops here`);
+      throw new Error(
+        `Transaction ${transaction.xid} holds more than ${this.maxEvents} changes: the worker buffers a transaction whole and stops here`,
+      );
     }
   }
 
@@ -109,12 +103,13 @@ export class TransactionBuffer {
    * Emits the surviving buffered changes; a second pass catches child deletes that preceded their parent.
    * @param commitEndLsn - End of the commit record, from the COMMIT: the position a flush of these changes acknowledges.
    */
-  async onCommit(commitEndLsn: string | null = null): Promise<void> {
+  async onCommit(commitEndLsn: string | null): Promise<void> {
+    if (commitEndLsn === null) throw new Error('COMMIT carries no end position');
     // Children that preceded their parent delete in WAL order; the parent-first case is already gone.
     const kept: PendingEvent[] = [];
     for (const event of this.pendingEvents) {
       if (this.isCascadedDelete(event.result)) this.countCascadedDelete(event.result);
-      else kept.push(event);
+      else kept.push({ ...event, commitEndLsn });
     }
     const suppressedCount = this.suppressedCount + this.pendingEvents.length - kept.length;
     if (suppressedCount > 0) {
@@ -123,20 +118,17 @@ export class TransactionBuffer {
     this.attachCascadeCounts(kept);
     this.reset();
 
-    // Deletes of embedded product A plus updates of its host B: the B updates are cascade noise.
-    const surviving = suppressEmbeddingPropagation(kept);
-    for (const event of surviving) event.commitEndLsn = commitEndLsn;
-    if (surviving.length > 0) await this.onSurvivingEvents(surviving);
+    if (kept.length > 0) await this.onSurvivingEvents(kept);
   }
 
   /** Whether a transaction is currently being buffered. */
   get isBuffering(): boolean {
-    return this.activeXid !== null;
+    return this.transaction !== null;
   }
 
   /** Forgets the transaction being buffered: the replication stream starts over and delivers it again. */
   reset(): void {
-    this.activeXid = null;
+    this.transaction = null;
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;

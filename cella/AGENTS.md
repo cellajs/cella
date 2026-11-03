@@ -61,7 +61,7 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [In
 Model: [Sync engine](./SYNC_ENGINE.md).
 
 - Mint a write's `stx` when the edit is made (`createStxForUpdate` and its siblings) and pass it in the mutation variables; a create handler finds a replay by its row ids (`checkIdempotency()`).
-- A server-driven write (CDC fan-out, materialization, a scheduled job) or an update that changes no field stores its `stx` through `stripChangedFields`, else the CDC worker attributes the write to the wrong columns.
+- A server-driven write (CDC fan-out, materialization, a scheduled job) or an update that changes no field stores its `stx` through `stripChangedFields`, else the yjs module takes the fields an earlier write listed for this write's.
 - A fact that is no product row reaches clients as a stream signal of ids, declared in `defineBackendModule` and `defineFrontendModule` (`signals`), sent after the commit with `sendSignal`, and versioned when a client that was away must still hear it ([Changes and signals](./SYNC_ENGINE.md#changes-and-signals)).
 - Sync-derived per-user state extends only through sync events (`sync-events.ts`); never import module logic into the prioritizer.
 - Columns derived from a collaborative description register in `query.ts` ([add-entity](./skills/add-entity/SKILL.md#6-optional-capabilities)), a description shown in place builds on `useInPlaceDescription`, and a backend write that dispatches no `<type>.updated` calls `recordYjsOutsideWrite` ([Yjs](../yjs/README.md#outside-writes)).

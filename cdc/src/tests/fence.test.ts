@@ -66,8 +66,6 @@ describe('fence', () => {
 
     expect(fence.sawTransaction(101)).toBe(true);
     expect(fence.sawTransaction(110)).toBe(false);
-    // An event outside a transaction has no id: it cannot have been counted.
-    expect(fence.sawTransaction(undefined)).toBe(false);
     fence.addCounted(counters({ org: { 'e:c:attachment': 2 } }));
     fence.addCounted(counters({ org: { 'e:c:attachment': -1, 'm:c:total': 1 } }));
 

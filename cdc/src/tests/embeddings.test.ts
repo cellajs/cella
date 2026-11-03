@@ -88,7 +88,6 @@ vi.mock('../lib/db', () => {
 
 // The mock replaces the module, so the one export read here is typed by hand.
 const { getEntityTable } = (await import('#/tables')) as unknown as { getEntityTable: (type: string) => AnyPgTable };
-const { embeddingsAfterDispatch } = await import('../embeddings/embedding-hooks');
 const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
 const { parseUpdate } = await import('../pipeline/parse-update');
 const { createActivity } = await import('../services/create-activity');
@@ -112,18 +111,8 @@ const taskRow = (id: string, values: Record<string, unknown> = {}): Row => ({ id
 const itemRow = (id: string, values: Record<string, unknown> = {}): Row => ({ id, ...ancestors, deletedAt: null, ...values });
 
 /** A parsed change of a synthetic row, with the activity the worker builds for it. */
-function change(
-  type: SyntheticProduct | SyntheticChannel,
-  action: ActivityAction,
-  rowData: Row,
-  { changedFields = null, oldRowData = null }: { changedFields?: string[] | null; oldRowData?: Row | null } = {},
-): ParseMessageResult {
-  return { activity: createActivity(metaOf(type), rowData, action, changedFields), rowData, oldRowData, tableMeta: metaOf(type) };
-}
-
-/** Sends changes through the buffer as one source transaction. @returns What its commit lets through, as `type:action:id`. */
-async function commit(changes: ParseMessageResult[]): Promise<string[]> {
-  return (await commitEvents(changes)).map(({ result: { activity } }) => `${activity.entityType}:${activity.action}:${activity.subjectId}`);
+function change(type: SyntheticProduct | SyntheticChannel, action: ActivityAction, rowData: Row, oldRowData: Row | null = null): ParseMessageResult {
+  return { activity: createActivity(metaOf(type), rowData, action), rowData, oldRowData, tableMeta: metaOf(type) };
 }
 
 /** Sends changes through the buffer as one source transaction. @returns The changes its commit lets through. */
@@ -135,7 +124,7 @@ async function commitEvents(changes: ParseMessageResult[]): Promise<PendingEvent
 
   buffer.onBegin({ tag: 'begin', xid: 1, commitLsn: '0/10', commitTime: BigInt(0) });
   for (const [index, result] of changes.entries()) await buffer.onEvent(`0/${index + 1}`, result, index);
-  await buffer.onCommit();
+  await buffer.onCommit('0/18');
 
   return surviving;
 }
@@ -163,79 +152,7 @@ beforeEach(() => {
   world.hosts = [{ id: 't1' }];
 });
 
-describe('suppressEmbeddingPropagation: at the commit of a source transaction', () => {
-  it('drops the host update that only removes the id of an embedded row the transaction deletes, and keeps the delete', async () => {
-    const survivors = await commit([
-      change('item', 'delete', itemRow('i1')),
-      change('task', 'update', taskRow('t1'), { changedFields: ['items', 'updatedAt'], oldRowData: taskRow('t1', { items: ['i1'] }) }),
-    ]);
-
-    expect(survivors).toEqual(['item:delete:i1']);
-  });
-
-  it('keeps a host update in a transaction that deletes no embedded row', async () => {
-    const survivors = await commit([
-      change('task', 'update', taskRow('t1'), { changedFields: ['items', 'updatedAt'], oldRowData: taskRow('t1', { items: ['i1'] }) }),
-      change('item', 'update', itemRow('i1'), { changedFields: ['name', 'updatedAt'] }),
-    ]);
-
-    expect(survivors).toEqual(['task:update:t1', 'item:update:i1']);
-  });
-
-  it('keeps an update of an embedded row in a transaction that deletes a host row', async () => {
-    const survivors = await commit([change('task', 'delete', taskRow('t1')), change('item', 'update', itemRow('i1'), { changedFields: ['name'] })]);
-
-    expect(survivors).toEqual(['task:delete:t1', 'item:update:i1']);
-  });
-
-  it('must not drop a user edit of a host row because the transaction deletes an embedded row: it reads the changed columns', async () => {
-    const survivors = await commit([
-      change('item', 'delete', itemRow('i1')),
-      // A user edit of another column of the host that held the deleted id.
-      change('task', 'update', taskRow('t1', { name: 'Renamed', items: ['i1'] }), { changedFields: ['name', 'updatedAt'] }),
-      // An edit that renames the host and drops the id in one write.
-      change('task', 'update', taskRow('t2', { name: 'Other' }), { changedFields: ['name', 'items', 'updatedAt'] }),
-    ]);
-
-    expect(survivors).toEqual(['item:delete:i1', 'task:update:t1', 'task:update:t2']);
-  });
-
-  it('must not drop the soft delete of a host row in a transaction that deletes an embedded row: its count would never go down', async () => {
-    const deleted = taskRow('t1', { deletedAt: '2026-10-01T10:00:00.000Z' });
-    const survivors = await commit([
-      change('item', 'delete', itemRow('i1')),
-      change('task', 'update', deleted, { changedFields: ['deletedAt', 'updatedAt', 'updatedBy'], oldRowData: taskRow('t1', { deletedAt: null }) }),
-    ]);
-
-    expect(survivors).toEqual(['item:delete:i1', 'task:update:t1']);
-  });
-
-  it('drops the propagation of a single reference, which the host keeps in an id column', async () => {
-    const survivors = await commit([
-      change('item', 'delete', itemRow('i1')),
-      change('task', 'update', taskRow('t1'), { changedFields: ['mainItemId', 'updatedAt', 'updatedBy'] }),
-    ]);
-
-    expect(survivors).toEqual(['item:delete:i1']);
-  });
-
-  it('keeps a host update whose columns refer to a type the transaction does not delete', async () => {
-    const survivors = await commit([
-      change('task', 'delete', taskRow('t9')),
-      change('task', 'update', taskRow('t1'), { changedFields: ['items', 'updatedAt'] }),
-    ]);
-
-    expect(survivors).toEqual(['task:delete:t9', 'task:update:t1']);
-  });
-
-  it('keeps a host update whose changed columns are unknown', async () => {
-    const survivors = await commit([change('item', 'delete', itemRow('i1')), change('task', 'update', taskRow('t1'))]);
-
-    expect(survivors).toEqual(['item:delete:i1', 'task:update:t1']);
-  });
-});
-
-describe('isEmbeddingCleanupWrite: in the update handler', () => {
+describe('isReferenceCleanupWrite: in the update handler', () => {
   const updatedAt = '2026-10-01T10:00:00.000Z';
   const stored = {
     ...taskRow('t1', { items: ['i1', 'i2'] }),
@@ -254,7 +171,7 @@ describe('isEmbeddingCleanupWrite: in the update handler', () => {
   });
 
   it('turns a user edit of the same column into an activity', () => {
-    // As the API writes it: changedFields names the column and updatedAt.
+    // As the API writes it: the column and updatedAt move.
     const edited = {
       ...stored,
       items: ['i2'],
@@ -294,7 +211,7 @@ describe('cleanupEmbeddingReferences', () => {
     expect(statement.where).toContain('"tasks"."items" &&');
     expect(statement.where).toContain('"tasks"."organization_id" =');
     expect(statement.scope).toEqual(['i1', 'o1']);
-    // No changedFields: the update handler reads the write by its WAL diff.
+    // Without changedFields: an earlier write's list does not describe this one.
     expect(statement.stx).toBe(`"tasks"."stx" - 'changedFields'`);
   });
 
@@ -303,15 +220,15 @@ describe('cleanupEmbeddingReferences', () => {
     const softDeleted = itemRow('i2', { deletedAt: '2026-10-01T10:00:00.000Z' });
 
     await cleanupEmbeddingReferences(productOf('item'), 'update', [
-      { result: change('item', 'update', live, { oldRowData: itemRow('i1') }) },
-      { result: change('item', 'update', softDeleted, { oldRowData: itemRow('i2') }) },
+      { result: change('item', 'update', live, itemRow('i1')) },
+      { result: change('item', 'update', softDeleted, itemRow('i2')) },
     ]);
 
     expect(statements).toHaveLength(1);
     expect(rendered(statements[0]).strippedIds).toEqual(['i2']);
 
     statements.length = 0;
-    await cleanupEmbeddingReferences(productOf('item'), 'update', [{ result: change('item', 'update', live, { oldRowData: itemRow('i1') }) }]);
+    await cleanupEmbeddingReferences(productOf('item'), 'update', [{ result: change('item', 'update', live, itemRow('i1')) }]);
 
     expect(statements).toHaveLength(0);
   });
@@ -410,22 +327,5 @@ describe('a channel delete that takes rows with it', () => {
     // The section was the project's home.
     expect(countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:project': -1, 'e:c:item': -1, 's:channel.deleted': 1 });
     expect(countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:project': -1, 'e:c:h:project': -1, 'e:c:item': -1 });
-  });
-});
-
-describe('embeddingsAfterDispatch: after a group was handed to the API', () => {
-  const event = (result: ParseMessageResult): PendingEvent => ({ lsn: '0/1', result });
-
-  it('runs the cleanup for a group of embedded deletes', async () => {
-    await embeddingsAfterDispatch(productOf('item'), 'delete', [event(change('item', 'delete', itemRow('i1')))]);
-
-    expect(statements).toHaveLength(1);
-    expect(rendered(statements[0]).strippedIds).toEqual(['i1']);
-  });
-
-  it('issues nothing for a group of creates', async () => {
-    await embeddingsAfterDispatch(productOf('item'), 'create', [event(change('item', 'create', itemRow('i1')))]);
-
-    expect(statements).toHaveLength(0);
   });
 });

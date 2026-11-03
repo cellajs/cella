@@ -1,13 +1,10 @@
 import type { RowData } from '../types';
 
-/** Expects camelCase keys, so run convertRowKeys first. */
+/** The columns whose value differs between two images of a row. Expects camelCase keys, so run convertRowKeys first. */
 export function getChangedFields(oldRow: RowData, newRow: RowData): string[] {
   const changedFields: string[] = [];
 
   for (const key of Object.keys(newRow)) {
-    // These always change.
-    if (key === 'updatedAt') continue;
-
     const oldValue = oldRow[key];
     const newValue = newRow[key];
 

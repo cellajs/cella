@@ -2,7 +2,8 @@ import { sql } from 'drizzle-orm';
 import { isProduct, type ProductEntityType } from 'shared';
 import { activityAttrs, cdcAttrs, cdcSpanNames } from 'shared/tracing';
 import { activitiesTable } from '#/modules/activities/activities-db';
-import { embeddingsAfterDispatch } from '../embeddings/embedding-hooks';
+import { cleanupEmbeddingReferences } from '../embeddings/embedding-cleanup';
+import { gcOwnedEmbeddedRows } from '../embeddings/owned-embedding-gc';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { withSpan } from '../lib/tracing';
@@ -141,7 +142,10 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
         movedFrom: item.event.result.movedFrom,
       }));
       sendProductMessagesToApi(productType, rows, traceContext);
-      await embeddingsAfterDispatch(productType, action, events);
+      // Both write outside the flush's transaction, and a statement that fails rejects the flush.
+      if (action === 'update' || action === 'delete') await cleanupEmbeddingReferences(productType, action, events);
+      // Owned rows go only with an update of their host: hard deletes ride FK cascades.
+      if (action === 'update') await gcOwnedEmbeddedRows(productType, events);
     });
 
     log.trace('Group processed', { groupSize: group.length, entityType: activity.entityType, action });

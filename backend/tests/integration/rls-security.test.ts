@@ -675,9 +675,7 @@ const rlsSuiteReady = await (async () => {
 
       // bigint columns come back as strings from node-pg; coerce
       const newSeq = Number(before[0].seq ?? 0) + 1;
-      const updateResult = await adminRoleDb.execute(
-        sql.raw(`UPDATE ${fixture.table} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = '${fixture.rowId}'`),
-      );
+      const updateResult = await adminRoleDb.execute(sql.raw(`UPDATE ${fixture.table} SET seq = ${newSeq} WHERE id = '${fixture.rowId}'`));
 
       expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(1);
 
