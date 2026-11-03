@@ -6,6 +6,7 @@ import {
   type LockInfo,
   lockKey,
   parseRotations,
+  readObjectEtag,
   recordRotation,
   releaseLock,
   rotationsKey,
@@ -126,5 +127,21 @@ describe('rotations', () => {
     const { s3, puts } = makeS3({ get: [{ status: 404 }] });
     await recordRotation({ s3, bucket: 'b', stack: 'production', kind: 'keys', by: 'operator:flip' });
     expect(puts[0]!.IfNoneMatch).toBe('*');
+  });
+});
+
+describe('readObjectEtag', () => {
+  it('must not let an unreadable checkpoint pass for an unchanged one: only a 404 reads as none, any other failure throws', async () => {
+    const head = (error?: Error) => ({
+      send: async () => {
+        if (error) throw error;
+        return { ETag: '"aaa"' };
+      },
+    });
+    expect(await readObjectEtag(head(), 'state', 'checkpoint')).toBe('"aaa"');
+    expect(await readObjectEtag(head(Object.assign(new Error('not found'), { name: 'NotFound' })), 'state', 'checkpoint')).toBeNull();
+    await expect(readObjectEtag(head(Object.assign(new Error('access denied'), { name: 'AccessDenied' })), 'state', 'checkpoint')).rejects.toThrow(
+      'access denied',
+    );
   });
 });
