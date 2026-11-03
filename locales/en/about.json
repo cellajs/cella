@@ -95,8 +95,6 @@
   "features.i18n.text": "Built-in translations with instant language switching. English and Dutch included.",
   "features.idempotent_mutations": "Idempotent mutations",
   "features.idempotent_mutations.text": "Every change has a stable id, so retrying after a dropped response or a crash never causes duplicates.",
-  "features.impersonation": "Impersonation",
-  "features.impersonation.text": "Admins can safely act as any user for support and debugging. Locked behind an IP allowlist.",
   "features.live_changes": "Live changes",
   "features.live_changes.text": "When data changes, you get a tiny live signal and the client fetches just the changed rows. No polling, no bloated payloads.",
   "features.load_testing": "Load testing",

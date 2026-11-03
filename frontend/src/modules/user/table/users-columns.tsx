@@ -9,7 +9,6 @@ import { DeleteQuestion } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteUsers } from '~/modules/user/delete-users';
-import { ImpersonateCell } from '~/modules/user/table/impersonate-cell';
 import type { BaseUser } from '~/modules/user/types';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { UserCell } from '~/modules/user/user-cell';
@@ -36,13 +35,6 @@ export const useColumns = () => {
       minWidth: 200,
       resizable: true,
       renderCell: ({ row, tabIndex }) => <UserCell user={row} email={row.email} tabIndex={tabIndex} className="font-medium" />,
-    },
-    {
-      key: 'impersonate',
-      name: '',
-      minBreakpoint: 'md',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => <ImpersonateCell user={row} tabIndex={tabIndex} />,
     },
     ellipsisColumn<BaseUser>(() => [
       {

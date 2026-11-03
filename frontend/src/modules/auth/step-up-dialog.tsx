@@ -90,9 +90,6 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
   const submitCode = ({ code }: { code: string }) =>
     prove({ emailCode: code }, { onSuccess: () => (next ? setUp(next) : onStepUp()), onError: () => setCodeVersion((version) => version + 1) });
 
-  // An impersonation never steps up: the admin acts as the user, not on how the account is protected.
-  if (methods.length === 0) return <p className="text-muted-foreground text-sm">{t('error:impersonation_forbidden.text')}</p>;
-
   if (view === 'totp') {
     return (
       <TotpConfirmationForm

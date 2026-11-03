@@ -131,7 +131,7 @@ describe('parking edits that can never be saved', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const failingWriter = fakeWriter({ park: vi.fn(async () => Promise.reject(new DOMException('full', 'QuotaExceededError'))) });
     const parks = [
-      { text: 'Impersonated edit', writer: null },
+      { text: 'Unbound edit', writer: null },
       { text: 'Kept anyway', writer: failingWriter },
     ];
 

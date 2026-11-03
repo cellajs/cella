@@ -6,33 +6,20 @@ vi.stubGlobal('window', { location: { reload } });
 /** What the server answers on `/me`: whoever this browser's cookies say it is. */
 const server = vi.hoisted(() => ({ me: null as unknown }));
 
-vi.mock('sdk', () => ({
-  getMe: vi.fn(async () => server.me),
-  startImpersonation: vi.fn(async () => {}),
-  stopImpersonation: vi.fn(async () => {}),
-}));
+vi.mock('sdk', () => ({ getMe: vi.fn(async () => server.me) }));
 // The store follows the user's language; no translations are loaded here.
 vi.mock('i18next', () => ({ default: { language: 'en', changeLanguage: vi.fn() } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-vi.mock('~/modules/me/query', () => ({ meKeys: { all: ['me'], memberships: ['me', 'memberships'] } }));
-vi.mock('~/query/query-client', () => ({ queryClient: { removeQueries: vi.fn() } }));
-vi.mock('~/query/realtime/stream-manager', () => ({ appStreamManager: { reconnect: vi.fn() } }));
-vi.mock('~/query/local-user-storage', () => ({ localUserStorageReady: () => Promise.resolve() }));
 
-const { getMe } = await import('sdk');
 const { userStore } = await import('~/modules/user/user-store');
-const { getAndSetMe, startImpersonationFlow, stopImpersonationFlow } = await import('~/modules/me/helpers');
+const { getAndSetMe } = await import('~/modules/me/helpers');
 
 const person = (id: string, name: string) => ({ id, name, slug: id, thumbnailUrl: null, email: `${id}@example.test`, language: 'en' });
-const admin = person('admin-1', 'Ada Admin');
-const target = person('user-1', 'Uma User');
-const adminRef = { id: admin.id, name: admin.name, slug: admin.slug, thumbnailUrl: null, entityType: 'user' as const };
-
-const asAdmin = { user: admin, isSystemAdmin: true, impersonator: null };
-const asTarget = { user: target, isSystemAdmin: false, impersonator: adminRef };
+const first = person('user-1', 'Ada First');
+const second = person('user-2', 'Uma Second');
 
 const state = () => userStore.getState();
-const lastUserOf = ({ id, email }: typeof admin) => ({ id, email });
+const lastUserOf = ({ id, email }: typeof first) => ({ id, email });
 
 describe('who this browser is, as /me answers it', () => {
   beforeEach(() => {
@@ -40,61 +27,16 @@ describe('who this browser is, as /me answers it', () => {
     reload.mockClear();
   });
 
-  it('must not take an impersonated user for the browser’s own: the admin stays behind them and stays the last user', async () => {
-    server.me = asAdmin;
+  it('must not keep the caches of a user who signed out: another account signing in on this browser reloads', async () => {
+    server.me = { user: first, isSystemAdmin: false };
     await getAndSetMe();
-    server.me = asTarget;
-    await getAndSetMe();
-
-    expect(state()).toMatchObject({ user: target, isSystemAdmin: false, impersonator: adminRef, lastUser: lastUserOf(admin) });
+    expect(state()).toMatchObject({ user: first, lastUser: lastUserOf(first) });
     expect(reload).not.toHaveBeenCalled();
 
-    // The admin edits the user's profile: still nothing of the user becomes this browser's own.
-    state().updateUser({ ...target, name: 'Uma Renamed' } as never);
-    expect(state()).toMatchObject({ user: { name: 'Uma Renamed' }, lastUser: lastUserOf(admin) });
-  });
-
-  it('must not keep an impersonation the server ended: the next answer names the admin again', async () => {
-    server.me = asTarget;
-    await getAndSetMe();
-    // The impersonation's hour passed, or another tab stopped it: the same browser now answers as its admin.
-    server.me = asAdmin;
-    await getAndSetMe();
-
-    expect(state()).toMatchObject({ user: admin, isSystemAdmin: true, impersonator: null, lastUser: lastUserOf(admin) });
-  });
-
-  it('must not leave a stale tab unable to stop: the stop is answered and /me settles who is signed in', async () => {
-    userStore.setState({ user: target as never, impersonator: adminRef, lastUser: lastUserOf(admin) });
-    server.me = asAdmin;
-
-    await stopImpersonationFlow();
-
-    expect(state()).toMatchObject({ user: admin, impersonator: null });
-    expect(reload).not.toHaveBeenCalled();
-  });
-
-  it('must not hold the admin’s own state while /me is still asked who the impersonated user is', async () => {
-    server.me = asAdmin;
-    await getAndSetMe();
-
-    let whileAsking: unknown;
-    vi.mocked(getMe).mockImplementationOnce((async () => {
-      whileAsking = state().impersonator;
-      return asTarget;
-    }) as never);
-    await startImpersonationFlow(target.id);
-
-    expect(whileAsking).toEqual(adminRef);
-    expect(state()).toMatchObject({ user: target, impersonator: adminRef, lastUser: lastUserOf(admin) });
-  });
-
-  it('reloads when another account signs in on this browser (positive control)', async () => {
-    server.me = asAdmin;
-    await getAndSetMe();
-    server.me = { user: target, isSystemAdmin: false, impersonator: null };
+    server.me = { user: second, isSystemAdmin: false };
     await getAndSetMe();
 
     expect(reload).toHaveBeenCalledTimes(1);
+    expect(state()).toMatchObject({ user: second, lastUser: lastUserOf(second) });
   });
 });
