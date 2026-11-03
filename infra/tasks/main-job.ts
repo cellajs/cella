@@ -26,7 +26,14 @@ interface DeployKey {
 /** The deploy key as the definition hands it: the engine folder's copy in `DEPLOY_KEY_JSON`, or `SCW_*` from a definition before the engine image. */
 function deployKey(env: NodeJS.ProcessEnv): DeployKey | undefined {
   if (env.DEPLOY_KEY_JSON) {
-    const { accessKey, secretKey } = JSON.parse(env.DEPLOY_KEY_JSON) as Partial<DeployKey>;
+    let parsed: Partial<DeployKey>;
+    try {
+      parsed = JSON.parse(env.DEPLOY_KEY_JSON) as Partial<DeployKey>;
+    } catch {
+      // JSON.parse quotes the text it refuses, which is the key.
+      return undefined;
+    }
+    const { accessKey, secretKey } = parsed;
     return accessKey && secretKey ? { accessKey, secretKey } : undefined;
   }
   return env.SCW_ACCESS_KEY && env.SCW_SECRET_KEY ? { accessKey: env.SCW_ACCESS_KEY, secretKey: env.SCW_SECRET_KEY } : undefined;

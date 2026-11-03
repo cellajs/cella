@@ -113,8 +113,12 @@ export async function publishEngine(opts: {
   const { naming, region } = deriveInfra(opts.appConfig);
   const namespace = await findNamespace(auth, region, opts.projectId, naming.registryNamespace);
   if (!namespace) return undefined;
-  const commit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+  const git = (args: string[]) => (spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout ?? '').trim();
+  const commit = git(['rev-parse', 'HEAD']);
   if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error('the engine image names the commit it is built from: run the apply from a git checkout');
+  if (git(['status', '--porcelain', '--', ...CONTEXT_PATHS])) {
+    log(`  The engine image carries changes ${commit.slice(0, 10)} does not hold; applied.json names that commit all the same.`);
+  }
   const descriptionHash = await appDescriptionHash(root);
   const repository = engineImageRepository(region, naming.registryNamespace);
   const context = stageContext(root);
