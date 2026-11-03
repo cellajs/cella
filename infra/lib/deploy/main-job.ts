@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ENCRYPTION_SALT_SECRET_NAME, PASSPHRASE_SECRET_NAME } from '../../tasks/passphrase-custody';
-import { DEPLOY_FOLDER, ENGINE_FOLDER } from '../scaleway/secret-paths';
+import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 import { defaultRule } from './target';
 
@@ -90,11 +90,11 @@ unset DEPLOY_KEY_JSON
 echo "== $(date -u +%FT%TZ) fetch $TARGET_SHA"
 git init -q /work
 git -C /work remote add origin "$REPO"
-# A private repository's read key (D19), from the deploy folder, goes as a header with the tag listing and the fetch.
+# A private repository's read key (D19), from the runtime folder, goes as a header with the tag listing and the fetch.
 REPO_KEY=$(node -e '
   const base = "https://api.scaleway.com/secret-manager/v1beta1/regions/" + process.env.REGION;
   const headers = { "X-Auth-Token": process.env.SCW_SECRET_KEY };
-  const path = process.env.DEPLOY_FOLDER;
+  const path = process.env.RUNTIME_FOLDER;
   fetch(base + "/secrets?project_id=" + process.env.SCW_DEFAULT_PROJECT_ID + "&name=repository-read-key&path=" + encodeURIComponent(path), { headers })
     .then((res) => res.json())
     .then(async ({ secrets = [] }) => {
@@ -161,7 +161,7 @@ export function declaredMainJob(opts: {
       MODE: opts.mode,
       REPO: opts.repository,
       REGION: opts.region,
-      DEPLOY_FOLDER: DEPLOY_FOLDER.replace(/\/$/, ''),
+      RUNTIME_FOLDER: RUNTIME_FOLDER.replace(/\/$/, ''),
       SCW_DEFAULT_PROJECT_ID: opts.projectId,
       SCW_DEFAULT_ORGANIZATION_ID: opts.organizationId,
       ...(defaultRule(opts.mode)?.kind === 'releases' ? { RELEASES_ONLY: '1' } : {}),

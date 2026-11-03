@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { actionCommand, actionLabel, menuPath } from '../../lib/operator-actions';
+import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -11,14 +12,13 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
-import { syncDeployTelemetryKey } from '../../lib/telemetry/sink-key';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets, memberShutOut } from '../../tasks/admit-operator-buckets';
-import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
+import { moveSecretPaths } from '../../tasks/move-secret-paths';
 import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
@@ -129,6 +129,18 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       // Identities are IAM, which the operator key writes none of: one that differs from the declared ones stops the run before its `up`.
       await exitOnIdentityChanges(context, { secretKey: operator.secretKey, organizationId }, releaseAll);
 
+      // Each secret leaves its consumer copies for one container in the runtime folder before the `up`, whose program declares that one
+      // under the alias of the copy kept; the deleted copies leave the state at the `up`'s refresh.
+      console.info(pc.dim('\n→ Moving runtime secrets to one container each (move-secret-paths)…'));
+      try {
+        const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
+        await moveSecretPaths({ client, secrets: runtimeSecrets, log: (message) => console.info(pc.dim(message)) });
+      } catch (error) {
+        await releaseAll();
+        console.error(`${warningMark} move-secret-paths failed (${errorMessage(error)}). Nothing applied.`);
+        endAction(1);
+      }
+
       // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
       console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));
       const forget = await infraTask(env, ['forget-retired-resources', '--stack', stack]);
@@ -222,14 +234,8 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       await releaseLock();
     }
 
-    // The `up` made each consumer's copy of a secret; operator values still in a shared folder move into them (ledger L3).
     if (completed) {
       const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-      await copySharedSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
-        console.warn(
-          `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next apply tries again.`,
-        ),
-      );
       // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any
       // new secret's containers.
       await ensureDatabaseForStack({
@@ -242,10 +248,6 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
       }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
       await ensureSecrets({ client, log: (message) => console.info(pc.dim(message)) }).catch((error) =>
         console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
-      );
-      // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
-      await syncDeployTelemetryKey({ client }).catch((error) =>
-        console.warn(`${warningMark} Could not copy the telemetry key into the deploy folder (${errorMessage(error)}).`),
       );
     }
 

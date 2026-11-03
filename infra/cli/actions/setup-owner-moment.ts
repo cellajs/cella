@@ -1,21 +1,20 @@
 import { confirm, select } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
 import { deleteApiKey } from '../../lib/scaleway/iam-client';
-import { machinePolicies } from '../../lib/scaleway/machine-policies';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { allPrincipalNames, type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
+import { ensureApplication } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import type { Environment } from '../../lib/stack/bootstrap-stack-state';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { ensureMachineIdentities } from '../../tasks/machine-identities';
-import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
-import { writeMachinePolicies } from '../../tasks/machine-policies';
-import { assertSecretsUnprefixed } from '../../tasks/move-secret-paths';
+import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { setupCiKey } from '../../tasks/setup-ci-key';
+import { planUploadsKey, writeUploadsKey } from '../../tasks/uploads-key';
 import { forgetOwnerKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
 import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared';
@@ -133,10 +132,10 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
 
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt and checked as every Owner
- * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The machine identities with their policies and
- * standing keys (in the deploy folder), the deploy key (its copy for the main job), and the app's operators and observer: created when the
- * app has none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces
- * the deploy key and every machine key, the runner's too when the runner serves this environment. Undefined when declined.
+ * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The uploads application with its policy and
+ * key (in the runtime folder), the deploy key (its copy for the main job), and the app's operators and observer: created when the app has
+ * none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces the deploy
+ * key and the uploads key, the runner's too when the runner serves this environment. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -155,36 +154,27 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
   const projectId =
     context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
-  // The standing keys are planned from the deploy folder: one still under the environment's prefix would have every key made anew.
-  if (context.projectId) {
-    const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
-    const refusal = await assertSecretsUnprefixed(secrets, appConfig.slug, environment).then(
-      () => undefined,
-      (error: unknown) => errorMessage(error),
-    );
-    if (refusal) {
-      console.error(`${warningMark} ${refusal}.`);
-      return undefined;
-    }
-  }
   const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
 
-  console.info('\n→ Machine identities (one application per registry service, and the builder, each with a standing key)');
-  try {
-    const registry = { slug: appConfig.slug, mode: environment };
-    await ensureMachineIdentities({ ...registry, callerSecretKey: pair.secretKey, projectId, organizationId });
-    console.info('\n→ Machine policies');
-    await writeMachinePolicies({ secretKey: pair.secretKey }, organizationId, machinePolicies(appConfig, projectId));
-    // The standing keys go to the deploy folder, where a deploy reads them; a rotation makes every one anew.
-    console.info('\n→ Standing machine keys');
-    const auth = { secretKey: pair.secretKey };
-    const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
-    const planned = await planMachineKeys({ auth, secrets, organizationId, ...registry });
-    const steps = mode === 'rotate-keys' ? planned.map((step) => ({ ...step, change: 'make' as const })) : planned;
-    await writeMachineKeys({ auth, secrets, organizationId, projectId, ...registry, steps });
-  } catch (error) {
-    console.warn(`${warningMark} Machine identities incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
+  // The uploads key goes to the runtime folder, where the deploy composes it into the backend's env file; a rotation makes it anew.
+  if (declaresUploads()) {
+    console.info('\n→ Uploads key');
+    try {
+      const registry = { slug: appConfig.slug, mode: environment };
+      const auth = { secretKey: pair.secretKey };
+      await ensureApplication(
+        { ...registry, callerSecretKey: pair.secretKey, projectId, organizationId },
+        { suffix: 'uploads', description: "The uploads key: signs the backend's uploads and presigned URLs" },
+      );
+      await writeDeclaredPolicies(auth, organizationId, [uploadsPolicy({ ...registry, projectId })]);
+      const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
+      const planned = await planUploadsKey({ auth, secrets, organizationId, ...registry });
+      const step = mode === 'rotate-keys' ? { ...planned, change: 'make' as const } : planned;
+      await writeUploadsKey({ auth, secrets, organizationId, projectId, step });
+    } catch (error) {
+      console.warn(`${warningMark} Uploads key incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
+    }
   }
 
   console.info('\n→ Deploy key');

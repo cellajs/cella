@@ -1,26 +1,26 @@
-import { assertSecretsDeliverable, secretsForServices } from '../../../tasks/assert-secrets-deliverable';
-import { enabledServices } from '../../services';
+import { runtimeEnvEntries } from '../../runtime-secrets';
+import { createSecretManagerClient } from '../../scaleway/scaleway-secret-manager';
+import { RUNTIME_FOLDER } from '../../scaleway/secret-paths';
+import { carriedServices, deployedServices } from '../../services';
 import { check, manageSecrets, probed } from '../check';
 import type { StatusProvider } from '../types';
 
-/** The required copies with no version, as `name in path`: a machine reading one would stop at hydration. */
+/** The required runtime values with no version, by container name: a deploy would end blocked composing an env file that needs one. */
 export type SecretsFacts = string[];
 
-/** Every required copy the enabled services read, checked one by one as the deploy checks them: a secret set in one folder and not another counts as missing. */
+/** Every value a machine's env file needs, read from the runtime folder's metadata as the deploy's compose step checks it. */
 export const secretsProvider: StatusProvider<SecretsFacts> = {
   domain: 'secrets',
   async gather(session) {
     if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
-      const enabled = enabledServices(session.appConfig.services).map((service) => service.slug);
-      const { offenders } = await assertSecretsDeliverable({
-        secretKey: session.secretKey,
-        region: session.appConfig.s3.region,
-        projectId: session.projectId,
-        secrets: secretsForServices(enabled),
-        log: () => {},
-      });
-      return offenders.map((offender) => `${offender.secretName}${offender.path ? ` in ${offender.path}` : ''}`);
+      const { services, singleVM } = session.appConfig;
+      const client = createSecretManagerClient({ secretKey: session.secretKey, region: session.appConfig.s3.region, projectId: session.projectId });
+      const versioned = new Set((await client.listSecretsUnder(RUNTIME_FOLDER)).filter((s) => (s.version_count ?? 0) > 0).map((s) => s.name));
+      const required = deployedServices(services, singleVM).flatMap((machine) =>
+        runtimeEnvEntries(carriedServices(services, singleVM, machine)).filter((entry) => entry.required),
+      );
+      return [...new Set(required.map((entry) => entry.secretName))].filter((name) => !versioned.has(name));
     } catch {
       return undefined;
     }
@@ -30,8 +30,8 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
     return [
       probed(secrets, session.scalewayKeyAvailable, facts, 'could not read Secret Manager', (missing) =>
         missing.length === 0
-          ? secrets.ok('every required copy holds a value')
-          : secrets.missing(`required copies without a value: ${missing.join(', ')}`, manageSecrets),
+          ? secrets.ok('every required value is set')
+          : secrets.missing(`required values not set: ${missing.join(', ')}`, manageSecrets),
       ),
     ];
   },

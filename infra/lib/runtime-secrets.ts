@@ -1,8 +1,7 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
-import { serviceKeyCondition } from './scaleway/secret-paths';
-import { serviceNames } from './services';
+import { type ServiceDefinition, serviceNames } from './services';
 import type { DatabaseRole, StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
@@ -26,7 +25,7 @@ export interface RuntimeSecretConfig {
   valueSource: RuntimeSecretValueSource;
   /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
   generation: RuntimeSecretGeneration;
-  /** Services that receive the secret in their per-VM `.env.runtime`. */
+  /** Services that receive the secret in their machine's `.env.runtime`, which the deploy composes from the runtime folder. */
   services: readonly RuntimeSecretConsumer[];
   /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
   derivedFrom?: RuntimeSecretDerivation;
@@ -170,9 +169,33 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
 }
 
 /**
- * The secret-read condition of a service principal: its own folder, and nothing else. The machine policies (lib/scaleway/machine-policies.ts)
- * and the deploy's grant assertion both build it here, so they compare equal as strings.
+ * The uploads key's two halves, which Update identities and Rotate keys write into the runtime folder: the key of the uploads application,
+ * which a service with `s3Access` signs uploads and presigned URLs with. Its consumers are those services.
  */
-export function principalSecretCondition(service: ServiceName): string {
-  return serviceKeyCondition(service);
+export const uploadsKeySecrets = [
+  { secretName: 'uploads-access-key', envVar: 'S3_ACCESS_KEY_ID', half: 'accessKey' },
+  { secretName: 'uploads-secret-key', envVar: 'S3_ACCESS_KEY_SECRET', half: 'secretKey' },
+] as const;
+
+/** One name a machine's env file carries: its env var, the runtime-folder container it is read from, and whether a missing value stops a deploy. */
+export interface RuntimeEnvEntry {
+  envVar: string;
+  secretName: string;
+  required: boolean;
+}
+
+/**
+ * The names one machine's env file carries: every runtime secret the services it carries consume, in registry order, and the uploads key when
+ * one of them signs uploads. Nothing else: a value no service on the machine reads stays off it.
+ */
+export function runtimeEnvEntries(carried: readonly Pick<ServiceDefinition, 'slug' | 's3Access'>[]): RuntimeEnvEntry[] {
+  const secrets = unionRuntimeSecrets(carried.map((service) => service.slug)).map(({ envVar, secretName, required }) => ({
+    envVar,
+    secretName,
+    required,
+  }));
+  const uploads = carried.some((service) => service.s3Access)
+    ? uploadsKeySecrets.map(({ envVar, secretName }) => ({ envVar, secretName, required: true }))
+    : [];
+  return [...secrets, ...uploads];
 }

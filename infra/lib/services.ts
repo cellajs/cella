@@ -75,6 +75,17 @@ export function collocatedServices(serviceConfig: Record<string, EngineServiceEn
   return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
 
+/** The services one machine carries: its own, and on the singleVM host every co-hosted worker and collocated container. */
+export function carriedServices(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+  machine: ServiceDefinition,
+): readonly ServiceDefinition[] {
+  if (!singleVM || !machine.primaryRollout) return [machine];
+  const placed = placeServices(enabledServices(serviceConfig), singleVM);
+  return [machine, ...placed.coHosted, ...placed.collocated];
+}
+
 /**
  * True for the singleVM host when it runs a stop-first worker (the cdc replication slot, the cron maintainer). The host still cuts over start-first:
  * PostgreSQL lets one session hold the slot and pg-boss claims each cron period once, so the new generation's copies wait while the old VM lives.

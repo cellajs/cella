@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { MachinePolicy } from '../lib/scaleway/machine-policies';
+import type { DeclaredPolicy } from '../lib/scaleway/declared-identities';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import { planMachinePolicies, writeMachinePolicies } from './machine-policies';
+import { planDeclaredPolicies, writeDeclaredPolicies } from './declared-policies';
 
-const wanted: MachinePolicy[] = [
+const wanted: DeclaredPolicy[] = [
   {
-    name: 'app-vm-backend-policy',
-    applicationName: 'app-staging-vm-backend',
+    name: 'app-staging-uploads-policy',
+    applicationName: 'app-staging-uploads',
     description: 'd',
     rules: [{ permission_set_names: ['SecretManagerSecretAccess'], project_ids: ['p'], condition: 'c' }],
     tags: [],
   },
   {
-    name: 'app-vm-boot-policy',
-    applicationName: 'app-staging-boot',
+    name: 'app-staging-ci-deploy-policy',
+    applicationName: 'app-staging-ci-deploy',
     description: 'd',
-    rules: [{ permission_set_names: ['ContainerRegistryReadOnly'], project_ids: ['p'] }],
+    rules: [{ permission_set_names: ['ObjectStorageFullAccess'], project_ids: ['p'] }],
     tags: [],
   },
 ];
@@ -50,50 +50,50 @@ function fakeIam(state: { apps: Record<string, string>; policies: Record<string,
   return { auth: { secretKey: 's', fetchImpl }, writes };
 }
 
-describe('planMachinePolicies', () => {
+describe('planDeclaredPolicies', () => {
   it('names a policy to create, one whose rules differ, and one whose application is missing, and writes nothing', async () => {
     const { auth, writes } = fakeIam({
-      apps: { 'app-staging-vm-backend': 'a1' },
-      policies: { 'app-vm-backend-policy': { id: 'p1', rules: [{ permission_set_names: ['SecretManagerSecretAccess'], project_ids: ['p'] }] } },
+      apps: { 'app-staging-uploads': 'a1' },
+      policies: { 'app-staging-uploads-policy': { id: 'p1', rules: [{ permission_set_names: ['SecretManagerSecretAccess'], project_ids: ['p'] }] } },
     });
-    expect(await planMachinePolicies(auth, 'org', wanted)).toEqual([
-      { policy: 'app-vm-backend-policy', change: 'update' },
-      { policy: 'app-vm-boot-policy', change: 'missing-application' },
+    expect(await planDeclaredPolicies(auth, 'org', wanted)).toEqual([
+      { policy: 'app-staging-uploads-policy', change: 'update' },
+      { policy: 'app-staging-ci-deploy-policy', change: 'missing-application' },
     ]);
     expect(writes).toEqual([]);
   });
 });
 
-describe('writeMachinePolicies', () => {
+describe('writeDeclaredPolicies', () => {
   it('creates a missing policy, replaces differing rules in place, and leaves a matching one alone', async () => {
     const { auth, writes } = fakeIam({
-      apps: { 'app-staging-vm-backend': 'a1', 'app-staging-boot': 'a2' },
-      policies: { 'app-vm-boot-policy': { id: 'p2', rules: [{ permission_set_names: ['ContainerRegistryReadOnly'], project_ids: ['p'] }] } },
+      apps: { 'app-staging-uploads': 'a1', 'app-staging-ci-deploy': 'a2' },
+      policies: { 'app-staging-ci-deploy-policy': { id: 'p2', rules: [{ permission_set_names: ['ObjectStorageFullAccess'], project_ids: ['p'] }] } },
     });
-    const steps = await writeMachinePolicies(auth, 'org', wanted, () => {});
+    const steps = await writeDeclaredPolicies(auth, 'org', wanted, () => {});
     expect(steps).toEqual([
-      { policy: 'app-vm-backend-policy', change: 'create' },
-      { policy: 'app-vm-boot-policy', change: 'none' },
+      { policy: 'app-staging-uploads-policy', change: 'create' },
+      { policy: 'app-staging-ci-deploy-policy', change: 'none' },
     ]);
     expect(writes).toHaveLength(1);
-    expect(writes[0]).toMatchObject({ method: 'POST', body: { name: 'app-vm-backend-policy', application_id: 'a1', rules: wanted[0]?.rules } });
+    expect(writes[0]).toMatchObject({ method: 'POST', body: { name: 'app-staging-uploads-policy', application_id: 'a1', rules: wanted[0]?.rules } });
   });
 
-  it('replaces the rules of a policy in place, so its machines keep their rights in between', async () => {
+  it('replaces the rules of a policy in place, so its key keeps its rights in between', async () => {
     const { auth, writes } = fakeIam({
-      apps: { 'app-staging-vm-backend': 'a1', 'app-staging-boot': 'a2' },
+      apps: { 'app-staging-uploads': 'a1', 'app-staging-ci-deploy': 'a2' },
       policies: {
-        'app-vm-backend-policy': { id: 'p1', rules: [] },
-        'app-vm-boot-policy': { id: 'p2', rules: [{ permission_set_names: ['ContainerRegistryReadOnly'], project_ids: ['p'] }] },
+        'app-staging-uploads-policy': { id: 'p1', rules: [] },
+        'app-staging-ci-deploy-policy': { id: 'p2', rules: [{ permission_set_names: ['ObjectStorageFullAccess'], project_ids: ['p'] }] },
       },
     });
-    await writeMachinePolicies(auth, 'org', wanted, () => {});
+    await writeDeclaredPolicies(auth, 'org', wanted, () => {});
     expect(writes).toEqual([{ method: 'PUT', url: expect.stringContaining('/rules'), body: { policy_id: 'p1', rules: wanted[0]?.rules } }]);
   });
 
   it('must not write a policy for an application that does not exist', async () => {
     const { auth, writes } = fakeIam({ apps: {}, policies: {} });
-    await expect(writeMachinePolicies(auth, 'org', wanted, () => {})).rejects.toThrow("'app-staging-vm-backend' does not exist");
+    await expect(writeDeclaredPolicies(auth, 'org', wanted, () => {})).rejects.toThrow("'app-staging-uploads' does not exist");
     expect(writes).toEqual([]);
   });
 });

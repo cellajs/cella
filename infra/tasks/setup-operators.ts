@@ -1,6 +1,6 @@
+import { sameRules } from '../lib/scaleway/declared-identities';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { IAM_BASE, type IamAuth } from '../lib/scaleway/iam-client';
-import { sameRules } from '../lib/scaleway/machine-policies';
 import { DNS_PERMISSION_SETS, OPERATOR_ORG_PERMISSION_SETS, OPERATOR_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { extendPolicyReach, type LivePolicy, type LiveRule, type PolicyReach, policyReach, readPolicy } from '../lib/scaleway/policy-reach';
 import { type AppPrincipalNames, appPrincipalNames } from '../lib/scaleway/principals';

@@ -5,15 +5,15 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { readRunnerFile } from '../../lib/runner/runner-file';
 import { RUNNER_REPOSITORY_KEY } from '../../lib/runner/runner-machine';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { DEPLOY_FOLDER } from '../../lib/scaleway/secret-paths';
+import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { maskedSecret } from '../prompts/masked-secret';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
 
 /**
- * Store, replace or remove the read-only key a private repository is fetched with (D19), in the deploy folder of this environment's
- * project, on the operator key. The deploy writes it into the builder's cloud-init. Where the runner is set up, its project keeps a
+ * Store, replace or remove the read-only key a private repository is fetched with (D19), in the runtime folder of this environment's
+ * project, on the operator key. The deploy reads it there and writes it into the builder's cloud-init. Where the runner is set up, its project keeps a
  * copy (D22), which Replace the runner gives to the runner machine. A key the repository does not answer is not stored. An empty answer
  * removes a stored key, for a repository anyone may read.
  */
@@ -22,13 +22,13 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
   const repository = repositoryUrl();
   console.info(
     pc.dim(
-      `\n${actionLabel('repository-key')}: the key the builder fetches a release's commit of ${repository} with, in ${DEPLOY_FOLDER} of ${context.environment}.\n` +
+      `\n${actionLabel('repository-key')}: the key the builder fetches a release's commit of ${repository} with, in ${RUNTIME_FOLDER} of ${context.environment}.\n` +
         '  Make a fine-grained GitHub token for this repository only, with "Contents: read" and nothing else, and an expiry.\n',
     ),
   );
   const operator = await acquireOperatorKey(context);
   const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
-  const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, DEPLOY_FOLDER);
+  const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, RUNTIME_FOLDER);
   const runnerProject = readRunnerFile()?.projectId;
   const runnerSecrets = runnerProject
     ? createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId: runnerProject })
@@ -58,7 +58,7 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
     stored ??
     (await secrets.ensureSecret({
       name: REPOSITORY_KEY_NAME,
-      path: DEPLOY_FOLDER,
+      path: RUNTIME_FOLDER,
       description: "Read-only key of the app's repository, for the builder (D19)",
     }));
   await secrets.putSecretValue({ secretId: container.id, value: key, description: 'Set by the operator', disablePrevious: true });

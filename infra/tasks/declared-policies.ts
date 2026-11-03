@@ -1,10 +1,10 @@
+import type { DeclaredPolicy } from '../lib/scaleway/declared-identities';
+import { sameRules } from '../lib/scaleway/declared-identities';
 import { IAM_BASE, type IamAuth, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import type { MachinePolicy } from '../lib/scaleway/machine-policies';
-import { sameRules } from '../lib/scaleway/machine-policies';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 
-/** What one machine policy needs: nothing, a policy made, its rules replaced, or its application made first. */
-export interface MachinePolicyStep {
+/** What one declared policy needs: nothing, a policy made, its rules replaced, or its application made first. */
+export interface DeclaredPolicyStep {
   policy: string;
   change: 'none' | 'create' | 'update' | 'missing-application';
 }
@@ -36,9 +36,9 @@ async function liveRules(auth: IamAuth, policyId: string): Promise<LiveRule[]> {
   return rules;
 }
 
-/** What writing the machine policies would change, read with any key that holds IAM read. Nothing is written. */
-export async function planMachinePolicies(auth: IamAuth, organizationId: string, wanted: readonly MachinePolicy[]): Promise<MachinePolicyStep[]> {
-  const steps: MachinePolicyStep[] = [];
+/** What writing the declared policies would change, read with any key that holds IAM read. Nothing is written. */
+export async function planDeclaredPolicies(auth: IamAuth, organizationId: string, wanted: readonly DeclaredPolicy[]): Promise<DeclaredPolicyStep[]> {
+  const steps: DeclaredPolicyStep[] = [];
   for (const policy of wanted) {
     if (!(await resolveApplicationIdByName(auth, organizationId, policy.applicationName))) {
       steps.push({ policy: policy.name, change: 'missing-application' });
@@ -52,16 +52,16 @@ export async function planMachinePolicies(auth: IamAuth, organizationId: string,
 }
 
 /**
- * Write the machine policies: create a missing one, and replace the rules of one that differs in place, so a machine keeps its rights in
+ * Write the declared policies: create a missing one, and replace the rules of one that differs in place, so its key keeps its rights in
  * between. Needs IAM write: an Owner API key. Every application must exist already (the registry principals are ensured first).
  */
-export async function writeMachinePolicies(
+export async function writeDeclaredPolicies(
   auth: IamAuth,
   organizationId: string,
-  wanted: readonly MachinePolicy[],
+  wanted: readonly DeclaredPolicy[],
   log: (message: string) => void = console.info,
-): Promise<MachinePolicyStep[]> {
-  const steps: MachinePolicyStep[] = [];
+): Promise<DeclaredPolicyStep[]> {
+  const steps: DeclaredPolicyStep[] = [];
   for (const policy of wanted) {
     const applicationId = await resolveApplicationIdByName(auth, organizationId, policy.applicationName);
     if (!applicationId) throw new Error(`IAM application '${policy.applicationName}' does not exist, so '${policy.name}' cannot be written.`);

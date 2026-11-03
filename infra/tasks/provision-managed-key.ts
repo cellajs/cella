@@ -2,7 +2,7 @@ import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
+import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { checkMark } from '../lib/utils/cli-output';
 
 export interface ProvisionManagedKeyOptions {
@@ -54,16 +54,15 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   // Resolve + verify every target container up front. Minting an IAM key is a
   // side effect we cannot cheaply undo, so bail before minting if a container is
   // missing so a live key is never leaked.
-  const containersBySecretName = new Map<string, SecretManagerSecret[]>();
+  const containersBySecretName = new Map<string, SecretManagerSecret>();
   for (const { secret } of targets) {
-    const copies = await secretCopyContainers(client, secret);
-    const missing = missingCopies(copies);
-    if (missing.length > 0) {
+    const container = await client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
+    if (!container) {
       throw new Error(
-        `${secret.secretName} (${secret.envVar}) has no container yet for ${missing.join(', ')}: run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
+        `${secret.secretName} (${secret.envVar}) has no container yet: run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
       );
     }
-    containersBySecretName.set(secret.secretName, existingContainers(copies));
+    containersBySecretName.set(secret.secretName, container);
   }
 
   const minted = await provisionScopedKey(
@@ -79,15 +78,16 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   const seeded: Record<string, number> = {};
   for (const { field, secret } of targets) {
     const value = field === 'accessKey' ? minted.accessKey : minted.secretKey;
-    const revisions = await putEveryCopy(client, containersBySecretName.get(secret.secretName) ?? [], value, {
+    const container = containersBySecretName.get(secret.secretName);
+    if (!container) continue;
+    const { revision } = await client.putSecretValue({
+      secretId: container.id,
+      value,
       description: `Minted by infra CLI (${definition.suffix})`,
       disablePrevious: true,
     });
-    const revision = Math.max(...revisions);
     seeded[secret.secretName] = revision;
-    log(
-      `  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) to ${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'} → revision ${revision}`,
-    );
+    log(`  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) → revision ${revision}`);
   }
 
   return { applicationId: minted.applicationId, seeded };

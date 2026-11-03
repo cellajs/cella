@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { engineMadeRuntimeSecrets, runtimeSecrets } from '../lib/runtime-secrets';
-import { secretCopies } from '../lib/scaleway/secret-paths';
+import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
@@ -15,19 +15,12 @@ const containers = () => h.resources.filter((r) => r.type === 'scaleway:secrets/
 const versions = () => h.resources.filter((r) => r.type === 'scaleway:secrets/version:Version');
 
 describe('secrets module', () => {
-  it('files one copy of every runtime secret in the folder of each consumer, never at the root', () => {
+  it('files one container per runtime secret, in the runtime folder the deploy key alone reads', () => {
     for (const definition of runtimeSecrets) {
       const paths = containers()
         .filter((r) => r.inputs.name === definition.secretName)
-        .map((r) => String(r.inputs.path))
-        .sort();
-      // The machine grants are conditioned on these folders (tests/unit/secret-scope.test.ts proves what each covers).
-      expect(paths, definition.id).toEqual(
-        secretCopies(definition)
-          .map((copy) => copy.path)
-          .sort(),
-      );
-      for (const path of paths) expect(path).toMatch(/^\/[^/]+\/$/);
+        .map((r) => String(r.inputs.path));
+      expect(paths, definition.id).toEqual([RUNTIME_FOLDER]);
     }
   });
 

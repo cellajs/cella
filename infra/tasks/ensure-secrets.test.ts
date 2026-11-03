@@ -22,41 +22,38 @@ function fakeClient(store: Record<string, string | undefined>) {
   return { client, writes };
 }
 
-const cookie: RuntimeSecretDefinition = {
-  ...(runtimeSecrets.find((s) => s.secretName === 'cookie-secret') as RuntimeSecretDefinition),
-  services: ['backend', 'jobs'],
-};
+const cookie = runtimeSecrets.find((s) => s.secretName === 'cookie-secret') as RuntimeSecretDefinition;
 
 describe('ensureSecrets', () => {
-  it('makes one fresh value for every copy of a secret none of whose copies has one', async () => {
-    const { client, writes } = fakeClient({ '/backend/cookie-secret': undefined, '/jobs/cookie-secret': undefined });
+  it('makes a fresh value for a container without one', async () => {
+    const { client, writes } = fakeClient({ '/runtime/cookie-secret': undefined });
     await ensureSecrets({ client, secrets: [cookie], generate: () => 'fresh', log: () => {} });
-    expect(writes).toEqual({ '/backend/cookie-secret': 'fresh', '/jobs/cookie-secret': 'fresh' });
+    expect(writes).toEqual({ '/runtime/cookie-secret': 'fresh' });
   });
 
-  it('must not replace a value that exists: a copy without one gets the existing value', async () => {
-    const { client, writes } = fakeClient({ '/backend/cookie-secret': 'kept', '/jobs/cookie-secret': undefined });
+  it('must not replace a value that exists', async () => {
+    const { client, writes } = fakeClient({ '/runtime/cookie-secret': 'kept' });
     await ensureSecrets({ client, secrets: [cookie], generate: () => 'fresh', log: () => {} });
-    expect(writes).toEqual({ '/jobs/cookie-secret': 'kept' });
+    expect(writes).toEqual({});
   });
 
   it('derives the relay public key from the signing key, so the relay verifies what the backend signs', async () => {
     const yjs = runtimeSecrets.filter((s) => s.secretName.startsWith('yjs-token-'));
     const material = 'known-yjs-token-key-material-of-32-chars';
-    const { client, writes } = fakeClient({ '/backend/yjs-token-private-key': material, '/yjs/yjs-token-public-key': undefined });
+    const { client, writes } = fakeClient({ '/runtime/yjs-token-private-key': material, '/runtime/yjs-token-public-key': undefined });
     await ensureSecrets({ client, secrets: yjs, log: () => {} });
     const token = signYjsToken(
       { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
       yjsTokenSigningKey(material),
       60_000,
     );
-    expect(verifyYjsToken(token, yjsTokenVerifyKey(writes['/yjs/yjs-token-public-key'] ?? '')).ok).toBe(true);
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(writes['/runtime/yjs-token-public-key'] ?? '')).ok).toBe(true);
   });
 
-  it('leaves a copy whose container does not exist yet for the next run', async () => {
-    const { client, writes } = fakeClient({ '/backend/cookie-secret': undefined });
-    await ensureSecrets({ client, secrets: [cookie], generate: () => 'fresh', log: () => {} });
-    expect(writes).toEqual({ '/backend/cookie-secret': 'fresh' });
+  it('leaves a secret whose container does not exist yet for the next run', async () => {
+    const { client, writes } = fakeClient({});
+    expect(await ensureSecrets({ client, secrets: [cookie], generate: () => 'fresh', log: () => {} })).toEqual([]);
+    expect(writes).toEqual({});
   });
 
   it('generates 32 URL-safe characters', () => {
@@ -65,10 +62,10 @@ describe('ensureSecrets', () => {
 
   it('must not rotate a key that protects stored data: the data would become unreadable', async () => {
     const dataKey = runtimeSecrets.find((secret) => secret.secretName === 'data-encryption-key') as RuntimeSecretDefinition;
-    const { client, writes } = fakeClient({ '/backend/data-encryption-key': 'kept-data-key-of-32-characters-x' });
+    const { client, writes } = fakeClient({ '/runtime/data-encryption-key': 'kept-data-key-of-32-characters-x' });
     await ensureSecrets({
       client,
-      secrets: [{ ...dataKey, services: ['backend'] }],
+      secrets: [dataKey],
       generate: () => 'fresh',
       rotate: true,
       log: () => {},
@@ -76,13 +73,12 @@ describe('ensureSecrets', () => {
     expect(writes).toEqual({});
   });
 
-  it('rotates every copy of a generated secret to one fresh value, and recomputes what derives from it', async () => {
+  it('rotates a generated secret to a fresh value, and recomputes what derives from it', async () => {
     const yjs = runtimeSecrets.filter((secret) => secret.secretName.startsWith('yjs-token-'));
     const { client, writes } = fakeClient({
-      '/backend/cookie-secret': 'old',
-      '/jobs/cookie-secret': 'old',
-      '/backend/yjs-token-private-key': 'old-material-of-32-characters-xx',
-      '/yjs/yjs-token-public-key': 'old-public',
+      '/runtime/cookie-secret': 'old',
+      '/runtime/yjs-token-private-key': 'old-material-of-32-characters-xx',
+      '/runtime/yjs-token-public-key': 'old-public',
     });
     let n = 0;
     await ensureSecrets({
@@ -92,14 +88,13 @@ describe('ensureSecrets', () => {
       rotate: true,
       log: () => {},
     });
-    expect(writes['/backend/cookie-secret']).toBe(writes['/jobs/cookie-secret']);
-    expect(writes['/backend/cookie-secret']).not.toBe('old');
-    const material = writes['/backend/yjs-token-private-key'] ?? '';
+    expect(writes['/runtime/cookie-secret']).not.toBe('old');
+    const material = writes['/runtime/yjs-token-private-key'] ?? '';
     const token = signYjsToken(
       { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
       yjsTokenSigningKey(material),
       60_000,
     );
-    expect(verifyYjsToken(token, yjsTokenVerifyKey(writes['/yjs/yjs-token-public-key'] ?? '')).ok).toBe(true);
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(writes['/runtime/yjs-token-public-key'] ?? '')).ok).toBe(true);
   });
 });

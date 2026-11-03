@@ -1,5 +1,5 @@
+import type { DeclaredPolicy } from '../lib/scaleway/declared-identities';
 import type { IamAuth } from '../lib/scaleway/iam-client';
-import type { MachinePolicy } from '../lib/scaleway/machine-policies';
 import { OBSERVER_ORG_PERMISSION_SETS, OBSERVER_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { type PolicyReach, policyReach, readPolicy } from '../lib/scaleway/policy-reach';
 import { appPrincipalNames } from '../lib/scaleway/principals';
@@ -23,7 +23,7 @@ export function observerRules(opts: { projectIds: readonly string[]; organizatio
 }
 
 /** The observer's policy as Update identities compares and writes it, reaching `projectIds`. Its creation is the observer's own setup. */
-export function observerPolicy(opts: { slug: string; organizationId: string; projectIds: readonly string[] }): MachinePolicy {
+export function observerPolicy(opts: { slug: string; organizationId: string; projectIds: readonly string[] }): DeclaredPolicy {
   const application = appPrincipalNames(opts.slug).observer;
   return {
     name: `${application}-policy`,
@@ -64,7 +64,7 @@ export async function declaredObserverPolicy(
   organizationId: string,
   slug: string,
   projectId: string,
-): Promise<MachinePolicy | undefined> {
+): Promise<DeclaredPolicy | undefined> {
   const reach = await observerReach(auth, organizationId, slug);
   return reach && observerPolicy({ slug, organizationId, projectIds: [...reach.projectIds, projectId] });
 }

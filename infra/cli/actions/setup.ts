@@ -22,8 +22,8 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
   if (writesIdentities && !moment) return;
   const operatorKey = await acquireOperatorKey(context);
   // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the deploys it starts (the
-  // live release again, then the target) replace every machine, so none keeps a key the rotation deleted. The main job's copy of the deploy
-  // key is replaced first, for the same reason.
+  // live release again, then the target) replace every machine, so none keeps the uploads key the rotation deleted. The main job's copy of
+  // the deploy key is replaced first, so those deploys run on the new one.
   if (mode === 'rotate-keys') {
     await copyDeployKeyForMainJob(context, operatorKey, moment?.projectId ?? context.projectId, moment?.ciKey);
     await recordKeyRotation(context, operatorKey);

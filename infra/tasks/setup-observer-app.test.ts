@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sameRules } from '../lib/scaleway/machine-policies';
+import { sameRules } from '../lib/scaleway/declared-identities';
 import { OBSERVER_PROJECT_PERMISSION_SETS, OPERATOR_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { policyReach } from '../lib/scaleway/policy-reach';
 import { observerPolicy, observerRules } from './setup-observer-app';

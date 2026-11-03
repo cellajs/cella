@@ -7,7 +7,7 @@ import { sizing } from '../config/sizing';
 import { deriveGenId } from '../lib/gen-id';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
 import { type Generation, selectGenerations } from '../lib/select-generations';
-import { coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
+import { carriedServices, coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
 import { controlState } from './control';
 
 // Each service gets a VM except workers co-hosted on the backend and containers collocated on the host under singleVM, which route through the host VM.
@@ -22,10 +22,7 @@ export const hostSlug = enabled.find((s) => s.primaryRollout)?.slug;
 
 /** Runtime-secret consumers a service's VM must carry; under singleVM the host also carries every co-hosted worker's and collocated container's secrets. */
 export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsumer[] {
-  if (appConfig.singleVM && svc.slug === hostSlug) {
-    return [svc.slug, ...coHosted.map((s) => s.slug), ...collocated.map((s) => s.slug)] as RuntimeSecretConsumer[];
-  }
-  return [svc.slug as RuntimeSecretConsumer];
+  return carriedServices(appConfig.services, appConfig.singleVM, svc).map((carried) => carried.slug);
 }
 
 export type { Generation } from '../lib/select-generations';

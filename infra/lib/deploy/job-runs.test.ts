@@ -77,14 +77,14 @@ describe('the Serverless Jobs calls', () => {
   });
 
   it('compares a run only with a definition changed before it started, so an apply that changes a value flags no older run (seen 2026-10-29)', () => {
-    const definition = { env: { DEPLOY_FOLDER: '/deploy' }, updatedAt: '2026-10-29T10:00:00Z' };
+    const definition = { env: { RUNTIME_FOLDER: '/runtime' }, updatedAt: '2026-10-29T10:00:00Z' };
     const run = (created_at: string) => ({
       id: created_at,
       state: 'succeeded',
       created_at,
-      environment_variables: { DEPLOY_FOLDER: '/cella-production/deploy', TARGET_SHA: 'a'.repeat(40), RETRY: '0' },
+      environment_variables: { RUNTIME_FOLDER: '/cella-production/runtime', TARGET_SHA: 'a'.repeat(40), RETRY: '0' },
     });
     expect(runOverrides(run('2026-10-29T09:00:00Z'), definition)).toEqual([]);
-    expect(runOverrides(run('2026-10-29T11:00:00Z'), definition)).toEqual(['sets DEPLOY_FOLDER to another value']);
+    expect(runOverrides(run('2026-10-29T11:00:00Z'), definition)).toEqual(['sets RUNTIME_FOLDER to another value']);
   });
 });

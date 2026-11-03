@@ -1,5 +1,4 @@
 import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
-import { machinePrincipals } from '../../scaleway/machine-keys';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
 import { allPrincipalNames } from '../../scaleway/principals';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
@@ -60,12 +59,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
       const auth = { secretKey: session.secretKey };
       const names = allPrincipalNames(session.appConfig, session.mode);
       const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
-      const applications = [
-        names.operator,
-        names.observer,
-        names.ciDeploy,
-        ...machinePrincipals(session.appConfig.slug, session.mode).map((principal) => principal.application),
-      ];
+      const applications = [names.operator, names.observer, names.ciDeploy, names.uploads];
       const keyAges: KeyAge[] = [];
       for (const application of applications) {
         const id = application === names.observer ? observerAppId : await resolveApplicationIdByName(auth, organizationId, application);

@@ -1,17 +1,12 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { sizing } from '../config/sizing';
+import { BOOT_ACCOUNTS_PREFIX } from '../lib/deploy/boot-accounts';
+import { ENV_PREFIX, RELEASES_PREFIX } from '../lib/deploy/release-archives';
+import { RUNS_PREFIX } from '../lib/deploy/run-record';
 import { appStorageNeeds, services } from '../lib/services';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
-import {
-  backendServiceApplicationId,
-  builderApplicationId,
-  ciDeployApplicationId,
-  observerApplicationId,
-  operatorApplicationId,
-  operatorMemberUserIds,
-  serviceApplicationIds,
-} from './identities';
+import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, operatorMemberUserIds, uploadsApplicationId } from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
@@ -64,15 +59,15 @@ const deployAccess = (bucketName: pulumi.Input<string>, prefix = '') => ({
   Resource: [bucketName, pulumi.interpolate`${bucketName}/${prefix}*`],
 });
 
-/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its standing service key. An absent app drops the statement. */
+/** The uploads application's statement on the upload buckets: object-level only, as the backend signs uploads and presigned URLs with its key. */
 const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
-  backendServiceApplicationId.apply((backendId) =>
-    backendId
+  uploadsApplicationId.apply((uploadsId) =>
+    uploadsId
       ? [
           {
-            Sid: 'BackendObjectAccess',
+            Sid: 'UploadsObjectAccess',
             Effect: 'Allow',
-            Principal: { SCW: `application_id:${backendId}` },
+            Principal: { SCW: `application_id:${uploadsId}` },
             Action: [
               's3:ListBucket',
               's3:ListBucketMultipartUploads',
@@ -139,14 +134,6 @@ if (frontendBucket) {
           Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
         },
         deployAccess(frontendBucket.name),
-        // The builder writes a release's files, listing them first to skip unchanged ones; it deletes nothing.
-        {
-          Sid: 'BuilderFiles',
-          Effect: 'Allow',
-          Principal: { SCW: pulumi.interpolate`application_id:${builderApplicationId}` },
-          Action: ['s3:ListBucket', 's3:GetObject', 's3:PutObject'],
-          Resource: [frontendBucket.name, pulumi.interpolate`${frontendBucket.name}/*`],
-        },
         ...admin,
       ]),
     }),
@@ -246,7 +233,8 @@ const bootDiagBucket = new scaleway.object.Bucket(
     forceDestroy: !isProduction,
     // Versioned, so the deploy key, which may delete objects, cannot erase a run record or a boot account: a deleted one stays for 60 days.
     versioning: { enabled: true },
-    // Records and boot accounts keep as long as Scaleway keeps the job runs they describe (D25).
+    // Records, boot accounts and release archives keep as long as Scaleway keeps the job runs they describe (D25). An env file holds a
+    // machine's secret values: it and its versions go within a day, and the deploy deletes it once the machine booted.
     lifecycleRules: [
       {
         id: 'cleanup-old-versions',
@@ -254,8 +242,10 @@ const bootDiagBucket = new scaleway.object.Bucket(
         noncurrentVersionExpiration: { noncurrentDays: 60 },
         expiration: { expiredObjectDeleteMarker: true },
       },
-      { id: 'expire-boot-diag', enabled: true, expiration: { days: 60 }, prefix: 'boot-diag/' },
-      { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: 'runs/' },
+      { id: 'expire-boot-diag', enabled: true, expiration: { days: 60 }, prefix: BOOT_ACCOUNTS_PREFIX },
+      { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: RUNS_PREFIX },
+      { id: 'expire-releases', enabled: true, expiration: { days: 60 }, prefix: RELEASES_PREFIX },
+      { id: 'expire-env', enabled: true, expiration: { days: 1 }, noncurrentVersionExpiration: { noncurrentDays: 1 }, prefix: ENV_PREFIX },
     ],
   },
   { protect: isProduction },
@@ -266,39 +256,36 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: pulumi
-      .all([humanAccess(bootDiagBucket.name), observerApplicationId, pulumi.all(Object.values(serviceApplicationIds)), builderApplicationId])
-      .apply(([admin, observerId, serviceIds, builderId]) => [
-        // One statement for every service, as Scaleway refuses a bucket policy of over 10: a service key may write any service's boot accounts, never the builder's reports.
-        {
-          Sid: 'ServiceReports',
-          Effect: 'Allow',
-          Principal: { SCW: serviceIds.map((id) => `application_id:${id}`) },
-          Action: ['s3:PutObject'],
-          Resource: Object.keys(serviceApplicationIds).map((service) => pulumi.interpolate`${bootDiagBucket.name}/boot-diag/${service}-*`),
-        },
-        {
-          Sid: 'BuilderReports',
-          Effect: 'Allow',
-          Principal: { SCW: `application_id:${builderId}` },
-          Action: ['s3:PutObject'],
-          Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/builder/*`],
-        },
-        // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first.
-        ...(observerId
-          ? [
-              {
-                Sid: 'ObserverReadBootDiagnostics',
-                Effect: 'Allow',
-                Principal: { SCW: `application_id:${observerId}` },
-                Action: ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
-                Resource: [bootDiagBucket.name, pulumi.interpolate`${bootDiagBucket.name}/*`],
-              },
-            ]
-          : []),
-        deployAccess(bootDiagBucket.name),
-        ...admin,
-      ]),
+    // Four statements of the ten Scaleway allows: machines and the builder write through links the deploy key signs, so no machine is named.
+    Statement: pulumi.all([humanAccess(bootDiagBucket.name), observerApplicationId]).apply(([admin, observerId]) => [
+      // The observer reads what machines wrote about their boot, and every version of a run record, which it reads by the first; never an
+      // env file, which holds a machine's secret values.
+      ...(observerId
+        ? [
+            {
+              Sid: 'ObserverReadBootDiagnostics',
+              Effect: 'Allow',
+              Principal: { SCW: `application_id:${observerId}` },
+              Action: ['s3:ListBucket', 's3:ListBucketVersions', 's3:GetObject', 's3:GetObjectVersion'],
+              Resource: [
+                bootDiagBucket.name,
+                pulumi.interpolate`${bootDiagBucket.name}/${BOOT_ACCOUNTS_PREFIX}*`,
+                pulumi.interpolate`${bootDiagBucket.name}/${RUNS_PREFIX}*`,
+              ],
+            },
+          ]
+        : []),
+      deployAccess(bootDiagBucket.name),
+      // The deploy deletes a booted machine's env file with its version, which no other object of the bucket may lose.
+      {
+        Sid: 'DeployEnvRemoval',
+        Effect: 'Allow',
+        Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
+        Action: ['s3:DeleteObjectVersion'],
+        Resource: [pulumi.interpolate`${bootDiagBucket.name}/${ENV_PREFIX}*`],
+      },
+      ...admin,
+    ]),
   }),
 });
 

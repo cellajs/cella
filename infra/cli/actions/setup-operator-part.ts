@@ -332,7 +332,9 @@ export async function recordKeyRotation(context: InfraContext, operatorKey: Oper
   try {
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
     const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'keys', by: controlActor() });
-    console.info(`${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine with the new machine keys.`);
+    console.info(
+      `${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine, the backend's with the new uploads key.`,
+    );
   } finally {
     await lock.release();
   }

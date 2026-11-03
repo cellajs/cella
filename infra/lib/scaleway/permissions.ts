@@ -2,8 +2,8 @@
 
 /**
  * The deploy key's unconditioned project sets: machines and what they attach to (a builder machine among them), the buckets (narrowed per
- * bucket by their policies), and reads of the registry and of what is privileged. Machines are granular: no serial console, no image, no
- * snapshot and no security group is written. The builder machine pushes the images; the deploy key only reads them.
+ * bucket by their policies), and reads of what is privileged. Machines are granular: no serial console, no image, no snapshot and no
+ * security group is written. No registry set: a release travels as archives in the boot-diag bucket, through links the deploy key signs.
  */
 export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesReadOnly',
@@ -31,7 +31,6 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'LoadBalancersFullAccess',
   'PrivateNetworksFullAccess',
   'ObjectStorageFullAccess',
-  'ContainerRegistryReadOnly',
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
   'ServerlessJobsReadOnly',
@@ -43,7 +42,7 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
  */
 export const DEPLOY_SECRET_METADATA_SETS = ['SecretManagerReadOnly'] as const;
 
-/** Secret values, in the deploy folder only: the standing machine keys and the telemetry key. */
+/** Secret values, in the runtime folder only: the values the deploy composes into each machine's env file. */
 export const DEPLOY_SECRET_VALUE_SETS = ['SecretManagerSecretAccess'] as const;
 
 /** DNS permission set, "Scoped by Project" on Scaleway: the operator's, in the serving zone's project. The deploy key writes no DNS. */
@@ -57,9 +56,9 @@ export const DEPLOY_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 /**
  * Project-scoped sets for the observer application, the key a person and their agents read with: what `status`, `runs` and the plan of an
  * identity update read, each set named one by one, so a set that also reads secret values never comes in by a wider name. The key works from
- * any address, so it holds no set that reads a key in the clear: no Instances set, as a machine's user data holds its keys, and no registry
- * set, as an image holds the app's code. Object Storage reads need the
- * bucket policy too: the state and boot-diagnostics buckets name the observer, the others do not.
+ * any address, so it holds no set that reads a secret in the clear: no Instances set, as a machine's user data holds the links to its env
+ * file until the deploy strips them, and no registry set. Object Storage reads need the bucket policy too: the state and boot-diagnostics
+ * buckets name the observer, the others do not.
  */
 export const OBSERVER_PROJECT_PERMISSION_SETS = [
   'LoadBalancersReadOnly',
@@ -94,19 +93,8 @@ export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as con
  */
 export const OPERATOR_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// Machine identities: service and builder grants
-
-/** Secret-value read sets, always paired with a resource-level path condition. SecretManagerReadOnly alone is metadata-only and 403s the sync; SecretManagerSecretAccess decrypts the values. */
-export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
-
-/** Backend service app S3 signing sets for attachment uploads and presigned URLs. Granular object sets, NOT FullAccess; bucket policies scope which buckets. */
-export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const;
-
-/** Every service key's unconditioned sets: pull the release's images and write its boot account, where the diagnostics bucket's policy admits it. */
-export const MACHINE_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
-
 /**
- * Builder application sets: push a release's images (the registry has no narrower set than full access) and write the frontend's files,
- * listing them first to skip unchanged ones. The frontend bucket's policy is the one that admits it to objects.
+ * The uploads application's sets (`<slug>-<mode>-uploads`): object reads, writes and deletes for the backend's uploads and presigned URLs.
+ * Granular object sets, not FullAccess; the upload buckets' policies are the ones that admit it, and no other bucket names it.
  */
-export const BUILDER_PROJECT_PERMISSION_SETS = ['ContainerRegistryFullAccess', 'ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite'] as const;
+export const UPLOADS_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const;

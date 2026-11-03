@@ -5,8 +5,8 @@ import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
+import { declaresUploads } from '../lib/scaleway/declared-identities';
 import { allPrincipalNames } from '../lib/scaleway/principals';
-import { principalServices } from '../lib/services';
 import { mode, organizationId } from '../pulumi-context';
 
 const names = allPrincipalNames(appConfig, mode);
@@ -98,23 +98,10 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
   return undefined;
 });
 
-// Machine principals: one application per registry service, wherever it runs. Registry-derived: neither an `enabled` toggle nor a placement
-// changes a principal.
-
-const vmServices = principalServices();
-
-/** Per-service application ids. Required for an `up`; a preview plans a registry service whose application the next apply creates. */
-export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(
-  vmServices.map((svc) => [
-    svc.slug,
-    requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`, { pendingOnPreview: true }),
-  ]),
-);
-
-/** Builder application id, for the frontend and diagnostics buckets' statements. Required; a preview plans it before the next identity update makes it. */
-export const builderApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.builder), `builder ('${names.builder}')`, {
-  pendingOnPreview: true,
-});
-
-/** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
-export const backendServiceApplicationId: pulumi.Output<string | undefined> = serviceApplicationIds.backend ?? pulumi.output(undefined);
+/**
+ * Uploads application id, for the upload buckets' statements: the backend signs its uploads and presigned URLs with its key. Required where
+ * the registry has upload buckets; a preview plans it before the next identity update makes it. Undefined without upload buckets.
+ */
+export const uploadsApplicationId: pulumi.Output<string | undefined> = declaresUploads()
+  ? requirePrincipalId(findApplicationId(names.uploads), `uploads ('${names.uploads}')`, { pendingOnPreview: true })
+  : pulumi.output(undefined);

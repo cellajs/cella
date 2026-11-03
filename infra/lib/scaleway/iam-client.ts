@@ -50,6 +50,21 @@ export async function resolveApplicationIdByName(auth: IamAuth, organizationId: 
   return applications.find((app) => app.name === name)?.id ?? null;
 }
 
+/** Every application in the organization, paged. */
+export async function listOrganizationApplications(auth: IamAuth, organizationId: string): Promise<Array<{ id: string; name: string }>> {
+  const all: Array<{ id: string; name: string }> = [];
+  for (let page = 1; page <= 100; page++) {
+    const { applications = [], total_count = 0 } = await scwFetch<{ applications?: Array<{ id: string; name: string }>; total_count?: number }>(
+      auth,
+      'GET',
+      `${IAM_BASE}/applications?organization_id=${organizationId}&page=${page}&page_size=100`,
+    );
+    all.push(...applications);
+    if (applications.length === 0 || all.length >= total_count) break;
+  }
+  return all;
+}
+
 interface IamPolicy {
   id: string;
   name: string;
@@ -75,7 +90,7 @@ export async function listOrganizationPolicies(auth: IamAuth, organizationId: st
   return all;
 }
 
-/** All api keys on an application (one page of 100; a machine identity holds its standing key only). */
+/** All api keys on an application (one page of 100; a declared identity holds one key). */
 export async function listApiKeys(auth: IamAuth, organizationId: string, applicationId: string): Promise<ScwApiKey[]> {
   const { api_keys = [] } = await scwFetch<{ api_keys?: ScwApiKey[] }>(
     auth,

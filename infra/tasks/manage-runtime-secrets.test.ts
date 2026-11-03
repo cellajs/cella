@@ -3,7 +3,7 @@ import { manageRuntimeSecrets } from './manage-runtime-secrets';
 
 const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn() };
 
-const listSecrets = vi.fn();
+const listSecretsUnder = vi.fn();
 const getSecretByName = vi.fn();
 const ensureSecret = vi.fn();
 const putSecretValue = vi.fn();
@@ -11,7 +11,7 @@ const deleteSecret = vi.fn();
 const provisionManagedKey = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ listSecrets, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
+  createSecretManagerClient: () => ({ listSecretsUnder, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
 }));
 
 vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
@@ -20,7 +20,7 @@ function resetMocks() {
   prompts.select.mockReset();
   prompts.password.mockReset();
   prompts.confirm.mockReset();
-  listSecrets.mockReset();
+  listSecretsUnder.mockReset();
   getSecretByName.mockReset();
   ensureSecret.mockReset();
   putSecretValue.mockReset();
@@ -43,33 +43,22 @@ describe('manageRuntimeSecrets', () => {
   it('lists operator-managed secrets and reports presence', async () => {
     resetMocks();
     prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit');
-    // Every copy of brevo-api-key has a version → present; github-client-id's copies exist empty (0 versions) → empty, not present.
-    // Everything else is missing.
-    listSecrets.mockResolvedValueOnce([
-      ...['backend', 'mcp', 'jobs'].map((service) => ({
-        name: 'brevo-api-key',
-        id: `brevo-${service}`,
-        path: `/${service}`,
-        version_count: 1,
-      })),
-      ...['backend', 'mcp'].map((service) => ({
-        name: 'github-client-id',
-        id: `gh-${service}`,
-        path: `/${service}/`,
-        version_count: 0,
-      })),
+    // brevo-api-key has a version → present; github-client-id's container is empty → empty, not present. Everything else is missing.
+    listSecretsUnder.mockResolvedValueOnce([
+      { name: 'brevo-api-key', id: 'brevo', path: '/runtime', version_count: 1 },
+      { name: 'github-client-id', id: 'gh', path: '/runtime', version_count: 0 },
     ]);
 
     await manageRuntimeSecrets(baseOptions);
 
-    expect(listSecrets).toHaveBeenCalledWith();
+    expect(listSecretsUnder).toHaveBeenCalledWith('/runtime/');
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'));
   });
 
-  it('updates every consumer copy of an operator-managed secret with one value', async () => {
+  it('updates an operator-managed secret in the runtime folder', async () => {
     resetMocks();
     prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
     prompts.password.mockResolvedValueOnce('new-api-key');
@@ -79,10 +68,8 @@ describe('manageRuntimeSecrets', () => {
     await manageRuntimeSecrets(baseOptions);
 
     expect(ensureSecret).not.toHaveBeenCalled();
-    for (const service of ['backend', 'mcp', 'jobs']) {
-      expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: `/${service}/brevo-api-key`, value: 'new-api-key' }));
-    }
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('3 copies'));
+    expect(putSecretValue).toHaveBeenCalledTimes(1);
+    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: '/runtime/brevo-api-key', value: 'new-api-key' }));
   });
 
   it('refuses to create a missing container and tells the operator to apply first', async () => {

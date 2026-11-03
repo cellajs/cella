@@ -6,7 +6,7 @@ import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { environments } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark } from '../../lib/utils/cli-output';
 import { OBSERVER_KEY_NAMES, observerKeyInModeFile, writeObserverKey } from '../../lib/utils/env-files';
-import { writeMachinePolicies } from '../../tasks/machine-policies';
+import { writeDeclaredPolicies } from '../../tasks/declared-policies';
 import { observerPolicy, observerReach, setupObserverApp } from '../../tasks/setup-observer-app';
 import { operatorPolicyReach } from '../../tasks/setup-operators';
 import type { InfraContext } from '../shared';
@@ -57,7 +57,7 @@ export async function ensureObserverForEnvironment(context: InfraContext, ownerK
   }
 
   const policy = observerPolicy({ slug, organizationId, projectIds: [...reach.projectIds, projectId] });
-  const [written] = await writeMachinePolicies(auth, organizationId, [policy], () => undefined);
+  const [written] = await writeDeclaredPolicies(auth, organizationId, [policy], () => undefined);
   if (written?.change === 'update') console.info(`  ${changeMark} The rules of ${policy.name} are replaced; its keys are unchanged.`);
   else console.info(`  ${checkMark} '${names.observer}' reaches ${mode} as declared.`);
 
