@@ -1,11 +1,6 @@
-import { actionCommand } from '../lib/operator-actions';
 import { type DeclaredPolicy, declaredIdentities, declaresUploads } from '../lib/scaleway/declared-identities';
 import { type IamAuth, listOrganizationApplications, listOrganizationPolicies, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
 import { isRetiredMachineApplication } from '../lib/scaleway/principals';
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { ExitCodeError } from '../lib/utils/errors';
-import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 import { type DeclaredPolicyStep, planDeclaredPolicies } from './declared-policies';
 import { planUploadsKey, type UploadsKeySecrets, type UploadsKeyStep } from './uploads-key';
 
@@ -44,8 +39,7 @@ async function extraPolicies(auth: IamAuth, organizationId: string, declared: re
 /**
  * The identity plan: where the deploy key and the uploads application differ from what the environment's code declares, in their
  * applications, policies and the uploads key, and the retired machine identities still there. Read with any key that reads IAM and secret
- * metadata, the deploy key's included; nothing is written. The apply and the deploy read it at their start, and Update identities writes what
- * it names.
+ * metadata; nothing is written. The apply reads it at its start, and Update identities writes what it names.
  */
 export async function planIdentityChanges(opts: {
   auth: IamAuth;
@@ -91,36 +85,3 @@ export function identityChangeLines(changes: IdentityChanges): string[] {
     ...changes.retiredApplications.map((application) => `application ${application.name}: retired, to delete with its keys and policy`),
   ];
 }
-
-/**
- * The deploy's first check, on the deploy key: identities that differ from the declared ones end the run blocked before it changes
- * anything, as only Update identities, at an Owner moment, writes them.
- * @throws ExitCodeError with code 2 when the identities differ
- */
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const secretKey = process.env.SCW_SECRET_KEY;
-  const projectId = getFlag(argv, '--project-id');
-  const organizationId = getFlag(argv, '--organization-id');
-  if (!secretKey || !projectId || !organizationId) throw new Error('Required: SCW_SECRET_KEY, --project-id, --organization-id');
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
-  const lines = identityChangeLines(
-    await planIdentityChanges({
-      auth: { secretKey },
-      organizationId,
-      projectId,
-      slug: appConfig.slug,
-      mode: appConfig.mode,
-      secrets: createSecretManagerClient({ secretKey, region: appConfig.s3.region, projectId }),
-    }),
-  );
-  if (lines.length > 0) {
-    throw new ExitCodeError(
-      `The identities of ${appConfig.mode} differ from the declared ones: ${lines.join('; ')}. Update identities writes them (\`${actionCommand('identity')}\`, an Owner API key), then \`${actionCommand('start-deploy')}\` or an apply starts this target again.`,
-      2,
-    );
-  }
-  console.info('✓ the identities are as declared');
-}
-
-runIfMain(import.meta.url, main);
