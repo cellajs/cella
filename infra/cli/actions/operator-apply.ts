@@ -143,11 +143,12 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
         endAction(1);
       }
 
+      let moved: Awaited<ReturnType<typeof moveMachinesOutOfProgram>> = 'none';
       // Resources the program no longer declares and that stay live (machines it made, machine policies, generated secret values): a state
       // that still holds them would have this `up` delete them. Its machines first keep their place in the pools.
       console.info(pc.dim('\n→ Taking retired resources out of the state…'));
       try {
-        await moveMachinesOutOfProgram({
+        moved = await moveMachinesOutOfProgram({
           appConfig,
           stack,
           secretKey: operator.secretKey,
@@ -176,7 +177,9 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
 
       if (opts.confirmPlan) {
         // Read under the lease: another apply's `up` since the review changes what this one does, so the plan made before it no longer holds.
-        const outdated = opts.reviewed ? await changesSinceReview(opts.reviewed) : undefined;
+        const outdated = opts.reviewed
+          ? [...(moved === 'none' ? [] : ['the pools keep or drop the machines the program made']), ...(await changesSinceReview(opts.reviewed))]
+          : undefined;
         if (outdated?.length === 0) {
           console.info(pc.dim('\nThe stack is as the confirmed plan found it.'));
         } else {

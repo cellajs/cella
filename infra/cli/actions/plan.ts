@@ -10,7 +10,6 @@ import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 
 /** The `pulumi preview` arguments of a plan an operator reviews. `--refresh` reads every resource live first, so drift made outside Pulumi (a rule re-scoped in the console) is part of the diff. */
@@ -77,16 +76,8 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
       operation: 'forget-retired-resources',
     });
     try {
-      // Before the machines the program made leave the state: the pools keep them, and the next deploy deletes them.
-      await moveMachinesOutOfProgram({
-        appConfig,
-        stack,
-        secretKey: key.secretKey,
-        projectId,
-        s3: await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey),
-        env,
-        log: (message) => console.info(pc.dim(message)),
-      });
+      // The move off the machines the program made is the apply's (operator-apply.ts), which plans again once it ran: a plan declined here
+      // leaves the pools, the stack config and the live record as they were.
       forgetRetiredResources(stack, env);
     } catch (error) {
       console.error(`${warningMark} The retired resources could not leave the state (${errorMessage(error)}). Nothing was planned or applied.`);
