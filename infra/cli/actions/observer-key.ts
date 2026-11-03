@@ -8,7 +8,7 @@ import { changeMark, checkMark } from '../../lib/utils/cli-output';
 import { OBSERVER_KEY_NAMES, observerKeyInModeFile, writeObserverKey } from '../../lib/utils/env-files';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { observerPolicy, observerReach, setupObserverApp } from '../../tasks/setup-observer-app';
-import { operatorPolicyReach } from '../../tasks/setup-operator-app';
+import { operatorPolicyReach } from '../../tasks/setup-operators';
 import type { InfraContext } from '../shared';
 import type { OwnerKey } from './owner-key';
 

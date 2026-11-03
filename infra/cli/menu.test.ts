@@ -4,7 +4,6 @@ import {
   BACK,
   disabledReason,
   formatAccessLines,
-  formatOperatorLine,
   formatStackLine,
   type MenuItem,
   type MenuState,
@@ -36,7 +35,7 @@ describe('mainMenuItems', () => {
       '  Show runs                read-only',
       '  Review & apply changes   operator key',
       'Change',
-      '  Rotate keys & secrets ›  keys, secrets, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, operators',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -58,7 +57,7 @@ describe('mainMenuItems', () => {
       '  Show runs                read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  keys, secrets, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, operators',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -114,9 +113,9 @@ describe('mainMenuItems', () => {
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
     expect(render(pickItems('rotate', bootstrapped))).toEqual([
-      '  Rotate keys          Owner key',
-      '  Rotate secrets       operator key',
-      '  Set up operator key  Owner key',
+      '  Rotate keys       Owner key',
+      '  Rotate secrets    operator key',
+      '  Set up operators  Owner key',
       '  ← Back',
     ]);
     expect(render(pickItems('repair', bootstrapped))).toEqual(['  Unlock stack  operator key', '  Resume setup  operator key', '  ← Back']);
@@ -177,62 +176,26 @@ describe('formatStackLine', () => {
   });
 });
 
-describe('formatOperatorLine', () => {
-  const line = (operator: Parameters<typeof formatOperatorLine>[0]) => plain(formatOperatorLine(operator));
-  const present = (cidrs: string[], open = false) => ({ state: 'present' as const, cidrs, open });
-
-  it('points a stack without an operator application at the action that sets one up', () => {
-    expect(line({ lock: { state: 'absent', cidrs: [], open: false }, verdict: 'unknown' })).toBe(
-      '○ Operator key: none yet, so privileged actions ask for your Owner API key (pnpm infra operator-key sets one up)',
-    );
-  });
-
-  it('says the key works from this machine when its address is on the list', () => {
-    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'inside', address: '203.0.113.7' })).toBe(
-      '● Operator key: works from this address (203.0.113.7/32)',
-    );
-  });
-
-  it('must not leave a refusal looking like an empty stack: an address off the list is named before any action', () => {
-    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'outside', address: '198.51.100.9' })).toBe(
-      '● Operator key: works from 203.0.113.7/32 only; this machine is 198.51.100.9',
-    );
-  });
-
-  it('must not call an open policy locked: a rule without its condition is reported as working from every address', () => {
-    expect(line({ lock: present([], true), verdict: 'unknown' })).toBe(
-      '● Operator key: works from every address: a rule of its policy has no address condition',
-    );
-  });
-
-  it('names the list alone when this machine has no detectable address', () => {
-    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'unknown' })).toBe('○ Operator key: works from 203.0.113.7/32');
-  });
-});
-
 describe('formatAccessLines', () => {
   const lines = (facts: Parameters<typeof formatAccessLines>[0]) => formatAccessLines(facts).map(plain);
 
-  it('says the operator key is asked for when nothing is known about it', () => {
-    expect(lines({ stackState: 'partial', dbExposed: false })).toEqual(['○ Operator key: asked when an action needs it']);
-    expect(
-      lines({ operator: { lock: { state: 'unknown', cidrs: [], open: false }, verdict: 'unknown' }, stackState: 'partial', dbExposed: false }),
-    ).toEqual(['○ Operator key: asked when an action needs it']);
+  it('says nothing before the stack is bootstrapped', () => {
+    expect(lines({ stackState: 'partial', dbExposed: false })).toEqual([]);
   });
 
   it('reports a private database only when the instance was read', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: [] })[1]).toBe('● DB access: private');
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false })).toHaveLength(1);
+    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: [] })).toEqual(['● DB access: private']);
+    expect(lines({ stackState: 'bootstrapped', dbExposed: false })).toEqual([]);
   });
 
   it('reports an open endpoint and the action that closes it', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: true, liveEndpoints: ['51.15.0.1:5432'] })[1]).toBe(
+    expect(lines({ stackState: 'bootstrapped', dbExposed: true, liveEndpoints: ['51.15.0.1:5432'] })[0]).toBe(
       '● DB access: OPEN at 51.15.0.1:5432; close it with "Close public DB access"',
     );
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: ['51.15.0.1:5432'] })[1]).toContain('although exposure is off');
+    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: ['51.15.0.1:5432'] })[0]).toContain('although exposure is off');
   });
 
   it('falls back to the exposure config when the instance was not read', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: true })[1]).toBe('● DB access: exposure is configured (the instance was not read)');
+    expect(lines({ stackState: 'bootstrapped', dbExposed: true })[0]).toBe('● DB access: exposure is configured (the instance was not read)');
   });
 });

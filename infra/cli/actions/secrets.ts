@@ -6,7 +6,7 @@ import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import type { InfraContext } from '../shared';
-import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
+import { acquireIdentityKey, acquireOperatorKey } from './operator-unlock';
 import type { OwnerKey } from './owner-key';
 import { printRevokeReminder } from './owner-key';
 import { startBlockedTarget } from './start-deploy';
@@ -27,7 +27,7 @@ async function selectWithEscape<T extends string>(options: { message: string; ch
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager: it uses your operator key.'));
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   let identityKey: OwnerKey | undefined;
 
   try {

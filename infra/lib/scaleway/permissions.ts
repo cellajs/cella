@@ -79,11 +79,11 @@ export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
  */
 export const RUNNER_PROJECT_PERMISSION_SETS = ['ServerlessJobsFullAccess'] as const;
 
-// Operator app (`<app>-operator`): the principal a person runs privileged actions as, one per app
+// Operators (`<app>-operator`, `<app>-operators`): the principals a person runs privileged actions as, one set per app
 
 /**
- * Project-scoped set for the operator application: every product of the app's projects, as a privileged `pulumi up` writes all of them.
- * Every operator rule carries an IP condition (lib/scaleway/ip-lock.ts), so the key works from the dedicated address only.
+ * Project-scoped set for the operator application and the operators group: every product of the app's projects, as a privileged
+ * `pulumi up` writes all of them. No rule carries a condition: a key is held to its day (tasks/setup-operators.ts).
  */
 export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as const;
 

@@ -49,10 +49,10 @@ export const OPERATOR_ACTIONS = {
       'Fresh database role passwords and rotatable generated secrets, every copy rewritten; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'operator-key': {
-    label: 'Set up operator key',
+    label: 'Set up operators',
     key: 'owner',
     description:
-      "Create the app's operator application and a fresh key that works from your dedicated IP address only, in every environment. Replaces an earlier operator key; run it again to change the address.",
+      "Make or repair the app's operator application and operators group, each with a policy over every environment and no condition. Makes no key: at each sitting a person makes a one-day key of the application, or of their own user as a group member, in the console.",
   },
   identity: {
     label: 'Update identities',
@@ -186,8 +186,8 @@ export const MENU_ROWS = {
     group: 'change',
     label: 'Rotate keys & secrets',
     actions: ['rotate-keys', 'rotate-secrets', 'operator-key'],
-    hint: 'keys, secrets, operator key',
-    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator key and its dedicated IP.',
+    hint: 'keys, secrets, operators',
+    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator application and operators group.',
   },
   secrets: {
     group: 'change',

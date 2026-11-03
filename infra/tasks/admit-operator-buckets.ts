@@ -10,10 +10,9 @@ import { stateBucket } from '../lib/stack/control-store';
 /** Secret Manager container that holds the retired admin application's key pair, under the stack's engine folder. */
 export const ADMIN_KEY_SECRET_NAME = 'admin-key';
 
-/** True when a bucket policy document admits the given application. */
-export function policyAdmits(policyText: string | undefined, applicationId: string): boolean {
+/** True when a bucket policy document admits the principal (`application_id:<id>` or `user_id:<id>`). */
+export function policyAdmits(policyText: string | undefined, principal: string): boolean {
   if (!policyText) return false;
-  const principal = `application_id:${applicationId}`;
   const { Statement = [] } = JSON.parse(policyText) as { Statement?: Array<{ Principal?: unknown }> };
   return Statement.some((statement) => JSON.stringify(statement.Principal ?? '').includes(principal));
 }
@@ -51,14 +50,14 @@ export function withOperatorAdmitted(policyText: string, bucket: string, applica
 }
 
 /**
- * True when a bucket's policy was written before the operator was admitted: the operator is refused the policy, or reads one that does not
+ * True when a bucket's policy was written before the principal was admitted: the key is refused the policy, or reads one that does not
  * name it (its IAM rights let it read a policy that still refuses it every object). A bucket without a policy shuts nobody out.
  */
-async function operatorShutOut(region: string, operator: KeyPair, buckets: readonly PolicedBucket[], applicationId: string): Promise<boolean> {
-  const s3 = await makeS3Client(region, operator.accessKey, operator.secretKey);
+async function shutOut(region: string, key: KeyPair, buckets: readonly PolicedBucket[], principal: string): Promise<boolean> {
+  const s3 = await makeS3Client(region, key.accessKey, key.secretKey);
   for (const { bucket } of buckets) {
     const shutOut = await s3.send(new GetBucketPolicyCommand({ Bucket: bucket })).then(
-      (res) => !!res.Policy && !policyAdmits(res.Policy, applicationId),
+      (res) => !!res.Policy && !policyAdmits(res.Policy, principal),
       (error: { name?: string; $metadata?: { httpStatusCode?: number } }) => error.$metadata?.httpStatusCode === 403 || error.name === 'AccessDenied',
     );
     if (shutOut) return true;
@@ -73,6 +72,14 @@ async function retiredAdminKey(opts: { operatorSecretKey: string; region: string
   if (!container) return undefined;
   const pair = JSON.parse(await secrets.accessLatestValue(container.id)) as Partial<KeyPair>;
   return pair.accessKey && pair.secretKey ? { accessKey: pair.accessKey, secretKey: pair.secretKey } : undefined;
+}
+
+/**
+ * True when the bucket policies shut a member of the operators group out: the apply that names them, on a key the policies admit, has not
+ * run since they joined. Nothing in the engine can let a member in by their own key.
+ */
+export async function memberShutOut(opts: { appConfig: EngineConfig; projectId: string; member: KeyPair & { userId: string } }): Promise<boolean> {
+  return shutOut(opts.appConfig.s3.region, stateKeyOf(opts.member, opts.projectId), policedBuckets(opts.appConfig), `user_id:${opts.member.userId}`);
 }
 
 /**
@@ -93,8 +100,8 @@ export async function admitOperatorToBuckets(opts: {
   const { appConfig, projectId } = opts;
   const region = appConfig.s3.region;
   const buckets = policedBuckets(appConfig);
-  const operatorState = stateKeyOf(opts.operator, projectId);
-  if (!(await operatorShutOut(region, operatorState, buckets, opts.operator.applicationId))) return [];
+  const principal = `application_id:${opts.operator.applicationId}`;
+  if (!(await shutOut(region, stateKeyOf(opts.operator, projectId), buckets, principal))) return [];
 
   const admin = await retiredAdminKey({ operatorSecretKey: opts.operator.secretKey, region, projectId });
   if (!admin) {
@@ -111,7 +118,7 @@ export async function admitOperatorToBuckets(opts: {
       (res) => res.Policy,
       () => undefined,
     );
-    if (!policy || policyAdmits(policy, opts.operator.applicationId)) continue;
+    if (!policy || policyAdmits(policy, principal)) continue;
     await s3.send(new PutBucketPolicyCommand({ Bucket: bucket, Policy: withOperatorAdmitted(policy, bucket, opts.operator.applicationId) }));
     admitted.push(resource);
   }

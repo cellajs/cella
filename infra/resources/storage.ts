@@ -9,6 +9,7 @@ import {
   ciDeployApplicationId,
   observerApplicationId,
   operatorApplicationId,
+  operatorMemberUserIds,
   serviceApplicationIds,
 } from './identities';
 
@@ -20,24 +21,26 @@ const uploadCorsRules = browserOrigin
   : undefined;
 
 /**
- * The people's S3 access on the bucket policies: the operator application, which applies the stack. Bucket policies are deny-by-default, so
- * without it even a key with every IAM right 403s on ListObjects/GetBucketCors during `pulumi up --refresh`. Resolved from IAM by name so
- * local and CI ups produce the same policy; an application that does not exist drops its statement.
+ * The people's S3 access on the bucket policies: the operator application and each member of the operators group, who apply the stack, in
+ * one statement, as Scaleway refuses a bucket policy of over ten. Bucket policies are deny-by-default, so without it even a key with every
+ * IAM right 403s on ListObjects/GetBucketCors during `pulumi up --refresh`. Resolved from IAM at apply time so local and CI ups produce the
+ * same policy: a member joins the policies at the next apply, and an application that does not exist drops the statement.
  */
 const humanAccess = (bucketName: pulumi.Input<string>) =>
-  operatorApplicationId.apply((operatorId) =>
-    operatorId
+  pulumi.all([operatorApplicationId, operatorMemberUserIds]).apply(([operatorId, userIds]) => {
+    const principals = [...(operatorId ? [`application_id:${operatorId}`] : []), ...userIds.map((id) => `user_id:${id}`)];
+    return principals.length > 0
       ? [
           {
             Sid: 'OperatorAccess',
             Effect: 'Allow',
-            Principal: { SCW: `application_id:${operatorId}` },
+            Principal: { SCW: principals },
             Action: ['s3:*'],
             Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
           },
         ]
-      : [],
-  );
+      : [];
+  });
 
 /**
  * The deploy key's access on a bucket policy: objects only, under `prefix` when given (the frontend's files, GeoIP data, boot diagnostics). A

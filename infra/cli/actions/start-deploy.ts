@@ -15,7 +15,7 @@ import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-outpu
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 
 const POLL_MS = 10_000;
 
@@ -41,7 +41,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   );
   if (!(await confirmOrDefault({ message: `Deploy ${target.sha.slice(0, 10)} to ${environment}?`, default: true }))) return;
 
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };
   const { naming, region } = deriveInfra(appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId, name: naming.resource('main') });

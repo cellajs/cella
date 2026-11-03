@@ -14,8 +14,9 @@ const names = allPrincipalNames(appConfig, mode);
 // The engine's IAM principals, resolved by their canonical per-mode names. A required principal throws on a resolution failure; an optional one warns and drops its statements, so a missing admin app never blocks a release.
 
 /**
- * Whether a failed application lookup means the application does not exist. Only a real not-found counts: a transient IAM outage must not
- * demote a required principal or drop admin statements. The provider says "no element found with the name <name>" (measured on staging).
+ * Whether a failed principal lookup means the application or group does not exist. Only a real not-found counts: a transient IAM outage
+ * must not demote a required principal or drop the people's statements. The provider says "no element found with the name <name>"
+ * (measured on staging).
  */
 export function isAbsentApplication(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -69,6 +70,23 @@ export const operatorApplicationId: pulumi.Output<string | undefined> = findAppl
   );
   return undefined;
 });
+
+/**
+ * The operators group's members, by user id, as IAM lists them at apply time: the people whose own one-day keys the bucket policies admit
+ * beside the operator application. Empty, with a warning, until `operator-key` makes the group.
+ */
+export const operatorMemberUserIds: pulumi.Output<string[]> = pulumi.output(
+  scaleway.iam
+    .getGroup({ name: names.operators, organizationId })
+    .then((group) => group.userIds)
+    .catch((error: unknown) => {
+      if (!isAbsentApplication(error)) throw error;
+      pulumi.log.warn(
+        `Operators IAM group '${names.operators}' not found: only '${names.operator}' is admitted to the buckets this update. \`${actionCommand('operator-key')}\` creates it.`,
+      );
+      return [];
+    }),
+);
 
 /** CI deploy application id: the principal CI authenticates as. Required. */
 export const ciDeployApplicationId = requirePrincipalId(findApplicationId(names.ciDeploy), `CI deploy ('${names.ciDeploy}')`);

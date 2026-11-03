@@ -6,7 +6,7 @@ The deploy's steps and the operator tasks. The sequencers keep their live effect
 - **Build**: `build-release` makes the builder machine, from `build-images` (the image bake), `frontend-build-env`, `frontend-assets` and `release-files` (the frontend files and where the entry files wait).
 - **Rollout**: `deploy-rollout` runs the two waves through `rollout-plans`, `rollout` and `rollout-runtime`; `cutover` moves a pool, and `wait-for-version` waits for a service to serve the release.
 - **Apply and operator tasks**: `ensure-database`, `ensure-secrets`, `seed-operator-secrets`, `passphrase-custody`, `verify-after-apply`, `repair-certs`, `record-rotation`, `manage-runtime-secrets` and `reset-database`.
-- **Identity tasks**, written at an Owner moment: `machine-identities`, `machine-policies`, `machine-keys`, `setup-ci-key`, `setup-operator-app`, `setup-observer-app`, `provision-managed-key`.
+- **Identity tasks**, written at an Owner moment: `machine-identities`, `machine-policies`, `machine-keys`, `setup-ci-key`, `setup-operators`, `setup-observer-app`, `provision-managed-key`.
 - **Pull request check**: `privileged-check` renders the base and the head with `privileged-footprint`.
 - **Status**: `status`, the report behind `pnpm infra status`.
 - **Retired-model migrations**: `admit-operator-buckets`, `copy-shared-secrets`, `move-secret-paths`.

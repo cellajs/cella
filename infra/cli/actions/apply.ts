@@ -5,7 +5,7 @@ import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, reviewPlan } from './plan';
 import { startBlockedTarget } from './start-deploy';
 
@@ -21,7 +21,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   );
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   // The committed stack config never records an open endpoint, so its plan keeps the endpoint and deletes the ACL.
   const open = await openDbEndpoints(context, operator.secretKey);
   if (open.length > 0) {

@@ -11,7 +11,7 @@ const expect_ = {
     'app-operator': 'app-operator-policy',
     'app-observer': 'app-observer-policy',
   },
-  oneKey: ['app-staging-boot', 'app-staging-ci-deploy', 'app-operator'],
+  oneKey: ['app-staging-boot', 'app-staging-ci-deploy'],
   machinePrefix: 'app-',
   operator: 'app-operator',
 };
@@ -22,6 +22,7 @@ describe('the inventory', () => {
       applications: [
         { id: 'boot', name: 'app-staging-boot' },
         { id: 'ci', name: 'app-staging-ci-deploy' },
+        { id: 'op', name: 'app-operator' },
         { id: 'obs', name: 'app-observer' },
         { id: 'other-ci', name: 'other-production-ci-deploy' },
         { id: 'reader', name: 'other-production-admin' },
@@ -31,6 +32,10 @@ describe('the inventory', () => {
         { access_key: 'SCWBOOT', application_id: 'boot' },
         { access_key: 'SCWPLANTED', application_id: 'boot', description: 'planted' },
         { access_key: 'SCWCI', application_id: 'ci' },
+        // Two sittings' one-day keys belong; a key without an end on the operator does not.
+        { access_key: 'SCWOP1', application_id: 'op', expires_at: '2026-10-14T20:00:00Z' },
+        { access_key: 'SCWOP2', application_id: 'op', expires_at: '2026-10-15T09:00:00Z' },
+        { access_key: 'SCWOPDURABLE', application_id: 'op', description: 'forever' },
         { access_key: 'SCWOBS1', application_id: 'obs' },
         { access_key: 'SCWOBS2', application_id: 'obs' },
       ],
@@ -53,10 +58,10 @@ describe('the inventory', () => {
       mainJob: { running: false, env: {} },
       organizationId: 'o',
     };
-    expect(inventoryFindings(facts, expect_)).toEqual({
+    expect(inventoryFindings(facts, expect_, Date.parse('2026-10-14T12:00:00Z'))).toEqual({
       applications: ['other-production-ci-deploy: can act in this environment through other-production-ci-deploy-policy: IAMApplicationManager'],
       keys: ['app-staging-boot holds 2 keys: SCWBOOT (no description), SCWPLANTED (planted)'],
-      operatorKeys: [],
+      operatorKeys: ['app-operator holds a key that outlives a day: SCWOPDURABLE (forever)'],
       policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
       machines: [
         'app-backend-g0: a generation that is not active, and no deploy runs (a failed run left it, or someone named it so)',

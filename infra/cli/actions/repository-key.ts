@@ -9,7 +9,7 @@ import { DEPLOY_FOLDER } from '../../lib/scaleway/secret-paths';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { maskedSecret } from '../prompts/masked-secret';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 
 /**
  * Store, replace or remove the read-only key a private repository is fetched with (D19), in the deploy folder of this environment's
@@ -26,7 +26,7 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
         '  Make a fine-grained GitHub token for this repository only, with "Contents: read" and nothing else, and an expiry.\n',
     ),
   );
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
   const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, DEPLOY_FOLDER);
   const runnerProject = readRunnerFile()?.projectId;

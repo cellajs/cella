@@ -146,9 +146,19 @@ export function formatKeyLine(desc: KeyDescription, role: PrincipalRole): string
 }
 
 /** Hours until a key expires, negative when already expired, undefined for a key without expiry. */
-export function hoursUntilExpiry(desc: KeyDescription, now = Date.now()): number | undefined {
+export function hoursUntilExpiry(desc: Pick<KeyDescription, 'expiresAt'>, now = Date.now()): number | undefined {
   if (!desc.expiresAt) return undefined;
   return (Date.parse(desc.expiresAt) - now) / 3_600_000;
+}
+
+/** A key with more life than this is durable: it works from every address until it ends, so no prompt of the CLI takes it. */
+const DURABLE_KEY_HOURS = 24;
+
+/** How long a durable key would go on working, for the refusal or the finding that names it; undefined for a key that ends within a day. */
+export function durableKeyLife(desc: Pick<KeyDescription, 'expiresAt'>, now = Date.now()): string | undefined {
+  const hours = hoursUntilExpiry(desc, now);
+  if (hours === undefined) return 'until it is revoked';
+  return hours > DURABLE_KEY_HOURS ? `for ${Math.round(hours / 24)} more day(s)` : undefined;
 }
 
 /** Where an Owner API key comes from, for every message that tells the operator how to get one. */

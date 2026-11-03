@@ -4,9 +4,9 @@ This document walks through setting up a cella app's first environment on Scalew
 
 ### TL;DR
 
-A fresh install takes a domain, a fixed IPv4 address, the Pulumi CLI and an Owner API key. The wizard writes the
-identities in one Owner moment, then sets up state storage, the passphrase and the first infrastructure on the
-operator key it made. From then on a runner deploys every release, and the first admin signs in with a magic link.
+A fresh install takes a domain, the Pulumi CLI and an Owner API key. The wizard writes the identities in one Owner
+moment, then sets up state storage, the passphrase and the first infrastructure on a one-day operator key you make in
+the console. From then on a runner deploys every release, and the first admin signs in with a magic link.
 
 ## How the CLI runs
 
@@ -22,7 +22,7 @@ Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the install wizard; on a
    ```
 
 3. A Scaleway project per environment (optional): the wizard picks or creates one and writes its id to `infra/Pulumi.<mode>.yaml`. Each environment needs a project of its own.
-4. A fixed public IPv4 address to work from, such as an office line or a VPN exit, and a password manager. Scaleway accepts the operator key the wizard makes from that address only, and the key is shown once.
+4. A password manager, for the Pulumi passphrase the wizard shows once.
 5. The root `package.json`'s `repository` set to the https URL of the app's repository, which create-cella leaves empty: every deploy fetches its commit from there.
 
 ## 2. Your Owner API key
@@ -42,18 +42,18 @@ The first setup has two parts. The **Owner moment** runs on the Owner API key yo
 
 1. Picks or creates the Scaleway project (prerequisite 3).
 2. Creates the machine and deploy identities with their policies and keys, and stores each machine identity's standing key in the environment's `/deploy/` secret folder.
-3. Lets the app's operator reach this environment. The app's first environment creates the operator for the dedicated address you give, and shows its key once: store it. A later one adds its project, and the key keeps working.
+3. Lets the app's operators reach this environment. The app's first environment makes the `<app>-operator` application and the `<app>-operators` group, each with a policy; a later one adds its project to both, and their keys keep working. No key is made: you make a one-day key of the application in the console when the operator part asks for it (IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration).
 4. Does the same for the app's observer, whose read-only key works from any address, and writes that key to `infra/.env.<mode>` on this machine.
 5. Offers to **revoke the Owner API key you pasted**. Decline when you set up the runner next (step 4): it needs the key again.
 
-The **operator part** runs on the operator key: the one just created, or the one you paste.
+The **operator part** runs on the one-day operator key you paste ([Operator key](./KEYS.md#operator-key)).
 
 1. Generates the Pulumi passphrase, shows it once and waits until you confirm it is in your password manager. Later runs fetch it from Secret Manager, and your copy restores that one if it is lost.
 2. Asks for the admin email and the mail key, both optional here: **Manage runtime secrets** sets them later.
 3. Creates state storage and initializes Pulumi.
 4. Offers the first apply: the database, the network, the load balancer with its DNS records and certificates, and the main job the runner (step 4) starts, but no machine yet. It stores the values step 2 asked for.
 
-A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operator's reach, and its operator part asks for the operator key you stored.
+A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operators' reach, and its operator part asks for a one-day operator key.
 
 ## 4. Let the runner deploy
 

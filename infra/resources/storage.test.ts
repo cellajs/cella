@@ -43,7 +43,9 @@ describe('storage module', () => {
         } else {
           const { SCW } = statement.Principal as { SCW: string | string[] };
           expect(SCW, `${policy.name} ${statement.Sid}`).toBeDefined();
-          for (const id of [SCW].flat()) expect(id, `${policy.name} ${statement.Sid}`).toEqual(expect.stringMatching(/^application_id:.+/));
+          // A person's own key is admitted only among the operators.
+          const principal = statement.Sid === 'OperatorAccess' ? /^(application_id|user_id):.+/ : /^application_id:.+/;
+          for (const id of [SCW].flat()) expect(id, `${policy.name} ${statement.Sid}`).toEqual(expect.stringMatching(principal));
         }
       }
     }
@@ -51,12 +53,13 @@ describe('storage module', () => {
     expect(publicReads.sort()).toEqual(['frontend-policy', 'public-uploads-policy']);
   });
 
-  it("admits the app's operator on every bucket, so an apply on the operator key can refresh and change them", () => {
+  it("admits the app's operator application and each member of the operators group on every bucket, in one statement, so an apply on either key can refresh and change them", () => {
     type Statement = { Sid: string; Principal: unknown; Action: string[] };
+    const names = appPrincipalNames(engineConfig().appSlug);
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const operator = Statement.find((statement) => statement.Sid === 'OperatorAccess');
-      expect(operator?.Principal, policy.name).toEqual({ SCW: `application_id:${appPrincipalNames(engineConfig().appSlug).operator}-id` });
+      expect(operator?.Principal, policy.name).toEqual({ SCW: [`application_id:${names.operator}-id`, `user_id:${names.operators}-member-id`] });
       expect(operator?.Action, policy.name).toEqual(['s3:*']);
     }
   });

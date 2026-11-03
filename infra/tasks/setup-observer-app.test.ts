@@ -22,7 +22,7 @@ describe('observerRules', () => {
   it("reaches the app's projects, and its reach reads back from its rules", () => {
     expect(rules[0]?.project_ids).toEqual(['proj', 'proj-staging']);
     expect(rules[1]).toMatchObject({ permission_set_names: ['IAMReadOnly'], organization_id: 'org-1' });
-    expect(policyReach(rules, OBSERVER_PROJECT_PERMISSION_SETS)).toEqual({ projectIds: ['proj', 'proj-staging'], cidrs: [] });
+    expect(policyReach(rules, OBSERVER_PROJECT_PERMISSION_SETS)).toEqual({ projectIds: ['proj', 'proj-staging'] });
   });
 
   it("is not read as the operator's reach: the two policies name different sets", () => {

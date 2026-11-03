@@ -4,7 +4,7 @@ The Scaleway API calls the engine makes, and what each key may do.
 
 | Group | Files |
 | --- | --- |
-| Identities and rights | [principals.ts](./principals.ts) names them, [declared-identities.ts](./declared-identities.ts) lists what an environment declares, [permissions.ts](./permissions.ts) and [deploy-policy.ts](./deploy-policy.ts) the deploy key's rules, [machine-policies.ts](./machine-policies.ts), [machine-keys.ts](./machine-keys.ts), [policy-reach.ts](./policy-reach.ts) and [ip-lock.ts](./ip-lock.ts) the rest |
+| Identities and rights | [principals.ts](./principals.ts) names them, [declared-identities.ts](./declared-identities.ts) lists what an environment declares, [permissions.ts](./permissions.ts) and [deploy-policy.ts](./deploy-policy.ts) the deploy key's rules, [machine-policies.ts](./machine-policies.ts), [machine-keys.ts](./machine-keys.ts) and [policy-reach.ts](./policy-reach.ts) the rest |
 | Keys at hand | [operator-identity.ts](./operator-identity.ts), [provider-env.ts](./provider-env.ts) |
 | API clients | [scw-fetch.ts](./scw-fetch.ts), [iam-client.ts](./iam-client.ts), [scaleway-iam.ts](./scaleway-iam.ts), [scaleway-account.ts](./scaleway-account.ts), [scaleway-rdb.ts](./scaleway-rdb.ts), [scaleway-secret-manager.ts](./scaleway-secret-manager.ts), [s3-client.ts](./s3-client.ts), [machines.ts](./machines.ts) |
 | Secrets | [secret-paths.ts](./secret-paths.ts): the folders, which are the boundary IAM conditions read; [secret-copies.ts](./secret-copies.ts): one copy per consumer; [db-privileges.ts](./db-privileges.ts): the database roles |
