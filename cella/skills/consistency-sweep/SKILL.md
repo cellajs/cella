@@ -22,7 +22,7 @@ A Tailwind change is applied with a proof, never with taste: [tw-check.mjs](./tw
 
 ## Screenshots, when the group has UI states
 
-Shoot the group's states before the first pass and after each Tailwind pass on the same seeded database, then diff with [png-diff.mjs](./png-diff.mjs) (a red diff image per mismatch). Run the stack of [A throwaway database](../verify/SKILL.md#a-throwaway-database) from the worktree and sign in as the verify skill does. Two runs of the same commit differ by up to 0.2% of pixels per image (loader timing, status dots, a transient scrollbar, web-font timing); anything above that is a change to explain.
+Shoot the group's states before the first pass and after each Tailwind pass on the same seeded database, then diff same-named PNGs pixel by pixel with a scratch script in `.scratch/` (a per-channel tolerance of 8 absorbs antialiasing; write a diff image per mismatch). Run the stack of [A throwaway database](../verify/SKILL.md#a-throwaway-database) from the worktree and sign in as the verify skill does. Two runs of the same commit differ by up to 0.2% of pixels per image (loader timing, status dots, a transient scrollbar, web-font timing); anything above that is a change to explain.
 
 ## Where the method bites
 

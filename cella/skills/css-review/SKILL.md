@@ -1,6 +1,6 @@
 ---
 name: css-review
-description: Review how the whole frontend writes and ships its classes and CSS (state variants nothing can satisfy, one mechanism per state, style-only props, shorter classes through Tailwind itself, what a state change costs in the browser) with scripts first, then agent passes, a sibling comparison and a refutation, and a fix commit per pass in one PR. Use it after a large UI change, a Tailwind or Base UI upgrade, or for a periodic pass; the consistency sweep goes module by module for readability.
+description: Review how the whole frontend writes and ships its classes and CSS (state variants nothing can satisfy, one mechanism per state, shorter classes through Tailwind itself, what a state change costs in the browser) with scripts first, then agent passes, a sibling comparison and a refutation, and a fix commit per pass in one PR. Use it after a large UI change, a Tailwind or Base UI upgrade, or for a periodic pass; the consistency sweep goes module by module for readability.
 ---
 
 # CSS review
@@ -14,9 +14,9 @@ Most of what this review finds compiles, so `pnpm style` passes it: a variant no
 Work in a worktree. Run the tools from the repo root of the checkout under review: each reads the repo it lives in and prints it on its first line.
 
 1. **Scan.** Run the tools below and hand their output to the passes.
-2. **Four passes**, one agent each, in the order of [passes.md](./passes.md): state and `cn`, props, classes and drift, performance. An agent edits nothing and returns its report as its final message; the coordinator saves it beside the run.
-3. **Sibling comparison.** One agent compares families of sibling components ([passes.md](./passes.md#5-sibling-comparison)). A census cannot see this, since each finding is an absence or a difference between components. It stops after three more families with nothing of medium value or higher. A third iteration runs only if this one finds something of high value, and it runs in the browser.
-4. **Refutation.** A fresh agent receives the top findings and every new rule, and tries to break them ([passes.md](./passes.md#6-refutation)). Hand it the claims and the code, never the reasoning.
+2. **Three passes**, one agent each, in the order of [passes.md](./passes.md): state and `cn`, classes and drift, performance. An agent edits nothing and returns its report as its final message; the coordinator saves it beside the run.
+3. **Sibling comparison.** One agent compares families of sibling components ([passes.md](./passes.md#4-sibling-comparison)). A census cannot see this, since each finding is an absence or a difference between components. It stops after three more families with nothing of medium value or higher. A third iteration runs only if this one finds something of high value, and it runs in the browser.
+4. **Refutation.** A fresh agent receives the top findings and every new rule, and tries to break them ([passes.md](./passes.md#5-refutation)). Hand it the claims and the code, never the reasoning.
 5. **Fix**, one commit per pass, each change with the proof [How far to trust a finding](#how-far-to-trust-a-finding) asks for. Run `pnpm check`. A change that breaks an app ships an alignment.
 6. **Turn finds into rules.** A finding a regex or the AST can catch becomes a `pnpm style` rule in the same PR, so the next run does not pay for it again. A rule that fails on an app's own code needs an alignment too.
 
@@ -28,7 +28,6 @@ In [tools/](./tools/), run with `node`:
 | --- | --- | --- |
 | `state-check.mjs` | Variants and group consumers with no emitter, markers with no consumer, a utility used as a selector. Carries its own positive control | About half of its lines are true |
 | `canon-check.mjs` | Tailwind's canonicalizer, split into rewrites proven equal and rewrites held for a person | Some safe rewrites are held; a wrong one must never pass |
-| `prop-table.mjs <output json>` | Every prop by how it is used, with call sites and values | About 1 style-only prop in 10 is a finding |
 | `flip-scan.mjs <origin> [--session <email>] <path> ...` | How many elements each class flip on body or html restyles, with controls | `HIGH` is a lead; a theme or focus view flip may stay high by design |
 | `touch-probe.mjs <origin> [--session <email>] <path> ...` | Controls invisible and tappable at a touch viewport | Few lines, nearly all true |
 
