@@ -4,7 +4,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { caretToEnd, chromium, editorText, endSession, exactText, mintSession, rowByName } from './driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
+import { caretToEnd, editorText, exactText, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
 const SHOTS = join(OUT, 'shots');

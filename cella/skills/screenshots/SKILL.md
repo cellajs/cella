@@ -13,14 +13,11 @@ state and judging the result is this skill's job, and the driver cannot do it: r
 
 ## Run
 
-- From the app's repo root: `node cella/skills/screenshots/shot-driver.mjs`. It starts `pnpm dev`, waits for the
-  frontend and `/health`, mints a session for `ADMIN_EMAIL`, writes both modes of every shot over the files the app
-  ships, and prints each one's pixel and file size.
+- From the app's repo root: `node cella/skills/screenshots/shot-driver.mjs`. It attaches to this checkout's running
+  stack (launch it first: the [verify](../verify/SKILL.md) skill owns stack setup), mints a session for `ADMIN_EMAIL`,
+  writes both modes of every shot over the files the app ships, and prints each one's pixel and file size.
 - A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
 - One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
-- `START= node ...` attaches to a stack that already answers. Use it whenever another checkout already runs a stack
-  on the database in `backend/.env` (check: `lsof -tiTCP:<services.backend.port> -sTCP:LISTEN`): a second CDC worker there only waits for
-  the slot the running one holds.
 - The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
   table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.
 - `format` in `shots-config.mjs` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and
@@ -32,7 +29,7 @@ state and judging the result is this skill's job, and the driver cannot do it: r
 A development database that has been worked in fails the data check below: bench users, test rows, your own address,
 dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
 [A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
-`START= node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
+`node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
 origin it shoots: it must be the shifted one.
 
 That stack starts no relay, so a shot of a collaborative description reads "Connecting...": start `src/yjs-worker.ts` in

@@ -1,8 +1,8 @@
 // Shoots this app's marketing screenshots, a matched light/dark pair each. Shot list: shots-config.mjs. See SKILL.md.
-// Usage, from the app's repo root, where START= attaches to a running stack and OUT_DIR keeps a trial run out of it:
-//   [START='pnpm dev'] [EMAIL=<admin email>] [OUT_DIR=<dir>] node cella/skills/screenshots/shot-driver.mjs [<id> ...]
-import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+// Attaches to this checkout's running stack (launch: the verify skill); OUT_DIR keeps a trial run out of the tree:
+//   [EMAIL=<admin email>] [OUT_DIR=<dir>] node cella/skills/screenshots/shot-driver.mjs [<id> ...]
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -13,9 +13,7 @@ import * as config from './shots-config.mjs';
 // A namespace import, so a shots-config.mjs written before an export existed still loads
 const { devices, placeholders, shots, suppress, format = 'png' } = config;
 
-const START = process.env.START ?? 'pnpm dev';
 const OUT_DIR = process.env.OUT_DIR || null;
-const LOG_DIR = process.env.LOG_DIR ?? '/tmp/cella-shots';
 const fileEnv = parseEnv(readFileSync('backend/.env', 'utf8'));
 // The environment wins over the file, as it does for the stack itself: a run against another database names its admin there
 const EMAIL = process.env.EMAIL ?? process.env.ADMIN_EMAIL ?? fileEnv.ADMIN_EMAIL;
@@ -31,7 +29,7 @@ if (format !== 'png' && format !== 'webp') throw new Error(`No such format "${fo
 if (format === 'webp' && spawnSync('cwebp', ['-version']).status !== 0)
   throw new Error("format 'webp' needs the cwebp encoder on the PATH: `brew install webp` or `apt install webp`. Or set format to 'png'.");
 
-const BOOT_MS = 5 * 60_000;
+const ATTACH_MS = 60_000;
 // The first signed-in page of a dev server compiles most of the app on demand
 const PAGE_MS = 120_000;
 // The nav bar's first button shows the logo for three seconds after mount (`AppNavLoader`): every shot waits it out, so a pair never differs by it
@@ -113,24 +111,7 @@ const { base, api } = session;
 // The ui store's key is `<slug>-ui`, and the session cookie is `[__Host-]<slug>-session-v<n>`: one app config, read
 // off the mint output, so an app with its own slug needs no configuration here
 const slug = session.cookie.name.replace(/^__Host-/, '').replace(/-session-v\d+$/, '');
-log('target', { base, api, email: EMAIL, start: START || '(attached)', out: OUT_DIR ?? '(the files the app ships)' });
-
-let stack = null;
-mkdirSync(LOG_DIR, { recursive: true });
-const logPath = join(LOG_DIR, 'dev-stack.log');
-const stop = () => {
-  // The stack runs in its own process group: backend, workers and the frontend server go down together
-  if (!stack?.pid) return;
-  try {
-    process.kill(-stack.pid, 'SIGTERM');
-  } catch {
-    // It already exited
-  }
-};
-process.on('SIGINT', () => {
-  stop();
-  process.exit(130);
-});
+log('target', { base, api, email: EMAIL, out: OUT_DIR ?? '(the files the app ships)' });
 
 /**
  * Writes a screenshot to `path` in the app's format. WebP is lossless, so the pixels are the screenshot's own, at the
@@ -153,19 +134,10 @@ const scratch = mkdtempSync(join(tmpdir(), 'shots-'));
 let browser = null;
 
 try {
-  if (START) {
-    if (await answers(base, (status) => status < 500))
-      throw new Error(`Something already answers at ${base}. Stop it, or run with START= to shoot that stack.`);
-    const [command, ...args] = START.split(/\s+/);
-    stack = spawn(command, args, { detached: true, stdio: ['ignore', openSync(logPath, 'w'), openSync(logPath, 'a')] });
-    log('stack', { command: START, pid: stack.pid, log: logPath });
-  }
-
-  const deadline = Date.now() + BOOT_MS;
+  const deadline = Date.now() + ATTACH_MS;
   while (!((await answers(base, (status) => status < 500)) && (await answers(`${api}/health`, (status) => status < 300)))) {
-    if (stack && stack.exitCode !== null) throw new Error(`The stack stopped while starting (exit ${stack.exitCode}): see ${logPath}`);
     if (Date.now() > deadline)
-      throw new Error(`Nothing answered at ${base} and ${api}/health within ${BOOT_MS / 60_000} minutes${stack ? `: see ${logPath}` : '.'}`);
+      throw new Error(`Nothing answers at ${base} and ${api}/health: launch this checkout's stack first (the verify skill) and rerun.`);
     await sleep(2000);
   }
   log('up', { base, api });
@@ -258,7 +230,6 @@ try {
 } finally {
   await browser?.close();
   await endSession(session);
-  stop();
   rmSync(scratch, { recursive: true, force: true });
 
   console.log(`\n${written.length} image${written.length === 1 ? '' : 's'}:`);

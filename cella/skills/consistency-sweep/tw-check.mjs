@@ -1,28 +1,32 @@
 #!/usr/bin/env node
 // Compiles the project's Tailwind CSS for the given classes and prints the rules in cascade order; NONE marks a class
-// that emits nothing. Usage: node tw-check.mjs <repo root> <class> [<class> ...]. See SKILL.md.
+// that emits nothing. Usage, from the repo root: node tw-check.mjs <class> [<class> ...]. See SKILL.md.
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { repoFiles, repoRoot } from '../../../shared/scripts/repo-files.ts';
+import { loadTailwindNode } from '../../../shared/scripts/tailwind-class-rules.ts';
 
-const [worktree, ...candidates] = process.argv.slice(2);
-if (!worktree || candidates.length === 0) {
-  console.error('usage: node tw-check.mjs <worktree> <class> [<class> ...]');
+const candidates = process.argv.slice(2);
+if (candidates.length === 0) {
+  console.error('usage: node tw-check.mjs <class> [<class> ...]');
   process.exit(2);
 }
 
-// @tailwindcss/node is a dependency of @tailwindcss/vite, so it only exists in pnpm's store folder.
-const storeDir = path.join(worktree, 'node_modules/.pnpm');
-const nodeDir = readdirSync(storeDir).find((d) => d.startsWith('@tailwindcss+node@'));
-if (!nodeDir) throw new Error(`no @tailwindcss/node in ${storeDir}`);
-const { compile } = await import(path.join(storeDir, nodeDir, 'node_modules/@tailwindcss/node/dist/index.mjs'));
-
-const cssFile = path.join(worktree, 'frontend/src/styling/tailwind.css');
+const entry = repoFiles().find(
+  (file) =>
+    file.startsWith('frontend/src/') &&
+    file.endsWith('.css') &&
+    /@import\s+['"]tailwindcss['"]/.test(readFileSync(path.join(repoRoot, file), 'utf8')),
+);
+if (!entry) throw new Error('no frontend stylesheet imports tailwindcss');
+const cssFile = path.join(repoRoot, entry);
 const css = readFileSync(cssFile, 'utf8')
   // Source scanning is irrelevant here: candidates are passed explicitly.
   .replace(/@source[^;]*;/g, '');
 
+const { compile } = loadTailwindNode();
 const compiler = await compile(css, { base: path.dirname(cssFile), onDependency: () => {} });
 const out = compiler.build(candidates);
 

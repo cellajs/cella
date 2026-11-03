@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { chromium, endSession, mintSession } from '../../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../../verify/session-lib.mjs';
 import { printHeader } from './lib.mjs';
 
 // Finds controls a touch user cannot see and can still tap: `hover:` never fires on touch and `opacity-0` does not stop a tap.

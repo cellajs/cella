@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
-import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from './session-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? join(tmpdir(), 'cella-smoke');
 mkdirSync(join(OUT, 'shots'), { recursive: true });

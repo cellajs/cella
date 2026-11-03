@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
-import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
 
 const { values: args } = parseArgs({
   options: {
