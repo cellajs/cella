@@ -153,7 +153,7 @@ export const zApiError = z.object({
 });
 
 /**
- * The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.
+ * The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.
  */
 export const zBadRequestError = zApiError.and(
   z.object({
@@ -162,7 +162,7 @@ export const zBadRequestError = zApiError.and(
 );
 
 /**
- * The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.
+ * The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.
  */
 export const zUnauthorizedError = zApiError.and(
   z.object({
@@ -171,7 +171,7 @@ export const zUnauthorizedError = zApiError.and(
 );
 
 /**
- * The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
+ * The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.
  */
 export const zForbiddenError = zApiError.and(
   z.object({
@@ -180,7 +180,7 @@ export const zForbiddenError = zApiError.and(
 );
 
 /**
- * The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.
+ * The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.
  */
 export const zNotFoundError = zApiError.and(
   z.object({
@@ -189,7 +189,7 @@ export const zNotFoundError = zApiError.and(
 );
 
 /**
- * The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
+ * The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.
  */
 export const zConflictError = zApiError.and(
   z.object({
@@ -198,7 +198,7 @@ export const zConflictError = zApiError.and(
 );
 
 /**
- * The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.
+ * The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.
  */
 export const zPayloadTooLargeError = zApiError.and(
   z.object({
@@ -207,7 +207,7 @@ export const zPayloadTooLargeError = zApiError.and(
 );
 
 /**
- * A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
+ * A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
  */
 export const zTooManyRequestsError = zApiError.and(
   z.object({

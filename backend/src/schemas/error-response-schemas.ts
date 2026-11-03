@@ -15,55 +15,54 @@ const retryAfterHeader = {
   'Retry-After': { description: 'Seconds to wait before trying again, at least 1.', schema: { type: 'integer', minimum: 1 } },
 } satisfies Record<string, HeaderDoc>;
 
-/** One entry per documented error status: its response component, the description of its body schema, and its headers beyond `X-Request-Id`. */
+/** One entry per documented error status: its response component, its short label, the description of its body schema, and its headers beyond `X-Request-Id`. */
 const errorResponseOptions = [
   {
     code: 400,
     name: 'BadRequestError',
-    description: 'Bad request: problem processing request.',
-    schemaDescription: 'The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.',
+    description: 'Bad request',
+    schemaDescription: 'The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.',
   },
   {
     code: 401,
     name: 'UnauthorizedError',
-    description: 'Unauthorized: authentication required.',
-    schemaDescription:
-      'The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.',
+    description: 'Unauthorized',
+    schemaDescription: 'The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.',
   },
   {
     code: 403,
     name: 'ForbiddenError',
-    description: 'Forbidden: insufficient permissions.',
+    description: 'Forbidden',
     schemaDescription:
-      'The caller is known but may not do this (403): their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.',
+      'The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.',
   },
   {
     code: 404,
     name: 'NotFoundError',
-    description: 'Not found: resource does not exist.',
+    description: 'Not found',
     schemaDescription:
-      'The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.',
+      'The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.',
   },
   {
     code: 409,
     name: 'ConflictError',
-    description: 'Conflict: resource state conflict.',
+    description: 'Conflict',
     schemaDescription:
-      'The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.',
+      'The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.',
   },
   {
     code: 413,
     name: 'PayloadTooLargeError',
-    description: 'Payload too large: the request body exceeds its limit.',
+    description: 'Payload too large',
     schemaDescription:
-      'The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.',
+      'The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.',
   },
   {
     code: 429,
     name: 'TooManyRequestsError',
-    description: 'Rate limit: too many requests.',
+    description: 'Too many requests',
     schemaDescription:
-      "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
+      "A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
     headers: retryAfterHeader,
   },
 ] as const;

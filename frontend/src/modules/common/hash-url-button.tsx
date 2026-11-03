@@ -8,11 +8,13 @@ import { cn } from '~/utils/cn';
 interface HashUrlButtonProps {
   /** Section id the copied link points to, on the current page. */
   hash: string;
+  /** Path, search and hash to copy for a section shown away from its page, such as in a sheet. */
+  href?: string;
   className?: string;
 }
 
 /** Copies the link to a section of the current page. Invisible until the parent carrying `group/hash-url` is hovered. */
-export function HashUrlButton({ hash, className }: HashUrlButtonProps) {
+export function HashUrlButton({ hash, href, className }: HashUrlButtonProps) {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();
 
@@ -21,7 +23,7 @@ export function HashUrlButton({ hash, className }: HashUrlButtonProps) {
       variant="ghost"
       tabIndex={-1}
       size="xs"
-      onClick={() => copyToClipboard(`${window.location.origin}${window.location.pathname}${window.location.search}#${hash}`)}
+      onClick={() => copyToClipboard(`${window.location.origin}${href ?? `${window.location.pathname}${window.location.search}#${hash}`}`)}
       className={cn('opacity-0 transition-opacity hover:opacity-100 group-hover/hash-url:opacity-70', className)}
       aria-label={t('c:copy_link')}
     >

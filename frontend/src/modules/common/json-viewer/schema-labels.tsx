@@ -1,3 +1,4 @@
+import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { cn } from '~/utils/cn';
 
@@ -10,6 +11,7 @@ export interface SchemaConstraints {
 
 export interface SchemaLabelsProps {
   typeValue: string | string[] | null;
+  /** The full `$ref`, such as '#/components/schemas/User'. */
   refValue: string | null;
   contentTypeValue?: string | null;
   hasAnyOf?: boolean;
@@ -18,6 +20,7 @@ export interface SchemaLabelsProps {
 }
 
 export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, hasOneOf, constraints }: SchemaLabelsProps) {
+  const { renderRef } = useJsonViewerContext();
   if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf && !constraints) return null;
 
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
@@ -39,7 +42,11 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
         </span>
       )}
       {compositionLabel && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-muted text-code-type')}>{compositionLabel}</span>}
-      {refValue && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>{refValue}</span>}
+      {refValue && (
+        <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>
+          {renderRef ? renderRef(refValue) : refValue.split('/').pop()}
+        </span>
+      )}
       {contentTypeValue && <span className="ml-1 text-muted-foreground text-xs italic">{contentTypeValue}</span>}
       {constraints && (
         <span className="ml-1.5 text-muted-foreground text-xs">

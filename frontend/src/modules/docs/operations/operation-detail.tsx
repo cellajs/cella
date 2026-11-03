@@ -1,43 +1,29 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { type ReactNode, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationDetail, GenOperationSummary } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
+import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
+import { openDocsSheet } from '~/modules/docs/open-docs-sheet';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { OperationAccess } from '~/modules/docs/operations/operation-access';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { tagDetailsQueryOptions } from '~/modules/docs/query';
+import { SpecText } from '~/modules/docs/spec-text';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 
-interface OperationDocSheetOptions {
-  id: string;
-  title: string;
-  trigger: HTMLButtonElement | HTMLAnchorElement;
-  content: ReactNode;
-}
-
-/** Opens operation docs in a right-hand sheet, with a spinner while the content suspends. */
-export function openOperationDocSheet({ id, title, trigger, content }: OperationDocSheetOptions) {
-  sheeter.getState().create(
-    <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
-      <div className="container pt-3 pb-[50vh]">{content}</div>
-    </Suspense>,
-    { id, title, triggerRef: { current: trigger }, side: 'right' },
-  );
-}
-
 export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  openOperationDocSheet({
+  openDocsSheet({
     id: `operation-${operation.id}`,
     title: i18n.t('c:docs.operation_detail'),
     trigger,
@@ -81,6 +67,7 @@ interface OperationDetailProps {
 function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
   const { t } = useTranslation();
   const detail = useResolvedDetail(operation, detailProp);
+  const { href } = useRouter().buildLocation(operationLinkOptions(operation));
 
   return (
     <Card id={`spy-${operation.hash}`} className={cn('border-0 sm:py-5', className)}>
@@ -88,7 +75,7 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
         <div className="flex items-center justify-between">
           <CardTitle level={3} className="gap-2 leading-8 sm:text-xl">
             <HighlightText text={operation.summary} />
-            <HashUrlButton hash={operation.hash} />
+            <HashUrlButton hash={operation.hash} href={href} />
           </CardTitle>
           <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
             <HighlightText text={operation.id} />
@@ -96,7 +83,7 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
         </div>
         {operation.description && (
           <CardDescription className="max-w-measure whitespace-pre-line text-base">
-            <HighlightText text={operation.description} />
+            <SpecText text={operation.description} />
           </CardDescription>
         )}
         <OperationTags tagsByKind={operation.tagsByKind} />

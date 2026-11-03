@@ -1,6 +1,6 @@
 import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
 import { CodeCopyButton } from '~/modules/common/code-copy-button';
@@ -26,6 +26,7 @@ interface ViewerGroupProps {
   defaultViewMode?: SchemaViewMode;
   /** Hides the schema's descriptions behind a help toggle, which shows only when the schema has any. */
   descriptionToggle?: boolean;
+  renderRef?: (ref: string) => ReactNode;
 }
 
 export function ViewerGroup({
@@ -36,6 +37,7 @@ export function ViewerGroup({
   defaultInspectDepth = 5,
   defaultViewMode = 'format',
   descriptionToggle,
+  renderRef,
 }: ViewerGroupProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
@@ -88,6 +90,7 @@ export function ViewerGroup({
                 defaultInspectDepth={defaultInspectDepth}
                 indentWidth={3}
                 hideDescriptions={descriptionToggle && !descriptionsOpen}
+                renderRef={renderRef}
               />
             )}
             {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
