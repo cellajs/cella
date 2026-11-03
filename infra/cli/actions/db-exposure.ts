@@ -94,14 +94,20 @@ function convergeSecretKey(env: NodeJS.ProcessEnv): string {
   return env.SCW_SECRET_KEY;
 }
 
-/** The managed PostgreSQL instance, looked up by its name over the RDB API. */
-async function findDbInstance(context: InfraContext, secretKey: string) {
+/** The managed PostgreSQL instance, looked up by its name over the RDB API; `instanceId` is undefined before it exists. */
+async function lookupDbInstance(context: InfraContext, secretKey: string) {
   const { naming, region } = deriveInfra(context.appConfig);
   const client = createRdbClient({ secretKey, region });
   const name = naming.resource('postgres');
   const instance = await client.findInstance(name);
-  if (!instance) throw new Error(`no managed database instance named '${name}' in ${region}`);
-  return { client, instanceId: instance.id };
+  return { client, instanceId: instance?.id, name, region };
+}
+
+/** The managed PostgreSQL instance; throws before it exists. */
+async function findDbInstance(context: InfraContext, secretKey: string) {
+  const { client, instanceId, name, region } = await lookupDbInstance(context, secretKey);
+  if (!instanceId) throw new Error(`no managed database instance named '${name}' in ${region}`);
+  return { client, instanceId };
 }
 
 /** The instance's live public endpoints and ACL rules, read over the RDB API (RelationalDatabasesReadOnly is enough). */
@@ -113,10 +119,8 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
 
 /** The live public endpoints as `host:port`: none before the instance exists. */
 export async function openDbEndpoints(context: InfraContext, secretKey: string): Promise<string[]> {
-  const { naming, region } = deriveInfra(context.appConfig);
-  const client = createRdbClient({ secretKey, region });
-  const instance = await client.findInstance(naming.resource('postgres'));
-  return instance ? publicEndpoints(await client.getInstance(instance.id)).map(endpointAddress) : [];
+  const { client, instanceId } = await lookupDbInstance(context, secretKey);
+  return instanceId ? publicEndpoints(await client.getInstance(instanceId)).map(endpointAddress) : [];
 }
 
 /** The live public endpoints, read with the observer key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
