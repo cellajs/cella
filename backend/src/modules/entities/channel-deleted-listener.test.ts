@@ -32,9 +32,10 @@ const unusedChannelColumns = Object.fromEntries(
   ownConfig.channelEntityTypes.filter((type) => type !== 'organization').map((type) => [ownConfig.entityIdColumnKeys[type], null]),
 );
 
-/** A channel change as the CDC worker sends it: the rows its delete cascaded to send none. */
+/** A channel change as the CDC worker sends it: the rows its delete cascaded to send none, and the delete moves the version of `channel.deleted`. */
 const projectEvent = (action: 'update' | 'delete') =>
   ({
+    ...(action === 'delete' && { signalVersions: { 'channel.deleted': 7 } }),
     id: `activity-${action}-project`,
     type: action === 'delete' ? 'project.deleted' : 'project.updated',
     action,
@@ -51,7 +52,7 @@ const projectEvent = (action: 'update' | 'delete') =>
   }) as unknown as ActivityEvent; // A fixture of the fields the listener reads, not a whole activity row.
 
 describe('entities listeners: a channel below the organization is deleted', () => {
-  it('names the channel to its own readers only, never to every reader of the organization', async () => {
+  it('names the channel to its own readers only, never to every reader of the organization, with the version its delete gave the signal', async () => {
     activityBus.emit(projectEvent('update'));
     activityBus.emit(projectEvent('delete'));
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -61,7 +62,7 @@ describe('entities listeners: a channel below the organization is deleted', () =
       [
         'channel.deleted',
         { kind: 'readers', action: 'read', subject: expect.objectContaining({ entityType: 'project', id: 'project-1' }) },
-        { organizationId: org, subjectId: 'project-1' },
+        { organizationId: org, subjectId: 'project-1', version: 7 },
       ],
     ]);
   });

@@ -46,9 +46,9 @@ function staleStreamError(
 
 /**
  * Re-checks the session behind every open app stream and closes each stream that must end: its session expired, was
- * revoked where no event reached this process (another instance) or went with its user, an impersonation's admin
- * lost their session or system role, or the system role was removed or granted since the stream connected (the
- * client reconnects on `access_changed`).
+ * revoked between its session check and its registration (the revoke closes only the streams registered by then) or
+ * went with its user, an impersonation's admin lost their session or system role, or the system role was removed or
+ * granted since the stream connected (the client reconnects on `access_changed`).
  */
 async function sweepAppStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all();

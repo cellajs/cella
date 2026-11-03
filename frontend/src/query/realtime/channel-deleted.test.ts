@@ -39,6 +39,11 @@ vi.mock('~/query/realtime/membership-ops', () => ({
 }));
 // The deleted project is not on screen: the marks wait for the lists to be opened.
 vi.mock('~/query/realtime/sync-priority', () => ({ isViewingChannel: () => false }));
+// The catchup that reports a missed delete answered the task view opaque in one case below.
+const opaque = new Set<string>();
+vi.mock('~/query/realtime/catchup-processor', () => ({
+  isOpaqueScope: (organizationId: string, type: string) => opaque.has(`${organizationId}:${type}`),
+}));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-source' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
@@ -51,6 +56,7 @@ const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-reg
 const { queryClient } = await import('~/query/query-client');
 const { onChangeEvent } = await import('~/query/realtime/sync-events');
 const { handleChannelDeleted } = await import('~/query/realtime/channel-deleted');
+const { syncStore } = await import('~/query/realtime/sync-store');
 
 // The synthetic types exist only in this file's shared mock, hence the casts.
 const taskType = 'task' as ProductEntityType;
@@ -106,6 +112,8 @@ afterEach(() => {
   vi.useRealTimers();
   queryClient.clear();
   vi.clearAllMocks();
+  opaque.clear();
+  syncStore.getState().reset();
 });
 
 describe('channel.deleted', () => {
@@ -157,5 +165,30 @@ describe('channel.deleted', () => {
     expect(idsOf(homeOfP1)).toEqual(['t1', 't2']);
     for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(true);
     expect(isMarked(notes)).toBe(false);
+  });
+
+  it('missed while away, must not refetch a list when a start-over refetch is due, also one that ran before the cascade settled', () => {
+    seedCache();
+    // A new generation: every client runs its versioned signals once, and refetches its synced cache at its share of the spread.
+    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().adoptGeneration(2);
+
+    handleChannelDeleted(signal({ subjectId: null }));
+    syncStore.getState().markRefetched();
+    cascadeSettles();
+
+    for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(false);
+    expect(invalidateMemberQueries).toHaveBeenCalledWith('org-1');
+  });
+
+  it('missed while away, must not refetch the lists of a scope the same catchup answered opaque a second time', () => {
+    seedCache();
+    opaque.add('org-1:task');
+
+    handleChannelDeleted(signal({ subjectId: null }));
+    cascadeSettles();
+
+    for (const key of [homeOfP1, homeOfP2, acrossProjects]) expect(isMarked(key)).toBe(false);
+    expect(invalidateMemberQueries).toHaveBeenCalledWith('org-1');
   });
 });

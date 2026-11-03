@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
+import { workerAwayPing } from 'shared/stream-ping';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
@@ -11,7 +12,7 @@ import { closeAppStreams } from '#/modules/entities/helpers/session-streams';
 import { appCatchupOp } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
-import { keepAlive, workerAwayPing, writeOffset } from '#/modules/entities/stream/helpers';
+import { keepAlive, writeOffset } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { defaultHook } from '#/utils/default-hook';

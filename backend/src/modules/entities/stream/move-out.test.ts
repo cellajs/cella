@@ -140,7 +140,7 @@ describe('dispatchMoveOuts', () => {
     expect(member.received).toHaveLength(0);
   });
 
-  it('sends one moveOut per moved row of an event of several rows, to those who lost that row', async () => {
+  it('sends each reader one moveOut of the moved rows it lost, and none of the others', async () => {
     const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
@@ -164,5 +164,30 @@ describe('dispatchMoveOuts', () => {
     expect(member.received).toHaveLength(1);
     // It names the moved row alone, with its own seq.
     expect(member.received[0]).toMatchObject({ action: 'moveOut', rows: [{ subjectId: 'att-2', seq: 8 }] });
+  });
+
+  it('sends each reader one frame for a reparent of 30 rows, naming them by id past the row cap', async () => {
+    const admins = ['admin-a', 'admin-b'].map((userId) => fakeSubscriber([membership(org, 'admin', userId)], userId));
+    const author = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
+    for (const { subscriber } of [...admins, author]) streamSubscriberManager.register(subscriber);
+
+    // The rows become drafts, which nobody reads; the member authored the first 15, so it read them under read:'own' too.
+    const ids = Array.from({ length: 30 }, (_, index) => `att-${index}`);
+    const rows = ids.map((id, index) => ({
+      seq: index + 1,
+      rowData: row(id, { publishedAt: null }),
+      movedFrom: row(id, { publishedAt: '2026-07-01T00:00:00Z', createdBy: index < 15 ? 'member-user' : 'author-user' }),
+    }));
+    await dispatchMoveOuts(updateEvent(rows));
+
+    for (const { received } of admins) {
+      expect(received).toEqual([
+        expect.objectContaining({ action: 'moveOut', channelId: org, rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: ids } }),
+      ]);
+    }
+    // 15 rows or all 30, by the member policy: one frame either way.
+    expect(author.received).toHaveLength(1);
+    const named = [...author.received[0].rows.map(({ subjectId }) => subjectId), ...(author.received[0].overflow?.subjectIds ?? [])];
+    expect(named).toEqual(expect.arrayContaining(ids.slice(0, 15)));
   });
 });

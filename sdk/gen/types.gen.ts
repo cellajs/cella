@@ -144,11 +144,15 @@ export type StreamChange = {
     actorId: string | null;
   }>;
   /**
-   * Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch
+   * Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out
    */
   overflow: {
     afterSeq: number | null;
     untilSeq: number | null;
+    /**
+     * The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type
+     */
+    subjectIds: Array<string> | null;
   } | null;
   /**
    * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
@@ -186,6 +190,10 @@ export type StreamSignal = {
    * The one row the signal is about; null when it is about the organization as a whole
    */
   subjectId: string | null;
+  /**
+   * A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again
+   */
+  version?: number;
 };
 
 /**
@@ -2363,6 +2371,10 @@ export type PostAppCatchupResponses = {
            * Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch
            */
           overflow?: boolean;
+          /**
+           * Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor
+           */
+          untilSeq?: number;
         }>;
       };
     };

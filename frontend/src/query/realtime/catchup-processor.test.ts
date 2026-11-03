@@ -1,5 +1,6 @@
 import { QueryObserver } from '@tanstack/react-query';
 import type { PostAppCatchupResponse } from 'sdk';
+import type { ProductEntityType } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
@@ -70,6 +71,17 @@ const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('~/query/realtime/fetch-prioritizer');
 const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
 const { fetchMemberships } = await import('~/query/realtime/membership-ops');
+const { handleStreamSignal } = await import('~/query/realtime/signal-handlers');
+const { defineFrontendModule } = await import('~/lib/module');
+
+const channelDeleted = vi.fn();
+defineFrontendModule({
+  name: 'catchup-test',
+  owner: 'cella',
+  scope: ['frontend'],
+  description: 'Hears channel.deleted',
+  signals: { 'channel.deleted': channelDeleted },
+});
 
 // The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
@@ -184,6 +196,32 @@ describe('catchup processor (view-driven)', () => {
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     // Cursor untouched: opaque answers carry no frontier to advance to.
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+  });
+
+  it("moves an opaque view's cursor to the highest position its embedding hint read, and refetches the hosts of the rows it names", async () => {
+    // The config embeds labels in attachments; a label view the server answers opaque. Labels exist only in that config, hence the cast.
+    const label = 'label' as ProductEntityType;
+    const labelKeys = createEntityKeys<Record<string, never>>(label);
+    const attachmentKeys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys(label, labelKeys, vi.fn());
+    registerEntityQueryKeys('attachment', attachmentKeys, vi.fn());
+    syncStore.getState().setOrgSeq('org-1', label, 4);
+    // What the cache held before: the host's copy of the label and the label's detail, both from before the rename.
+    queryClient.setQueryData(attachmentKeys.list.org('org-1'), {
+      items: [{ id: 'att-1', organizationId: 'org-1', labels: [{ id: 'label-1', name: 'old' }] }],
+      total: 1,
+    });
+    queryClient.setQueryData(labelKeys.detail.byId('label-1'), { id: 'label-1', name: 'old' });
+
+    await processAppCatchup({
+      organizations: { 'org-1': { propagation: [{ embeddedProduct: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
+      views: [{ organizationId: 'org-1', entityType: label, status: 'opaque' }],
+    });
+
+    expect(syncStore.getState().getOrgSeq('org-1', label)).toBe(9);
+    // Nothing fetched the renamed label: past the moved cursor no later read would name it, so its copies are marked here.
+    expect(queryClient.getQueryState(attachmentKeys.list.org('org-1'))?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(labelKeys.detail.byId('label-1'))?.isInvalidated).toBe(true);
   });
 });
 
@@ -328,5 +366,65 @@ describe('catchup → fetch prioritizer fold', () => {
 
     expect(rangeFetch).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a versioned signal heard live', () => {
+  afterEach(() => {
+    queryClient.clear();
+    syncStore.getState().reset();
+    vi.clearAllMocks();
+  });
+
+  /** A catchup answer that holds only the organization's version of `channel.deleted`. */
+  const signalsAnswer = (version: number): PostAppCatchupResponse => ({ organizations: { 'org-1': { signals: { 'channel.deleted': version } } } });
+  const deleted = (version: number) => ({ type: 'channel.deleted', organizationId: 'org-1', subjectId: `project-${version}`, version });
+
+  it('is not run again at the next catchup', async () => {
+    syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 3);
+
+    handleStreamSignal(deleted(4));
+    await processAppCatchup(signalsAnswer(4));
+
+    expect(channelDeleted).toHaveBeenCalledExactlyOnceWith(deleted(4), { missed: false });
+  });
+
+  it('must not hide one missed across a stream break: the next catchup still runs it', async () => {
+    syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 3);
+
+    // Version 4 went out while the stream was down; 5 arrives on the new stream.
+    handleStreamSignal(deleted(5));
+    await processAppCatchup(signalsAnswer(5));
+
+    expect(channelDeleted.mock.calls).toEqual([
+      [deleted(5), { missed: false }],
+      [{ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true }],
+    ]);
+    expect(syncStore.getState().getSignalVersion('org-1', 'channel.deleted')).toBe(5);
+  });
+
+  it('must not take the version of one whose live handler threw: the next catchup runs it again', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 3);
+    channelDeleted.mockImplementationOnce(() => {
+      throw new Error('handler failed');
+    });
+
+    handleStreamSignal(deleted(4));
+    await processAppCatchup(signalsAnswer(4));
+
+    expect(channelDeleted).toHaveBeenLastCalledWith({ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true });
+    vi.mocked(console.error).mockRestore();
+  });
+
+  it('must not hide one after the books were rebuilt, whose new count reaches the stored version by coincidence', async () => {
+    vi.useFakeTimers();
+    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().setSignalVersion('org-1', 'channel.deleted', 5);
+
+    await processAppCatchup({ ...signalsAnswer(5), generation: 2 });
+    vi.useRealTimers();
+
+    expect(channelDeleted).toHaveBeenCalledExactlyOnceWith({ type: 'channel.deleted', organizationId: 'org-1', subjectId: null }, { missed: true });
   });
 });

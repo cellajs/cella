@@ -90,13 +90,23 @@ describe('Catchup propagation hints', async () => {
 
   // The client patches every host column its own config declares, so one hint per embedded product is the contract it reads.
   it('must not name a changed row the caller cannot read in a hint, and names the embedded product once however many hosts embed it', async () => {
-    expect(await hintsOf(member)).toEqual([{ embeddedProduct: 'attachment', update: [readable], remove: [removed] }]);
+    expect(await hintsOf(member)).toEqual([{ embeddedProduct: 'attachment', update: [readable], remove: [removed], untilSeq: cursor + 3 }]);
   });
 
   it('names every changed row, the soft-deleted one as removed, to a caller who reads them all (positive control)', async () => {
     const [hint] = (await hintsOf(admin)) ?? [];
     expect(hint?.update.toSorted()).toEqual([readable, hidden].toSorted());
     expect(hint?.remove).toEqual([removed]);
+  });
+
+  it('tells the caller the highest position among the rows it may read, never that of a row it cannot', async () => {
+    const later = await insertAttachment(admin.id, cursor + 4);
+    onTestFinished(async () => {
+      await adminDb.delete(attachmentsTable).where(eq(attachmentsTable.id, later));
+    });
+
+    expect((await hintsOf(member))?.map(({ untilSeq }) => untilSeq)).toEqual([cursor + 3]);
+    expect((await hintsOf(admin))?.map(({ untilSeq }) => untilSeq)).toEqual([cursor + 4]);
   });
 
   it('names no row of an organization where more changed than one hint names, and says so: the client refetches the host lists', async () => {
@@ -112,6 +122,8 @@ describe('Catchup propagation hints', async () => {
     await Promise.all(rows.map(insertAttachmentRow));
     await adminDb.insert(channelCountersTable).values({ channelKey: bulk.id, counts: { 'e:f:attachment': cursor + rows.length } });
 
-    expect(await hintsOf(bulkAdmin, bulk.id)).toEqual([{ embeddedProduct: 'attachment', update: [], remove: [], overflow: true }]);
+    expect(await hintsOf(bulkAdmin, bulk.id)).toEqual([
+      { embeddedProduct: 'attachment', update: [], remove: [], overflow: true, untilSeq: expect.any(Number) },
+    ]);
   });
 });

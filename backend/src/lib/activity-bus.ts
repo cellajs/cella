@@ -32,6 +32,8 @@ interface ActivityEventBase extends Omit<ActivityModel, 'type' | 'createdAt' | O
 export interface RowActivityEvent extends ActivityEventBase, Pick<ActivityModel, OwnActivityColumns> {
   rowData: unknown;
   rows: null;
+  /** The versions of the signals this change moved, as the worker counted them; absent when it sent none. */
+  signalVersions?: Record<string, number>;
 }
 
 /**

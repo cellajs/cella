@@ -29,7 +29,8 @@ interface SyncStoreState {
   /**
    * Takes the generation a catchup answered with. Another one than the client held means the server corrected or
    * rebuilt its books: every cursor goes back to 0, so the catchup that follows stores the frontiers as baselines, and the
-   * refetch is due at this client's share of the spread.
+   * refetch is due at this client's share of the spread. The signal versions go too: books rebuilt from lost counters
+   * count them again from 0, and a stored version the new count reaches would hide its runs, so each runs once now.
    */
   adoptGeneration: (generation: number | undefined) => void;
   /**
@@ -48,6 +49,13 @@ interface SyncStoreState {
   getOrgSeq: (organizationId: string, entityType: string) => number;
   setSignalVersion: (organizationId: string, type: string, version: number) => void;
   getSignalVersion: (organizationId: string, type: string) => number;
+  /**
+   * Takes the version of a signal whose live handlers ran, so the next catchup does not run it again. Only the next
+   * version is taken: a gap (a frame lost to a stream break, a signal of a channel this tab cannot read, a version a
+   * cascade moved, a frame without a version, a handler that threw) leaves the run to the next catchup. A catchup answer
+   * read before a version taken here sets it back, and the signal runs at most twice more: nothing is lost.
+   */
+  noteHeardSignal: (organizationId: string, type: string, version: number) => void;
   setChannelSeq: (organizationId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (organizationId: string, channelId: string, entityType: string) => number;
   /** Build the view-driven catchup body: one org view per (org, entityType). */
@@ -69,8 +77,8 @@ const generationRefetchSpreadMs = 10_000;
 const maxCatchupViews = 256;
 
 /**
- * Puts every org and channel cursor back at 0 and records when the synced cache refetches. Signal versions stay:
- * they only count up, so the next catchup runs only the handlers of signals sent meanwhile.
+ * Puts every org and channel cursor back at 0 and records when the synced cache refetches. Signal versions stay: across
+ * an absence they only count up, so the next catchup runs only the handlers of signals sent meanwhile.
  */
 function resetCursors(state: Pick<SyncStoreState, 'orgs' | 'refetchDueAt'>, refetchDueAt: number): void {
   for (const org of Object.values(state.orgs)) {
@@ -97,7 +105,9 @@ export const syncStore = createStore<SyncStoreState>()(
           if (generation === undefined || generation === held) return;
           set((state) => {
             state.generation = generation;
-            if (held !== null) resetCursors(state, Date.now() + Math.random() * generationRefetchSpreadMs);
+            if (held === null) return;
+            resetCursors(state, Date.now() + Math.random() * generationRefetchSpreadMs);
+            for (const org of Object.values(state.orgs)) org.signals = {};
           });
         },
         startOverIfAway: (awayMs) => {
@@ -139,6 +149,13 @@ export const syncStore = createStore<SyncStoreState>()(
             org.signals[type] = version;
           }),
         getSignalVersion: (organizationId, type) => get().orgs[organizationId]?.signals?.[type] ?? 0,
+        noteHeardSignal: (organizationId, type, version) =>
+          set((state) => {
+            const org = state.orgs[organizationId];
+            if (!org || (org.signals?.[type] ?? 0) + 1 !== version) return;
+            org.signals ??= {};
+            org.signals[type] = version;
+          }),
 
         // Org-homed channel views arrive with channelId === organizationId live but at org level in catchup; both normalize to the org slot so they share one caught-up cursor.
         setChannelSeq: (organizationId, channelId, entityType, seq) =>

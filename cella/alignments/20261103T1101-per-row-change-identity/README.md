@@ -2,12 +2,12 @@
 breaking: true
 clientCacheBump: false
 caughtBy: compiler
-grep: batchUntilSeq, event.subjectId, event.userId, event.changedFields, ActivityEvent, AppStreamProductEvent, fanOutNotifications, buildStreamChange, buildMoveOut, StreamChange, sync.entity_id, event.subject_id
+grep: batchUntilSeq, event.subjectId, event.userId, event.changedFields, ActivityEvent, AppStreamProductEvent, fanOutNotifications, buildStreamChange, buildMoveOut, StreamChange, sync.entity_id, event.subject_id, organizationSubscribers, workerAwayPing
 ---
 
 # Each row of a product change carries its own activity
 
-A product event on the activity bus (`ProductActivityEvent`) has no `id`, `userId`, `subjectId`, `changedFields` or `stx` of its own: each of its `rows` carries `activityId`, `userId`, `changedFields` and `stx`. The `StreamChange` frame drops `subjectId`, `seq`, `stx`, `actorId`, `batchUntilSeq` and `count` for `rows: [{ subjectId, seq, stx, actorId }]`, listing only the rows its receiver may read. Past `maxStreamChangeRows` (20) a frame names no row and sets `overflow`: the sequence range of a create or update, which the client fetches, or nulls on a delete, whose lists the client marks for a refetch. `fanOutNotifications` takes a `ProductActivityEvent`, `buildStreamChange(event, rows?)` the rows to name, `buildMoveOut(event, row, movedFrom)` the moved row.
+A product event on the activity bus (`ProductActivityEvent`) has no `id`, `userId`, `subjectId`, `changedFields` or `stx` of its own: each of its `rows` carries `activityId`, `userId`, `changedFields` and `stx`. The `StreamChange` frame drops `subjectId`, `seq`, `stx`, `actorId`, `batchUntilSeq` and `count` for `rows: [{ subjectId, seq, stx, actorId }]`, listing only the rows its receiver may read. Past `maxStreamChangeRows` (20) a frame names no row in full and sets `overflow`: the sequence range of a create or update, nulls on a delete or a move-out, and `subjectIds`, the rows' ids up to `maxStreamChangeIds` (400), null past that, when a delete or a move-out refetches the lists of the type. `fanOutNotifications` takes a `ProductActivityEvent`, `buildStreamChange(event, rows?)` the rows to name, `buildMoveOut(event, rows)` the moved rows one reader lost: each reader gets one move-out frame per update.
 
 ## What & why
 
@@ -25,8 +25,10 @@ No script: manual.
 
 1. Where an app test builds a product event for `fanOutNotifications` (raak `backend/tests/task-mention-notifications.test.ts`, projectcampus `backend/tests/comment-notifications.test.ts`), type it as `ProductActivityEvent` and move `id`, `userId` and `changedFields` from the event onto each row as `activityId`, `userId`, `changedFields`, with `stx: null`; drop the event's `subjectId`.
 2. A test that builds an `AppStreamProductEvent` with a typed literal (projectcampus `backend/src/modules/entities/stream/dispatch-mirror-app.test.ts`) stops compiling: move the activity fields onto each row as in step 1, and drop the event's `id`, `subjectId`, `userId`, `changedFields` and `stx`. One that casts its event (raak `backend/src/modules/label/label-stream.test.ts`, projectcampus `backend/src/permissions/row-predicates-app.test.ts`) passes as is; drop its event-level `subjectId`, `id` and `stx`, which nothing reads.
-3. App code that reads a change frame reads `change.rows`: the range is the lowest and highest `seq` of its rows, each row's `subjectId`, `stx` and `actorId` are that row's own. It handles `change.overflow` too, where `rows` is empty; a test that builds a `StreamChange` adds `overflow: null`.
-4. A listener of a product type that read `event.subjectId` or `event.userId` reads them per row: `row.rowData.id` and `row.userId`.
+3. App code that reads a change frame reads `change.rows`: the range is the lowest and highest `seq` of its rows, each row's `subjectId`, `stx` and `actorId` are that row's own. It handles `change.overflow` too, where `rows` is empty and `overflow.subjectIds` names the rows by id; a test that builds a `StreamChange` adds `overflow: null`, one that builds an overflow adds `subjectIds`.
+4. A test that calls `buildMoveOut` passes the moved rows, each with `movedFrom`; one that counts the move-out frames of an update of several rows expects one per reader.
+5. A listener of a product type that read `event.subjectId` or `event.userId` reads them per row: `row.rowData.id` and `row.userId`.
+6. Code that called `organizationSubscribers(id)` reads `streamSubscriberManager.getByTopic(organizationTopic(id))`; `workerAwayPing` comes from `shared/stream-ping`; a `SyncedRows` subscriber reads no `degraded`, and hears of fetched ranges alone.
 
 ## Verify
 

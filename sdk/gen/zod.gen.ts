@@ -115,6 +115,7 @@ export const zStreamChange = z.object({
     .object({
       afterSeq: z.int().nullable(),
       untilSeq: z.int().nullable(),
+      subjectIds: z.array(z.string()).nullable(),
     })
     .nullable(),
   spreadWindow: z.int().nullable(),
@@ -134,6 +135,7 @@ export const zStreamSignal = z.object({
   type: z.string(),
   organizationId: z.string().nullable(),
   subjectId: z.string().nullable(),
+  version: z.int().optional(),
 });
 
 /**
@@ -1060,6 +1062,7 @@ export const zPostAppCatchupResponse = z.object({
             update: z.array(z.string()),
             remove: z.array(z.string()),
             overflow: z.boolean().optional(),
+            untilSeq: z.int().optional(),
           }),
         )
         .optional(),

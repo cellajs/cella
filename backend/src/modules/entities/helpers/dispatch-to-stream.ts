@@ -113,11 +113,6 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
 }
 
-/** The subscribers on an organization's topic that hold the organization. */
-export function organizationSubscribers(organizationId: string): AppStreamSubscriber[] {
-  return streamSubscriberManager.getByTopic(organizationTopic(organizationId)).filter((subscriber) => subscriber.organizationIds.has(organizationId));
-}
-
 /**
  * The frames of a product event: each set of its rows that some subscribers may read, in event order, with those
  * subscribers. Only `own` reads a row's author, and it grants that author alone: rows of one `decisionKey` share one
@@ -170,7 +165,7 @@ export function readerFrames<S extends SubscriberAccess>(
  * @param event - A product change from the activity bus.
  */
 export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
-  const subscribers = organizationSubscribers(event.organizationId);
+  const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));
   if (subscribers.length === 0) return;
 
   // A create or update row without seq is a redelivery whose row has since left its table: no reader can fetch it.
@@ -184,26 +179,33 @@ export async function dispatchChange(event: AppStreamProductEvent): Promise<void
 }
 
 /**
- * Tells those who lost a row to a move: a subscriber who could read a row where it was and cannot read it where it is
- * gets `moveOut` for it. Everyone else receives the normal update.
+ * Tells those who lost rows to a move: a subscriber who could read a row where it was and cannot read it where it is
+ * gets it in one `moveOut` frame of all the rows it lost, shared with every subscriber who lost the same ones. Everyone
+ * else receives the normal update.
  * @param event - A product update; each of its rows that moved carries `movedFrom`.
  */
 export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
-  if (!event.rows.some(({ movedFrom }) => movedFrom)) return;
+  const moved = event.rows.filter((row): row is ActivityRow & { movedFrom: Record<string, unknown> } => !!row.movedFrom);
+  if (moved.length === 0) return;
 
-  const subscribers = organizationSubscribers(event.organizationId);
+  const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));
   if (subscribers.length === 0) return;
 
+  // Per subscriber, the positions in `moved` of the rows it lost.
   const accesses = accessesOf(subscribers);
-  for (const row of event.rows) {
-    const { rowData, movedFrom } = row;
-    if (!movedFrom) continue;
+  const lost: number[][] = subscribers.map(() => []);
+  for (const [at, { rowData, movedFrom }] of moved.entries()) {
     const canReadOld = rowReadDecisions(accesses, event, movedFrom);
     const canReadNew = rowReadDecisions(accesses, event, rowData);
-    const eligible = subscribers.filter((_, index) => canReadOld[index] && !canReadNew[index]);
-    if (eligible.length === 0) continue;
-
-    const moveOut = buildMoveOut(rowScopedEvent(event, movedFrom), row, movedFrom);
-    await sendToSubscribers(eligible, { event: 'change', data: moveOut }, 'Failed to dispatch move-out');
+    for (const index of subscribers.keys()) if (canReadOld[index] && !canReadNew[index]) lost[index].push(at);
   }
+
+  const losers = subscribers.flatMap((subscriber, index) => (lost[index].length > 0 ? [{ subscriber, rows: lost[index] }] : []));
+  await Promise.all(
+    [...Map.groupBy(losers, ({ rows }) => rows.join()).values()].map((readers) => {
+      const rows = readers[0].rows.map((at) => moved[at]);
+      const recipients = readers.map(({ subscriber }) => subscriber);
+      return sendToSubscribers(recipients, { event: 'change', data: buildMoveOut(event, rows) }, 'Failed to dispatch move-out');
+    }),
+  );
 }

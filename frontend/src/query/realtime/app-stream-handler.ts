@@ -4,40 +4,63 @@ import { frontendSpanNames } from 'shared/tracing';
 import { withSpanSync } from '~/lib/tracing';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { userStore } from '~/modules/user/user-store';
-import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
+import { getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/hlc';
 import * as cacheOps from '~/query/realtime/cache-ops';
 import { enqueueRange, invalidateUndelivered } from '~/query/realtime/fetch-prioritizer';
 import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/propagation';
 import { publishChangeEvent } from '~/query/realtime/sync-events';
-import { getSyncTier } from '~/query/realtime/sync-priority';
 
 /** Changes carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
 export function handleStreamChange(change: StreamChange): void {
-  const { productType: entityType, action, organizationId, rows } = change;
+  const { productType: entityType, action, organizationId, overflow } = change;
+  const subjectIds = overflow ? (overflow.subjectIds ?? []) : change.rows.map(({ subjectId }) => subjectId);
 
-  const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.row_count': rows.length };
+  const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.row_count': subjectIds.length };
 
   withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
     // The check guards a product type this bundle does not know.
     if (!isProduct(entityType)) return console.error('Unknown entityType in app stream change:', entityType);
 
     // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
-    for (const { subjectId } of rows) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId ?? null, subjectId });
+    for (const subjectId of subjectIds) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId ?? null, subjectId });
 
-    if (change.overflow) handleOverflow(change, change.overflow);
-    else handleProductChange(change, getEntityQueryKeys(entityType));
+    if (overflow) handleOverflow(change, overflow);
+    else handleProductChange(change);
   });
 }
 
-/** A frame of more rows than it names: a create's or update's range goes to the lazy path, any other change refetches the lists of the type. */
-function handleOverflow(change: StreamChange, { afterSeq, untilSeq }: NonNullable<StreamChange['overflow']>): void {
-  invalidateEmbeddingHosts(change.productType, change.organizationId);
-  if (change.action !== 'delete' && change.action !== 'moveOut' && afterSeq !== null && untilSeq !== null) {
-    enqueueAnnouncedRange(change, { afterSeq, untilSeq });
-  } else {
-    invalidateUndelivered(change.productType, change.organizationId, [change.channelId ?? null], true);
+/**
+ * A frame of more rows than it names in full: a create's or update's range goes to the lazy path, a delete or a
+ * move-out removes the rows it names by id. Past those it refetches the lists of the type and recounts unseen, and a
+ * removal drops every cached detail of the type below the frame's channel: the readable ones refetch when opened.
+ */
+function handleOverflow(change: StreamChange, { afterSeq, untilSeq, subjectIds }: NonNullable<StreamChange['overflow']>): void {
+  const { productType: entityType, organizationId } = change;
+  invalidateEmbeddingHosts(entityType, organizationId);
+  const removal = change.action === 'delete' || change.action === 'moveOut';
+  if (!removal && afterSeq !== null && untilSeq !== null) enqueueAnnouncedRange(change, { afterSeq, untilSeq });
+  else if (removal && subjectIds) removeRows(change, subjectIds);
+  else {
+    invalidateUndelivered(entityType, organizationId, [change.channelId ?? null], true);
+    if (removal) cacheOps.removeEntityDetailsBelow(entityType, change.channelId ?? organizationId);
   }
+}
+
+/**
+ * Rows this reader cannot fetch any more: a delete leaves no tombstone, so each detail is marked and the lists refetch,
+ * at once on screen; a move-out drops each row from the cache.
+ */
+function removeRows(change: StreamChange, subjectIds: string[]): void {
+  const { productType: entityType, action, organizationId } = change;
+  const channelId = change.channelId ?? null;
+  const keys = getEntityQueryKeys(entityType);
+  for (const subjectId of subjectIds) {
+    if (action === 'moveOut') cacheOps.removeEntity(entityType, subjectId, organizationId);
+    else cacheOps.invalidateEntityDetail(subjectId, keys, 'none');
+  }
+  applyUnfetchableRemovalUnseen(entityType, subjectIds, channelId);
+  if (action === 'delete') invalidateUndelivered(entityType, organizationId, [channelId], false);
 }
 
 /** Hands an announced range to the fetch prioritizer, which fetches it on the tier of its scope. */
@@ -64,9 +87,8 @@ function isOwnEcho(action: StreamChange['action'], { stx, actorId }: StreamChang
   return userId !== undefined && actorId === userId;
 }
 
-function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void {
-  const { productType: entityType, action, organizationId, propagation } = change;
-  const channelId = change.channelId ?? null;
+function handleProductChange(change: StreamChange): void {
+  const { productType: entityType, action, propagation } = change;
 
   // An own echo fetches nothing: the write's answer brings the stored row. A frame of only own rows fetches nothing.
   const rows = change.rows.filter((row) => {
@@ -86,26 +108,14 @@ function handleProductChange(change: StreamChange, keys: EntityQueryKeys): void 
       break;
     }
 
-    case 'delete': {
-      // Physical deletes and unpublishes leave no fetchable tombstone; soft deletes stay updates reconciled through sequence ranges.
-      for (const { subjectId } of rows) {
-        cacheOps.invalidateEntityDetail(subjectId, keys, 'none');
-        applyUnfetchableRemovalUnseen(entityType, subjectId, channelId);
-      }
-      // The tier system the fetch prioritizer uses: the viewing tier refetches its lists now, background and muted on next access.
-      const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
-      cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
+    // Physical deletes, unpublishes and move-outs; a soft delete stays an update reconciled through sequence ranges.
+    case 'delete':
+    case 'moveOut': {
+      const subjectIds = rows.map(({ subjectId }) => subjectId);
+      removeRows(change, subjectIds);
       if (propagation) propagateEmbeddings(propagation);
       break;
     }
-
-    case 'moveOut':
-      // A move-out reads as a removal here: this subscriber cannot fetch the new location.
-      for (const { subjectId } of rows) {
-        cacheOps.removeEntity(entityType, subjectId, organizationId);
-        applyUnfetchableRemovalUnseen(entityType, subjectId, channelId);
-      }
-      break;
   }
 
   console.debug(`[handleProductChange] ${entityType}:${action} rows=${rows.length}`);

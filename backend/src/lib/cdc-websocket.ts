@@ -49,6 +49,8 @@ const cdcMessageSchema = z.union([
     activity: activitySchema.extend({ subjectId: z.string().nullable() }),
     rowData: rowDataSchema,
     movedFrom: rowDataSchema.nullable().optional(),
+    // Optional: a worker of an earlier release sends none, and the live signal then goes without one.
+    signalVersions: z.record(z.string(), z.number().int()).optional(),
     _trace: messageTraceSchema,
   }),
 ]);
@@ -59,7 +61,7 @@ export type CdcMessage = z.infer<typeof cdcMessageSchema>;
 function eventOf(message: CdcMessage): ActivityEvent {
   const trace = message._trace ?? null;
   if ('rows' in message) return { ...message.activity, rows: message.rows, rowData: null, trace };
-  return { ...message.activity, rowData: message.rowData, rows: null, trace };
+  return { ...message.activity, rowData: message.rowData, rows: null, signalVersions: message.signalVersions, trace };
 }
 
 /** The worker pushes its health report several times within this span, so a connection that sends nothing this long is dead. */

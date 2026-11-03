@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
 import { appConfig } from 'shared';
+import { workerAwayPing } from 'shared/stream-ping';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
@@ -44,8 +45,6 @@ const changeBufferCap = 500;
 const catchupTimeoutMs = 60_000;
 /** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
 const streamSilenceMs = 75_000;
-/** What a ping of the app stream carries while the server's CDC worker has not been reading for a minute. */
-const workerAwayPing = 'worker_away';
 
 interface StreamStoreState {
   state: StreamState;
@@ -287,13 +286,16 @@ class StreamManager {
   private applyChange(change: StreamChange) {
     // Followers get a change when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
     postToFollowers({ type: 'stream-change', change });
-    handleStreamChange(change);
+    // Logged and dropped here, as a follower does: a throw would fail the catchup's drain and close the stream.
+    try {
+      handleStreamChange(change);
+    } catch (error) {
+      console.error(`[${streamName}] stream-change handler failed:`, error);
+    }
   }
 
   private isPermanentError(error: unknown): boolean {
-    if (error && typeof error === 'object' && 'status' in error) return error.status === 401 || error.status === 403;
-    const message = error instanceof Error ? error.message : String(error);
-    return message.includes('Access denied') || message.includes('Unauthorized');
+    return !!error && typeof error === 'object' && 'status' in error && (error.status === 401 || error.status === 403);
   }
 
   private connectSSE(signal: AbortSignal) {

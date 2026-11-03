@@ -168,9 +168,15 @@ describe('CDC socket: a message as the bus receives it', () => {
     });
 
     const [event] = onBus('membership.created', () => worker.send({ activity, rowData: membership }));
+    const [versioned] = onBus('membership.created', () =>
+      worker.send({ activity, rowData: membership, signalVersions: { 'membership.changed': 4 } }),
+    );
 
     expect(event.rowData).toEqual(membership);
     expect(event.rows).toBeNull();
+    // A worker of an earlier release sends no versions, and its message still reaches the bus.
+    expect(event).toMatchObject({ signalVersions: undefined });
+    expect(versioned).toMatchObject({ rowData: membership, signalVersions: { 'membership.changed': 4 } });
   });
 
   it('must not hand a product message without a row to the bus', () => {

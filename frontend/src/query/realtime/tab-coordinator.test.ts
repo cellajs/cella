@@ -181,6 +181,28 @@ describe('what the leader tells the other tabs', () => {
     expect(received).toEqual(messages);
   });
 
+  it('logs a message the follower fails on, which escapes the channel handler no further, and takes the next one', async () => {
+    const signal = (subjectId: string): LeaderMessage => ({
+      type: 'stream-signal',
+      signal: { type: 'notification.read', organizationId: null, subjectId },
+    });
+    const handled: unknown[] = [];
+    onLeaderMessage((message) => {
+      if (message.type === 'stream-signal' && message.signal.subjectId === 'bad') throw new Error('handler failed');
+      handled.push(message);
+    });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    await initTabCoordinator();
+
+    receive(signal('bad'));
+    receive(signal('next'));
+
+    expect(handled).toEqual([signal('next')]);
+    expect(logged).toHaveBeenCalledOnce();
+    logged.mockRestore();
+  });
+
   it('includes the health of its stream, said again to a tab that opens later: every tab announces its version as it opens', async () => {
     await initTabCoordinator();
     postToFollowers({ type: 'sync-health', health: down });

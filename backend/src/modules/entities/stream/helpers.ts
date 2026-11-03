@@ -20,11 +20,18 @@ export interface StreamErrorPayload {
 /** One frame of the app stream. */
 export type StreamFrame = { event: 'change'; data: StreamChange } | { event: 'signal'; data: StreamSignal };
 
-/** Frame bytes a stream may hold unsent: the next frame closes it, and its client's reconnect catches up. */
+/** Frame bytes a stream may hold unsent, counted as each frame's JSON without its SSE envelope: the next frame closes it, and its client's reconnect catches up. */
 export const maxPendingStreamBytes = 64 * 1024;
 
-/** Rows one change frame names: 20 rows of about 700 B (an update's stx) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
+/** Rows one change frame names in full: 20 rows of about 700 B (an update's stx) make 14 KB, under a quarter of `maxPendingStreamBytes`. */
 export const maxStreamChangeRows = 20;
+
+/**
+ * Rows a change frame names by id alone past `maxStreamChangeRows`: 400 UUIDs make about 16 KB, as 20 full rows do.
+ * Past it a frame names none: a create or update still names its range, and after a delete or a move-out the client
+ * refetches the lists and drops the type's cached details below the frame's channel.
+ */
+export const maxStreamChangeIds = 400;
 
 /** The bytes of each stream's frames written and not yet taken by its client. */
 const pendingStreamBytes = new WeakMap<SSEStreamingApi, number>();
@@ -80,12 +87,6 @@ export async function writeOffset(stream: SSEStreamingApi): Promise<void> {
 export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPayload): Promise<void> {
   await stream.writeSSE({ event: 'error', data: JSON.stringify(payload) });
 }
-
-/**
- * What a ping of the app stream says while no CDC worker has been reading for a minute. Any other ping is empty: live
- * changes arrive as they happen.
- */
-export const workerAwayPing = 'worker_away';
 
 /**
  * A `ping` event. EventSource hands a named event to client code and hides a comment line, so this is how a client

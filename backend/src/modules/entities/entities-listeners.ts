@@ -75,9 +75,11 @@ for (const table of [...appConfig.entityTypes, ...appConfig.resourceTypes]) {
       if (!organizationId) return;
       const organization = buildSubject('organization', {}, { id: organizationId });
       const channel = namedChannel(event, table);
+      const versions = event.rows === null ? event.signalVersions : undefined;
       for (const { type, namesRow } of signals) {
-        if (!namesRow) await sendSignal(type, toReaders(organization), { organizationId });
-        else if (channel) await sendSignal(type, channel.readers, { organizationId, subjectId: channel.id });
+        const version = versions?.[type];
+        if (!namesRow) await sendSignal(type, toReaders(organization), { organizationId, version });
+        else if (channel) await sendSignal(type, channel.readers, { organizationId, subjectId: channel.id, version });
       }
     });
   }

@@ -235,7 +235,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/entities-handlers.ts` (stream handler, catchup), `backend/src/schemas/stream-schemas.ts`.
   - `sync-events.ts` is the frontend prioritizer file; the backend equivalents are `modules/entities/entities-listeners.ts` and `stream/send-signal.ts`.
   - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
-  - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `organizationSubscribers`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
+  - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
   - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every app stream on a new generation).
   - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStreams`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).

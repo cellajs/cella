@@ -44,7 +44,7 @@ The stream carries two kinds of frame. Both are announcements: what a frame poin
 | Sent to | Subscribers who may read the row | One user, or the readers of a subject |
 | Missed while away | Catchup fetches the sequence gap | Catchup compares a **versioned** signal's version and runs its handler once; an **ephemeral** one is gone |
 
-A signal is versioned when a client that was away must still find out, and then a committed row makes it. A module declares the signals it sends and the handlers that answer them.
+A signal is versioned when a client that was away must still find out, and then a committed row makes it. Its live frame carries the version, so a client that heard every version since its last catchup does not run them again at the next one. A module declares the signals it sends and the handlers that answer them.
 
 The rows below a deleted channel leave by cascade and get no change of their own, however many there are. The channel's delete sends `channel.deleted` to the channel's readers in their place: a client drops what it holds below the channel and marks the lists of every product type below a channel for a refetch. Missed while away, the signal names no channel, and only the marks remain.
 
@@ -77,7 +77,7 @@ A product table that opts into drafts is published with a row filter, so sync se
 
 ### Moves
 
-When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` under its old home channel and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update.
+When an update moves products to a path a subscriber can no longer read, that subscriber receives one `moveOut` of the rows it lost, under their old home channel when they share one, and drops them, because no range fetch could return them. Subscribers who can read both locations receive a normal update.
 
 ## Access
 
@@ -95,7 +95,7 @@ When an update moves a product to a path a subscriber can no longer read, that s
 
 ### Changes
 
-A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names none of them: the client fetches their sequence range, or after a delete refetches the lists. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
+A change frame names its rows, each with its sequence position and the write that changed it: rows to fetch and patch into the caches, deletes that only mark the lists for a refetch (no sync-visible row remains), or move-outs that drop the row at once. Past a fixed number of rows a frame names them by id alone, and past a larger id bound names none: the client fetches the sequence range of a create or update; it handles deleted and moved rows by id as it does named ones, and when the frame names none of them it refetches the lists and drops the type's cached details below the frame's channel. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row counts as the tab's echo only when it carries the tab's source id and names the tab's signed-in user as its writer, since anyone who reads a row the tab wrote can copy that id.
 
 ### Catchup
 
@@ -109,7 +109,7 @@ Beside change and signal frames the stream sends a periodic `ping`, which also s
 
 An announced range is queued, not fetched at once. A viewed channel fetches immediately, a muted or archived one when it is opened, and any other in the background, spread over a window that grows with the organization's online audience.
 
-Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces each row a change frame names, ids only, before any tier decision, and delivers each settled range's rows. A frame past the row cap names no row, and a range the client cannot deliver row by row arrives as a degraded event without rows.
+Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces every readable change, ids only, before any tier decision, and delivers each fetched range's rows. A frame past the id bound announces none: a create's or update's rows still arrive with its fetched range, and after a delete or a move-out the lists refetch.
 
 ### Freshness
 
@@ -176,7 +176,7 @@ Missed frames are repaired by the client's own catchup. Clients refetch everythi
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped, by an operator or at the WAL bound; after a drop every client refetches once | A fix lets the worker read on; a dropped slot is made anew and the books rebuilt | Nothing after a fix; after a drop, activities and notifications of the backlog |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
-A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and refetches its synced cache once, each client at its own moment within a few seconds: what is on screen then, the rest through its [refetch mark](#freshness).
+A rebuild starts a new sync generation, and the API ends every open stream. A client whose catchup answer carries a new generation resets its view cursors to the new frontiers and runs each versioned signal's handler once. It refetches its synced cache once, each client at its own moment within a few seconds: what is on screen then, the rest through its [refetch mark](#freshness).
 
 ### Failure modes
 

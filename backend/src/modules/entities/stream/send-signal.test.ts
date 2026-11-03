@@ -76,6 +76,19 @@ describe('sendSignal: who hears it', () => {
     expect(otherOrg).toEqual([]);
   });
 
+  it('carries the version a versioned signal was given, and no version field otherwise', async () => {
+    const frames = openStream('user-a');
+
+    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, version: 5 });
+    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org });
+
+    expect(frames.map(({ data }) => JSON.parse(data))).toEqual([
+      { type: 'signal-test.changed', organizationId: org, subjectId: null, version: 5 },
+      { type: 'signal-test.changed', organizationId: org, subjectId: null },
+    ]);
+    expect(frames[1].data).not.toContain('version');
+  });
+
   it('must not send a type no module declared for that audience', async () => {
     const frames = openStream('user-a');
 

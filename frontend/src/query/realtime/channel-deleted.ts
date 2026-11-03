@@ -9,16 +9,20 @@ import { getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
+import { isOpaqueScope } from '~/query/realtime/catchup-processor';
 import { invalidateUndelivered } from '~/query/realtime/fetch-prioritizer';
 import * as membershipOps from '~/query/realtime/membership-ops';
 import { invalidateEmbeddingHosts } from '~/query/realtime/propagation';
 import { publishChangeEvent } from '~/query/realtime/sync-events';
+import { syncStore } from '~/query/realtime/sync-store';
 
 /** The organization's refetches wait this long for the rest of a cascade: a delete reaches the channels below it, each with a signal of its own. */
 const cascadeSettleMs = 1_000;
 
 /** Per organization, the channels deleted since the last refetch; null for a delete missed while away. */
 const pendingRefetches = new Map<string, Set<string | null>>();
+/** The organizations whose missed delete arrived while a start-over refetch was due, which loads every synced list. */
+const coveredByStartOver = new Set<string>();
 let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const channelTypesBelowOrganization = () => hierarchy.channelTypes.filter((type) => type !== 'organization');
@@ -71,8 +75,13 @@ function refetchBelowDeletedChannels(): void {
   const deletedIds = new Set<string>();
 
   for (const [organizationId, channelIds] of pendingRefetches) {
-    for (const productType of productTypes) {
+    // Missed while away and nothing else: a due start-over refetch loads every list and host, and the catchup that
+    // reported it already refetched the lists of an opaque scope.
+    const missedOnly = [...channelIds].every((channelId) => channelId === null);
+    const startOverCovers = missedOnly && coveredByStartOver.has(organizationId);
+    for (const productType of startOverCovers ? [] : productTypes) {
       invalidateEmbeddingHosts(productType, organizationId);
+      if (missedOnly && isOpaqueScope(organizationId, productType)) continue;
       invalidateUndelivered(productType, organizationId, [...channelIds], false);
     }
     // The channels' memberships and invitations left by the same cascade.
@@ -80,6 +89,7 @@ function refetchBelowDeletedChannels(): void {
     for (const channelId of channelIds) if (channelId) deletedIds.add(channelId);
   }
   pendingRefetches.clear();
+  coveredByStartOver.clear();
 
   // A delete missed while away leaves the unseen recount and the memberships to the catchup that reported it.
   if (deletedIds.size > 0 && productTypes.some(isSeenTracked)) queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
@@ -91,6 +101,8 @@ function refetchBelowDeletedChannels(): void {
 export function handleChannelDeleted({ organizationId, subjectId }: StreamSignal): void {
   if (!organizationId) return;
   if (subjectId) dropChannel(organizationId, subjectId);
+  // Read now: the start-over refetch may run, and clear its moment, before the cascade settles.
+  else if (syncStore.getState().refetchDueAt !== null) coveredByStartOver.add(organizationId);
 
   const pending = pendingRefetches.get(organizationId) ?? new Set();
   pendingRefetches.set(organizationId, pending.add(subjectId));

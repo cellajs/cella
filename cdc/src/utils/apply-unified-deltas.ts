@@ -31,9 +31,11 @@ async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Reco
  * Phase 1 reserves WAL-ordered sequence ranges; phase 2 writes the organization frontiers, remaining counts, and the row
  * seq values. Every statement runs in a fixed order (organizations and counter rows by key, product rows by id), so two
  * transactions that touch the same rows take their locks the same way round.
+ * @returns The counter row of each channel the plan wrote, as the flush left it.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor): Promise<void> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor): Promise<Map<string, Record<string, number>>> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
+  const written = new Map<string, Record<string, number>>();
 
   const handledChannelKeys = new Set<string>();
   /** The last seq of each row by table: a row changed twice in one flush is stamped once, with its newest position. */
@@ -49,6 +51,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
     handledChannelKeys.add(group.orgKey);
 
     const counts = await applyCounterDeltas(db, group.orgKey, mergedDeltas);
+    written.set(group.orgKey, counts);
     const highSeq = counts.sequence ?? count;
     const baseSeq = highSeq - count;
 
@@ -73,7 +76,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
     mergeDelta(phase2Deltas, channelKey, deltas);
   }
   for (const channelKey of [...phase2Deltas.keys()].sort()) {
-    await applyCounterDeltas(db, channelKey, phase2Deltas.get(channelKey) ?? {});
+    const counts = await applyCounterDeltas(db, channelKey, phase2Deltas.get(channelKey) ?? {});
+    written.set(channelKey, { ...written.get(channelKey), ...counts });
   }
 
   for (const [tableName, rows] of lastSeqByTable) {
@@ -95,4 +99,5 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
       `);
     }
   }
+  return written;
 }

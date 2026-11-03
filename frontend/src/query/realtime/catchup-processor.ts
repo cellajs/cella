@@ -14,6 +14,8 @@ import { syncStore } from '~/query/realtime/sync-store';
 
 const dayMs = 24 * 60 * 60 * 1000;
 
+type PropagationHint = NonNullable<PostAppCatchupResponse['organizations'][string]['propagation']>[number];
+
 let refetchTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
@@ -75,6 +77,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
 
       if (answer.status === 'opaque') {
         opaqueScopes.add(viewKey);
+        // Before the lists refetch, so a list read in flight finds no cursor move to read again.
+        const hint = organizations[organizationId]?.propagation?.find(({ embeddedProduct }) => embeddedProduct === entityType);
+        if (!baselineOnly && hint) settleOpaqueHint(organizationId, hint, keys);
         // Readable but not provably complete, so no numbers to compare: an actively viewed list refetches, the others stay marked until opened.
         if (!baselineOnly && !refetchPending && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
@@ -179,6 +184,20 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
 
   // Synced-row deltas miss what happened while disconnected, such as other-device seen-marks, so an exact recount re-anchors the counts.
   queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
+}
+
+/**
+ * An opaque scope's embedding hint, which gets no frontier: the cursor moves to the highest position the hint read, so
+ * the next hint names only newer rows. Nothing fetched the updated rows, so the host lists refetch and the updated
+ * rows' own cached details are marked; the hint's removals still propagate.
+ */
+function settleOpaqueHint(organizationId: string, { embeddedProduct, update, untilSeq }: PropagationHint, keys: EntityQueryKeys): void {
+  if (untilSeq === undefined) return;
+  const syncState = syncStore.getState();
+  syncState.setOrgSeq(organizationId, embeddedProduct, Math.max(syncState.getOrgSeq(organizationId, embeddedProduct), untilSeq));
+  if (update.length === 0) return;
+  invalidateEmbeddingHosts(embeddedProduct, organizationId);
+  for (const id of update) cacheOps.invalidateEntityDetail(id, keys, 'none');
 }
 
 /** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */

@@ -25,6 +25,7 @@ const { offlineFilesStore } = await import('~/modules/attachment/offline/offline
 const { attachmentQueryKeys, useAttachmentDeleteMutation } = await import('~/modules/attachment/query');
 const { queryClient } = await import('~/query/query-client');
 const { makeAttachment, makeQueueEntry } = await import('~/modules/attachment/tests/test-setup');
+const { publishChangeEvent } = await import('~/query/realtime/sync-events');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 
@@ -83,6 +84,14 @@ describe('download service', () => {
       expect(await attachmentsDb.downloadQueue.get('att-1')).toBeUndefined();
     });
     expect(deleteAttachments).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ ids: ['att-1'] }) }));
+  });
+
+  it("removes the stored file of an attachment a move took out of this reader's reach", async () => {
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-2', status: 'downloaded' }));
+
+    publishChangeEvent({ action: 'moveOut', entityType: 'attachment', organizationId: ctx.organizationId, channelId: null, subjectId: 'att-2' });
+
+    await vi.waitFor(async () => expect(await attachmentsDb.downloadQueue.get('att-2')).toBeUndefined());
   });
 
   // A row queued with its local key finishes on the previews tier with nothing stored, and a finished row never revives once linked.

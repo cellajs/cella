@@ -30,6 +30,8 @@ interface CdcRowMessage {
   activity: InsertActivityModel & { id?: string };
   rowData: CdcRowData;
   movedFrom?: CdcRowData | null;
+  /** Per signal type, the version this change moved it to; a change delivered again carries none. */
+  signalVersions?: Record<string, number>;
   _trace: TraceContext;
 }
 
@@ -74,9 +76,11 @@ export function sendMessageToApi(
   rowData: CdcRowData,
   traceContext: TraceContext,
   movedFrom?: CdcRowData | null,
+  signalVersions?: Record<string, number>,
 ): void {
   const message: CdcRowMessage = { activity, rowData, _trace: traceContext };
   if (movedFrom) message.movedFrom = movedFrom;
+  if (signalVersions) message.signalVersions = signalVersions;
   wsClient.send(message);
 }
 

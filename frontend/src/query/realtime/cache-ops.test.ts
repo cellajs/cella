@@ -31,7 +31,7 @@ vi.mock('shared', async (importOriginal) => {
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys, registerEqualityFilterKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
+const { fetchRangeAndPatch, removeEntityDetailsBelow } = await import('~/query/realtime/cache-ops');
 
 // The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
 const TASK = 'task' as EntityType;
@@ -175,6 +175,30 @@ describe('realtime cache ops', () => {
     expect(result.status).toBe(status);
     expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual(cached);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
+  });
+});
+
+describe('details of rows a frame removes without naming them', () => {
+  afterEach(() => queryClient.clear());
+
+  it('must not keep a cached detail of the type below the channel, and leaves those of another channel', () => {
+    const keys = createEntityKeys<Record<string, never>>(TASK);
+    registerEntityQueryKeys(TASK, keys);
+    const task = (id: string, projectId: string) => ({ id, organizationId: 'org-1', projectId });
+    for (const [id, projectId] of [
+      ['t1', 'p1'],
+      ['t2', 'p2'],
+    ]) {
+      queryClient.setQueryData(keys.detail.byId(id), task(id, projectId));
+    }
+
+    removeEntityDetailsBelow(TASK, 'p1');
+    expect(queryClient.getQueryData(keys.detail.byId('t1'))).toBeUndefined();
+    expect(queryClient.getQueryData(keys.detail.byId('t2'))).toEqual(task('t2', 'p2'));
+
+    // A frame without a channel names the organization, an ancestor of every row.
+    removeEntityDetailsBelow(TASK, 'org-1');
+    expect(queryClient.getQueryData(keys.detail.byId('t2'))).toBeUndefined();
   });
 });
 

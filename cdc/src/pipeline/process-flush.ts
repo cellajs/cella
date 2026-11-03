@@ -13,7 +13,7 @@ import { metrics } from '../services/cdc-metrics';
 import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
 import type { PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
-import { computeBatchUnifiedDeltas, isStampable } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, isStampable, signalVersionsOf } from '../utils/compute-unified-deltas';
 
 /** A change with the activity it is recorded as: the parsed activity plus its id. */
 interface PreparedEvent {
@@ -46,9 +46,11 @@ function seqOf({ result: { rowData } }: PendingEvent): number | undefined {
  * row stamps of the changes whose activity this transaction inserted. An activity id comes from the commit position of
  * its source transaction and its index there, so a change delivered a second time inserts nothing and changes nothing:
  * its row keeps the seq it got the first time, read back here for the message.
+ * @returns The versions each change this transaction recorded gave its versioned signals; a change delivered again has none.
  */
-async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
+async function recordFlush(prepared: PreparedEvent[]): Promise<Map<PendingEvent, Record<string, number>>> {
   let counted: CounterDeltas = new Map();
+  let signalVersions = new Map<PendingEvent, Record<string, number>>();
   await cdcDb.transaction(async (tx) => {
     const insertedIds = new Set<string>();
     for (let offset = 0; offset < prepared.length; offset += activityChunkSize) {
@@ -67,7 +69,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
         // A rebuild wrote the count itself: what it saw is not counted a second time. A verify only compares.
         if (fence.mode === 'rebuild') addCounts(plan.countDeltasByChannelKey, counted, -1);
       }
-      await applyBatchUnifiedDeltas(plan, tx);
+      signalVersions = signalVersionsOf(fresh, await applyBatchUnifiedDeltas(plan, tx));
     }
 
     const again = prepared
@@ -90,6 +92,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
   });
   // Only what the transaction committed counts towards the comparison.
   fence.addCounted(counted);
+  return signalVersions;
 }
 
 /**
@@ -112,14 +115,14 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
     .flat()
     .map((event) => ({ event, activity: { ...event.result.activity, id: generateActivityId(event) } }));
 
-  await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activity), () => recordFlush(prepared));
+  const signalVersions = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activity), () => recordFlush(prepared));
 
   // A row that is no product goes to the API alone and in commit order: its listeners act on that one row.
   for (const { event, activity } of prepared) {
     if (productTypeOf(event)) continue;
     const { rowData, movedFrom } = event.result;
     await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: event.lsn, tag: activity.action, table: activity.tableName }), async (traceContext) =>
-      sendMessageToApi(activity, rowData, traceContext, movedFrom),
+      sendMessageToApi(activity, rowData, traceContext, movedFrom, signalVersions.get(event)),
     );
   }
 

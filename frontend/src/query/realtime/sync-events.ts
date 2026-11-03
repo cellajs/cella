@@ -15,8 +15,6 @@ export interface SyncedRows {
   entityType: ProductEntityType;
   organizationId: string;
   rows: { id: string; [key: string]: unknown }[];
-  /** A range the fetch could not deliver (overflow, unsupported, exhausted retries): `rows` is empty, and a subscriber that derives state from rows invalidates. */
-  degraded: boolean;
 }
 
 type Handler<T> = (event: T) => void;
@@ -53,6 +51,6 @@ const syncedRows = createEmitter<SyncedRows>('SyncedRows');
 export const onChangeEvent = changeEvent.subscribe;
 export const publishChangeEvent = changeEvent.publish;
 
-/** Subscribe to fetched rows to derive state from them: the fetch prioritizer publishes a range once it settles, a muted scope's announced ranges when it is opened. */
+/** Subscribe to fetched rows to derive state from them: the fetch prioritizer publishes the rows of each range it fetched, a muted scope's announced ranges when it is opened. */
 export const onSyncedRows = syncedRows.subscribe;
 export const publishSyncedRows = syncedRows.publish;

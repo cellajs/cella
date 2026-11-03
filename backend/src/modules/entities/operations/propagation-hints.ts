@@ -58,7 +58,7 @@ export async function buildPropagationHints(
       const readWhere = buildCollectionReadWhere(readFilter, getEntityTable(embeddedProduct), access);
       if (readWhere.kind === 'none') continue;
 
-      const { updatedIds, deletedIds } = await tenantReadAsIncludingDeleted(ctx, tenantId, (readCtx) =>
+      const { updatedIds, deletedIds, untilSeq } = await tenantReadAsIncludingDeleted(ctx, tenantId, (readCtx) =>
         findChangedEntityDeltaIds(readCtx, {
           entityType: embeddedProduct,
           organizationId,
@@ -67,11 +67,11 @@ export async function buildPropagationHints(
           limit: maxHintRows + 1,
         }),
       );
-      const changed = updatedIds.length + deletedIds.length;
-      if (changed === 0) continue;
+      // No changed row the caller may read.
+      if (untilSeq === null) continue;
 
-      if (changed > maxHintRows) hints.push({ embeddedProduct, update: [], remove: [], overflow: true });
-      else hints.push({ embeddedProduct, update: updatedIds, remove: deletedIds });
+      if (updatedIds.length + deletedIds.length > maxHintRows) hints.push({ embeddedProduct, update: [], remove: [], overflow: true, untilSeq });
+      else hints.push({ embeddedProduct, update: updatedIds, remove: deletedIds, untilSeq });
     }
 
     if (hints.length > 0) {

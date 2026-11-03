@@ -242,8 +242,8 @@ interface FindChangedEntityDeltaIdsOpts {
 }
 
 /**
- * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones. A
- * tombstone is read only in a transaction that includes deleted rows.
+ * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones, and the
+ * highest seq among them (null when none). A tombstone is read only in a transaction that includes deleted rows.
  */
 export const findChangedEntityDeltaIds = async (
   ctx: DbContext,
@@ -255,8 +255,9 @@ export const findChangedEntityDeltaIds = async (
   // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
   const published = publishedRowsPredicate(table);
 
-  const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
-    SELECT id, ${deletedAtSelect} AS "deletedAt"
+  // pg returns an int8 `seq` as text.
+  const result = await db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
+    SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
     LIMIT ${limit}
@@ -264,6 +265,7 @@ export const findChangedEntityDeltaIds = async (
 
   const updatedIds: string[] = [];
   const deletedIds: string[] = [];
+  let untilSeq: number | null = null;
 
   for (const row of result.rows) {
     if (row.deletedAt) {
@@ -271,7 +273,8 @@ export const findChangedEntityDeltaIds = async (
     } else {
       updatedIds.push(row.id);
     }
+    untilSeq = Math.max(untilSeq ?? 0, Number(row.seq));
   }
 
-  return { updatedIds, deletedIds };
+  return { updatedIds, deletedIds, untilSeq };
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, signalVersionsOf } from '../utils/compute-unified-deltas';
 import { changeEvent, tableMetaOf } from './factories';
 
 // `attachment` parents on organization, so resolveChannelKey returns organizationId and seq plus
@@ -339,5 +339,35 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': 1, 'e:c:h:attachment': 1 });
+  });
+});
+
+/** The live signal carries the version its change gave it, so a client that heard it skips it at its next catchup. */
+describe('signalVersionsOf: the version each change gives its signals', () => {
+  const membership = (id: string, organizationId: string) =>
+    changeEvent({ tableMeta: membershipEntry(), action: 'create', rowData: { id, organizationId, channelId: organizationId, role: 'member' } });
+
+  it('gives the changes of one organization consecutive versions in commit order, the last one the counter the flush left', () => {
+    const events = [membership('mem-1', 'org-1'), membership('mem-2', 'org-2'), membership('mem-3', 'org-1')];
+    const attachment = changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-1', organizationId: 'org-1' } });
+    const counters = new Map([
+      ['org-1', { 's:membership.changed': 7 }],
+      ['org-2', { 's:membership.changed': 3 }],
+    ]);
+
+    const versions = signalVersionsOf([...events, attachment], counters);
+
+    expect(events.map((event) => versions.get(event))).toEqual([
+      { 'membership.changed': 6 },
+      { 'membership.changed': 3 },
+      { 'membership.changed': 7 },
+    ]);
+    expect(versions.has(attachment)).toBe(false);
+  });
+
+  it('gives no version without the counter of its organization', () => {
+    const event = membership('mem-1', 'org-1');
+
+    expect(signalVersionsOf([event], new Map()).has(event)).toBe(false);
   });
 });

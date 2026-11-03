@@ -70,10 +70,7 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
     expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
-    expect(syncedRows.mock.calls).toEqual([
-      [{ entityType: 'attachment', organizationId: 'org-1', rows: items, degraded: false }],
-      [{ entityType: 'attachment', organizationId: 'org-1', rows: [], degraded: true }],
-    ]);
+    expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
 
     // The row's next change names its new position, and its range starts where the cursor moved to.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 9 });
@@ -86,7 +83,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it.each(['overflow', 'error'] as const)(
-    'ends a range whose fetch reports %s in one list invalidation, an empty degraded batch and a cursor moved on',
+    'ends a range whose fetch reports %s in one list invalidation, one unseen recount and a cursor moved on, and publishes no rows',
     async (status) => {
       const syncedRows = vi.fn();
       const off = onSyncedRows(syncedRows);
@@ -99,7 +96,7 @@ describe('fetch-prioritizer', () => {
 
       expect(invalidateEntityListForOrg).toHaveBeenCalledOnce();
       expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
-      expect(syncedRows).toHaveBeenCalledExactlyOnceWith({ entityType: 'attachment', organizationId: 'org-1', rows: [], degraded: true });
+      expect(syncedRows).not.toHaveBeenCalled();
       expect(invalidateUnseenCounts).toHaveBeenCalledOnce();
     },
   );
@@ -116,7 +113,7 @@ describe('fetch-prioritizer', () => {
     off();
 
     expect(syncedRows).toHaveBeenCalledTimes(1);
-    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: items, degraded: false });
+    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: items });
     expect(invalidateUnseenCounts).not.toHaveBeenCalled();
   });
 

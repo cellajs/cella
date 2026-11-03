@@ -176,7 +176,12 @@ function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
   // The leader acts on its own stream: its changes and signals as they arrive, a catchup answer where its request returns.
   if (store.isLeader) return;
   if (message.type === 'sync-health') lastSyncHealth = null;
-  leaderMessageHandler?.(message);
+  // Logged and dropped here: a throw would leave the channel handler as an uncaught error.
+  try {
+    leaderMessageHandler?.(message);
+  } catch (error) {
+    console.error(`[TabCoordinator] ${message.type} handler failed:`, error);
+  }
 }
 
 /** Sets the one handler of what the leader posts; the stream manager sets it, and it runs only while this tab follows. */

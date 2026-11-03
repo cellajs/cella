@@ -1,3 +1,4 @@
+import { generateId } from 'shared/utils/entity-id';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
@@ -12,7 +13,7 @@ vi.mock('shared', async (importOriginal) => {
 });
 
 const { buildStreamChange } = await import('./build-change');
-const { maxStreamChangeRows } = await import('./helpers');
+const { maxPendingStreamBytes, maxStreamChangeIds, maxStreamChangeRows } = await import('./helpers');
 
 const org = 'org-hint';
 
@@ -78,7 +79,10 @@ describe('buildStreamChange: the propagation hint of an embedded product', () =>
   });
 });
 
-/** Past the cap a frame names no row, so its size stays bounded whatever the transaction: the client fetches the range or refetches its lists. */
+/**
+ * Past the cap a frame names its rows by id alone, and past `maxStreamChangeIds` none, so its size stays under the pending
+ * limit whatever the transaction: the client fetches the range, or removes the rows by id, or refetches its lists.
+ */
 describe('buildStreamChange: a frame past the row cap', () => {
   const many = (count: number, seq: (index: number) => number) => Array.from({ length: count }, (_, index) => row(`a${index}`, seq(index)));
 
@@ -105,14 +109,30 @@ describe('buildStreamChange: a frame past the row cap', () => {
     expect(change).toMatchObject({ rows: [], propagation: null, overflow: { afterSeq: 99, untilSeq: 100 + maxStreamChangeRows * 2 } });
   });
 
-  it('names no range of a delete past it', () => {
-    const change = buildStreamChange(
+  it('names 25 deleted rows by id and no range, and 401 by none', () => {
+    const named = buildStreamChange(
       event(
         'delete',
-        many(maxStreamChangeRows + 1, () => 0),
+        many(25, () => 0),
+      ),
+    );
+    const unnamed = buildStreamChange(
+      event(
+        'delete',
+        many(maxStreamChangeIds + 1, () => 0),
       ),
     );
 
-    expect(change).toMatchObject({ rows: [], propagation: null, overflow: { afterSeq: null, untilSeq: null } });
+    expect(named).toMatchObject({ rows: [], propagation: null, overflow: { afterSeq: null, untilSeq: null } });
+    expect(named.overflow?.subjectIds).toEqual(Array.from({ length: 25 }, (_, index) => `a${index}`));
+    expect(unnamed.overflow).toEqual({ afterSeq: null, untilSeq: null, subjectIds: null });
+  });
+
+  it('weighs at most a quarter of the pending limit of a stream at the most ids it names, as a frame of full rows does', () => {
+    // Entity ids are UUIDs: the id is the whole weight of a row here.
+    const rows = Array.from({ length: maxStreamChangeIds }, (_, index) => row(generateId(), index + 1));
+    const bytes = Buffer.byteLength(JSON.stringify(buildStreamChange(event('update', rows))));
+
+    expect(bytes).toBeLessThan(maxPendingStreamBytes / 4);
   });
 });

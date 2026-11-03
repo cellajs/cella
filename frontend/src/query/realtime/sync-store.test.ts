@@ -39,7 +39,7 @@ describe('sync-store adoptGeneration', () => {
     expect(store.getOrgSeq('org-1', 'item')).toBe(0);
     expect(store.getChannelSeq('org-1', 'c1', 'item')).toBe(0);
     expect(store.refetchDueAt).not.toBeNull();
-    // Signal versions only count up, so the catchup after the reset runs no handler for a signal it already heard.
-    expect(store.getSignalVersion('org-1', 'channel.deleted')).toBe(3);
+    // Signal versions go too: rebuilt books may count them again from 0, so the catchup after the reset runs each once.
+    expect(store.getSignalVersion('org-1', 'channel.deleted')).toBe(0);
   });
 });

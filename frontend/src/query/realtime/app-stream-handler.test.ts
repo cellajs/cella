@@ -2,11 +2,14 @@ import '~/query/tests/query-client-env';
 import type { StreamChange } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the boundaries: the cache operations, the unseen counts, the fetch queue, the tier lookup, the tab's source id and the signed-in user.
+// Mock the boundaries: the cache operations, the unseen counts, the fetch queue, the tab's source id and the signed-in user.
 const invalidateEntityDetail = vi.fn();
+const removeEntity = vi.fn();
+const removeEntityDetailsBelow = vi.fn();
 vi.mock('~/query/realtime/cache-ops', () => ({
   invalidateEntityDetail: (...a: unknown[]) => invalidateEntityDetail(...a),
-  invalidateEntityListForOrg: vi.fn(),
+  removeEntity: (...a: unknown[]) => removeEntity(...a),
+  removeEntityDetailsBelow: (...a: unknown[]) => removeEntityDetailsBelow(...a),
 }));
 const applyUnfetchableRemovalUnseen = vi.fn();
 vi.mock('~/modules/seen/unseen-sync', () => ({ applyUnfetchableRemovalUnseen: (...a: unknown[]) => applyUnfetchableRemovalUnseen(...a) }));
@@ -16,7 +19,6 @@ vi.mock('~/query/realtime/fetch-prioritizer', () => ({
   enqueueRange: (...a: unknown[]) => enqueueRange(...a),
   invalidateUndelivered: (...a: unknown[]) => invalidateUndelivered(...a),
 }));
-vi.mock('~/query/realtime/sync-priority', () => ({ getSyncTier: () => ({ min: 0, max: 0 }) }));
 vi.mock('~/query/basic/entity-query-registry', () => ({ getEntityQueryKeys: () => ({}) }));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'tab-a' }));
 const session = { user: { id: 'user-a' } };
@@ -82,20 +84,58 @@ describe('a hard delete of several rows', () => {
     stop();
 
     expect(invalidateEntityDetail.mock.calls.map(([subjectId]) => subjectId)).toEqual(['att-a', 'att-b']);
-    expect(applyUnfetchableRemovalUnseen.mock.calls.map(([, subjectId]) => subjectId)).toEqual(['att-a', 'att-b']);
+    expect(applyUnfetchableRemovalUnseen).toHaveBeenCalledExactlyOnceWith('attachment', ['att-a', 'att-b'], null);
     // The download service purges a stored file on this announcement.
     expect(announced).toEqual(['att-a', 'att-b']);
   });
 });
 
 describe('a frame past the row cap', () => {
-  it('fetches the range of a create or update and refetches the lists after a delete, row by row for neither', () => {
-    handleStreamChange(change({ rows: [], overflow: { afterSeq: 40, untilSeq: 90 } }));
-    expect(enqueueRange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ afterSeq: 40, untilSeq: 90 }));
+  const ids = (count: number) => Array.from({ length: count }, (_, index) => `att-${index}`);
 
-    handleStreamChange(change({ action: 'delete', rows: [], overflow: { afterSeq: null, untilSeq: null } }));
-    expect(invalidateUndelivered).toHaveBeenCalledExactlyOnceWith('attachment', 'org-1', [null], true);
+  it('fetches the range of a create or update', () => {
+    handleStreamChange(change({ rows: [], overflow: { afterSeq: 40, untilSeq: 90, subjectIds: ids(25) } }));
+
+    expect(enqueueRange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ afterSeq: 40, untilSeq: 90 }));
+    expect(invalidateEntityDetail).not.toHaveBeenCalled();
+  });
+
+  it('clears each of 25 deleted rows it names by id; past the id bound it refetches the lists and drops the details below the channel', () => {
+    const announced: string[] = [];
+    const stop = onChangeEvent(({ subjectId }) => void announced.push(subjectId));
+
+    handleStreamChange(change({ action: 'delete', rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: ids(25) } }));
+
+    // The download service purges a stored file on each announcement.
+    expect(announced).toEqual(ids(25));
+    expect(invalidateEntityDetail.mock.calls.map(([subjectId]) => subjectId)).toEqual(ids(25));
+    expect(applyUnfetchableRemovalUnseen).toHaveBeenCalledExactlyOnceWith('attachment', ids(25), null);
+    expect(invalidateUndelivered).toHaveBeenCalledExactlyOnceWith('attachment', 'org-1', [null], false);
+
+    vi.clearAllMocks();
+    handleStreamChange(change({ action: 'delete', rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: null } }));
+    stop();
+
+    expect(announced).toHaveLength(25);
     expect(invalidateEntityDetail).not.toHaveBeenCalled();
     expect(applyUnfetchableRemovalUnseen).not.toHaveBeenCalled();
+    expect(invalidateUndelivered).toHaveBeenCalledExactlyOnceWith('attachment', 'org-1', [null], true);
+    // No channel on the frame: the organization's.
+    expect(removeEntityDetailsBelow).toHaveBeenCalledExactlyOnceWith('attachment', 'org-1');
+  });
+
+  it('drops each row a move-out names by id from the cache, and past the id bound every detail below the old home', () => {
+    handleStreamChange(change({ action: 'moveOut', rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: ids(30) } }));
+
+    expect(removeEntity.mock.calls.map(([, subjectId]) => subjectId)).toEqual(ids(30));
+    expect(invalidateUndelivered).not.toHaveBeenCalled();
+    expect(enqueueRange).not.toHaveBeenCalled();
+
+    // The reader lost these rows, so none of their details may stay on the device.
+    handleStreamChange(
+      change({ action: 'moveOut', channelId: 'old-home', rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: null } }),
+    );
+    expect(removeEntityDetailsBelow).toHaveBeenCalledExactlyOnceWith('attachment', 'old-home');
+    expect(removeEntity).toHaveBeenCalledTimes(30);
   });
 });

@@ -1,7 +1,8 @@
+import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
-import { cacheRemove, writeKeepingMark } from '~/query/basic/cache-mutations';
+import { cacheRemove, removeDetailQueriesOnceUnobserved, writeKeepingMark } from '~/query/basic/cache-mutations';
 import {
   type EntityQueryKeys,
   getEntityQueryKeys,
@@ -38,6 +39,16 @@ export function removeEntity(entityType: string, entityId: string, organizationI
 
 export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, refetchType: 'active' | 'none' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
+}
+
+/** Drops every cached detail of a type whose ancestor ids name the channel, the organization included, once nothing observes it. */
+export function removeEntityDetailsBelow(entityType: string, channelId: string): void {
+  const keys = getEntityQueryKeys(entityType);
+  const columns = hierarchy.getOrderedAncestors(entityType).map((type) => appConfig.entityIdColumnKeys[type]);
+  const below = queryClient
+    .getQueriesData<ItemData>({ queryKey: keys.detail.base })
+    .flatMap(([, row]) => (row && columns.some((column) => asRecord(row)[column] === channelId) ? [row.id] : []));
+  removeDetailQueriesOnceUnobserved(queryClient, keys.detail.base, below);
 }
 
 /** Marks every cached list and detail of an entity type stale and refetches the ones on screen. */

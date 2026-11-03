@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
+import { maxStreamChangeIds } from '#/modules/entities/stream/helpers';
 import { validIdSchema } from '#/schemas/common-schemas';
 import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
@@ -18,6 +19,13 @@ const catchupPropagationHintSchema = propagationHintSchema.extend({
     .optional()
     .describe(
       'Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch',
+    ),
+  untilSeq: z
+    .number()
+    .int()
+    .optional()
+    .describe(
+      "Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor",
     ),
 });
 
@@ -54,10 +62,19 @@ export const streamChangeSchema = z
         'The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave',
       ),
     overflow: z
-      .object({ afterSeq: z.number().int().nullable(), untilSeq: z.number().int().nullable() })
+      .object({
+        afterSeq: z.number().int().nullable(),
+        untilSeq: z.number().int().nullable(),
+        subjectIds: z
+          .array(z.string())
+          .nullable()
+          .describe(
+            `The ids of the rows when they are at most ${maxStreamChangeIds}, in commit order; null past that, when a delete or a move-out refetches the lists of the type`,
+          ),
+      })
       .nullable()
       .describe(
-        'Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch',
+        'Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out',
       ),
     spreadWindow: z
       .number()
@@ -83,6 +100,13 @@ export const streamSignalSchema = z
     type: z.string().describe('Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)'),
     organizationId: z.string().nullable(),
     subjectId: z.string().nullable().describe('The one row the signal is about; null when it is about the organization as a whole'),
+    version: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again",
+      ),
   })
   .openapi('StreamSignal', {
     description:

@@ -870,10 +870,17 @@
               },
               "untilSeq": {
                 "type": ["integer", "null"]
+              },
+              "subjectIds": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "string"
+                },
+                "description": "The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type"
               }
             },
-            "required": ["afterSeq", "untilSeq"],
-            "description": "Set when the receiver may read more rows than one frame names, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete, after which the lists of the type refetch"
+            "required": ["afterSeq", "untilSeq", "subjectIds"],
+            "description": "Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out"
           },
           "spreadWindow": {
             "type": ["integer", "null"],
@@ -945,6 +952,10 @@
           "subjectId": {
             "type": ["string", "null"],
             "description": "The one row the signal is about; null when it is about the organization as a whole"
+          },
+          "version": {
+            "type": "integer",
+            "description": "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again"
           }
         },
         "required": ["type", "organizationId", "subjectId"],
@@ -5717,6 +5728,10 @@
                                 "overflow": {
                                   "type": "boolean",
                                   "description": "Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch"
+                                },
+                                "untilSeq": {
+                                  "type": "integer",
+                                  "description": "Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor"
                                 }
                               },
                               "required": ["embeddedProduct", "update", "remove"]
