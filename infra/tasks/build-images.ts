@@ -1,9 +1,8 @@
 import { pinnedNodeImage } from '../lib/deploy/node-image';
-import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
+import { BOOT_IMAGE_NAME } from '../lib/deploy/release-archives';
 import { parseServiceRows } from '../lib/utils/service-rows';
 
-// The bake definition the builder machine runs: targets derive from the deploy's
-// build matrix; two builds share only the layer cache of their epoch.
+// The bake definition the builder machine runs: targets derive from the deploy's build matrix, and each image is written as an archive.
 
 export interface BuildImageRow {
   service: string;
@@ -21,48 +20,40 @@ export interface BakeOptions {
   namespace: string;
   /** The release sha: every image's tag and its `RELEASE_SHA`. */
   releaseSha: string;
-  /** The build epoch: a second tag on every image, which says it was built under the current builder key. */
-  epoch: string;
   /** The root package.json `engines.node`: every image's `FROM` takes the `node` image at it by digest, as `NODE_IMAGE`. */
   nodeVersion: string;
   /** Path of the build context relative to the bake process cwd (the repo root). */
   context?: string;
-  /** The registry tag of each image's layer cache, which only the builder writes (D13); none, no cache. */
-  cacheTag?: string;
+  /** The folder each image's archive is written to, as `<name>.tar`. */
+  archiveDir: string;
 }
 
 /**
- * A `docker buildx bake` definition covering every app image + the boot runner, in two groups: `services` bakes while the boot bundle is built,
- * `boot` after it. With a `cacheTag`, each image reads and writes its layer cache under that tag in the registry.
+ * A `docker buildx bake` definition covering every app image and the boot runner, in two groups: `services` bakes while the boot bundle is
+ * built, `boot` after it. Each image is written to `<archiveDir>/<name>.tar` in the format `docker load` reads, tagged as the release's
+ * compose file names it, and pushed nowhere.
  */
 export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { group: unknown; target: Record<string, unknown> } {
   const context = opts.context ?? '.';
-  const image = (service: string) => `${opts.registry}/${opts.namespace}/${service}:${opts.releaseSha}`;
-  const tags = (service: string) => [image(service), `${image(service)}-e${opts.epoch}`];
-  const cache = (service: string) =>
-    opts.cacheTag
-      ? {
-          'cache-from': [`type=registry,ref=${opts.registry}/${opts.namespace}/${service}:${opts.cacheTag}`],
-          'cache-to': [`type=registry,ref=${opts.registry}/${opts.namespace}/${service}:${opts.cacheTag},mode=max`],
-        }
-      : {};
+  const image = (name: string) => `${opts.registry}/${opts.namespace}/${name}:${opts.releaseSha}`;
+  const archive = (name: string) => [`type=docker,dest=${opts.archiveDir}/${name}.tar`];
   const target: Record<string, unknown> = {};
   for (const row of rows) {
     target[row.service] = {
       context,
       dockerfile: row.dockerfile,
       ...(row.target ? { target: row.target } : {}),
-      tags: tags(row.service),
+      tags: [image(row.service)],
       args: { RELEASE_SHA: opts.releaseSha, NODE_IMAGE: pinnedNodeImage(opts.nodeVersion, 'alpine') },
-      ...cache(row.service),
+      output: archive(row.service),
     };
   }
   target['boot-runner'] = {
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
-    tags: tags(BOOT_IMAGE_NAME),
+    tags: [image(BOOT_IMAGE_NAME)],
     args: { NODE_IMAGE: pinnedNodeImage(opts.nodeVersion, 'bookworm-slim') },
-    ...cache(BOOT_IMAGE_NAME),
+    output: archive(BOOT_IMAGE_NAME),
   };
   const services = rows.map((row) => row.service);
   return {

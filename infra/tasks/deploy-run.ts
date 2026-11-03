@@ -1,9 +1,11 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { parseReleaseManifest } from '../lib/deploy/release-archives';
+import { releasePlan } from '../lib/deploy/release-plan';
 import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
@@ -19,8 +21,8 @@ import { main as runWavedRolloutCli } from './deploy-rollout';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
- * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
- * atomic frontend entry publish, smoke checks, the reap, and boot diagnostics on failure.
+ * The whole deploy, in order: preflights, stack lock, each machine's env file, the build, base stack update, waved rollout, the links taken
+ * off the new machines, public version verification, atomic frontend entry publish, smoke checks, the reap, and boot diagnostics on failure.
  * The main job runs this with the deploy key in `SCW_*`, the one key it needs.
  */
 export interface DeployOptions {
@@ -38,9 +40,9 @@ export type TaskName =
   | 'preflight-privileged'
   | 'build-release'
   | 'sync-rollout-config'
-  | 'generation-keys'
   | 'identity-plan'
-  | 'assert-secrets-deliverable'
+  | 'compose-env'
+  | 'clear-machine-links'
   | 'geoip-refresh'
   | 'smoke';
 
@@ -50,6 +52,8 @@ export interface DeployEffects {
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>;
+  /** A file a task wrote for the steps after it. */
+  readFile(path: string): Promise<string>;
   /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
   lease(stack: string, operation: 'deploy'): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
   /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async, so the stack lease keeps renewing while it runs. */
@@ -74,7 +78,13 @@ interface RolloutRow {
 }
 
 /** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
-const STEPS_WITH_MACHINES = new Set(['Base stack update', 'Waved rollout', 'Verify public versions', 'Smoke tests']);
+const STEPS_WITH_MACHINES = new Set([
+  'Base stack update',
+  'Waved rollout',
+  'Take the links off the new machines',
+  'Verify public versions',
+  'Smoke tests',
+]);
 
 /** What a failed deploy says last: the step it stopped at, and where to read the machines' boot accounts only when machines of the release booted. */
 export function deployFailureHint(err: unknown, mode: string): { description: string; command?: string } {
@@ -170,6 +180,10 @@ export async function runDeploy(
   };
 
   let lease: { release(): Promise<void>; readonly lost: boolean } | undefined;
+  // Each machine's env file and boot account, as the compose step wrote them; cleared at the end of the run whatever stopped it.
+  const work = await mkdtemp(join(tmpdir(), 'deploy-'));
+  const envsFile = join(work, 'envs.json');
+  let envsWritten = false;
   let outcome: 'ok' | 'error' = 'ok';
   let failure: unknown;
   try {
@@ -200,25 +214,20 @@ export async function runDeploy(
     // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
     await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
-    // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
-    // this step checks from metadata that every copy a machine reads has one. Secret containers are privileged, so nothing after this step
-    // makes a copy: a missing one ends the run blocked before any machine exists, and storing it starts the target again.
-    await step('Verify runtime secrets are deliverable', () =>
-      fx.task('assert-secrets-deliverable', [
-        '--region',
-        env.region,
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--services-json',
-        env.enabled_services_json,
-      ]),
-    );
+    // The deploy writes no value of the app's: the apply makes them, and Update identities the uploads key. Here it reads them from the
+    // runtime folder and writes each machine's env file, which only it reads; a required value that is missing ends the run blocked before
+    // any machine exists, the builder included, and storing it starts the target again.
+    await step('Compose runtime env', async () => {
+      await fx.task('compose-env', ['--sha', opts.sha, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--out', envsFile]);
+      envsWritten = true;
+    });
 
-    // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
-    // their own for the publish below. No app code runs beside the deploy key.
+    // The release's archives and frontend files: a builder machine makes the missing ones and writes them through links, then the release's
+    // entry files wait in a folder of their own for the publish below. No app code runs beside the deploy key.
     const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
-    await step('Build the release', () =>
-      fx.task('build-release', [
+    const manifestFile = join(work, 'manifest.json');
+    await step('Build the release', async () => {
+      await fx.task('build-release', [
         '--sha',
         opts.sha,
         '--mode',
@@ -231,8 +240,16 @@ export async function runDeploy(
         env.enabled_services_json,
         '--dist',
         distDir,
-      ]),
-    );
+        '--manifest-out',
+        manifestFile,
+      ]);
+      // The plan the stack update makes the new machines from: their env files and the archives' digests; the program signs the links.
+      const manifest = parseReleaseManifest(await fx.readFile(manifestFile), opts.sha);
+      const planFile = join(work, 'plan.json');
+      await writeFile(planFile, JSON.stringify(releasePlan(opts.sha, manifest, JSON.parse(await fx.readFile(envsFile)))), { mode: 0o600 });
+      // The pulumi child (fx.update) inherits this env.
+      process.env.INFRA_RELEASE_PLAN_FILE = planFile;
+    });
 
     // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
     // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
@@ -248,13 +265,6 @@ export async function runDeploy(
 
     // A stack that never had a machine plans its first generation in the base update below, before the rollout names one: it is this release.
     process.env.INFRA_RELEASE_SHA = opts.sha;
-
-    await step('Read machine keys', async () => {
-      const outFile = resolve(tmpdir(), `generation-keys-${stack}-${opts.sha.slice(0, 10)}.json`);
-      await fx.task('generation-keys', ['--out', outFile]);
-      // The pulumi child (fx.update) inherits this env and writes each service's key into the cloud-init of the machines it makes.
-      process.env.INFRA_GENERATION_KEYS_FILE = outFile;
-    });
 
     await step('Base stack update', () => fx.update(stack));
     try {
@@ -289,6 +299,10 @@ export async function runDeploy(
       }
       throw err;
     }
+    // Each new machine fetched its env file and archives: once its boot account arrived, its user data keeps no link and its env file goes.
+    await step('Take the links off the new machines', () =>
+      fx.task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile]),
+    );
 
     await step('Verify public versions', async () => {
       // Every LB-exposed service, not just the VM-owning rollout rows: co-hosted and collocated followers are repointed by cutover without their own version probe.
@@ -324,6 +338,12 @@ export async function runDeploy(
     failure = err;
     throw err;
   } finally {
+    // Whatever stopped the run, no env file outlives it and no machine of it keeps a link.
+    if (envsWritten) {
+      await fx
+        .task('clear-machine-links', ['--stack', stack, '--sha', opts.sha, '--envs', envsFile, '--no-wait'])
+        .catch((err) => say(`[deploy] the links stay until they end, the env files until the bucket's rule: ${errorMessage(err)}`));
+    }
     await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
     // A step that found identities, a privileged change or a required secret owed ends the run blocked, not failed: the operator settles it,
     // then the same target.
@@ -400,10 +420,10 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
-  'generation-keys': async (argv) => (await import('./generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
   'identity-plan': async (argv) => (await import('./identity-plan')).main(argv),
-  'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
+  'compose-env': async (argv) => (await import('./compose-env')).main(argv),
+  'clear-machine-links': async (argv) => (await import('./clear-machine-links')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
 };
@@ -437,6 +457,7 @@ function createRealEffects(): DeployEffects {
       });
     },
     task: (name, argv = []) => taskRunners[name](argv),
+    readFile: (path) => readFile(path, 'utf8'),
     async lease(stack, operation) {
       const [{ controlActor, controlContextForStack }, { acquireLease, installSignalRelease }] = await Promise.all([
         import('../lib/stack/control-store'),

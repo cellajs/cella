@@ -1,9 +1,13 @@
+import { createHash } from 'node:crypto';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { leakableDsn } from '../../tests/helpers/fake-secrets';
 import { boot, waitForPrivateNetwork } from './boot';
 import type { ExecFn, ExecResult } from './exec';
 
-/** The VM's files: the plan and key files cloud-init writes, plus whatever boot writes itself. */
+/** The VM's files: the plan cloud-init writes, plus whatever boot writes itself. */
 const files = vi.hoisted(() => new Map<string, string>());
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -22,6 +26,58 @@ vi.mock('./fs-utils', () => ({
     files.set(path, content);
   }),
 }));
+
+const link = (object: string) => `https://app-boot-diag.s3.nl-ams.scw.cloud/${object}?X-Amz-Expires=900&X-Amz-Signature=${'f'.repeat(64)}`;
+const envLink = link('env/backend-abc123.env');
+const accountLink = link('boot-diag/backend-20261103T120000Z-boot.log');
+const archiveLink = link('releases/abc123/images/backend.tar');
+const archiveBody = 'the backend image archive';
+
+function writePlan(overrides: Record<string, unknown> = {}): void {
+  files.set(
+    '/etc/app/boot-plan.json',
+    JSON.stringify({
+      schemaVersion: 2,
+      service: 'backend',
+      profile: 'backend',
+      services: ['backend'],
+      releaseSha: 'abc123',
+      telemetry: { endpoint: 'https://ingest.example/v1', keyHeader: 'x-ingest-key', keyEnvVar: 'SINK_INGEST_KEY' },
+      imageContract: 'docker-node-boot-v1',
+      links: {
+        env: envLink,
+        bootAccount: accountLink,
+        archives: [
+          { name: 'backend', image: 'rg/ns/backend:abc123', url: archiveLink, sha256: createHash('sha256').update(archiveBody).digest('hex') },
+        ],
+      },
+      bootDiagnostics: { logFile: '/var/log/infra-boot.log' },
+      docker: { composeFile: '/opt/app/compose.yml' },
+      files: { compose: 'services: {}', env: 'BACKEND_TAG=abc123' },
+      timeouts: { privateNetworkSeconds: 5, fetchAttempts: 1, fetchRetrySeconds: 1, composeWaitSeconds: 240 },
+      ...overrides,
+    }),
+  );
+}
+
+/** Stub fetch: the env link serves `env`, the archive link the archive, the sink answers `sinkStatus`; every other request is recorded. */
+function stubNetwork(opts: { env: string; archive?: string; sinkStatus?: number }) {
+  const sent: Array<{ url: string; method: string; body: string }> = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      if (url === envLink) return new Response(opts.env, { status: 200 });
+      if (url === archiveLink) return new Response(opts.archive ?? archiveBody, { status: 200 });
+      sent.push({ url, method: init?.method ?? 'GET', body: String(init?.body ?? '') });
+      return new Response('', { status: url.startsWith('https://ingest.example/') ? (opts.sinkStatus ?? 200) : 200 });
+    }),
+  );
+  return sent;
+}
+
+const ok = (stdout = ''): ExecResult => ({ code: 0, stdout, stderr: '' });
+const isUp = (line: string) => line.startsWith('docker compose') && line.includes(' up ');
+const archiveDir = () => mkdtempSync(join(tmpdir(), 'archives-'));
 
 describe('waitForPrivateNetwork', () => {
   it('retries until route and private address are available', async () => {
@@ -56,236 +112,105 @@ describe('boot', () => {
     files.clear();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
-  it('must not upload, export or print a secret via a failed release command', async () => {
-    const serviceKey = { accessKey: 'SCWSERVICEACCESSKEY2', secretKey: 'svc-sk-4444-5555-6666' };
-    // The key of a worker the host carries beside its own service.
-    const coHostedKey = 'cdc-sk-7777-8888-9999';
+  it('must not upload, export or print a secret or a link via a failed release companion', async () => {
     const { password: dbPassword, dsn } = leakableDsn();
     const cookieSecret = 'ck-8888bbbbdd';
     const sinkKey = 'ik-9999ccccee';
-    const secretValues: Record<string, string> = {
-      'db-url-id': dsn,
-      'cookie-id': cookieSecret,
-      'sink-id': sinkKey,
-    };
-
-    files.set('/etc/app/scw-access-key', `${serviceKey.accessKey}\n`);
-    files.set('/etc/app/scw-secret-key', `${serviceKey.secretKey}\n`);
-    files.set('/etc/app/scw-secret-key-cdc', `${coHostedKey}\n`);
+    writePlan();
     // The host boot log, mounted into the runner: cloud-init's script and earlier output, a secret among it without its name.
     files.set('/var/log/infra-boot.log', `::cella:: boot start\nlauncher saw ${cookieSecret}\nDATABASE_URL=${dsn}\n`);
-    files.set(
-      '/etc/app/boot-plan.json',
-      JSON.stringify({
-        schemaVersion: 1,
-        service: 'backend',
-        profile: 'backend',
-        releaseSha: 'abc123',
-        telemetry: { endpoint: 'https://ingest.example/v1', keyHeader: 'x-ingest-key', keyEnvVar: 'SINK_INGEST_KEY' },
-        imageContract: 'docker-node-boot-v1',
-        registry: 'rg.nl-ams.scw.cloud/ns',
-        region: 'nl-ams',
-        credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
-        serviceSecretKeyFiles: { cdc: '/etc/app/scw-secret-key-cdc' },
-        exportS3Env: true,
-        bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
-        releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', '--rm', 'backend-release'] },
-        docker: { composeFile: '/opt/app/compose.yml' },
-        files: {
-          compose: 'services: {}',
-          env: 'BACKEND_TAG=abc123',
-          runtimeSecretManifest: [
-            { envVar: 'DATABASE_URL', secretId: 'db-url-id', required: true },
-            { envVar: 'COOKIE_SECRET', secretId: 'cookie-id', required: true },
-            { envVar: 'SINK_INGEST_KEY', secretId: 'sink-id', required: false },
-          ],
-        },
-        timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
-      }),
-    );
-
-    const sent: Array<{ url: string; body: string }> = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string, init?: { body?: string }) => {
-        const secretId = /\/secrets\/([^/]+)\/versions\//.exec(url)?.[1];
-        if (secretId) {
-          const data = Buffer.from(secretValues[secretId] ?? '').toString('base64');
-          return new Response(JSON.stringify({ data }), { status: 200 });
-        }
-        sent.push({ url, body: String(init?.body ?? '') });
-        return new Response('', { status: 200 });
-      }),
-    );
+    const sent = stubNetwork({ env: `DATABASE_URL=${dsn}\nCOOKIE_SECRET=${cookieSecret}\nSINK_INGEST_KEY=${sinkKey}\n` });
     const printed: string[] = [];
     vi.spyOn(console, 'info').mockImplementation((line: unknown) => {
       printed.push(String(line));
     });
 
-    const ok = (stdout = ''): ExecResult => ({ code: 0, stdout, stderr: '' });
-    // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw, the
-    // service keys among them, each without the name that would get its line scrubbed.
+    // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw, and a link, each without
+    // the name that would get its line scrubbed.
     const exec: ExecFn = async (command, args, opts) => {
       const line = [command, ...args].join(' ');
       if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
-      if (line.includes('run --rm backend-release')) {
-        // Streamed as it prints, the way execCommand hands lines over, and returned whole.
-        const stderr = `migrate: dial ${dsn} refused (auth ${dbPassword})`;
+      if (isUp(line)) {
+        const stderr = `dependency failed to start: container backend-release exited (1): dial ${dsn} refused (auth ${dbPassword})`;
         opts?.onLine?.(stderr, 'stderr');
         return { code: 1, stdout: '', stderr };
       }
-      if (line.includes(' logs ')) {
-        return ok(
-          [
-            `backend | auth rejected ${cookieSecret}`,
-            `backend | sink ${sinkKey}`,
-            `backend | s3 refused ${serviceKey.secretKey}, then ${coHostedKey}`,
-          ].join('\n'),
-        );
-      }
+      if (line.includes(' logs '))
+        return ok([`backend | auth rejected ${cookieSecret}`, `backend | sink ${sinkKey}`, `fetched ${envLink}`].join('\n'));
       return ok();
     };
 
-    const error = await boot({ planPath: '/etc/app/boot-plan.json', exec }).catch((err: unknown) => err);
+    const error = await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() }).catch((err: unknown) => err);
 
-    // Positive control: the boot failed at the release step, and every channel still carried the diagnosis.
-    expect(error).toBeInstanceOf(Error);
+    // Positive control: the boot failed at the start, kept its env file, and every channel still carried the diagnosis.
     expect((error as Error).message).toContain('failed with exit 1');
-    const uploads = sent.filter((request) => request.url.startsWith('https://app-boot-diag.'));
-    expect(uploads.map((request) => request.url.split('/boot-diag/')[1])).toEqual([expect.stringMatching(/^backend-.*-boot\.log$/)]);
-    expect(uploads[0]?.body).toContain('release-command');
+    expect(files.get('/opt/app/.env.runtime')).toContain('COOKIE_SECRET=');
+    const uploads = sent.filter((request) => request.method === 'PUT');
+    expect(uploads.map((request) => request.url)).toEqual([accountLink]);
+    expect(uploads[0]?.body).toContain('failed_phase=start-service');
     expect(uploads[0]?.body).toContain('auth rejected [REDACTED]');
     expect(uploads[0]?.body).toContain('::cella:: boot start\nlauncher saw [REDACTED]');
-    expect(uploads[0]?.body).not.toContain('boot log not found');
     expect(sent.some((request) => request.url === 'https://ingest.example/v1/logs')).toBe(true);
-    expect(printed.some((line) => line.includes('boot-failed'))).toBe(true);
 
     const channels = [...sent.map((request) => request.body), ...printed, (error as Error).message].join('\n');
-    for (const secret of [serviceKey.secretKey, coHostedKey, dbPassword, cookieSecret, sinkKey]) {
-      expect(channels).not.toContain(secret);
-    }
+    for (const secret of [dbPassword, cookieSecret, sinkKey, envLink, 'X-Amz-Signature']) expect(channels).not.toContain(secret);
   });
 
-  it('kills a stuck release companion, removes its container and names the phase in the upload', async () => {
-    files.set('/etc/app/scw-access-key', 'SCWSERVICEACCESSKEY1\n');
-    files.set('/etc/app/scw-secret-key', 'svc-sk-1111-2222-3333\n');
-    files.set(
-      '/etc/app/boot-plan.json',
-      JSON.stringify({
-        schemaVersion: 1,
-        service: 'backend',
-        profile: 'backend',
-        releaseSha: 'abc123',
-        imageContract: 'docker-node-boot-v1',
-        registry: 'rg.nl-ams.scw.cloud/ns',
-        region: 'nl-ams',
-        credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
-        bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
-        releaseCommand: {
-          enabled: true,
-          command: ['docker', 'compose', 'run', '--rm', '--name', 'backend-release-run', 'backend-release'],
-          containerName: 'backend-release-run',
-        },
-        docker: { composeFile: '/opt/app/compose.yml' },
-        files: { compose: 'services: {}', env: 'BACKEND_TAG=abc123', runtimeSecretManifest: [] },
-        timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
-      }),
-    );
-    const sent: Array<{ url: string; body: string }> = [];
+  it("must not load an archive that differs from its digest: whoever replaces it in the bucket cannot choose the machine's code", async () => {
+    writePlan();
+    const sent = stubNetwork({ env: 'COOKIE_SECRET=ck-12345678\n', archive: 'an image someone else built' });
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const calls: string[] = [];
+    const exec: ExecFn = async (command, args) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
+      if (line.startsWith('docker image inspect')) return { code: 1, stdout: '', stderr: 'No such image' };
+      return ok();
+    };
+
+    const error = await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() }).catch((err: unknown) => err);
+
+    expect((error as Error).message).toMatch(/differs from its digest/);
+    expect(calls.some((line) => line.startsWith('docker load'))).toBe(false);
+    expect(calls.some(isUp)).toBe(false);
+    expect(sent.find((request) => request.method === 'PUT')?.body).toContain('failed_phase=load-images');
+  });
+
+  it('boots again after a reboot without a link: the env file is kept and the images are loaded', async () => {
+    writePlan();
+    files.set('/opt/app/.env.runtime', 'COOKIE_SECRET=ck-12345678\n');
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string, init?: { body?: string }) => {
-        sent.push({ url, body: String(init?.body ?? '') });
-        return new Response('', { status: 200 });
+      vi.fn(async (url: string) => {
+        if (url === envLink || url === archiveLink) throw new Error('the link ended');
+        return new Response('', { status: 403 });
       }),
     );
     vi.spyOn(console, 'info').mockImplementation(() => {});
-
-    const calls: Array<{ line: string; timeoutMs?: number }> = [];
-    const exec: ExecFn = async (command, args, opts) => {
-      const line = [command, ...args].join(' ');
-      calls.push({ line, timeoutMs: opts?.timeoutMs });
-      if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
-      // The migrate companion waits on a lock until the ceiling kills it.
-      if (line.includes(' run --rm ')) return { code: 124, stdout: '[migrate] Running migrations...', stderr: '', timedOut: true };
-      return { code: 0, stdout: '', stderr: '' };
+    const calls: string[] = [];
+    const exec: ExecFn = async (command, args) => {
+      calls.push([command, ...args].join(' '));
+      return command === 'ip' ? ok('inet 10.0.0.12/24 scope global ens2') : ok();
     };
 
-    const error = await boot({ planPath: '/etc/app/boot-plan.json', exec }).catch((err: unknown) => err);
+    await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() });
 
-    expect((error as Error).message).toMatch(/timed out after 180s/);
-    const run = calls.findIndex((call) => call.line.includes(' run --rm '));
-    expect(calls[run]?.timeoutMs).toBe(180_000);
-    // Cleared before the run (a leftover from an interrupted boot) and after the kill (the container outlives its CLI).
-    expect(calls[run - 1]?.line).toBe('docker rm --force backend-release-run');
-    expect(calls[run + 1]?.line).toBe('docker rm --force backend-release-run');
-    // No docker call runs without a ceiling.
-    expect(calls.filter((call) => call.line.startsWith('docker ')).every((call) => call.timeoutMs !== undefined)).toBe(true);
-
-    const bootLog = sent.find((request) => /\/boot-diag\/backend-\d{8}T\d{6}Z-boot\.log$/.test(request.url));
-    expect(bootLog?.body).toContain('release=abc123');
-    expect(bootLog?.body).toContain('failed_phase=release-command');
-    expect(bootLog?.body).toContain('[migrate] Running migrations...');
+    expect(calls.filter(isUp)).toEqual(['docker compose --profile backend up -d --wait --wait-timeout 240 backend']);
   });
 
   describe('live telemetry', () => {
-    /** A backend plan whose runtime manifest delivers the sink's ingest key, so boot telemetry exports. */
-    function writeSinkPlan(): void {
-      files.set('/etc/app/scw-access-key', 'SCWSERVICEACCESSKEY1\n');
-      files.set('/etc/app/scw-secret-key', 'svc-sk-1111-2222-3333\n');
-      files.set(
-        '/etc/app/boot-plan.json',
-        JSON.stringify({
-          schemaVersion: 1,
-          service: 'backend',
-          profile: 'backend',
-          releaseSha: 'abc123',
-          telemetry: { endpoint: 'https://ingest.example/v1', keyHeader: 'x-ingest-key', keyEnvVar: 'SINK_INGEST_KEY' },
-          imageContract: 'docker-node-boot-v1',
-          registry: 'rg.nl-ams.scw.cloud/ns',
-          region: 'nl-ams',
-          credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
-          bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
-          releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', '--rm', 'backend-release'] },
-          docker: { composeFile: '/opt/app/compose.yml' },
-          files: {
-            compose: 'services: {}',
-            env: 'BACKEND_TAG=abc123',
-            runtimeSecretManifest: [{ envVar: 'SINK_INGEST_KEY', secretId: 'sink-id', required: false }],
-          },
-          timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
-        }),
-      );
-    }
-
-    /** Stub fetch: Secret Manager answers the sink key, the sink answers `sinkStatus`, and every sink and upload request is recorded. */
-    function stubNetwork(sinkStatus: number): Array<{ url: string; body: string }> {
-      const sent: Array<{ url: string; body: string }> = [];
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async (url: string, init?: { body?: string }) => {
-          if (url.includes('/secrets/'))
-            return new Response(JSON.stringify({ data: Buffer.from('ik-1234567890').toString('base64') }), { status: 200 });
-          sent.push({ url, body: String(init?.body ?? '') });
-          return new Response('', { status: url.startsWith('https://ingest.example/') ? sinkStatus : 200 });
-        }),
-      );
-      vi.spyOn(console, 'info').mockImplementation(() => {});
-      return sent;
-    }
-
-    /** An exec whose release companion runs for `releaseMs` of (fake) time; everything else succeeds at once. */
-    const slowReleaseExec =
-      (releaseMs: number): ExecFn =>
+    /** An exec whose compose up runs for `upMs` of (fake) time; everything else succeeds at once. */
+    const slowUpExec =
+      (upMs: number): ExecFn =>
       async (command, args) => {
         const line = [command, ...args].join(' ');
-        if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
-        if (line.includes(' run --rm ')) {
-          await new Promise((resolve) => setTimeout(resolve, releaseMs));
-        }
-        return { code: 0, stdout: '', stderr: '' };
+        if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
+        if (isUp(line)) await new Promise((resolve) => setTimeout(resolve, upMs));
+        return ok();
       };
 
     const sinkEvents = (sent: Array<{ url: string; body: string }>) =>
@@ -296,23 +221,20 @@ describe('boot', () => {
             JSON.parse(request.body).resourceLogs[0].scopeLogs[0].logRecords as Array<{ eventName: string; body?: { stringValue?: string } }>,
         );
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
     it('exports a heartbeat while a phase hangs, before the phase ends', async () => {
       vi.useFakeTimers();
-      writeSinkPlan();
-      const sent = stubNetwork(200);
-      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowReleaseExec(65_000) });
+      writePlan();
+      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n' });
+      vi.spyOn(console, 'info').mockImplementation(() => {});
+      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowUpExec(65_000), archiveDir: archiveDir() });
 
       await vi.advanceTimersByTimeAsync(31_000);
-      // The buffered start and early phases shipped once the key arrived; the release companion still runs.
+      // The buffered start and early phases shipped once the key arrived; compose up still runs.
       const live = sinkEvents(sent).map((record) => record.eventName);
       expect(live).toContain('boot.started');
       expect(live).toContain('boot.step.completed');
       const heartbeat = sinkEvents(sent).find((record) => record.eventName === 'boot.step.running');
-      expect(heartbeat?.body?.stringValue).toBe('backend boot step release-command still running after 30s');
+      expect(heartbeat?.body?.stringValue).toBe('backend boot step start-service still running after 30s');
       expect(live).not.toContain('boot.completed');
 
       await vi.advanceTimersByTimeAsync(40_000);
@@ -322,23 +244,21 @@ describe('boot', () => {
       expect(vi.getTimerCount()).toBe(0);
     });
 
-    it('streams the release companion output to the console and as capped telemetry records', async () => {
-      writeSinkPlan();
-      const sent = stubNetwork(200);
+    it('streams compose output to the console and as capped telemetry records', async () => {
+      writePlan();
+      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n' });
       const printed: string[] = [];
-      vi.mocked(console.info).mockImplementation((line: unknown) => void printed.push(String(line)));
+      vi.spyOn(console, 'info').mockImplementation((line: unknown) => void printed.push(String(line)));
       const exec: ExecFn = async (command, args, opts) => {
         const line = [command, ...args].join(' ');
-        if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
-        if (line.includes(' run --rm ')) {
-          for (let index = 1; index <= 250; index++) opts?.onLine?.(`[migrate] step ${index} with ik-1234567890`, 'stdout');
-        }
-        return { code: 0, stdout: '', stderr: '' };
+        if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
+        if (isUp(line)) for (let index = 1; index <= 250; index++) opts?.onLine?.(`[migrate] step ${index} with ik-1234567890`, 'stdout');
+        return ok();
       };
-      await boot({ planPath: '/etc/app/boot-plan.json', exec });
+      await boot({ planPath: '/etc/app/boot-plan.json', exec, archiveDir: archiveDir() });
 
-      expect(printed).toContain('[release-command] [migrate] step 1 with [REDACTED]');
-      expect(printed).toContain('[release-command] [migrate] step 250 with [REDACTED]');
+      expect(printed).toContain('[start-service] [migrate] step 1 with [REDACTED]');
+      expect(printed).toContain('[start-service] [migrate] step 250 with [REDACTED]');
       const output = sinkEvents(sent).filter((record) => record.eventName === 'boot.output');
       expect(output).toHaveLength(200);
       expect(output[0]?.body?.stringValue).toBe('[migrate] step 1 with [REDACTED]');
@@ -346,14 +266,15 @@ describe('boot', () => {
       expect(sent.map((request) => request.body).join('\n')).not.toContain('ik-1234567890');
     });
 
-    it('boots and uploads its diagnostics while the sink rejects every export', async () => {
+    it('boots and uploads its account while the sink rejects every export', async () => {
       vi.useFakeTimers();
-      writeSinkPlan();
-      const sent = stubNetwork(500);
-      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowReleaseExec(35_000) });
+      writePlan();
+      const sent = stubNetwork({ env: 'SINK_INGEST_KEY=ik-1234567890\n', sinkStatus: 500 });
+      vi.spyOn(console, 'info').mockImplementation(() => {});
+      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowUpExec(35_000), archiveDir: archiveDir() });
       await vi.advanceTimersByTimeAsync(40_000);
       await expect(booted).resolves.toBeUndefined();
-      expect(sent.some((request) => request.url.startsWith('https://app-boot-diag.'))).toBe(true);
+      expect(sent.some((request) => request.url === accountLink)).toBe(true);
     });
   });
 });

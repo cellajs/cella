@@ -8,6 +8,8 @@ import { createSecretRedactor } from './secret-redactor';
 
 let tempDir: string | undefined;
 
+const accountLink = 'https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log?X-Amz-Signature=00';
+
 afterEach(async () => {
   if (tempDir) await rm(tempDir, { recursive: true, force: true });
   tempDir = undefined;
@@ -26,25 +28,21 @@ async function bootLog(content: string): Promise<string> {
  * upload's own redaction only drops URL userinfo), and records every request the upload sends.
  */
 async function upload(overrides: Partial<UploadBootDiagnosticsOptions> = {}) {
-  const requests: { url: string; body: string; auth?: string }[] = [];
-  const keys = await uploadBootDiagnostics({
-    bucket: 'cella-boot-diag',
-    region: 'nl-ams',
-    accessKey: 'access',
-    secretKey: 'secret',
+  const requests: { url: string; method?: string; body: string; auth?: string }[] = [];
+  await uploadBootDiagnostics({
+    url: accountLink,
     service: 'backend',
     releaseSha: 'abc123',
     bootRc: 1,
     logFile: '/missing/log',
     redact: createSecretRedactor().redact,
-    now: new Date('2026-06-19T12:00:00Z'),
     fetchImpl: async (url, init) => {
-      requests.push({ url, body: init?.body ?? '', auth: init?.headers?.Authorization });
+      requests.push({ url, method: init?.method, body: init?.body ?? '', auth: init?.headers?.Authorization });
       return { ok: true, status: 200, text: async () => '' };
     },
     ...overrides,
   });
-  return { keys, requests, bodies: requests.map((request) => request.body) };
+  return { requests, bodies: requests.map((request) => request.body) };
 }
 
 describe('uploadBootDiagnostics', () => {
@@ -61,21 +59,13 @@ describe('uploadBootDiagnostics', () => {
     expect(bodies[0]).toContain('boot_rc=1\nfailed_phase=release-command\n\n--- boot error ---\ndocker compose run timed out after 180s');
   });
 
-  it('uploads one account for a failed boot', async () => {
-    const { keys, requests } = await upload({ logFile: await bootLog('hello boot') });
-    expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log']);
+  it('uploads one account through its link, signing nothing itself', async () => {
+    const { requests } = await upload({ logFile: await bootLog('hello boot') });
     expect(requests).toHaveLength(1);
     const first = requests[0]!;
-    expect(first.url).toContain('https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log');
-    expect(first.auth).toMatch(/AWS4-HMAC-SHA256 Credential=access\/20260619\/nl-ams\/s3\/aws4_request/);
+    expect(first).toMatchObject({ url: accountLink, method: 'PUT', auth: undefined });
     expect(first.body).toContain('release=abc123');
     expect(first.body).toContain('hello boot');
-  });
-
-  it('uploads only the full log for successful boots', async () => {
-    const { keys, requests } = await upload({ service: 'frontend', bootRc: 0 });
-    expect(keys).toEqual(['boot-diag/frontend-20260619T120000Z-boot.log']);
-    expect(requests).toHaveLength(1);
   });
 
   it('appends the captured app logs to the uploaded body', async () => {
@@ -121,7 +111,13 @@ describe('uploadBootDiagnostics', () => {
 
 describe('scrubSecretLines', () => {
   it('replaces lines matching the cloud-init scrub pattern and keeps the rest', () => {
-    const input = ['ok line', 'MY_API_KEY=xyz', 'docker login rg.fr-par.scw.cloud', 'PASSWORD: hunter2', 'final line'].join('\n');
+    const input = [
+      'ok line',
+      'MY_API_KEY=xyz',
+      'curl https://b.s3.fr-par.scw.cloud/env/x?X-Amz-Signature=ab',
+      'PASSWORD: hunter2',
+      'final line',
+    ].join('\n');
     const out = scrubSecretLines(input);
     expect(out.split('\n')).toEqual([
       'ok line',

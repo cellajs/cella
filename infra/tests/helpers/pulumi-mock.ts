@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
 import { vi } from 'vitest';
 import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
-import type { GenerationKeys } from '../../lib/scaleway/machine-keys';
+import { composeConfig } from '../../compose/compose';
+import { BOOT_IMAGE_NAME, imageRepositoryOf } from '../../lib/deploy/release-archives';
+import type { ReleasePlan } from '../../lib/deploy/release-plan';
+import { servicesByName } from '../../lib/services';
 import { installKeylessMocks, type RenderedResource, settleRender } from '../../lib/stack/keyless-render';
 
 export type CapturedResource = RenderedResource;
@@ -81,15 +84,43 @@ export function unwrapSecret(input: unknown): unknown {
   return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
 }
 
-/** Hands the Pulumi program this deploy's machine keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
-export function writeGenerationKeys(keys: GenerationKeys): void {
-  const file = join(mkdtempSync(join(tmpdir(), 'generation-keys-')), 'keys.json');
-  writeFileSync(file, JSON.stringify(keys));
-  vi.stubEnv('INFRA_GENERATION_KEYS_FILE', file);
+/** The deploy key the program signs links with in a test: a key-shaped string, so a test can prove none reaches a machine. */
+export const testDeployKey = { accessKey: 'SCWDEPLOYACCESSKEY00', secretKey: 'deploy-secret-key-of-the-test' };
+
+/**
+ * Hands the Pulumi program the plan of a release, as tasks/deploy-run.ts does through INFRA_RELEASE_PLAN_FILE, with the deploy key it signs
+ * the links with: every archive and every service's env file. A stack without a control object makes its first generation at `latest`.
+ */
+export function writeReleasePlan(release = 'latest'): ReleasePlan {
+  const names = [...new Set(Object.values(composeConfig.services).map((block) => imageRepositoryOf(block.image))), BOOT_IMAGE_NAME];
+  const plan: ReleasePlan = {
+    release,
+    archives: Object.fromEntries(names.map((name) => [name, { key: `releases/${release}/images/${name}.tar`, sha256: 'a'.repeat(64) }])),
+    machines: Object.fromEntries(
+      [...servicesByName.keys()].map((slug) => [slug, { env: `env/${slug}.env`, bootAccount: `boot-diag/${slug}-20261103T120000Z-boot.log` }]),
+    ),
+  };
+  const file = join(mkdtempSync(join(tmpdir(), 'release-plan-')), 'plan.json');
+  writeFileSync(file, JSON.stringify(plan));
+  vi.stubEnv('INFRA_RELEASE_PLAN_FILE', file);
+  vi.stubEnv('SCW_ACCESS_KEY', testDeployKey.accessKey);
+  vi.stubEnv('SCW_SECRET_KEY', testDeployKey.secretKey);
+  return plan;
+}
+
+/** A file a `#cloud-config` writes, as its `write_files` entry holds it, or undefined when it writes none at `path`. */
+export function cloudConfigFile(cloudConfig: string, path: string): string | undefined {
+  const entry = cloudConfig.split('\n  - path: ').find((block) => block.startsWith(`${path}\n`));
+  const content = entry?.split('    content: |\n')[1]?.split('\nruncmd:')[0];
+  return content
+    ?.split('\n')
+    .map((line) => line.slice(6))
+    .join('\n')
+    .replace(/\n+$/, '');
 }
 
 /** The boot plan a cloud-init writes to `planPath`, read by the boot runner's own parser; throws when it writes none there. */
 export function bootPlanIn(cloudInit: string, planPath: string): { plan: BootPlan; raw: Record<string, unknown> } {
-  const json = cloudInit.split(`cat > ${planPath} <<'BOOT_PLAN_EOF'\n`)[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
+  const json = cloudConfigFile(cloudInit, planPath) ?? '';
   return { plan: parseBootPlanJson(json, planPath), raw: JSON.parse(json) };
 }

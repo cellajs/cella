@@ -1,13 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { engineConfig } from '../config/engine-config';
 import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
-import { principalServices } from '../lib/services';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
 
 beforeAll(async () => {
-  // The mock IAM API supplies CI and VM application IDs normally absent from stack config.
+  // The mock IAM API supplies the application IDs normally absent from stack config.
   h = await installPulumiMocks({ deferCompute: true });
   await import('./storage');
   await h.settle();
@@ -106,22 +105,33 @@ describe('storage module', () => {
     }
   });
 
-  it('keeps the builder reports from service keys, within the 10 statements Scaleway allows a bucket policy', () => {
+  it('must not let the observer or a machine read an env file: machines write through links, within the 10 statements Scaleway allows', () => {
     type Statement = { Sid: string; Principal: { SCW: string | string[] }; Action: string[]; Resource: string[] };
     const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);
     const { Statement } = JSON.parse(String(h.resources.find((r) => r.name === 'boot-diag-policy')?.inputs.policy)) as { Statement: Statement[] };
-    const names = principalNames(engineConfig().slug, 'production');
-    // Beside the deploy key, which writes the run records, and the operator's `s3:*`.
-    const writes = Statement.filter((statement) => statement.Action.includes('s3:PutObject') && statement.Sid !== 'DeployAccess');
-    expect(writes.map((statement) => [statement.Principal.SCW, statement.Action, statement.Resource])).toEqual([
-      [
-        principalServices().map((svc) => `application_id:${names.vmService(svc.slug)}-id`),
-        ['s3:PutObject'],
-        principalServices().map((svc) => `${bucket}/boot-diag/${svc.slug}-*`),
-      ],
-      [`application_id:${names.builder}-id`, ['s3:PutObject'], [`${bucket}/boot-diag/builder/*`]],
+    expect(Statement.map((statement) => statement.Sid).sort()).toEqual([
+      'DeployAccess',
+      'DeployEnvRemoval',
+      'ObserverReadBootDiagnostics',
+      'OperatorAccess',
     ]);
+    const observer = Statement.find((statement) => statement.Sid === 'ObserverReadBootDiagnostics');
+    expect(observer?.Resource).toEqual([bucket, `${bucket}/boot-diag/*`, `${bucket}/runs/*`]);
+    // The one version the deploy may delete is an env file's, which holds a machine's secret values.
+    const removal = Statement.find((statement) => statement.Sid === 'DeployEnvRemoval');
+    expect([removal?.Action, removal?.Resource]).toEqual([['s3:DeleteObjectVersion'], [`${bucket}/env/*`]]);
     expect(Statement.length).toBeLessThanOrEqual(10);
+  });
+
+  it('expires env files and their versions within a day, and release archives with the records', () => {
+    const rules = (h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.lifecycleRules as any[]) ?? [];
+    expect(rules.find((rule) => rule.id === 'expire-env')).toMatchObject({
+      prefix: 'env/',
+      enabled: true,
+      expiration: { days: 1 },
+      noncurrentVersionExpiration: { noncurrentDays: 1 },
+    });
+    expect(rules.find((rule) => rule.id === 'expire-releases')).toMatchObject({ prefix: 'releases/', enabled: true, expiration: { days: 60 } });
   });
 
   it('upload buckets restrict CORS allowedOrigins (no wildcard)', () => {

@@ -60,3 +60,14 @@ export function parseReleaseManifest(text: string, sha: string): ReleaseManifest
   }
   return { release: sha, images, ...(parsed.frontend === undefined ? {} : { frontend: digestOf(parsed.frontend, 'frontend') }) };
 }
+
+/**
+ * The repository a service's compose image reference names, which is the name of its archive: `${REGISTRY}/backend:${JOBS_TAG:-latest}` is
+ * `backend`. A machine loads only archives of the release, so an image from elsewhere is refused.
+ */
+export function imageRepositoryOf(imageRef: string): string {
+  const repository = imageRef.match(/^\$\{REGISTRY\}\/([^/:$]+):\$\{[A-Z0-9_]+_TAG(?::-[^}]*)?\}$/)?.[1];
+  if (!repository)
+    throw new Error(`release-archives: '${imageRef}' is not \${REGISTRY}/<repository>:\${<SLUG>_TAG}, so no archive of the release holds it`);
+  return repository;
+}

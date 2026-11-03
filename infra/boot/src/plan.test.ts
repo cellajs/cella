@@ -5,97 +5,54 @@ import { parseBootPlanJson as parsePlan } from './plan';
 const planPath = '/etc/cella/boot-plan.json';
 const parseBootPlanJson = (json: string) => parsePlan(json, planPath);
 
+const link = 'https://cella-boot-diag.s3.nl-ams.scw.cloud/x?X-Amz-Signature=00';
+const archive = { name: 'backend', image: 'rg.nl-ams.scw.cloud/ns/backend:abc123', url: link, sha256: 'a'.repeat(64) };
+
 function plan(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     service: 'backend',
     profile: 'backend',
+    services: ['backend'],
     releaseSha: 'abc123',
     imageContract: 'docker-node-boot-v1',
-    registry: 'rg.nl-ams.scw.cloud/ns',
-    region: 'nl-ams',
-    credentials: { scwAccessKeyFile: '/etc/cella/scw-access-key', scwSecretKeyFile: '/etc/cella/scw-secret-key' },
-    bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/infra-boot.log' },
-    releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'backend-release'] },
+    links: { env: link, bootAccount: link, archives: [archive] },
+    bootDiagnostics: { logFile: '/var/log/infra-boot.log' },
     docker: { composeFile: '/opt/app/compose.yml' },
-    files: {
-      compose: 'services: {}',
-      env: 'BACKEND_TAG=abc',
-      runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }],
-    },
-    timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
+    files: { compose: 'services: {}', env: 'BACKEND_TAG=abc' },
+    timeouts: { privateNetworkSeconds: 150, fetchAttempts: 2, fetchRetrySeconds: 1, composeWaitSeconds: 240 },
     ...overrides,
   });
 }
 
 describe('parseBootPlanJson', () => {
-  it('parses a valid schema-v1 boot plan', () => {
-    expect(parseBootPlanJson(plan()).service).toBe('backend');
+  it('parses a valid schema-v2 boot plan', () => {
+    expect(parseBootPlanJson(plan()).links.archives).toEqual([archive]);
   });
 
-  it('rejects unsupported schema and image contract', () => {
-    expect(() => parseBootPlanJson(plan({ schemaVersion: 2 }))).toThrow(/unsupported schemaVersion/);
+  it('rejects unsupported schema and image contract, and the fields of a plan that carried keys', () => {
+    expect(() => parseBootPlanJson(plan({ schemaVersion: 1 }))).toThrow(/unsupported schemaVersion/);
     expect(() => parseBootPlanJson(plan({ imageContract: 'docker-only' }))).toThrow(/unsupported imageContract/);
+    expect(() => parseBootPlanJson(plan({ credentials: { scwSecretKeyFile: '/etc/cella/scw-secret-key' } }))).toThrow(/unknown top-level field/);
   });
 
-  it('rejects unknown top-level fields', () => {
-    expect(() => parseBootPlanJson(plan({ surprise: true }))).toThrow(/unknown top-level field/);
-  });
-
-  it('parses the optional start-services list, absent in pre-collocation plans', () => {
-    expect(parseBootPlanJson(plan()).services).toBeUndefined();
-    expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend']);
-    expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/);
-  });
-
-  it('requires a release ceiling and accepts only a plain container name', () => {
-    const timeouts = { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 };
-    expect(() => parseBootPlanJson(plan({ timeouts }))).toThrow(/releaseCommandSeconds/);
-    const command = ['docker', 'compose', 'run', '--name', 'backend-release-run', 'backend-release'];
-    expect(
-      parseBootPlanJson(plan({ releaseCommand: { enabled: true, command, containerName: 'backend-release-run' } })).releaseCommand.containerName,
-    ).toBe('backend-release-run');
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command, containerName: 'x; rm -rf /' } }))).toThrow(/container name/);
-  });
-
-  it('rejects empty release commands', () => {
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(/non-empty command array/);
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(/empty or non-string/);
-  });
-
-  it('rejects paths outside allowed boot locations', () => {
-    expect(() => parseBootPlanJson(plan({ docker: { composeFile: '/tmp/compose.yml' } }))).toThrow(/outside the allowed/);
+  it('must not fetch or upload through anything but an https link, nor load an archive without its digest', () => {
+    expect(() => parseBootPlanJson(plan({ links: { env: 'http://169.254.42.42/', bootAccount: link, archives: [] } }))).toThrow(/https link/);
+    expect(() => parseBootPlanJson(plan({ links: { env: link, bootAccount: link, archives: [{ ...archive, sha256: 'abc' }] } }))).toThrow(
+      /no sha256/,
+    );
   });
 
   it('must not write outside the boot paths via dot segments or doubled slashes', () => {
     for (const composeFile of [
       '/opt/app/../../etc/sudoers.d/x',
-      '/opt/app/../etc/cron.d/x',
       '/opt/app/./compose.yml',
       '/opt/app//compose.yml',
       'opt/app/compose.yml',
+      '/tmp/c.yml',
     ]) {
       expect(() => parseBootPlanJson(plan({ docker: { composeFile } }))).toThrow(/outside the allowed/);
     }
-    const logFile = '/var/log/../../etc/shadow';
-    expect(() => parseBootPlanJson(plan({ bootDiagnostics: { bucket: 'b', logFile } }))).toThrow(/outside the allowed/);
-  });
-
-  it("must not read or write an /etc directory other than the plan's own", () => {
-    const credentials = (scwAccessKeyFile: string) => ({ credentials: { scwAccessKeyFile, scwSecretKeyFile: '/etc/cella/scw-secret-key' } });
-    expect(() => parseBootPlanJson(plan(credentials('/etc/ssh/x')))).toThrow(/outside the allowed/);
-    expect(() => parseBootPlanJson(plan(credentials('/etc/runtime-secrets/x')))).toThrow(/outside the allowed/);
-    const coHosted = (file: string) => ({ serviceSecretKeyFiles: { cdc: file } });
-    expect(() => parseBootPlanJson(plan(coHosted('/etc/sudoers.d/x')))).toThrow(/outside the allowed/);
-    expect(() => parseBootPlanJson(plan(coHosted('/etc/cella-other/scw-secret-key-cdc')))).toThrow(/outside the allowed/);
-    expect(() => parsePlan(plan(), '/etc/acme/boot-plan.json')).toThrow(/outside the allowed/);
-  });
-
-  it('accepts the paths the plan producer writes (positive control)', () => {
-    const parsed = parseBootPlanJson(plan({ serviceSecretKeyFiles: { cdc: '/etc/cella/scw-secret-key-cdc' } }));
-    expect(parsed.credentials.scwAccessKeyFile).toBe('/etc/cella/scw-access-key');
-    expect(parsed.serviceSecretKeyFiles).toEqual({ cdc: '/etc/cella/scw-secret-key-cdc' });
-    expect(parsed.docker.composeFile).toBe('/opt/app/compose.yml');
-    expect(parsed.bootDiagnostics.logFile).toBe('/var/log/infra-boot.log');
+    expect(() => parseBootPlanJson(plan({ bootDiagnostics: { logFile: '/var/log/../../etc/shadow' } }))).toThrow(/outside the allowed/);
   });
 });

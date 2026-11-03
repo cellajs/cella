@@ -7,28 +7,27 @@ import { telemetrySink } from '../config/telemetry.config';
 
 const appConfig = engineConfig();
 
+import type { ReleaseArchive } from '../boot/src/plan';
 import { composeConfig, type ServiceName } from '../compose/compose';
 import { sizing } from '../config/sizing';
-import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
-import type { GenerationKeys } from '../lib/scaleway/machine-keys';
-import { BOOT_IMAGE_NAME, imageRepositoryOf, type ResolvedImage, resolveReleaseImage } from '../lib/scaleway/release-image';
+import { BOOT_IMAGE_NAME, imageRepositoryOf } from '../lib/deploy/release-archives';
+import { BOOT_ACCOUNT_LINK_SECONDS, MACHINE_FETCH_LINK_SECONDS, type ReleasePlan, readReleasePlan } from '../lib/deploy/release-plan';
+import { bucketPresigner } from '../lib/scaleway/presign';
+import { projectAccessKey } from '../lib/scaleway/s3-client';
 import type { ServiceDefinition } from '../lib/services';
-import { naming, region, tags, zone, zones } from '../pulumi-context';
+import { naming, projectId, region, tags, zone, zones } from '../pulumi-context';
 import { renderCloudInit } from './cloud-init';
 import { createComposeEnvBuilder } from './compose-env';
-import { activeGenerations, coHosted, collocated, enabled, type Generation, hostSlug, secretConsumersFor } from './generations';
+import { activeGenerations, coHosted, collocated, enabled, type Generation, hostSlug } from './generations';
 import { privateNetworkId } from './network';
 import { registryEndpoint } from './registry';
-import { secretIds } from './secrets';
-import { bootDiagBucketName } from './storage';
 
 /**
- * Each running service's standing key, which the deploy read into INFRA_GENERATION_KEYS_FILE (tasks/generation-keys.ts) for every new
- * machine's cloud-init. Absent on an apply or a preview, where a pre-existing generation ignores its cloud-init; a new one is refused.
+ * The release the deploy is making machines of: each new machine's env file, boot account and the archives' digests, which the deploy wrote
+ * into INFRA_RELEASE_PLAN_FILE (tasks/deploy-run.ts). Absent on an apply or a preview, where a pre-existing generation ignores its cloud-init;
+ * a new one is refused.
  */
-const generationKeys: GenerationKeys | undefined = process.env.INFRA_GENERATION_KEYS_FILE
-  ? JSON.parse(fs.readFileSync(process.env.INFRA_GENERATION_KEYS_FILE, 'utf8'))
-  : undefined;
+const releasePlan = readReleasePlan(process.env.INFRA_RELEASE_PLAN_FILE || undefined);
 
 // Fully closed inbound: the LB reaches VMs over the private network, and no machine takes a login; the serial console shows its output.
 const closedGroup = (logicalName: string, groupZone: string) =>
@@ -45,139 +44,83 @@ const securityGroup = closedGroup('compute-sg', zone);
 // A group is zonal, and the builder is made in another zone of the region when its type is out of stock in this one (tasks/build-release.ts).
 for (const other of zones.filter((candidate) => candidate !== zone)) closedGroup(`compute-sg-${other}`, other);
 
-/** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. A secret is read from the copy of the first consumer the machine carries. */
-function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
-  const definitions = unionRuntimeSecrets(consumers);
-  const consumerOf = (definition: (typeof definitions)[number]) =>
-    consumers.find((candidate) => (definition.services as readonly string[]).includes(candidate));
-  const copyOf = (definition: (typeof definitions)[number]) => {
-    const consumer = consumerOf(definition);
-    const id = consumer ? secretIds[definition.id]?.[consumer] : undefined;
-    if (!id) throw new Error(`compute: no copy of '${definition.secretName}' for ${consumers.join(', ')}`);
-    return id;
-  };
-  return pulumi.all(definitions.map(copyOf)).apply((ids) =>
-    JSON.stringify(
-      definitions.map((definition, index) => ({
-        id: definition.id,
-        secretName: definition.secretName,
-        // The copy is read with the key of the service it belongs to.
-        service: consumerOf(definition),
-        // Strip the region from Pulumi's composite secret id: the access URL already carries it.
-        secretId: (ids[index] ?? '').split('/').pop(),
-        envVar: definition.envVar,
-        required: definition.required,
-      })),
-      null,
-      2,
-    ),
-  );
-}
-
 const composeContent = fs.readFileSync(path.resolve(import.meta.dirname, '../compose.gen.yml'), 'utf-8');
 
 interface ServiceConfig {
   name: string;
   profile: string;
-  /** Compose services the boot runner starts on this VM: the service plus, on the singleVM host, every collocated container. Explicit names keep the one-shot release companion out of `compose up`. */
-  startServices: string[];
-  /** Whether this service runs the one-shot release companion before the app. */
-  runRelease: boolean;
-  /** Runtime-secret consumers whose secrets this VM's `.env.runtime` manifest carries: the service, plus the folded co-hosted workers on the singleVM host. */
-  secretConsumers: RuntimeSecretConsumer[];
-  /** Compose env var suppliers (REGISTRY, URLs, the baked image tag), lazy so resource-backed values resolve only when VMs are created. */
+  /** Compose services the boot runner starts on this VM: the service plus, on the singleVM host, every collocated container. */
+  startServices: [string, ...string[]];
+  /** Compose env var suppliers (REGISTRY, URLs, the image tag), lazy so resource-backed values resolve only when VMs are created. */
   composeEnv: Record<string, () => pulumi.Input<string>>;
-  /** The machine's own service key; empty where the update keeps a machine as it booted. */
-  key: { accessKey: string; secretKey: string };
-  /** The secret key of each other service the singleVM host carries. */
-  coHostedSecretKeys: Record<string, string>;
-  /** v2 + s3Access: the boot runner exports the service key as S3_* env. */
-  exportS3Env?: boolean;
 }
 
-// Per image and release memo, so a release resolves each image's digest once, not once per VM. Stores the raw resolution, which may reject;
-// callers apply their own pin handling.
-const imageResolutions = new Map<string, Promise<ResolvedImage>>();
+/** The archives a machine loads: one per image repository its compose services run, a reused one once. */
+function archivesOf(startServices: readonly string[]): string[] {
+  return [...new Set(startServices.map((slug) => imageRepositoryOf(composeConfig.services[slug]?.image ?? '')))];
+}
 
-function resolveImageOnce(registry: string, image: string, releaseSha: string): Promise<ResolvedImage> {
-  const memoKey = `${registry}|${image}|${releaseSha}`;
-  let pending = imageResolutions.get(memoKey);
-  if (!pending) {
-    // The run's own key reads the registry: the deploy key in a deploy, the operator key in an apply.
-    pending = resolveReleaseImage({ registry, image, releaseSha, secretKey: process.env.SCW_SECRET_KEY ?? '' });
-    imageResolutions.set(memoKey, pending);
-  }
-  return pending;
+// Signed with this run's own key: the deploy key in a deploy, which reads and writes the objects the links name.
+const presigner = bucketPresigner({
+  region,
+  bucket: naming.bootDiagBucket,
+  accessKey: projectAccessKey(process.env.SCW_ACCESS_KEY ?? '', projectId),
+  secretKey: process.env.SCW_SECRET_KEY ?? '',
+});
+
+/** What a machine's user data names: the boot runner's archive and the links to its env file, its boot account and the app's archives. */
+interface MachineLinks {
+  bootImage: { image: string; url: string; sha256: string };
+  links: { env: string; bootAccount: string; archives: ReleaseArchive[] };
 }
 
 /**
- * Resolve an image of the release (the boot runner's or a service's) to the digest it is pullable by, so a later push under the same tag
- * changes nothing a machine runs. `requirePinned` fails closed on a real `up` for a newly rolling generation; a pre-existing generation and any
- * dry run degrade to the tag with a warning.
+ * The links of a new machine of the release, signed now: they start their minutes as the machine is made. A pre-existing generation keeps
+ * the user data it booted with (ignoreChanges below), so it gets the objects' plain addresses and no link.
  */
-function pinnedImageFor(registry: string, image: string, releaseSha: string, requirePinned: boolean): Promise<ResolvedImage | undefined> {
-  return resolveImageOnce(registry, image, releaseSha).catch((err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err);
-    if (pulumi.runtime.isDryRun()) {
-      pulumi.log.warn(`${image} digest resolution failed (preview continues on the tag): ${message}`);
-      return undefined;
-    }
-    if (!requirePinned) {
-      pulumi.log.warn(`${image} not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`);
-      return undefined;
-    }
-    throw new Error(`Refusing to plan a VM with an unpinned ${image} image: ${message}`);
-  });
-}
-
-/** A service's `*_TAG` for one generation: `<sha>@sha256:<digest>`, which compose pulls by digest; the bare tag where pinning degrades. */
-function pinnedImageTag(releaseSha: string, requirePinned: boolean): (slug: string) => pulumi.Output<string> {
-  return (slug) => {
-    const block = composeConfig.services[slug];
-    if (!block) throw new Error(`compute: no compose service '${slug}' to pin an image for`);
-    const image = imageRepositoryOf(block.image);
-    return registryEndpoint.apply(async (registry) => {
-      const resolved = await pinnedImageFor(registry, image, releaseSha, requirePinned);
-      return resolved ? `${releaseSha}@${resolved.digest}` : releaseSha;
-    });
+async function machineLinks(plan: ReleasePlan | undefined, service: ServiceConfig, sha: string, registry: string): Promise<MachineLinks> {
+  const sign = plan?.release === sha ? await presigner : undefined;
+  const unsigned = (key: string) => `https://${naming.bootDiagBucket}.s3.${region}.scw.cloud/${key}`;
+  const get = (key: string) => (sign ? sign.get(key, MACHINE_FETCH_LINK_SECONDS) : unsigned(key));
+  const archive = async (name: string): Promise<ReleaseArchive> => {
+    const entry = plan?.archives[name];
+    if (sign && !entry) throw new Error(`compute: the release plan names no archive '${name}', which ${service.name} runs`);
+    return { name, image: `${registry}/${name}:${sha}`, url: await get(entry?.key ?? name), sha256: entry?.sha256 ?? '0'.repeat(64) };
+  };
+  const machine = plan?.machines[service.name];
+  if (sign && !machine) throw new Error(`compute: the release plan has no env file for ${service.name}`);
+  const boot = await archive(BOOT_IMAGE_NAME);
+  return {
+    bootImage: { image: boot.image, url: boot.url, sha256: boot.sha256 },
+    links: {
+      env: await get(machine?.env ?? 'env/'),
+      bootAccount: sign && machine ? await sign.put(machine.bootAccount, BOOT_ACCOUNT_LINK_SECONDS) : unsigned(machine?.bootAccount ?? 'boot-diag/'),
+      archives: await Promise.all(archivesOf(service.startServices).map(archive)),
+    },
   };
 }
 
-function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
+function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Output<string> {
   const envEntries = Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`));
   const envLines = pulumi.all(envEntries);
-
-  const bootImage = registryEndpoint.apply((registry) => pinnedImageFor(registry, BOOT_IMAGE_NAME, releaseSha, requirePinnedBootImage));
-
-  // Secret, so the state keeps the keys in it under the passphrase.
+  // Secret, so the state keeps the links in it under the passphrase until they end.
   return pulumi.secret(
-    pulumi
-      .all([envLines, buildRuntimeSecretsManifest(service.secretConsumers), registryEndpoint, bootDiagBucketName, bootImage])
-      .apply(([env, manifest, registry, bootDiagBucket, resolvedBootImage]) =>
-        renderCloudInit({
-          slug: naming.slug,
-          service: service.name,
-          profile: service.profile,
-          startServices: service.startServices,
-          runRelease: service.runRelease,
-          releaseSha,
-          envFileContent: env.join('\n'),
-          manifestContent: manifest,
-          composeContent,
-          registry,
-          bootImageName: resolvedBootImage?.image,
-          bootImageDigest: resolvedBootImage?.digest,
-          ...service.key,
-          coHostedSecretKeys: service.coHostedSecretKeys,
-          region,
-          bootDiagBucket,
-          exportS3Env: service.exportS3Env,
-          // Deploy trace context, exported by deploy-run before the stack update; ignoreChanges on cloudInit keeps existing generations untouched.
-          traceparent: process.env.TRACEPARENT,
-          // The app's telemetry sink travels via the boot plan: the boot runner carries no vendor endpoint of its own.
-          telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },
-        }),
-      ),
+    pulumi.all([envLines, registryEndpoint]).apply(async ([env, registry]) =>
+      renderCloudInit({
+        slug: naming.slug,
+        service: service.name,
+        profile: service.profile,
+        startServices: service.startServices,
+        releaseSha,
+        envFileContent: env.join('\n'),
+        composeContent,
+        ...(await machineLinks(releasePlan, service, releaseSha, registry)),
+        // Deploy trace context, exported by deploy-run before the stack update; ignoreChanges on cloudInit keeps existing generations untouched.
+        traceparent: process.env.TRACEPARENT,
+        // The app's telemetry sink travels via the boot plan: the boot runner carries no vendor endpoint of its own.
+        telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },
+      }),
+    ),
   );
 }
 
@@ -222,47 +165,33 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   return ip.address.apply((addr) => addr.split('/')[0] ?? addr);
 }
 
-// A Scaleway marketplace label or pinned image UUID, with no plan-time lookup: the boot runner is pulled at startup, so image rotation is ignored.
+// A Scaleway marketplace label or pinned image UUID, with no plan-time lookup: the boot runner is loaded at startup, so image rotation is ignored.
 const computeImageId: pulumi.Input<string> = sizing.computeImage;
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
   const resourceName = `vm-${svc.slug}-${generation.id}`;
 
-  // Public IP for egress (image pull) plus the per-generation private IP reserved in pass 1.
+  // Public IP for egress (the archives and the env file) plus the per-generation private IP reserved in pass 1.
   const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags });
   const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id));
   if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
-  // A new generation carries the keys the deploy read: an update without them refuses and never writes an empty key. A preview only plans: the
-  // deploy's preflight previews before it reads them, and on a stack that never had a machine every generation is new.
-  if (!generation.preexisting && !generationKeys) {
+  // A new generation carries the links of the deploy's plan: an update without it refuses and never makes a machine that boots nothing. A
+  // preview only plans, and on a stack that never had a machine every generation is new.
+  if (!generation.preexisting && releasePlan?.release !== generation.sha) {
     if (!pulumi.runtime.isDryRun()) {
       throw new Error(
-        `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it reads the machine keys first).`,
+        `compute: planning a NEW ${svc.slug} generation without INFRA_RELEASE_PLAN_FILE for ${generation.sha}: deploy via the deploy task (it composes the env files and the plan first).`,
       );
     }
-    pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its keys; a deploy reads them before it updates.`);
+    pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its links; a deploy signs them as it makes the machine.`);
   }
-  // Every service a machine carries reads its own copies with its own key.
-  const keyOf = (consumer: string) => {
-    const key = generationKeys?.[consumer];
-    if (!key && generationKeys && !generation.preexisting) {
-      throw new Error(`compute: a NEW ${svc.slug} generation carries ${consumer}, whose key the deploy did not read`);
-    }
-    return key ?? { accessKey: '', secretKey: '' };
-  };
-  const [, ...coHostedConsumers] = secretConsumersFor(svc);
+  const startServices: [string, ...string[]] = [svc.slug, ...(appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : [])];
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
-    startServices: [svc.slug, ...(appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : [])],
-    runRelease: svc.runRelease ?? false,
-    secretConsumers: secretConsumersFor(svc),
-    // A newly rolling generation pulls every image by digest; a pre-existing one keeps the cloud-init it booted with (ignoreChanges below).
-    composeEnv: buildComposeEnv(svc, pinnedImageTag(generation.sha, !generation.preexisting)),
-    key: keyOf(svc.slug),
-    coHostedSecretKeys: Object.fromEntries(coHostedConsumers.map((consumer) => [consumer, keyOf(consumer).secretKey])),
-    exportS3Env: svc.s3Access === true,
+    startServices,
+    composeEnv: buildComposeEnv(svc, () => generation.sha),
   };
 
   const server = new scaleway.instance.Server(
@@ -274,15 +203,14 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
       zone,
       tags,
       securityGroupId: securityGroup.id,
-      // A newly rolling generation must have a pinnable boot image; a pre-existing one degrades to its booted image.
-      cloudInit: buildCloudInit(serviceConfig, generation.sha, !generation.preexisting),
+      cloudInit: buildCloudInit(serviceConfig, generation.sha),
       ipIds: [ip.id],
     },
     {
       // Generation VMs keep their initial cloud-init and image: changes roll a new content-addressed generation, and ignoring image UUID drift prevents in-place replacement outside LB cutover.
       ignoreChanges: ['cloudInit', 'image'],
-      // The provider reads all user data back into both outputs after every create and refresh, the machine's keys included, and marks
-      // neither secret: the state keeps them under the passphrase.
+      // The provider reads all user data back into both outputs after every create and refresh, links included until the deploy strips them,
+      // and marks neither secret: the state keeps them under the passphrase.
       additionalSecretOutputs: ['userData', 'cloudInit'],
     },
   );

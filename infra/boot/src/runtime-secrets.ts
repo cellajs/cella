@@ -1,64 +1,38 @@
-import { isEnvFileDeliverable } from '../../lib/utils/env-file';
+import { readFile } from 'node:fs/promises';
 import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like';
-import { parseJsonBody } from '../../lib/utils/json';
+import { retry } from '../../lib/utils/retry';
 import { writeFileMode } from './fs-utils';
-import type { RuntimeSecretManifestEntry } from './plan';
 
-export interface HydrateRuntimeSecretsOptions {
-  manifest: readonly RuntimeSecretManifestEntry[];
-  /** The key an entry without a service of its own is read with: the plan's own service. */
-  secretKey: string;
-  /** Per service, the key its copies are read with: each service's key reads its own folder only. */
-  secretKeys?: Readonly<Record<string, string>>;
-  region: string;
+/** The values of an env file, one `NAME=value` per line, so the boot runner redacts each wherever it shows up. */
+export function envFileValues(content: string): string[] {
+  return content
+    .split('\n')
+    .map((line) => line.slice(line.indexOf('=') + 1))
+    .filter((value, index, all) => value !== '' && all.indexOf(value) === index);
+}
+
+/**
+ * The machine's env file: the one at `outputPath` when an earlier boot of this machine fetched it, else the one its link serves, kept there
+ * at 0600 for every boot after. The deploy composed it; the link ends within minutes and is gone from the user data after the first boot.
+ */
+export async function fetchRuntimeEnv(opts: {
+  url: string;
   outputPath: string;
-  /** Extra env lines appended verbatim (e.g. the v2 S3 key export). */
-  extraLines?: readonly string[];
+  attempts: number;
+  retryDelayMs: number;
   fetchImpl?: FetchLike;
-}
-
-async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecretManifestEntry): Promise<string | null> {
+}): Promise<{ content: string; fetched: boolean }> {
+  const kept = await readFile(opts.outputPath, 'utf-8').catch(() => undefined);
+  if (kept !== undefined) return { content: kept, fetched: false };
   const fetchImpl = resolveFetch(opts.fetchImpl);
-  // Manifest ids are `region/uuid` (Pulumi) or a bare uuid, so take the last segment and refuse to build a request URL from a blank id.
-  const secretId = entry.secretId.split('/').at(-1);
-  if (!secretId) throw new Error(`${entry.envVar}: manifest entry has a blank secretId ('${entry.secretId}')`);
-  const url = `https://api.scaleway.com/secret-manager/v1beta1/regions/${opts.region}/secrets/${secretId}/versions/latest/access`;
-  const key = entry.service ? opts.secretKeys?.[entry.service] : opts.secretKey;
-  if (!key) throw new Error(`${entry.envVar}: no key for service '${entry.service}' on this machine`);
-  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': key } });
-  const body = await res.text();
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    if (!entry.required) return null;
-    throw new Error(`${entry.envVar}: ${res.status}`);
-  }
-  const { data } = parseJsonBody<{ data?: string }>(body);
-  return Buffer.from(data ?? '', 'base64').toString('utf-8');
-}
-
-/** Write the manifest's secrets to the runtime env file and return the delivered values, so boot can redact them by value. */
-export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions): Promise<string[]> {
-  const lines: string[] = [];
-  const values: string[] = [];
-  const errors: string[] = [];
-
-  for (const entry of opts.manifest) {
-    const value = await readSecret(opts, entry);
-    if (value === null) {
-      if (entry.required) errors.push(`${entry.envVar}: missing`);
-      continue;
-    }
-    const deliverable = isEnvFileDeliverable(value);
-    if (!deliverable.ok) {
-      errors.push(`${entry.envVar}: ${deliverable.reason}`);
-      continue;
-    }
-    lines.push(`${entry.envVar}=${value}`);
-    values.push(value);
-  }
-
-  if (errors.length > 0) throw new Error(`runtime-secret-sync failed: ${errors.join(', ')}`);
-  const allLines = [...lines, ...(opts.extraLines ?? [])];
-  await writeFileMode(opts.outputPath, allLines.length > 0 ? `${allLines.join('\n')}\n` : '', 0o600);
-  return values;
+  const content = await retry(
+    async () => {
+      const res = await fetchImpl(opts.url, { method: 'GET' });
+      if (!res.ok) throw new Error(`the env file's link answered ${res.status}`);
+      return res.text();
+    },
+    { attempts: opts.attempts, delayMs: opts.retryDelayMs },
+  );
+  await writeFileMode(opts.outputPath, content, 0o600);
+  return { content, fetched: true };
 }

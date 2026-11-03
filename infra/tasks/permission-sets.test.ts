@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { uploadsPolicy } from '../lib/scaleway/declared-identities';
 import { deployRules } from '../lib/scaleway/deploy-policy';
-import { SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 
 // The deploy key's rights are plan §3.1's: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
@@ -22,12 +22,16 @@ describe('deploy key rights', () => {
     expect(all.filter((set) => /^Instances(Image|Snapshot|SecurityGroup)(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
-  it("must not read a value of the app's secrets: values in the deploy folder only", () => {
+  it('must not read a secret value outside the runtime folder: the passphrase and the database passwords stay the operator’s', () => {
     const valueRules = rules.filter((rule) =>
       rule.permission_set_names.some((set) => set === 'SecretManagerSecretAccess' || set === 'SecretManagerFullAccess'),
     );
-    expect(valueRules.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/deploy/")']);
+    expect(valueRules.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/runtime/")']);
     expect(rules.flatMap(setsOf)).not.toContain('SecretManagerFullAccess');
+  });
+
+  it('must not reach the registry: a release travels as archives through links, and no image is pushed or pulled with a key', () => {
+    expect(rules.flatMap(setsOf).filter((set) => set.startsWith('ContainerRegistry'))).toEqual([]);
   });
 
   it('reads secret metadata unconditioned: Scaleway refuses a list call under any condition', () => {
@@ -48,18 +52,11 @@ describe('deploy key rights', () => {
   });
 });
 
-describe('service VM key permission sets', () => {
-  it('SERVICE_SECRET_PERMISSION_SETS exact membership snapshot', () => {
-    // Lock service VMs to these read-scoped secret grants; additions require security review.
-    // SecretManagerSecretAccess decrypts values without mutation, unlike metadata-only ReadOnly.
-    expect([...SERVICE_SECRET_PERMISSION_SETS].sort()).toEqual(['SecretManagerReadOnly', 'SecretManagerSecretAccess']);
-  });
-
-  it('every service VM permission set is read-scoped (ReadOnly, or the SecretAccess decrypt-read grant)', () => {
-    // SecretManagerSecretAccess reads (decrypts) secret values but grants no
-    // write/escalation; everything else must be a plain `ReadOnly` grant.
-    for (const p of SERVICE_SECRET_PERMISSION_SETS) {
-      expect(p, `service VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(/(ReadOnly$|^SecretManagerSecretAccess$)/);
-    }
+describe('uploads key rights', () => {
+  it('must not do more than object reads, writes and deletes in its own project: no bucket setting, no secret, no machine', () => {
+    const { rules: uploads } = uploadsPolicy({ slug: 'app', mode: 'production', projectId: 'proj' });
+    expect(uploads).toEqual([
+      { permission_set_names: ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'], project_ids: ['proj'] },
+    ]);
   });
 });

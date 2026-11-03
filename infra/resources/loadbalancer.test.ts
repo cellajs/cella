@@ -9,14 +9,8 @@ import {
   installPulumiMocks,
   type MockHarness,
   unwrapSecret,
-  writeGenerationKeys,
+  writeReleasePlan,
 } from '../tests/helpers/pulumi-mock';
-
-// The generation VMs the pools target need a pinnable boot image; the registry lookup answers a fixed digest here.
-vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
-  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
-}));
 
 // The propagation and readiness gates are dynamic resources whose providers poll the network; a plain component stands in so the graph they gate renders.
 vi.mock('./dns-cert-gates', async () => {
@@ -47,8 +41,8 @@ const vmEnv = (slug: string): Record<string, string> => {
 };
 
 beforeAll(async () => {
-  // A key for every service, as the deploy reads one for each that runs.
-  writeGenerationKeys(Object.fromEntries([...servicesByName.keys()].map((slug) => [slug, { accessKey: `ak-${slug}`, secretKey: `sk-${slug}` }])));
+  // The plan of the release, as the deploy writes it before its stack update.
+  writeReleasePlan();
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);

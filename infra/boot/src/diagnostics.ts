@@ -1,12 +1,9 @@
-import { createHash, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like';
 
 export interface UploadBootDiagnosticsOptions {
-  bucket: string;
-  region: string;
-  accessKey: string;
-  secretKey: string;
+  /** The boot account's upload link, which the deploy signed for this machine's first boot. */
+  url: string;
   service: string;
   releaseSha: string;
   bootRc: number;
@@ -17,12 +14,11 @@ export interface UploadBootDiagnosticsOptions {
   appLogs?: string;
   /** Redaction by value (see secret-redactor.ts), applied to the uploaded account: boot log and app logs. */
   redact: (text: string) => string;
-  now?: Date;
   fetchImpl?: FetchLike;
 }
 
 // Mirrors the cloud-init log scrub (resources/cloud-init.ts scrubCloudInitLogs) so both diagnostic channels drop the same secret-bearing lines.
-const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/i;
+const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|X-Amz-Signature/i;
 
 /** Replace secret-bearing lines before a log leaves the VM, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
 export function scrubSecretLines(text: string): string {
@@ -30,56 +26,6 @@ export function scrubSecretLines(text: string): string {
     .split('\n')
     .map((line) => (secretLinePattern.test(line) ? '[line scrubbed: matched secret pattern]' : line))
     .join('\n');
-}
-
-function hmac(key: Buffer | string, msg: string): Buffer {
-  return createHmac('sha256', key).update(msg, 'utf-8').digest();
-}
-
-function signingKey(secretKey: string, date: string, region: string): Buffer {
-  return hmac(hmac(hmac(hmac(`AWS4${secretKey}`, date), region), 's3'), 'aws4_request');
-}
-
-function hash(value: string): string {
-  return createHash('sha256').update(value, 'utf-8').digest('hex');
-}
-
-function timestamp(now: Date): { amzDate: string; date: string; keyStamp: string } {
-  const iso = now
-    .toISOString()
-    .replace(/[:-]/g, '')
-    .replace(/\.\d{3}Z$/, 'Z');
-  return { amzDate: iso, date: iso.slice(0, 8), keyStamp: iso };
-}
-
-async function putObject(opts: UploadBootDiagnosticsOptions, key: string, body: string): Promise<void> {
-  const fetchImpl = resolveFetch(opts.fetchImpl);
-  const host = `${opts.bucket}.s3.${opts.region}.scw.cloud`;
-  const { amzDate, date } = timestamp(opts.now ?? new Date());
-  const payloadHash = hash(body);
-  const canonicalUri = `/${key
-    .split('/')
-    .map((part) => encodeURIComponent(part))
-    .join('/')}`;
-  const canonicalHeaders = `content-type:text/plain; charset=utf-8\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
-  const canonicalRequest = ['PUT', canonicalUri, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
-  const scope = `${date}/${opts.region}/s3/aws4_request`;
-  const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, hash(canonicalRequest)].join('\n');
-  const signature = createHmac('sha256', signingKey(opts.secretKey, date, opts.region))
-    .update(stringToSign, 'utf-8')
-    .digest('hex');
-  const res = await fetchImpl(`https://${host}${canonicalUri}`, {
-    method: 'PUT',
-    body,
-    headers: {
-      Authorization: `AWS4-HMAC-SHA256 Credential=${opts.accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
-      'Content-Type': 'text/plain; charset=utf-8',
-      'X-Amz-Content-Sha256': payloadHash,
-      'X-Amz-Date': amzDate,
-    },
-  });
-  if (!res.ok) throw new Error(`boot diagnostics upload ${key} -> ${res.status}: ${await res.text()}`);
 }
 
 /** The boot log's tail that travels in a bundle: it accumulates every boot of the VM, and the newest lines name the failure. */
@@ -98,9 +44,8 @@ async function readBootLogTail(logFile: string): Promise<string> {
   }
 }
 
-export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions): Promise<string[]> {
-  const now = opts.now ?? new Date();
-  const { keyStamp } = timestamp(now);
+/** Upload the boot account through its link: the machine holds no key, and the link names the one object it may write. */
+export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions): Promise<void> {
   const log = await readBootLogTail(opts.logFile);
   const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`];
   if (opts.failedPhase) parts.push(`failed_phase=${opts.failedPhase}`);
@@ -109,7 +54,6 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   // The boot log holds the boot runner's and the release companion's output; the app containers log to Docker, so a crash is in their captured tail.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = opts.redact(parts.join('\n'));
-  const key = `boot-diag/${opts.service}-${keyStamp}-boot.log`;
-  await putObject({ ...opts, now }, key, body);
-  return [key];
+  const res = await resolveFetch(opts.fetchImpl)(opts.url, { method: 'PUT', body, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  if (!res.ok) throw new Error(`boot account upload → ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }

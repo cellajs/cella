@@ -11,7 +11,7 @@ import { registryEndpoint } from './registry';
 // Suppliers for shared, app-wide `${VAR}` values are app-owned in config/env-suppliers.config.ts; service-specific values are declared as registry `bindings` and resolved generically below.
 const envSuppliers: Record<string, EnvSupplier> = appEnvSuppliers;
 
-// Satisfied outside the pool: REGISTRY and APP_MODE go into every VM's .env, and `*_TAG` is the pinned image reference injected per service below.
+// Satisfied outside the pool: REGISTRY and APP_MODE go into every VM's .env, and `*_TAG` is the release tag injected per service below.
 const INJECTED_VARS = new Set(['REGISTRY', 'APP_MODE']);
 const PLACEHOLDER_RE = /\$\{([A-Z][A-Z0-9_]*)(?::-[^}]*)?\}/g;
 
@@ -34,7 +34,7 @@ const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]));
 /** Current-generation private-network IP supplier, owned by compute.ts. */
 export type CurrentGenBindingIp = (slug: ServiceName) => pulumi.Output<string>;
 
-/** The value of a service's `*_TAG` for one generation: its release tag, pinned to the digest it was built as. Owned by compute.ts. */
+/** The value of a service's `*_TAG` for one generation: its release tag, which the image loaded from the release's archive carries. Owned by compute.ts. */
 export type ImageTag = (slug: string) => pulumi.Input<string>;
 
 /** The compose `*_TAG` variable a service's image reference reads, e.g. backend to BACKEND_TAG. */
@@ -157,7 +157,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     const env: Record<string, () => pulumi.Input<string>> = {
       REGISTRY: () => registryEndpoint,
       APP_MODE: () => mode,
-      // The generation's image, `<sha>@sha256:<digest>`: the VM pulls exactly what was built for the release, whatever the tag points to later.
+      // The release's tag: the machine runs the image it loaded from the archive whose digest the deploy put in its plan.
       [tagVar(slug)]: () => imageTag(slug),
     };
     // Collocated containers ship at the same release as the host.

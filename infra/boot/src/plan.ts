@@ -1,47 +1,39 @@
 import { posix } from 'node:path';
 import { isRecord } from '../../lib/utils/guards';
 
-export const supportedSchemaVersion = 1;
+export const supportedSchemaVersion = 2;
 export const supportedImageContract = 'docker-node-boot-v1';
 
-export interface RuntimeSecretManifestEntry {
-  envVar: string;
-  secretId: string;
-  required: boolean;
-  /** The service whose copy this is, read with that service's key. Absent: the plan's own service. */
-  service?: string;
+/** One image archive of the release: the image it holds, the link it is fetched through and the sha256 it must have. */
+export interface ReleaseArchive {
+  name: string;
+  image: string;
+  url: string;
+  sha256: string;
 }
 
 export interface BootPlan {
   schemaVersion: typeof supportedSchemaVersion;
   service: string;
   profile: string;
-  /**
-   * Compose services to start, named explicitly so the one-shot release companion sharing the profile is never `up`ed.
-   * Absent in plans predating container collocation, where the boot runner falls back to [profile].
-   */
-  services?: [string, ...string[]];
+  /** Compose services to start, named explicitly; the one-shot release companion starts as their dependency. */
+  services: [string, ...string[]];
   releaseSha: string;
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
   traceparent?: string;
-  /** App-declared telemetry sink: boot events export here once the runtime env delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
+  /** App-declared telemetry sink: boot events export here once the env file delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
   telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
   imageContract: typeof supportedImageContract;
-  registry: string;
-  region: string;
-  /** The machine's own service key. */
-  credentials: { scwAccessKeyFile: string; scwSecretKeyFile: string };
-  /** Per other service a singleVM host carries, the file of the secret key that reads its folder. */
-  serviceSecretKeyFiles?: Record<string, string>;
-  /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
-  exportS3Env?: boolean;
-  bootDiagnostics: { bucket: string; logFile: string };
-  /** `containerName` is the companion's fixed `--name`, removed before a run and after a timed-out one. */
-  releaseCommand: { enabled: boolean; command: [string, ...string[]]; containerName?: string };
+  /**
+   * The links the deploy signed for the first boot, which end within minutes and which the deploy strips from the user data once the boot
+   * account arrived: the env file, the app's image archives and the boot account's upload. A reboot fetches nothing.
+   */
+  links: { env: string; bootAccount: string; archives: ReleaseArchive[] };
+  bootDiagnostics: { logFile: string };
   docker: { composeFile: string };
-  files: { compose: string; env: string; runtimeSecretManifest: RuntimeSecretManifestEntry[] };
-  /** `releaseCommandSeconds` bounds the release companion run; see resources/cloud-init.ts for how it fits the deploy's health gate. */
-  timeouts: { privateNetworkSeconds: number; pullAttempts: number; pullRetrySeconds: number; releaseCommandSeconds: number };
+  files: { compose: string; env: string };
+  /** `composeWaitSeconds` bounds the release companion and the start together; see resources/cloud-init.ts for how it fits the deploy's health gate. */
+  timeouts: { privateNetworkSeconds: number; fetchAttempts: number; fetchRetrySeconds: number; composeWaitSeconds: number };
 }
 
 const topLevelKeys = new Set([
@@ -53,13 +45,8 @@ const topLevelKeys = new Set([
   'services',
   'releaseSha',
   'imageContract',
-  'registry',
-  'region',
-  'credentials',
-  'serviceSecretKeyFiles',
-  'exportS3Env',
+  'links',
   'bootDiagnostics',
-  'releaseCommand',
   'docker',
   'files',
   'timeouts',
@@ -71,22 +58,16 @@ function stringField(obj: Record<string, unknown>, key: string): string {
   return value;
 }
 
-function booleanField(obj: Record<string, unknown>, key: string): boolean {
-  const value = obj[key];
-  if (typeof value !== 'boolean') throw new Error(`boot plan: '${key}' must be a boolean`);
-  return value;
-}
-
 function numberField(obj: Record<string, unknown>, key: string): number {
   const value = obj[key];
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) throw new Error(`boot plan: '${key}' must be a positive number`);
   return value;
 }
 
-/** A Docker container name: it reaches `docker rm` as an argument, so only the characters Docker itself allows. */
-function containerNameField(obj: Record<string, unknown>, key: string): string {
+/** A link: https only, so a plan cannot send a fetch or an upload anywhere a plain connection reaches. */
+function linkField(obj: Record<string, unknown>, key: string): string {
   const value = stringField(obj, key);
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(value)) throw new Error(`boot plan: '${key}' is not a valid container name`);
+  if (!value.startsWith('https://')) throw new Error(`boot plan: '${key}' must be an https link`);
   return value;
 }
 
@@ -113,29 +94,27 @@ function assertAllowedPath(path: string, configDir: string): void {
   throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`);
 }
 
-function commandField(obj: Record<string, unknown>, key: string): [string, ...string[]] {
-  const value = obj[key];
-  if (!Array.isArray(value) || value.length === 0) throw new Error(`boot plan: '${key}' must be a non-empty command array`);
-  const command = value.map((part) => {
-    if (typeof part !== 'string' || part === '') throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`);
+function servicesField(obj: Record<string, unknown>): [string, ...string[]] {
+  const value = obj.services;
+  if (!Array.isArray(value) || value.length === 0) throw new Error("boot plan: 'services' must be a non-empty array");
+  const services = value.map((part) => {
+    if (typeof part !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(part)) throw new Error("boot plan: 'services' holds a name compose would not take");
     return part;
   });
-  // Validated non-empty above, so the tuple type lets consumers destructure the executable without a non-null assertion.
-  return command as [string, ...string[]];
+  // Validated non-empty above, so the tuple type lets consumers destructure without a non-null assertion.
+  return services as [string, ...string[]];
 }
 
-/** Validate a runtime-secret manifest value. The boot-plan producer (resources/cloud-init.ts) calls it too, so a malformed manifest fails at plan time. */
-export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
-  if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array");
+function archivesField(links: Record<string, unknown>): ReleaseArchive[] {
+  const value = links.archives;
+  if (!Array.isArray(value)) throw new Error("boot plan: 'archives' must be an array");
   return value.map((entry, index) => {
-    if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`);
-    const service = entry.service === undefined ? undefined : stringField(entry, 'service');
-    return {
-      envVar: stringField(entry, 'envVar'),
-      secretId: stringField(entry, 'secretId'),
-      required: booleanField(entry, 'required'),
-      ...(service ? { service } : {}),
-    };
+    if (!isRecord(entry)) throw new Error(`boot plan: archives[${index}] must be an object`);
+    const name = stringField(entry, 'name');
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`boot plan: archive '${name}' is no archive name`);
+    const sha256 = stringField(entry, 'sha256');
+    if (!/^[0-9a-f]{64}$/.test(sha256)) throw new Error(`boot plan: archive '${name}' has no sha256`);
+    return { name, image: stringField(entry, 'image'), url: linkField(entry, 'url'), sha256 };
   });
 }
 
@@ -151,28 +130,17 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   const imageContract = parsed.imageContract;
   if (imageContract !== supportedImageContract) throw new Error(`boot plan: unsupported imageContract '${String(imageContract)}'`);
 
-  const credentials = objectField(parsed, 'credentials');
+  const links = objectField(parsed, 'links');
   const bootDiagnostics = objectField(parsed, 'bootDiagnostics');
-  const releaseCommand = objectField(parsed, 'releaseCommand');
   const docker = objectField(parsed, 'docker');
   const files = objectField(parsed, 'files');
   const timeouts = objectField(parsed, 'timeouts');
 
-  const scwAccessKeyFile = stringField(credentials, 'scwAccessKeyFile');
-  const scwSecretKeyFile = stringField(credentials, 'scwSecretKeyFile');
   const logFile = stringField(bootDiagnostics, 'logFile');
   const composeFile = stringField(docker, 'composeFile');
-  for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path, configDir);
+  for (const path of [logFile, composeFile]) assertAllowedPath(path, configDir);
 
   const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
-
-  let serviceSecretKeyFiles: Record<string, string> | undefined;
-  if (parsed.serviceSecretKeyFiles !== undefined) {
-    const files = objectField(parsed, 'serviceSecretKeyFiles');
-    serviceSecretKeyFiles = Object.fromEntries(Object.keys(files).map((service) => [service, stringField(files, service)]));
-    for (const path of Object.values(serviceSecretKeyFiles)) assertAllowedPath(path, configDir);
-  }
-  const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env');
 
   let telemetry: BootPlan['telemetry'];
   if (parsed.telemetry !== undefined) {
@@ -180,39 +148,24 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
     telemetry = { endpoint: stringField(sink, 'endpoint'), keyHeader: stringField(sink, 'keyHeader'), keyEnvVar: stringField(sink, 'keyEnvVar') };
   }
 
-  const services = parsed.services === undefined ? undefined : commandField(parsed, 'services');
-
   return {
     schemaVersion,
     service: stringField(parsed, 'service'),
     profile: stringField(parsed, 'profile'),
-    ...(services ? { services } : {}),
+    services: servicesField(parsed),
     releaseSha: stringField(parsed, 'releaseSha'),
     ...(traceparent ? { traceparent } : {}),
     ...(telemetry ? { telemetry } : {}),
     imageContract,
-    registry: stringField(parsed, 'registry'),
-    region: stringField(parsed, 'region'),
-    credentials: { scwAccessKeyFile, scwSecretKeyFile },
-    ...(serviceSecretKeyFiles ? { serviceSecretKeyFiles } : {}),
-    ...(exportS3Env !== undefined ? { exportS3Env } : {}),
-    bootDiagnostics: { bucket: stringField(bootDiagnostics, 'bucket'), logFile },
-    releaseCommand: {
-      enabled: booleanField(releaseCommand, 'enabled'),
-      command: commandField(releaseCommand, 'command'),
-      ...(releaseCommand.containerName === undefined ? {} : { containerName: containerNameField(releaseCommand, 'containerName') }),
-    },
+    links: { env: linkField(links, 'env'), bootAccount: linkField(links, 'bootAccount'), archives: archivesField(links) },
+    bootDiagnostics: { logFile },
     docker: { composeFile },
-    files: {
-      compose: stringField(files, 'compose'),
-      env: stringField(files, 'env'),
-      runtimeSecretManifest: parseRuntimeSecretManifest(files.runtimeSecretManifest),
-    },
+    files: { compose: stringField(files, 'compose'), env: stringField(files, 'env') },
     timeouts: {
       privateNetworkSeconds: numberField(timeouts, 'privateNetworkSeconds'),
-      pullAttempts: numberField(timeouts, 'pullAttempts'),
-      pullRetrySeconds: numberField(timeouts, 'pullRetrySeconds'),
-      releaseCommandSeconds: numberField(timeouts, 'releaseCommandSeconds'),
+      fetchAttempts: numberField(timeouts, 'fetchAttempts'),
+      fetchRetrySeconds: numberField(timeouts, 'fetchRetrySeconds'),
+      composeWaitSeconds: numberField(timeouts, 'composeWaitSeconds'),
     },
   };
 }

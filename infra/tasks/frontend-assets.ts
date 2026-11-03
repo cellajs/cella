@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 
@@ -9,6 +9,11 @@ import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 
 /** Entry files that must NOT upload with the bundle: they go live last. */
 export const ENTRY_FILE_NAMES = ['index.html', 'sw.js', 'sw.js.map', 'manifest.webmanifest'] as const;
+
+/** Where a release's entry files wait in the frontend bucket until the deploy publishes them: nothing serves this prefix. */
+export function releaseEntryPrefix(sha: string): string {
+  return `releases/${sha}/`;
+}
 
 const contentTypes: Record<string, string> = {
   '.js': 'text/javascript; charset=utf-8',
@@ -37,6 +42,13 @@ const contentTypes: Record<string, string> = {
 export function contentTypeFor(key: string): string {
   const dot = key.lastIndexOf('.');
   return (dot >= 0 ? contentTypes[key.slice(dot)] : undefined) ?? 'application/octet-stream';
+}
+
+/** The headers a file is stored with: the build's brotli copy of a file (`<file>.br`) keeps that file's content type. */
+function contentHeaders(key: string): { ContentType: string; ContentEncoding?: 'br' } {
+  return key.endsWith('.br')
+    ? { ContentType: contentTypeFor(key.slice(0, -'.br'.length)), ContentEncoding: 'br' }
+    : { ContentType: contentTypeFor(key) };
 }
 
 /**
@@ -71,16 +83,16 @@ export interface UploadAssetsOptions {
   distDir: string;
   bucket: string;
   region: string;
+  /** The release whose entry files wait under its prefix once the bundle is up. */
+  sha: string;
   log?: (message: string) => void;
 }
 
 /**
- * Upload the built frontend bundle (everything except entry files). Hashed
- * paths get a 1-year immutable cache and skip upload when the key already
- * exists (content-addressed names make that check exact). Stable-named keys
- * (static/, favicon, robots.txt) change content under the same name, so they
- * get a short cache and skip only when the remote ETag matches the local MD5;
- * unchanged deploys stay nearly free either way.
+ * Upload a release's frontend files with the deploy key: the bundle first, then the entry files under the release's prefix, which the
+ * publish copies to the root after version verification. Hashed paths get a 1-year immutable cache and skip upload when the key already
+ * exists (content-addressed names make that check exact). Stable-named keys (static/, favicon, robots.txt) change content under the same
+ * name, so they get a short cache and skip only when the remote ETag matches the local MD5; unchanged deploys stay nearly free either way.
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
   const log = opts.log ?? ((message: string) => console.info(message));
@@ -121,7 +133,7 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
             Bucket: opts.bucket,
             Key: key,
             Body: body,
-            ContentType: contentTypeFor(key),
+            ...contentHeaders(key),
             CacheControl: 'public, max-age=31536000, immutable',
           }),
         );
@@ -140,7 +152,7 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
           Bucket: opts.bucket,
           Key: key,
           Body: body,
-          ContentType: contentTypeFor(key),
+          ...contentHeaders(key),
           CacheControl: 'public, max-age=3600',
         }),
       );
@@ -148,6 +160,20 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
     }
   });
   await Promise.all(workers);
+  // Last, so a release whose index.html waits under its prefix has every file it references.
+  for (const name of ENTRY_FILE_NAMES) {
+    if (!existsSync(join(opts.distDir, name))) continue;
+    const body = readFileSync(join(opts.distDir, name));
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: opts.bucket,
+        Key: `${releaseEntryPrefix(opts.sha)}${name}`,
+        Body: body,
+        ContentType: contentTypeFor(name),
+        CacheControl: 'no-cache, no-store, must-revalidate',
+      }),
+    );
+  }
   log(`[deploy] frontend assets: ${uploaded} uploaded, ${skipped} unchanged (skipped)`);
   return { uploaded, skipped };
 }

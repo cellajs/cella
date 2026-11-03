@@ -1,32 +1,22 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runtimeSecrets, runtimeSecretsForConsumer } from '../lib/runtime-secrets';
+import { runtimeSecrets } from '../lib/runtime-secrets';
 import { fakeConfig } from '../tests/helpers/fake-config';
 import {
   bootPlanIn,
   type CapturedResource,
+  cloudConfigFile,
   installPulumiMocks,
   type MockHarness,
+  testDeployKey,
   unwrapSecret,
-  writeGenerationKeys,
+  writeReleasePlan,
 } from '../tests/helpers/pulumi-mock';
-
-// A new generation refuses to plan without a pinnable boot image; the registry lookup is a network call, so it answers a fixed digest here.
-vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
-  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
-}));
-
-/** The deploy's machine keys, as tasks/generation-keys.ts writes them for the Pulumi program. */
-const keys = {
-  backend: { accessKey: 'SCWBACKENDACCESSKEY', secretKey: 'backend-secret-key-value' },
-  frontend: { accessKey: 'SCWFRONTENDACCESSKEY', secretKey: 'frontend-secret-key-value' },
-};
 
 let h: MockHarness;
 let servers: CapturedResource[];
 
 beforeAll(async () => {
-  writeGenerationKeys(keys);
+  writeReleasePlan();
   // Split-VM with the two services whose env needs no load balancer address: one VM each for the API and the SPA proxy;
   // the cdc and jobs workers are off.
   const { setEngineConfig } = await import('../config/engine-config');
@@ -64,54 +54,42 @@ describe('compute module', () => {
     }
   });
 
-  it('pulls images from a private registry namespace', () => {
-    expect(h.oneOfType('scaleway:registry/namespace:Namespace').inputs.isPublic).toBe(false);
-  });
-
-  it('pins every image a new machine starts to the digest its release tag resolved to', () => {
-    for (const server of servers) {
-      const tags = bootPlanOf(server)
-        .plan.files.env.split('\n')
-        .filter((line) => /^[A-Z0-9]+_TAG=/.test(line));
-      expect(tags, server.name).toEqual([expect.stringMatching(new RegExp(`^${serviceOf(server).toUpperCase()}_TAG=[^@]+@sha256:a{64}$`))]);
-    }
-  });
-
-  it("must not give a machine another service's key: each VM carries its own service's key only", () => {
-    for (const server of servers) {
-      const cloudInit = cloudInitOf(server);
-      const own = keys[serviceOf(server)];
-      expect(cloudInit).toContain(`<<'SCW_ACCESS_KEY_EOF'\n${own.accessKey}\nSCW_ACCESS_KEY_EOF`);
-      expect(cloudInit).toContain(`<<'SCW_SECRET_KEY_EOF'\n${own.secretKey}\nSCW_SECRET_KEY_EOF`);
-      for (const other of Object.values(keys).filter((key) => key !== own)) expect(cloudInit, server.name).not.toContain(other.secretKey);
-      const { plan } = bootPlanOf(server);
-      expect(plan.serviceSecretKeyFiles, server.name).toBeUndefined();
-      // Only the upload-signing service gets its key exported as S3 env.
-      expect(plan.exportS3Env, server.name).toBe(serviceOf(server) === 'backend' ? true : undefined);
-    }
-  });
-
-  it('delivers runtime secrets by manifest reference, never as an env value', () => {
+  it("must not give a machine a key or a secret value: its user data holds links that end, the release's digests and the plan", () => {
     const secretVars = new Set(runtimeSecrets.map((secret) => secret.envVar));
     for (const server of servers) {
-      const { plan, raw } = bootPlanOf(server);
+      const cloudInit = cloudInitOf(server);
+      expect(cloudInit.startsWith('#cloud-config\n'), server.name).toBe(true);
+      expect(cloudInit, server.name).not.toContain(testDeployKey.secretKey);
+      expect(cloudInit, server.name).not.toMatch(/scw-secret-key|docker login|S3_ACCESS_KEY/);
+      const { plan } = bootPlanOf(server);
       const envVars = plan.files.env.split('\n').map((line) => line.split('=')[0] ?? '');
       expect(
-        envVars.filter((name) => secretVars.has(name)),
+        envVars.filter((name) => secretVars.has(name) || name.startsWith('S3_')),
         server.name,
       ).toEqual([]);
-      // The manifest names each secret's env var, Secret Manager id and the service whose copy it is; any other field would be a value baked
-      // into cloud-init. On its own machine a service reads its own copies only.
-      const manifest = (raw.files as { runtimeSecretManifest: Record<string, unknown>[] }).runtimeSecretManifest;
-      for (const entry of manifest) {
-        expect(Object.keys(entry).sort()).toEqual(['envVar', 'required', 'secretId', 'service']);
-        expect(entry.service, String(entry.envVar)).toBe(serviceOf(server));
-        expect(entry.secretId, String(entry.envVar)).toMatch(/^secret-.*-id$/);
-      }
+      // Every link names one object of the boot-diag bucket and ends within minutes; the env file is the machine's own.
+      const links = [plan.links.env, plan.links.bootAccount, ...plan.links.archives.map((archive) => archive.url)];
+      for (const link of links)
+        expect(link, server.name).toMatch(
+          /^https:\/\/cella-[a-z-]*boot-diag\.s3\.[a-z-]+\.scw\.cloud\/.+X-Amz-Expires=(900|1800)&.*X-Amz-Signature=/,
+        );
+      expect(plan.links.env).toContain(`/env/${serviceOf(server)}.env?`);
+      expect(plan.links.bootAccount).toContain('x-id=PutObject');
+    }
+  });
+
+  it("loads every image a machine starts from the release's archive, at the digest of the plan", () => {
+    for (const server of servers) {
+      const { plan } = bootPlanOf(server);
       expect(
-        manifest.map((entry) => entry.envVar),
+        plan.links.archives.map((archive) => [archive.name, archive.sha256]),
         server.name,
-      ).toEqual(runtimeSecretsForConsumer(serviceOf(server)).map((secret) => secret.envVar));
+      ).toEqual([[serviceOf(server), 'a'.repeat(64)]]);
+      const tags = plan.files.env.split('\n').filter((line) => /^[A-Z0-9]+_TAG=/.test(line));
+      expect(tags, server.name).toEqual([`${serviceOf(server).toUpperCase()}_TAG=latest`]);
+      expect(cloudConfigFile(cloudInitOf(server), '/etc/cella/boot.env')).toMatch(
+        /^BOOT_IMAGE=.+\/infra-boot:latest\nBOOT_ARCHIVE_SHA256=a{64}\nBOOT_ARCHIVE_URL=https:/,
+      );
     }
   });
 });

@@ -10,7 +10,7 @@ describe('main', () => {
   });
 
   it('reports schema support by exit code', async () => {
-    await expect(main(['supports', '--schema-version', '1'])).resolves.toBe(0);
-    await expect(main(['supports', '--schema-version', '2'])).resolves.toBe(1);
+    await expect(main(['supports', '--schema-version', '2'])).resolves.toBe(0);
+    await expect(main(['supports', '--schema-version', '1'])).resolves.toBe(1);
   });
 });

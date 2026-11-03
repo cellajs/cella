@@ -2,22 +2,19 @@ import { readFile } from 'node:fs/promises';
 import { bootEvents } from '../../lib/telemetry/deploy-telemetry';
 import { createTelemetry, type Telemetry } from '../../lib/telemetry/emitter';
 import { errorMessage } from '../../lib/utils/errors';
-import { retry } from '../../lib/utils/retry';
+import { loadArchives } from './archives';
 import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics';
 import { type ExecFn, execCommand, mustExec } from './exec';
 import { writeFileMode } from './fs-utils';
 import { createJsonLogger } from './logger';
 import { type BootPlan, parseBootPlanJson } from './plan';
-import { hydrateRuntimeSecrets } from './runtime-secrets';
+import { envFileValues, fetchRuntimeEnv } from './runtime-secrets';
 import { createSecretRedactor } from './secret-redactor';
 
-/** Seconds to wait for the started container to become healthy before failing the boot. */
-const startupTimeoutSeconds = 120;
+/** The machine's env file, kept at 0600 for every boot after the first, which fetched it. */
+const runtimeEnvPath = '/opt/app/.env.runtime';
 
-/** Ceiling on one `docker compose pull` attempt: a stalled transfer is killed and retried. A cold pull of the backend image takes well under a minute. */
-const pullAttemptTimeoutSeconds = 240;
-
-/** Ceiling on the quick docker calls (registry login, log capture, container cleanup). */
+/** Ceiling on the quick docker calls (log capture, image checks). */
 const dockerCallTimeoutSeconds = 60;
 
 /** Seconds between heartbeats of a running phase: an event and a flush each, so a stuck phase shows up live in the telemetry sink. */
@@ -29,16 +26,14 @@ const outputLinesPerPhase = 200;
 export interface BootOptions {
   planPath: string;
   exec?: ExecFn;
+  /** Where archives are fetched to before `docker load`, each deleted after. */
+  archiveDir?: string;
 }
 
 export interface WaitForPrivateNetworkOptions {
   exec: ExecFn;
   timeoutSeconds: number;
   retryDelayMs?: number;
-}
-
-async function readKeyFile(path: string): Promise<string> {
-  return (await readFile(path, 'utf-8')).trim();
 }
 
 async function sleep(ms: number): Promise<void> {
@@ -65,83 +60,38 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
 async function writeAppFiles(plan: BootPlan): Promise<void> {
   await writeFileMode(plan.docker.composeFile, plan.files.compose, 0o600);
   await writeFileMode('/opt/app/.env', plan.files.env, 0o600);
-  await writeFileMode('/etc/runtime-secrets/manifest.json', JSON.stringify(plan.files.runtimeSecretManifest, null, 2), 0o600);
 }
 
-async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Promise<void> {
-  const [registryHost = ''] = plan.registry.split('/');
-  await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], {
-    input: secretKey,
-    timeoutMs: dockerCallTimeoutSeconds * 1000,
+/** `--profile` for every service started: each runs in its own profile, the release companion in its service's. */
+function profileArgs(plan: BootPlan): string[] {
+  return plan.services.flatMap((service) => ['--profile', service]);
+}
+
+/**
+ * Start the app and any collocated containers with one `compose up`: the release companion runs first as the app's completion dependency,
+ * and `--wait` blocks until every started container passes its healthcheck, all within `timeouts.composeWaitSeconds`. A companion that
+ * fails or a container that stays unhealthy fails the boot, and the diagnostics upload names it.
+ */
+async function startServices(plan: BootPlan, exec: ExecFn): Promise<void> {
+  const wait = plan.timeouts.composeWaitSeconds;
+  await mustExec(exec, 'docker', ['compose', ...profileArgs(plan), 'up', '-d', '--wait', '--wait-timeout', String(wait), ...plan.services], {
+    cwd: '/opt/app',
+    // `--wait-timeout` bounds the wait; the kill is the backstop for a CLI that hangs past it.
+    timeoutMs: (wait + dockerCallTimeoutSeconds) * 1000,
   });
-}
-
-/** Compose services this VM runs: explicit names (plans written before container collocation carry none). */
-function startServices(plan: BootPlan): [string, ...string[]] {
-  return plan.services ?? [plan.profile];
-}
-
-async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await retry(
-    () =>
-      // `--quiet` drops the per-layer progress frames; errors still print.
-      mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', '--quiet', ...startServices(plan)], {
-        cwd: '/opt/app',
-        timeoutMs: pullAttemptTimeoutSeconds * 1000,
-      }),
-    { attempts: plan.timeouts.pullAttempts, delayMs: plan.timeouts.pullRetrySeconds * 1000 },
-  );
-}
-
-/** Force-remove the release companion's container, best-effort: a leftover from an interrupted boot would block the fixed name, and a killed CLI leaves it running. */
-async function removeReleaseContainer(plan: BootPlan, exec: ExecFn): Promise<void> {
-  const name = plan.releaseCommand.containerName;
-  if (!name) return;
-  await exec('docker', ['rm', '--force', name], { timeoutMs: dockerCallTimeoutSeconds * 1000 }).catch(() => undefined);
-}
-
-/**
- * Run the one-shot release companion (migrations) within `timeouts.releaseCommandSeconds`, so a migration stuck on a lock fails the boot and the
- * diagnostics upload names it. On a timeout the CLI is killed and the companion's container removed, so it stops holding database locks.
- */
-async function runReleaseCommand(plan: BootPlan, exec: ExecFn, streamingExec: ExecFn): Promise<void> {
-  if (!plan.releaseCommand.enabled) return;
-  const [command, ...args] = plan.releaseCommand.command;
-  await removeReleaseContainer(plan, exec);
-  try {
-    await mustExec(streamingExec, command, args, { cwd: '/opt/app', timeoutMs: plan.timeouts.releaseCommandSeconds * 1000 });
-  } catch (err) {
-    await removeReleaseContainer(plan, exec);
-    throw err;
-  }
-}
-
-/**
- * Start the app and any collocated containers, with `--wait` blocking until every started container passes its compose healthcheck.
- * Naming a service explicitly activates its profile, so collocated containers outside the host profile start too.
- */
-async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await mustExec(
-    exec,
-    'docker',
-    ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), ...startServices(plan)],
-    // `--wait-timeout` bounds the health wait; the kill is the backstop for a CLI that hangs past it.
-    { cwd: '/opt/app', timeoutMs: (startupTimeoutSeconds + dockerCallTimeoutSeconds) * 1000 },
-  );
 }
 
 /** Best-effort tail of the app container's stdout/stderr, secret-scrubbed at capture so the telemetry body and boot-diag upload only ever see the scrubbed form. */
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
-  const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', ...startServices(plan)], {
+  const res = await exec('docker', ['compose', ...profileArgs(plan), 'logs', '--no-color', '--tail', '200'], {
     cwd: '/opt/app',
     timeoutMs: dockerCallTimeoutSeconds * 1000,
   });
   return scrubSecretLines((res.stdout || res.stderr || '').trim());
 }
 
-/** Read the plan-declared ingest-key env var from the hydrated runtime env file, if delivered. */
-async function sinkKeyFromRuntimeEnv(path: string, keyEnvVar: string): Promise<string | undefined> {
-  const content = await readFile(path, 'utf-8').catch(() => '');
+/** The plan-declared ingest-key env var from the machine's env file, if delivered. */
+function sinkKeyFromRuntimeEnv(content: string, keyEnvVar: string): string | undefined {
   const line = content.split('\n').find((entry) => entry.startsWith(`${keyEnvVar}=`));
   const value = line?.slice(line.indexOf('=') + 1).trim();
   return value || undefined;
@@ -150,13 +100,11 @@ async function sinkKeyFromRuntimeEnv(path: string, keyEnvVar: string): Promise<s
 export async function boot(opts: BootOptions): Promise<void> {
   const exec = opts.exec ?? execCommand;
   const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'), opts.planPath);
-  // Learns every secret value as boot handles it; the console, telemetry and the diagnostics upload all redact through it.
+  // Learns every link and secret value as boot handles it; the console, telemetry and the diagnostics upload all redact through it.
   const redactor = createSecretRedactor();
   const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha }, (line) => console.info(redactor.redact(line)));
-  const accessKey = await readKeyFile(plan.credentials.scwAccessKeyFile);
-  const secretKey = await readKeyFile(plan.credentials.scwSecretKeyFile);
-  redactor.add(accessKey, secretKey);
-  // Build-only until secret hydration delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
+  redactor.add(plan.links.env, plan.links.bootAccount, ...plan.links.archives.map((archive) => archive.url));
+  // Build-only until the env file delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
   const telemetry: Telemetry = createTelemetry({
     resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
     traceparent: plan.traceparent,
@@ -216,36 +164,37 @@ export async function boot(opts: BootOptions): Promise<void> {
   try {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
     await phase('write-app-files', () => writeAppFiles(plan));
-    await phase('docker-login', () => dockerLogin(plan, secretKey, streamingExec));
-    await phase('hydrate-runtime-secrets', async () => {
-      const secretKeys: Record<string, string> = { [plan.service]: secretKey };
-      for (const [service, file] of Object.entries(plan.serviceSecretKeyFiles ?? {})) {
-        const key = await readKeyFile(file);
-        redactor.add(key);
-        secretKeys[service] = key;
-      }
-      const delivered = await hydrateRuntimeSecrets({
-        manifest: plan.files.runtimeSecretManifest,
-        secretKey,
-        secretKeys,
-        region: plan.region,
-        outputPath: '/opt/app/.env.runtime',
-        // REQ-20: the backend signs S3 requests with its own service key.
-        extraLines: plan.exportS3Env ? [`S3_ACCESS_KEY_ID=${accessKey}`, `S3_ACCESS_KEY_SECRET=${secretKey}`] : [],
+    let runtimeEnv = '';
+    await phase('fetch-env', async () => {
+      const env = await fetchRuntimeEnv({
+        url: plan.links.env,
+        outputPath: runtimeEnvPath,
+        attempts: plan.timeouts.fetchAttempts,
+        retryDelayMs: plan.timeouts.fetchRetrySeconds * 1000,
       });
-      redactor.add(...delivered);
+      redactor.add(...envFileValues(env.content));
+      runtimeEnv = env.content;
+      logger.log('info', env.fetched ? 'env-fetched' : 'env-kept');
     });
     // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
     const sink = plan.telemetry;
-    const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
+    const sinkKey = sink ? sinkKeyFromRuntimeEnv(runtimeEnv, sink.keyEnvVar) : undefined;
     if (sink && sinkKey) {
       telemetry.configureExport({ endpoint: sink.endpoint, headers: { [sink.keyHeader]: sinkKey } });
       // Ship what was buffered before the key arrived (the boot start and the first phases).
       flushInBackground();
     }
-    await phase('pull-image', () => pullImage(plan, streamingExec));
-    await phase('release-command', () => runReleaseCommand(plan, exec, streamingExec));
-    await phase('start-service', () => startService(plan, streamingExec));
+    await phase('load-images', () =>
+      loadArchives({
+        archives: plan.links.archives,
+        dir: opts.archiveDir ?? '/opt/app/images',
+        exec: streamingExec,
+        attempts: plan.timeouts.fetchAttempts,
+        retryDelayMs: plan.timeouts.fetchRetrySeconds * 1000,
+        log: (message) => logger.log('info', 'image', { message }),
+      }),
+    );
+    await phase('start-service', () => startServices(plan, streamingExec));
     logger.log('info', 'boot-complete');
     bootSpan.end('ok');
     telemetry.event(bootEvents.completed, { service: plan.service, sha: plan.releaseSha });
@@ -273,10 +222,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     await telemetry.flush().catch(() => {});
     try {
       await uploadBootDiagnostics({
-        bucket: plan.bootDiagnostics.bucket,
-        region: plan.region,
-        accessKey,
-        secretKey,
+        url: plan.links.bootAccount,
         service: plan.service,
         releaseSha: plan.releaseSha,
         bootRc,

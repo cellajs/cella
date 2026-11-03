@@ -45,9 +45,10 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
       ops.push('telemetry:init');
     },
     task: async (name, argv = []) => {
-      ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
+      ops.push(`task:${name}${argv.includes('--no-wait') ? ':no-wait' : ''}`);
       taskArgs[name] = [...argv];
     },
+    readFile: async (path) => (path.endsWith('manifest.json') ? JSON.stringify({ release: 'abc123', images: {} }) : '[]'),
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
       return {
@@ -113,7 +114,7 @@ describe('runDeploy sequencing', () => {
     const ok = makeFake();
     await runDeploy(baseOpts, ok.fx, withBucket);
     expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:build-release'));
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:generation-keys'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('update:production'));
 
     const failing = makeFake();
     const task = failing.fx.task;
@@ -133,9 +134,8 @@ describe('runDeploy sequencing', () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
 
-    // Ordering spine: identities checked first, lock before any stack mutation,
-    // machine keys read before the stack update writes them into cloud-init,
-    // rollout after preflights, publish only after verification, lock release last.
+    // Ordering spine: identities checked first, lock before any stack mutation, the env files written before the build and the stack
+    // update that hands each machine its link, the links taken off after the rollout, publish only after verification, lock release last.
     const spine = [
       'task:identity-plan',
       'task:ensure-state-bucket',
@@ -145,15 +145,17 @@ describe('runDeploy sequencing', () => {
       'task:sync-rollout-config',
       'task:preflight-privileged',
       // A missing secret blocks the run before any machine exists, the builder included.
-      'task:assert-secrets-deliverable',
+      'task:compose-env',
       'task:build-release',
-      'task:generation-keys',
       'update:production',
       'rollout',
+      'task:clear-machine-links',
       'publish-entry',
       'task:smoke',
       // The displaced generations are reaped once smoke passed, under the same lock.
       'update:production',
+      // No env file outlives the run, and no machine keeps a link.
+      'task:clear-machine-links:no-wait',
       'lease:release',
     ];
     let cursor = -1;
@@ -207,6 +209,7 @@ describe('runDeploy sequencing', () => {
     expect(ops).toContain('task:preflight-privileged');
     expect(ops).not.toContain('update:production');
     expect(ops).not.toContain('rollout');
+    // It stopped before any env file was written, so nothing is left to clear.
     expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
     // The failure travels as the thrown error; the process exit code stays the entry point's business.
     expect(process.exitCode).toBe(exitCodeBefore);
@@ -217,7 +220,7 @@ describe('runDeploy sequencing', () => {
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
     expect(records.at(-1)?.record.boot).toEqual([{ service: 'backend', key: 'backend-20261025T200000Z-boot.log', failed: true }, { service: 'cdc' }]);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
+    expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
   });
 
   it('a frontend-less registry (empty frontend_bucket) builds no frontend and publishes no entry file', async () => {
@@ -228,14 +231,14 @@ describe('runDeploy sequencing', () => {
     expect(build[build.indexOf('--dist') + 1]).toBe('');
     expect(ops).not.toContain('publish-entry');
     expect(ops).toContain('task:smoke');
-    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
+    expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
   });
 
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
+    expect(ops.slice(-3)).toEqual(['task:clear-machine-links:no-wait', 'lease:release', 'record']);
   });
 
   it('publishes and smoke-tests the entry files the build wrote', async () => {

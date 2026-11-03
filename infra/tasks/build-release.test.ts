@@ -2,26 +2,33 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { ArchiveDigest, ReleaseManifest } from '../lib/deploy/release-archives';
 import { type BuildEffects, type BuildReleaseOptions, buildRelease } from './build-release';
 
-const epoch = '0123456789ab';
+const sha = 'c'.repeat(40);
+const digest: ArchiveDigest = { sha256: 'a'.repeat(64), md5: 'b'.repeat(32), bytes: 10 };
+const manifest: ReleaseManifest = { release: sha, images: { backend: digest, 'infra-boot': digest }, frontend: digest };
 
 /** `earlier`: the result an earlier build of the commit left under its prefix an hour before, served with its step and log for two polls. */
 function fake(
-  opts: { present?: boolean; result?: string; never?: boolean; step?: string; epochOnFiles?: string; outOfStock?: string; earlier?: string } = {},
+  opts: { present?: boolean; result?: string; never?: boolean; step?: string; outOfStock?: string; earlier?: string; mismatch?: string } = {},
 ) {
   const ops: string[] = [];
   let built = false;
+  let published = false;
   let polls = 0;
   const fx: BuildEffects = {
-    imagePresent: async () => opts.present === true || built,
-    entryFile: async (name) => {
-      if (!opts.present && !built) return undefined;
-      return Buffer.from(name === 'epoch' ? (built ? epoch : (opts.epochOnFiles ?? epoch)) : `<${name}>`);
+    manifest: async () => (opts.present || built ? manifest : undefined),
+    archiveMatches: async (key) => !(opts.mismatch && key.includes(opts.mismatch) && !built),
+    links: async (archives) => {
+      ops.push('links');
+      return Object.fromEntries(archives.map((name) => [`image:${name}`, `https://link/${name}`]));
     },
-    keys: async () => {
-      ops.push('keys');
-      return { accessKey: 'SCWBUILDER', secretKey: 'builder-secret' };
+    repositoryKey: async () => undefined,
+    entryFile: async (name) => (opts.present || published ? Buffer.from(`<${name}>`) : undefined),
+    uploadFrontend: async () => {
+      ops.push('upload-frontend');
+      published = true;
     },
     removeBuilders: async () => {
       ops.push('remove');
@@ -55,11 +62,10 @@ function fake(
 }
 
 const options = (overrides: Partial<BuildReleaseOptions> = {}): BuildReleaseOptions => ({
-  sha: 'c'.repeat(40),
-  epoch,
+  sha,
   builderName: 'app-builder-cccccccccc',
   zones: ['nl-ams-1', 'nl-ams-2', 'nl-ams-3'],
-  images: ['backend', 'infra-boot'],
+  archives: ['backend', 'infra-boot'],
   withFrontend: true,
   distDir: mkdtempSync(join(tmpdir(), 'release-')),
   cloudConfig: () => '#cloud-config',
@@ -71,28 +77,35 @@ describe('buildRelease', () => {
   it('makes no builder for a release that is built, deletes one a cancelled deploy left, and writes its entry files', async () => {
     const { fx, ops } = fake({ present: true });
     const opts = options();
-    expect(await buildRelease(opts, fx)).toBe('present');
+    expect((await buildRelease(opts, fx)).outcome).toBe('present');
     expect(ops).toEqual(['remove']);
     expect(readFileSync(join(opts.distDir ?? '', 'index.html'), 'utf8')).toBe('<index.html>');
   });
 
-  it('must not trust frontend files pushed before the last rotation: their epoch differs, so the release is built again', async () => {
-    const { fx, ops } = fake({ present: true, epochOnFiles: 'before-rotation' });
-    expect(await buildRelease(options(), fx)).toBe('built');
+  it('must not trust an archive that is not the one its manifest names: the release is built again', async () => {
+    const { fx, ops } = fake({ present: true, mismatch: 'images/backend.tar' });
+    expect((await buildRelease(options(), fx)).outcome).toBe('built');
     expect(ops).toContain('start:app-builder-cccccccccc@nl-ams-1');
   });
 
-  it('builds a missing release on a builder it deletes afterwards, a leftover one deleted first', async () => {
+  it('builds a missing release on a builder it deletes afterwards, then uploads its frontend files from their archive', async () => {
     const { fx, ops } = fake();
-    expect(await buildRelease(options(), fx)).toBe('built');
-    expect(ops).toEqual(['remove', 'keys', 'start:app-builder-cccccccccc@nl-ams-1', 'remove']);
+    expect((await buildRelease(options(), fx)).manifest).toEqual(manifest);
+    expect(ops).toEqual(['remove', 'links', 'start:app-builder-cccccccccc@nl-ams-1', 'remove', 'upload-frontend']);
   });
 
   it('builds in the next zone of the region when Scaleway has the type out of stock, the machine it made in the first deleted', async () => {
     const { fx, ops } = fake({ outOfStock: 'nl-ams-1' });
     const lines: string[] = [];
-    expect(await buildRelease(options({ log: (line) => lines.push(line) }), fx)).toBe('built');
-    expect(ops).toEqual(['remove', 'keys', 'start:app-builder-cccccccccc@nl-ams-1', 'remove', 'start:app-builder-cccccccccc@nl-ams-2', 'remove']);
+    await buildRelease(options({ log: (line) => lines.push(line) }), fx);
+    expect(ops.slice(0, 6)).toEqual([
+      'remove',
+      'links',
+      'start:app-builder-cccccccccc@nl-ams-1',
+      'remove',
+      'start:app-builder-cccccccccc@nl-ams-2',
+      'remove',
+    ]);
     expect(lines).toContain('  ~ nl-ams-1 has no POP2-HC-8C-16G in stock: trying nl-ams-2');
   });
 
@@ -110,8 +123,7 @@ describe('buildRelease', () => {
 
   it("reads only its own builder's reports: an earlier build of the commit left its result under the same prefix", async () => {
     // Staging, 2026-10-28: every retry of a failed build read that build's result 15 s in, while its own builder was still booting.
-    expect(await buildRelease(options(), fake({ earlier: 'failed' }).fx)).toBe('built');
-    // After a rotation a commit built before builds again under the new epoch: its earlier `ok` must not end the wait.
+    expect((await buildRelease(options(), fake({ earlier: 'failed' }).fx)).outcome).toBe('built');
     await expect(buildRelease(options(), fake({ earlier: 'ok', result: 'failed' }).fx)).rejects.toThrow(/failed at 'images'/);
   });
 
