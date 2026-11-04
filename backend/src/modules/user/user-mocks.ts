@@ -75,6 +75,6 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
   };
 };
 
-export const mockEmail = (user: UserModel): InsertEmailModel => {
+export const mockEmail = (user: Pick<UserModel, 'id' | 'email'>): InsertEmailModel => {
   return { email: user.email, userId: user.id, verifiedAt: mockPastIsoDate() };
 };
