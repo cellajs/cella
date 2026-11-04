@@ -35,10 +35,9 @@ describe('route helpers', () => {
     }),
   });
 
-  it('names a route by its key, first, and places the module tags right before the summary', () => {
+  it('names a route by its key and tags it with its module, ahead of the draft’s own keys', () => {
     const keys = Object.keys(routes.getThing).filter((key) => key !== 'security');
-    expect(keys.slice(0, 2)).toEqual(['operationId', 'method']);
-    expect(keys.indexOf('tags')).toBe(keys.indexOf('summary') - 1);
+    expect(keys.slice(0, 3)).toEqual(['operationId', 'tags', 'method']);
     expect(routes.getThing).toMatchObject({ operationId: 'getThing', tags: ['things', 'app'] });
   });
 
@@ -46,8 +45,8 @@ describe('route helpers', () => {
     expect(routes.createThing.operationId).toBe('thingCreate');
   });
 
-  it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit for a body', () => {
-    expect(Object.keys(routes.getThing.responses)).toEqual(['200', '400']);
+  it('documents the error statuses the chain answers with beside the route’s own: validation for a request, the body limit for a body, the read limiter for a read', () => {
+    expect(Object.keys(routes.getThing.responses)).toEqual(['200', '400', '429']);
     expect(routes.createThing.responses).toMatchObject({
       201: { description: 'Created' },
       400: sharedErrorResponses[400],
@@ -69,7 +68,7 @@ describe('route helpers', () => {
 
   it('documents what the guards, limiters and errors() declare, and nothing for a public route without a request', () => {
     const route = (xGuard: XMiddlewareHandler[], responses: Parameters<typeof createXRoute>[0]['responses']) =>
-      createXRoute({ operationId: 'single', method: 'get', path: '/{tenantId}/single', xGuard, tags: ['things'], summary: 'Single', responses });
+      createXRoute({ operationId: 'single', method: 'delete', path: '/{tenantId}/single', xGuard, tags: ['things'], summary: 'Single', responses });
 
     expect(Object.keys(route([publicGuard], { 204: { description: 'Done' } }).responses)).toEqual(['204']);
     expect(Object.keys(route([publicGuard], { 204: { description: 'Done' }, ...errors(404, 409) }).responses)).toEqual(['204', '404', '409']);
