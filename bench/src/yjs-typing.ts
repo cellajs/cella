@@ -502,9 +502,10 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   let pollingWrites = true;
   const writePoller = (async () => {
     while (pollingWrites) {
+      // `t` is a numeric, which pg returns as a string.
       const { rows } = await admin
-        .query<{ id: string; t: number }>('SELECT id, extract(epoch FROM updated_at) * 1000 AS t FROM attachments WHERE id = ANY($1)', [ids])
-        .catch(() => ({ rows: [] as { id: string; t: number }[] }));
+        .query<{ id: string; t: string }>('SELECT id, extract(epoch FROM updated_at) * 1000 AS t FROM attachments WHERE id = ANY($1)', [ids])
+        .catch(() => ({ rows: [] as { id: string; t: string }[] }));
       for (const { id, t } of rows) {
         const previous = writtenAt.get(id);
         if (previous !== undefined && Number(t) !== previous) writes.push({ id, at: performance.now(), phase: run.phase });
