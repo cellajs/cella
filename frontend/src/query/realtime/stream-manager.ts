@@ -373,16 +373,17 @@ class StreamManager {
       if (!(event instanceof MessageEvent) || !event.data) return;
       noteActivity();
       try {
-        const payload = zStreamError.parse(JSON.parse(event.data));
-        const permanent = finalStreamErrorCodes.has(payload.code);
+        const payload = zStreamError.safeParse(JSON.parse(event.data)).data;
         // Any other end fails the stream as a transport error does, so a server that keeps ending it before catchup opens the circuit.
-        if (!permanent) return this.handleStreamFailure(`Server stream error: ${payload.code}`);
+        if (!payload || !finalStreamErrorCodes.has(payload.code)) {
+          return this.handleStreamFailure(`Server stream error: ${payload?.code ?? event.data}`);
+        }
         console.debug(`[${streamName}] Server stream error:`, payload);
         this.closeEventSource();
         this.store.getState().setState('error');
         this.openCircuit(`server error: ${payload.code}`, true);
       } catch {
-        // Malformed payload or a code this release does not know: let onerror handle the eventual transport close.
+        // Malformed payload, let onerror handle the eventual transport close.
       }
     });
 
