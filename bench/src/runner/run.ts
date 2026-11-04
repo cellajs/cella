@@ -368,7 +368,6 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
 
   const view: SummaryView = {
     ...summary,
-    http: http ?? undefined,
     counters: Object.entries(counters).filter(([counter]) => !builtin.test(counter)),
     compared: !short && ok,
     baseline,

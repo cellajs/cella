@@ -12,6 +12,7 @@ import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
 import type { StreamChange } from '#/schemas/stream-schemas';
 import { benchCookie } from './bench-user';
 import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
+import type { Distribution } from './runner/metrics';
 import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
@@ -69,13 +70,7 @@ export interface YjsTypingSink {
   keystroke(): void;
 }
 
-interface Percentiles {
-  count: number;
-  p50: number;
-  p95: number;
-  p99: number;
-  max: number;
-}
+type Percentiles = Pick<Distribution, 'count' | 'p50' | 'p95' | 'p99' | 'max'>;
 
 function percentiles(values: number[]): Percentiles {
   const sorted = [...values].sort((a, b) => a - b);
