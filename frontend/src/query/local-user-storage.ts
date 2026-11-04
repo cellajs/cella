@@ -1,4 +1,5 @@
 import { persistQueryClientRestore } from '@tanstack/react-query-persist-client';
+import { isRecord } from 'shared/utils/as-record';
 import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { boardStore } from '~/modules/common/board/board-store';
@@ -41,8 +42,9 @@ function resolveLocalUserId(): string | null {
 /** The signed-in user id in a value the user store persisted; `null` when signed out, removed or unreadable. */
 function storedUserId(value: string | null): string | null {
   try {
-    const stored: { state?: { user?: { id?: string } | null } } | null = JSON.parse(value ?? 'null');
-    return stored?.state?.user?.id ?? null;
+    const stored: unknown = JSON.parse(value ?? 'null');
+    const user = isRecord(stored) && isRecord(stored.state) ? stored.state.user : null;
+    return isRecord(user) && typeof user.id === 'string' ? user.id : null;
   } catch {
     return null;
   }

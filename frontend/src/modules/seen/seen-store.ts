@@ -1,6 +1,7 @@
 // biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action, batched seen-flush not eligible for a React Query hook.
 import { markSeen } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
@@ -117,12 +118,20 @@ export const seenStore = createStore<SeenStoreState>()(
         },
       }),
       {
+        version: 1,
         name: 'seen',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('seen')),
         // Sets serialize as arrays; insertion order (oldest first) survives the round-trip.
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
-        merge: (persisted, current) => ({ ...current, flushedIds: new Set((persisted as { flushedIds?: string[] })?.flushedIds ?? []) }),
+        merge: (persisted, current) => ({
+          ...current,
+          flushedIds: new Set(
+            isRecord(persisted) && Array.isArray(persisted.flushedIds)
+              ? persisted.flushedIds.filter((id): id is string => typeof id === 'string')
+              : [],
+          ),
+        }),
       },
     ),
     { enabled: isDebugMode, name: 'seen store' },
