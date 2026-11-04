@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
+import { FloatingNavButton, type FloatingNavItem, floatingHiddenClass } from '~/modules/navigation/floating-nav/button';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
@@ -57,12 +57,7 @@ export function FloatingNav({ items, resetTrigger }: FloatingNavProps) {
         return (
           <FloatingNavButton
             key={item.id}
-            // A button hidden by scrolling is how the keyboard reaches the menu, so focus brings it back
-            className={
-              isItemVisible
-                ? 'opacity-100'
-                : 'pointer-events-none translate-y-16 scale-50 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100'
-            }
+            className={isItemVisible ? 'opacity-100' : floatingHiddenClass}
             tabIndex={item.visible === false ? -1 : undefined}
             id={item.id}
             icon={item.icon}

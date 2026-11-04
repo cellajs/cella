@@ -5,7 +5,7 @@ import { requireSystemAdmin } from '~/routes/-permission-guard';
 import { createErrorComponent } from '~/routes/-route-utils';
 
 export const Route = createFileRoute('/_app/system')({
-  staticData: { isAuth: true, tabsSlot: 'system.tabs' },
+  staticData: { isAuth: true, floatingNavButtons: { left: 'menu' }, tabsSlot: 'system.tabs' },
   beforeLoad: ({ matches }) => {
     // The account-sheet link is isSystemAdmin-gated, but a direct URL must be too.
     requireSystemAdmin();
