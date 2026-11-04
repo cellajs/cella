@@ -1,4 +1,4 @@
-import { getInlineTextFromBlock, parseBlocks } from 'shared/blocknote';
+import { type DescriptionBlock, getInlineTextFromBlock, parseBlocks } from 'shared/blocknote';
 import type { TitleLevel } from '~/modules/common/blocknote/types';
 
 /**
@@ -7,10 +7,9 @@ import type { TitleLevel } from '~/modules/common/blocknote/types';
  */
 export const titleMaxLength = 255;
 
-type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unknown; children?: LooseBlock[] };
-
 /** True when a block renders nothing: no text, no children, and not a media/void block. */
-const isEmptyTextBlock = (block: LooseBlock): boolean => Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
+const isEmptyTextBlock = (block: DescriptionBlock): boolean =>
+  Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
 
 /**
  * Block 0 of a title document, its title. Editors seed it from a template and label it with `titlePlaceholder`; nothing enforces
@@ -36,7 +35,7 @@ export const seededTitleDocument = (name: string, level: TitleLevel = 1) => JSON
  * inline content (an image moved to the top) holds no title, so it stays in the body.
  * @public
  */
-export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: LooseBlock[] } => {
+export const splitTitleBlocks = (blocks: DescriptionBlock[]): { name: string; body: DescriptionBlock[] } => {
   const [first, ...rest] = blocks;
   const body = first && !Array.isArray(first.content) ? [first, ...rest] : rest;
   while (body.length && isEmptyTextBlock(body[body.length - 1])) body.pop();
@@ -49,7 +48,7 @@ export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: Lo
  * @public
  */
 export const trimTitleDocument = (strBlocks: string): string => {
-  const blocks = JSON.parse(strBlocks) as LooseBlock[];
+  const blocks = JSON.parse(strBlocks) as DescriptionBlock[];
   const [first, ...rest] = blocks;
   while (rest.length && isEmptyTextBlock(rest[rest.length - 1])) rest.pop();
   return JSON.stringify([first, ...rest]);
