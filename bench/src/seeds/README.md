@@ -25,4 +25,4 @@ Copy `attachment.bench.ts` (the reference) to `seeds/<name>.bench.ts`, point it 
 
 ## Attachment home
 
-The template's attachments live in the organization. An app that homes them in a channel says where in `attachment-home.ts` (app-owned): `benchAttachmentHome(index)` returns the seeded channel per ancestor id column, and `attachmentSeedOrder` places the attachment seed after those channels. The seed and the scenarios that create attachments both read it, and `attachment-home.test.ts` fails while a required ancestor is missing.
+The template's attachments live in the organization. An app that homes them in a channel says where in `attachment-home.ts` (app-owned): `benchAttachmentHome(index)` returns the seeded channel per ancestor id column, and `attachmentSeedOrder` places the attachment seed after those channels. The seed and the scenarios that create attachments both read it, and the seed checks it against the hierarchy's id columns (`BenchAttachmentHome` in `ids.ts`): `pnpm check` fails while a required ancestor is missing.
