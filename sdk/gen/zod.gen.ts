@@ -626,6 +626,7 @@ export const zServiceAccount = z.object({
   createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
   updatedBy: zActorRef.nullable(),
+  role: z.enum(['admin', 'member']),
   lastSeenAt: z.string().nullable(),
 });
 

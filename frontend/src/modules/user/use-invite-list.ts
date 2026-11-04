@@ -1,10 +1,21 @@
 import { useState } from 'react';
 import { useWatch } from 'react-hook-form';
+import type { InviteOutcome } from 'sdk';
 import type { InviteForm } from '~/modules/user/invite-submit';
 import { isInviteEmail, parseInviteText } from '~/modules/user/invite-text';
 
-/** Someone picked by name, so their chip shows the person; one restored from a draft stays an address. */
-export type InvitePerson = { id: string; name: string; email: string; entityType: 'user'; thumbnailUrl?: string | null };
+/**
+ * Someone picked by name, so their chip shows the person; one restored from a draft stays an address. The outcome is
+ * what the search's check answered, which places them until the list's own check answers.
+ */
+export type InvitePerson = {
+  id: string;
+  name: string;
+  email: string;
+  entityType: 'user';
+  thumbnailUrl?: string | null;
+  outcome?: InviteOutcome;
+};
 
 const shouldDirty = { shouldDirty: true };
 

@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
-import { CircleQuestionMarkIcon, ClockIcon, SendIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { ClockIcon, SendIcon } from 'lucide-react';
+import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
 import { systemInvite as baseSystemInvite } from 'sdk';
@@ -20,9 +20,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { sendInBatches } from '~/modules/memberships/query';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { Button } from '~/modules/ui/button';
-import { FormField, FormItem } from '~/modules/ui/field';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 import { type InviteResultData, inviteResultNeedsScreen, inviteResultTitle } from '~/modules/user/invite-result';
 import type { InviteCheck } from '~/modules/user/use-invite-check';
 import type { InviteList } from '~/modules/user/use-invite-list';
@@ -141,28 +139,19 @@ const submitLabel = ({ invite, remind, isEmpty, held }: SubmitLabelOptions): TKe
   return remind ? 'c:remind' : 'c:invite';
 };
 
-/** What every role of the channel may do, on request. It only explains: the role is picked beside it. */
+/** What every role of the channel may do, as the role field's help. */
 function RoleHelp({ entityType }: { entityType: ChannelEntityType }) {
   const { t } = useTranslation();
 
   return (
-    <Popover>
-      <PopoverTrigger
-        render={
-          <Button type="button" variant="ghost" size="icon" press={false} aria-label={t('c:role_help')} className="size-6 text-muted-foreground">
-            <CircleQuestionMarkIcon />
-          </Button>
-        }
-      />
-      <PopoverContent align="start" aria-label={t('c:role_help')} className="flex w-80 max-w-(--available-width) flex-col gap-2.5 p-3 text-sm">
-        {hierarchy.getRoles(entityType).map((role) => (
-          <div key={role}>
-            <p className="font-medium">{t(`c:${role}`)}</p>
-            <p className="text-muted-foreground">{t(`c:role_description.${role}`)}</p>
-          </div>
-        ))}
-      </PopoverContent>
-    </Popover>
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-1">
+      {hierarchy.getRoles(entityType).map((role) => (
+        <Fragment key={role}>
+          <dt className="font-medium">{t(`c:${role}`)}</dt>
+          <dd>{t(`c:role_description.${role}`)}</dd>
+        </Fragment>
+      ))}
+    </dl>
   );
 }
 
@@ -195,11 +184,11 @@ export function InviteFormFooter({ form, channel, check, list, held, loading, on
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem className="gap-3">
-              <div className="flex items-center gap-2">
-                <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:join_as')} />
-                <RoleHelp entityType={channel.entityType} />
-              </div>
+            <FormItem>
+              <FormLabel nativeLabel={false} help={<RoleHelp entityType={channel.entityType} />}>
+                {t('c:join_as')}
+              </FormLabel>
+              <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} />
               {isUnpublishedDraft(channel) && (
                 <Alert variant="info">
                   <ClockIcon />

@@ -106,7 +106,7 @@ export function TableFilterBar({
 
   if (isPanel) {
     return (
-      <TableBarContainer ref={barRef} searchVars={searchVars} pinned className="items-start gap-1 border-b">
+      <TableBarContainer ref={barRef} searchVars={searchVars} pinned className="items-start gap-1">
         <div className={cn('min-w-0 grow', panelFieldClass)}>{search}</div>
         <div className="flex h-10 shrink-0 items-center">
           <SearchCloseButton

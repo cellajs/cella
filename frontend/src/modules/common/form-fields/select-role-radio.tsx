@@ -38,7 +38,8 @@ export function SelectRoleRadio({ onChange, value, entityType, label, className 
       )}
       <SegmentedControl
         size="sm"
-        aria-labelledby={label ? id : undefined}
+        // Without a label of its own the group takes its form field's label, which an explicit undefined would override
+        {...(label && { 'aria-labelledby': id })}
         // Null selects no role and keeps the group controlled: an undefined value would make it uncontrolled until a role is picked.
         value={value ?? null}
         onValueChange={(role) => onChange(roleOptions.find((option) => option === role))}

@@ -1,5 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { withActorRefs } from '#/modules/actors/actor-refs';
+import { organizationRole } from '#/modules/service-accounts/helpers/organization-role';
 import { findServiceAccountsPaginated } from '#/modules/service-accounts/service-accounts-queries';
 import type { ServiceAccountListQuery } from '#/modules/service-accounts/service-accounts-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -8,5 +9,5 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
 export async function getServiceAccountsOp(ctx: UserContext, input: ServiceAccountListQuery) {
   await getValidChannel(ctx, ctx.var.organizationId, 'organization', 'update');
   const { items, total } = await findServiceAccountsPaginated(ctx, { ...input, tenantId: ctx.var.tenantId });
-  return { items: await withActorRefs(ctx, items), total };
+  return { items: (await withActorRefs(ctx, items)).map((item) => ({ ...item, role: organizationRole(item) })), total };
 }

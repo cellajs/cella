@@ -271,6 +271,8 @@ export function FormLabel({
     <Field.Label
       data-slot="form-label"
       nativeLabel={nativeLabel}
+      // A group control, such as a radio group, is named by a non-native label, which Base UI expects to be no <label>
+      render={nativeLabel ? undefined : <div />}
       className={cn('w-fit select-none font-medium text-sm/4.5 data-invalid:text-destructive', className)}
       {...props}
     >

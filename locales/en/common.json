@@ -724,7 +724,6 @@
   "role": "Role",
   "role_description.admin": "Manages members and settings.",
   "role_description.member": "Works in it, without managing members.",
-  "role_help": "What the roles mean",
   "roles": "Roles",
   "rotate_right": "Rotate right",
   "save": "Save",
