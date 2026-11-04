@@ -1,4 +1,12 @@
-import { appConfig, hierarchy as appHierarchy, type ChannelEntityType, type EntityHierarchy, type EntityRole } from 'shared';
+import {
+  appConfig,
+  hierarchy as appHierarchy,
+  type ChannelEntityType,
+  type EntityHierarchy,
+  type EntityRole,
+  type OrganizationRole,
+  resolveHierarchy,
+} from 'shared';
 import type { MenuStructureItem } from 'shared/config-builder/types';
 import type { EntityModel } from '#/tables';
 
@@ -11,9 +19,10 @@ export const resolveAssociatedMembershipRole = (
   invitedRole: string,
   carryRole = false,
   hierarchy: EntityHierarchy = appHierarchy,
-): string => {
-  if (carryRole && hierarchy.getRoles(channelType).includes(invitedRole)) return invitedRole;
-  return hierarchy.getLeastPrivilegedRole(channelType);
+): EntityRole => {
+  const { hierarchy: resolved } = resolveHierarchy({ hierarchy });
+  const carried = carryRole ? resolved.getRoles(channelType).find((role) => role === invitedRole) : undefined;
+  return carried ?? resolved.getLeastPrivilegedRole(channelType);
 };
 
 /**
@@ -25,8 +34,8 @@ export const resolveOrganizationMembershipRole = (
   sourceChannelType: string,
   invitedRole: string,
   hierarchy: EntityHierarchy = appHierarchy,
-): string => {
-  const explicit = hierarchy.getOrganizationRole(sourceChannelType, invitedRole);
+): OrganizationRole => {
+  const explicit = resolveHierarchy({ hierarchy }).hierarchy.getOrganizationRole(sourceChannelType, invitedRole);
   if (explicit === undefined) {
     throw new Error(
       `insertMemberships: channel "${sourceChannelType}" declares no organizationRoles mapping for role "${invitedRole}"; ` +
@@ -54,7 +63,7 @@ export const findMenuParent = (channelType: string): MenuParent | null => {
 interface BroughtAlong<C extends string> {
   channelType: C | 'organization';
   channelId: string;
-  role: string;
+  role: EntityRole;
 }
 
 /**

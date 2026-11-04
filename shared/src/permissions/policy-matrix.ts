@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
 import { type AccessScopedEntityType, type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
@@ -16,7 +16,7 @@ import type {
   PolicySetter,
 } from './types.ts';
 
-const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly string[], entries: PolicyEntry[]) => {
+const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly EntityRole[], entries: PolicyEntry[]) => {
   const builder: Record<string, PolicySetter> = {};
 
   for (const role of roles) {

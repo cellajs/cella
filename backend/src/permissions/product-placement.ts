@@ -7,9 +7,11 @@ import {
   type EntityIdColumns,
   type EntityType,
   entityIdColumnKey,
+  type HierarchyOverrides,
   type HomeChannelType,
   type NullableAncestorType,
   type ProductEntityType,
+  resolveHierarchy,
 } from 'shared';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -41,14 +43,9 @@ export interface PlacementIssue {
   message: string;
 }
 
-interface HierarchyOption {
-  /** Another hierarchy than the app's, for tests on a synthetic one. */
-  hierarchy?: EntityHierarchy;
-}
-
 /** The channel types below the organization a row may live in, deepest first, and whether it may live in the organization itself. */
 const homeLevels = (entityType: string, hierarchy: EntityHierarchy) => {
-  const homes = hierarchy.possibleHomeChannels(entityType);
+  const homes = resolveHierarchy({ hierarchy }).hierarchy.possibleHomeChannels(entityType);
   return { levels: homes.filter((type) => type !== 'organization'), organizationIsHome: homes.includes('organization') };
 };
 
@@ -64,7 +61,7 @@ const hasId = (item: Record<string, unknown>, channelType: string) => {
  * otherwise, with {@link validatePlacement} holding an item to one id. None for a product that lives in the
  * organization.
  */
-export const placementFieldsSchema = (entityType: ProductEntityType, { hierarchy = appHierarchy }: HierarchyOption = {}) => {
+export const placementFieldsSchema = (entityType: ProductEntityType, { hierarchy = appHierarchy }: HierarchyOverrides = {}) => {
   const { levels, organizationIsHome } = homeLevels(entityType, hierarchy);
   const onlyHome = levels.length === 1 && !organizationIsHome;
   return Object.fromEntries(levels.map((type) => [entityIdColumnKey(type), onlyHome ? validUuidSchema : validUuidSchema.optional()])) as Record<
@@ -81,7 +78,7 @@ export const placementFieldsSchema = (entityType: ProductEntityType, { hierarchy
 export const validatePlacement = (
   entityType: ProductEntityType,
   item: Record<string, unknown>,
-  { hierarchy = appHierarchy, requireChannel = false }: HierarchyOption & { requireChannel?: boolean } = {},
+  { hierarchy = appHierarchy, requireChannel = false }: HierarchyOverrides & { requireChannel?: boolean } = {},
 ): PlacementIssue | null => {
   const { levels, organizationIsHome } = homeLevels(entityType, hierarchy);
   const provided = levels.filter((type) => hasId(item, type));
@@ -95,7 +92,7 @@ export const validatePlacement = (
   return null;
 };
 
-interface ResolvePlacementOptions extends HierarchyOption {
+interface ResolvePlacementOptions extends HierarchyOverrides {
   /** Refuses a row without a home id where the hierarchy would let it live in the organization. */
   requireChannel?: boolean;
   /**
@@ -130,7 +127,7 @@ export const resolvePlacement = async <T extends ProductEntityType>(
   // Cast: the columns are built per hierarchy level at runtime, which the mapped type cannot follow.
   const columns = stamped as ResolvedPlacement<T>;
 
-  const homeType = homeLevels(entityType, hierarchy).levels.find((type) => hasId(input, type)) as ChannelEntityType | undefined;
+  const homeType = homeLevels(entityType, hierarchy).levels.find((type) => hasId(input, type));
   if (!homeType) return { columns, home: null };
 
   const entity = await resolveHome(ctx, input[entityIdColumnKey(homeType)] as string, homeType);

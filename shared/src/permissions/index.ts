@@ -4,7 +4,7 @@ export { allActionsAllowed } from './action-helpers.ts';
 export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
 export { type Access, checkAccess, checkAccessBatch, checkAccessFanout, checkRoleGrant, type PermissionResult } from './check-access.ts';
 export { getAllDecisions } from './engine/check.ts';
-export type { HierarchyOverrides } from './engine/resolve-hierarchy.ts';
+export { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
 export { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
 export type { AccessMembership, AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './engine/types.ts';
 export { MissingAncestorError } from './missing-ancestor-error.ts';

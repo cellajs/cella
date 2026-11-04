@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ChannelRoleOf, EntityActionType, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, ChannelRoleOf, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
 import type { RowConditionName } from './row-conditions.ts';
 
 /**
@@ -13,13 +13,9 @@ export type PolicyCellInput = Exclude<PolicyCell, 'public'>;
 
 export type EntityActionPermissions = Record<EntityActionType, PolicyCell>;
 
-/**
- * `role` is a plain string: roles arrive from the possibly synthetic hierarchy's `getRoles` and
- * are only equality-compared or index-keyed here, never narrowed to `EntityRole`.
- */
 export interface PolicyEntry {
   channelType: ChannelEntityType;
-  role: string;
+  role: EntityRole;
   permissions: EntityActionPermissions;
 }
 

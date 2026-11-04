@@ -56,6 +56,7 @@ export {
   policyMatrix,
   publicReadGrants,
   type RoleGrant,
+  resolveHierarchy,
   validateAncestorScope,
 } from './src/permissions/index.ts';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows.ts';
