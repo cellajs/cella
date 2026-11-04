@@ -47,7 +47,7 @@ const mockPresignedUrlItem = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
   return {
     attachmentId: attachment.id,
-    variant: 'thumbnail',
+    variant: 'thumbnail' as const,
     url: `https://${attachment.bucketName}.${appConfig.s3.host}/${attachment.keys.original}?X-Amz-Signature=…`,
   };
 };

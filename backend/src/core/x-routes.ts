@@ -154,7 +154,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
 type JsonResponse<S extends z.ZodType> = {
   description: string;
-  content: { 'application/json': { schema: S; example?: unknown } };
+  content: { 'application/json': { schema: S; example?: z.output<S> } };
 };
 
 /**
@@ -162,7 +162,7 @@ type JsonResponse<S extends z.ZodType> = {
  * from the schema's own example or where the schema is inline and has none.
  * @param description A label of a few words, then optionally a blank line and a detail the docs show when the row opens.
  */
-export const json = <S extends z.ZodType>(description: string, schema: S, example?: unknown): JsonResponse<S> => ({
+export const json = <S extends z.ZodType>(description: string, schema: S, example?: z.output<S>): JsonResponse<S> => ({
   description,
   content: { 'application/json': example === undefined ? { schema } : { schema, example } },
 });
