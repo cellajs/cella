@@ -1,5 +1,6 @@
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import { yjsCloseCodes, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { z } from 'zod';
@@ -14,7 +15,6 @@ import {
   yjsAwarenessRateLimit,
   yjsCompactDebounceMs,
   yjsCompactMaxWaitMs,
-  yjsMessageTypes,
 } from '../constants';
 import { appendUpdate, findDocument, findLog, seedDocument } from '../data/storage';
 import { log } from '../lib/pino';
@@ -31,9 +31,6 @@ import {
   setUnseenRowHandler,
   withDocumentLock,
 } from './session-manager';
-
-/** y-protocols' sync subtypes: the handshake's two steps and a live update. */
-const yjsSyncSubtypes = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, yjsMessageTypes.Saved));
 
@@ -93,7 +90,7 @@ function sendSaved(ws: WebSocket): void {
 /** Closes a socket whose frame the relay refuses: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
 export function refuseFrame(doc: YjsDocKey, userId: string, ws: WebSocket, reason = 'Malformed update'): void {
   log.warn(`${reason} refused for ${docKey(doc)}`, { userId });
-  ws.close(4400, reason);
+  ws.close(yjsCloseCodes.BadRequest, reason);
 }
 
 /** One entry of an awareness update, as y-protocols encodes it; `state` is its JSON text. */

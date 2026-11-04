@@ -4,6 +4,7 @@ import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
+import { yjsCloseCodes, yjsFragmentName, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
 import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -11,7 +12,6 @@ import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
-import { yDocFragment } from '~/modules/common/blocknote/ydoc-label';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
 import {
   type AppliedRows,
@@ -34,18 +34,6 @@ const maxBackoffMs = 30_000;
 /** Distinct tokens the relay refused, with no synced connection between them, before the connection stops for good. */
 const maxTokenFailures = 5;
 
-/** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
-const yjsCloseCodes = { TOKEN_INVALID: 4001, ACCESS_DENIED: 4003, BAD_REQUEST: 4400, ENTITY_DELETED: 4410 } as const;
-
-/**
- * Message types on the socket: y-websocket's sync, and the relay's own next to sync and awareness (1). `Generation` is
- * the document's generation, sent before every handshake answer; `Saved` is the relay's empty answer, to the sender
- * alone, to each sync Step2 or Update it handled. Must match the relay's `yjsMessageTypes` (yjs/src/constants.ts).
- */
-const yjsMessageTypes = { SYNC: 0, GENERATION: 4, SAVED: 5 } as const;
-/** The sync subtypes the relay answers with `Saved`. */
-const yjsSyncSubtypes = { STEP2: 1, UPDATE: 2 } as const;
-
 /** Why a connection ends for good: every reason its edits can never be saved except a reseed, which rebuilds the connection. */
 export type EndReason = Exclude<UnsaveableReason, 'replaced'>;
 
@@ -66,9 +54,9 @@ const stopMessages: Record<YjsStopReason, TKey> = {
  * send again. Every other close is transient: y-websocket backs off, reconnects with the current token and resyncs.
  */
 const finalCloses: ReadonlyMap<number, EndReason> = new Map<number, EndReason>([
-  [yjsCloseCodes.ENTITY_DELETED, 'deleted'],
-  [yjsCloseCodes.ACCESS_DENIED, 'denied'],
-  [yjsCloseCodes.BAD_REQUEST, 'refused'],
+  [yjsCloseCodes.EntityDeleted, 'deleted'],
+  [yjsCloseCodes.AccessDenied, 'denied'],
+  [yjsCloseCodes.BadRequest, 'refused'],
   [1009, 'refused'],
 ]);
 
@@ -244,7 +232,7 @@ function pauseTransports(conn: YjsConnection) {
 function syncSubtype(data: unknown): number | null {
   if (!(data instanceof Uint8Array) || data.length < 2) return null;
   const decoder = decoding.createDecoder(data);
-  if (decoding.readVarUint(decoder) !== yjsMessageTypes.SYNC) return null;
+  if (decoding.readVarUint(decoder) !== yjsMessageTypes.Sync) return null;
   return decoding.readVarUint(decoder);
 }
 
@@ -262,9 +250,10 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
     send(data: Parameters<WebSocket['send']>[0]) {
       super.send(data);
       const subtype = syncSubtype(data);
-      if (subtype !== yjsSyncSubtypes.STEP2 && subtype !== yjsSyncSubtypes.UPDATE) return;
+      // The relay answers each Step2 and Update with `Saved`.
+      if (subtype !== yjsSyncSubtypes.Step2 && subtype !== yjsSyncSubtypes.Update) return;
       ledger.sent++;
-      if (subtype === yjsSyncSubtypes.STEP2 && ledger.handshakeAt === 0) {
+      if (subtype === yjsSyncSubtypes.Step2 && ledger.handshakeAt === 0) {
         ledger.handshakeAt = ledger.sent;
         ledger.onHandshakeSent();
       }
@@ -380,7 +369,7 @@ function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
     yDoc,
     awareness,
     provider,
-    fragment: yDoc.getXmlFragment(yDocFragment),
+    fragment: yDoc.getXmlFragment(yjsFragmentName),
     ledger,
     transport: 'none',
     loaded: false,
@@ -600,7 +589,7 @@ function bindProvider(conn: YjsConnection) {
 
     // An expired or invalid token; the refetch this starts reaches the provider params before a later reconnect. Only
     // distinct tokens count: while the API is out of reach, every reconnect carries the same expired token again.
-    if (event.code === yjsCloseCodes.TOKEN_INVALID) {
+    if (event.code === yjsCloseCodes.TokenInvalid) {
       refusedTokens.add(attemptToken);
       void queryClient.invalidateQueries({ queryKey: tokenQueryKey });
       // A connection kept only for unsaved edits has no query observing the key: it fetches its own, whose answer the
@@ -621,7 +610,7 @@ function bindProvider(conn: YjsConnection) {
   // The relay announces the generation before it answers a handshake; a description written outside the relay (REST,
   // MCP, an import) keeps it. Another one means a reseed (a delete and a restore, or a lost document row), and this
   // document shares no history with the new one: it is dropped here, before y-websocket merges or uploads any of it.
-  provider.messageHandlers[yjsMessageTypes.GENERATION] = (_encoder, decoder) => {
+  provider.messageHandlers[yjsMessageTypes.Generation] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (conn.generation === null) conn.generation = generation;
     else if (conn.generation !== generation) return rebuildConnection(conn);
@@ -630,13 +619,13 @@ function bindProvider(conn: YjsConnection) {
 
   // The relay joins a socket to the session before it answers the handshake, so peers' updates can arrive ahead of the
   // `Generation`, into a document that may be another generation's. They are dropped: the Step2 after it carries them.
-  const readSync = provider.messageHandlers[yjsMessageTypes.SYNC];
-  provider.messageHandlers[yjsMessageTypes.SYNC] = (...args) => {
+  const readSync = provider.messageHandlers[yjsMessageTypes.Sync];
+  provider.messageHandlers[yjsMessageTypes.Sync] = (...args) => {
     if (ledger.generationSeen) readSync(...args);
   };
 
   // One per Step2 or Update this socket sent, in order.
-  provider.messageHandlers[yjsMessageTypes.SAVED] = () => {
+  provider.messageHandlers[yjsMessageTypes.Saved] = () => {
     ledger.saved++;
     if (ledger.handshakeAt > 0 && ledger.saved >= ledger.handshakeAt && !ledger.handshakeProven) {
       ledger.handshakeProven = true;

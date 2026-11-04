@@ -2,9 +2,10 @@ import i18n from 'i18next';
 import { CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
-import { firstLineOf, yDocFragment, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
+import { firstLineOf, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -81,8 +82,8 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
   let firstLine: string | null = null;
   try {
     Y.applyUpdate(doc, record.state);
-    firstLine = firstLineOf(doc.getXmlFragment(yDocFragment));
-    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, yDocFragment));
+    firstLine = firstLineOf(doc.getXmlFragment(yjsFragmentName));
+    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, yjsFragmentName));
   } catch (error) {
     console.error('[yjs] Reading parked edits failed:', error);
   } finally {
