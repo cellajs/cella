@@ -147,9 +147,10 @@ export function frontendScript(pnpmVersion: string): string {
   return [
     `npm install -g --silent pnpm@${pnpmVersion}`,
     "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'backend...'",
-    // The spec opens no database and signs nothing: the example env and a placeholder cookie secret only pass validation.
+    // The spec opens no database and signs nothing: the example env with a placeholder cookie secret and database URL only passes
+    // validation, which a deployed mode requires a database URL for.
     'cp backend/.env.example backend/.env',
-    'COOKIE_SECRET=openapi-spec-placeholder-secret pnpm --filter backend generate:openapi --force',
+    'COOKIE_SECRET=openapi-spec-placeholder-secret DATABASE_URL=postgres://openapi-spec-placeholder@localhost:5432/placeholder pnpm --filter backend generate:openapi --force',
     'cp backend/openapi.cache.json sdk/gen/openapi.json',
     'pnpm --filter frontend build',
     '',
