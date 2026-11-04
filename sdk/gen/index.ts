@@ -291,6 +291,8 @@ export type {
   GetAttachmentsResponse,
   GetAttachmentsResponses,
   GetAuthHealthData,
+  GetAuthHealthError,
+  GetAuthHealthErrors,
   GetAuthHealthResponse,
   GetAuthHealthResponses,
   GetConnectedAppsData,

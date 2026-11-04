@@ -7,6 +7,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { extensionLabel } from '~/modules/docs/helpers/extension-label';
+import { extensionValue } from '~/modules/docs/helpers/extension-value';
 import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { AccessCell, type AccessValue } from '~/modules/docs/operations/access-explanation';
@@ -26,7 +27,7 @@ const hiddenTagKinds = new Set(['owner', 'entity']);
 const prominentExtensions = new Set(['x-guard', 'x-rate-limiter']);
 
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
     key: ext.id,
@@ -39,13 +40,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
     renderCell: ({ row, tabIndex }: { row: GenOperationSummary; tabIndex: number }) => {
       const values = row.extensions[ext.id];
       if (!values?.length) return null;
-      const items: AccessValue[] = values.map((value) => ({
-        value,
-        code: value,
-        name: ext.values?.[value]?.name ?? value,
-        description: ext.values?.[value]?.description,
-        isGuard: ext.key === 'x-guard',
-      }));
+      const items = values.map((value) => extensionValue(ext, value, t, i18n.resolvedLanguage));
       return (
         <AccessCell
           label={extensionLabel(ext)}

@@ -109,6 +109,7 @@ export const serviceGuard = xMiddleware(
     errors: [401, 403],
     security: [{ apiKey: [] }, { oauth2: [] }],
     provides: ['actor'],
+    limiters: [serviceBurstLimiter],
     name: 'Service',
     description:
       'Works with a secret API key or an access token, no session. The request acts as the service account, or the user who gave consent, within the scopes granted.',

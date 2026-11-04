@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { AccessScope, AccessScopedEntityType, ConfigSwitch, EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
+import type { RateLimitPolicy } from '#/middlewares/rate-limiter/types';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
 
 type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
@@ -48,6 +49,8 @@ export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __provides?: GuardContext[];
   /** For guards: the context this guard reads, which a guard before it on the route must provide. */
   __requires?: GuardContext[];
+  /** For guards: the limiters this guard runs itself, which every route that lists the guard documents. */
+  __limiters?: XMiddlewareHandler[];
 };
 
 /** The extension types whose values are middleware: `x-guard` and `x-rate-limiter`. */
@@ -55,8 +58,8 @@ type MiddlewareExtensionType = { [K in ExtensionType]: (typeof extensionMap)[K][
 
 type SpecificationExtensions = Record<MiddlewareExtensionType, string[]>;
 
-/** Value metadata for individual extension values (e.g., each limiter or guard) */
-export type ExtensionValueMetadata = { name?: string; description: string };
+/** What one extension value (a limiter, a guard) documents: its label, its text and, for a limiter, its budget. */
+export type ExtensionValueMetadata = { name?: string; description: string; policy?: RateLimitPolicy };
 
 type ExtensionEntry = { key: string; id: string; description: string; values?: Record<string, ExtensionValueMetadata> };
 
@@ -121,11 +124,7 @@ export function createSpecificationExtensions(getValue: (key: MiddlewareExtensio
  */
 export function buildExtensionEntries(valueMetadata: ReadonlyMap<string, ReadonlyMap<string, ExtensionValueMetadata>>): ExtensionEntry[] {
   return Object.entries(extensionMap).map(([key, metadata]) => {
-    const values: Record<string, ExtensionValueMetadata> = {};
-    for (const [functionName, meta] of valueMetadata.get(key) ?? []) {
-      values[functionName] = { ...(meta.name ? { name: meta.name } : {}), description: meta.description };
-    }
-
+    const values = Object.fromEntries(valueMetadata.get(key) ?? []);
     return { key, ...metadata, ...(Object.keys(values).length > 0 ? { values } : {}) };
   });
 }

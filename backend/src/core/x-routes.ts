@@ -15,6 +15,7 @@ import {
 } from '#/core/openapi-extensions';
 import { checksAuthoringRules, recordDocumentedErrors } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
+import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
 
 /**
@@ -91,6 +92,8 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
  * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
+ * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
+ * documented on every route that lists the guard.
  * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where
  * `errors()` lists what the handler throws; a status the route declares keeps the route's own response. Where
  * authoring rules are checked, `errors()` of a status the chain already answers is refused at load, so every listed
@@ -99,7 +102,9 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const route = `${config.operationId} (${config.method} ${config.path})`;
-  const extensionMiddleware = collectExtensionMiddleware(config);
+  // A read declares a limiter only where its own budget differs from the read pace.
+  const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
+  const extensionMiddleware = collectExtensionMiddleware(limited);
   const existing = [config.middleware ?? []].flat();
 
   // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
@@ -108,7 +113,10 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
   const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
 
-  const xMiddlewares = middleware.filter((mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string');
+  // Each marked middleware, then the limiters a guard runs itself, so the document lists them and their errors.
+  const xMiddlewares = middleware
+    .filter((mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string')
+    .flatMap((mw) => [mw, ...(mw.__limiters ?? [])]);
   assertGuardOrder(route, xMiddlewares);
   const specificationExtensions = createSpecificationExtensions((key) =>
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),

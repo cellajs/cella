@@ -209,6 +209,8 @@
   "docs.proof_access_token.text": "A token from the authorization server, sent as Authorization: Bearer.",
   "docs.proof_api_key.text": "A service account's secret key, sent as Authorization: Bearer or x-api-key.",
   "docs.proof_session.text": "The cookie a browser gets by signing in.",
+  "docs.rate_budget": "{{points}} per {{window}}.",
+  "docs.rate_budget_blocked": "{{points}} per {{window}}, then blocked for {{block}}.",
   "docs.request": "Request",
   "docs.responses": "Responses",
   "docs.scope": "Scope",

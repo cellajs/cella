@@ -36,9 +36,16 @@ export const getRateLimiterInstance = (options: RateLimiterOptions): LimiterStor
   if (env.NODB) {
     instance = new RateLimiterMemory(options);
   } else {
-    // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
+    // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500.
+    // The retention sweep deletes aged rows (`sweepRules`), so the store's own timer per instance stays off.
     const insurance = new RateLimiterMemory(options);
-    instance = new RateLimiterDrizzle({ ...options, storeClient: db, schema: rateLimitsTable, insuranceLimiter: insurance });
+    instance = new RateLimiterDrizzle({
+      ...options,
+      storeClient: db,
+      schema: rateLimitsTable,
+      insuranceLimiter: insurance,
+      clearExpiredByTimeout: false,
+    });
     insurances.set(instance, insurance);
   }
 
@@ -210,14 +217,13 @@ const identifierReaders = {
     return null;
   },
   ip: (ctx) => getIp(ctx),
-  userId: (ctx) => ctx.var.user?.id ?? null,
   actorId: (ctx) => ctx.var.actor?.id ?? null,
   tenantId: (ctx) => ctx.var.tenantId || null,
 } satisfies Record<RateLimitIdentifier, (ctx: Context<Env>) => string | null | Promise<string | null>>;
 
 /** The value of each identifier in `identifiersToExtract` from the request, null where it has none. */
 export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract: RateLimitIdentifier[]): Promise<Identifiers> => {
-  const results: Identifiers = { email: null, ip: null, userId: null, actorId: null, tenantId: null };
+  const results: Identifiers = { email: null, ip: null, actorId: null, tenantId: null };
   for (const identifier of identifiersToExtract) results[identifier] = await identifierReaders[identifier](ctx);
   return results;
 };

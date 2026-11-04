@@ -6,10 +6,20 @@ import type { OpenApiTagKind } from '../../backend/src/core/openapi-tag-registry
  * and the frontend docs module fetches at runtime. The "Gen" prefix marks data generated from the OpenAPI spec.
  */
 
+/** A limiter's budget: `points` per `duration` seconds and, for a failure budget, how long a spent one blocks. */
+export interface GenRateLimitPolicy {
+  mode: 'limit' | 'success' | 'fail' | 'failseries';
+  points: number;
+  duration: number;
+  blockDuration?: number;
+}
+
 /** Metadata for one extension value, such as a specific limiter or guard. */
 export interface GenExtensionValueMetadata {
   name?: string;
   description: string;
+  /** A limiter's budget, which the docs show before its description. */
+  policy?: GenRateLimitPolicy;
 }
 
 /** Custom OpenAPI extension, provided by the backend via info.x-extensions. */

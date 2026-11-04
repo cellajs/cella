@@ -1,6 +1,6 @@
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { tenantOrgParamSchema } from '#/schemas';
 
@@ -20,7 +20,6 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     method: 'get',
     path: '/counts',
     xGuard: [userGuard],
-    xRateLimiter: [syncReadLimiter],
     summary: 'Get unseen counts',
     description:
       'Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.',

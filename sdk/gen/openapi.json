@@ -82,75 +82,168 @@
         "values": {
           "spamLimiter": {
             "name": "Emails sent",
-            "description": "10 requests per hour for each user, or each IP address when not signed in. Failed requests don't count."
+            "description": "Mails sent for each user, or for each IP address when not signed in. A failed request does not count.",
+            "policy": {
+              "mode": "success",
+              "points": 10,
+              "duration": 3600
+            }
           },
           "emailEnumLimiter": {
             "name": "Email lookups",
-            "description": "30 lookups per hour for each IP address. Every lookup counts, whatever the answer. Past it, sign-in goes on without lookups."
+            "description": "Lookups for each IP address. Every lookup counts, whatever the answer; past the budget, sign-in goes on without lookups.",
+            "policy": {
+              "mode": "limit",
+              "points": 30,
+              "duration": 3600
+            }
           },
           "presignedUrlLimiter": {
             "name": "File links",
-            "description": "2,000 requests per hour for each user. One request can cover up to 50 files."
+            "description": "Requests for each user or service account. One request can cover up to 50 files.",
+            "policy": {
+              "mode": "limit",
+              "points": 2000,
+              "duration": 3600
+            }
           },
           "uploadTokenLimiter": {
             "name": "Upload tokens",
-            "description": "300 tokens per hour for each user."
+            "description": "Tokens for each user or service account.",
+            "policy": {
+              "mode": "limit",
+              "points": 300,
+              "duration": 3600
+            }
           },
           "pushSubscriptionLimiter": {
             "name": "Push subscriptions",
-            "description": "30 registrations per hour for each user."
+            "description": "Registrations for each user.",
+            "policy": {
+              "mode": "limit",
+              "points": 30,
+              "duration": 3600
+            }
           },
           "totpVerificationLimiter": {
             "name": "Failed TOTP codes",
-            "description": "5 wrong codes per hour for each IP address, then blocked for 30 minutes. A correct code resets the count."
+            "description": "Wrong codes for each IP address. A correct code resets the count.",
+            "policy": {
+              "mode": "failseries",
+              "points": 5,
+              "duration": 3600,
+              "blockDuration": 1800
+            }
           },
           "stepUpLimiter": {
             "name": "Failed step-ups",
-            "description": "5 failed checks per hour for each account, then blocked for 30 minutes. A passed check resets the count."
+            "description": "Failed checks for each account. A passed check resets the count.",
+            "policy": {
+              "mode": "failseries",
+              "points": 5,
+              "duration": 3600,
+              "blockDuration": 1800
+            }
           },
           "magicLinkLimiter": {
             "name": "Magic links, new browser",
-            "description": "3 emails per 30 minutes for each address, when the browser has never signed in to it."
+            "description": "Emails for each address, when the browser has never signed in to it.",
+            "policy": {
+              "mode": "limit",
+              "points": 3,
+              "duration": 1800
+            }
           },
           "recognizedMagicLinkLimiter": {
             "name": "Magic links, known browser",
-            "description": "10 emails per 30 minutes for each address, when the browser has signed in to it before."
+            "description": "Emails for each address, when the browser has signed in to it before.",
+            "policy": {
+              "mode": "limit",
+              "points": 10,
+              "duration": 1800
+            }
           },
           "passkeyChallengeLimiter": {
             "name": "Passkey challenges",
-            "description": "30 challenges per 5 minutes for each IP address."
+            "description": "Challenges for each IP address.",
+            "policy": {
+              "mode": "limit",
+              "points": 30,
+              "duration": 300
+            }
           },
           "clientMetadataFetchLimiter": {
             "name": "Client metadata fetches",
-            "description": "60 fetches per minute for each IP address."
+            "description": "Fetches for each IP address.",
+            "policy": {
+              "mode": "limit",
+              "points": 60,
+              "duration": 60
+            }
           },
           "serviceBurstLimiter": {
             "name": "Request burst",
-            "description": "30 requests per second for each user or service account using an API key or access token."
+            "description": "Requests for each user or service account using an API key or access token.",
+            "policy": {
+              "mode": "limit",
+              "points": 30,
+              "duration": 1
+            }
           },
           "mcpRequestLimiter": {
             "name": "MCP requests",
-            "description": "30 requests per second for each user or service account."
+            "description": "Requests for each user or service account.",
+            "policy": {
+              "mode": "limit",
+              "points": 30,
+              "duration": 1
+            }
           },
-          "syncReadLimiter": {
-            "name": "Sync reads",
-            "description": "1,000 reads per 5 minutes for each user."
+          "readLimiter": {
+            "name": "Reads",
+            "description": "Reads for each user or service account, or for each IP address when not signed in.",
+            "policy": {
+              "mode": "limit",
+              "points": 1000,
+              "duration": 300
+            }
           },
           "streamConnectLimiter": {
             "name": "Stream connections",
-            "description": "60 connection attempts per 5 minutes for each user."
+            "description": "Connection attempts for each user.",
+            "policy": {
+              "mode": "limit",
+              "points": 60,
+              "duration": 300
+            }
           },
           "yjsHttpLimiter": {
             "name": "Yjs over HTTP",
-            "description": "600 pulls and pushes per minute for each user, counted together."
+            "description": "Pulls and pushes for each user, counted together.",
+            "policy": {
+              "mode": "limit",
+              "points": 600,
+              "duration": 60
+            }
           },
           "pointsLimiter": {
             "name": "API points",
-            "description": "An hourly budget for each user or service account in a tenant: 1 point per request, 1 per item on bulk routes. Default 1,000 an hour, and each tenant can change it."
+            "description": "Points for each user or service account in a tenant: 1 per request, 1 per item on a bulk route. A tenant starts at 1,000 an hour, which a system admin can raise up to the ceiling shown.",
+            "policy": {
+              "mode": "limit",
+              "points": 5000,
+              "duration": 3600
+            }
           },
           "tokenLimiter": {
             "name": "Failed sign-ins",
-            "description": "10 failed attempts per hour for each IP address and kind of sign-in, then blocked for 30 minutes. A success resets the count."
+            "description": "Failed attempts for each IP address and kind of sign-in. A success resets the count.",
+            "policy": {
+              "mode": "failseries",
+              "points": 10,
+              "duration": 3600,
+              "blockDuration": 1800
+            }
           },
           "insertEntityLock": {
             "name": "Create lock",
@@ -3716,7 +3809,7 @@
         "summary": "Auth health check",
         "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Auth health status",
@@ -3758,6 +3851,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -3827,7 +3926,7 @@
         "summary": "Get pending MFA challenge",
         "description": "For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Pending sign-in address\n\nThe address of the account the held MFA challenge signs in to.",
@@ -3845,8 +3944,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -4943,7 +5048,7 @@
           "provider": "github"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -4982,6 +5087,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -4998,7 +5106,7 @@
           "provider": "google"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5037,6 +5145,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5053,7 +5164,7 @@
           "provider": "microsoft"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5092,6 +5203,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5386,7 +5500,7 @@
           "strategy": "sso"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5414,6 +5528,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5429,7 +5546,7 @@
           "strategy": "sso"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5483,6 +5600,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5498,7 +5618,7 @@
           "strategy": "sso"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5550,6 +5670,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -5702,7 +5825,7 @@
         "summary": "Get step-up state",
         "description": "Whether this session stands stepped up for a kind of action, and what the user can offer to step up: a passkey or TOTP they hold, an emailed code, or setting up a second factor.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -5748,6 +5871,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -6230,7 +6356,7 @@
         "summary": "Get self",
         "description": "Returns the current user.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "User",
@@ -6242,8 +6368,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -6452,7 +6584,7 @@
         "summary": "Get auth data",
         "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Sign-in methods and sessions",
@@ -6464,8 +6596,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6482,7 +6620,7 @@
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Invitations pending",
@@ -6586,8 +6724,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6917,7 +7061,7 @@
         "summary": "Get my memberships",
         "description": "Returns all memberships for the current user across all channel entities.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "User memberships",
@@ -6938,8 +7082,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -6956,7 +7106,7 @@
         "summary": "Get connected apps",
         "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Connected apps",
@@ -6990,8 +7140,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7078,7 +7234,7 @@
         "summary": "Get public counts",
         "description": "Returns the number of users and of each channel entity type, such as organizations. This endpoint is public and uses a 1 minute in memory cache for performance.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Public counts",
@@ -7105,6 +7261,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7121,7 +7280,7 @@
         "summary": "List notifications",
         "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": ["syncReadLimiter"],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -7363,7 +7522,7 @@
         "summary": "Get notification preferences",
         "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Notification preferences",
@@ -7388,8 +7547,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -7646,7 +7811,7 @@
         "summary": "Get the Web Push application server key",
         "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "VAPID public key",
@@ -7664,8 +7829,14 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -7867,7 +8038,7 @@
         "summary": "Get list of requests",
         "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
         "x-guard": ["userGuard", "sysAdminGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -7974,6 +8145,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -8076,7 +8250,7 @@
         "summary": "Get unseen counts",
         "description": "Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": ["syncReadLimiter"],
+        "x-rate-limiter": ["readLimiter"],
         "responses": {
           "200": {
             "description": "Unseen counts\n\nKeyed by parent channel entity id, then by product entity type.",
@@ -8511,7 +8685,7 @@
         "summary": "Get list of tenants",
         "description": "Returns a paginated list of tenants. System admin access required.",
         "x-guard": ["userGuard", "sysAdminGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -8695,6 +8869,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -8923,7 +9100,7 @@
           "strategy": "sso"
         },
         "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -8982,6 +9159,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -9303,7 +9483,7 @@
         "summary": "Get list of users",
         "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -9460,6 +9640,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -9476,7 +9659,7 @@
         "summary": "Get user",
         "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.",
         "x-guard": ["userGuard", "relatableGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -9579,6 +9762,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -9594,7 +9780,7 @@
           "service": "oauth"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -9622,6 +9808,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -10139,7 +10328,7 @@
         "summary": "Get list of organizations",
         "description": "Returns a list of organizations.",
         "x-guard": ["userGuard", "relatableGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -10402,6 +10591,9 @@
           },
           "403": {
             "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -10424,7 +10616,7 @@
         "summary": "Get organization",
         "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
         "x-guard": ["actorGuard", "tenantGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -10493,6 +10685,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -10513,7 +10708,7 @@
         "summary": "Update organization",
         "description": "Updates an organization within a tenant.",
         "x-guard": ["actorGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
           {
             "schema": {
@@ -10878,7 +11073,7 @@
           "entity": "attachment"
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["syncReadLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11162,7 +11357,7 @@
         "summary": "Create attachments",
         "description": "Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11575,7 +11770,7 @@
           "entity": "attachment"
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11715,7 +11910,7 @@
         "summary": "Get presigned URLs",
         "description": "Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["presignedUrlLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "presignedUrlLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11887,7 +12082,7 @@
           "entity": "attachment"
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11939,6 +12134,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },
@@ -11964,7 +12162,7 @@
           "entity": "attachment"
         },
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
           {
             "schema": {
@@ -12085,7 +12283,7 @@
         "summary": "Link attachment keys",
         "description": "Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
           {
             "schema": {
@@ -12207,7 +12405,7 @@
           "service": "mcp"
         },
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -12251,6 +12449,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -13211,7 +13412,7 @@
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -13521,6 +13722,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -13537,7 +13741,7 @@
         "summary": "Get list of pending memberships",
         "description": "Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -13724,6 +13928,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -14177,7 +14384,7 @@
         "summary": "Get service accounts",
         "description": "Lists the service accounts of this organization.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -14323,6 +14530,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }
@@ -14435,7 +14645,7 @@
         "summary": "Get API keys",
         "description": "Lists the API keys of a service account. Secrets are never returned here.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -14520,6 +14730,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       },

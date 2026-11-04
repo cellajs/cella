@@ -52,22 +52,11 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
 };
 
 /**
- * Routes that take a write or an anonymous request without a limiter, each with what bounds the work one request causes.
- * A route an app adds to this list names that bound the same way.
+ * Routes that take a request without a limiter, each with what bounds the work one request causes; every read has the
+ * read pace unless it declares a limiter. A route an app adds to this list names that bound the same way.
  */
 const routesWithoutLimiter: Record<string, string> = {
-  getAuthHealth: 'a primary-key read of one bucket and the active federations',
-  getPendingMfa: "reads the browser's own confirm-mfa token and writes nothing",
   signOut: "ends only the caller's own session",
-  github: 'a redirect and a state cookie',
-  google: 'a redirect and a state cookie',
-  microsoft: 'a redirect and a state cookie',
-  getSsoEntry: 'one read by connection id',
-  startSso: 'a redirect; the discovery fetch is shared while in flight and goes to a configured issuer',
-  startSsoFederation: 'a redirect; the discovery fetch is shared while in flight and goes to a configured issuer',
-  getPublicCounts: 'counted at most once a minute per process',
-  getApiProtectedResourceMetadata: 'static JSON from the path, no database',
-  getMcpProtectedResourceMetadata: 'static JSON from the path, no database',
   markNotificationsRead: "one update of at most 200 of the caller's own rows, idempotent",
   updateNotificationPreferences: "one row of the caller's own",
   deletePushSubscription: "deletes the caller's own row only",
@@ -144,11 +133,10 @@ describe('Route guards', async () => {
     }
   });
 
-  it('must not take a write or an anonymous request on a route without a limiter, unless the list names its bound', () => {
-    // Every route, switched off ones included: a limiter belongs to the route whatever the config.
-    const unlimited = operationsOf(baseApp).filter(
-      ({ method, guards, rateLimiters }) => (method !== 'GET' || guards.includes('publicGuard')) && rateLimiters.length === 0,
-    );
+  it('must not take a request on a route without a limiter, unless the list names its bound', () => {
+    // Every route, switched off ones included: a limiter belongs to the route whatever the config. The burst limiter
+    // the service guard runs bounds machine callers alone, so it is no bound for a session.
+    const unlimited = operationsOf(baseApp).filter(({ rateLimiters }) => rateLimiters.every((name) => name === 'serviceBurstLimiter'));
     for (const operation of unlimited) {
       expect(
         routesWithoutLimiter[operation.operationId],

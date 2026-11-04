@@ -466,7 +466,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       expect((await pull(limited.sessionCookie, own.id)).response.status).toBe(200);
 
       // The budget is spent, by pulls and pushes alike.
-      const key = `${yjsHttpLimiter.keyPrefix}:${subjectSegment('userId', limited.id)}`;
+      const key = `${yjsHttpLimiter.keyPrefix}:${subjectSegment('actorId', limited.id)}`;
       const [bucket] = await adminDb
         .update(rateLimitsTable)
         .set({ points: yjsHttpLimiter.buckets[0].limits.points })
