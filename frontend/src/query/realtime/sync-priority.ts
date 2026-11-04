@@ -9,7 +9,7 @@ export function getRouteOrganizationId(): string | null {
   for (const match of getRouter().state.matches) {
     const context = match.context;
     if (context && 'organization' in context && context.organization) {
-      return (context.organization as { id: string }).id;
+      return context.organization.id;
     }
   }
   return null;
