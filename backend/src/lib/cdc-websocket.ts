@@ -2,10 +2,11 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import type { TraceContext } from 'shared/tracing';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { serviceSecret } from '#/env';
-import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import { type ActivityEvent, activityBus, messageRowSchema, ownActivityColumns } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { activitySchema } from '#/modules/activities/activities-schema';
 import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
@@ -13,26 +14,13 @@ import { log } from '#/utils/logger';
 
 const rowDataSchema = z.record(z.string(), z.unknown());
 
-/** The activity columns that differ between the rows of one product message: a row carries its own, and no commit time. */
-const ownActivityColumns = { id: true, userId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
-
-/**
- * One product row: the activity it was recorded as, its permission fields, its org-sequence position, and for a moved
- * row the permission fields it had before.
- */
-const messageRowSchema = z.object({
-  activityId: activitySchema.shape.id,
-  userId: activitySchema.shape.userId,
-  changedFields: activitySchema.shape.changedFields,
-  stx: activitySchema.shape.stx,
-  rowData: rowDataSchema,
-  seq: z.number().optional(),
-  movedFrom: rowDataSchema.nullable().optional(),
-});
-
-const messageTraceSchema = z
-  .object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number().optional(), cdcTimestamp: z.number(), lsn: z.string().optional() })
-  .optional();
+const messageTraceSchema = z.object({
+  traceId: z.string(),
+  spanId: z.string(),
+  traceFlags: z.number().optional(),
+  cdcTimestamp: z.number(),
+  lsn: z.string().optional(),
+}) satisfies z.ZodType<TraceContext>;
 
 /**
  * Validates the CDC worker payload: the product rows of one audience as `rows` beside what they share, or the one
@@ -45,7 +33,7 @@ const cdcMessageSchema = z.union([
       .omit(ownActivityColumns)
       .extend({ entityType: z.enum(appConfig.productEntityTypes), organizationId: z.string(), tenantId: z.string() }),
     rows: z.array(messageRowSchema).min(1),
-    _trace: messageTraceSchema,
+    _trace: messageTraceSchema.optional(),
   }),
   z.object({
     activity: activitySchema.extend({ subjectId: z.string().nullable() }),
@@ -53,11 +41,14 @@ const cdcMessageSchema = z.union([
     movedFrom: rowDataSchema.nullable().optional(),
     // Optional: a worker of an earlier release sends none, and the live signal then goes without one.
     signalVersions: z.record(z.string(), z.number().int()).optional(),
-    _trace: messageTraceSchema,
+    _trace: messageTraceSchema.optional(),
   }),
 ]);
 
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;
+
+/** A message as the worker builds it, before the parse. */
+export type CdcMessageInput = z.input<typeof cdcMessageSchema>;
 
 /** The event a message becomes on the bus: a product message with its rows, any other with its whole row. */
 function eventOf(message: CdcMessage): ActivityEvent {

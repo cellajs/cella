@@ -4,7 +4,6 @@ import { backendSpanNames, type CleanSpanAttributes, eventAttrs, remoteParentCon
 import { otel } from '#/lib/tracing';
 
 export { backendSpanNames as syncSpanNames, eventAttrs };
-export type SyncTraceContext = TraceContext;
 
 const meter = otel.meterProvider.getMeter('app-sync');
 
@@ -22,7 +21,7 @@ const tracer = trace.getTracer('app-sync');
  * @param parent - The CDC span that sent the message. The span then joins that span's trace as its child.
  * @returns The started span.
  */
-export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, parent?: SyncTraceContext | null): Span {
+export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, parent?: TraceContext | null): Span {
   const span = tracer.startSpan(name, {}, parent ? remoteParentContext(parent) : undefined);
   if (attributes) {
     for (const [key, value] of Object.entries(attributes)) {

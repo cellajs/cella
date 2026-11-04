@@ -1,56 +1,47 @@
-import type { StxBase } from 'sdk/types.gen';
 import { hierarchy, type ProductEntityType } from 'shared';
 import type { TraceContext } from 'shared/tracing';
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import type { OwnActivityColumns } from '#/lib/activity-bus';
+import type { CdcMessageInput } from '#/lib/cdc-websocket';
+import type { ActivityModel, InsertActivityModel } from '#/modules/activities/activities-db';
 import { wsClient } from '../network/websocket-client';
 import type { CdcRowData, PendingEvent } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
-/** The activity columns that differ between the rows of one message, which holds several transactions and writers. */
-type OwnActivityColumns = 'id' | 'userId' | 'subjectId' | 'changedFields' | 'stx' | 'createdAt';
+type ProductMessageInput = Extract<CdcMessageInput, { rows: unknown }>;
+
+/** The columns a product row carries of its own activity, typed as the worker records them for the wire check. */
+type RowActivityColumns = 'userId' | 'changedFields' | 'stx';
 
 /**
  * One product row of a message: the activity it was recorded as (its id, writer, changed fields and stx), the fields
  * that decide who may read it (see `pickPermissionRowData`), the sequence value the row holds, and for a row whose path
  * changed the same fields of the row before the move, so that dispatch can tell those who lost access.
  */
-interface CdcMessageRow {
-  activityId: string;
-  userId: string | null;
-  changedFields: string[] | null;
-  stx: StxBase | null;
-  rowData: CdcRowData;
-  seq?: number;
-  movedFrom?: CdcRowData | null;
-}
+type CdcMessageRow = Omit<ProductMessageInput['rows'][number], RowActivityColumns> & Pick<ActivityModel, RowActivityColumns>;
 
-/** The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row. */
-interface CdcRowMessage {
-  activity: InsertActivityModel & { id?: string };
-  rowData: CdcRowData;
-  movedFrom?: CdcRowData | null;
-  /** Per signal type, the version this change moved it to; a change delivered again carries none. */
-  signalVersions?: Record<string, number>;
-  _trace: TraceContext;
-}
+/**
+ * The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row.
+ * `signalVersions` holds per signal type the version this change moved it to; a change delivered again carries none.
+ */
+type CdcRowMessage = Omit<Exclude<CdcMessageInput, { rows: unknown }>, 'activity'> & { activity: InsertActivityModel & { id?: string } };
 
 /**
  * The message of the product rows of one audience, one or more: what they share (type, action, table and place) as
  * `activity`, and each row with its own activity. The API derives the change frames from the rows.
  */
-interface CdcProductMessage {
+type CdcProductMessage = Omit<ProductMessageInput, 'activity' | 'rows'> & {
   activity: Omit<InsertActivityModel, OwnActivityColumns | 'organizationId' | 'tenantId'> & {
     entityType: ProductEntityType;
     organizationId: string;
     tenantId: string;
   };
   rows: CdcMessageRow[];
-  _trace: TraceContext;
-}
+};
 
 /**
- * What the worker sends the API for a change, mirrored by `cdcMessageSchema`.
+ * What the worker sends the API for a change: the envelope as `cdcMessageSchema` takes it, the activity as the worker
+ * records it.
  * @see backend/src/lib/cdc-websocket.ts
  */
 export type CdcOutboundMessage = CdcRowMessage | CdcProductMessage;
