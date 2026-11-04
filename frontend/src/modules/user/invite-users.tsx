@@ -187,8 +187,9 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
               </div>
             </motion.div>
           )}
-          {list.hasList && <InviteGroups check={check} list={list} held={held} />}
-          {(inviteMode ? !boxOpen : list.hasList) && (
+          {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
+          {inviteMode && list.hasList && <InviteGroups check={check} list={list} held={held} />}
+          {inviteMode && !boxOpen && (
             <InviteFormFooter form={form} channel={channel} check={check} list={list} held={held} loading={isPending} onCancel={cancel}>
               {children}
             </InviteFormFooter>
