@@ -1,6 +1,7 @@
 import type { Pgoutput } from 'pg-logical-replication';
+import type { ChannelIdColumns } from 'shared';
 import type { PermissionRowData } from 'shared/permissions/permission-row-data';
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import type { ActivityModel } from '#/modules/activities/activities-db';
 import { createActivity } from '../services/create-activity';
 import { tableRegistry } from '../table-registry';
 import type { CdcRowData, RowData, TableMeta } from '../types';
@@ -11,12 +12,15 @@ import { parseUpdate } from './parse-update';
 /** A change of a row, the one kind of message the parser reads. */
 export type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.MessageDelete;
 
-/** An activity before it has its id, which a flush derives from the commit position of its source transaction. */
-export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
+/**
+ * An activity before it has its id, which a flush derives from the commit position of its source transaction. It names
+ * every channel the hierarchy declares, also one whose id the activities table holds no column for.
+ */
+export type CdcActivity = Omit<ActivityModel, 'id'> & ChannelIdColumns;
 
 /** A change as the parser hands it on: its activity, its row and, for an update, the row as it was. */
 export interface ParseMessageResult {
-  activity: ActivityWithoutId;
+  activity: CdcActivity;
   rowData: CdcRowData;
   oldRowData: CdcRowData | null;
   /** For a row that moved: the permission fields of the place it left, so dispatch can drop subscribers who lost access. */

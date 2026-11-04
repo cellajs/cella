@@ -1,16 +1,16 @@
 import { getTableName } from 'drizzle-orm';
 import type { ActivityAction, EntityHierarchy } from 'shared';
-import { actionToVerb, entityIdColumnKey, hierarchy } from 'shared';
+import { actionToVerb, entityIdColumnKey, hierarchy, recordFromKeys } from 'shared';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '../lib/pino';
-import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { CdcActivity } from '../pipeline/parse-message';
 import type { TableMeta } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { extractStxData } from '../utils/extract-stx-data';
 import { getStringValue } from '../utils/get-string-value';
 
 /** Every channel id column of an activity, null: what the row names overrides them. */
-const nullChannelIds: Record<string, null> = Object.fromEntries(channelIdColumnKeys.map((key) => [key, null]));
+const nullChannelIds = recordFromKeys(channelIdColumnKeys, () => null);
 
 /**
  * The activity of a change, from its row: who made it, what it is about, and the channels it belongs to. Warns for an
@@ -23,7 +23,7 @@ export function createActivity(
   action: ActivityAction,
   changedFields: string[] | null = null,
   h: EntityHierarchy = hierarchy,
-): ActivityWithoutId {
+): CdcActivity {
   const entityType = tableMeta.kind === 'entity' ? tableMeta.type : null;
   const resourceType = tableMeta.kind === 'resource' ? tableMeta.type : null;
   const subjectType = tableMeta.type;

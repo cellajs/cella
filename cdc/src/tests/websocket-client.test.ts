@@ -176,7 +176,12 @@ describe('wsClient.send', () => {
 
     // The flush hands its one row to the API. A BigInt has no JSON form, so the row itself is the cause.
     const acknowledge = vi.fn(async () => {});
-    const buffer = new FlushBuffer(async () => sendMessageToApi(mockCdcActivity(), { id: 'row-1', size: 10n }, {} as never), acknowledge, 10, 1);
+    const buffer = new FlushBuffer(
+      async () => sendMessageToApi({ ...mockCdcActivity(), id: 'act-1' }, { id: 'row-1', size: 10n }, {} as never),
+      acknowledge,
+      10,
+      1,
+    );
     buffer.onFailed = (error, position) => replicationState.recordFailure(position, error);
 
     await buffer.enqueue([mockPendingEvent({ lsn: '0/50' })]);

@@ -3,13 +3,16 @@ import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import type { TraceContext } from 'shared/tracing';
 import type { OwnActivityColumns } from '#/lib/activity-bus';
 import type { CdcMessageInput } from '#/lib/cdc-websocket';
-import type { ActivityModel, InsertActivityModel } from '#/modules/activities/activities-db';
 import { wsClient } from '../network/websocket-client';
+import type { CdcActivity } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
 type ProductMessageInput = Extract<CdcMessageInput, { rows: unknown }>;
+
+/** An activity with the id its flush gave it. */
+type RecordedActivity = CdcActivity & { id: string };
 
 /** The columns a product row carries of its own activity, typed as the worker records them for the wire check. */
 type RowActivityColumns = 'userId' | 'changedFields' | 'stx';
@@ -19,20 +22,20 @@ type RowActivityColumns = 'userId' | 'changedFields' | 'stx';
  * that decide who may read it (see `pickPermissionRowData`), the sequence value the row holds, and for a row whose path
  * changed the same fields of the row before the move, so that dispatch can tell those who lost access.
  */
-type CdcMessageRow = Omit<ProductMessageInput['rows'][number], RowActivityColumns> & Pick<ActivityModel, RowActivityColumns>;
+type CdcMessageRow = Omit<ProductMessageInput['rows'][number], RowActivityColumns> & Pick<CdcActivity, RowActivityColumns>;
 
 /**
  * The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row.
  * `signalVersions` holds per signal type the version this change moved it to; a change delivered again carries none.
  */
-type CdcRowMessage = Omit<Exclude<CdcMessageInput, { rows: unknown }>, 'activity'> & { activity: InsertActivityModel & { id?: string } };
+type CdcRowMessage = Omit<Exclude<CdcMessageInput, { rows: unknown }>, 'activity'> & { activity: RecordedActivity };
 
 /**
  * The message of the product rows of one audience, one or more: what they share (type, action, table and place) as
  * `activity`, and each row with its own activity. The API derives the change frames from the rows.
  */
 type CdcProductMessage = Omit<ProductMessageInput, 'activity' | 'rows'> & {
-  activity: Omit<InsertActivityModel, OwnActivityColumns | 'organizationId' | 'tenantId'> & {
+  activity: Omit<CdcActivity, OwnActivityColumns | 'organizationId' | 'tenantId'> & {
     entityType: ProductEntityType;
     organizationId: string;
     tenantId: string;
@@ -68,7 +71,7 @@ export function generateActivityId({ commitLsn, index }: Pick<PendingEvent, 'com
  * fails with it, and the change is delivered again.
  */
 export function sendMessageToApi(
-  activity: InsertActivityModel,
+  activity: RecordedActivity,
   rowData: CdcRowData,
   traceContext: TraceContext,
   movedFrom?: PermissionRowData | null,
@@ -82,7 +85,7 @@ export function sendMessageToApi(
 
 /** One product row of a flush as its message is built from it: its activity, its row and the sequence value the row holds. */
 export interface ProductRow {
-  activity: InsertActivityModel & { id: string };
+  activity: RecordedActivity;
   rowData: CdcRowData;
   seq?: number;
   movedFrom?: PermissionRowData | null;
@@ -97,9 +100,9 @@ function buildProductMessage(productType: ProductEntityType, rows: ProductRow[],
     activity: { ...shared, entityType: productType, organizationId, tenantId },
     rows: rows.map(({ activity, rowData, seq, movedFrom }) => ({
       activityId: activity.id,
-      userId: activity.userId ?? null,
-      changedFields: activity.changedFields ?? null,
-      stx: activity.stx ?? null,
+      userId: activity.userId,
+      changedFields: activity.changedFields,
+      stx: activity.stx,
       rowData: pickPermissionRowData(rowData),
       seq,
       ...(movedFrom ? { movedFrom } : {}),

@@ -2,7 +2,7 @@ import type { ActivityAction, EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
 import { isMaxMergeKey, signalVersionPrefix } from '#/modules/entities/counter-keys';
 import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
-import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { CdcActivity } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent, TableMeta } from '../types';
 import { getCountDeltas } from './count-deltas';
 
@@ -27,7 +27,7 @@ export interface OrgSequenceGroup {
  * organization violates the hierarchy and throws. The API messages group a row by it when its product path cannot be
  * computed.
  */
-export function resolveChannelKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId, h: EntityHierarchy = hierarchy): string {
+export function resolveChannelKey(entityType: string, rowData: CdcRowData, activity: CdcActivity, h: EntityHierarchy = hierarchy): string {
   const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
