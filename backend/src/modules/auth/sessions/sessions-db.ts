@@ -1,6 +1,7 @@
 import { getColumns } from 'drizzle-orm';
 import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { FederationKey } from 'shared';
+import { oauthProviders } from 'shared/config-builder/types';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
@@ -17,11 +18,11 @@ import { usersTable } from '#/modules/user/user-db';
 const sessionTypes = ['regular', 'mfa'] as const;
 export type SessionType = (typeof sessionTypes)[number];
 
-const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
+const baseAuthStrategies = [...oauthProviders, 'passkey', 'totp', 'email', 'magic'] as const;
 /** A sign-in method as a session records it: a built-in one, or a federation key from `appConfig.federations`. */
 export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;
 /** Every {@link AuthStrategy}: the enum of the columns and request fields that hold one. */
-export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as [AuthStrategy, ...AuthStrategy[]];
+export const authStrategiesEnum = [...baseAuthStrategies, ...federationKeys] as const;
 
 /**
  * Why a session was revoked before its expiry. The user's acts: `sign_out` from the session itself, `other_session`

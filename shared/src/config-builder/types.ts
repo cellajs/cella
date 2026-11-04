@@ -59,7 +59,9 @@ export interface FederationConfig {
    */
   mfaAcr?: readonly string[];
 }
-export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
+/** The OAuth providers the template signs in with; `enabledOAuthProviders` picks among them. */
+export const oauthProviders = ['github', 'google', 'microsoft'] as const;
+export type BaseOAuthProviders = (typeof oauthProviders)[number];
 
 /** Only host and region are required; app-config derives the rest from the slug. */
 export interface S3ConfigInput {
