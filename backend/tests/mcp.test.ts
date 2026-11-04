@@ -191,7 +191,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     // The route charges what a REST request with the same token is charged: the burst once, plus its own limiters.
     expect((await toolCall(ctx, 'getAttachments', {})).response.status).toBe(200);
-    expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 2, serviceBurst: 1, syncRead: 1 });
+    expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 2, serviceBurst: 1, read: 1 });
   });
 
   it('showcase 3: a service account reads, renames and deletes through the same tools', async () => {
