@@ -15,14 +15,13 @@ import {
   type Slot,
 } from '~/lib/placements';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
-import { type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
+import { type TabLabel, type TabNavAvatar, TabNavLabel, TabNavShell, tabNavItemClass } from '~/modules/common/page/tab-nav-shell';
 import { useScrollResetOnNavigate } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
 import { getHasNavigated } from '~/utils/nav-transition';
 
-export type PageTab = {
+export type PageTab = TabLabel & {
   id: string;
-  label: TKey;
   /** Sits before the label. */
   icon?: ReactNode;
   path: LinkComponentProps['to'];
@@ -30,6 +29,9 @@ export type PageTab = {
   search?: LinkComponentProps['search'];
   activeOptions?: LinkComponentProps['activeOptions'];
 };
+
+/** A tab a route or a tool declares, captioned by its placement's key. */
+type DeclaredTab = Extract<PageTab, { label: TKey }>;
 
 // Cast: generated FileRoutesById is a closed interface without index signature
 const getRoutesById = () => getRouter().routesById as unknown as Record<string, AnyRoute>;
@@ -134,7 +136,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
 }
 
 /** {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0, lower first). */
-function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): PageTab[] {
+function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): DeclaredTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
 
@@ -150,7 +152,7 @@ export function resolveChannelTabs(
   entityType: ChannelEntityType,
   channelParams: Record<string, string>,
   options: ResolvePlacementOptions = {},
-): PageTab[] {
+): DeclaredTab[] {
   const routeId = getTabsRouteId(`${entityType}.tabs`);
   if (!routeId) return [];
 
@@ -259,7 +261,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
 
   return (
     <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
-      {tabs.map(({ id, path, label, icon, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } }, index) => (
+      {tabs.map(({ id, path, icon, search = {}, params = true, activeOptions = { exact: true, includeSearch: false }, ...caption }, index) => (
         <Link
           key={id}
           id={`tab-${id}`}
@@ -280,7 +282,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, f
 
             return (
               <>
-                <TabNavLabel label={label} icon={icon} />
+                <TabNavLabel {...caption} icon={icon} />
                 {showAsActive && <ActiveTabMarker indicator={indicator} />}
               </>
             );
