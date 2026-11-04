@@ -28,7 +28,9 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesVolumeWrite',
   'InstancesVolumeDelete',
   'BlockStorageFullAccess',
-  'IPAMReadOnly',
+  // Attaching a private NIC at a reserved address is an IPAM write the Instance API makes with the caller's rights: under the read set the
+  // create answers a bare 500 (production, 2026-11-04), and IPAM has no narrower write set.
+  'IPAMFullAccess',
   'LoadBalancersReadOnly',
   'PrivateNetworksFullAccess',
   'ObjectStorageFullAccess',

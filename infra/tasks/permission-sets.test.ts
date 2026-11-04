@@ -44,10 +44,10 @@ describe('deploy key rights', () => {
     expect(rules.flatMap(setsOf).filter((set) => /^SecretManagerSecret(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
-  it('must not move traffic or take an address of its own: a leaked key cannot edit a pool, a health check or a reservation', () => {
+  it('must not move traffic: a leaked key cannot edit a pool or a health check, and attaches reserved addresses, an IPAM write', () => {
     const all = rules.flatMap(setsOf);
     expect(all.filter((set) => set.startsWith('LoadBalancers'))).toEqual(['LoadBalancersReadOnly']);
-    expect(all.filter((set) => set.startsWith('IPAM'))).toEqual(['IPAMReadOnly']);
+    expect(all.filter((set) => set.startsWith('IPAM'))).toEqual(['IPAMFullAccess']);
     // Measured with the deploy key: a private NIC at a reserved address is refused (403) without the private network's write set or either NIC family.
     expect(all).toEqual(expect.arrayContaining(['PrivateNetworksFullAccess', 'InstancesPrivateNicCreate', 'InstancesPrivateNetworkInterfaceCreate']));
   });
