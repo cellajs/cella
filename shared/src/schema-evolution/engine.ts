@@ -60,8 +60,8 @@ function dropKey(record: AnyRecord, field: string): AnyRecord {
 
 /** `record` with `change` applied to its `stx.fieldTimestamps`; the same object when that changes nothing. */
 function changeFieldTimestamps(record: AnyRecord, change: (fieldTimestamps: AnyRecord) => AnyRecord): AnyRecord {
-  const stx = record.stx as AnyRecord | undefined;
-  const fieldTimestamps = stx?.fieldTimestamps as AnyRecord | undefined;
+  const stx = isRecord(record.stx) ? record.stx : undefined;
+  const fieldTimestamps = stx && isRecord(stx.fieldTimestamps) ? stx.fieldTimestamps : undefined;
   if (!fieldTimestamps) return record;
   const changed = change(fieldTimestamps);
   return changed === fieldTimestamps ? record : { ...record, stx: { ...stx, fieldTimestamps: changed } };
@@ -166,20 +166,20 @@ export function resetLensEngine(): void {
 }
 
 /** Moves a row between two version nodes; the row as given when the entity has no lenses or the transform fails. */
-async function transformEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, from: string, to: string): Promise<T> {
+async function transformEntity(entityType: LensEntityType, entity: AnyRecord, from: string, to: string): Promise<AnyRecord> {
   const registry = getRegistry(entityType);
   if (!registry || from === to) return entity;
   const result = await registry.transform(entity, from, to, { validate: 'none' });
-  return result.ok ? (result.value as T) : entity;
+  return result.ok && isRecord(result.value) ? result.value : entity;
 }
 
 /** Idempotent: re-running over already-migrated rows changes nothing. */
-export function migrateCachedEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, fromVersion: number): Promise<T> {
+export function migrateCachedEntity(entityType: LensEntityType, entity: AnyRecord, fromVersion: number): Promise<AnyRecord> {
   return transformEntity(entityType, entity, versionNodeFor(entityType, fromVersion), versionNodeFor(entityType, currentSchemaVersion));
 }
 
 /** Phase 2 only. `lossyBackward` lenses keep removed fields absent going backward. */
-export function downgradeEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, toVersion: number): Promise<T> {
+export function downgradeEntity(entityType: LensEntityType, entity: AnyRecord, toVersion: number): Promise<AnyRecord> {
   return transformEntity(entityType, entity, versionNodeFor(entityType, currentSchemaVersion), versionNodeFor(entityType, toVersion));
 }
 
@@ -242,7 +242,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(entityType:
  * to current canonical keys, across `ops`, `stx.fieldTimestamps` and the rows the variables hold:
  * under `data` for a create and `rows` for a delete, or the variables themselves where they are one row.
  */
-export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntityType, variables: V, fromVersion: number): V {
+export function migrateQueuedMutation(entityType: LensEntityType, variables: AnyRecord, fromVersion: number): AnyRecord {
   const pending = lensesFor(entityType).filter(({ ordinal }) => ordinal > fromVersion);
   if (pending.length === 0) return variables;
 
@@ -270,12 +270,10 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
       continue;
     }
     next = inRows(next, (row) => renameKey(row, rename.from, rename.to));
-    if (next.ops && typeof next.ops === 'object') {
-      next = { ...next, ops: renameKey(next.ops as AnyRecord, rename.from, rename.to) };
-    }
+    if (isRecord(next.ops)) next = { ...next, ops: renameKey(next.ops, rename.from, rename.to) };
     next = changeFieldTimestamps(next, (fieldTimestamps) => renameKey(fieldTimestamps, rename.from, rename.to));
   }
-  return next as V;
+  return next;
 }
 
 /** Old to new key aliases for an entity's active expand lenses, read by wire-schema widening. */
