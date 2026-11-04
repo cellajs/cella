@@ -3,6 +3,7 @@ import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { errors } from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
+import type { ConsentDetails } from 'shared/oauth-consent';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -11,27 +12,16 @@ import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
-import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
+import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { deleteProviderSession, findConsentTargetNames, stampGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
-import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
+import { parseResource } from '#/modules/oauth-server/resources';
 import { runWithLogContext } from '#/utils/logger';
 
 /** The consent page's decision; a missing `accept` refuses. */
 const decisionBodySchema = z.object({ accept: z.boolean().optional() });
 
-interface ConsentDetails {
-  client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
-  scopes: string[];
-  resource: ResourceRef;
-  /** The names of the tenant and, on the MCP face, the organization the grant reaches; null where the user is not a member. */
-  target: { tenant: string | null; organization: string | null };
-  /** Null when no session is present (the page sends the person to sign in). */
-  user: { id: string; name: string } | null;
-  /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
-  prompt: { name: string; reasons: string[] };
-  /** Why the consent page must refuse (the grant policy's answer); null when the user may accept. */
-  refusal: Exclude<UserGrantRefusal, 'unknown_user'> | null;
-}
+/** The details route's 401 body: no session is present, and the page sends the person to sign in. */
+type SignedOutConsentDetails = Omit<ConsentDetails, 'user'> & { user: null };
 
 /**
  * The consent routes the app serves beside the provider: the details and the decision, behind the app session. The
@@ -131,7 +121,7 @@ async function loadInteraction(provider: Provider, c: Context<Env>) {
       ? await findConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
       : { tenant: null, organization: null };
 
-  const details: ConsentDetails = {
+  const shown: Omit<ConsentDetails, 'user'> = {
     // A metadata document is written by the client's author, who would learn every consenting viewer's address from a
     // logo and could claim any name: such a client shows the host serving its client id. A registered app shows the
     // name and logo a system admin set.
@@ -142,9 +132,9 @@ async function loadInteraction(provider: Provider, c: Context<Env>) {
     scopes: requested,
     resource,
     target,
-    user: user ? { id: user.id, name: user.name } : null,
     prompt: { name: interaction.prompt.name, reasons: interaction.prompt.reasons },
     refusal,
   };
+  const details: ConsentDetails | SignedOutConsentDetails = user ? { ...shown, user: { id: user.id, name: user.name } } : { ...shown, user: null };
   return { signedIn, details, interaction, clientId };
 }

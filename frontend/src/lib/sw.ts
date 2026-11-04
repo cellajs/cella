@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
+import type { GetNotificationsResponse } from 'sdk';
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
+import type { NotificationPushPayload } from 'shared/push-payload';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
 
 declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry | string)[] };
@@ -42,18 +44,8 @@ const serwist = new Serwist({
 // the closed-app toast stays generic and the app renders the localized inbox on open.
 const pushTitles: Record<string, string> = { mention: 'You were mentioned', reply: 'New reply', comment: 'New comment' };
 
-/** { t: 'notif', activityId, channelId, type, url } from push-sender.ts; anything else is dropped. */
-interface NotificationPushData {
-  t: string;
-  activityId: string;
-  channelId: string;
-  type: string;
-  /** Self-describing `/n` link to the subject; a click opens it. */
-  url?: string;
-}
-
 self.addEventListener('push', (event) => {
-  let data: NotificationPushData | null = null;
+  let data: NotificationPushPayload | null = null;
   try {
     data = event.data?.json() ?? null;
   } catch {
@@ -63,7 +55,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(handleNotificationPush(data));
 });
 
-async function handleNotificationPush(data: NotificationPushData): Promise<void> {
+async function handleNotificationPush(data: NotificationPushPayload): Promise<void> {
   // Visible notification first (userVisibleOnly contract), collapsed per channel by tag: a
   // burst edits one toast in place.
   await self.registration.showNotification(pushTitles[data.type] ?? 'New notification', {
@@ -78,7 +70,7 @@ async function updateUnreadBadge(): Promise<void> {
   try {
     const response = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
     if (!response.ok) return;
-    const { unreadCount }: { unreadCount: number } = await response.json();
+    const { unreadCount }: Pick<GetNotificationsResponse, 'unreadCount'> = await response.json();
     await (unreadCount > 0 ? self.navigator.setAppBadge(unreadCount) : self.navigator.clearAppBadge());
   } catch {
     // Network error or expired auth: leave the badge unchanged.

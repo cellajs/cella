@@ -1,17 +1,6 @@
 import { appConfig } from 'shared';
+import type { ConsentDetails } from 'shared/oauth-consent';
 import { apiFetch } from '~/lib/api-client';
-
-/** What the authorization server's interaction route reports about a pending consent. */
-export interface ConsentDetails {
-  client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
-  scopes: string[];
-  resource: { face: 'api' | 'mcp'; tenantId: string; organizationId?: string };
-  /** Names of the tenant and organization the grant reaches, as the server allows this user to see them. */
-  target: { tenant: string | null; organization: string | null };
-  user: { id: string; name: string };
-  prompt: { name: string; reasons: string[] };
-  refusal: 'not_a_member' | 'unregistered_clients_not_allowed' | 'app_not_installed' | null;
-}
 
 /** The interaction routes live on the authorization server, outside the OpenAPI spec, so no SDK function exists. */
 const interactionUrl = (uid: string, suffix: string) => `${appConfig.oauthUrl}/interaction/${encodeURIComponent(uid)}/${suffix}`;
