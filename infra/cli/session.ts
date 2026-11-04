@@ -1,15 +1,5 @@
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 
-/** What the CLI learned about the operator application through the observer key. */
-export interface OperatorLock {
-  /** `absent`: the stack has no operator application yet. `unknown`: this machine holds no key that can tell. */
-  state: 'present' | 'absent' | 'unknown';
-  /** The addresses the operator key works from, as its policy names them; empty when they could not be read. */
-  cidrs: string[];
-  /** True when a rule of the operator policy carries no address condition: the key then works from every address. */
-  open: boolean;
-}
-
 /** How a run reads and writes the passphrase in Secret Manager. */
 export interface PassphraseCustody {
   /** The stored passphrase, asking for the operator key when the session is still locked; undefined when there is none to read. */
@@ -26,7 +16,6 @@ const session: {
   passphrase?: string;
   ownerKey?: KeyPair;
   operatorKey?: KeyPair;
-  operatorLock?: OperatorLock;
   passphraseCustody?: PassphraseCustody;
 } = {};
 
@@ -70,21 +59,6 @@ export function forgetOperatorKey(): void {
   session.operatorKey = undefined;
 }
 
-/** Keep what the observer key showed about the operator application. */
-export function rememberOperatorLock(lock: OperatorLock): void {
-  session.operatorLock = lock;
-}
-
-/** What this run already knows about the operator application. */
-export function rememberedOperatorLock(): OperatorLock | undefined {
-  return session.operatorLock;
-}
-
-/** Drop it after an action that sets up the operator application or changes its addresses. */
-export function forgetOperatorLock(): void {
-  session.operatorLock = undefined;
-}
-
 /** Register how this run reads and writes the passphrase in Secret Manager; the CLI sets it once the stack context is loaded. */
 export function setPassphraseCustody(custody: PassphraseCustody | undefined): void {
   session.passphraseCustody = custody;
@@ -100,6 +74,5 @@ export function forgetSession(): void {
   session.passphrase = undefined;
   session.ownerKey = undefined;
   session.operatorKey = undefined;
-  session.operatorLock = undefined;
   session.passphraseCustody = undefined;
 }

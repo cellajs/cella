@@ -183,20 +183,57 @@ async function findPolicyIdByName(secretKey: string, organizationId: string, nam
   return policies.find((p) => p.name === name)?.id;
 }
 
-interface ScwGroup {
+/** An IAM group as the API lists it, with its members. */
+export interface ScwGroup {
   id: string;
   name: string;
   application_ids?: string[];
+  user_ids?: string[];
 }
 
-/** Find the per-mode IAM group, or undefined. */
-async function findGroup(callerSecretKey: string, organizationId: string, name: string): Promise<ScwGroup | undefined> {
+/** An IAM group of the organization by name, or undefined. */
+export async function findGroup(callerSecretKey: string, organizationId: string, name: string): Promise<ScwGroup | undefined> {
   const { groups = [] } = await scwFetch<{ groups?: ScwGroup[] }>(
     { secretKey: callerSecretKey },
     'GET',
     `${IAM_BASE}/groups?organization_id=${organizationId}&name=${encodeURIComponent(name)}&page_size=20`,
   );
   return groups.find((group) => group.name === name);
+}
+
+/**
+ * Make an IAM group when it does not exist. Logs only a creation. A write-only key (IAMManager without IAMReadOnly) creates directly and
+ * tolerates the duplicate; undefined when the group can then be neither found nor made.
+ */
+export async function ensureGroup(opts: {
+  callerSecretKey: string;
+  organizationId: string;
+  name: string;
+  description: string;
+  tags?: string[];
+  log?: (msg: string) => void;
+}): Promise<ScwGroup | undefined> {
+  const log = opts.log ?? ((msg) => console.info(msg));
+  let group: ScwGroup | undefined;
+  try {
+    group = await findGroup(opts.callerSecretKey, opts.organizationId, opts.name);
+  } catch (error) {
+    if (!isPermissionDenied(error)) throw error;
+  }
+  if (group) return group;
+  try {
+    group = await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups`, {
+      name: opts.name,
+      organization_id: opts.organizationId,
+      description: opts.description,
+      tags: opts.tags ?? [],
+    });
+    log(`  ${changeMark} Created IAM group: ${opts.name}`);
+    return group;
+  } catch (error) {
+    if (!isAlreadyExists(error)) throw error;
+    return findGroup(opts.callerSecretKey, opts.organizationId, opts.name);
+  }
 }
 
 /** Ensure the `<slug>-<mode>` IAM group exists and contains the application. Never a policy principal: a group policy would grant every member. */
@@ -208,31 +245,18 @@ async function ensureGroupMembership(opts: {
   applicationId: string;
   log?: (msg: string) => void;
 }): Promise<void> {
-  const log = opts.log ?? ((msg) => console.info(msg));
   const groupName = principalNames(opts.slug, opts.mode).group;
-  let group: ScwGroup | undefined;
-  try {
-    group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName);
-  } catch (error) {
-    if (!isPermissionDenied(error)) throw error;
-    // A write-only key (IAMManager without IAMReadOnly): create directly and tolerate the duplicate.
-  }
-  if (!group) {
-    try {
-      group = await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups`, {
-        name: groupName,
-        organization_id: opts.organizationId,
-        description: `All ${opts.slug} ${opts.mode} IAM applications (managed by cella-infra; organizational only, never attach policies)`,
-        tags: principalTags(opts.slug, opts.mode),
-      });
-      log(`  ${changeMark} Created IAM group: ${groupName}`);
-    } catch (error) {
-      if (!isAlreadyExists(error)) throw error;
-      group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName);
-    }
-  }
+  const group = await ensureGroup({
+    callerSecretKey: opts.callerSecretKey,
+    organizationId: opts.organizationId,
+    name: groupName,
+    description: `All ${opts.slug} ${opts.mode} IAM applications (managed by cella-infra; organizational only, never attach policies)`,
+    tags: principalTags(opts.slug, opts.mode),
+    log: opts.log,
+  });
   if (!group) return;
   if ((group.application_ids ?? []).includes(opts.applicationId)) return;
+  const log = opts.log ?? ((msg) => console.info(msg));
   try {
     await scwFetch<ScwGroup>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/groups/${group.id}/add-member`, {
       application_id: opts.applicationId,

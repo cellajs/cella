@@ -1,12 +1,9 @@
 import { randomBytes } from 'node:crypto';
-import { telemetrySink } from '../config/telemetry.config';
 import { managedKeys } from '../lib/managed-keys';
 import { actionCommand } from '../lib/operator-actions';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
-import { secretCopies } from '../lib/scaleway/secret-paths';
-import { syncDeployTelemetryKey } from '../lib/telemetry/sink-key';
+import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { checkMark, pc, tildeMark, warningMark } from '../lib/utils/cli-output';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { isMain } from '../lib/utils/is-main';
@@ -87,16 +84,14 @@ async function selectSecret(ctx: MenuContext, message: string, choices: ManagedR
 }
 
 async function handleList(ctx: MenuContext): Promise<void> {
-  const existing = await ctx.client.listSecrets();
-  const trim = (path: string) => `/${path.split('/').filter(Boolean).join('/')}/`;
-  const byCopy = new Map(existing.map((secret) => [`${secret.name}@${trim(secret.path)}`, secret]));
+  const existing = new Map((await ctx.client.listSecretsUnder(RUNTIME_FOLDER)).map((secret) => [secret.name, secret]));
   ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.mode)}`);
   for (const secret of ctx.secrets) {
-    // One copy per consumer. Treat only versioned copies as present; an empty container has no readable value, and the operator sets it.
-    const copies = secretCopies(secret).map((copy) => byCopy.get(`${secret.secretName}@${trim(copy.path)}`));
-    const status = copies.some((copy) => !copy)
+    // Only a versioned container is present; an empty one has no readable value, and the operator sets it.
+    const container = existing.get(secret.secretName);
+    const status = !container
       ? `${tildeMark} missing`
-      : copies.every((copy) => (copy?.version_count ?? 0) > 0)
+      : (container.version_count ?? 0) > 0
         ? `${checkMark} present`
         : `${warningMark} empty (no version: run "Set or update")`;
     ctx.log(`- ${secret.secretName} (${secret.envVar}): ${status}; consumers: ${secret.services.join(', ')}`);
@@ -114,27 +109,28 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   // Pulumi owns container creation (resources/secrets.ts); refuse to create one
   // out-of-band here, since that would make the next `pulumi up` fail with
   // "secret already exists". An apply makes the container, then rotate.
-  const copies = await secretCopyContainers(ctx.client, secret);
-  if (missingCopies(copies).length > 0) {
+  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
+  if (!container) {
     ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. Apply first (\`${actionCommand('apply')}\`), which creates it, then rotate.`,
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. Apply first (\`${actionCommand('apply')}\`), which creates it, then rotate.`,
     );
     return;
   }
-  // One value for every consumer's copy.
-  const revisions = await putEveryCopy(ctx.client, existingContainers(copies), generateRandomRuntimeSecret(), {
+  const version = await ctx.client.putSecretValue({
+    secretId: container.id,
+    value: generateRandomRuntimeSecret(),
     description: 'Rotated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
-  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'})`)}`);
+  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`);
 }
 
 async function handleDelete(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets);
   if (!secret) return;
-  const containers = existingContainers(await secretCopyContainers(ctx.client, secret));
-  if (containers.length === 0) {
-    ctx.log(`${tildeMark} ${secret.secretName} has no copy`);
+  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
+  if (!container) {
+    ctx.log(`${tildeMark} ${secret.secretName} has no container`);
     return;
   }
   const confirmed = await ctx.prompts.confirm({
@@ -145,8 +141,8 @@ async function handleDelete(ctx: MenuContext): Promise<void> {
     ctx.log(`${tildeMark} Deletion cancelled.`);
     return;
   }
-  for (const container of containers) await ctx.client.deleteSecret(container.id);
-  ctx.log(`${checkMark} Deleted ${secret.secretName} ${pc.dim(`(${containers.length} cop${containers.length === 1 ? 'y' : 'ies'})`)}`);
+  await ctx.client.deleteSecret(container.id);
+  ctx.log(`${checkMark} Deleted ${secret.secretName}`);
 }
 
 async function handleSet(ctx: MenuContext): Promise<void> {
@@ -154,10 +150,10 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   if (!secret) return;
   // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
   // An apply makes the empty container before the operator sets its value.
-  const copies = await secretCopyContainers(ctx.client, secret);
-  if (missingCopies(copies).length > 0) {
+  const container = await ctx.client.getSecretByName(secret.secretName, RUNTIME_FOLDER);
+  if (!container) {
     ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. ` +
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
         `Apply first (\`${actionCommand('apply')}\`), which creates it, then run "Set or update" again to give it a value.`,
     );
     return;
@@ -177,18 +173,13 @@ async function handleSet(ctx: MenuContext): Promise<void> {
       },
     })
   ).trim();
-  // One value for every consumer's copy.
-  const revisions = await putEveryCopy(ctx.client, existingContainers(copies), value, {
+  const version = await ctx.client.putSecretValue({
+    secretId: container.id,
+    value,
     description: 'Updated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
-  ctx.log(
-    `${checkMark} Updated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'}, ${value.length} chars)`)}`,
-  );
-  // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
-  if (secret.secretName === telemetrySink.keySecretName && (await syncDeployTelemetryKey({ client: ctx.client })) === 'written') {
-    ctx.log(`${checkMark} Copied ${secret.secretName} into the deploy folder, where the deploy reads it`);
-  }
+  ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`);
 }
 
 /**
@@ -257,12 +248,12 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     log: options.log ?? defaultLog,
   };
 
-  // Secret Manager writes an immutable version immediately, but services load it only at boot.
+  // Secret Manager writes an immutable version immediately, but a machine gets it only in the env file of the deploy that makes it.
   // The trailing newline separates this warning from the menu.
   ctx.log(
     `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
-      `${pc.dim("container metadata looking unchanged; check the secret's Versions list for the new revision. Running services pick")}\n` +
-      `${pc.dim('up the latest value only on the next VM boot or deploy.')}\n`,
+      `${pc.dim("container metadata looking unchanged; check the secret's Versions list for the new revision. Running machines keep")}\n` +
+      `${pc.dim('the values they booted with: the machines of the next deploy get the latest value.')}\n`,
   );
 
   // Loop the menu so an operator setting up a fresh environment can manage

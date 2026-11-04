@@ -1,8 +1,6 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
-import { fakeConfig } from '../helpers/fake-config';
+import { describe, expect, it } from 'vitest';
 
 const infraRoot = resolve(__dirname, '../..');
 
@@ -21,9 +19,9 @@ function sources(dir: string): string[] {
   return out;
 }
 
-// Config flows ONLY through engine-config, whose lazy workspace fallback is the single allowed reference to the shared package.
-describe('config inversion sweep', () => {
-  it("no engine module references the shared package except engine-config's fallback", () => {
+// The engine reads the app's config only through engine-config, the one engine module that imports the shared package.
+describe('config boundary sweep', () => {
+  it('no engine module references the shared package except engine-config', () => {
     const scanned = [
       ...sources(join(infraRoot, 'resources')),
       ...sources(join(infraRoot, 'lib')),
@@ -31,7 +29,7 @@ describe('config inversion sweep', () => {
       ...sources(join(infraRoot, 'tasks')),
       ...sources(join(infraRoot, 'cli')),
       ...sources(join(infraRoot, 'config')),
-      ...sources(join(infraRoot, 'boot', 'src')),
+      ...sources(join(infraRoot, 'agent', 'src')),
       join(infraRoot, 'pulumi-context.ts'),
       join(infraRoot, 'index.ts'),
     ];
@@ -47,27 +45,21 @@ describe('config inversion sweep', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('engineConfig throws before a config is loaded, then returns the injected one', async () => {
-    vi.resetModules();
-    const { engineConfig, setEngineConfig } = await import('../../config/engine-config');
-    expect(() => engineConfig()).toThrow(/no config loaded/);
-    setEngineConfig(fakeConfig({ slug: 'injected-app' }));
-    expect(engineConfig().slug).toBe('injected-app');
-  });
-
-  it('loadEngineConfig resolves an INFRA_CONFIG_MODULE over the workspace fallback', async () => {
-    vi.resetModules();
-    const dir = mkdtempSync(join(tmpdir(), 'engine-config-'));
-    const modulePath = join(dir, 'config.mjs');
-    writeFileSync(modulePath, `export const engineConfig = ${JSON.stringify(fakeConfig({ slug: 'pointer-app' }))}\n`);
-    vi.stubEnv('INFRA_CONFIG_MODULE', modulePath);
-    try {
-      const { loadEngineConfig } = await import('../../config/engine-config');
-      const config = await loadEngineConfig();
-      expect(config.slug).toBe('pointer-app');
-    } finally {
-      vi.unstubAllEnvs();
-      rmSync(dir, { recursive: true, force: true });
-    }
+  // The export is read once, when the module first loads: a static import outside the Pulumi program could load it before APP_MODE is set.
+  it('only the Pulumi program imports the engine config statically; every other module imports its type or loads it dynamically', () => {
+    const staticImport = /^import (?!type )[^;]*from '(?:\.\.?\/)+(?:config\/)?engine-config';/m;
+    const scanned = [
+      ...sources(join(infraRoot, 'lib')),
+      ...sources(join(infraRoot, 'compose')),
+      ...sources(join(infraRoot, 'tasks')),
+      ...sources(join(infraRoot, 'cli')),
+      ...sources(join(infraRoot, 'config')),
+      ...sources(join(infraRoot, 'agent', 'src')),
+      join(infraRoot, 'index.ts'),
+    ];
+    const offenders = scanned.filter((file) => staticImport.test(readFileSync(file, 'utf-8')));
+    expect(offenders.map((file) => file.replace(`${infraRoot}/`, ''))).toEqual([]);
+    // Positive control: the program's context module imports it statically.
+    expect(readFileSync(join(infraRoot, 'pulumi-context.ts'), 'utf-8')).toMatch(staticImport);
   });
 });

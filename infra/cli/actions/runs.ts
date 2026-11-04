@@ -25,12 +25,12 @@ import { autoAcceptDefaults, endAction, type InfraContext } from '../shared';
 const LIST_LENGTH = 10;
 const LOG_TAIL = 40;
 
-/** The machines' boot accounts a failed rollout's record names: a failed one's error and the end of its log, a missing one said plainly. */
+/** The machines' boot accounts a failed switch's record names: a failed one's error and the end of its log, a missing one said plainly. */
 async function bootLines(record: RunRecord, store: RunStore): Promise<string[]> {
   const lines: string[] = [];
   for (const entry of record.boot ?? []) {
     if (!entry.key) {
-      lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its boot runner never finished (its serial console says more)`);
+      lines.push('', `  ${warningMark} ${entry.service}: no account of this release: its agent never finished (its serial console says more)`);
       continue;
     }
     if (!entry.failed) continue;
@@ -75,7 +75,7 @@ async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Prom
 }
 
 /**
- * A job run that left no record (D27), by Scaleway's state, exit code and message: one that runs still, or one that ended before the engine
+ * A job run that left no record, by Scaleway's state, exit code and message: one that runs still, or one that ended before the engine
  * could write its record (in the fetch or the install).
  */
 function runWithoutRecordLine(run: JobRun, environment: string): string {
@@ -99,7 +99,9 @@ function wroteRecord(run: JobRun, record: RunRecord): boolean {
 function disagreement(record: RunRecord, run: JobRun | undefined): string {
   if (!run || !runEnded(run)) return '';
   const outcome = mainJobOutcome(run);
-  return outcome === record.outcome ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
+  // A run that found the target serving exits as a deploy does, one that needs an apply as a blocked one.
+  const recorded = record.outcome === 'unchanged' ? 'deployed' : record.outcome === 'apply needed' ? 'blocked' : record.outcome;
+  return outcome === recorded ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
 }
 
 /** A run started with values or a command of its own, which no start of the engine sets (D-b): flagged, as only a key holder's start does it. */
@@ -111,7 +113,7 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
 /**
  * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. A record is read by its first
  * version, and one whose versions stopped growing is flagged as rewritten. The environment's job runs that left no record are listed beside
- * the records (D27), so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
+ * the records, so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
  * own is flagged.
  */
 export async function showRuns(
@@ -151,7 +153,7 @@ export async function showRuns(
 
 /**
  * The machines' own accounts, beside the runs: with `sha`, each service's account of that release and the builder's report; without, each
- * service's newest account, a boot outside any run included (a reboot that could not hydrate).
+ * service's newest account, a boot outside any run included.
  */
 async function showMachines(
   reader: BootAccountReader,
@@ -162,9 +164,7 @@ async function showMachines(
   if (opts.sha) {
     for (const found of await releaseAccounts(reader, services, opts.sha)) {
       if (!found.account) {
-        print(
-          `${warningMark} ${found.service}: no account of ${opts.sha.slice(0, 10)}: its boot runner has not finished (its serial console says more)`,
-        );
+        print(`${warningMark} ${found.service}: no account of ${opts.sha.slice(0, 10)}: its agent has not finished (its serial console says more)`);
         continue;
       }
       print('', pc.bold(`${found.service} (boot-diag/${found.account.key})${found.account.failed ? ': boot failed' : ''}`), found.account.body);
@@ -191,7 +191,7 @@ async function showMachines(
 
 /**
  * The environment's runs, on the observer key: what was deployed when, how it ended and where it stopped, read from the records each deploy
- * writes to the diagnostics bucket (plan §3.8), beside the main job's runs that left none. With `--machines` it shows each service's newest
+ * writes to the diagnostics bucket, beside the main job's runs that left none. With `--machines` it shows each service's newest
  * boot account, and with `--sha <sha>` every account of that release with the builder's report. Reads only.
  */
 export async function runRuns(context: InfraContext): Promise<void> {

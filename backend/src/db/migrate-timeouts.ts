@@ -3,10 +3,10 @@ import type { DB, SessionTimeouts } from '#/db/create-connection';
 
 /**
  * Session timeouts of the migrate companion's admin pool. An app transaction holds a table lock for milliseconds, so a statement
- * waiting 30s for one waits on a session that is not coming back, such as one of a destroyed VM, which keeps its locks until TCP
- * gives up hours later. Meanwhile the queued ACCESS EXCLUSIVE request stalls every query of the serving generation on that table.
- * No statement on an empty-ish database comes near 120s. Both sit below the boot runner's 180s ceiling on the release companion
- * (infra/resources/cloud-init.ts), so a stuck migration fails with the database's own error, not a killed container.
+ * waiting 30s for one waits on a session that is not coming back, such as one of a deleted machine, which keeps its locks until TCP
+ * gives up hours later. Meanwhile the queued ACCESS EXCLUSIVE request stalls every query of the serving machine on that table.
+ * No statement on an empty-ish database comes near 120s. Both sit below the agent's ceiling on the release companion
+ * (`composeWaitTimeoutSeconds` in infra/lib/deploy/machine-user-data.ts), so a stuck migration fails with the database's own error, not a killed container.
  */
 export const migrateSessionTimeouts: SessionTimeouts = { lockMs: 30_000, statementMs: 120_000 };
 

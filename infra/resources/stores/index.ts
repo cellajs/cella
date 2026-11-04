@@ -1,10 +1,10 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { sizing } from '../../config/sizing';
+import { generalConfig } from '../../config/general.config';
 import { appStores } from '../../config/stores.config';
+import { resolvePerMode } from '../../lib/general-config';
 import type { ProvisionContext, StoreOutputs } from '../../lib/stores';
-import { isProduction, naming, region, zone } from '../../pulumi-context';
-import { configuredOrRandomSecret } from '../configured-secret';
+import { deployMode, isProduction, naming, region, zone } from '../../pulumi-context';
 import { privateNetworkId } from '../network';
 
 // The engine facilities handed to every store's provision(). Store modules are pure at import time; this module is the only place that binds them to the live Pulumi program.
@@ -15,16 +15,15 @@ const provisionContext: ProvisionContext = {
   region,
   zone,
   isProduction,
-  sizing: { dbNodeType: sizing.dbNodeType, dbVolumeSize: sizing.dbVolumeSize },
+  sizing: {
+    dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
+    dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),
+  },
   privateNetworkId,
-  configuredOrRandomSecret,
 };
 
-// Importing this module provisions every registered store exactly once. Registry order is stable and the first store is primary.
-const results = Object.entries(appStores).map(([id, store]) => {
-  store.validate?.();
-  return [id, store.provision(provisionContext)] as const;
-});
+// Importing this module provisions every registered store exactly once, in registry order.
+const results = Object.entries(appStores).map(([id, store]) => [id, store.provision(provisionContext)] as const);
 
 /** Every store's outputs, keyed by store id; the stack exports these as one `storeOutputs` object addressed `<storeId>.<key>`. */
 export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(results.map(([id, provisioned]) => [id, provisioned.outputs]));

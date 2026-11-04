@@ -40,25 +40,25 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the deploy key, every standing machine key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
+      'Replace the deploy key, the uploads key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
+      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'operator-key': {
-    label: 'Set up operator key',
+    label: 'Set up operators',
     key: 'owner',
     description:
-      "Create the app's operator application and a fresh key that works from your dedicated IP address only, in every environment. Replaces an earlier operator key; run it again to change the address.",
+      "Make or repair the app's operator application and operators group, each with a policy over every environment and no condition. Makes no key: at each sitting a person makes a one-day key of the application, or of their own user as a group member, in the console.",
   },
   identity: {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs, write the machine policies and the observer policy, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin and boot applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the uploads application and its key, write the deploy, uploads and observer policies, put the observer key on this machine, and delete the retired admin and machine applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   'start-deploy': {
     label: 'Start a deploy',
@@ -111,7 +111,7 @@ export const OPERATOR_ACTIONS = {
   unlock: {
     label: 'Unlock stack',
     key: 'operator',
-    description: 'Clear a stale stack lock and review the operations an interrupted run left in the Pulumi state.',
+    description: 'Clear a stale lease and review the operations an interrupted run left in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
@@ -125,8 +125,9 @@ export const OPERATOR_ACTIONS = {
   },
   teardown: {
     label: 'Tear down stack',
-    key: 'operator',
-    description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals with your Owner API key.',
+    key: 'owner',
+    description:
+      "DESTRUCTIVE: delete everything that runs or costs, the environment's identities included, after a final dump of the database. Keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which a setup adopts again.",
   },
 } as const satisfies Record<string, OperatorAction>;
 
@@ -186,8 +187,8 @@ export const MENU_ROWS = {
     group: 'change',
     label: 'Rotate keys & secrets',
     actions: ['rotate-keys', 'rotate-secrets', 'operator-key'],
-    hint: 'keys, secrets, operator key',
-    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator key and its dedicated IP.',
+    hint: 'keys, secrets, operators',
+    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator application and operators group.',
   },
   secrets: {
     group: 'change',
@@ -228,14 +229,14 @@ export const MENU_ROWS = {
     group: 'recover',
     label: 'Repair stack',
     actions: ['unlock', 'resume'],
-    hint: 'stack lock, setup',
-    description: 'Clear a stale stack lock, or re-sync the setup.',
+    hint: 'lease, setup',
+    description: 'Clear a stale lease, or re-sync the setup.',
   },
   teardown: {
     group: 'rare',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'operator key · DESTRUCTIVE',
+    hint: 'Owner key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;

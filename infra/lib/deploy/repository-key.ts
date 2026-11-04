@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DEPLOY_FOLDER } from '../scaleway/secret-paths';
+import { RUNTIME_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 
-/** The repository read key's name in the deploy folder: a read-only key a private repository is fetched with (D19). */
+/** The repository read key's name in the runtime folder: a read-only key a private repository is fetched with. */
 export const REPOSITORY_KEY_NAME = 'repository-read-key';
 
 /** The repository the root `package.json` names, as git reads it: the one a release's commit is fetched from. */
@@ -20,9 +20,9 @@ interface KeySecrets {
   accessLatestValue(secretId: string): Promise<string>;
 }
 
-/** The deploy folder's repository read key, or undefined for a repository anyone may read. */
+/** The runtime folder's repository read key, or undefined for a repository anyone may read. */
 export async function readRepositoryKey(secrets: KeySecrets): Promise<string | undefined> {
-  const container = await secrets.getSecretByName(REPOSITORY_KEY_NAME, DEPLOY_FOLDER);
+  const container = await secrets.getSecretByName(REPOSITORY_KEY_NAME, RUNTIME_FOLDER);
   if (!container || (container.version_count ?? 0) === 0) return undefined;
   return (await secrets.accessLatestValue(container.id)).trim() || undefined;
 }

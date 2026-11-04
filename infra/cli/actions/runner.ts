@@ -10,22 +10,22 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { RUNNER_FILE, readRunnerFile, withEnvironment, writeRunnerFile } from '../../lib/runner/runner-file';
 import { RUNNER_KEY, RUNNER_REPOSITORY_KEY, runnerCloudConfig, runnerName } from '../../lib/runner/runner-machine';
 import { createApiKey, deleteApiKey, listApiKeys, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
-import { ipCondition } from '../../lib/scaleway/ip-lock';
 import { removeMachines, type ScwServer } from '../../lib/scaleway/machines';
 import { RUNNER_PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions';
 import { extendPolicyReach, readPolicy } from '../../lib/scaleway/policy-reach';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { type PolicyRule, provisionScopedKey } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { type ScwAuth, scwFetch, scwSend } from '../../lib/scaleway/scw-fetch';
 import { changeMark, checkMark, crossMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
-import { extendOperatorReach } from '../../tasks/setup-operator-app';
+import { durableKeyRevokeNotice, extendOperatorReach } from '../../tasks/setup-operators';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
-import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
+import { acquireIdentityKey, acquireOperatorKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
 
-// Measured in plan §7: a DEV1-S at a reserved address calls the APIs from that address 37 to 48 s after it is created.
+// Measured: a DEV1-S at a reserved address calls the APIs from that address 37 to 48 s after it is created.
 const RUNNER_TYPE = 'DEV1-S';
 const RUNNER_IMAGE = 'docker';
 const RUNNER_DISK_BYTES = 20_000_000_000;
@@ -48,9 +48,19 @@ async function findRunnerAddress(auth: ScwAuth, opts: { zone: string; projectId:
   return ips.find((ip) => ip.tags?.includes(opts.name));
 }
 
-/** The runner's one rule: start and read job runs in every environment it serves, from its reserved address only. */
-function runnerRules(opts: { projectIds: readonly string[]; cidrs: readonly string[] }): PolicyRule[] {
-  return [{ permission_set_names: RUNNER_PROJECT_PERMISSION_SETS, project_ids: [...opts.projectIds], condition: ipCondition(opts.cidrs) }];
+/** The IAM condition that admits a request from one public IPv4 address: the runner's reserved one. */
+function addressCondition(address: string): string {
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(address)) throw new Error(`'${address}' is not an IPv4 address`);
+  return `request.ip in ['${address}']`;
+}
+
+/**
+ * The runner's one rule: start and read job runs in every environment it serves, from its reserved address only. An empty condition
+ * throws, as a rule without it would admit the runner key from every address.
+ */
+function runnerRules(opts: { projectIds: readonly string[]; condition?: string }): PolicyRule[] {
+  if (!opts.condition) throw new Error("the runner's policy carries no single address condition on its rules: set the runner up again");
+  return [{ permission_set_names: RUNNER_PROJECT_PERMISSION_SETS, project_ids: [...opts.projectIds], condition: opts.condition }];
 }
 
 /** The commit this checkout is on: the release a new runner file pins until a person changes it. */
@@ -100,7 +110,7 @@ export function runnerServes(opts: { projectId: string; definition: string }): b
 }
 
 /**
- * Set up the runner, at an Owner moment (D28-D30): the app's runner project and its reserved address, the runner application
+ * Set up the runner, at an Owner moment: the app's runner project and its reserved address, the runner application
  * with the right to start and read job runs in every environment it serves from that address only, the runner key in its project, and the
  * app operator's reach over the runner project; then this environment in `infra/runner.json`. The first run makes the key; a later one
  * extends the policy in place, so the key the running machine holds keeps working. Rotate keys replaces the key. The address is made here,
@@ -140,7 +150,7 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
       }));
       console.info(`  ${changeMark} Reserved the runner's address ${address.address}.`);
     }
-    const cidrs = [`${address.address}/32`];
+    const condition = addressCondition(address.address);
 
     const secrets = createSecretManagerClient({ secretKey: ownerKey.secretKey, region, projectId: project.id });
     const stored = await secrets.getSecretByName(RUNNER_KEY.name, RUNNER_KEY.path);
@@ -152,7 +162,7 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
           suffix: 'runner',
           appDescription: "The app's runner: starts each environment's main job, from its reserved address only",
           policyDescription: 'Runner policy: Serverless Jobs in every environment it serves, conditioned on its reserved address (auto-generated)',
-          buildRules: () => runnerRules({ projectIds, cidrs }),
+          buildRules: () => runnerRules({ projectIds, condition }),
         },
       );
       const container = await secrets.ensureSecret({
@@ -174,19 +184,24 @@ export async function runRunnerIdentity(context: InfraContext): Promise<void> {
         policyName,
         projectSets: RUNNER_PROJECT_PERMISSION_SETS,
         projectIds,
-        rules: (next) => runnerRules(next),
+        rules: runnerRules,
       });
       console.info(
         `  ${reach === 'extended' ? changeMark : checkMark} '${name}' ${reach === 'extended' ? 'now reaches' : 'reaches'} ${context.environment}.`,
       );
     }
 
-    const operator = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
-    if (operator === 'absent') {
-      console.warn(`${warningMark} The app has no operator yet: \`${actionCommand('operator-key')}\` makes it, then run this again.`);
-    } else {
-      console.info(`  ${operator === 'extended' ? changeMark : checkMark} The operator reaches '${name}'.`);
+    const operators = await extendOperatorReach({ auth, organizationId, slug: appConfig.appSlug, projectIds: [project.id], dnsZone });
+    const names = appPrincipalNames(appConfig.appSlug);
+    for (const [principal, outcome] of [
+      [names.operator, operators.application],
+      [names.operators, operators.group],
+    ] as const) {
+      if (outcome === 'absent')
+        console.warn(`${warningMark} The app has no '${principal}' yet: \`${actionCommand('operator-key')}\` makes it, then run this again.`);
+      else console.info(`  ${outcome === 'extended' ? changeMark : checkMark} '${principal}' reaches '${name}'.`);
     }
+    if (operators.conditionDropped) console.warn(`${warningMark} ${durableKeyRevokeNotice(names)}`);
     writeRunnerFile({ projectId: project.id, release: file?.release ?? checkoutCommit(), environments });
   } finally {
     await ownerKey.release();
@@ -219,7 +234,7 @@ async function ensureSecurityGroup(auth: ScwAuth, opts: { zone: string; projectI
 }
 
 /**
- * Replace the runner machine, on the operator key (D24, D28, D30): delete the one that runs and start one at the reserved address that
+ * Replace the runner machine, on the operator key: delete the one that runs and start one at the reserved address that
  * fetches the release `infra/runner.json` pins and serves its environments, with the runner key in its user data. Nothing changes when the
  * machine runs that release and list already. After a rotation of the runner key the machine holds a deleted key, so it is replaced without a
  * question: the rotation asked.
@@ -233,7 +248,7 @@ export async function runRunnerReplace(context: InfraContext, opts: { afterKeyRo
   const name = runnerName(context.appConfig.appSlug);
   const { zone, region } = deriveInfra(context.appConfig);
   const repository = repositoryUrl();
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };
   const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region, projectId: file.projectId });
   const readKeyStored = await secrets.getSecretByName(RUNNER_REPOSITORY_KEY.name, RUNNER_REPOSITORY_KEY.path);

@@ -11,7 +11,7 @@ import { type RunnerEnvironment, readRunnerEnvironments } from './config.ts';
 import { decide } from './decide.ts';
 
 /**
- * The runner (plan §3.4): once a minute, for every environment on its list, find the target and start a run of the environment's main job
+ * The runner: once a minute, for every environment on its list, find the target and start a run of the environment's main job
  * when that target has none. It runs on Node alone, from a checkout of a pinned release, with nothing installed: every module it imports
  * names its own imports with their `.ts` extension.
  */
@@ -26,7 +26,7 @@ const USAGE = `Usage: node runner/src/main.ts --config <file> [--once] [--dry-ru
 Env: SCW_SECRET_KEY (the runner key), REPOSITORY_READ_KEY (a private repository's read key, optional)`;
 
 /**
- * The environments file at the head of the repository's default branch, or '' when it has none (D22). The head is fetched without its file
+ * The environments file at the head of the repository's default branch, or '' when it has none. The head is fetched without its file
  * contents into a folder kept between rounds, and again only when it moved; only this one file's content is then fetched.
  */
 function environmentsFileReader(stateDir: string, key: string | undefined) {

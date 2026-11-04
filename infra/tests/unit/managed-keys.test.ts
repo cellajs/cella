@@ -36,9 +36,9 @@ describe('managed key registry', () => {
     }
   });
 
-  it('wires the AI key to a single bearer secret; the s3 key is retired (REQ-20)', () => {
+  it('wires the AI key to a single bearer secret; the s3 key is retired', () => {
     expect(managedKeyById('ai')?.assign).toEqual({ secretKey: 'scwAiApiKey' });
-    // The backend signs S3 requests with its own per-deploy service key.
+    // The backend signs S3 requests with the uploads key, written at Owner moments.
     expect(managedKeyById('s3')).toBeUndefined();
   });
 });

@@ -125,7 +125,7 @@ export async function hardenStateBucket(
 }
 
 /**
- * Post-condition: the bucket this key sees must live in the expected project, catching a pre-existing bucket in the wrong project that the key-only preflight cannot.
+ * Post-condition: the bucket this key sees must live in the expected project, catching a pre-existing bucket in the wrong project, which the bucket's HEAD alone cannot tell.
  * ListBuckets' Owner ID is the project the key operates in, and the bucket must appear in the listing.
  */
 export async function assertBucketProject(s3: S3Client, bucketName: string, expectedProjectId: string): Promise<void> {
@@ -133,7 +133,7 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
   const ownerId = listing.Owner?.ID ?? '';
   if (!ownerId.startsWith(expectedProjectId)) {
     throw new Error(
-      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}': the key's preferred project points elsewhere. See the remedy in the preflight error above (IAM → API keys → preferred project).`,
+      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}': the key's preferred project points elsewhere. Point it at the app's project (IAM → API keys → preferred project), or check the bucket's project in the console.`,
     );
   }
   if (!listing.Buckets?.some((bucket) => bucket.Name === bucketName)) {
@@ -145,15 +145,14 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
 
 /**
  * The setup's step: make the bucket in the environment's project and harden it, on the operator key. `--check` is the deploy's: the bucket
- * must exist in the project, and nothing is made or changed, as a bucket's configuration is the apply's (plan §3.2).
+ * must exist in the project, and nothing is made or changed, as a bucket's configuration is the apply's.
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const accessKey = process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set');
   process.env.APP_MODE = process.env.APP_MODE ?? 'production';
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
+  const { engineConfig: appConfig } = await import('../config/engine-config');
   const { stateBucket } = await import('../lib/stack/control-store');
   const bucketName = stateBucket(appConfig.slug);
   const region = appConfig.s3.region;

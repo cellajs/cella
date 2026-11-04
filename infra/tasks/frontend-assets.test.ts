@@ -61,8 +61,8 @@ describe('uploadFrontendAssets', () => {
     'static/docs.gen/operations.gen.json': '[{"id":"getMe"}]',
     'static/openapi.json': '{"info":{"version":"v2"}}',
     'favicon.ico': 'icon',
-    'index.html': '<html>entry, must not upload</html>',
-    'sw.js': '// entry, must not upload',
+    'index.html': '<html>entry, waits under the release prefix</html>',
+    'sw.js': '// entry, waits under the release prefix',
   };
 
   beforeEach(() => {
@@ -87,11 +87,12 @@ describe('uploadFrontendAssets', () => {
 
   afterEach(() => rmSync(distDir, { recursive: true, force: true }));
 
-  it('skips existing hashed keys, skips unchanged stable keys, re-uploads changed ones', async () => {
-    const result = await uploadFrontendAssets({ distDir, bucket: 'b', region: 'r', log: () => {} });
+  it('skips existing hashed keys, skips unchanged stable keys, re-uploads changed ones, and puts the entry files under the release prefix', async () => {
+    const result = await uploadFrontendAssets({ distDir, bucket: 'b', region: 'r', sha: 'c'.repeat(40), log: () => {} });
 
     expect(result).toEqual({ uploaded: 3, skipped: 2 });
-    expect(Object.keys(puts).sort()).toEqual(['assets/app-def456.js', 'favicon.ico', 'static/openapi.json']);
+    const entries = [`releases/${'c'.repeat(40)}/index.html`, `releases/${'c'.repeat(40)}/sw.js`];
+    expect(Object.keys(puts).sort()).toEqual(['assets/app-def456.js', 'favicon.ico', ...entries, 'static/openapi.json']);
     expect(puts['assets/app-def456.js']?.CacheControl).toBe('public, max-age=31536000, immutable');
     expect(puts['static/openapi.json']?.CacheControl).toBe('public, max-age=3600');
     expect(puts['favicon.ico']?.CacheControl).toBe('public, max-age=3600');
@@ -99,7 +100,7 @@ describe('uploadFrontendAssets', () => {
 
   it('walks the full listing across pages instead of probing per key', async () => {
     listPageSize = 2;
-    const result = await uploadFrontendAssets({ distDir, bucket: 'b', region: 'r', log: () => {} });
+    const result = await uploadFrontendAssets({ distDir, bucket: 'b', region: 'r', sha: 'c'.repeat(40), log: () => {} });
 
     // 4 remote objects at 2 per page; a truncated listing must not hide the
     // later pages' keys (they would re-upload as false-new otherwise).

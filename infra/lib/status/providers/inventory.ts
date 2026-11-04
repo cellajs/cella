@@ -1,12 +1,13 @@
+import { type AppliedEngine, engineImageRef, engineImageRepository } from '../../deploy/applied-engine';
 import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
-import { declaredMainJob, type MainJobDeclaration, rootNodeVersion } from '../../deploy/main-job';
-import { repositoryUrl } from '../../deploy/repository-key';
+import { declaredMainJob, type MainJobDeclaration } from '../../deploy/main-job';
+import { machineRoles } from '../../machine-roles';
 import { deriveInfra } from '../../naming';
-import { actionCommand, actionLabel } from '../../operator-actions';
+import { actionCommand } from '../../operator-actions';
 import { runnerName } from '../../runner/runner-machine';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
-import { organizationIdOfKey } from '../../scaleway/operator-identity';
+import { durableKeyLife, organizationIdOfKey } from '../../scaleway/operator-identity';
 import { appPrincipalNames } from '../../scaleway/principals';
 import { scwFetch } from '../../scaleway/scw-fetch';
 import { type CheckBuilder, check, probed } from '../check';
@@ -28,9 +29,11 @@ export interface InventoryFacts {
   /** The policies bound to an application or a group, with their rules. */
   policies: InventoryPolicy[];
   /** The project's machines, in every zone of the region; undefined when the run holds no operator key to list them with. */
-  machines?: string[];
-  /** Each service's active generation, from the control object. */
-  activeGenerations: Record<string, string>;
+  machines?: Array<{ id: string; name: string }>;
+  /** Each role's machine that serves, from the live record. */
+  liveMachines: Record<string, string>;
+  /** The environment's machine roles: a machine named for one of their slots is the engine's. */
+  roles: readonly string[];
   /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
   mainJob?: {
     running: boolean;
@@ -42,20 +45,22 @@ export interface InventoryFacts {
   };
   /** The organization the key belongs to, which the main job's definition names. */
   organizationId: string;
+  /** The engine the last apply published, which the definition must run; null before the first, undefined when it could not be read. */
+  applied?: AppliedEngine | null;
 }
 
-/** What an environment's code declares (C11): its applications, the ones that hold one key, its project and how its machines are named. */
+/** What an environment's code declares: its applications, the ones that hold one key, its project and how its machines are named. */
 export interface InventoryExpectation {
   projectId: string;
   /** Every application name of this environment starts with it (`<slug>-<mode>-`). */
   environmentPrefix: string;
   /** This environment's applications and the app's own (operator, observer, runner), each with the name of its one policy. */
   declared: Readonly<Record<string, string>>;
-  /** Applications that hold exactly one key; the observer holds one per machine it was put on. */
+  /** Applications that hold exactly one key; the observer holds one per machine, the operator one per sitting. */
   oneKey: readonly string[];
   /** Every machine of this environment starts with it (`<slug>-`). */
   machinePrefix: string;
-  /** The app's operator: Set up operator key removes its extra key, Rotate keys every other. */
+  /** The app's operator: every key of it ends within a day, and one that does not is deleted in the console. */
   operator: string;
 }
 
@@ -63,22 +68,22 @@ export interface InventoryFindings {
   applications: string[];
   /** An extra key that Rotate keys removes, or a person's key without an end date. */
   keys: string[];
-  /** An extra key of the operator, which Set up operator key replaces. */
+  /** A key of the operator that outlives a day, which the console deletes: the CLI takes none such. */
   operatorKeys: string[];
   policies: string[];
   /** A machine the engine did not make. */
   machines: string[];
-  /** A machine the engine made that is not live while a deploy runs: a generation not yet reaped, or a builder. */
+  /** A machine the engine made that is not live while a deploy runs: one of a switch not finished, or a builder. */
   passing: string[];
 }
 
 /**
- * The difference between what an environment declares and what exists (C11), as an Owner checks after a suspected break-in: an application
+ * The difference between what an environment declares and what exists, as an Owner checks after a suspected break-in: an application
  * the environment does not declare that can act in its project (by a rule on the project or on the organization, its own or a group's), an
- * extra key or policy on one it declares, a person's key without an end date, and a machine the engine did not make. Policies bound to
- * people are the Owner's to judge in the console.
+ * extra key or policy on one it declares, a person's key without an end date, a key of the operator that outlives a day, and a machine the
+ * engine did not make. Policies bound to people are the Owner's to judge in the console.
  */
-export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpectation): InventoryFindings {
+export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpectation, now = Date.now()): InventoryFindings {
   const found: InventoryFindings = { applications: [], keys: [], operatorKeys: [], policies: [], machines: [], passing: [] };
   const nameOf = new Map(facts.applications.map((application) => [application.id, application.name]));
   const own = new Set(facts.applications.filter((application) => application.name in expect.declared).map((application) => application.id));
@@ -113,33 +118,36 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
     }
   }
   const keysOf = new Map<string, typeof facts.apiKeys>();
+  const describe = (key: InventoryFacts['apiKeys'][number]) => `${key.access_key} (${key.description || 'no description'})`;
   for (const key of facts.apiKeys) {
-    if (key.user_id && !key.expires_at)
-      found.keys.push(`a person's key without an end date: ${key.access_key} (${key.description || 'no description'})`);
+    if (key.user_id && !key.expires_at) found.keys.push(`a person's key without an end date: ${describe(key)}`);
     if (key.application_id && own.has(key.application_id)) keysOf.set(key.application_id, [...(keysOf.get(key.application_id) ?? []), key]);
   }
   for (const [id, keys] of keysOf) {
     const name = nameOf.get(id) ?? id;
-    if (expect.oneKey.includes(name) && keys.length > 1) {
-      (name === expect.operator ? found.operatorKeys : found.keys).push(
-        `${name} holds ${keys.length} keys: ${keys.map((key) => `${key.access_key} (${key.description || 'no description'})`).join(', ')}`,
-      );
+    if (name === expect.operator) {
+      for (const key of keys) {
+        if (durableKeyLife({ expiresAt: key.expires_at ?? undefined }, now))
+          found.operatorKeys.push(`${name} holds a key that outlives a day: ${describe(key)}`);
+      }
+    } else if (expect.oneKey.includes(name) && keys.length > 1) {
+      found.keys.push(`${name} holds ${keys.length} keys: ${keys.map(describe).join(', ')}`);
     }
   }
-  const live = new Set(Object.entries(facts.activeGenerations).map(([service, id]) => `${expect.machinePrefix}${service}-${id}`));
-  const services = Object.keys(facts.activeGenerations);
-  // A deploy reaps what it displaced and deletes its builder before it ends, so with no run going on such a machine is a finding too.
+  const live = new Set(Object.values(facts.liveMachines));
+  const slotNames = new Set(facts.roles.flatMap((role) => ['a', 'b'].map((slot) => `${expect.machinePrefix}${role}-${slot}`)));
+  // A deploy deletes the machine it switched from and its builder before it ends, so with no run going on such a machine is a finding too.
   const deploying = facts.mainJob?.running === true;
-  for (const machine of facts.machines ?? []) {
-    if (live.has(machine)) continue;
-    const kind = machine.startsWith(`${expect.machinePrefix}builder-`)
+  for (const { id, name } of facts.machines ?? []) {
+    if (live.has(id)) continue;
+    const kind = name.startsWith(`${expect.machinePrefix}builder-`)
       ? 'a builder'
-      : services.some((service) => machine.startsWith(`${expect.machinePrefix}${service}-`))
-        ? 'a generation that is not active'
+      : slotNames.has(name)
+        ? 'a machine the live record does not name'
         : undefined;
-    if (!kind) found.machines.push(`${machine}: not made by the engine`);
-    else if (deploying) found.passing.push(`${machine}: ${kind}, while a deploy runs`);
-    else found.machines.push(`${machine}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
+    if (!kind) found.machines.push(`${name}: not made by the engine`);
+    else if (deploying) found.passing.push(`${name}: ${kind}, while a deploy runs`);
+    else found.machines.push(`${name}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
   }
   return found;
 }
@@ -178,11 +186,26 @@ export function mainJobDifferences(live: NonNullable<InventoryFacts['mainJob']>,
   return differs;
 }
 
-/** Whether the main job's definition runs what this checkout declares: a difference is an apply owed, or an edit nobody declared. */
-function mainJobVerdict(builder: CheckBuilder, mainJob: InventoryFacts['mainJob'], declared: () => MainJobDeclaration): Check {
+/**
+ * Whether the main job's definition runs the engine the last apply published, by the digest `applied.json` names, with the script and env
+ * this checkout declares: a difference is an apply owed, or an edit nobody declared.
+ */
+function mainJobVerdict(
+  builder: CheckBuilder,
+  mainJob: InventoryFacts['mainJob'],
+  applied: InventoryFacts['applied'],
+  declared: (applied: AppliedEngine) => MainJobDeclaration,
+): Check {
   if (!mainJob) return builder.ok('no main job yet');
   if (!mainJob.command || !mainJob.imageUri) return builder.warn('its command or image could not be read');
-  const differs = mainJobDifferences(mainJob, declared());
+  if (applied === undefined) return builder.warn('the applied engine (applied.json) could not be read');
+  if (applied === null) {
+    return builder.error(`runs ${mainJob.imageUri}, which no apply recorded publishing`, {
+      description: 'Review & apply changes publishes the engine image and points the main job at it',
+      command: actionCommand('apply'),
+    });
+  }
+  const differs = mainJobDifferences(mainJob, declared(applied));
   if (differs.length > 0) {
     return builder.error(`${differs.join('; ')}: an apply is owed, or someone edited the definition`, {
       description: 'An apply writes the declared definition again',
@@ -208,7 +231,7 @@ function expectationOf(appConfig: { slug: string; appSlug: string }, mode: strin
     projectId,
     environmentPrefix: `${appConfig.slug}-${mode}-`,
     declared,
-    oneKey: Object.keys(declared).filter((name) => name !== app.observer),
+    oneKey: Object.keys(declared).filter((name) => name !== app.observer && name !== app.operator),
     machinePrefix: `${appConfig.slug}-`,
     operator: app.operator,
   };
@@ -226,7 +249,7 @@ async function listAll<T>(auth: { secretKey: string }, url: (page: number) => st
 }
 
 /**
- * The inventory (plan §4.2, phase 8b): what can act in the environment and what runs in its project, against what the code declares, read on
+ * The inventory: what can act in the environment and what runs in its project, against what the code declares, read on
  * the observer key, and the machines on the operator key when the run holds it. Rotate keys deletes every key beside the declared ones; an
  * application, a policy or a machine the engine did not make is removed in the console once it is known who made it.
  */
@@ -240,8 +263,8 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const auth = { secretKey: session.secretKey };
       const operatorSecretKey = session.operatorKey?.secretKey;
       const { naming, region, zones } = deriveInfra(session.appConfig);
-      const rollout = (await session.scalewayFacts()).rollout;
-      if (!rollout) return undefined;
+      const { live, applied } = await session.scalewayFacts();
+      if (!live) return undefined;
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
       // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
       const secretPlace = (secretId: string) =>
@@ -259,11 +282,12 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         listAll<InventoryFacts['apiKeys'][number]>(auth, org('api-keys'), 'api_keys'),
         listOrganizationPolicies(auth, organizationId),
         // Every zone of the region: a machine an intruder made in another zone of the project is still the project's. The observer key reads
-        // no machine, as user data holds the machine's keys; a listing that fails leaves the machines unread and the other checks standing.
+        // no machine, as user data holds links to the env file until the deploy strips them; a listing that fails leaves the machines unread
+        // and the other checks standing.
         operatorSecretKey
           ? Promise.all(
               zones.map((zone) =>
-                listAll<{ name: string }>(
+                listAll<{ id: string; name: string }>(
                   { secretKey: operatorSecretKey },
                   (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
                   'servers',
@@ -297,9 +321,10 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
               [],
           })),
       );
-      const activeGenerations = Object.fromEntries(rollout.flatMap((row) => (row.activeGeneration ? [[row.slug, row.activeGeneration]] : [])));
-      const machines = servers?.map((server) => server.name);
-      return { applications, groups, apiKeys, policies: withRules, machines, activeGenerations, mainJob, organizationId };
+      const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
+      const machines = servers?.map(({ id, name }) => ({ id, name }));
+      const roles = machineRoles(session.appConfig).map((role) => role.role);
+      return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId, applied };
     } catch {
       return undefined;
     }
@@ -317,38 +342,35 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
     const listed = (builder: CheckBuilder, lines: string[], fine: string, nextAction?: NextAction) =>
       lines.length === 0 ? builder.ok(fine) : builder.error(lines.join('; '), nextAction);
     const rotate = { description: 'Rotate keys deletes every key beside the declared ones', command: actionCommand('rotate-keys') };
-    const operatorKey = { description: `${actionLabel('operator-key')} replaces every key of the operator`, command: actionCommand('operator-key') };
     return [
       item('inventory.applications', 'Applications', (b, { found }) => listed(b, found.applications, 'only the declared ones can act here')),
       item('inventory.keys', 'API keys', (b, { found }) =>
         listed(
           b,
-          [...found.keys, ...found.operatorKeys.map((line) => `${line}, which ${actionLabel('operator-key')} removes`)],
-          'one key per identity, as declared',
-          found.keys.length > 0 ? rotate : operatorKey,
+          [...found.keys, ...found.operatorKeys.map((line) => `${line}: delete it in the console`)],
+          'one key per identity, as declared, and every operator key ends within a day',
+          found.keys.length > 0 ? rotate : undefined,
         ),
       ),
       item('inventory.policies', 'Policies', (b, { found }) => listed(b, found.policies, 'one per identity, as declared')),
       item('inventory.machines', 'Machines', (b, { facts, found }) =>
         !facts.machines
-          ? b.unknown('not read: machines are listed with the operator key, from the dedicated address')
+          ? b.unknown('not read: machines are listed with the operator key, once a session holds it')
           : found.machines.length > 0
             ? b.error(found.machines.join('; '))
             : found.passing.length > 0
               ? b.warn(found.passing.join('; '))
-              : b.ok(`${facts.machines.length} machine(s), each an active generation`),
+              : b.ok(`${facts.machines.length} machine(s), each one the live record names`),
       ),
       item('inventory.mainJob', 'Main job', (b, { facts }) =>
-        mainJobVerdict(b, facts.mainJob, () =>
-          declaredMainJob({
-            mode: session.mode,
+        mainJobVerdict(b, facts.mainJob, facts.applied, (applied) => {
+          const { naming, region } = deriveInfra(session.appConfig);
+          return declaredMainJob({
             projectId: session.projectId ?? '',
             organizationId: facts.organizationId,
-            region: deriveInfra(session.appConfig).region,
-            repository: repositoryUrl(),
-            nodeVersion: rootNodeVersion(),
-          }),
-        ),
+            image: engineImageRef(engineImageRepository(region, naming.registryNamespace), applied.imageDigest),
+          });
+        }),
       ),
     ];
   },

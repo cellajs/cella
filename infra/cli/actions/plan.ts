@@ -4,8 +4,9 @@ import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
-import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
-import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
+import { makeControlClient, readObjectEtag, stateBucket } from '../../lib/stack/control-store';
+import { checkpointKey } from '../../lib/stack/pending-operations';
+import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -32,16 +33,22 @@ export function askToApply(environment: string): Promise<boolean> {
 export interface ReviewedPlan {
   /** The passphrase verified for the plan, so the apply does not ask for it again. */
   passphrase: string;
-  /** What the plan was computed from. Undefined when the state bucket could not be read: the apply then plans again under the lock. */
-  basis?: PlanBasis;
+  /**
+   * The etag of the stack's checkpoint the plan was computed from, null when there was none: every `up` changes it, and a preview writes
+   * none. Undefined when the state bucket could not be read: the apply then plans again under the lock.
+   */
+  checkpoint?: string | null;
 }
 
 /**
  * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the operator apply builds
- * (organization id, privileged marker). A deploy applies only the part of such a diff that is not privileged, and stops while a privileged
- * change is pending. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
+ * (organization id). Nothing is locked or written: the returned checkpoint lets the apply tell whether the plan still holds once it is.
  */
-export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { forgetRetired?: boolean } = {}): Promise<ReviewedPlan> {
+export async function reviewPlan(
+  context: InfraContext,
+  key: KeyPair,
+  opts: { forgetRetired?: boolean; engineImage?: string } = {},
+): Promise<ReviewedPlan> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} A plan needs a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
@@ -63,9 +70,11 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
 
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
+  // The engine image the apply just pushed, which the plan shows on the main job; without one the program keeps the applied engine's.
+  if (opts.engineImage) env.INFRA_ENGINE_IMAGE = opts.engineImage;
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
-  // An apply first takes retired resources out of the state, under the stack lock, so its plan shows none of them as deleted: they stay live
+  // An apply first takes retired resources out of the state, under the lease, so its plan shows none of them as deleted: they stay live
   // (lib/stack/retired-state.ts). A preview leaves the state as it is.
   if (opts.forgetRetired) {
     const lock = await acquireStackLockOrExit({
@@ -75,19 +84,20 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
       operation: 'forget-retired-resources',
     });
     try {
-      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-retired-resources', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
-      if (forget.status !== 0) {
-        console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing was planned or applied.`);
-        endAction(forget.status ?? 1);
-      }
+      // The move off the machines the program made is the apply's (operator-apply.ts), which plans again once it ran: a plan declined here
+      // leaves the pools, the stack config and the live record as they were.
+      forgetRetiredResources(stack, env);
+    } catch (error) {
+      console.error(`${warningMark} The retired resources could not leave the state (${errorMessage(error)}). Nothing was planned or applied.`);
+      endAction(1);
     } finally {
       await lock.release();
     }
   }
 
-  // Read before the plan runs, so a deploy that lands while Pulumi computes it counts as a change too.
-  const basis = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
-    .then((s3) => readPlanBasis(s3, stateBucket(appConfig.slug), stack))
+  // Read before the plan runs, so an apply whose `up` completes and writes the checkpoint while the preview runs counts as a change too.
+  const checkpoint = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
+    .then((s3) => readObjectEtag(s3, stateBucket(appConfig.slug), checkpointKey(stack)))
     .catch(() => undefined);
 
   const status = showPlan(env, stack);
@@ -95,8 +105,6 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
     console.error(`\n${warningMark} pulumi preview exited ${status}. Check provider auth (SCW_* env) and the passphrase.`);
     endAction(status);
   }
-  console.info(
-    `\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code; a deploy stops on any privileged change in it.')}`,
-  );
-  return { passphrase, basis };
+  console.info(`\n${pc.dim('The preview applied nothing. A clean "no changes" result means the stack matches the code.')}`);
+  return { passphrase, checkpoint };
 }

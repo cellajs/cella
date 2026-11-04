@@ -38,7 +38,7 @@ export type LeaseResult = { acquired: true; lease: StackLease } | { acquired: fa
 const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Take the stack lock as a renewed lease. The holder extends the expiry every `renewEveryMs`, so an interrupted run's lock lapses on its own within one
+ * Take the lease as a renewed lease. The holder extends the expiry every `renewEveryMs`, so an interrupted run's lock lapses on its own within one
  * lifetime; a caller that finds the lock held may wait up to `waitMs` for that lapse.
  */
 export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
@@ -96,7 +96,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
 }
 
 /**
- * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the stack locked for a full lifetime.
+ * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the environment leased for a full lifetime.
  * Returns the uninstaller; call it after a normal release.
  */
 export function installSignalRelease(lease: StackLease, opts: { exit?: (code: number) => void; log?: (msg: string) => void } = {}): () => void {
@@ -104,7 +104,7 @@ export function installSignalRelease(lease: StackLease, opts: { exit?: (code: nu
   const handlers = new Map<NodeJS.Signals, () => void>();
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     const handler = () => {
-      opts.log?.(`received ${signal}: releasing the stack lock`);
+      opts.log?.(`received ${signal}: releasing the lease`);
       void lease.release().finally(() => exit(signal === 'SIGINT' ? 130 : 143));
     };
     handlers.set(signal, handler);

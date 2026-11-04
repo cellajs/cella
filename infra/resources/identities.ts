@@ -1,12 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { engineConfig } from '../config/engine-config';
+import { engineConfig as appConfig } from '../config/engine-config';
 import { actionCommand } from '../lib/operator-actions';
-
-const appConfig = engineConfig();
-
+import { declaresUploads } from '../lib/scaleway/declared-identities';
 import { allPrincipalNames } from '../lib/scaleway/principals';
-import { principalServices } from '../lib/services';
 import { mode, organizationId } from '../pulumi-context';
 
 const names = allPrincipalNames(appConfig, mode);
@@ -14,8 +11,9 @@ const names = allPrincipalNames(appConfig, mode);
 // The engine's IAM principals, resolved by their canonical per-mode names. A required principal throws on a resolution failure; an optional one warns and drops its statements, so a missing admin app never blocks a release.
 
 /**
- * Whether a failed application lookup means the application does not exist. Only a real not-found counts: a transient IAM outage must not
- * demote a required principal or drop admin statements. The provider says "no element found with the name <name>" (measured on staging).
+ * Whether a failed principal lookup means the application or group does not exist. Only a real not-found counts: a transient IAM outage
+ * must not demote a required principal or drop the people's statements. The provider says "no element found with the name <name>"
+ * (measured on staging).
  */
 export function isAbsentApplication(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -70,6 +68,23 @@ export const operatorApplicationId: pulumi.Output<string | undefined> = findAppl
   return undefined;
 });
 
+/**
+ * The operators group's members, by user id, as IAM lists them at apply time: the people whose own one-day keys the bucket policies admit
+ * beside the operator application. Empty, with a warning, until `operator-key` makes the group.
+ */
+export const operatorMemberUserIds: pulumi.Output<string[]> = pulumi.output(
+  scaleway.iam
+    .getGroup({ name: names.operators, organizationId })
+    .then((group) => group.userIds)
+    .catch((error: unknown) => {
+      if (!isAbsentApplication(error)) throw error;
+      pulumi.log.warn(
+        `Operators IAM group '${names.operators}' not found: only '${names.operator}' is admitted to the buckets this update. \`${actionCommand('operator-key')}\` creates it.`,
+      );
+      return [];
+    }),
+);
+
 /** CI deploy application id: the principal CI authenticates as. Required. */
 export const ciDeployApplicationId = requirePrincipalId(findApplicationId(names.ciDeploy), `CI deploy ('${names.ciDeploy}')`);
 
@@ -80,23 +95,10 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
   return undefined;
 });
 
-// Machine principals: one application per registry service, wherever it runs. Registry-derived: neither an `enabled` toggle nor a placement
-// changes a principal.
-
-const vmServices = principalServices();
-
-/** Per-service application ids. Required for an `up`; a preview plans a registry service whose application the next apply creates. */
-export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(
-  vmServices.map((svc) => [
-    svc.slug,
-    requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`, { pendingOnPreview: true }),
-  ]),
-);
-
-/** Builder application id, for the frontend and diagnostics buckets' statements. Required; a preview plans it before the next identity update makes it. */
-export const builderApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.builder), `builder ('${names.builder}')`, {
-  pendingOnPreview: true,
-});
-
-/** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
-export const backendServiceApplicationId: pulumi.Output<string | undefined> = serviceApplicationIds.backend ?? pulumi.output(undefined);
+/**
+ * Uploads application id, for the upload buckets' statements: the backend signs its uploads and presigned URLs with its key. Required where
+ * the registry has upload buckets; a preview plans it before the next identity update makes it. Undefined without upload buckets.
+ */
+export const uploadsApplicationId: pulumi.Output<string | undefined> = declaresUploads()
+  ? requirePrincipalId(findApplicationId(names.uploads), `uploads ('${names.uploads}')`, { pendingOnPreview: true })
+  : pulumi.output(undefined);

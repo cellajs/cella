@@ -6,11 +6,11 @@ const policy = (principals: string[]) =>
 
 describe('policyAdmits', () => {
   it('finds the application among the principals', () => {
-    expect(policyAdmits(policy(['ci', 'operator']), 'operator')).toBe(true);
+    expect(policyAdmits(policy(['ci', 'operator']), 'application_id:operator')).toBe(true);
   });
 
   it('is false for a policy without it, and for no policy at all', () => {
-    expect(policyAdmits(policy(['ci', 'admin']), 'operator')).toBe(false);
-    expect(policyAdmits(undefined, 'operator')).toBe(false);
+    expect(policyAdmits(policy(['ci', 'admin']), 'application_id:operator')).toBe(false);
+    expect(policyAdmits(undefined, 'application_id:operator')).toBe(false);
   });
 });

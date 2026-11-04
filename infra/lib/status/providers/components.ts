@@ -5,7 +5,7 @@ import { deployedServices, serviceEndpoints } from '../../services';
 import { check, diagAction } from '../check';
 import type { Check, StatusProvider } from '../types';
 
-/** The primary-rollout service's aggregate `/health?depth=full` read, the same body the post-deploy smoke step judges. */
+/** The primary service's aggregate `/health?depth=full` read, the same body the post-deploy smoke step judges. */
 export interface ComponentsFact {
   slug: string;
   url: string;
@@ -42,7 +42,7 @@ export const componentsProvider: StatusProvider<ComponentsFact> = {
     if (!endpoint) return undefined;
     const url = `${endpoint.url.replace(/\/$/, '')}${healthContract.path}?depth=full`;
     try {
-      // Same short timeout as the live version probe: status is a snapshot, not a rollout gate.
+      // Same short timeout as the live version probe: status is a snapshot, not a deploy gate.
       const res = await createFetchGet(3000)(url);
       return { slug: endpoint.slug, url, httpStatus: res.status, issues: unhealthyComponents(res.body) };
     } catch {

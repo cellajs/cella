@@ -9,7 +9,7 @@ PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes a
 
 ## Overview
 
-Below is a typical production stack. Yjs, OAuth and MCP are optional, and every worker can be **cohosted on the backend VM** to reduce costs.
+Below is a typical production stack. Yjs, OAuth and MCP are optional, and every worker can be **cohosted on the backend machine** to reduce costs.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -105,7 +105,7 @@ Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3
 
 ## Scaling
 
-Cella runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process, and that process holds every stream. Up: a bigger VM for the API and a bigger managed database. Apart: each worker moves to a VM of its own when the API's VM gets busy. Every worker is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler.
+An app runs one API process per deployment and scales up and apart, not out. The CDC worker hands every change to one process, and that process holds every stream. Up: a bigger machine for the API and a bigger managed database. Apart: each worker moves to a machine of its own when the API's machine gets busy. Every worker is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler.
 
 The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
 
@@ -124,7 +124,7 @@ Flat-root monorepo:
 ├── mcp           Optional Model Context Protocol worker
 ├── oauth         Optional OAuth authorization server worker
 ├── jobs          Jobs worker: cron and queues on pg-boss
-├── infra         Pulumi deployment and operational CLI
+├── infra         Deploy engine and the infra CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
 ├── locales       Translations
 └── bench         Load tests with their own runner

@@ -1,6 +1,5 @@
 import * as storage from './storage';
 import './dns';
-import * as compute from './compute';
 import * as network from './network';
 import * as registry from './registry';
 import * as stores from './stores';
@@ -10,8 +9,9 @@ import './identities';
 import './main-job';
 import { mode, naming, region } from '../pulumi-context';
 import * as lb from './loadbalancer';
+import './security-groups';
 
-// The whole deployment program: one stack per mode, long-lived base resources plus the content-addressed generation VMs.
+// The whole foundation program: one stack per mode, long-lived resources only. A deploy makes and deletes the machines (tasks/switch-machines.ts).
 
 console.info(`Pulumi stack: ${mode}`);
 console.info(`Slug: ${naming.slug}`);
@@ -33,11 +33,8 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 export const bootDiagBucketName = storage.bootDiagBucketName;
 export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint;
 
-// Generic store outputs addressed `storeOutputs.<storeId>.<key>`; the db-exposure and seed CLI reads the primary store's keys from here.
+// Generic store outputs addressed `storeOutputs.<storeId>.<key>`; the database actions and ensure-database read the database store's keys from here.
 export const storeOutputs = stores.allStoreOutputs;
-
-export const computeInstances = compute.computeInstances.map((i) => i.name);
-export const computeGenerationMetadata = compute.computeGenerationMetadata;
 
 export const serviceDomainUrls = lb.serviceDomainUrls;
 export const lbId = lb.lbId;

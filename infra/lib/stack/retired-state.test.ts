@@ -44,12 +44,10 @@ describe('retiredUrns', () => {
     expect(isRetired(caVersion, generated)).toBe(false);
   });
 
-  it("keeps a shared generated secret's container live, never a copy or the container of a one-consumer secret", () => {
+  it("must not take a runtime secret's one container out of the state: the program declares it, and a second would be refused", () => {
     const container = (name: string) => urn('scaleway:secrets/secret:Secret', name);
-    const shared = new Set(['cookie-secret']);
-    expect(isRetired(container('secret-cookie-secret'), generated, shared)).toBe(true);
-    expect(isRetired(container('secret-cookie-secret@backend'), generated, shared)).toBe(false);
-    expect(isRetired(container('secret-cdc-secret'), new Set(['cdc-secret']), shared)).toBe(false);
+    expect(isRetired(container('secret-cookie-secret'), generated)).toBe(false);
+    expect(isRetired(container('secret-cookie-secret@backend'), generated)).toBe(false);
   });
 
   it('refuses a document that is no stack export', () => {

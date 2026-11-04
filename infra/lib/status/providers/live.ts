@@ -1,38 +1,37 @@
 import type { EngineConfig } from '../../../config/engine-config';
 import { healthContract } from '../../../config/health.config';
 import { createFetchProbe } from '../../../tasks/wait-for-version';
-import { rolloutOwner, serviceEndpoints } from '../../services';
+import type { LiveRecord } from '../../deploy/live-record';
+import { roleOf } from '../../machine-roles';
+import { serviceEndpoints } from '../../services';
 import { check, deployAction, diagAction } from '../check';
-import type { RolloutRowFact, StatusProvider } from '../types';
+import type { StatusProvider } from '../types';
 
 /** First 7 chars of a git SHA, the length humans and logs use. */
 const short = (sha: string): string => sha.slice(0, 7);
 
-/** A public service's live health/version probe, cross-referenced with control. */
+/** A public service's live health/version probe, cross-referenced with the live record. */
 export interface LiveServiceFact {
   slug: string;
   healthUrl: string;
   /** undefined when the probe was not run. `status: 0` means unreachable. */
   probe?: { status: number; version?: string };
-  /** Expected SHA from the control object's active generation, when known. */
+  /** The commit the live record says serves it, when known. */
   expectedSha?: string;
-  /** The service whose `active` pointer set `expectedSha`, when it is not this one: the singleVM host for a service running on its VM. */
+  /** The role whose machine serves it, when it is not its own: the single-process host for a service running there. */
   expectedFrom?: string;
 }
 
-/**
- * The release a public service must serve, from the active pointer of the service that rolls it out: its own when it boots its own VM, the singleVM
- * host's when it runs on the host VM. A disabled service has no expectation.
- */
+/** The release a public service must serve: the commit of the role whose machine serves it, in the live record. A disabled service has none. */
 export function expectedRelease(
   config: Pick<EngineConfig, 'services' | 'singleVM'>,
   slug: string,
-  rollout: RolloutRowFact[] | undefined,
+  live: LiveRecord | undefined,
 ): Pick<LiveServiceFact, 'expectedSha' | 'expectedFrom'> {
-  const owner = rolloutOwner(config.services, config.singleVM, slug);
-  if (!owner) return {};
-  const expectedSha = rollout?.find((r) => r.slug === owner)?.activeSha;
-  return owner === slug ? { expectedSha } : { expectedSha, expectedFrom: owner };
+  const role = roleOf(config, slug);
+  if (!role) return {};
+  const expectedSha = live?.roles[role]?.commit;
+  return role === slug ? { expectedSha } : { expectedSha, expectedFrom: role };
 }
 
 export const liveProvider: StatusProvider<LiveServiceFact[]> = {
@@ -44,10 +43,9 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
     } catch {
       return undefined;
     }
-    // Status is a snapshot, not a rollout gate, so a shorter timeout than the
-    // deploy poller keeps the worst-case wait small when a service is down.
+    // Status is a snapshot, so a short timeout keeps the worst-case wait small when a service is down.
     const probe = createFetchProbe(3000);
-    const rollout = (await session.scalewayFacts()).rollout;
+    const live = (await session.scalewayFacts()).live;
     return Promise.all(
       endpoints.map(async (endpoint): Promise<LiveServiceFact> => {
         const healthUrl = `${endpoint.url.replace(/\/$/, '')}${healthContract.path}`;
@@ -56,7 +54,7 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
           slug: endpoint.slug,
           healthUrl,
           probe: { status: result.status, version: result.version },
-          ...expectedRelease(session.appConfig, endpoint.slug, rollout),
+          ...expectedRelease(session.appConfig, endpoint.slug, live),
         };
       }),
     );

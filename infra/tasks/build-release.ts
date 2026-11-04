@@ -1,54 +1,65 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { bootBundleScript, builderCloudConfig, builderReportPrefix, frontendScript } from '../lib/builder/builder-machine';
+import {
+  agentBundleScript,
+  BUILDER_ARCHIVE_DIR,
+  type BuilderLinks,
+  builderCloudConfig,
+  builderReportPrefix,
+  frontendScript,
+} from '../lib/builder/builder-machine';
+import { readUstar, writeArchiveFiles } from '../lib/deploy/frontend-archive';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
+import {
+  AGENT_IMAGE_NAME,
+  type ArchiveDigest,
+  frontendArchiveKey,
+  parseReleaseManifest,
+  type ReleaseManifest,
+  releaseArchiveKey,
+  releaseManifestKey,
+} from '../lib/deploy/release-archives';
 import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
 import { actionCommand } from '../lib/operator-actions';
-import { readStandingKey } from '../lib/scaleway/machine-keys';
-import { removeMachines, type ScwServer } from '../lib/scaleway/machines';
-import { resolveImageDigest } from '../lib/scaleway/registry-digest';
-import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
+import { createMachine, removeMachines } from '../lib/scaleway/machines';
+import { bucketPresigner } from '../lib/scaleway/presign';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { scwErrorStatus, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { scwErrorStatus, scwFetch } from '../lib/scaleway/scw-fetch';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 import { bakeDefinition, parseBuildRows } from './build-images';
-import { ENTRY_FILE_NAMES } from './frontend-assets';
+import { ENTRY_FILE_NAMES, releaseEntryPrefix, uploadFrontendAssets } from './frontend-assets';
 import { frontendBuildEnv } from './frontend-build-env';
-import { releaseEntryPrefix } from './release-files';
 
 // 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
 const BUILDER_TYPE = 'POP2-HC-8C-16G';
 const BUILDER_IMAGE = 'docker';
 const BUILDER_DISK_BYTES = 40_000_000_000;
 
-/**
- * The build epoch: a short hash of the builder key's access key id. Every Rotate keys makes a new builder key, and nobody knows its id
- * before, so an image or a frontend file pushed before a rotation never carries the epoch after it, and the release is built again.
- */
-export function buildEpoch(builderAccessKey: string): string {
-  return createHash('sha256').update(builderAccessKey).digest('hex').slice(0, 12);
-}
-
-export interface BuilderKeys {
-  accessKey: string;
-  secretKey: string;
-  repositoryKey?: string;
-}
+/** How long the builder waits for its report, and how long each of its links lasts beyond it. */
+const BUILD_TIMEOUT_MS = 30 * 60_000;
+const BUILDER_LINK_SECONDS = 60 * 60;
 
 /** What building a release does outside this module, so a test passes its own. */
 export interface BuildEffects {
-  /** True when the registry holds the image under the release's tag of this epoch. */
-  imagePresent(image: string): Promise<boolean>;
-  /** A file under the release's entry prefix in the frontend bucket (an entry file, or the `epoch` marker), or undefined when it is not there. */
+  /** The release's manifest in the boot-diag bucket, or undefined when no build wrote one. */
+  manifest(): Promise<ReleaseManifest | undefined>;
+  /** True when the bucket holds the archive at `key` as the manifest names it: a single PUT's ETag is its md5, and the size matches. */
+  archiveMatches(key: string, digest: ArchiveDigest): Promise<boolean>;
+  /** Links for every write of a builder: its reports, each archive by name, the frontend archive and the manifest. */
+  links(archives: readonly string[]): Promise<BuilderLinks>;
+  /** A private repository's read key, which the builder's cloud-init carries. */
+  repositoryKey(): Promise<string | undefined>;
+  /** A file under the release's entry prefix in the frontend bucket, or undefined when it is not there. */
   entryFile(name: string): Promise<Buffer | undefined>;
-  /** The builder key and, for a private repository, its read key, which the builder's cloud-init carries. */
-  keys(): Promise<BuilderKeys>;
+  /** Upload the release's frontend files from its archive, which is checked against its digest first. */
+  uploadFrontend(digest: ArchiveDigest): Promise<void>;
   /** Delete every builder machine of the environment with its volume, in every zone of the region; returns the names deleted. */
   removeBuilders(): Promise<string[]>;
   /** Make the builder machine in a zone and start it. */
@@ -60,44 +71,62 @@ export interface BuildEffects {
 
 export interface BuildReleaseOptions {
   sha: string;
-  /** The build epoch (`buildEpoch`): a release counts as built only when its images and entry files carry it. */
-  epoch: string;
   builderName: string;
   /** The zones the builder may be made in, in the order tried. */
   zones: readonly string[];
-  /** Every image repository the release has, the boot runner's included. */
-  images: readonly string[];
+  /** Every archive the release has, by image repository name, the agent's included. */
+  archives: readonly string[];
   /** Whether the release has frontend files. */
   withFrontend: boolean;
   /** Where the release's entry files are written for the publish and the smoke test. */
   distDir?: string;
-  cloudConfig(keys: BuilderKeys): string;
+  cloudConfig(input: { links: BuilderLinks; repositoryKey?: string }): string;
   timeoutMs?: number;
   pollMs?: number;
   log?: (message: string) => void;
 }
 
+/** What of a release is not in the bucket as its manifest names it: archives by name, and `frontend` for the frontend archive. */
+async function missingParts(opts: BuildReleaseOptions, fx: BuildEffects, manifest: ReleaseManifest | undefined): Promise<string[]> {
+  const missing: string[] = [];
+  for (const name of opts.archives) {
+    const digest = manifest?.images[name];
+    if (!digest || !(await fx.archiveMatches(releaseArchiveKey(opts.sha, name), digest))) missing.push(name);
+  }
+  if (opts.withFrontend && (!manifest?.frontend || !(await fx.archiveMatches(frontendArchiveKey(opts.sha), manifest.frontend)))) {
+    missing.push('frontend');
+  }
+  return missing;
+}
+
 /**
- * Make sure a release is built. When the registry lacks one of its images or the frontend bucket its entry files, a builder machine, made in the
- * first zone that has its type in stock, builds and pushes all of them; a builder a dead deploy left is deleted first, and this one is deleted
- * when it is done or the wait ends. The release's entry files are then written to `distDir`. Returns whether the release was already there.
+ * Make sure a release is built. When the boot-diag bucket lacks its manifest or an archive the manifest names, a builder machine, made in the
+ * first zone that has its type in stock, builds all of them and writes them through the links it was given; a builder a dead deploy left is
+ * deleted first, and this one is deleted when it is done or the wait ends. The frontend files are uploaded from their archive when the
+ * frontend bucket lacks the release's entry files, which are then written to `distDir`. Returns the release's manifest, checked.
  */
-export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects): Promise<'present' | 'built'> {
+export async function buildRelease(
+  opts: BuildReleaseOptions,
+  fx: BuildEffects,
+): Promise<{ outcome: 'present' | 'built'; manifest: ReleaseManifest }> {
   const log = opts.log ?? ((message: string) => console.info(message));
-  // Under the stack lock, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
+  // Under the lease, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
   // whether or not this release needs a build.
   for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
-  const missing: string[] = [];
-  for (const image of opts.images) if (!(await fx.imagePresent(image))) missing.push(image);
-  if (opts.withFrontend && (!(await fx.entryFile('index.html')) || (await fx.entryFile('epoch'))?.toString() !== opts.epoch)) {
-    missing.push('the frontend files');
-  }
+  // A manifest that cannot be parsed names no archive: the release is built again, and the build overwrites it.
+  const readManifest = () =>
+    fx.manifest().catch((error: unknown) => {
+      log(`[build] the manifest of ${opts.sha.slice(0, 10)} cannot be read (${errorMessage(error)}): it counts as missing`);
+      return undefined;
+    });
+  let manifest = await readManifest();
+  const missing = await missingParts(opts, fx, manifest);
 
   let outcome: 'present' | 'built' = 'present';
   if (missing.length > 0) {
     outcome = 'built';
     log(`[build] missing for ${opts.sha.slice(0, 10)}: ${missing.join(', ')}; building on ${opts.builderName}`);
-    const cloudConfig = opts.cloudConfig(await fx.keys());
+    const cloudConfig = opts.cloudConfig({ links: await fx.links(opts.archives), repositoryKey: await fx.repositoryKey() });
     const startedAt = Date.now();
     try {
       for (const [index, zone] of opts.zones.entries()) {
@@ -116,10 +145,18 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
     } finally {
       for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}`);
     }
+    manifest = await readManifest();
+    const still = await missingParts(opts, fx, manifest);
+    if (still.length > 0) throw new Error(`the builder reported a build, and the bucket lacks ${still.join(', ')} of it`);
   } else {
-    log(`[build] ${opts.sha.slice(0, 10)} is built: every image and the frontend files are there`);
+    log(`[build] ${opts.sha.slice(0, 10)} is built: every archive is there as its manifest names it`);
   }
+  if (!manifest) throw new Error(`the release ${opts.sha.slice(0, 10)} has no manifest after its build`);
 
+  if (opts.withFrontend && manifest.frontend && !(await fx.entryFile('index.html'))) {
+    log('[build] uploading the frontend files from their archive');
+    await fx.uploadFrontend(manifest.frontend);
+  }
   if (opts.withFrontend && opts.distDir) {
     await mkdir(opts.distDir, { recursive: true });
     for (const name of ENTRY_FILE_NAMES) {
@@ -128,7 +165,7 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
       else if (name === 'index.html') throw new Error(`the release's index.html is not in the frontend bucket after the build`);
     }
   }
-  return outcome;
+  return { outcome, manifest };
 }
 
 /** Scaleway's refusal of a machine type a zone has none of: 412 with `"type": "out_of_stock"`. */
@@ -144,7 +181,7 @@ const REPORT_CLOCK_MARGIN_MS = 5_000;
  * stored before `startedAt`, taken before the machine was made, belongs to one of those builds and is not read as this one's.
  */
 async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: (message: string) => void, startedAt: number): Promise<void> {
-  const deadline = Date.now() + (opts.timeoutMs ?? 30 * 60_000);
+  const deadline = Date.now() + (opts.timeoutMs ?? BUILD_TIMEOUT_MS);
   const report = async (name: 'step' | 'log' | 'result') => {
     const found = await fx.report(name);
     return found && found.modified.getTime() >= startedAt - REPORT_CLOCK_MARGIN_MS ? found.body : undefined;
@@ -170,7 +207,7 @@ async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: 
     }
   }
   throw new Error(
-    `the builder did not finish within ${Math.round((opts.timeoutMs ?? 30 * 60_000) / 60_000)} minutes (last step: ${lastStep ?? 'none'})`,
+    `the builder did not finish within ${Math.round((opts.timeoutMs ?? BUILD_TIMEOUT_MS) / 60_000)} minutes (last step: ${lastStep ?? 'none'})`,
   );
 }
 
@@ -191,7 +228,7 @@ export async function removeBuilderMachines(opts: {
   return removed;
 }
 
-/** The builder's effects on Scaleway, with the deploy key. */
+/** The builder's effects on Scaleway, with the deploy key: it signs every link the builder writes through, and reads what the builder wrote. */
 function liveEffects(opts: {
   secretKey: string;
   accessKey: string;
@@ -199,9 +236,6 @@ function liveEffects(opts: {
   region: string;
   zones: readonly string[];
   sha: string;
-  epoch: string;
-  registry: string;
-  namespace: string;
   frontendBucket: string;
   diagBucket: string;
   builderPrefix: string;
@@ -211,24 +245,56 @@ function liveEffects(opts: {
   const instance = (zone: string) => `https://api.scaleway.com/instance/v1/zones/${zone}`;
   const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
   const secrets = createSecretManagerClient({ secretKey: opts.secretKey, region: opts.region, projectId: opts.projectId });
-  const s3 = makeS3Client(opts.region, projectAccessKey(opts.accessKey, opts.projectId), opts.secretKey);
+  const accessKey = projectAccessKey(opts.accessKey, opts.projectId);
+  const s3 = makeS3Client(opts.region, accessKey, opts.secretKey);
+  const presigner = bucketPresigner({ region: opts.region, bucket: opts.diagBucket, accessKey, secretKey: opts.secretKey });
+  const getObject = async (key: string) => {
+    const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+    return (await s3).send(new GetObjectCommand({ Bucket: opts.diagBucket, Key: key }));
+  };
 
   return {
-    imagePresent: (image) =>
-      resolveImageDigest({
-        registry: `${opts.registry}/${opts.namespace}`,
-        image,
-        tag: `${opts.sha}-e${opts.epoch}`,
-        secretKey: opts.secretKey,
-      }).then(
-        () => true,
-        () => false,
-      ),
+    manifest: async () => {
+      const text = await getObject(releaseManifestKey(opts.sha)).then(
+        (object) => object.Body?.transformToString(),
+        () => undefined,
+      );
+      return text === undefined ? undefined : parseReleaseManifest(text, opts.sha);
+    },
+    archiveMatches: async (key, digest) => {
+      const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
+      const head = await (await s3).send(new HeadObjectCommand({ Bucket: opts.diagBucket, Key: key })).catch(() => undefined);
+      return head?.ContentLength === digest.bytes && head.ETag?.replaceAll('"', '') === digest.md5;
+    },
+    links: async (archives) => {
+      const sign = await presigner;
+      const put = (key: string) => sign.put(key, BUILDER_LINK_SECONDS);
+      const report = builderReportPrefix(opts.sha);
+      const links: BuilderLinks = {
+        step: await put(`${report}step`),
+        log: await put(`${report}log`),
+        result: await put(`${report}result`),
+        manifest: await put(releaseManifestKey(opts.sha)),
+        ...(opts.frontendBucket ? { frontend: await put(frontendArchiveKey(opts.sha)) } : {}),
+      };
+      for (const name of archives) links[`image:${name}`] = await put(releaseArchiveKey(opts.sha, name));
+      return links;
+    },
+    repositoryKey: () => readRepositoryKey(secrets),
     entryFile: async (name) => {
       const res = await fetch(`https://${opts.frontendBucket}.s3.${opts.region}.scw.cloud/${releaseEntryPrefix(opts.sha)}${name}`);
       return res.ok ? Buffer.from(await res.arrayBuffer()) : undefined;
     },
-    keys: async () => ({ ...(await readStandingKey(secrets, 'builder')), repositoryKey: await readRepositoryKey(secrets) }),
+    uploadFrontend: async (digest) => {
+      const object = await getObject(frontendArchiveKey(opts.sha));
+      const archive = Buffer.from((await object.Body?.transformToByteArray()) ?? []);
+      if (createHash('sha256').update(archive).digest('hex') !== digest.sha256) {
+        throw new Error("the frontend archive differs from its manifest's digest: it is not the one the builder wrote");
+      }
+      const dir = await mkdtemp(join(tmpdir(), 'frontend-'));
+      await writeArchiveFiles(readUstar(archive), dir);
+      await uploadFrontendAssets({ distDir: dir, bucket: opts.frontendBucket, region: opts.region, sha: opts.sha });
+    },
     removeBuilders: () =>
       removeBuilderMachines({ secretKey: opts.secretKey, projectId: opts.projectId, zones: opts.zones, prefix: opts.builderPrefix }),
     startBuilder: async (zone, name, cloudConfig) => {
@@ -239,29 +305,21 @@ function liveEffects(opts: {
       );
       const securityGroup = security_groups.find((group) => group.name === opts.securityGroupName);
       if (!securityGroup) throw new Error(`no security group '${opts.securityGroupName}' in ${zone} to put the builder in: an apply makes one`);
-      const { server } = await scwFetch<{ server: ScwServer }>(auth, 'POST', `${instance(zone)}/servers`, {
+      // An address for egress only: the closed security group drops every inbound packet.
+      await createMachine(auth, zone, {
         name,
-        commercial_type: BUILDER_TYPE,
+        type: BUILDER_TYPE,
         image: BUILDER_IMAGE,
-        project: opts.projectId,
-        // An address for egress only: the closed security group drops every inbound packet.
-        dynamic_ip_required: true,
-        security_group: securityGroup.id,
+        projectId: opts.projectId,
+        securityGroupId: securityGroup.id,
         tags: ['builder', `sha=${opts.sha}`],
-        volumes: { 0: { size: BUILDER_DISK_BYTES, volume_type: 'sbs_volume' } },
+        volumeBytes: BUILDER_DISK_BYTES,
+        userData: { 'cloud-init': cloudConfig },
       });
-      const set = await fetch(`${instance(zone)}/servers/${server.id}/user_data/cloud-init`, {
-        method: 'PATCH',
-        headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'text/plain' },
-        body: cloudConfig,
-      });
-      if (!set.ok) throw new Error(`setting the builder's cloud-init → ${set.status}: ${await set.text()}`);
-      await scwSend(auth, 'POST', `${instance(zone)}/servers/${server.id}/action`, { action: 'poweron' });
     },
     report: async (name) => {
-      const { GetObjectCommand } = await import('@aws-sdk/client-s3');
       try {
-        const object = await (await s3).send(new GetObjectCommand({ Bucket: opts.diagBucket, Key: `${builderReportPrefix(opts.sha)}${name}` }));
+        const object = await getObject(`${builderReportPrefix(opts.sha)}${name}`);
         const body = await object.Body?.transformToString();
         return body !== undefined && object.LastModified ? { body, modified: object.LastModified } : undefined;
       } catch {
@@ -272,7 +330,10 @@ function liveEffects(opts: {
   };
 }
 
-/** The deploy's step: the deploy key in `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`; names, the repository and the pnpm version from the config. */
+/**
+ * The deploy's step: the deploy key in `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`; names, the repository and the pnpm version from the config. The
+ * checked manifest goes to `--manifest-out`, from which the deploy hands each new machine the digests of the archives it loads.
+ */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const accessKey = process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.SCW_SECRET_KEY;
@@ -281,13 +342,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const projectId = getFlag(argv, '--project-id');
   const buildImagesJson = getFlag(argv, '--build-images-json');
   const servicesJson = getFlag(argv, '--services-json');
+  const manifestOut = getFlag(argv, '--manifest-out');
   const distDir = getFlag(argv, '--dist') || undefined;
-  if (!accessKey || !secretKey || !sha || !mode || !projectId || !buildImagesJson || !servicesJson) {
-    throw new Error('Required: SCW_ACCESS_KEY, SCW_SECRET_KEY, --sha, --mode, --project-id, --build-images-json, --services-json');
+  if (!accessKey || !secretKey || !sha || !mode || !projectId || !buildImagesJson || !servicesJson || !manifestOut) {
+    throw new Error('Required: SCW_ACCESS_KEY, SCW_SECRET_KEY, --sha, --mode, --project-id, --build-images-json, --services-json, --manifest-out');
   }
   process.env.APP_MODE = mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
+  const { engineConfig: appConfig } = await import('../config/engine-config');
   const { naming, region, zones } = deriveInfra(appConfig);
   const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as {
     packageManager?: string;
@@ -299,52 +360,40 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const nodeVersion = rootPackage.engines?.node;
   if (!nodeVersion) throw new Error("the builder builds on the Node the root package.json's 'engines.node' names");
 
-  const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
-  const secrets = createSecretManagerClient({ secretKey, region, projectId });
-  const epoch = buildEpoch((await readStandingKey(secrets, 'builder')).accessKey);
-  // The layer cache is the epoch's too, so a rotation (after a compromise, keys first) starts a clean one (D13).
-  const cacheTag = `buildcache-e${epoch}`;
   const frontendBucket = distDir ? naming.frontendBucket : '';
   const prefix = builderPrefix(naming.resource);
 
-  await buildRelease(
+  const { manifest } = await buildRelease(
     {
       sha,
-      epoch,
       builderName: `${prefix}${sha.slice(0, 10)}`,
       zones,
-      images: [...rows.map((row) => row.service), BOOT_IMAGE_NAME],
+      archives: [...rows.map((row) => row.service), AGENT_IMAGE_NAME],
       withFrontend: Boolean(frontendBucket),
       distDir,
-      cloudConfig: (keys) =>
+      cloudConfig: ({ links, repositoryKey }) =>
         builderCloudConfig({
           values: {
             SHA: sha,
             REPO: repository,
-            REGION: region,
-            PROJECT: projectId,
-            REGISTRY_HOST: registry,
-            DIAG_BUCKET: naming.bootDiagBucket,
-            FRONTEND_BUCKET: frontendBucket,
-            BUILDER_AK: keys.accessKey,
-            BUILDER_SK: keys.secretKey,
-            REPO_KEY: keys.repositoryKey ?? '',
-            // The boot image's base, at the root `engines.node`, by digest: the builder's keys meet it.
+            REPO_KEY: repositoryKey ?? '',
+            // The agent image's base, at the root `engines.node`, by digest.
             NODE_IMAGE: pinnedNodeImage(nodeVersion, 'bookworm-slim'),
-            EPOCH: epoch,
+            FRONTEND: frontendBucket ? '1' : '',
+            APP_MODE: mode,
           },
+          links,
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
           bake: bakeDefinition(rows, {
-            registry,
+            registry: `rg.${region}.scw.cloud`,
             namespace: naming.registryNamespace,
             releaseSha: sha,
-            epoch,
             nodeVersion,
             context: '/build',
-            cacheTag,
+            archiveDir: BUILDER_ARCHIVE_DIR,
           }),
-          boot: bootBundleScript(pnpmVersion),
+          agent: agentBundleScript(pnpmVersion),
           frontend: frontendBucket ? frontendScript(pnpmVersion) : '',
         }),
     },
@@ -355,15 +404,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       region,
       zones,
       sha,
-      epoch,
-      registry,
-      namespace: naming.registryNamespace,
       frontendBucket,
       diagBucket: naming.bootDiagBucket,
       builderPrefix: prefix,
       securityGroupName: naming.resource('compute-sg'),
     }),
   );
+  await writeFile(manifestOut, JSON.stringify(manifest), { mode: 0o600 });
 }
 
 runIfMain(import.meta.url, main);

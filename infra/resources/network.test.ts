@@ -4,7 +4,7 @@ import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mo
 let h: MockHarness;
 
 beforeAll(async () => {
-  h = await installPulumiMocks({ deferCompute: true });
+  h = await installPulumiMocks();
   await import('./network');
   await h.settle();
 });

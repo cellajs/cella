@@ -1,4 +1,4 @@
-import { createSecretRedactor } from '../../boot/src/secret-redactor';
+import { createSecretRedactor } from '../../agent/src/secret-redactor';
 import { isSecretEnvKey } from '../utils/scrub-secret-env';
 import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter';
 import { defineEvent, type EventDef, type Placeholders } from './events';
@@ -13,16 +13,13 @@ export const deployEvents = {
   started: defineEvent('deploy.started', 'deploy of {sha} to {mode} started'),
   stepCompleted: defineEvent('deploy.step.completed', 'step {step} completed in {duration_s}s'),
   stepFailed: defineEvent('deploy.step.failed', 'step {step} failed: {error}'),
-  servicePending: defineEvent('deploy.service.pending', '{service} marked pending for {sha}'),
-  servicePromoted: defineEvent('deploy.service.promoted', '{service} promoted to generation {gen_id}'),
-  healthGatePassed: defineEvent('deploy.health_gate.passed', 'health gate passed: {url} serves {sha}'),
-  healthGateFailed: defineEvent('deploy.health_gate.failed', 'health gate FAILED: {url} never served {sha}'),
-  rolloutFailed: defineEvent('deploy.rollout.failed', 'rollout failed: {error}'),
+  roleSwitched: defineEvent('deploy.role.switched', '{role} serves {sha} on slot {slot}'),
+  switchFailed: defineEvent('deploy.switch.failed', 'switch failed: {error}'),
   completed: defineEvent('deploy.completed', 'deploy of {sha} to {mode} succeeded'),
   failed: defineEvent('deploy.failed', 'deploy of {sha} to {mode} FAILED'),
 } as const;
 
-/** Boot runner events (same stream, VM side). */
+/** Agent boot events (same stream, machine side). */
 export const bootEvents = {
   started: defineEvent('boot.started', '{service} boot started for {sha}'),
   stepCompleted: defineEvent('boot.step.completed', '{service} boot step {step} completed in {duration_s}s'),
@@ -37,8 +34,8 @@ export const bootEvents = {
   failed: defineEvent('boot.failed', '{service} boot FAILED: {error}'),
 } as const;
 
-// One emitter per deploy process. rollout-runtime emits through the accessor
-// without plumbing the instance through every seam; absent init (unit tests,
+// One emitter per deploy process. The switch's live effects emit through the accessor
+// without the instance passed down to them; absent init (unit tests,
 // disabled telemetry) every call is a safe no-op.
 let active: Telemetry | undefined;
 

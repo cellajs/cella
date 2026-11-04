@@ -1,22 +1,9 @@
 import type { ComponentResourceOptions } from '@pulumi/pulumi';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { agentPort } from '../lib/machine-roles';
 import { servicesByName } from '../lib/services';
-import { fakeConfig } from '../tests/helpers/fake-config';
 import { makeFetch } from '../tests/helpers/fake-fetch';
-import {
-  bootPlanIn,
-  type CapturedResource,
-  installPulumiMocks,
-  type MockHarness,
-  unwrapSecret,
-  writeGenerationKeys,
-} from '../tests/helpers/pulumi-mock';
-
-// The generation VMs the pools target need a pinnable boot image; the registry lookup answers a fixed digest here.
-vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
-  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
-}));
+import { type CapturedResource, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 // The propagation and readiness gates are dynamic resources whose providers poll the network; a plain component stands in so the graph they gate renders.
 vi.mock('./dns-cert-gates', async () => {
@@ -30,6 +17,13 @@ vi.mock('./dns-cert-gates', async () => {
   return { DnsPropagationGate: Gate, CertReadyGate: Gate };
 });
 
+// Split mode with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
+vi.mock('../config/engine-config', async () => {
+  const { fakeConfig } = await import('../tests/helpers/fake-config');
+  const { services } = fakeConfig();
+  return { engineConfig: fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }) };
+});
+
 let h: MockHarness;
 const named = (name: string): CapturedResource => {
   const resource = h.resources.find((r) => r.name === name);
@@ -38,24 +32,10 @@ const named = (name: string): CapturedResource => {
 };
 const id = (name: string) => `${name}-id`;
 
-/** The `.env` a VM's boot plan carries, as `NAME=value` pairs. */
-const vmEnv = (slug: string): Record<string, string> => {
-  const server = h.byType('scaleway:instance/server:Server').find((r) => r.name.startsWith(`vm-${slug}-`));
-  if (!server) throw new Error(`no VM for ${slug}`);
-  const { env } = bootPlanIn(String(unwrapSecret(server.inputs.cloudInit)), '/etc/cella/boot-plan.json').plan.files;
-  return Object.fromEntries(env.split('\n').map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]));
-};
-
 beforeAll(async () => {
-  // A key for every service, as the deploy reads one for each that runs.
-  writeGenerationKeys(Object.fromEntries([...servicesByName.keys()].map((slug) => [slug, { accessKey: `ak-${slug}`, secretKey: `sk-${slug}` }])));
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);
-  // Split-VM with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
-  const { setEngineConfig } = await import('../config/engine-config');
-  const { services } = fakeConfig();
-  setEngineConfig(fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }));
   h = await installPulumiMocks();
   await import('./loadbalancer');
   await import('./dns');
@@ -124,7 +104,6 @@ describe('load balancer', () => {
     for (const pool of backends.filter((b) => b !== internalPool)) {
       const service = servicesByName.get(pool.name.replace('-lb-backend', '') as never);
       expect(pool.inputs.forwardPort, pool.name).toBe(service?.healthPort);
-      expect(pool.inputs.healthCheckHttp, pool.name).toEqual({ uri: '/health', code: service?.healthExpectStatus });
     }
     // No public frontend or route reaches the internal pool; the path routes lead to their own service.
     const routes = h.byType('scaleway:loadbalancers/route:Route');
@@ -135,20 +114,28 @@ describe('load balancer', () => {
       ['/yjs', id('yjs-lb-backend')],
     ]);
     expect(named('https-frontend').inputs.backendId).toBe(id('frontend-lb-backend'));
-    // In-network consumers dial the listener at the LB's private address on the internal frontend's port, never at a generation IP.
-    const internalAddress = `10.0.0.200:${internal.inputs.inboundPort}`;
-    expect(vmEnv('cdc').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
-    expect(vmEnv('yjs').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
   });
 
-  it("targets each pool at its own service's generation IPs over the private network attachment", () => {
+  it("lists each role's two reserved addresses in its pools for good, and moves traffic by the agent's answer at the shortest check", () => {
     const lb = named('main-lb');
     expect(lb.inputs.privateNetworks).toEqual([{ privateNetworkId: id('main-private-network') }]);
     for (const pool of h.byType('scaleway:loadbalancers/backend:Backend')) {
       const slug = pool.name.replace(/-(internal-)?lb-backend$/, '');
-      const reserved = h.resources.filter((r) => r.type === 'scaleway:ipam/ip:Ip' && r.name.startsWith(`ipam-${slug}-`));
-      expect(reserved.length, pool.name).toBeGreaterThan(0);
+      const reserved = ['a', 'b'].map((slot) => named(`slot-${slug}-${slot}`));
+      expect(
+        reserved.map((r) => r.inputs.tags),
+        pool.name,
+      ).toEqual([expect.arrayContaining([`cella-production-${slug}-a`]), expect.arrayContaining([`cella-production-${slug}-b`])]);
       expect(pool.inputs.serverIps, pool.name).toEqual(reserved.map((r) => String(r.outputs.address).split('/')[0]));
+      // Measured: a 503 takes a server out 1.3 s later at these values, and none of 447 requests during the switch failed.
+      expect(pool.inputs, pool.name).toMatchObject({
+        healthCheckPort: agentPort(slug),
+        healthCheckHttp: { uri: `/health/${slug}`, code: 200 },
+        healthCheckDelay: '1s',
+        healthCheckTimeout: '1s',
+        healthCheckMaxRetries: 2,
+        healthCheckTransientDelay: '0.5s',
+      });
     }
   });
 

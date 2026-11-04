@@ -4,7 +4,7 @@ import { type RunnerEnvironment, readRunnerEnvironments } from '../../runner/src
 import { infraDir } from '../utils/paths';
 
 /**
- * The runner's committed file (D29): its project, the release its program runs from (D24) and the environments it starts deploys for (D23).
+ * The runner's committed file: its project, the release its program runs from and the environments it starts deploys for.
  * **Set up the runner** adds an environment; a change reaches the machine when **Replace the runner** replaces it.
  */
 export const RUNNER_FILE = join(infraDir, 'runner.json');

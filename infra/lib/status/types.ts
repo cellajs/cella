@@ -1,15 +1,13 @@
+import type { AppliedEngine } from '../deploy/applied-engine';
+import type { LiveRecord } from '../deploy/live-record';
 import type { KeyPair } from '../scaleway/operator-identity';
 import type { StackState } from '../stack/bootstrap-stack-state';
-import type { PendingOperation } from '../stack/pending-operations';
-
-/** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
-export const STATUS_SCHEMA_VERSION = 2;
 
 /** A check's verdict. `unknown` means "could not be evaluated", usually a missing key; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
 
-/** Key tier a check needs, in the JSON field `credential`: renaming the field is a breaking change of the contract. `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
-export type CredentialTier = 'none' | 'scaleway';
+/** Key tier a check needs: `none` reads local files or public HTTP; `scaleway` needs an API key with Object Storage, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
+export type KeyTier = 'none' | 'scaleway';
 
 /** A runnable remediation: a one-line description and the exact command. */
 export interface NextAction {
@@ -17,19 +15,18 @@ export interface NextAction {
   command: string;
 }
 
-/** One evaluated check. `id` is stable and part of the public contract. */
+/** One evaluated check. `id` is stable across releases. */
 export interface Check {
   id: string;
   title: string;
   status: CheckStatus;
   detail: string;
-  credential: CredentialTier;
+  key: KeyTier;
   nextAction?: NextAction;
 }
 
 /** The full report emitted by `infra status` (the `--json` envelope). */
 export interface StatusReport {
-  schemaVersion: number;
   mode: string;
   /** ISO timestamp; stamped by the task, not the pure evaluator. */
   generatedAt: string;
@@ -41,7 +38,7 @@ export interface StatusReport {
   summary: Record<CheckStatus, number>;
 }
 
-/** The held stack lock, if any. */
+/** The held lease, if any. */
 export interface LockFacts {
   held: boolean;
   owner?: string;
@@ -53,27 +50,18 @@ export interface LockFacts {
   stale?: boolean;
 }
 
-/** Per-service rollout pointers read from the S3 control object. */
-export interface RolloutRowFact {
-  slug: string;
-  activeSha?: string;
-  /** The active generation's id, the suffix of its machine's name. */
-  activeGeneration?: string;
-  pendingSha?: string;
-}
-
-/** Control-bucket facts shared by the state and live providers (one read). */
+/** Facts shared by the state, live and inventory providers (one read): the state bucket's presence and the control records. */
 export interface ScalewayFacts {
   /** undefined = not checked (no creds or error). */
   stateBucketExists?: boolean;
   lock?: LockFacts;
-  /** undefined = control object could not be read. */
-  rollout?: RolloutRowFact[];
-  /** Operations an interrupted Pulumi run left in the stack checkpoint; undefined = checkpoint could not be read. */
-  pendingOperations?: PendingOperation[];
+  /** undefined = the live record could not be read. */
+  live?: LiveRecord;
+  /** The engine the last apply published; null before the first, undefined when it could not be read. */
+  applied?: AppliedEngine | null;
 }
 
-/** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-store read that lets the state and live providers share one S3 round-trip. */
+/** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-object read the providers share. */
 export interface ProbeSession {
   mode: string;
   appConfig: import('../../config/engine-config').EngineConfig;
@@ -84,10 +72,9 @@ export interface ProbeSession {
   scalewayKeyAvailable: boolean;
   accessKey?: string;
   secretKey?: string;
-  /** The operator key the run holds, which lists the machines and reads the stack checkpoint: the observer key reads neither. Absent outside a session unlocked with it. */
+  /** The operator key the run holds, which lists the machines: the observer key reads none. Absent outside a session unlocked with it. */
   operatorKey?: KeyPair;
   hasDomain: boolean;
-  computeDeferredSince?: string;
   /** True when the exposure overlay or stack config turns the public DB endpoint on. */
   dbExposureConfigured?: boolean;
   /** Memoized best-effort control-store read; never rejects. */

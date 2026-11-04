@@ -1,9 +1,16 @@
 import { healthContract } from '../config/health.config';
 import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, HealthCheck, ServiceMeta } from './types';
 
+/**
+ * A service's agent port, on which the machine's agent answers the load balancer's check for it, is its own port shifted by this: it moves
+ * only with that port, so a registry change moves no other service's check.
+ */
+export const AGENT_PORT_OFFSET = 5000;
+
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
   validateInternalPorts(services);
+  validateAgentPorts(services);
   const seenPrefixes = new Map<string, string>();
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.pathPrefix;
@@ -46,10 +53,31 @@ function validateInternalPorts(services: AppServices): void {
   }
 }
 
+/** The static env, and the runtime one the agent fetches at the machine's first boot: optional, as Compose starts the agent before it exists. */
+const ENV_FILES = ['.env', { path: '.env.runtime', required: false as const }];
+
+/** An agent port must be a port of its own: the single-process host publishes every service's ports beside its agent's. */
+function validateAgentPorts(services: AppServices): void {
+  const taken = new Map<number, string>();
+  for (const [slug, cfg] of Object.entries(services)) {
+    taken.set(cfg.port, slug);
+    if (cfg.internalPort !== undefined) taken.set(cfg.internalPort, slug);
+  }
+  for (const [slug, cfg] of Object.entries(services)) {
+    const port = cfg.port + AGENT_PORT_OFFSET;
+    const owner = taken.get(port);
+    if (port > 65535 || owner) {
+      throw new Error(
+        `services config: '${slug}' port ${cfg.port} puts its agent port on ${port}, ${owner ? `the port of '${owner}'` : 'outside the port range'}.`,
+      );
+    }
+  }
+}
+
 /** Standard environment injected into every app service unless opted out. */
 const STANDARD_ENV = { NODE_ENV: 'production', APP_MODE: '${APP_MODE:-production}', TZ: 'UTC' } as const;
 
-/** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the deploy's health gate waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace VM image cannot guarantee. */
+/** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the agent's boot waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace machine image cannot guarantee. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
   return {
     test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}${healthContract.path}`],
@@ -65,7 +93,6 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   const meta: ServiceMeta = {
     slug,
     healthPort: cfg.port,
-    healthTimeoutSeconds: cfg.healthTimeoutSeconds,
     healthExpectStatus: cfg.healthExpectStatus ?? 200,
     runRelease: cfg.release !== undefined,
     replacementStrategy: cfg.replacementStrategy,
@@ -102,12 +129,16 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
   };
   const block: ComposeService = {
     image: cfg.image,
+    pull_policy: 'never',
     profiles: [slug],
+    // The app starts once its release companion (migrations) exited 0: one `compose up --wait` runs both, and a failed migration fails it.
+    ...(cfg.release ? { depends_on: { [releaseServiceName(slug)]: { condition: 'service_completed_successfully' as const } } } : {}),
     restart: 'unless-stopped',
-    // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
+    // The pools forward to the host ports directly, with no ingress hop on the machine; their check asks the machine's agent, which probes the app's own health path.
     ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
-    stop_grace_period: cfg.stopGracePeriod ?? '30s',
-    ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
+    // SIGTERM drain window for in-flight requests.
+    stop_grace_period: '30s',
+    ...(cfg.includeEnvFile === false ? {} : { env_file: ENV_FILES }),
     environment,
     healthcheck: healthcheck(cfg.port, cfg.startPeriod),
   };
@@ -121,26 +152,54 @@ function releaseServiceName(slug: string): string {
 }
 
 /**
- * One-shot release companion for a service that declares a `release` step: the service image with the app's
- * release command/env, run at the new generation's boot BEFORE the app starts and gated on exit 0.
- * It shares the service's profile because profile membership is genId-fingerprinted; a separate profile would re-roll every generation.
+ * One-shot release companion for a service that declares a `release` step: the service image with the step's env, run
+ * at the new machine's boot BEFORE the app starts, which depends on its exit 0.
+ * It shares the service's profile, so the agent's `--profile <service>` starts it with the app.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const release = cfg.release;
   return {
     image: cfg.image,
+    pull_policy: 'never',
     profiles: [slug],
     restart: 'no',
-    ...(release?.command ? { command: release.command } : {}),
-    env_file: ['.env', '.env.runtime'],
+    env_file: ENV_FILES,
     environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
+  };
+}
+
+/** The agent's compose service, which every machine runs beside its app (agent/): the launcher starts it, and it starts the rest. */
+const AGENT_SERVICE = 'infra-agent';
+
+/**
+ * The agent: on the host network, where it answers the load balancer on each service's agent port and reads its manifest from the metadata
+ * service, which answers only a source port below 1024, so it keeps that one capability and drops the rest. It drives the host's Docker
+ * daemon through its socket, reads its plan from `AGENT_DIR` (`/etc/<slug>`, set in the machine's static env) and the boot log read-only.
+ * The machine's unit supervises it, so Docker restarts it never.
+ */
+function agentBlock(): ComposeService {
+  return {
+    image: '${REGISTRY}/infra-agent:${AGENT_TAG}',
+    pull_policy: 'never',
+    profiles: ['agent'],
+    restart: 'no',
+    command: ['agent', '--plan', '${AGENT_DIR}/boot-plan.json'],
+    network_mode: 'host',
+    cap_drop: ['ALL'],
+    cap_add: ['NET_BIND_SERVICE'],
+    volumes: [
+      '/var/run/docker.sock:/var/run/docker.sock',
+      '/opt/app:/opt/app',
+      '${AGENT_DIR}:${AGENT_DIR}',
+      '/var/log/infra-boot.log:/var/log/infra-boot.log:ro',
+    ],
   };
 }
 
 /**
  * Assemble the full `ComposeFile` from the app's service registry. Each service is one app block binding the host
- * port directly; zero-downtime overlap happens at the load balancer between VM generations, not inside the VM.
- * A `release` step additionally emits a one-shot companion run at the new generation's boot before the app starts.
+ * port directly; zero-downtime overlap happens at the load balancer between two machines, not inside one.
+ * A `release` step additionally emits a one-shot companion run at the new machine's boot before the app starts.
  * `processIdentityEnv` names the env keys selecting a container's process identity (which service, which port);
  * they are never folded from a co-hosted worker into the singleVM host.
  */
@@ -151,13 +210,15 @@ export function assembleCompose(appServices: AppServices, options: { processIden
     services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv });
     if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg);
   }
+  if (AGENT_SERVICE in services) throw new Error(`services config: '${AGENT_SERVICE}' is the engine's agent and no app service name.`);
+  services[AGENT_SERVICE] = agentBlock();
   publishCoHostedPorts(appServices, services);
   publishCoHostedEnv(appServices, services, processIdentityEnv);
   return { services };
 }
 
 /**
- * Fold co-hosted service environments into the single-VM host block, which supplies their placeholders because worker blocks do not start.
+ * Fold co-hosted service environments into the singleVM host block, which supplies their placeholders because worker blocks do not start.
  * Equal collisions are accepted, conflicting values fail synthesis, and process-identity keys are skipped (folded workers boot under the host's identity).
  */
 function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>, processIdentityEnv: ReadonlySet<string>): void {
@@ -183,7 +244,7 @@ function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, Com
 }
 
 /**
- * Publish co-hosted worker ports on the single-VM host for load-balancer access.
+ * Publish co-hosted worker ports on the singleVM host for load-balancer access.
  * Split mode keeps them in the shared Compose output, where nothing binds them and network policy keeps them unreachable.
  */
 function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {

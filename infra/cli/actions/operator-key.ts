@@ -1,207 +1,90 @@
-import { confirm, input } from '@inquirer/prompts';
-import { parseAclInput } from '../../lib/db-exposure-acl';
+import { confirm } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
-import { ipAllowed } from '../../lib/scaleway/ip-lock';
-import { classifyPrincipal, describeKey, type KeyPair } from '../../lib/scaleway/operator-identity';
-import { readPolicy } from '../../lib/scaleway/policy-reach';
 import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
-import type { ScopedKeyResult } from '../../lib/scaleway/scaleway-iam';
 import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
-import { changeMark, checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { pollUntil } from '../../lib/utils/retry';
-import { extendOperatorReach, operatorPolicyReach, setupOperatorApp } from '../../tasks/setup-operator-app';
-import { forgetOperatorLock } from '../session';
+import { type OperatorsResult, setupOperators } from '../../tasks/setup-operators';
 import { endAction, type InfraContext } from '../shared';
-import { keyAccepted, publicAddress } from './operator-unlock';
+import { oneDayKeyHowto } from './operator-unlock';
 import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
 
-/** How long the new key is tried from this machine. Scaleway applies a policy within about a minute, and single APIs follow later still. */
-const ACCEPT_ATTEMPTS = 24;
-const ACCEPT_INTERVAL_MS = 5_000;
-
-/**
- * What the check of the new key from this machine says. An address outside the list cannot check the key: Scaleway refuses it there by
- * design. An address inside the list either sees the key accepted, or reports that it is not yet.
- */
-export function acceptanceVerdict(opts: { addressInList: boolean | undefined; accepted: boolean }): 'accepted' | 'not-yet' | 'cannot-check' {
-  if (opts.addressInList === false) return 'cannot-check';
-  return opts.accepted ? 'accepted' : 'not-yet';
-}
-
-/** Show the key once and hold until the operator confirms it is stored: nothing else keeps it, and Scaleway shows a secret key only at creation. */
-async function confirmKeyStored(name: string, key: ScopedKeyResult): Promise<void> {
-  console.info(`\n→ Operator key of '${name}' ${pc.dim('(shown once)')}\n`);
-  console.info(`    access key  ${pc.cyanBright(key.accessKey)}`);
-  console.info(`    secret key  ${pc.cyanBright(key.secretKey)}\n`);
-  console.info(`  ${pc.bold('Store both in your password manager now.')} The CLI keeps them nowhere, and Scaleway cannot show the secret key again.`);
-  while (!(await confirm({ message: 'Operator key stored in your password manager?', default: false }))) {
-    console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
-  }
-}
-
-/** The environments an operator key reaches: the one the action runs for, then every other environment that has a project on this machine. */
+/** The environments the operators reach: the one the action runs for, then every other environment that has a project on this machine. */
 export function operatorReach(mode: string, projectId: string, others: ReadonlyMap<string, string>): Array<{ mode: string; projectId: string }> {
   return [{ mode, projectId }, ...[...others].filter(([id]) => id !== projectId).map(([id, other]) => ({ mode: other, projectId: id }))];
 }
 
 /**
- * Create the app's operator application and a fresh key for it, with an Owner key the caller holds: ask for the dedicated address, confirm,
- * write the application and its policy, show the key once, and wait until Scaleway accepts it from here. Undefined when the person declines.
+ * Write the app's operators with an Owner key the caller holds: the operator application, the operators group and a policy for each, over
+ * `reach` and every project the operator policy reaches today (the runner's among them, which no environment file on this machine names).
  */
-async function createOperator(
+async function writeOperators(
   context: InfraContext,
   ownerKey: OwnerKey,
   reach: ReadonlyArray<{ mode: string; projectId: string }>,
-): Promise<ScopedKeyResult | undefined> {
+): Promise<OperatorsResult> {
   const { appConfig, projectId } = context;
-  const mode = context.environment;
-  const names = allPrincipalNames(appConfig, mode);
-  console.info(`The key works in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
-  console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).\n'));
-
-  const detected = await publicAddress();
-  if (detected) console.info(`This machine reaches the internet as ${pc.cyan(detected)}.`);
-  else console.warn(`${warningMark} Could not detect this machine's public address: enter the dedicated address yourself.`);
-
-  const raw = await input({
-    message: 'Dedicated IPv4 address(es) the operator key works from, comma-separated',
-    default: detected ? `${detected}/32` : undefined,
-    validate: (value) => {
-      const parsed = parseAclInput(value);
-      return parsed.ok || parsed.reason;
-    },
-  });
-  const parsed = parseAclInput(raw);
-  if (!parsed.ok) {
-    console.error(`${crossMark} ${parsed.reason}`);
-    endAction(1);
-  }
-  const { cidrs } = parsed;
-  const addressInList = detected ? ipAllowed(detected, cidrs) : undefined;
-
-  console.warn(
-    `\n${pc.yellow(pc.bold('⚠  This replaces the operator key.'))} An earlier key of '${names.operator}' stops working, and the new one works from ${pc.cyan(cidrs.join(', '))} only.`,
-  );
-  if (addressInList === false)
-    console.warn(`  ${warningMark} This machine's address is not in that list: the new key can be neither checked nor used from here.`);
-  console.info(pc.dim('  When the address changes, the organization Owner sets the new one: this action again, or the policy in the console.\n'));
-  if (!(await confirm({ message: `Create the operator key of ${appConfig.appSlug}?`, default: false }))) {
-    console.info('Aborted; nothing changed.');
-    return undefined;
-  }
-
-  // The run deletes the operator policy before it writes the new one, so the operator application's own key would lose its rights in between.
-  const bearer = await describeKey(ownerKey).catch(() => undefined);
-  if (bearer && classifyPrincipal(bearer, names) === 'operator') {
-    console.error(
-      `${crossMark} This action replaces the policy of '${names.operator}', so that application's own key cannot run it. Use your Owner API key.`,
-    );
-    endAction(1);
-  }
-
-  // A project the operator reaches today stays in its reach, such as the runner's, which no environment file on this machine names.
-  const today = await readPolicy({ secretKey: ownerKey.secretKey }, ownerKey.organizationId, `${names.operator}-policy`);
-  const projectIds = [...new Set([...reach.map((entry) => entry.projectId), ...(today ? operatorPolicyReach(today.rules).projectIds : [])])];
-
-  let key: ScopedKeyResult;
   try {
-    key = await setupOperatorApp({
+    return await setupOperators({
       callerSecretKey: ownerKey.secretKey,
       organizationId: ownerKey.organizationId,
       projectId,
-      projectIds,
+      projectIds: reach.map((entry) => entry.projectId),
       slug: appConfig.appSlug,
       dnsZone: deriveInfra(appConfig).dnsZone,
-      cidrs,
     });
   } catch (error) {
-    console.error(`${crossMark} The operator key was not created: ${errorMessage(error)}`);
-    endAction(1);
+    console.error(`${crossMark} The operators were not set up: ${errorMessage(error)}`);
+    return endAction(1);
   }
-
-  forgetOperatorLock();
-  await confirmKeyStored(names.operator, key);
-
-  const accepted =
-    addressInList === false
-      ? false
-      : Boolean(
-          await withSpinner('Waiting for Scaleway to accept the new key from this address', () =>
-            pollUntil(() => keyAccepted(key.secretKey, key.organizationId), { attempts: ACCEPT_ATTEMPTS, intervalMs: ACCEPT_INTERVAL_MS }),
-          ),
-        );
-  const verdict = acceptanceVerdict({ addressInList, accepted });
-  if (verdict === 'accepted') {
-    console.info(`${checkMark} Scaleway accepts the operator key from this address. ${pc.dim('Single APIs can follow a minute or two later.')}`);
-  } else if (verdict === 'not-yet') {
-    console.warn(
-      `${warningMark} Scaleway does not accept the operator key from this address yet. A new policy can take a few minutes; if it stays refused, check the address list of '${names.operator}-policy' in the console.`,
-    );
-  } else {
-    console.info(pc.dim('Not checked from here: this address is outside the list. Use the key from the dedicated address.'));
-  }
-  return key;
 }
 
 /**
- * Create the app's operator application and a fresh key for it: the principal a person runs privileged actions as, in every environment of
- * the app. Scaleway accepts the key from the dedicated address only, which an Owner API key can never be held to, and the key writes no IAM.
- * A run replaces the application's policy and every earlier key, so the caller is the organization Owner (or another IAMManager principal),
- * never the operator application itself. A new address takes this action again; a new environment is added by its setup without a new key.
+ * Set up the app's operators: the `<app>-operator` application and the `<app>-operators` group, each with a policy that holds every
+ * product of the app's projects and no condition. No key is made or shown: a person makes a one-day key in the console at each sitting.
+ * A run rewrites both policies in place, so the caller is the organization Owner (or another IAMManager principal); a new environment is
+ * added by its setup.
  */
 export async function runOperatorKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const mode = context.environment;
   const names = allPrincipalNames(appConfig, mode);
+  const reach = operatorReach(mode, projectId, projectsOfOtherModes(mode));
   console.info(
     pc.dim(
-      `\n${actionLabel('operator-key')}: the '${names.operator}' application and a fresh key, which Scaleway accepts from your dedicated IP address only.\n`,
+      `\n${actionLabel('operator-key')}: the '${names.operator}' application and the '${names.operators}' group, with a policy each and no key.\n`,
     ),
   );
+  console.info(`They work in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
+  console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).'));
+  console.info(pc.dim('  The policies are written in place: a key of either keeps working.\n'));
+  if (!(await confirm({ message: `Set up the operators of ${appConfig.appSlug}?`, default: false }))) {
+    console.info('Aborted; nothing changed.');
+    return;
+  }
   const ownerKey = await acquireOwnerKey({ names, projectId, slug: appConfig.slug, mode });
   try {
-    const key = await createOperator(context, ownerKey, operatorReach(mode, projectId, projectsOfOtherModes(mode)));
-    if (key) {
-      console.info(
-        `\n  ${pc.bold('From now on the CLI asks for the operator key, once per session.')} ${pc.dim('From another address Scaleway refuses it.')}`,
-      );
-    }
+    await writeOperators(context, ownerKey, reach);
   } finally {
     await ownerKey.release();
   }
+  console.info(`\n${checkMark} ${pc.bold('The CLI asks for a one-day operator key, once per session.')} ${oneDayKeyHowto(names)}`);
+  console.info(pc.dim(`  Members join '${names.operators}' in the console: IAM → Groups → ${names.operators} → Members.`));
   printRevokeReminder();
 }
 
 /**
- * Make sure the app's operator reaches this environment, at an Owner moment: an operator that exists gets this environment's project added to
- * its policy in place, so the key the person stored keeps working; an app without one gets it created, and its new key is returned (shown
- * once) so the rest of the setup can run on it.
+ * Make sure the app's operators reach this environment, at an Owner moment: the application, the group and both policies are written as
+ * declared, with this environment's project added to the projects they reach today, so a key of either keeps working. An app that gets
+ * them here, or a policy of them, is told that the operator part asks for a one-day key next, made in the console.
  */
-export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<KeyPair | undefined> {
-  const { appConfig } = context;
-  const mode = context.environment;
-  const names = appPrincipalNames(appConfig.appSlug);
-  const auth = { secretKey: ownerKey.secretKey };
-  const reach = await extendOperatorReach({
-    auth,
-    organizationId: ownerKey.organizationId,
-    slug: appConfig.appSlug,
-    projectIds: [projectId],
-    dnsZone: deriveInfra(appConfig).dnsZone,
-  });
-  if (reach === 'unchanged') {
-    console.info(`  ${checkMark} '${names.operator}' already reaches ${mode}.`);
-    return undefined;
+export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<void> {
+  const names = appPrincipalNames(context.appConfig.appSlug);
+  const reach = operatorReach(context.environment, projectId, projectsOfOtherModes(context.environment));
+  const result = await writeOperators({ ...context, projectId }, ownerKey, reach);
+  console.info(`  ${checkMark} '${names.operator}' and '${names.operators}' reach ${context.environment}.`);
+  if (result.applicationPolicy === 'created' || result.groupPolicy === 'created') {
+    console.info(`  ${pc.bold('The operator part asks for a key next.')} ${oneDayKeyHowto(names)}`);
   }
-  if (reach === 'extended') {
-    forgetOperatorLock();
-    console.info(`  ${changeMark} '${names.operator}' now reaches ${mode} too; its key is unchanged.`);
-    return undefined;
-  }
-  console.info(`  The app has no operator yet: '${names.operator}' is created now.`);
-  const key = await createOperator({ ...context, projectId }, ownerKey, operatorReach(mode, projectId, projectsOfOtherModes(mode)));
-  if (!key) endAction(1);
-  return { accessKey: key.accessKey, secretKey: key.secretKey };
 }

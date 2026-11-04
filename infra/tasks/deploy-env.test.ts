@@ -7,17 +7,17 @@ const fakeAppConfig = {
   s3: { region: 'nl-ams', publicBucket: 'cella-public', privateBucket: 'cella-private', host: 's3.nl-ams.scw.cloud' },
   domain: 'cella.example',
   frontendUrl: 'https://www.cella.example',
-  backendUrl: 'https://api.cella.example',
-  yjsUrl: 'https://yjs.cella.example',
-  mcpUrl: 'https://mcp.cella.example',
-  oauthUrl: 'https://api.cella.example/oauth',
+  backendUrl: 'https://www.cella.example/api',
+  yjsUrl: 'wss://www.cella.example/yjs',
+  mcpUrl: 'https://www.cella.example/mcp',
+  oauthUrl: 'https://www.cella.example/oauth',
   services: {
     frontend: { enabled: true, publicUrl: 'https://www.cella.example' },
-    backend: { enabled: true, publicUrl: 'https://api.cella.example' },
+    backend: { enabled: true, publicUrl: 'https://www.cella.example/api' },
     cdc: { enabled: true },
-    yjs: { enabled: false, publicUrl: 'https://yjs.cella.example' },
-    mcp: { enabled: false, publicUrl: 'https://mcp.cella.example' },
-    oauth: { enabled: false, publicUrl: 'https://api.cella.example/oauth' },
+    yjs: { enabled: false, publicUrl: 'wss://www.cella.example/yjs' },
+    mcp: { enabled: false, publicUrl: 'https://www.cella.example/mcp' },
+    oauth: { enabled: false, publicUrl: 'https://www.cella.example/oauth' },
   },
   securityEmail: 'security@cella.example',
 } as any;
@@ -32,18 +32,16 @@ describe('buildDeployEnv', () => {
     expect(buildDeployEnv(fakeAppConfig)).toEqual({
       environment: 'production',
       image_tag: '',
-      pulumi_stack: 'production',
+      stack: 'production',
       region: 'nl-ams',
-      registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       public_bucket: 'cella-public',
-      state_bucket: 'cella-pulumi-state',
       diag_bucket: 'cella-boot-diag',
       enabled_services_json: JSON.stringify([
         {
           service: 'backend',
-          public_url: 'https://api.cella.example',
-          health_url: 'https://api.cella.example',
+          public_url: 'https://www.cella.example/api',
+          health_url: 'https://www.cella.example/api',
           lb_route: 'path',
           dockerfile: 'Dockerfile',
           reuses_image_of: '',
@@ -66,18 +64,8 @@ describe('buildDeployEnv', () => {
         { service: 'cdc', dockerfile: 'Dockerfile', target: 'cdc' },
         { service: 'frontend', dockerfile: 'infra/caddy/Dockerfile', target: '' },
       ]),
-      primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
-      roll_rest_matrix: JSON.stringify([
-        { service: 'cdc', health_url: '' },
-        { service: 'jobs', health_url: '' },
-        { service: 'frontend', health_url: 'https://www.cella.example' },
-      ]),
+      primary_role: 'backend',
     });
-  });
-
-  it('strips hyphens from registry_ns', () => {
-    const cfg = { ...fakeAppConfig, slug: 'my-cool-app' };
-    expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp');
   });
 
   it('emits the supplied image tag', () => {
@@ -91,12 +79,12 @@ describe('buildDeployEnv', () => {
       backendUrl: 'https://legacy-api.example',
       services: {
         ...fakeAppConfig.services,
-        frontend: { enabled: true, publicUrl: 'https://service-front.example' },
-        backend: { enabled: true, publicUrl: 'https://service-api.example' },
+        frontend: { enabled: true, publicUrl: 'https://app.cella.example' },
+        backend: { enabled: true, publicUrl: 'https://app.cella.example/api' },
       },
     };
     const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[];
-    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://service-front.example');
-    expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example');
+    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://app.cella.example');
+    expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://app.cella.example/api');
   });
 });

@@ -1,4 +1,5 @@
 import type { EngineConfig } from '../config/engine-config';
+import { enabledServices } from './services';
 import { stateBucket } from './stack/control-store';
 
 type Cfg = EngineConfig;
@@ -6,15 +7,42 @@ type Cfg = EngineConfig;
 /** Whether the config names a DNS zone to deploy under; a local mode leaves it empty. */
 export const hasDomain = (appConfig: Pick<Cfg, 'domain'>): boolean => appConfig.domain !== '';
 
-/** Report a frontend configured at the zone apex, where the load balancer creates no DNS record, certificate, or host route. Deploy paths require a subdomain. */
+/**
+ * The refusal of an app host at the zone apex: the load balancer serves the app on a record under the zone, so the CLI, `deriveInfra`
+ * and the program refuse an apex host before any apply.
+ */
+export function apexHostIssue(host: string, zone: string): string | undefined {
+  if (host !== zone) return undefined;
+  return (
+    `The app cannot be served at the zone apex ('${zone}'): every deploy path refuses it before any apply. ` +
+    `Set origin (shared/config) to a subdomain; with 'https://www.${zone}' the apex 301-redirects to it, preserving path and query.`
+  );
+}
+
+/** {@link apexHostIssue} for the frontend's public URL; undefined without a domain or an enabled frontend. */
 export function frontendApexIssue(appConfig: Cfg): string | undefined {
   const frontend = appConfig.services.frontend;
   if (!hasDomain(appConfig) || !frontend?.publicUrl || frontend.enabled === false) return undefined;
-  const frontendHost = new URL(frontend.publicUrl).hostname;
-  if (frontendHost !== appConfig.domain) return undefined;
+  return apexHostIssue(new URL(frontend.publicUrl).hostname, appConfig.domain);
+}
+
+/**
+ * The refusal of an enabled routed service whose URL is on another host than the default route's: the load balancer serves every route
+ * on the app host under its path prefix, with one record and one certificate. Undefined without a domain.
+ */
+export function routedHostIssue(appConfig: Cfg): string | undefined {
+  if (!hasDomain(appConfig)) return undefined;
+  const urls = appConfig.services;
+  const routed = enabledServices(urls).flatMap((service) => {
+    const url = service.lbRoute ? urls[service.slug]?.publicUrl : undefined;
+    return url ? [{ slug: service.slug, host: new URL(url).hostname, isDefault: service.lbRoute === 'default' }] : [];
+  });
+  const appHost = routed.find((service) => service.isDefault)?.host;
+  const elsewhere = routed.filter((service) => service.host !== appHost).map((service) => service.slug);
+  if (!appHost || elsewhere.length === 0) return undefined;
   return (
-    `The app cannot be served at the zone apex ('${appConfig.domain}'): the load balancer gives an apex-hosted app no DNS record, TLS certificate, or host route. ` +
-    `Set origin (shared/config) to a subdomain, e.g. 'https://www.${appConfig.domain}'; the apex then 301-redirects to it automatically, preserving path and query.`
+    `${elsewhere.join(', ')} ${elsewhere.length === 1 ? 'has its' : 'have their'} URL off the app host '${appHost}': the load balancer serves every route there, ` +
+    'under its path prefix. Derive the service URLs from origin (shared/config).'
   );
 }
 
@@ -23,8 +51,8 @@ export function deriveInfra(appConfig: Cfg) {
   const prefix = appConfig.slug;
   const region = appConfig.s3.region;
 
-  const apexIssue = frontendApexIssue(appConfig);
-  if (apexIssue) throw new Error(apexIssue);
+  const issue = frontendApexIssue(appConfig) ?? routedHostIssue(appConfig);
+  if (issue) throw new Error(issue);
 
   return {
     naming: {

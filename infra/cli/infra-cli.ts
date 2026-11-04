@@ -12,23 +12,11 @@ import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpi
 import { dropPromptOnlyEnv, loadBaseEnvFiles, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
-import { within } from '../lib/utils/retry';
 import { runAction } from './actions';
 import { liveDbEndpoints } from './actions/db-exposure';
-import { addressVerdict, installPassphraseCustody, operatorLock, publicAddress } from './actions/operator-unlock';
+import { installPassphraseCustody } from './actions/operator-unlock';
 import { parseCliArgs } from './args';
-import {
-  BACK,
-  disabledReason,
-  formatAccessLines,
-  formatStackLine,
-  type MenuState,
-  mainMenuItems,
-  type OperatorFacts,
-  pickItems,
-  QUIT,
-  visibleRows,
-} from './menu';
+import { BACK, disabledReason, formatAccessLines, formatStackLine, type MenuState, mainMenuItems, pickItems, QUIT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import { setPassphraseCustody } from './session';
@@ -41,7 +29,7 @@ loadBaseEnvFiles();
 // A privileged key or the passphrase in the environment would let the CLI run with nobody at the prompt: they are dropped here and asked for.
 const droppedFromEnv = dropPromptOnlyEnv();
 
-// A Ctrl-C at any prompt below ends the run with one line and releases a held stack lock.
+// A Ctrl-C at any prompt below ends the run with one line and releases a held lease.
 installPromptAbortHandler();
 
 const args = parseCliArgs(process.argv.slice(2));
@@ -145,15 +133,15 @@ function printStackNotices(context: InfraContext): void {
   const deferredSince = detectComputeDeferred(context.stackYaml);
   if (deferredSince) {
     console.warn(
-      `${warningMark} ${pc.bold('Compute is currently deferred')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
-        '  A fresh provision sets this so VMs are not declared until images exist;\n' +
+      `${warningMark} ${pc.bold('The first provisioning has not finished')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
+        '  A fresh provision sets this before its first `pulumi up`;\n' +
         '  it clears automatically on the next successful provisioning `pulumi up`.\n',
     );
   }
 }
 
 /**
- * What an operator wants to know before choosing: is the stack locked, what is live, which keys this machine holds, and whether the
+ * What an operator wants to know before choosing: is the environment leased, what is live, which key this machine holds, and whether the
  * database has a public endpoint. One bounded, best-effort read; resolves to the live DB endpoints for the menu's DB access row.
  */
 async function printStackFacts(context: InfraContext): Promise<string[] | undefined> {
@@ -173,7 +161,6 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
     for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   }
   const access = formatAccessLines({
-    operator: await operatorFacts(context),
     stackState: context.state,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints,
@@ -181,20 +168,6 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
   for (const line of access) console.info(line);
   console.info('');
   return liveEndpoints;
-}
-
-/** How long the header waits for the operator application's policy and this machine's address. */
-const OPERATOR_FACTS_BUDGET_MS = 4_000;
-
-/** The operator key's address lock against this machine's address, for the header. Undefined on a fresh stack and when it is not known in time. */
-async function operatorFacts(context: InfraContext): Promise<OperatorFacts | undefined> {
-  if (context.state === 'fresh' || !context.projectId) return undefined;
-  const read = Promise.all([operatorLock(context), publicAddress()]).then(([lock, address]) => ({
-    lock,
-    address,
-    verdict: addressVerdict(address, lock),
-  }));
-  return within(OPERATOR_FACTS_BUDGET_MS, read);
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
@@ -254,12 +227,12 @@ if (pulumiLag) console.warn(`${warningMark} ${pulumiLag}`);
 const environment = await resolveMode(args.mode);
 let context = await loadContext(environment, (message) => console.info(pc.dim(message)));
 
-// Fail on an apex-hosted frontend before any prompt or provisioning step; the LB module cannot serve the app at the zone apex, and `pulumi up` only throws once half a deploy has run.
+// Refuse an app host the load balancer cannot serve before any prompt or provisioning step.
 {
-  const { frontendApexIssue } = await import('../lib/naming');
-  const apexIssue = frontendApexIssue(context.appConfig);
-  if (apexIssue) {
-    console.error(`${crossMark} ${apexIssue}`);
+  const { frontendApexIssue, routedHostIssue } = await import('../lib/naming');
+  const issue = frontendApexIssue(context.appConfig) ?? routedHostIssue(context.appConfig);
+  if (issue) {
+    console.error(`${crossMark} ${issue}`);
     process.exit(1);
   }
 }

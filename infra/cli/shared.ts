@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
+import { deriveInfra } from '../lib/naming';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { allPrincipalNames } from '../lib/scaleway/principals';
@@ -184,12 +185,12 @@ export interface StackLockHandle {
   readonly lost: boolean;
 }
 
-/** The leases this process holds, so an action that ends without releasing its own cannot leave the stack locked under the menu. */
+/** The leases this process holds, so an action that ends without releasing its own cannot leave the environment leased under the menu. */
 const heldLocks = new Set<StackLockHandle>();
 
 /**
  * Release every stack lease still held and report how many there were. The menu calls it after each action: a lease renews itself for as
- * long as the process lives, so one that outlived its action would keep the stack locked until the operator quits.
+ * long as the process lives, so one that outlived its action would keep the environment leased until the operator quits.
  */
 export async function releaseHeldLocks(): Promise<number> {
   const leftover = [...heldLocks];
@@ -201,7 +202,7 @@ export async function releaseHeldLocks(): Promise<number> {
 const OPERATOR_LOCK_WAIT_MS = 5 * 60_000;
 
 /**
- * Take the stack lease so a second operator or CI cannot mutate the stack concurrently. A live lock held by someone else is waited out (a dead
+ * Take the environment's lease (`control/<mode>/lock.json` in its boot-diag bucket) so a second operator or a deploy cannot change it concurrently. A live lock held by someone else is waited out (a dead
  * run's lease lapses within minutes); a holder that keeps renewing wins, and the action ends pointing at the unlock action.
  * The lease renews itself while held and is released on Ctrl-C, so an interrupted run leaves nothing behind.
  */
@@ -214,7 +215,7 @@ export async function acquireStackLockOrExit(opts: {
   ttlMs?: number;
 }): Promise<StackLockHandle> {
   const s3 = await makeControlClient(opts.appConfig.s3.region, opts.accessKey, opts.secretKey);
-  const bucket = stateBucket(opts.appConfig.slug);
+  const bucket = deriveInfra(opts.appConfig).naming.bootDiagBucket;
   const key = lockKey(opts.stack);
   let lastWaitLine = 0;
   const result = await acquireLease({
@@ -247,7 +248,7 @@ export async function acquireStackLockOrExit(opts: {
     release: async () => {
       if (!heldLocks.delete(handle)) return;
       uninstall();
-      await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+      await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release lease: ${errorMessage(e)}`));
     },
     get lost() {
       return result.lease.lost;

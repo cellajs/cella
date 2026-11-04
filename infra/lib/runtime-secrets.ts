@@ -1,48 +1,13 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
-import { serviceKeyCondition } from './scaleway/secret-paths';
-import { serviceNames } from './services';
+import type { RuntimeSecretDerivation, RuntimeSecretGeneration, RuntimeSecretValueSource } from './runtime-secrets-config';
+import { type ServiceDefinition, serviceNames } from './services';
 import type { DatabaseRole, StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
 
 export type RuntimeSecretConsumer = ServiceName;
-
-export type RuntimeSecretValueSource = 'engine' | 'operator';
-export type RuntimeSecretGeneration = 'manual' | 'random';
-
-/** One runtime secret's app-owned mapping data from `runtime-secrets.config.ts`. The `id` is the config object key; {@link RuntimeSecretDefinition} is the flattened shape. */
-export interface RuntimeSecretConfig {
-  /** Scaleway Secret Manager container name (kebab-case). */
-  secretName: string;
-  /** Human-readable purpose, surfaced in tooling and the container description. */
-  description: string;
-  /** Environment variable the consuming service reads the value as. */
-  envVar: string;
-  /** Whether deploy/health gating treats the value's absence as fatal. */
-  required: boolean;
-  /** `'engine'` = the engine makes the value (generated, derived, a database's connection string, a store's output); `'operator'` = the operator sets it. */
-  valueSource: RuntimeSecretValueSource;
-  /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
-  generation: RuntimeSecretGeneration;
-  /** Services that receive the secret in their per-VM `.env.runtime`. */
-  services: readonly RuntimeSecretConsumer[];
-  /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
-  derivedFrom?: RuntimeSecretDerivation;
-  /**
-   * A generated value "Rotate secrets" may replace: one that protects no stored data (a signing key, a secret two services share). A key that
-   * encrypts or hashes stored data is left out: a new value would leave that data unreadable or unmatched. A value derived from a rotatable
-   * one follows it.
-   */
-  rotatable?: boolean;
-}
-
-/** How a derived secret's value follows its source: the source secret's id and a pure function of the source value. */
-export interface RuntimeSecretDerivation {
-  secretId: string;
-  derive: (sourceValue: string) => string;
-}
 
 /** A runtime-secret id. Store contributions register ids outside the app-config key union, so this stays a plain string and load-time validation rejects duplicates. */
 export type RuntimeSecretId = string;
@@ -64,12 +29,7 @@ export interface RuntimeSecretDefinition {
   database?: { role: DatabaseRole };
 }
 
-/** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
-export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecretConfig>>(secrets: T): T {
-  return secrets;
-}
-
-/** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order: the per-consumer union order is genId-fingerprinted, so merge position must not change. */
+/** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order. */
 export function buildRuntimeSecrets(
   stores: Record<string, Pick<StoreProvisioner, 'secrets'>>,
   appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>>,
@@ -151,14 +111,19 @@ export function engineMadeRuntimeSecrets(definitions: readonly RuntimeSecretDefi
   return [...generatedRuntimeSecrets(definitions), ...databaseRuntimeSecrets(definitions)];
 }
 
+/** A generated value that protects stored data: no rotation replaces it, and a teardown keeps its container beside the final dump. */
+export function protectsStoredData(definition: Pick<RuntimeSecretDefinition, 'valueSource' | 'generation' | 'rotatable'>): boolean {
+  return definition.valueSource === 'engine' && definition.generation === 'random' && definition.rotatable !== true;
+}
+
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {
   return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer));
 }
 
-/** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order. That order is hashed into each generation's genId, so reordering re-rolls every generation. */
-export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
+/** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order: the order of a machine's env file. */
+function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
   const seen = new Set<string>();
   return consumers
     .flatMap((consumer) => runtimeSecretsForConsumer(consumer))
@@ -170,9 +135,33 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
 }
 
 /**
- * The secret-read condition of a service principal: its own folder, and nothing else. The machine policies (lib/scaleway/machine-policies.ts)
- * and the deploy's grant assertion both build it here, so they compare equal as strings.
+ * The uploads key's two halves, which Update identities and Rotate keys write into the runtime folder: the key of the uploads application,
+ * which a service with `s3Access` signs uploads and presigned URLs with. Its consumers are those services.
  */
-export function principalSecretCondition(service: ServiceName): string {
-  return serviceKeyCondition(service);
+export const uploadsKeySecrets = [
+  { secretName: 'uploads-access-key', envVar: 'S3_ACCESS_KEY_ID', half: 'accessKey' },
+  { secretName: 'uploads-secret-key', envVar: 'S3_ACCESS_KEY_SECRET', half: 'secretKey' },
+] as const;
+
+/** One name a machine's env file carries: its env var, the runtime-folder container it is read from, and whether a missing value stops a deploy. */
+export interface RuntimeEnvEntry {
+  envVar: string;
+  secretName: string;
+  required: boolean;
+}
+
+/**
+ * The names one machine's env file carries: every runtime secret the services it carries consume, in registry order, and the uploads key when
+ * one of them signs uploads. Nothing else: a value no service on the machine reads stays off it.
+ */
+export function runtimeEnvEntries(carried: readonly Pick<ServiceDefinition, 'slug' | 's3Access'>[]): RuntimeEnvEntry[] {
+  const secrets = unionRuntimeSecrets(carried.map((service) => service.slug)).map(({ envVar, secretName, required }) => ({
+    envVar,
+    secretName,
+    required,
+  }));
+  const uploads = carried.some((service) => service.s3Access)
+    ? uploadsKeySecrets.map(({ envVar, secretName }) => ({ envVar, secretName, required: true }))
+    : [];
+  return [...secrets, ...uploads];
 }

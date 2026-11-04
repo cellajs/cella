@@ -1,5 +1,5 @@
 /**
- * What an environment deploys (D8): production the newest release, any other environment only what its line in the repository's environments
+ * What an environment deploys: production the newest release, any other environment only what its line in the repository's environments
  * file names. A line also pins a release or a commit, or raises the retry counter; an environment that follows the releases takes `releases`
  * or a release tag only. The runner reads this, as data, once a minute.
  */
@@ -31,7 +31,8 @@ export interface Target {
   source: string;
 }
 
-const COMMIT = /^[0-9a-f]{40}$/;
+/** A full commit id. */
+export const COMMIT = /^[0-9a-f]{40}$/;
 const RELEASE_TAG = /^\d+\.\d+\.\d+$/;
 
 function parseRule(word: string): TargetRule {
@@ -91,6 +92,19 @@ function tagCommit(refs: readonly RemoteRef[], tag: string): string | undefined 
   return refs.find((ref) => ref.ref === `refs/tags/${tag}^{}`)?.sha ?? refs.find((ref) => ref.ref === `refs/tags/${tag}`)?.sha;
 }
 
+/**
+ * Whether a release names the commit: a tag of the form `X.Y.Z` that points to it, an annotated tag by the commit on its peeled line. The
+ * tag object of an annotated tag is no release commit.
+ */
+export function isReleaseCommit(refs: readonly RemoteRef[], sha: string): boolean {
+  return releaseTags(refs).some((tag) => tagCommit(refs, tag) === sha);
+}
+
+/** The release tags `X.Y.Z` the refs name, once each: an annotated tag is listed by its tag object and its peeled line. */
+function releaseTags(refs: readonly RemoteRef[]): string[] {
+  return [...new Set(refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag)))];
+}
+
 interface TargetQuery {
   environment: string;
   line?: EnvironmentLine;
@@ -115,8 +129,7 @@ export async function resolveTarget(opts: TargetQuery): Promise<Target | undefin
   }
   if (rule.kind === 'releases') {
     const refs = await opts.listRemote(['refs/tags/*']);
-    const tags = refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag));
-    const newest = tags.reduce<string | undefined>((best, tag) => (best === undefined || newer(tag, best) ? tag : best), undefined);
+    const newest = releaseTags(refs).reduce<string | undefined>((best, tag) => (best === undefined || newer(tag, best) ? tag : best), undefined);
     const sha = newest ? tagCommit(refs, newest) : undefined;
     if (!newest || !sha) throw new Error(`${opts.environment} follows the releases, and the repository has none`);
     return of(sha, `release ${newest}`);

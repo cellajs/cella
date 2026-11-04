@@ -11,10 +11,8 @@ vi.mock('../prompts/masked-secret', () => ({ maskedSecret: (...args: unknown[]) 
 vi.mock('@inquirer/prompts', () => ({ input: (...args: unknown[]) => input(...args) }));
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
-const { acquireIdentityKey, acquireOperatorKey, acquirePrivilegedKey, addressVerdict, readOperatorLock, refusalLines } = await import(
-  './operator-unlock'
-);
-const { forgetSession, rememberedOperatorKey, rememberOperatorLock } = await import('../session');
+const { acquireIdentityKey, acquireOperatorKey, refusalLines } = await import('./operator-unlock');
+const { forgetSession, rememberedOperatorKey } = await import('../session');
 
 const stack = {
   appConfig: { slug: 'cella', appSlug: 'cella', s3: { region: 'nl-ams' } },
@@ -22,33 +20,40 @@ const stack = {
   projectId: 'project-1',
 } as unknown as InfraContext;
 const names = appPrincipalNames('cella');
-const lock = "request.ip in ['203.0.113.7']";
-const present = { state: 'present' as const, cidrs: ['203.0.113.7/32'], open: false };
+const inHours = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
 
-/** Who bears each access key, as IAM tells it; a number is the status IAM refuses the key with. */
-const bearers = new Map<string, { application?: string; owner?: string } | number>();
+/** Who bears each access key and when it ends, as IAM tells it; a number is the status IAM refuses the key with. */
+const bearers = new Map<string, { application?: string; user?: string; expiresAt?: string } | number>();
+/** The users in the operators group; undefined when the app has no group. */
+let members: string[] | undefined;
 /** The IAM key reads, with the secret key each was made with. */
 const keyReads: Array<{ accessKey: string; secretKey: string }> = [];
 
-/** A fake Scaleway: the IAM reads that tell a key's bearer, and the address lookup, which answers with this machine's address. */
+/** A fake Scaleway: the IAM reads that tell a key's bearer, its end and the operators group. */
 async function fakeScaleway(url: string, init?: { headers?: Record<string, string> }) {
   const answer = (status: number, body: unknown) => ({ ok: status < 400, status, text: async () => JSON.stringify(body) });
-  const path = new URL(url).pathname;
-  const keyRead = path.match(/\/api-keys\/([^/]+)$/);
+  const { pathname, searchParams } = new URL(url);
+  const keyRead = pathname.match(/\/api-keys\/([^/]+)$/);
   if (keyRead?.[1]) {
     keyReads.push({ accessKey: keyRead[1], secretKey: init?.headers?.['X-Auth-Token'] ?? '' });
     const bearer = bearers.get(keyRead[1]);
     if (bearer === undefined) return answer(404, { message: 'not found' });
     if (typeof bearer === 'number') return answer(bearer, { message: 'no' });
-    return answer(200, { access_key: keyRead[1], application_id: bearer.application, user_id: bearer.owner });
+    return answer(200, { access_key: keyRead[1], application_id: bearer.application, user_id: bearer.user, expires_at: bearer.expiresAt });
   }
-  const application = path.match(/\/applications\/([^/]+)$/)?.[1];
+  const application = pathname.match(/\/applications\/([^/]+)$/)?.[1];
   if (application) return answer(200, { name: application, organization_id: 'org-1' });
-  const user = path.match(/\/users\/([^/]+)$/)?.[1];
-  if (user) return answer(200, { email: user, type: 'owner', organization_id: 'org-1' });
-  if (path.endsWith('/secrets')) return answer(200, { secrets: [], total_count: 0 });
-  return { ok: true, status: 200, text: async () => '198.51.100.9' };
+  const user = pathname.match(/\/users\/([^/]+)$/)?.[1];
+  if (user) return answer(200, { email: `${user}@example.com`, type: 'member', organization_id: 'org-1' });
+  if (pathname.endsWith('/groups')) {
+    const name = searchParams.get('name');
+    return answer(200, { groups: members && name === names.operators ? [{ id: 'group-1', name, user_ids: members }] : [] });
+  }
+  if (pathname.endsWith('/secrets')) return answer(200, { secrets: [], total_count: 0 });
+  return answer(404, { message: `no fake for ${pathname}` });
 }
+
+const errorsPrinted = () => vi.mocked(console.error).mock.calls.flat().join(' ');
 
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -56,11 +61,12 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal('fetch', vi.fn(fakeScaleway));
   bearers.clear();
-  bearers.set('SCWOPERATOR', { application: 'cella-operator' });
+  bearers.set('SCWOPERATOR', { application: 'cella-operator', expiresAt: inHours(8) });
+  bearers.set('SCWALICE', { user: 'alice', expiresAt: inHours(8) });
+  members = ['alice'];
   keyReads.length = 0;
   input.mockResolvedValue('SCWOPERATOR');
   maskedSecret.mockResolvedValue('operator-secret');
-  rememberOperatorLock(present);
 });
 
 afterEach(() => {
@@ -70,64 +76,37 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-describe('readOperatorLock', () => {
-  it('reads the addresses every rule agrees on', () => {
-    expect(readOperatorLock([{ condition: lock }, { condition: lock }])).toEqual({ cidrs: ['203.0.113.7/32'], open: false });
-  });
-
-  it('must not call a policy locked when one rule has no condition: that rule admits the key from every address', () => {
-    expect(readOperatorLock([{ condition: lock }, { condition: '' }])).toEqual({ cidrs: [], open: true });
-  });
-
-  it('must not call a policy locked when its rules name different addresses, or a condition of another shape', () => {
-    expect(readOperatorLock([{ condition: lock }, { condition: "request.ip in ['198.51.100.9']" }]).open).toBe(true);
-    expect(readOperatorLock([{ condition: 'resource.name.startsWith("/x/")' }]).open).toBe(true);
-  });
-
-  it('says nothing about a policy without rules', () => {
-    expect(readOperatorLock([])).toEqual({ cidrs: [], open: false });
-  });
-});
-
-describe('addressVerdict', () => {
-  it('places an address inside or outside the list, and stays unknown without an address or a list', () => {
-    expect(addressVerdict('203.0.113.7', present)).toBe('inside');
-    expect(addressVerdict('198.51.100.9', present)).toBe('outside');
-    expect(addressVerdict(undefined, present)).toBe('unknown');
-    expect(addressVerdict('203.0.113.7', { state: 'present', cidrs: [], open: false })).toBe('unknown');
-  });
-});
-
 describe('refusalLines', () => {
-  it('calls a 401 a key Scaleway does not know, and leaves the address out of it', () => {
-    const lines = refusalLines({ status: 401, detail: 'x', names, address: '198.51.100.9', lock: present });
-    expect(lines).toEqual(["Scaleway does not know that secret key. Paste the key of 'cella-operator' from your password manager."]);
+  it('calls a 401 a key Scaleway does not know, and says where a one-day key is made', () => {
+    const lines = refusalLines({ status: 401, detail: 'x', names });
+    expect(lines[0]).toBe('Scaleway does not know that secret key.');
+    expect(lines[1]).toContain("IAM → Applications → 'cella-operator' → API keys");
   });
 
-  it('must not leave a 403 unexplained: it names this machine, the addresses the key works from, and who can change them', () => {
-    const lines = refusalLines({ status: 403, detail: 'x', names, address: '198.51.100.9', lock: present });
-    expect(lines[1]).toBe('This machine reaches the internet as 198.51.100.9; the key works from 203.0.113.7/32 only.');
-    expect(lines[2]).toBe('Connect through the dedicated address and try again.');
-    expect(lines[3]).toContain('pnpm infra operator-key');
-  });
-
-  it('must not blame an address that is on the list', () => {
-    const lines = refusalLines({ status: 403, detail: 'x', names, address: '203.0.113.7', lock: present });
-    expect(lines[2]).toMatch(/^The address is on the list, so this is not the address/);
+  it('must not leave a 403 unexplained: a key that reads no IAM is neither the operator application nor a member, and the Owner makes both', () => {
+    const lines = refusalLines({ status: 403, detail: 'x', names });
+    expect(lines[0]).toContain("no key of 'cella-operator' and none of a member of 'cella-operators'");
+    expect(lines[1]).toContain('pnpm infra operator-key');
   });
 
   it('passes on what Scaleway said for any other failure', () => {
-    expect(refusalLines({ status: 500, detail: 'boom', names, lock: present })).toEqual(['Scaleway did not take the operator key: boom']);
+    expect(refusalLines({ status: 500, detail: 'boom', names })).toEqual(['Scaleway did not take the key: boom']);
   });
 });
 
 describe('acquireOperatorKey', () => {
-  it('runs an action on the operator key itself: nothing is minted, and nothing is left to revoke', async () => {
+  it("runs an action on the operator application's one-day key: nothing is minted, and nothing is left to revoke", async () => {
     const key = await acquireOperatorKey(stack);
 
     expect(keyReads).toEqual([{ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' }]);
     expect(key).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' });
     expect(rememberedOperatorKey()).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
+  });
+
+  it("takes a member's own one-day key: a user in the operators group", async () => {
+    input.mockResolvedValue('SCWALICE');
+    const key = await acquireOperatorKey(stack);
+    expect(key).toEqual({ accessKey: 'SCWALICE', secretKey: 'operator-secret', organizationId: 'org-1' });
   });
 
   it('is one application for every environment of the app', async () => {
@@ -147,18 +126,48 @@ describe('acquireOperatorKey', () => {
     expect(maskedSecret).toHaveBeenCalledTimes(1);
   });
 
+  it('must not take a durable key, of the application or of a member: one with days left, or no end, is refused and the console path named', async () => {
+    for (const bearer of [
+      { application: 'cella-operator', expiresAt: inHours(2 * 24) },
+      { application: 'cella-operator' },
+      { user: 'alice', expiresAt: inHours(30 * 24) },
+    ]) {
+      bearers.set('SCWOPERATOR', bearer);
+      await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+      expect(errorsPrinted()).toContain('must die within the day');
+      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate API key, with an expiration");
+      expect(rememberedOperatorKey()).toBeUndefined();
+    }
+  });
+
+  it('takes a key that ends within the day, up to the last hour', async () => {
+    bearers.set('SCWOPERATOR', { application: 'cella-operator', expiresAt: inHours(23) });
+    await expect(acquireOperatorKey(stack)).resolves.toMatchObject({ accessKey: 'SCWOPERATOR' });
+  });
+
   it('must not take the key of another application, however much that key may do', async () => {
-    bearers.set('SCWOPERATOR', { application: 'cella-production-admin' });
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    bearers.set('SCWOPERATOR', { application: 'cella-production-admin', expiresAt: inHours(1) });
 
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
-    expect(errors.mock.calls.flat().join(' ')).toContain("not of 'cella-operator'");
+    expect(errorsPrinted()).toContain("not of 'cella-operator'");
     expect(rememberedOperatorKey()).toBeUndefined();
   });
 
-  it('must not take a user key in the place of the operator key', async () => {
-    bearers.set('SCWOPERATOR', { owner: 'owner@example.com' });
+  it("must not take a user's key when the user is no member of the operators group, and says who adds members", async () => {
+    bearers.set('SCWOPERATOR', { user: 'mallory', expiresAt: inHours(1) });
+
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    expect(errorsPrinted()).toContain("mallory@example.com is no member of 'cella-operators'");
+    expect(errorsPrinted()).toContain('IAM → Groups → cella-operators');
+    expect(rememberedOperatorKey()).toBeUndefined();
+  });
+
+  it("must not take a user's key when the app has no operators group yet: the action that makes it is named", async () => {
+    members = undefined;
+    bearers.set('SCWOPERATOR', { user: 'alice', expiresAt: inHours(1) });
+
+    await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    expect(errorsPrinted()).toContain('pnpm infra operator-key');
     expect(rememberedOperatorKey()).toBeUndefined();
   });
 
@@ -168,7 +177,7 @@ describe('acquireOperatorKey', () => {
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(rememberedOperatorKey()).toBeUndefined();
 
-    bearers.set('SCWOPERATOR', { application: 'cella-operator' });
+    bearers.set('SCWOPERATOR', { application: 'cella-operator', expiresAt: inHours(8) });
     await acquireOperatorKey(stack);
     expect(maskedSecret).toHaveBeenCalledTimes(2);
   });
@@ -178,31 +187,6 @@ describe('acquireOperatorKey', () => {
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(maskedSecret).not.toHaveBeenCalled();
     expect(keyReads).toEqual([]);
-  });
-});
-
-describe('acquirePrivilegedKey', () => {
-  it('takes the operator key on a stack that has an operator application', async () => {
-    const key = await acquirePrivilegedKey(stack);
-    expect(key.accessKey).toBe('SCWOPERATOR');
-    expect(acquireOwnerKey).not.toHaveBeenCalled();
-  });
-
-  it('takes the operator key when this machine cannot tell whether the stack has one', async () => {
-    rememberOperatorLock({ state: 'unknown', cidrs: [], open: false });
-    await acquirePrivilegedKey(stack);
-    expect(acquireOwnerKey).not.toHaveBeenCalled();
-  });
-
-  it('must not run a privileged action on an Owner key: an app without an operator application stops and names the action that makes it', async () => {
-    rememberOperatorLock({ state: 'absent', cidrs: [], open: false });
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    await expect(acquirePrivilegedKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
-
-    expect(acquireOwnerKey).not.toHaveBeenCalled();
-    expect(errors.mock.calls.flat().join(' ')).toContain('pnpm infra operator-key');
-    errors.mockRestore();
   });
 });
 

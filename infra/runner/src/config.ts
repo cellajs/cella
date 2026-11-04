@@ -1,4 +1,4 @@
-/** One environment the runner serves (D23): an entry of the committed `infra/runner.json`, which reaches the machine in its user data. */
+/** One environment the runner serves: an entry of the committed `infra/runner.json`, which reaches the machine in its user data. */
 export interface RunnerEnvironment {
   /** The environment's name, and its line in the repository's environments file. */
   environment: string;

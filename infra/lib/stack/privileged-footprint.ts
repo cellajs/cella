@@ -5,6 +5,8 @@ export interface PrivilegedFootprint {
   environment: string;
   identities: DeclaredIdentities;
   resources: Array<{ type: string; name: string; inputs: Record<string, unknown> }>;
+  /** The hash of the applied description (lib/deploy/app-description.ts); absent from a base older than it. */
+  description?: string;
 }
 
 /** What merging a change owes in one environment: an Owner moment for its identities, an apply for its privileged resources. */
@@ -12,7 +14,7 @@ export interface OwedWork {
   environment: string;
   /** Applications and policies that are new, gone or changed: **Update identities**, with an Owner API key. */
   ownerMoment: string[];
-  /** Privileged resources that are new, gone or changed: an apply, on the operator key. */
+  /** Privileged resources that are new, gone or changed, and the applied description when it changed: an apply, on the operator key. */
   apply: string[];
 }
 
@@ -43,10 +45,12 @@ export function owedWork(base: PrivilegedFootprint, head: PrivilegedFootprint): 
     new Map(footprint.identities.policies.map((policy) => [`policy ${policy.name}`, canonical({ ...policy, rules: policy.rules })]));
   const resources = (footprint: PrivilegedFootprint) =>
     new Map(footprint.resources.map((resource) => [`${resource.type} ${resource.name}`, canonical(resource.inputs)]));
+  // A release whose description differs ends apply needed, whatever the program declares.
+  const described = (footprint: PrivilegedFootprint) => new Map(footprint.description ? [['the applied description', footprint.description]] : []);
   return {
     environment: head.environment,
     ownerMoment: [...changes(applications(base), applications(head)), ...changes(policies(base), policies(head))],
-    apply: changes(resources(base), resources(head)),
+    apply: [...changes(resources(base), resources(head)), ...changes(described(base), described(head))],
   };
 }
 

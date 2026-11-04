@@ -4,9 +4,8 @@ import { databaseRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/run
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import { createRdbClient, type RdbUser } from '../lib/scaleway/scaleway-rdb';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { secretCopyContainers } from '../lib/scaleway/secret-copies';
-import { ENGINE_FOLDER } from '../lib/scaleway/secret-paths';
-import { readStoreOutputs } from '../lib/stack/store-outputs';
+import { ENGINE_FOLDER, RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
+import { readDatabaseOutputs } from '../lib/stack/store-outputs';
 import type { DatabaseRole } from '../lib/stores';
 
 /** The database API calls the task needs, so a test passes its own. */
@@ -71,7 +70,7 @@ export type PasswordSource = 'stored' | 'recovered' | 'generated';
  * - A role's password is the one kept in the engine folder; failing that, the one an existing connection string of that role carries (a stack
  *   whose roles the program made keeps its passwords); failing that, a fresh one. A recovered or fresh one is kept in the engine folder.
  * - A missing role is created with its password and its privileges. A role that exists gets a fresh password only when none could be found.
- * - Every consumer's copy of a connection string is written when it is missing or names another endpoint or password.
+ * - A connection string is written when it is missing or names another endpoint or password.
  */
 export async function ensureDatabase(opts: {
   rdb: EnsureDatabaseRdb;
@@ -101,10 +100,9 @@ export async function ensureDatabase(opts: {
     }
     let recovered: string | undefined;
     for (const definition of opts.rotate ? [] : definitions.filter((candidate) => candidate.database?.role === role)) {
-      for (const copy of await secretCopyContainers(opts.secrets, definition)) {
-        if (recovered || !copy.container || (copy.container.version_count ?? 0) === 0) continue;
-        recovered = passwordOfPostgresUrl(await opts.secrets.accessLatestValue(copy.container.id));
-      }
+      const container = await opts.secrets.getSecretByName(definition.secretName, RUNTIME_FOLDER);
+      if (recovered || !container || (container.version_count ?? 0) === 0) continue;
+      recovered = passwordOfPostgresUrl(await opts.secrets.accessLatestValue(container.id));
     }
     passwords[role] = recovered ?? generate();
     sources[role] = recovered ? 'recovered' : 'generated';
@@ -152,26 +150,25 @@ export async function ensureDatabase(opts: {
     const role = definition.database?.role;
     if (!role) continue;
     const expected = formatPostgresUrl(POSTGRES_ROLE_NAMES[role], passwords[role], opts.endpoint.privateIp, opts.endpoint.port, databaseName);
-    for (const copy of await secretCopyContainers(opts.secrets, definition)) {
-      if (!copy.container) continue;
-      const current = (copy.container.version_count ?? 0) > 0 ? await opts.secrets.accessLatestValue(copy.container.id) : undefined;
-      if (current === expected) continue;
-      await opts.secrets.putSecretValue({
-        secretId: copy.container.id,
-        value: expected,
-        description: 'Assembled by ensure-database',
-        disablePrevious: true,
-      });
-      written.push(`${definition.secretName}@${copy.service}`);
-    }
+    const container = await opts.secrets.getSecretByName(definition.secretName, RUNTIME_FOLDER);
+    if (!container) continue;
+    const current = (container.version_count ?? 0) > 0 ? await opts.secrets.accessLatestValue(container.id) : undefined;
+    if (current === expected) continue;
+    await opts.secrets.putSecretValue({
+      secretId: container.id,
+      value: expected,
+      description: 'Assembled by ensure-database',
+      disablePrevious: true,
+    });
+    written.push(definition.secretName);
   }
-  if (written.length > 0) log(`[ensure-database] wrote ${written.length} connection string cop${written.length === 1 ? 'y' : 'ies'}`);
+  if (written.length > 0) log(`[ensure-database] wrote ${written.length} connection string(s)`);
   return { passwords: sources, created, written };
 }
 
 /**
  * Run `ensureDatabase` for a stack whose `pulumi up` completed: the endpoint from its store outputs, the operator key for the database API and
- * Secret Manager. Nothing when the app declares no database connection string or the stack has no managed database yet.
+ * Secret Manager. Nothing when the stack has no managed database yet.
  */
 export async function ensureDatabaseForStack(opts: {
   env: NodeJS.ProcessEnv;
@@ -183,11 +180,8 @@ export async function ensureDatabaseForStack(opts: {
   log?: (message: string) => void;
 }): Promise<void> {
   const log = opts.log ?? ((message) => console.info(message));
-  if (databaseRuntimeSecrets().length === 0) return;
-  const store = Object.values(readStoreOutputs(opts.env, opts.stack)).find(
-    (outputs) => outputs.instanceId && outputs.privateIp && outputs.databaseName,
-  );
-  if (!store?.instanceId || !store.privateIp || !store.databaseName) {
+  const store = readDatabaseOutputs(opts.env, opts.stack);
+  if (!store.instanceId || !store.privateIp || !store.databaseName) {
     log('[ensure-database] the stack has no managed database endpoint yet');
     return;
   }

@@ -1,5 +1,4 @@
 import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
-import { machinePrincipals } from '../../scaleway/machine-keys';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
 import { allPrincipalNames } from '../../scaleway/principals';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
@@ -36,7 +35,7 @@ export interface KeyAge {
  */
 export type IdentityFacts = { observerAppId: string | null; keyAges: KeyAge[] };
 
-/** The keys' ages as one line, oldest first, in days. No age is a deadline (D12): the line only says how old each key is. */
+/** The keys' ages as one line, oldest first, in days. No age is a deadline: the line only says how old each key is. */
 export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
   const days = (createdAt: string) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
   return [...ages]
@@ -60,12 +59,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
       const auth = { secretKey: session.secretKey };
       const names = allPrincipalNames(session.appConfig, session.mode);
       const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
-      const applications = [
-        names.operator,
-        names.observer,
-        names.ciDeploy,
-        ...machinePrincipals(session.appConfig.slug, session.mode).map((principal) => principal.application),
-      ];
+      const applications = [names.operator, names.observer, names.ciDeploy, names.uploads];
       const keyAges: KeyAge[] = [];
       for (const application of applications) {
         const id = application === names.observer ? observerAppId : await resolveApplicationIdByName(auth, organizationId, application);

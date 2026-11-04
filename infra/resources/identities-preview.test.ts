@@ -2,18 +2,16 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
-/** The first service application the program looks up: the one this preview does not find. */
-let missing: string | undefined;
+let looked = false;
 
-// A registry service whose IAM application does not exist yet, as right after the service was added to the registry: a plan must still render.
+// The uploads application before the identity update that makes it, as right after an upgrade that declares it: a plan must still render.
 beforeAll(async () => {
   h = await installPulumiMocks({
-    deferCompute: true,
     preview: true,
     absentApplication: (name) => {
-      if (!name.includes('-vm-')) return false;
-      missing ??= name;
-      return name === missing;
+      if (!name.endsWith('-uploads')) return false;
+      looked = true;
+      return true;
     },
   });
   await import('./identities');
@@ -21,11 +19,11 @@ beforeAll(async () => {
 });
 
 describe('identities module in a preview', () => {
-  it('renders while a registry service has no application yet', () => {
-    expect(missing).toBeDefined();
+  it('renders while the uploads application does not exist yet', () => {
+    expect(looked).toBe(true);
   });
 
-  it('declares no IAM policy: the machine policies are written at Owner moments', () => {
+  it('declares no IAM policy: the identities are written at Owner moments', () => {
     expect(h.byType('scaleway:iam/policy:Policy')).toEqual([]);
   });
 });

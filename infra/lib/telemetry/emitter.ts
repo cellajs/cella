@@ -55,7 +55,7 @@ export interface Telemetry {
     opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
   ): void;
   event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void;
-  /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
+  /** Attach or replace the OTLP export target after creation: the agent learns its ingest key only from its env file, and earlier records still export. */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void;
   /** Export the spans + events buffered since the last export over OTLP/HTTP. Swallows failures; calls queue behind each other, so concurrent ones never export a record twice. */
   flush(): Promise<void>;
@@ -169,20 +169,8 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   };
 }
 
-/**
- * OTLP endpoint and headers from the environment: explicit OTLP vars win, and an app-configured sink ingest key implies that sink's endpoint.
- * `OTEL_EXPORTER_OTLP_ENDPOINT` is the base URL the OTel SDKs read (`https://collector:4318`), so its signals live under `/v1`.
- */
+/** The sink's endpoint and key header (config/telemetry.config.ts) when the environment holds its ingest key. */
 export function otlpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): { endpoint: string; headers: Record<string, string> } | undefined {
-  const explicit = env.OTEL_EXPORTER_OTLP_ENDPOINT;
-  if (explicit) {
-    const headers: Record<string, string> = {};
-    for (const pair of (env.OTEL_EXPORTER_OTLP_HEADERS ?? '').split(',')) {
-      const eq = pair.indexOf('=');
-      if (eq > 0) headers[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
-    }
-    return { endpoint: `${explicit.replace(/\/$/, '')}/v1`, headers };
-  }
   const sinkKey = env[telemetrySink.keyEnvVar];
   if (sinkKey) return { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: sinkKey } };
   return undefined;

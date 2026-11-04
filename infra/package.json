@@ -7,27 +7,24 @@
     "test": "vitest run",
     "test:integration": "INTEGRATION=1 vitest run tests/integration",
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
-    "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
-    "forget-retired-resources": "tsx tasks/forget-retired-resources.ts",
     "deploy": "tsx tasks/deploy.ts",
     "main-job": "tsx tasks/main-job.ts",
+    "description-hash": "tsx tasks/description-hash.ts",
     "status": "tsx tasks/status.ts",
-    "preflight": "tsx tasks/preflight-privileged.ts",
     "repair-certs": "tsx tasks/repair-certs.ts",
-    "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && rolldown boot/src/entry.ts --format cjs --platform node --file boot/dist/entry.cjs",
-    "boot:image": "pnpm run boot:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${BOOT_IMAGE:-infra-boot:dev} boot",
+    "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && rolldown agent/src/entry.ts --format cjs --platform node --file agent/dist/entry.cjs",
+    "agent:image": "pnpm run agent:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${AGENT_IMAGE:-infra-agent:dev} agent",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
-    "engine-gate": "bash scripts/engine-gate.sh",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@inquirer/core": "^12.0.6",
     "@inquirer/prompts": "^8.7.5",
     "@pulumi/pulumi": "^3.273.0",
-    "@pulumi/random": "^4.21.4",
     "@pulumiverse/scaleway": "^1.60.0",
     "picocolors": "^1.1.1",
     "shared": "workspace:*"
@@ -35,9 +32,11 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "ajv": "^8.20.0",
     "rolldown": "~1.2.16",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "yaml": "^2.9.1"
   }
 }

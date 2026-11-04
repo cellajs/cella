@@ -5,7 +5,7 @@ import type { Target } from '../../lib/deploy/target.ts';
 export type Decision = { action: 'start' } | { action: 'wait'; run: JobRun } | { action: 'none'; run: JobRun };
 
 /**
- * Whether to start a run of the environment's main job for its target (plan §3.4, C17, D21). Scaleway's run list is the runner's memory: a
+ * Whether to start a run of the environment's main job for its target. Scaleway's run list is the runner's memory: a
  * run's start values name its target and retry counter. A run in progress waits; a target and counter that have a run are not started again
  * by the runner, however that run ended: deployed is done, failed waits for a change in git, blocked waits for the operator who clears the block.
  * A target whose last run Scaleway no longer keeps (60 days) has no run here, so it is started again.

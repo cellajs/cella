@@ -20,12 +20,12 @@ export function pickStackShort(exists: (shortName: string) => boolean, candidate
   return candidates.find(exists) ?? 'production';
 }
 
-/** Extract the plaintext `bootstrap:computeDeferred: <iso-timestamp>` marker, set before a fresh provision's first `pulumi up` (no images exist yet, so compute is not declared) and cleared once base infra is up. */
+/** Extract the plaintext `bootstrap:computeDeferred: <iso-timestamp>` marker, set before a fresh provision's first `pulumi up` and cleared once the foundation is up. */
 export function extractComputeDeferredMarker(yamlText: string): string | undefined {
   return yamlText.match(/^\s*bootstrap:computeDeferred:\s*(.+)$/m)?.[1]?.trim();
 }
 
-/** Detect a leftover `bootstrap:computeDeferred` marker from a fresh provision whose first `pulumi up` did not complete. While present, compute stays gated off until images are pushed. */
+/** Detect a leftover `bootstrap:computeDeferred` marker from a fresh provision whose first `pulumi up` did not complete. */
 export function detectComputeDeferred(yamlText?: string): string | undefined {
   return yamlText ? extractComputeDeferredMarker(yamlText) : undefined;
 }

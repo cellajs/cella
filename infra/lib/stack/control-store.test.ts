@@ -1,26 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
-import { recordRotation } from '../../tasks/record-rotation';
 import { makeLockS3 } from '../../tests/helpers/fake-lock-s3';
 import {
   acquireLock,
-  type ControlState,
-  controlKey,
-  emptyControlState,
-  emptyRollout,
   forceUnlock,
   type LockInfo,
   lockKey,
-  parseControlState,
-  promote,
-  readControlState,
+  parseRotations,
+  readObjectEtag,
+  recordRotation,
   releaseLock,
-  serializeControlState,
-  setPending,
+  rotationsKey,
   stateBucket,
-  updateServiceRollout,
-  withoutPending,
   withRotation,
-  writeControlState,
 } from './control-store';
 
 /** Mock S3 client dispatching on command constructor name, mirroring
@@ -51,106 +42,14 @@ describe('control-store keys', () => {
     expect(stateBucket('cella')).toBe('cella-pulumi-state');
   });
 
-  it('derives the control key from a full or bare stack name', () => {
-    expect(controlKey('organization/infra/production')).toBe('control/production.json');
-    expect(controlKey('production')).toBe('control/production.json');
-  });
-});
-
-describe('parse/serialize', () => {
-  it('round-trips a populated state', () => {
-    const state: ControlState = {
-      schemaVersion: 2,
-      rollout: {
-        backend: { seq: 6, active: { id: 'aa11', sha: 'abc', seq: 5 }, pendingSha: 'def' },
-        cdc: { seq: 2, active: { id: 'cc33', sha: 'abc', seq: 2 } },
-      },
-      updatedAt: '2026-06-20T01:00:00Z',
-      updatedBy: 'ci:run-512',
-    };
-    expect(parseControlState(serializeControlState(state))).toEqual(state);
-  });
-
-  it('accepts a minimal document, and one an older engine wrote with its bootstrap block', () => {
-    expect(parseControlState('{"schemaVersion":2}')).toEqual(emptyControlState());
-    expect(parseControlState('{"schemaVersion":2,"bootstrap":{"completedAt":"2026-06-20T00:00:00Z"}}')).toEqual(emptyControlState());
-  });
-
-  it('rejects invalid JSON', () => {
-    expect(() => parseControlState('{nope')).toThrow(/not valid JSON/);
-  });
-
-  it('rejects an unsupported schema version', () => {
-    expect(() => parseControlState('{"schemaVersion":1}')).toThrow(/unsupported schemaVersion/);
-  });
-
-  it('rejects a malformed rollout entry', () => {
-    expect(() => parseControlState('{"schemaVersion":2,"rollout":{"backend":{"active":{"id":"x","sha":"y","seq":1}}}}')).toThrow(
-      /rollout\['backend'\].seq/,
-    );
-  });
-});
-
-describe('readControlState', () => {
-  it('parses an existing object and returns its etag', async () => {
-    const { s3 } = makeS3({
-      get: [{ body: '{"schemaVersion":2,"rollout":{"backend":{"seq":5,"active":{"id":"aa11","sha":"abc","seq":5}}}}', etag: '"e1"' }],
-    });
-    const { state, etag } = await readControlState(s3, 'b', 'k');
-    expect(state.rollout.backend).toEqual({ seq: 5, active: { id: 'aa11', sha: 'abc', seq: 5 } });
-    expect(etag).toBe('"e1"');
-  });
-
-  it('returns the empty state (no etag) when the object is missing', async () => {
-    const { s3 } = makeS3({ get: [{ name: 'NoSuchKey' }] });
-    const { state, etag } = await readControlState(s3, 'b', 'k');
-    expect(state).toEqual(emptyControlState());
-    expect(etag).toBeUndefined();
-  });
-
-  it('treats a 404 status as missing', async () => {
-    const { s3 } = makeS3({ get: [{ status: 404 }] });
-    const { state } = await readControlState(s3, 'b', 'k');
-    expect(state).toEqual(emptyControlState());
-  });
-
-  it('rethrows unexpected errors', async () => {
-    const { s3 } = makeS3({ get: [{ status: 500 }] });
-    await expect(readControlState(s3, 'b', 'k')).rejects.toThrow(/get error/);
-  });
-});
-
-describe('writeControlState', () => {
-  it('writes serialized JSON and returns the etag', async () => {
-    const { s3, puts } = makeS3({ putEtag: '"e2"' });
-    const { etag } = await writeControlState(s3, 'b', 'k', emptyControlState());
-    expect(etag).toBe('"e2"');
-    expect(puts[0]!.Bucket).toBe('b');
-    expect(puts[0]!.Key).toBe('k');
-    expect(puts[0]!.ContentType).toBe('application/json');
-    expect(JSON.parse(puts[0]!.Body as string).schemaVersion).toBe(2);
-    expect(puts[0]!.IfMatch).toBeUndefined();
-    expect(puts[0]!.IfNoneMatch).toBeUndefined();
-  });
-
-  it('passes conditional-write headers when provided', async () => {
-    const { s3, puts } = makeS3({});
-    await writeControlState(s3, 'b', 'k', emptyControlState(), { ifMatch: '"e1"' });
-    expect(puts[0]!.IfMatch).toBe('"e1"');
-
-    await writeControlState(s3, 'b', 'k', emptyControlState(), { ifNoneMatch: '*' });
-    expect(puts[1]!.IfNoneMatch).toBe('*');
+  it("keeps an environment's control records in one folder, from a full or bare stack name", () => {
+    expect(lockKey('organization/infra/production')).toBe('control/production/lock.json');
+    expect(rotationsKey('staging')).toBe('control/staging/rotations.json');
   });
 });
 
 /** Stateful single-object S3 mock honouring If-None-Match/If-Match preconditions,
  *  so the lock's create-if-absent and stale-break paths are exercised for real. */
-
-describe('lock keys', () => {
-  it('derives a sibling lock key', () => {
-    expect(lockKey('organization/infra/production')).toBe('control/production.lock.json');
-  });
-});
 
 describe('acquireLock / releaseLock', () => {
   const opts = { owner: 'operator:a', operation: 'apply', ttlMs: 60_000, now: 1_000_000 };
@@ -201,130 +100,16 @@ describe('acquireLock / releaseLock', () => {
   });
 });
 
-describe('rollout transitions', () => {
-  it('setPending records the deploy intent without touching pointers', () => {
-    const active = { id: 'aa11', sha: 'abc', seq: 3 };
-    const next = setPending({ seq: 3, active }, 'def');
-    expect(next).toEqual({ seq: 3, active, pendingSha: 'def' });
-  });
-
-  it('setPending on a brand-new service starts from the empty rollout', () => {
-    expect(setPending(undefined, 'def')).toEqual({ seq: 0, pendingSha: 'def' });
-  });
-
-  it('promote advances seq, sets active, and clears pending', () => {
-    const active = { id: 'aa11', sha: 'abc', seq: 3 };
-    const next = promote({ seq: 3, active, pendingSha: 'def' }, { id: 'bb22', sha: 'def' });
-    expect(next).toEqual({ seq: 4, active: { id: 'bb22', sha: 'def', seq: 4 } });
-  });
-
-  it('promote on a first deploy starts from seq 1', () => {
-    expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({ seq: 1, active: { id: 'bb22', sha: 'def', seq: 1 } });
-  });
-
-  it('parse tolerates and drops unknown pointer fields (a pre-refactor plane marker)', () => {
-    const text = JSON.stringify({
-      schemaVersion: 2,
-      rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'abc', seq: 1, plane: 'foundation' } } },
-    });
-    expect(parseControlState(text).rollout.backend?.active).toEqual({ id: 'aa11', sha: 'abc', seq: 1 });
-  });
-
-  it('emptyRollout starts at seq 0 with no pointers', () => {
-    expect(emptyRollout()).toEqual({ seq: 0 });
-  });
-
-  it('withoutPending drops every deploy intent and keeps the active pointers', () => {
-    // The state the failed 0.13.0 deploy left: the preflight must plan the active generation, not the pending release.
-    const active = { id: 'f9a8', sha: 'e9a8d48', seq: 3 };
-    const rollout = { backend: { seq: 3, pendingSha: '84b7e22', active }, frontend: { seq: 0, pendingSha: '84b7e22' }, cdc: { seq: 2 } };
-    expect(withoutPending(rollout)).toEqual({ backend: { seq: 3, active }, frontend: { seq: 0 }, cdc: { seq: 2 } });
-    expect(rollout.backend.pendingSha).toBe('84b7e22');
-  });
-});
-
-/** Stateful control-object S3 mock: a racing writer promotes `frontend` between
- *  our first read and write, so the conditional write conflicts exactly once. */
-function makeRacingControlS3(initial: ControlState) {
-  let obj = { body: serializeControlState(initial), etag: '"e1"' };
-  let counter = 1;
-  let raced = false;
-  const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' });
-  const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, string> }) => {
-    const kind = cmd.constructor.name;
-    if (kind === 'GetObjectCommand') {
-      return { Body: { transformToString: async () => obj.body }, ETag: obj.etag };
-    }
-    if (kind === 'PutObjectCommand') {
-      if (!raced) {
-        raced = true;
-        const racedState = parseControlState(obj.body);
-        racedState.rollout.frontend = { seq: 9, active: { id: 'ff99', sha: 'zz', seq: 9 } };
-        obj = { body: serializeControlState(racedState), etag: `"e${++counter}"` };
-        throw fail412();
-      }
-      if (cmd.input.IfMatch && cmd.input.IfMatch !== obj.etag) throw fail412();
-      obj = { body: cmd.input.Body ?? '', etag: `"e${++counter}"` };
-      return { ETag: obj.etag };
-    }
-    throw new Error(`unexpected command ${kind}`);
-  });
-  return { s3: { send } as any, read: () => parseControlState(obj.body) };
-}
-
-describe('updateServiceRollout', () => {
-  const initial: ControlState = {
-    schemaVersion: 2,
-    rollout: { backend: { seq: 1, active: { id: 'aa11', sha: 'old', seq: 1 }, pendingSha: 'new' } },
-  };
-
-  it('retries the read-patch-write when a racing writer wins the conditional write', async () => {
-    const { s3, read } = makeRacingControlS3(initial);
-    await updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }));
-    const state = read();
-    // Both the racer's entry and ours survive.
-    expect(state.rollout.frontend).toEqual({ seq: 9, active: { id: 'ff99', sha: 'zz', seq: 9 } });
-    expect(state.rollout.backend).toEqual({ seq: 2, active: { id: 'bb22', sha: 'new', seq: 2 } });
-  });
-
-  it('gives up after the configured attempts', async () => {
-    const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' });
-    const send = vi.fn(async (cmd: { constructor: { name: string } }) => {
-      if (cmd.constructor.name === 'GetObjectCommand') {
-        return { Body: { transformToString: async () => serializeControlState(initial) }, ETag: '"e1"' };
-      }
-      throw fail412();
-    });
-    const s3 = { send } as any;
-    await expect(updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }), 2)).rejects.toThrow(
-      /PreconditionFailed/,
-    );
-    expect(send.mock.calls.filter(([cmd]) => (cmd as { constructor: { name: string } }).constructor.name === 'PutObjectCommand')).toHaveLength(2);
-  });
-});
-
 describe('rotations', () => {
-  it('must not lose a rotation when a deploy reads and writes the record back: the parse keeps it', () => {
-    const state = withRotation(emptyControlState(), 'keys', { at: '2026-10-14T09:00:00.000Z', by: 'operator:flip' });
-    expect(parseControlState(serializeControlState(state)).rotations).toEqual({
-      counter: 1,
-      keys: { at: '2026-10-14T09:00:00.000Z', by: 'operator:flip' },
-    });
-  });
-
   it('raises the counter at every rotation, of either kind, and keeps the last record of the other', () => {
-    const once = withRotation(emptyControlState(), 'keys', { at: 'a', by: 'x' });
+    const once = withRotation({ counter: 0 }, 'keys', { at: 'a', by: 'x' });
     const twice = withRotation(once, 'secrets', { at: 'b', by: 'y' });
-    expect(twice.rotations).toEqual({ counter: 2, keys: { at: 'a', by: 'x' }, secrets: { at: 'b', by: 'y' } });
+    expect(twice).toEqual({ counter: 2, keys: { at: 'a', by: 'x' }, secrets: { at: 'b', by: 'y' } });
+    expect(parseRotations(JSON.stringify(twice))).toEqual(twice);
   });
 
-  it('leaves a record that never rotated without rotations, so its generations keep their identity', () => {
-    expect(parseControlState(serializeControlState(emptyControlState())).rotations).toBeUndefined();
-  });
-
-  it('writes the rotation conditional on the record it read, so a racing write fails loudly', async () => {
-    const current = serializeControlState(emptyControlState());
-    const { s3, puts } = makeS3({ get: [{ body: current, etag: '"e1"' }] });
+  it('writes the rotation conditional on the object it read, so a racing write fails loudly', async () => {
+    const { s3, puts } = makeS3({ get: [{ body: JSON.stringify({ counter: 1 }), etag: '"e1"' }] });
     const rotations = await recordRotation({
       s3,
       bucket: 'b',
@@ -333,8 +118,32 @@ describe('rotations', () => {
       by: 'operator:flip',
       now: new Date('2026-10-14T10:00:00Z'),
     });
-    expect(rotations).toEqual({ counter: 1, secrets: { at: '2026-10-14T10:00:00.000Z', by: 'operator:flip' } });
+    expect(rotations).toEqual({ counter: 2, secrets: { at: '2026-10-14T10:00:00.000Z', by: 'operator:flip' } });
     expect(puts[0]!.IfMatch).toBe('"e1"');
-    expect(puts[0]!.Key).toBe('control/staging.json');
+    expect(puts[0]!.Key).toBe('control/staging/rotations.json');
+  });
+
+  it('creates the first rotation create-only', async () => {
+    const { s3, puts } = makeS3({ get: [{ status: 404 }] });
+    await recordRotation({ s3, bucket: 'b', stack: 'production', kind: 'keys', by: 'operator:flip' });
+    expect(puts[0]!.IfNoneMatch).toBe('*');
+  });
+});
+
+describe('readObjectEtag', () => {
+  it('must not let an unreadable checkpoint pass for an unchanged one: one HEAD of the given object, no body, and a refused read throws', async () => {
+    const sent: Array<{ command: string; input: unknown }> = [];
+    const head = (error?: Error) => ({
+      send: async (command: unknown) => {
+        const sentCommand = command as { constructor: { name: string }; input: unknown };
+        sent.push({ command: sentCommand.constructor.name, input: sentCommand.input });
+        if (error) throw error;
+        return { ETag: '"aaa"' };
+      },
+    });
+    expect(await readObjectEtag(head(), 'state', '.pulumi/stacks/infra/production.json')).toBe('"aaa"');
+    expect(sent).toEqual([{ command: 'HeadObjectCommand', input: { Bucket: 'state', Key: '.pulumi/stacks/infra/production.json' } }]);
+    const denied = Object.assign(new Error('access denied'), { name: 'AccessDenied' });
+    await expect(readObjectEtag(head(denied), 'state', '.pulumi/stacks/infra/production.json')).rejects.toThrow('access denied');
   });
 });

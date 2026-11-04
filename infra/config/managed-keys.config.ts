@@ -1,6 +1,6 @@
-import { defineManagedKeys } from '../lib/managed-keys';
+import { defineManagedKeys } from '../lib/managed-keys-config';
 
-/** App-owned registry of scoped IAM keys the CLI can mint into operator runtime secrets. Every mint or rotation requires operator confirmation. */
+/** Registry of scoped IAM keys the CLI can mint into operator runtime secrets. Every mint or rotation requires operator confirmation. */
 export const managedKeysConfig = defineManagedKeys({
   ai: {
     suffix: 'ai',

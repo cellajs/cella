@@ -25,7 +25,7 @@ describe('pathPrefix registry validation', () => {
 
   it('rejects two services claiming the same prefix', () => {
     expect(() =>
-      defineServices({ a: { ...base, lbRoute: 'default', pathPrefix: '/api' }, b: { ...base, lbRoute: 'host', pathPrefix: '/api' } }),
+      defineServices({ a: { ...base, lbRoute: 'default', pathPrefix: '/api' }, b: { ...base, lbRoute: 'path', pathPrefix: '/api' } }),
     ).toThrow(/unique/);
   });
 });

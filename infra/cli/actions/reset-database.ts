@@ -5,9 +5,9 @@ import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-outpu
 import { errorMessage } from '../../lib/utils/errors';
 import { backupName, ResetIrrecoverableError, type ResetTarget, rebuildSteps, restoreHint, sequenceDatabaseReset } from '../../tasks/reset-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 
-/** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
+/** Roles the operator task ensure-database makes on the instance (`tasks/ensure-database.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
 
 /** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */
@@ -51,7 +51,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
   // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const client = createRdbClient({ secretKey: operator.secretKey, region });
   const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 

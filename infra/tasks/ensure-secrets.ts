@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { databaseRuntimeSecrets, generatedRuntimeSecrets, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { type CopyContainer, secretCopyContainers } from '../lib/scaleway/secret-copies';
+import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 
 /** The Secret Manager calls the task needs, so a test passes its own. */
 export interface EnsureSecretsClient {
@@ -15,20 +15,17 @@ export function generateSecretValue(): string {
   return randomBytes(24).toString('base64url');
 }
 
-const hasValue = (copy: CopyContainer) => (copy.container?.version_count ?? 0) > 0;
-
 /**
- * Make the value of every generated or derived runtime secret straight into Secret Manager, so it never passes through the Pulumi state. A value
- * that exists in any copy is the value: copies without one get it, and nothing is regenerated (rotating is its own action). A secret none of
- * whose copies has a value gets a fresh one, or the one derived from its source. A database connection string is only given to a copy without
- * one: ensure-database makes it, as it needs the role's password. A copy whose container the `up` has not made yet is left for
- * the next run. Returns the secrets that got a value.
+ * Make the value of every generated or derived runtime secret straight into its container in the runtime folder, so it never passes through
+ * the Pulumi state. A value that exists is the value: nothing is regenerated (rotating is its own action). A container without one gets a
+ * fresh value, or the one derived from its source. A database connection string is ensure-database's, as it needs the role's password. A
+ * container the `up` has not made yet is left for the next run. Returns the secrets that got a value.
  */
 export async function ensureSecrets(opts: {
   client: EnsureSecretsClient;
   secrets?: readonly RuntimeSecretDefinition[];
   generate?: () => string;
-  /** Rotate: a fresh value for every rotatable secret in every copy, the ones derived from it recomputed; connection strings are ensure-database's. */
+  /** Rotate: a fresh value for every rotatable secret, the ones derived from it recomputed; connection strings are ensure-database's. */
   rotate?: boolean;
   log?: (message: string) => void;
 }): Promise<string[]> {
@@ -47,16 +44,15 @@ export async function ensureSecrets(opts: {
   const resolveValue = async (definition: RuntimeSecretDefinition): Promise<string | undefined> => {
     const known = values.get(definition.id);
     if (known !== undefined) return known;
-    const copies = await secretCopyContainers(opts.client, definition);
+    const container = await opts.client.getSecretByName(definition.secretName, RUNTIME_FOLDER);
     if (opts.rotate && definition.database) return undefined;
     const rotating = Boolean(opts.rotate) && isRotatable(definition);
-    const existing = rotating ? undefined : copies.find(hasValue);
+    const existing = !rotating && container && (container.version_count ?? 0) > 0 ? container : undefined;
     let value: string | undefined;
-    if (existing?.container) {
-      value = await opts.client.accessLatestValue(existing.container.id);
+    if (existing) {
+      value = await opts.client.accessLatestValue(existing.id);
     } else if (definition.database) {
-      // A connection string is assembled by ensure-database with the role's password; this task only gives it to a copy without one.
-      log(`[ensure-secrets] ${definition.secretName}: no copy has a value; an apply makes it (ensure-database)`);
+      log(`[ensure-secrets] ${definition.secretName}: no value yet; an apply makes it (ensure-database)`);
     } else if (definition.derivedFrom) {
       const { secretId, derive } = definition.derivedFrom;
       const source = all.find((candidate) => candidate.id === secretId);
@@ -67,21 +63,16 @@ export async function ensureSecrets(opts: {
       value = generate();
     }
     if (value === undefined) return undefined;
-    const empty = copies.filter((copy) => copy.container && (rotating || !hasValue(copy)));
-    for (const copy of empty) {
+    if (!container) {
+      log(`[ensure-secrets] ${definition.secretName}: no container yet; the next apply makes it`);
+    } else if (!existing) {
       await opts.client.putSecretValue({
-        secretId: copy.container!.id,
+        secretId: container.id,
         value,
         description: rotating ? 'Rotated by ensure-secrets' : 'Made by ensure-secrets',
         disablePrevious: rotating,
       });
-    }
-    const missing = copies.filter((copy) => !copy.container);
-    if (missing.length > 0) log(`[ensure-secrets] ${definition.secretName}: no container yet for ${missing.map((copy) => copy.service).join(', ')}`);
-    if (empty.length > 0) {
-      log(
-        `[ensure-secrets] ${definition.secretName}: ${empty.length} cop${empty.length === 1 ? 'y' : 'ies'} given ${existing ? 'its value' : 'a new value'}`,
-      );
+      log(`[ensure-secrets] ${definition.secretName}: given ${rotating ? 'a rotated' : 'a new'} value`);
       written.push(definition.secretName);
     }
     values.set(definition.id, value);

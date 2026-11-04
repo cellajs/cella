@@ -33,8 +33,8 @@ export async function loadStackContext(environment: Environment, log?: (message:
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
   const state = detectStackState({ yamlText: stackYaml });
   process.env.APP_MODE = environment;
-  const { loadEngineConfig } = await import('../../config/engine-config');
-  const appConfig = await loadEngineConfig();
+  const { engineConfig: appConfig } = await import('../../config/engine-config');
+  if (appConfig.mode !== environment) throw new Error(`Mode mismatch: requested "${environment}" but loaded config is "${appConfig.mode}"`);
   const project = resolveModeProject({
     stack: stackFileProjectId(stackYaml),
     own: ownProjectId(environment),

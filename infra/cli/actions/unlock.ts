@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { deriveInfra } from '../../lib/naming';
 import { menuPath } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { appPrincipalNames } from '../../lib/scaleway/principals';
@@ -33,7 +34,7 @@ import { operatorKeys } from './operator-unlock';
 const STATE_BACKUP_DIR = resolve(infraDir, '.state-backups');
 
 /**
- * What the stack lock is at `now`: `none` without one, `expired` once its lease lapsed (the run that held it is gone), `live` while the
+ * What the lease is at `now`: `none` without one, `expired` once it lapsed (the run that held it is gone), `live` while the
  * lease still runs. A holder renews its lease while it works, so a live lock most likely belongs to a run in progress.
  */
 export function lockVerdict(held: Pick<LockInfo, 'expiresAt'> | undefined, now: number): 'none' | 'expired' | 'live' {
@@ -42,8 +43,8 @@ export function lockVerdict(held: Pick<LockInfo, 'expiresAt'> | undefined, now: 
 }
 
 /**
- * Clear what an interrupted apply or deploy left behind: a stale conditional-write stack lock, then the operations the Pulumi state still records as
- * in flight. An expired lock is removed without a question; a live one only after the operator confirms, and declining ends the action.
+ * Clear what an interrupted apply or deploy left behind: a stale lease, then the operations the Pulumi state still records as in flight
+ * from an interrupted apply. An expired lock is removed without a question; a live one only after the operator confirms, and declining ends the action.
  */
 export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
@@ -51,11 +52,12 @@ export async function runUnlock(context: InfraContext): Promise<void> {
 
   await resolveVerifiedPassphrase(context.stackYaml);
 
-  // The operator key, as Apply locks with: the state bucket admits the operator, the observer (read) and the CI deploy application.
+  // The operator key, as Apply locks with: the boot-diag bucket's policy on the lease admits the operator, the observer (read) and the deploy key.
   const { state: key } = await operatorKeys(context);
 
   const s3 = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey);
-  const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
+  const leaseBucket = deriveInfra(appConfig).naming.bootDiagBucket;
+  const held = await peekLock(s3, leaseBucket, lockKey(targetStack));
   const verdict = lockVerdict(held, Date.now());
   if (!held) {
     console.info(`${pc.dim('No lock present for')} ${targetStack}.`);
@@ -73,7 +75,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
         return;
       }
     }
-    const removed = await forceUnlock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
+    const removed = await forceUnlock(s3, leaseBucket, lockKey(targetStack));
     if (removed) {
       console.info(`${checkMark} Cleared lock held by ${pc.cyan(removed.owner)} (operation: ${removed.operation}, since ${removed.acquiredAt}).`);
     } else {

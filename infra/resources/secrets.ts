@@ -1,56 +1,17 @@
 import type * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
-import { type RuntimeSecretDefinition, type RuntimeSecretId, runtimeSecrets } from '../lib/runtime-secrets';
-import { secretCopies } from '../lib/scaleway/secret-paths';
+import { protectsStoredData, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
+import { RUNTIME_FOLDER } from '../lib/scaleway/secret-paths';
 import { region, tags } from '../pulumi-context';
 import { derivedRuntimeSecretData } from './stores';
 
-// One copy per consumer, in `/<service>/`. The folder is the security boundary the machine grant is conditioned on, so it is derived
-// from the consumer list, never hand-assigned, and a grant names its own folder only.
-
-/** Imports of operator secret containers that exist outside the state, as `secretName@service=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
-function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
-  if (!raw) return {};
-  const map: Record<string, string> = {};
-  for (const pair of raw.split(',')) {
-    const entry = pair.trim();
-    if (!entry) continue;
-    const eq = entry.indexOf('=');
-    const name = eq === -1 ? '' : entry.slice(0, eq).trim();
-    const id = eq === -1 ? '' : entry.slice(eq + 1).trim();
-    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name@service=region/uuid).`);
-    map[name] = id;
-  }
-  return map;
-}
-
-const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS);
+// One container per value, in the runtime folder, which only the deploy key reads: the deploy composes each machine's env file from them.
 
 /**
- * The container of one copy. A secret of one consumer keeps the resource name it had before copies (`secret-<name>`), through an alias, as
- * its folder did not move: a new resource at the same name and path would be refused. The provider updates a changed `path` in place, so a
- * container whose folder moves keeps its id and its versions.
+ * The resource name a secret's container had while each consumer held a copy: its first consumer's copy is the one the move to the runtime
+ * folder keeps (tasks/move-secret-paths.ts), so the alias carries its id and versions over.
  */
-function createSecretContainer(
-  name: string,
-  copy: { service: string; path: string; only: boolean },
-  description: string,
-  opts?: { retainOnDelete?: boolean; importId?: string },
-) {
-  return new scaleway.secrets.Secret(
-    `secret-${name}@${copy.service}`,
-    { name, path: copy.path, description, region, tags },
-    { retainOnDelete: opts?.retainOnDelete, import: opts?.importId, aliases: copy.only ? [{ name: `secret-${name}` }] : undefined },
-  );
-}
-
-function createSecretVersion(name: string, copy: { service: string; only: boolean }, secretId: pulumi.Input<string>, data: pulumi.Input<string>) {
-  return new scaleway.secrets.Version(
-    `secret-version-${name}@${copy.service}`,
-    { secretId, data, region },
-    { aliases: copy.only ? [{ name: `secret-version-${name}` }] : undefined },
-  );
-}
+const copyAlias = (resource: string, definition: RuntimeSecretDefinition) => [{ name: `${resource}@${definition.services[0]}` }];
 
 // The values a store supplies (connection strings, CA data) are bound by the store plugins in resources/stores and written as versions here.
 // Generated and derived values are made by the operator task ensure-secrets, and database connection strings by ensure-database, straight
@@ -67,31 +28,24 @@ function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<st
   );
 }
 
-// Registry-driven secret containers
-
-function secretContainers(definition: RuntimeSecretDefinition): Record<string, pulumi.Output<string>> {
-  const isOperator = definition.valueSource === 'operator';
-  const copies = secretCopies(definition);
-  return Object.fromEntries(
-    copies.map(({ service, path }) => {
-      const copy = { service, path, only: copies.length === 1 };
-      // Pulumi creates every container and operators add versions through the CLI. Operator values are retained when a registry entry disappears, so orphans are cleaned up by hand.
-      const secret = createSecretContainer(definition.secretName, copy, definition.description, {
-        retainOnDelete: isOperator,
-        importId: isOperator ? operatorSecretImports[`${definition.secretName}@${service}`] : undefined,
-      });
-      const supplied = storeSuppliedData(definition);
-      if (supplied !== undefined) createSecretVersion(definition.secretName, copy, secret.id, supplied);
-      return [service, secret.id];
-    }),
+/**
+ * A runtime secret's container. One whose value protects stored data outlives a destroy and a registry entry that disappears, as the final
+ * dump of a teardown needs it, and a setup adopts it again (lib/stack/kept-resources.ts).
+ */
+function secretContainer(definition: RuntimeSecretDefinition): void {
+  const secret = new scaleway.secrets.Secret(
+    `secret-${definition.secretName}`,
+    { name: definition.secretName, path: RUNTIME_FOLDER, description: definition.description, region, tags },
+    { retainOnDelete: protectsStoredData(definition), aliases: copyAlias(`secret-${definition.secretName}`, definition) },
   );
+  const supplied = storeSuppliedData(definition);
+  if (supplied !== undefined) {
+    new scaleway.secrets.Version(
+      `secret-version-${definition.secretName}`,
+      { secretId: secret.id, data: supplied, region },
+      { aliases: copyAlias(`secret-version-${definition.secretName}`, definition) },
+    );
+  }
 }
 
-/**
- * Runtime secret ids to the Scaleway secret id of each consumer's copy. The key type is the literal id union, so a typo is a compile error;
- * Object.fromEntries widens, hence the cast.
- */
-export const secretIds = Object.fromEntries(runtimeSecrets.map((definition) => [definition.id, secretContainers(definition)])) as Record<
-  RuntimeSecretId,
-  Record<string, pulumi.Output<string>>
->;
+for (const definition of runtimeSecrets) secretContainer(definition);

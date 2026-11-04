@@ -2,26 +2,27 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
+import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
+import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { stateKeyOf } from '../../lib/scaleway/s3-client';
-import { deployedServices } from '../../lib/services';
-import { controlKey, makeControlClient, readControlState, stateBucket } from '../../lib/stack/control-store';
+import { makeControlClient } from '../../lib/stack/control-store';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 
 const POLL_MS = 10_000;
 
 /**
  * Start one run of the environment's main job by hand, on the operator key, for the environment's target as the environments file of this
- * checkout says it, and follow the run until it ends: deployed, blocked (the operator owes something first) or failed. The runner does the
+ * checkout says it, and follow the run until it ends: deployed (or already serving), blocked (a runtime value is owed) or failed. The runner does the
  * same by itself; this is the operator's way when it is not there or must not wait.
  */
 export async function runStartDeploy(context: InfraContext): Promise<void> {
@@ -41,7 +42,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
   );
   if (!(await confirmOrDefault({ message: `Deploy ${target.sha.slice(0, 10)} to ${environment}?`, default: true }))) return;
 
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };
   const { naming, region } = deriveInfra(appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId, name: naming.resource('main') });
@@ -98,7 +99,7 @@ async function deployAndFollow(
   if (outcome === 'deployed') console.info(`${checkMark} ${context.environment} runs ${commit.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
     console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either deploys this commit again. Identities are written with \`${actionCommand('identity')}\`; \`${actionCommand('start-deploy')}\` deploys the target after it.`,
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A runtime value: \`${actionCommand('secrets')}\` stores it, or \`${actionCommand('apply')}\` for one it makes. "apply needed": \`${actionCommand('apply')}\` from a checkout at this commit. Either deploys this commit again.`,
     );
   else
     console.error(
@@ -107,24 +108,25 @@ async function deployAndFollow(
   return outcome;
 }
 
-/** The commit the environment runs: the primary service's active generation in the control object, none before the first deploy. */
+/** The commit the environment runs: the primary role's in the live record, none before the first deploy. */
 async function liveCommit(context: InfraContext, key: KeyPair): Promise<string | undefined> {
   const { appConfig, projectId } = context;
-  const primary = deployedServices(appConfig.services, appConfig.singleVM).find((service) => service.primaryRollout);
+  const primary = machineRoles(appConfig).find((role) => role.primary);
   if (!primary) return undefined;
   const state = stateKeyOf(key, projectId);
   const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
-  const { state: control } = await readControlState(s3, stateBucket(appConfig.slug), controlKey(stackNameFor(context)));
-  return control.rollout[primary.slug]?.active?.sha;
+  const { record } = await readLiveRecord(s3, deriveInfra(appConfig).naming.bootDiagBucket, stackNameFor(context));
+  return record.roles[primary.role]?.commit;
 }
 
 /**
- * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, then start
+ * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, as the live
+ * record names the counter each machine was booted under, then start
  * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and the runner starts
  * a run only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
- * becomes of the target. The live run is followed to its end, as the target's run would wait on the stack lock behind it, and when it does
+ * becomes of the target. The live run is followed to its end, as the target's run would wait on the lease behind it, and when it does
  * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
- * and when the control object cannot be read there is none known: the target alone is started.
+ * and when the live record cannot be read there is none known: the target alone is started.
  */
 export async function redeployAfterRotation(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };
@@ -169,7 +171,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
 }
 
 /**
- * Start the environment's main job again for the target whose last run ended blocked (D21), on the operator key: the apply, or Manage runtime
+ * Start the environment's main job again for the target whose last run ended blocked, on the operator key: the apply, or Manage runtime
  * secrets for a missing secret, does it at its end, as the runner holds rights over jobs only and cannot see either. Nothing when the last
  * run ended otherwise or runs still; a target that moved on since is the runner's.
  */

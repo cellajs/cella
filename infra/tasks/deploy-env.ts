@@ -1,6 +1,7 @@
 import type { EngineConfig } from '../config/engine-config';
+import { machineRoles } from '../lib/machine-roles';
 import { deriveInfra } from '../lib/naming';
-import { appStorageNeeds, deployedServices, enabledServices, serviceEndpoints } from '../lib/services';
+import { appStorageNeeds, enabledServices, serviceEndpoints } from '../lib/services';
 
 type Cfg = EngineConfig;
 
@@ -8,17 +9,14 @@ type Cfg = EngineConfig;
 export const ALLOWED_KEYS = [
   'environment',
   'image_tag',
-  'pulumi_stack',
+  'stack',
   'region',
-  'registry_ns',
   'frontend_bucket',
   'public_bucket',
-  'state_bucket',
   'diag_bucket',
   'enabled_services_json',
   'build_images_matrix',
-  'primary_rollout_matrix',
-  'roll_rest_matrix',
+  'primary_role',
 ] as const;
 export type AllowedKey = (typeof ALLOWED_KEYS)[number];
 
@@ -38,21 +36,6 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     reuses_image_of: service.reusesImageOf ?? '',
     primary_rollout: service.primaryRollout === true,
   }));
-  const primaryServices = enabled.filter((service) => service.primaryRollout);
-  if (primaryServices.length > 1) {
-    const slugs = primaryServices.map((service) => service.slug).join(', ');
-    throw new Error(`At most one enabled service may set primaryRollout: true (${slugs})`);
-  }
-  const primaryService = primaryServices[0];
-  // Include only services that own VM generations; single-VM workers cut over with their host.
-  // This mirrors the compute resource set.
-  const deployedSlugs = new Set(deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug));
-  const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service));
-  const primaryRollout = primaryService
-    ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url }))
-    : [];
-  const restRows = primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows;
-  const restRollout = restRows.map(({ service, health_url }) => ({ service, health_url }));
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
@@ -63,18 +46,14 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
   return {
     environment: appConfig.mode,
     image_tag: opts.imageTag ?? '',
-    pulumi_stack: appConfig.mode,
+    stack: appConfig.mode,
     region: appConfig.s3.region,
-    registry_ns: naming.registryNamespace,
-    // Empty when the registry implies no SPA bucket (frontend-less app); the
-    // deploy skips asset upload + entry publish on ''.
+    // Empty when the registry implies no SPA bucket (frontend-less app); the deploy skips asset upload + entry publish on ''.
     frontend_bucket: appStorageNeeds(enabled).spaBucket ? naming.frontendBucket : '',
     public_bucket: appStorageNeeds(enabled).uploadBuckets ? naming.publicBucket : '',
-    state_bucket: naming.pulumiStateBucket,
     diag_bucket: naming.bootDiagBucket,
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
-    primary_rollout_matrix: JSON.stringify(primaryRollout),
-    roll_rest_matrix: JSON.stringify(restRollout),
+    primary_role: machineRoles(appConfig).find((role) => role.primary)?.role ?? '',
   };
 }

@@ -139,14 +139,14 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/listeners.ts` (`internalSourceRefusal`), `backend/src/lib/request-details.ts` (country, browser, os; no address), `backend/src/lib/geoip.ts`, `backend/src/middlewares/rate-limiter/` (`helpers.ts`, `core.ts`).
   - Added files: `backend/src/utils/get-ip.ts` (the one function that yields the client address), `backend/src/utils/system-access.ts` (allowlist parsing and `isSystemAccessAllowed`), `backend/src/utils/ip-subnet.ts` (`toRateLimitIp`, `isPublicIp`, `unmapIPv4`).
   - Other call sites: `middlewares/guard/user-guard.ts` (sets `isSystemAdmin`), `modules/auth/sessions/operations/{resolve-session,create-session}.ts`, `modules/entities/entities-handlers.ts` (reports `systemAccessAllowed`), `modules/mcp/mcp-tools.ts` (copies `x-forwarded-for` and `authorization` into the in-process request), `modules/oauth-server/interaction-policy.ts` (rebuilds a Context from `cookie`, `x-forwarded-for` and the node socket).
-  - Infra: `infra/caddy/Caddyfile` is the SPA proxy and reads no client address; the API VMs sit behind the Scaleway load balancer (`infra/resources/loadbalancer.ts`, `forwardProtocol: 'http'`, no proxy protocol); VMs take no inbound (`infra/resources/compute.ts`, `inboundDefaultPolicy: 'drop'`); internal frontends admit private-network sources only.
+  - Infra: `infra/caddy/Caddyfile` is the SPA proxy and reads no client address; the API machines sit behind the Scaleway load balancer (`infra/resources/loadbalancer.ts`, `forwardProtocol: 'http'`, no proxy protocol); machines take no inbound but the load balancer's address on the service and agent ports (`infra/resources/security-groups.ts`, `inboundDefaultPolicy: 'drop'`); internal frontends admit private-network sources only.
 - **Holds:**
   - `backend/src/utils/get-ip.test.ts`: forged left-most entries ignored, `x-real-ip` ignored, rightmost entry, trimming, null.
   - `system-admin-ip`: a session cached from the allowlisted address gives no system scope from another (`x-forwarded-for` varied), and the reverse order.
   - `internal-listener`: a public peer is refused on every route and on the CDC upgrade, secret or not; the public listener and dot-segment paths cannot reach the internal routes.
   - `backend/tests/emails/request-details.test.ts`: request details appear only in mail about the recipient's own action, never the inviter's.
   - `backend/src/utils/ip-subnet.test.ts`: mapped and differently spelled forms share a bucket; private, loopback and ULA are not public.
-  - The VMs drop all inbound, so no client reaches the API without the load balancer.
+  - The machines drop all inbound but the load balancer's address, so no client reaches the API without the load balancer.
 - **Asks:** one function that yields the client address, its inputs per deployment (load balancer, dev, test), and a test with a forged forwarded header; canonical form of allowlist entries; the hono version minimum for the three fixes.
 - **Not this class:** rate-limit budgets per route belong to E1. Header and body parsing differentials belong to C7. The CDC and relay shared secrets after the peer check belong to the class of their module (B5 for the relay). Network ACLs, security groups and load balancer IAM belong to the infra review (F3).
 
@@ -425,7 +425,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `deleted-storage` and `replaced-images`: a sweep or release deleting a key a live row, a seed or another holder names.
   - A missing storage key in the bucket is refused (`storedFileSize` HEADs every variant, 400 `missing_object`). Signed upload params expire in 15 minutes with a nonce per token; the token route is limited per user (`limiters.ts`).
 - **Asks:** a presigned URL for another tenant's key; a key with `..`; a file declared `text/html` on the public bucket; what the bucket origin shares with the app origin (with C4).
-- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
+- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder's links belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
 
 ### C7 Request parsing, routing and cross-site differentials
 - **Gain:** guard bypass, reaching internal routes.
@@ -437,7 +437,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/middlewares/app.ts`: chain order is request-log context, invoke-token `Referrer-Policy`, `secureHeaders`, otel, request id, logger, CSRF (with skips), client version, body limit, compress (GET only).
   - `backend/src/middlewares/is-no-bot.ts` (used on `metrics-routes.ts`, `magic-routes.ts` and the auth routes in `general-routes.ts`).
   - `backend/src/middlewares/guard/service-guard.ts` (an API-key request carrying `Origin` is refused 403 `browser_origin`); `backend/src/modules/service-accounts/helpers/api-key.ts` (`hasApiKeyHeader`).
-  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, host routes, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
+  - Infra: `infra/resources/loadbalancer.ts` (path routes with `matchPathBegin`, internal frontends and ACLs, apex redirect), `infra/caddy/Caddyfile` (frontend only). Prefixes `/api`, `/yjs`, `/mcp`, `/oauth` in `infra/config/services.config.ts`; mcp and oauth reuse the backend image under `SERVICE`, and `backend/src/routes.ts` mounts every registered module in every mode.
   - Tests: `backend/tests/prefix-mount.test.ts` and `backend/tests/request-id.test.ts` at `backend/tests/`; `csrf`, `malformed-ids`, `internal-listener` under `backend/tests/security/`.
 - **Holds:**
   - `internal-listener`: the CDC socket is not reachable from the public listener under `/internal/cdc`, `/api/%2e%2e/internal/cdc`, `/api/../internal/cdc` or `/api/internal/cdc`; `/internal/yjs/materialize` is a 404 on the public listener under plain, `/api` and `/api/%2e%2e` prefixes even with the relay secret; `isCdcUpgradePath` matches only the exact raw target; dot-segment paths to the CDC socket on the internal listener are 404; an empty or missing secret is refused; a non-private peer is refused on every internal route; the health path stays served.
@@ -612,7 +612,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `failed-query-redaction` (D1): logs and spans carry no request value from a failed query.
   - In code: a session read failure stays the request's failure, never "signed out" (`resolve-session.ts`); the cookie is kept on a failed read. Yjs authorization failure closes the socket 4503; its connection limiter refuses on any error. CDC: an unknown flush failure never acknowledges; the setup check keeps the stream stopped while replica identity or the publication is wrong. The Matrix helper never throws; a failed mail send throws to its caller, and a request that stored its rows before the mail logs it. `@hono/node-server` answers an unparsable Host with 400, not a throw.
 - **Asks:** a dependency outage table (dependency -> request outcome -> closed or open -> test); process-level handlers; what pages an operator.
-- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health gate, rollout and runbooks belong to the infra review.
+- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health checks, switches and runbooks belong to the infra review.
 
 ## F. Platform
 
@@ -625,7 +625,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `package.json` (`packageManager`).
   - `.github/workflows/ci.yml`, `.github/workflows/release.yml` (no `.github/actions`); `lefthook.yaml`.
   - `infra/config/frontend-csp.config.ts`, set by `infra/caddy/Caddyfile` from `{$FRONTEND_CSP}`.
-  - Dockerfiles: `Dockerfile`, `infra/boot/Dockerfile`, `infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
+  - Dockerfiles: `Dockerfile`, `infra/agent/Dockerfile`, `infra/caddy/Dockerfile`, `backend/db/Dockerfile`.
   - `pnpm cella audit` lives in `@cellajs/cli` (not in this repo; `cella/SECURITY.md` names it); the repo config is the `updateConfig` block in `pnpm-workspace.yaml`. Root `SECURITY.md` exists.
   - CI has no merge queue (`ci.yml` says so).
 - **Holds:**
@@ -634,10 +634,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - Install scripts: only esbuild and lefthook may build; images install with `--ignore-scripts` and `--frozen-lockfile`.
   - CI: `permissions: {}` at the top; jobs `contents: read`; every third-party `uses:` is a 40-character SHA with a tag comment; the trigger is `pull_request` only (no `pull_request_target`); heavy jobs run only for same-repo branches; `privileged-changes` holds no secret.
   - Browser: `script-src 'self' *.gleap.io`, no `unsafe-inline` for scripts, `object-src 'none'`, `font-src 'self' data:`. Fonts are self-hosted (`frontend/index.html`). Gleap, onedollarstats and Maple are npm packages bundled by Vite (`frontend/src/modules/common/gleap-support.ts`, `root.tsx`, `frontend/src/lib/maple.ts`), so they carry lockfile integrity, not a script tag.
-  - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`, F2 line on build machine keys, G1, G12), cited and not redone.
+  - The infra review (`INFRA_ADVERSARIAL_REVIEW.md`: the F2 line on a compromised build dependency, which reaches a builder that holds no key; G1; G12), cited and not redone.
   - The workspace settings, the audit and cella#1549.
 - **Asks:** an inventory of code that runs from the network at install, build, CI and in the browser, and what a compromised package in each tier reaches (the infra review's F2 line).
-- **Not this class:** dev server exposure, Storybook and `.env` on disk belong to F2. Build-machine keys and deploy key handling belong to the infra review (F3). CSP `connect-src` breadth for exfiltration after XSS belongs to C4; here only the third-party script cover is counted.
+- **Not this class:** dev server exposure, Storybook and `.env` on disk belong to F2. The builder's links and deploy key handling belong to the infra review (F3). CSP `connect-src` breadth for exfiltration after XSS belongs to C4; here only the third-party script cover is counted.
 
 ### F2 Dev-time exposure
 - **Gain:** a developer laptop, which the infra review rates as the observer and operator keys (F6, F7).

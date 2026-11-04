@@ -55,6 +55,9 @@ export interface RdbBackup {
   instance_id?: string;
   size?: string;
   expires_at?: string | null;
+  /** A link to download the backup, set once an export of it ended; it ends at `download_url_expires_at`. */
+  download_url?: string | null;
+  download_url_expires_at?: string | null;
 }
 
 /** Scaleway's coarse per-database permission. `all` is what `database.ts` declares for both roles. */
@@ -177,20 +180,24 @@ export function createRdbClient(opts: RdbClientOptions) {
     async getBackup(backupId: string): Promise<RdbBackup> {
       return scwFetch<RdbBackup>(auth, 'GET', `${base}/backups/${encodeURIComponent(backupId)}`);
     },
+
+    /** Start the export of a ready backup: it turns `exporting`, then `ready` again with `download_url` set. */
+    async exportBackup(backupId: string): Promise<RdbBackup> {
+      return scwFetch<RdbBackup>(auth, 'POST', `${base}/backups/${encodeURIComponent(backupId)}/export`, {});
+    },
   };
 }
 
 export type RdbClient = ReturnType<typeof createRdbClient>;
 
 /**
- * Poll a backup until it reports `ready`. The reset must not proceed if the backup never
- * becomes ready. It is the only undo, and staging has `disableBackup: true` so no automatic
- * backup exists to fall back on.
+ * Poll a backup until it reports `ready`, and with `downloadable` until its export set `download_url` too. The reset must not proceed if the
+ * backup never becomes ready. It is the only undo, and staging has `disableBackup: true` so no automatic backup exists to fall back on.
  */
 export async function waitForBackupReady(
-  client: RdbClient,
+  client: Pick<RdbClient, 'getBackup'>,
   backupId: string,
-  opts: { timeoutMs?: number; intervalMs?: number; now?: () => number; sleep?: (ms: number) => Promise<void> } = {},
+  opts: { timeoutMs?: number; intervalMs?: number; now?: () => number; sleep?: (ms: number) => Promise<void>; downloadable?: boolean } = {},
 ): Promise<RdbBackup> {
   const timeoutMs = opts.timeoutMs ?? 10 * 60_000;
   const intervalMs = opts.intervalMs ?? 3_000;
@@ -199,7 +206,7 @@ export async function waitForBackupReady(
 
   const deadline = now() + timeoutMs;
   let last: RdbBackup = await client.getBackup(backupId);
-  while (last.status !== 'ready') {
+  while (last.status !== 'ready' || (opts.downloadable && !last.download_url)) {
     if (last.status === 'error') throw new Error(`Backup ${backupId} failed (status: error)`);
     if (now() >= deadline) throw new Error(`Backup ${backupId} not ready after ${Math.round(timeoutMs / 1000)}s (status: ${last.status})`);
     await sleep(intervalMs);

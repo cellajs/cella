@@ -1,14 +1,15 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { engineConfig } from '../config/engine-config';
+import type { EngineConfig } from '../config/engine-config';
 import { appPrincipalNames, principalNames } from '../lib/scaleway/principals';
-import { principalServices } from '../lib/services';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
+let appConfig: EngineConfig;
 
 beforeAll(async () => {
-  // The mock IAM API supplies CI and VM application IDs normally absent from stack config.
-  h = await installPulumiMocks({ deferCompute: true });
+  // The mock IAM API supplies the application IDs normally absent from stack config.
+  h = await installPulumiMocks();
+  ({ engineConfig: appConfig } = await import('../config/engine-config'));
   await import('./storage');
   await h.settle();
 });
@@ -43,7 +44,9 @@ describe('storage module', () => {
         } else {
           const { SCW } = statement.Principal as { SCW: string | string[] };
           expect(SCW, `${policy.name} ${statement.Sid}`).toBeDefined();
-          for (const id of [SCW].flat()) expect(id, `${policy.name} ${statement.Sid}`).toEqual(expect.stringMatching(/^application_id:.+/));
+          // A person's own key is admitted only among the operators.
+          const principal = statement.Sid === 'OperatorAccess' ? /^(application_id|user_id):.+/ : /^application_id:.+/;
+          for (const id of [SCW].flat()) expect(id, `${policy.name} ${statement.Sid}`).toEqual(expect.stringMatching(principal));
         }
       }
     }
@@ -51,12 +54,13 @@ describe('storage module', () => {
     expect(publicReads.sort()).toEqual(['frontend-policy', 'public-uploads-policy']);
   });
 
-  it("admits the app's operator on every bucket, so an apply on the operator key can refresh and change them", () => {
+  it("admits the app's operator application and each member of the operators group on every bucket, in one statement, so an apply on either key can refresh and change them", () => {
     type Statement = { Sid: string; Principal: unknown; Action: string[] };
+    const names = appPrincipalNames(appConfig.appSlug);
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const operator = Statement.find((statement) => statement.Sid === 'OperatorAccess');
-      expect(operator?.Principal, policy.name).toEqual({ SCW: `application_id:${appPrincipalNames(engineConfig().appSlug).operator}-id` });
+      expect(operator?.Principal, policy.name).toEqual({ SCW: [`application_id:${names.operator}-id`, `user_id:${names.operators}-member-id`] });
       expect(operator?.Action, policy.name).toEqual(['s3:*']);
     }
   });
@@ -82,7 +86,7 @@ describe('storage module', () => {
 
   it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
-      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(engineConfig().slug, 'production').admin);
+      expect(String(policy.inputs.policy), policy.name).not.toContain(principalNames(appConfig.slug, 'production').admin);
     }
   });
 
@@ -91,7 +95,7 @@ describe('storage module', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       const observer = Statement.filter((statement) =>
-        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(engineConfig().appSlug).observer}-id`),
+        JSON.stringify(statement.Principal).includes(`${appPrincipalNames(appConfig.appSlug).observer}-id`),
       );
       if (policy.name === 'boot-diag-policy') {
         expect(observer.map((statement) => statement.Action)).toEqual([
@@ -103,22 +107,46 @@ describe('storage module', () => {
     }
   });
 
-  it('keeps the builder reports from service keys, within the 10 statements Scaleway allows a bucket policy', () => {
+  it('must not let the observer or a machine read an env file: machines write through links, within the 10 statements Scaleway allows', () => {
     type Statement = { Sid: string; Principal: { SCW: string | string[] }; Action: string[]; Resource: string[] };
     const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);
     const { Statement } = JSON.parse(String(h.resources.find((r) => r.name === 'boot-diag-policy')?.inputs.policy)) as { Statement: Statement[] };
-    const names = principalNames(engineConfig().slug, 'production');
-    // Beside the deploy key, which writes the run records, and the operator's `s3:*`.
-    const writes = Statement.filter((statement) => statement.Action.includes('s3:PutObject') && statement.Sid !== 'DeployAccess');
-    expect(writes.map((statement) => [statement.Principal.SCW, statement.Action, statement.Resource])).toEqual([
-      [
-        principalServices().map((svc) => `application_id:${names.vmService(svc.slug)}-id`),
-        ['s3:PutObject'],
-        principalServices().map((svc) => `${bucket}/boot-diag/${svc.slug}-*`),
-      ],
-      [`application_id:${names.builder}-id`, ['s3:PutObject'], [`${bucket}/boot-diag/builder/*`]],
+    expect(Statement.map((statement) => statement.Sid).sort()).toEqual([
+      'DeployAccess',
+      'DeployEnvRemoval',
+      'ObserverReadBootDiagnostics',
+      'OperatorAccess',
     ]);
+    const observer = Statement.find((statement) => statement.Sid === 'ObserverReadBootDiagnostics');
+    // The control records (the live record, the lease, the rotations) hold no value: status reads them.
+    expect(observer?.Resource).toEqual([bucket, `${bucket}/boot-diag/*`, `${bucket}/runs/*`, `${bucket}/control/*`]);
+    // The one version the deploy may delete is an env file's, which holds a machine's secret values.
+    const removal = Statement.find((statement) => statement.Sid === 'DeployEnvRemoval');
+    expect([removal?.Action, removal?.Resource]).toEqual([['s3:DeleteObjectVersion'], [`${bucket}/env/*`]]);
     expect(Statement.length).toBeLessThanOrEqual(10);
+  });
+
+  it('must not let a leaked deploy key read a final dump: it reaches only the prefixes a deploy reads and writes', () => {
+    type Statement = { Sid: string; Resource: string[] };
+    const bucket = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name);
+    const { Statement } = JSON.parse(String(h.resources.find((r) => r.name === 'boot-diag-policy')?.inputs.policy)) as { Statement: Statement[] };
+    const deploy = Statement.find((statement) => statement.Sid === 'DeployAccess');
+    expect(deploy?.Resource.filter((resource) => resource !== bucket)).toEqual(
+      ['releases/', 'env/', 'boot-diag/', 'runs/', 'control/'].map((prefix) => `${bucket}/${prefix}*`),
+    );
+    const objects = deploy?.Resource.filter((resource) => resource !== bucket) ?? [];
+    expect(objects.some((resource) => `${bucket}/dumps/staging/x.dump`.startsWith(resource.replace(/\*$/, '')))).toBe(false);
+  });
+
+  it('expires env files and their versions within a day, and release archives with the records', () => {
+    const rules = (h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.lifecycleRules as any[]) ?? [];
+    expect(rules.find((rule) => rule.id === 'expire-env')).toMatchObject({
+      prefix: 'env/',
+      enabled: true,
+      expiration: { days: 1 },
+      noncurrentVersionExpiration: { noncurrentDays: 1 },
+    });
+    expect(rules.find((rule) => rule.id === 'expire-releases')).toMatchObject({ prefix: 'releases/', enabled: true, expiration: { days: 60 } });
   });
 
   it('upload buckets restrict CORS allowedOrigins (no wildcard)', () => {

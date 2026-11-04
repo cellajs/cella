@@ -35,6 +35,7 @@ const RETIRED_LABELS = [
   'Rotate passphrase',
   'Manage keys & secrets',
   'Manage database',
+  'Set up operator key',
   'Stack setup →',
   '"Stack setup"',
 ];

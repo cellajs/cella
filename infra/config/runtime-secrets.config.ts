@@ -1,5 +1,5 @@
 import { createPrivateKey, createPublicKey, hkdfSync } from 'node:crypto';
-import { defineRuntimeSecrets } from '../lib/runtime-secrets';
+import { defineRuntimeSecrets } from '../lib/runtime-secrets-config';
 
 /**
  * The Yjs relay's public key for the backend's token key material: the Ed25519 seed is HKDF-SHA256 of the material,
@@ -15,10 +15,10 @@ function yjsTokenPublicKey(material: string): string {
 }
 
 /**
- * App-owned mapping from runtime secrets to their consuming services; per-service manifests restrict each VM to the values it needs.
- * The consumer list also places the secret: each consumer gets its own copy in its own folder, which only its key reads. The
- * backend image checks the same assignment per process mode (backend/src/env-service-secrets.ts, pinned by the tests).
- * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
+ * Mapping from runtime secrets to their consuming services: the deploy composes each machine's env file from the values its
+ * services consume, and no other. Each value has one container in the runtime folder, which only the deploy key reads. The backend image
+ * checks the same assignment per process mode (backend/src/env-service-secrets.ts, pinned by the tests).
+ * Database DSN and CA secrets are declared by the PostgreSQL store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   cookieSecret: {

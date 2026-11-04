@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { databaseUrl } from '../resources/stores/database-url';
-import { none } from '../resources/stores/none';
 import { buildRuntimeSecrets, type RuntimeSecretDefinition, validateRuntimeSecrets } from './runtime-secrets';
+import type { StoreSecretContribution } from './stores';
 
-/** A minimal non-cella app config, the P2 external-store consumer shape. */
+/** A minimal non-cella app config. */
 const appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>> = {
   adminEmail: {
     secretName: 'admin-email',
@@ -17,28 +16,29 @@ const appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>> = {
 };
 const knownServices: ReadonlySet<string> = new Set(['api', 'worker']);
 
-describe('buildRuntimeSecrets with external stores (P2)', () => {
-  it('a databaseUrl registry contributes its operator secret ahead of app entries', () => {
-    const secrets = buildRuntimeSecrets({ primary: databaseUrl({ services: ['api'] }) }, appSecrets);
-    expect(secrets.map((secret) => secret.id)).toEqual(['databaseUrl', 'adminEmail']);
-    expect(secrets[0]).toMatchObject({ envVar: 'DATABASE_URL', valueSource: 'operator', generation: 'manual' });
-    expect(() => validateRuntimeSecrets(secrets, knownServices)).not.toThrow();
-  });
+/** A store that declares one operator-filled URL for `services`. */
+const urlStore = (services: readonly string[]) => ({
+  secrets: (): StoreSecretContribution[] => [
+    { id: 'queueUrl', secretName: 'queue-url', envVar: 'QUEUE_URL', description: 'Queue URL', required: true, valueSource: 'operator', services },
+  ],
+});
 
-  it('a none registry yields only the app entries', () => {
-    const secrets = buildRuntimeSecrets({ primary: none() }, appSecrets);
-    expect(secrets.map((secret) => secret.id)).toEqual(['adminEmail']);
+describe('buildRuntimeSecrets with store contributions', () => {
+  it('a store contributes its secret ahead of app entries', () => {
+    const secrets = buildRuntimeSecrets({ primary: urlStore(['api']) }, appSecrets);
+    expect(secrets.map((secret) => secret.id)).toEqual(['queueUrl', 'adminEmail']);
+    expect(secrets[0]).toMatchObject({ envVar: 'QUEUE_URL', valueSource: 'operator', generation: 'manual' });
     expect(() => validateRuntimeSecrets(secrets, knownServices)).not.toThrow();
   });
 
   it('rejects a store contribution clashing with an app-config id', () => {
-    const clashing = { ...appSecrets, databaseUrl: { ...appSecrets.adminEmail!, secretName: 'db-url-2', envVar: 'DB_URL_2' } };
-    const secrets = buildRuntimeSecrets({ primary: databaseUrl({ services: ['api'] }) }, clashing);
-    expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/duplicate secret id 'databaseUrl'/);
+    const clashing = { ...appSecrets, queueUrl: { ...appSecrets.adminEmail!, secretName: 'queue-url-2', envVar: 'QUEUE_URL_2' } };
+    const secrets = buildRuntimeSecrets({ primary: urlStore(['api']) }, clashing);
+    expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/duplicate secret id 'queueUrl'/);
   });
 
   it('rejects a contribution targeting an unknown service', () => {
-    const secrets = buildRuntimeSecrets({ primary: databaseUrl({ services: ['nope'] }) }, {});
+    const secrets = buildRuntimeSecrets({ primary: urlStore(['nope']) }, {});
     expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/unknown service 'nope'/);
   });
 });
@@ -67,7 +67,7 @@ describe('derived runtime secrets', () => {
   });
 
   it('accepts a pulumi-owned secret derived from a pulumi-owned source (positive control)', () => {
-    const secrets = buildRuntimeSecrets({ primary: none() }, { signingKey, publicKey: publicKey() });
+    const secrets = buildRuntimeSecrets({}, { signingKey, publicKey: publicKey() });
     expect(() => validateRuntimeSecrets(secrets, knownServices)).not.toThrow();
   });
 
@@ -77,7 +77,7 @@ describe('derived runtime secrets', () => {
       ['operator-owned derived value', { signingKey, publicKey: publicKey({ valueSource: 'operator' }) }],
       ['unknown source', { signingKey, publicKey: publicKey({ derivedFrom: { secretId: 'missing', derive } }) }],
     ] as const) {
-      const secrets = buildRuntimeSecrets({ primary: none() }, entries);
+      const secrets = buildRuntimeSecrets({}, entries);
       expect(() => validateRuntimeSecrets(secrets, knownServices), label).toThrow(/must be pulumi-owned/);
     }
   });

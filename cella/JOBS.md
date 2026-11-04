@@ -58,7 +58,7 @@ Payloads carry ids, never row bodies: the handler re-reads through the query the
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when the scheduler stalls, a queue grows past its warning size or dead letters wait, so a cutover never blocks on it.
+`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when the scheduler stalls, a queue grows past its warning size or dead letters wait, so a switch never blocks on it.
 
 For recent failures and the index rebuild statements pg-boss asks for, query the job store schema with SQL as the owner role; the health payload names the queues that degrade.
 

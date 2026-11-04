@@ -1,11 +1,15 @@
 # DO NOT EDIT: generated from infra/compose/ by `pnpm --filter infra compose:generate`.
-# Edit services.config.ts (the app-owned service registry) and re-run synth.
+# Edit services.config.ts (the service registry) and re-run synth.
 # Deploy machinery and rationale live in infrastructure.ts.
 
 services:
   backend:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    pull_policy: never
     profiles: [backend]
+    depends_on:
+      backend-release:
+        condition: service_completed_successfully
     restart: unless-stopped
     ports:
       - '4000:4000'
@@ -18,7 +22,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -36,7 +41,6 @@ services:
     x-service:
       slug: backend
       healthPort: 4000
-      healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: true
       replacementStrategy: start-first
@@ -54,11 +58,13 @@ services:
       s3Access: true
   backend-release:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    pull_policy: never
     profiles: [backend]
     restart: 'no'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -68,6 +74,7 @@ services:
       APP_ORIGIN: ${APP_ORIGIN}
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
+    pull_policy: never
     profiles: [cdc]
     restart: unless-stopped
     ports:
@@ -75,7 +82,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -91,7 +99,6 @@ services:
     x-service:
       slug: cdc
       healthPort: 4001
-      healthTimeoutSeconds: 90
       healthExpectStatus: 204
       runRelease: false
       replacementStrategy: stop-first
@@ -104,6 +111,7 @@ services:
         BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
+    pull_policy: never
     profiles: [yjs]
     restart: unless-stopped
     ports:
@@ -111,7 +119,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -127,7 +136,6 @@ services:
     x-service:
       slug: yjs
       healthPort: 4002
-      healthTimeoutSeconds: 90
       healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
@@ -144,6 +152,7 @@ services:
         BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   mcp:
     image: ${REGISTRY}/backend:${MCP_TAG:-latest}
+    pull_policy: never
     profiles: [mcp]
     restart: unless-stopped
     ports:
@@ -151,7 +160,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -167,7 +177,6 @@ services:
     x-service:
       slug: mcp
       healthPort: 4003
-      healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
@@ -180,6 +189,7 @@ services:
       coHosted: true
   oauth:
     image: ${REGISTRY}/backend:${OAUTH_TAG:-latest}
+    pull_policy: never
     profiles: [oauth]
     restart: unless-stopped
     ports:
@@ -187,7 +197,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -203,7 +214,6 @@ services:
     x-service:
       slug: oauth
       healthPort: 4004
-      healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: false
       replacementStrategy: start-first
@@ -216,6 +226,7 @@ services:
       coHosted: true
   jobs:
     image: ${REGISTRY}/backend:${JOBS_TAG:-latest}
+    pull_policy: never
     profiles: [jobs]
     restart: unless-stopped
     ports:
@@ -223,7 +234,8 @@ services:
     stop_grace_period: '30s'
     env_file:
       - .env
-      - .env.runtime
+      - path: .env.runtime
+        required: false
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -239,7 +251,6 @@ services:
     x-service:
       slug: jobs
       healthPort: 4006
-      healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: false
       replacementStrategy: stop-first
@@ -249,6 +260,7 @@ services:
       coHosted: true
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
+    pull_policy: never
     profiles: [frontend]
     restart: unless-stopped
     ports:
@@ -266,7 +278,6 @@ services:
     x-service:
       slug: frontend
       healthPort: 80
-      healthTimeoutSeconds: 90
       healthExpectStatus: 200
       runRelease: false
       replacementStrategy: start-first
@@ -276,3 +287,22 @@ services:
       lbRoute: default
       dockerfile: infra/caddy/Dockerfile
       placement: host
+  infra-agent:
+    image: ${REGISTRY}/infra-agent:${AGENT_TAG}
+    pull_policy: never
+    profiles: [agent]
+    restart: 'no'
+    command:
+      - agent
+      - '--plan'
+      - ${AGENT_DIR}/boot-plan.json
+    network_mode: host
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/app:/opt/app
+      - ${AGENT_DIR}:${AGENT_DIR}
+      - /var/log/infra-boot.log:/var/log/infra-boot.log:ro

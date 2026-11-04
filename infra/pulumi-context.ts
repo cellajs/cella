@@ -1,9 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
-import { engineConfig } from './config/engine-config';
-
-const appConfig = engineConfig();
-
 import type { ServiceName } from './compose/compose';
+import { engineConfig as appConfig } from './config/engine-config';
 import { deriveInfra } from './lib/naming';
 import { serviceEndpoints } from './lib/services';
 import type { Environment } from './lib/stack/bootstrap-stack-state';
@@ -12,8 +9,8 @@ import type { Environment } from './lib/stack/bootstrap-stack-state';
  * Stack identity and derived addressing, shared by every resource module. The
  * stack NAME is the config mode (index.ts derives APP_MODE from it before any
  * module loads the shared appConfig); everything else here is a pure derivation
- * of that identity. Provider lookups, secret reads, and sizing live with their
- * consumers (identities.ts, compute.ts, config/sizing.ts).
+ * of that identity. Provider lookups and secret reads live with their
+ * consumers (identities.ts).
  */
 const stackName = pulumi.getStack().split('/').pop() ?? '';
 
@@ -47,8 +44,7 @@ if (mode !== 'production' && mode !== 'staging') {
 export const deployMode: Environment = mode;
 
 // Per-service public endpoints (host + URL), derived from the service registry by slug.
-export const endpoints = serviceEndpoints(appConfig);
-const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]));
+const endpointBySlug = new Map(serviceEndpoints(appConfig).map((e) => [e.slug, e]));
 
 /** Public hostname for a service slug (throws for internal-only services like cdc). */
 export function serviceHost(slug: ServiceName): string {

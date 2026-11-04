@@ -10,7 +10,7 @@ let harness: MockHarness;
 let ctx: ProvisionContext;
 
 beforeAll(async () => {
-  harness = await installPulumiMocks({ deferCompute: true });
+  harness = await installPulumiMocks();
   ({ postgresManaged } = await import('./postgres-managed'));
   const { pulumi } = harness;
   ctx = {
@@ -22,7 +22,6 @@ beforeAll(async () => {
     isProduction: true,
     sizing: { dbNodeType: 'DB-DEV-S', dbVolumeSize: 10 },
     privateNetworkId: 'pn-id',
-    configuredOrRandomSecret: () => pulumi.output('secret'),
   };
 });
 
@@ -33,7 +32,7 @@ describe('postgresManaged public endpoint ACL', () => {
   async function render(config: Record<string, string>) {
     for (const [key, value] of Object.entries(config)) harness.pulumi.runtime.setConfig(key, value);
     harness.resources.length = 0;
-    postgresManaged().provision(ctx);
+    postgresManaged({ secretConsumers: { runtime: ['backend'], admin: ['backend'], cdc: ['cdc'], ca: ['backend'] } }).provision(ctx);
     await harness.settle();
     const instance = harness.oneOfType('scaleway:databases/instance:Instance');
     const acls = harness.byType('scaleway:databases/acl:Acl');
@@ -86,5 +85,15 @@ describe('postgresManaged public endpoint ACL', () => {
     const { instance, rules } = await render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '203.0.113.7, 198.51.100.0/24' });
     expect(instance.inputs.loadBalancer).toEqual({});
     expect(rules?.map((rule) => rule.ip)).toEqual(['203.0.113.7/32', '198.51.100.0/24']);
+  });
+});
+
+describe('postgresManaged secret declarations', () => {
+  it('declares no secret for a role no service reads, so an app without a cdc service still loads', async () => {
+    const { buildRuntimeSecrets, validateRuntimeSecrets } = await import('../../lib/runtime-secrets');
+    const store = postgresManaged({ secretConsumers: { runtime: ['backend'], admin: ['backend'], cdc: [], ca: ['backend'] } });
+    const secrets = buildRuntimeSecrets({ primary: store }, {});
+    expect(secrets.map((secret) => secret.id)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseSslCa']);
+    expect(() => validateRuntimeSecrets(secrets, new Set(['backend']))).not.toThrow();
   });
 });

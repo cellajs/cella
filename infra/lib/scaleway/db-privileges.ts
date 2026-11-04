@@ -11,7 +11,7 @@ export interface ExpectedDbPrivilege {
   acceptable: readonly string[];
 }
 
-/** The database privileges the Pulumi program declares (resources/stores/postgres-managed.ts), in a form a live check can compare against. */
+/** The database privileges the operator task ensure-database grants (tasks/ensure-database.ts), in a form a live check can compare against. */
 export function expectedDbPrivileges(dbName: string): ExpectedDbPrivilege[] {
   return [
     { user: POSTGRES_ROLE_NAMES.admin, database: dbName, acceptable: ['all', 'custom'] },

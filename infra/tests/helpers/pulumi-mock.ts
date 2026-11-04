@@ -1,10 +1,5 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
-import { vi } from 'vitest';
-import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
-import type { GenerationKeys } from '../../lib/scaleway/machine-keys';
+import { type BootPlan, parseBootPlanJson } from '../../agent/src/plan';
 import { installKeylessMocks, type RenderedResource, settleRender } from '../../lib/stack/keyless-render';
 
 export type CapturedResource = RenderedResource;
@@ -16,7 +11,7 @@ export interface MockHarness {
   byType: (prefix: string) => CapturedResource[];
   /** Single resource of an exact type; throws if zero or many. */
   oneOfType: (typeStr: string) => CapturedResource;
-  /** Waits until no new resource has registered for a run of event-loop turns: a VM registers only after its cloud-init's async output chain settles. */
+  /** Waits until no new resource has registered for a run of event-loop turns: a resource behind an async output chain registers late. */
   settle: () => Promise<void>;
 }
 
@@ -24,11 +19,6 @@ export interface InstallOpts {
   project?: string;
   stack?: string;
   mode?: 'production' | 'staging' | 'development';
-  /**
-   * Marks compute deferred (`bootstrap:computeDeferred`), as a fresh provision does, so a module renders without the
-   * pinned image tags pulumi-context.ts asserts for compute. For a test that renders no VM.
-   */
-  deferCompute?: boolean;
   /** Stack config overrides, namespaced (e.g. `{ 'infra:dbPublicEndpoint': 'true' }`). */
   config?: Record<string, string>;
   /** Render as `pulumi preview` does (`pulumi.runtime.isDryRun()` is true). */
@@ -42,6 +32,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   // Stack and project must be set via env vars before @pulumi/pulumi is imported, or getStack() throws "Missing stack name".
   process.env.PULUMI_NODEJS_PROJECT = opts.project ?? 'infra';
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production';
+  // The engine config reads it when it loads, so a test imports every module that reads the config after this call, as index.ts does.
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production';
 
   // pulumi-context.ts requires the org id and project id strictly from the environment, as CI and the infra CLI do, so both are provided for deterministic rendering.
@@ -49,12 +40,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.SCW_DEFAULT_ORGANIZATION_ID = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? 'mock-organization-id';
 
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
-  const config = { ...(opts.deferCompute ? { 'bootstrap:computeDeferred': 'test' } : {}), ...opts.config };
+  const config = { ...opts.config };
   if (Object.keys(config).length > 0) process.env.PULUMI_CONFIG = JSON.stringify(config);
-
-  // Engine modules read config at evaluation, so load it before any resource module is imported, exactly like index.ts does.
-  const { loadEngineConfig } = await import('../../config/engine-config');
-  await loadEngineConfig();
 
   const pulumi = await import('@pulumi/pulumi');
   const resources = installKeylessMocks(pulumi, {
@@ -76,20 +63,19 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   return { pulumi, resources, byType, oneOfType, settle };
 }
 
-/** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */
-export function unwrapSecret(input: unknown): unknown {
-  return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
+/** A file a `#cloud-config` writes, as its `write_files` entry holds it, or undefined when it writes none at `path`. */
+export function cloudConfigFile(cloudConfig: string, path: string): string | undefined {
+  const entry = cloudConfig.split('\n  - path: ').find((block) => block.startsWith(`${path}\n`));
+  const content = entry?.split('    content: |\n')[1]?.split('\nruncmd:')[0];
+  return content
+    ?.split('\n')
+    .map((line) => line.slice(6))
+    .join('\n')
+    .replace(/\n+$/, '');
 }
 
-/** Hands the Pulumi program this deploy's machine keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
-export function writeGenerationKeys(keys: GenerationKeys): void {
-  const file = join(mkdtempSync(join(tmpdir(), 'generation-keys-')), 'keys.json');
-  writeFileSync(file, JSON.stringify(keys));
-  vi.stubEnv('INFRA_GENERATION_KEYS_FILE', file);
-}
-
-/** The boot plan a cloud-init writes to `planPath`, read by the boot runner's own parser; throws when it writes none there. */
+/** The boot plan a cloud-init writes to `planPath`, read by the agent's own parser; throws when it writes none there. */
 export function bootPlanIn(cloudInit: string, planPath: string): { plan: BootPlan; raw: Record<string, unknown> } {
-  const json = cloudInit.split(`cat > ${planPath} <<'BOOT_PLAN_EOF'\n`)[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
+  const json = cloudConfigFile(cloudInit, planPath) ?? '';
   return { plan: parseBootPlanJson(json, planPath), raw: JSON.parse(json) };
 }

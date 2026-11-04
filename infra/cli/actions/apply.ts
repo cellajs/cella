@@ -1,19 +1,21 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { discardEngine, type PublishedEngine, publishEngine } from '../../tasks/publish-engine';
 import { endAction, type InfraContext } from '../shared';
 import { openDbEndpoints } from './db-exposure';
 import { exitOnIdentityChanges } from './identity';
 import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireOperatorKey } from './operator-unlock';
 import { askToApply, reviewPlan } from './plan';
 import { startBlockedTarget } from './start-deploy';
 
 /**
- * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
- * The machine policies and the registry's applications are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
- * The plan is made before the stack lock, so the lock is taken only for a plan the operator said yes to.
- * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
+ * Publish the engine image of this checkout, plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged
+ * resources (DB, VPC, private network, buckets, DNS, the main job and its engine) the read-only CI key cannot make.
+ * The declared applications and their policies are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
+ * The plan is made before the lease is taken, so it is taken only for a plan the operator said yes to.
+ * It runs against a bootstrapped stack, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
   console.info(
@@ -21,7 +23,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   );
 
   // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
-  const operator = await acquirePrivilegedKey(context);
+  const operator = await acquireOperatorKey(context);
   // The committed stack config never records an open endpoint, so its plan keeps the endpoint and deletes the ACL.
   const open = await openDbEndpoints(context, operator.secretKey);
   if (open.length > 0) {
@@ -33,8 +35,22 @@ export async function runApply(context: InfraContext): Promise<void> {
   await admitOperatorOrExit(context, operator);
   // A missing identity would break the plan itself: the program looks up every application it names.
   await exitOnIdentityChanges(context, operator);
-  const reviewed = await reviewPlan(context, operator, { forgetRetired: true });
+  // Built and pushed before the plan, so the plan shows the main job's new image: until the `up` names it, nothing runs it.
+  let engine: PublishedEngine | undefined;
+  try {
+    engine = await publishEngine({ appConfig: context.appConfig, projectId: context.projectId, secretKey: operator.secretKey });
+  } catch (error) {
+    console.error(`${crossMark} The engine image could not be published (${errorMessage(error)}). Nothing applied.`);
+    return endAction(1);
+  }
+  if (!engine) {
+    console.warn(`${warningMark} The registry has no namespace yet: this apply makes it, and the next one publishes the engine the main job runs.`);
+  }
+  const reviewed = await reviewPlan(context, operator, { forgetRetired: true, engineImage: engine?.image });
+  // A declined plan leaves no engine image behind: no definition names the one pushed for it.
+  const discard = () => (engine ? discardEngine({ appConfig: context.appConfig, secretKey: operator.secretKey, engine }) : undefined);
   if (!(await askToApply(context.environment))) {
+    await discard();
     console.info('Declined; nothing applied.');
     return;
   }
@@ -43,16 +59,18 @@ export async function runApply(context: InfraContext): Promise<void> {
     `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim(`If it is interrupted, run "${actionLabel('apply')}" again to converge.`)}`,
   );
 
-  // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
+  // An established stack recovers from an interruption by running the apply again; the first-provisioning marker is the setup's alone.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=1) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === '1';
-  const { completed, verified } = await runOperatorApply(context, {
+  const { completed, verified, declined } = await runOperatorApply(context, {
     operation: 'apply',
     confirmPlan: true,
     reviewed,
     verifyAfter: true,
     debugProvider,
+    engine,
   });
+  if (declined) await discard();
   if (completed && verified === false) endAction(1);
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>

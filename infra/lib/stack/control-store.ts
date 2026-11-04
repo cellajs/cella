@@ -2,22 +2,11 @@ import { makeS3Client } from '../scaleway/s3-client';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
-/** A provisioned, content-addressed generation: VM resource `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
-export interface GenRef {
-  /** Content-addressed generation id, the suffix of its resource names. Stored because the live VM exists under this id; never re-derived. @see lib/gen-id.ts */
-  id: string;
-  /** Image SHA baked into this generation. */
-  sha: string;
-  /** Monotonic sequence stamped when this generation was promoted to active. */
-  seq: number;
-}
-
-/** Per-service rollout pointers in the S3 control object: `active` takes live traffic, `pendingSha` holds deploy intent until Pulumi derives the generation id, `seq` orders promotion and garbage collection. */
-export interface ServiceRollout {
-  active?: GenRef;
-  pendingSha?: string;
-  seq: number;
-}
+/**
+ * The control records of an environment, under `control/<mode>/` of its boot-diagnostics bucket: the live record (lib/deploy/live-record.ts),
+ * the lease, the rotations and the applied engine an apply publishes (lib/deploy/applied-engine.ts). The observer reads them all, and the
+ * Pulumi program reads the applied engine alone.
+ */
 
 /** One rotation: when, and who ran it. */
 export interface RotationRecord {
@@ -26,8 +15,9 @@ export interface RotationRecord {
 }
 
 /**
- * The rotations of an environment. `counter` rises with every rotation and is part of every new generation's identity, so the next deploy
- * replaces every machine and none keeps a key or a value from before. No date is a deadline (D12): the CLI shows the last of each kind.
+ * The rotations of an environment. `counter` rises with every rotation, and the live record keeps the counter each machine was booted
+ * under, so the next deploy replaces every machine and none keeps a key or a value from before. No date is a deadline: the CLI shows
+ * the last of each kind.
  */
 export interface Rotations {
   counter: number;
@@ -35,17 +25,6 @@ export interface Rotations {
   keys?: RotationRecord;
   /** The last rotation of the secrets the engine checks: database role passwords and generated values. */
   secrets?: RotationRecord;
-}
-
-export interface ControlState {
-  schemaVersion: 2;
-  /** Keyed by service slug. */
-  rollout: Record<string, ServiceRollout>;
-  rotations?: Rotations;
-  /** ISO timestamp of the last write. */
-  updatedAt?: string;
-  /** Who wrote it last, e.g. `ci:run-512` or `operator:flip@host`. */
-  updatedBy?: string;
 }
 
 /** Minimal S3 client surface used here (the AWS SDK `S3Client` satisfies it). */
@@ -57,7 +36,7 @@ export interface S3Like {
 const s3sdk = () => import('@aws-sdk/client-s3');
 
 /** Conditional-write options mapping to Scaleway's `If-Match`/`If-None-Match`. */
-interface ConditionalWrite {
+export interface ConditionalWrite {
   ifMatch?: string;
   ifNoneMatch?: string;
 }
@@ -87,7 +66,7 @@ export async function readObjectEtag(s3: S3Like, bucket: string, key: string): P
 }
 
 /** PUT a JSON object body with optional conditional-write headers. */
-async function putJsonObject(s3: S3Like, bucket: string, key: string, body: string, opts: ConditionalWrite): Promise<{ etag?: string }> {
+export async function putJsonObject(s3: S3Like, bucket: string, key: string, body: string, opts: ConditionalWrite): Promise<{ etag?: string }> {
   const { PutObjectCommand } = await s3sdk();
   const res = await s3.send(
     new PutObjectCommand({
@@ -102,6 +81,9 @@ async function putJsonObject(s3: S3Like, bucket: string, key: string, body: stri
   return { etag: res.ETag };
 }
 
+/** The write condition that keeps a read-modify-write safe: the etag read, or create-only when there was no object. */
+export const conditionOn = (etag: string | undefined): ConditionalWrite => (etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
+
 /** Name + HTTP status of an S3-style error, however the SDK shaped it. */
 function s3ErrorInfo(err: unknown): { name?: string; status?: number } {
   const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
@@ -113,153 +95,83 @@ function isNotFound(err: unknown): boolean {
   return name === 'NoSuchKey' || name === 'NotFound' || status === 404;
 }
 
-function isPreconditionFailed(err: unknown): boolean {
+export function isPreconditionFailed(err: unknown): boolean {
   const { name, status } = s3ErrorInfo(err);
   return name === 'PreconditionFailed' || status === 412;
 }
 
-export function emptyControlState(): ControlState {
-  return { schemaVersion: 2, rollout: {} };
-}
-
-/** Bucket holding the Pulumi state and the control object. Must live in the app project: Scaleway Object Storage pins API keys to their preferred project, so a bucket elsewhere is unreachable for the project-scoped CI key. */
+/** Bucket holding the Pulumi state. Must live in the app project: Scaleway Object Storage pins API keys to their preferred project. */
 export function stateBucket(slug: string): string {
   return `${slug}-pulumi-state`;
 }
 
-/** Control object key for a stack. Accepts a full Pulumi stack name (`organization/infra/production`) or a bare mode (`production`). */
-export function controlKey(stack: string): string {
-  const short = stack.split('/').pop() ?? stack;
-  return `control/${short}.json`;
-}
+/** The mode a full Pulumi stack name (`organization/infra/production`) or a bare mode names. */
+const modeOf = (stack: string): string => stack.split('/').pop() ?? stack;
 
-/** Lock object key for a stack (sibling of the control object). */
-export function lockKey(stack: string): string {
-  const short = stack.split('/').pop() ?? stack;
-  return `control/${short}.lock.json`;
-}
+/** Where every environment's control records live in its boot-diagnostics bucket. */
+export const CONTROL_PREFIX = 'control/';
 
-function parseGenRef(slug: string, field: string, value: unknown): GenRef {
-  if (!isRecord(value)) throw new Error(`control: rollout['${slug}'].${field} must be an object`);
-  const { id, sha, seq } = value;
-  if (typeof id !== 'string') throw new Error(`control: rollout['${slug}'].${field}.id must be a string`);
-  if (typeof sha !== 'string') throw new Error(`control: rollout['${slug}'].${field}.sha must be a string`);
-  if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].${field}.seq must be a number`);
-  return { id, sha, seq };
-}
+/** The folder of an environment's control records. */
+export const controlPrefix = (stack: string): string => `${CONTROL_PREFIX}${modeOf(stack)}/`;
 
-function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
-  if (!isRecord(value)) throw new Error(`control: rollout['${slug}'] must be an object`);
-  const { active, pendingSha, seq } = value;
-  if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].seq must be a number`);
-  if (pendingSha !== undefined && typeof pendingSha !== 'string') throw new Error(`control: rollout['${slug}'].pendingSha must be a string`);
-  const out: ServiceRollout = { seq };
-  if (active !== undefined) out.active = parseGenRef(slug, 'active', active);
-  if (pendingSha !== undefined) out.pendingSha = pendingSha;
-  return out;
-}
+/** The lease one deploy or operator action holds at a time. */
+export const lockKey = (stack: string): string => `${controlPrefix(stack)}lock.json`;
+
+/** The rotations an operator records. */
+export const rotationsKey = (stack: string): string => `${controlPrefix(stack)}rotations.json`;
 
 function parseRotationRecord(kind: string, value: unknown): RotationRecord {
   if (!isRecord(value) || typeof value.at !== 'string' || typeof value.by !== 'string') {
-    throw new Error(`control: rotations.${kind} must be { at, by } strings`);
+    throw new Error(`rotations: ${kind} must be { at, by } strings`);
   }
   return { at: value.at, by: value.by };
 }
 
-function parseRotations(value: unknown): Rotations {
-  if (!isRecord(value) || typeof value.counter !== 'number') throw new Error('control: rotations.counter must be a number');
-  const rotations: Rotations = { counter: value.counter };
-  if (value.keys !== undefined) rotations.keys = parseRotationRecord('keys', value.keys);
-  if (value.secrets !== undefined) rotations.secrets = parseRotationRecord('secrets', value.secrets);
-  return rotations;
-}
-
-/** Record a rotation of one kind: the counter rises, so every machine a deploy makes from now on is a new generation. */
-export function withRotation(state: ControlState, kind: 'keys' | 'secrets', record: RotationRecord): ControlState {
-  const counter = (state.rotations?.counter ?? 0) + 1;
-  return { ...state, rotations: { ...state.rotations, counter, [kind]: record } };
-}
-
-/** Parse and validate the control JSON. A malformed document fails the deploy loudly. */
-export function parseControlState(text: string): ControlState {
+/** Parse the rotations object. A malformed one fails loudly: the deploy reads its counter. */
+export function parseRotations(text: string): Rotations {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch (err) {
-    throw new Error(`control: not valid JSON (${errorMessage(err)})`);
+    throw new Error(`rotations: not valid JSON (${errorMessage(err)})`);
   }
-  if (!isRecord(raw)) throw new Error('control: root must be an object');
-  if (raw.schemaVersion !== 2) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`);
-
-  // A stored `bootstrap` block, which older engines wrote, is read past: nothing reads it.
-  const rollout: Record<string, ServiceRollout> = {};
-  if (raw.rollout !== undefined) {
-    if (!isRecord(raw.rollout)) throw new Error('control: rollout must be an object');
-    for (const [slug, value] of Object.entries(raw.rollout)) rollout[slug] = parseServiceRollout(slug, value);
-  }
-
-  const state: ControlState = { schemaVersion: 2, rollout };
-  if (raw.rotations !== undefined) state.rotations = parseRotations(raw.rotations);
-  if (typeof raw.updatedAt === 'string') state.updatedAt = raw.updatedAt;
-  if (typeof raw.updatedBy === 'string') state.updatedBy = raw.updatedBy;
-  return state;
+  if (!isRecord(raw) || typeof raw.counter !== 'number') throw new Error('rotations: counter must be a number');
+  const rotations: Rotations = { counter: raw.counter };
+  if (raw.keys !== undefined) rotations.keys = parseRotationRecord('keys', raw.keys);
+  if (raw.secrets !== undefined) rotations.secrets = parseRotationRecord('secrets', raw.secrets);
+  return rotations;
 }
 
-export function serializeControlState(state: ControlState): string {
-  return `${JSON.stringify(state, null, 2)}\n`;
+/** Read the rotations; `{ counter: 0 }` before the first one. */
+export async function readRotations(s3: S3Like, bucket: string, stack: string): Promise<{ rotations: Rotations; etag?: string }> {
+  const { body, etag } = await readObjectText(s3, bucket, rotationsKey(stack));
+  return { rotations: body ? parseRotations(body) : { counter: 0 }, etag };
 }
 
-// Pure rollout-state transitions: every state change is a total function over the previous rollout, so the orchestrator never hand-mutates pointer fields.
-
-/** A service with no recorded rollout yet. */
-export function emptyRollout(): ServiceRollout {
-  return { seq: 0 };
+/** Record a rotation of one kind: the counter rises, so every machine a deploy keeps from before it is replaced. */
+export function withRotation(rotations: Rotations, kind: 'keys' | 'secrets', record: RotationRecord): Rotations {
+  return { ...rotations, counter: rotations.counter + 1, [kind]: record };
 }
-
-/** Record the deploy intent to roll `sha` in. Idempotent, and pointers stay untouched until promotion. */
-export function setPending(current: ServiceRollout | undefined, sha: string): ServiceRollout {
-  const base = current ?? emptyRollout();
-  return { ...base, pendingSha: sha };
-}
-
-/** Promote a resolved generation to active: `seq` advances, pending intent clears, and the old active is dropped (its VM is reaped once the new one is healthy). */
-export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
-  const base = current ?? emptyRollout();
-  const seq = base.seq + 1;
-  return { seq, active: { id: resolved.id, sha: resolved.sha, seq } };
-}
-
-/** Env marker the privileged preflight sets on its preview, so the program plans live generations only. */
-export const PLAN_LIVE_ONLY_ENV = 'INFRA_PLAN_LIVE_ONLY';
 
 /**
- * The rollout with every pending deploy intent dropped and the `active` pointers kept. A pending sha plans a new generation, which needs keys only
- * the deploy mints; the preflight checks privileged resources, which no generation touches, so it plans without one.
+ * Record a rotation. The caller holds the lease; the write is conditional on the object it read, so a write that raced it fails loudly and
+ * nothing is lost.
  */
-export function withoutPending(rollout: Record<string, ServiceRollout>): Record<string, ServiceRollout> {
-  return Object.fromEntries(Object.entries(rollout).map(([svc, { pendingSha: _, ...entry }]) => [svc, entry]));
+export async function recordRotation(opts: {
+  s3: S3Like;
+  bucket: string;
+  stack: string;
+  kind: 'keys' | 'secrets';
+  by: string;
+  now?: Date;
+}): Promise<Rotations> {
+  const { rotations, etag } = await readRotations(opts.s3, opts.bucket, opts.stack);
+  const next = withRotation(rotations, opts.kind, { at: (opts.now ?? new Date()).toISOString(), by: opts.by });
+  await putJsonObject(opts.s3, opts.bucket, rotationsKey(opts.stack), `${JSON.stringify(next, null, 2)}\n`, conditionOn(etag));
+  return next;
 }
 
-/** Read the control object. Returns the empty state and no etag when the object does not exist yet. */
-export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
-  const { body, etag } = await readObjectText(s3, bucket, key);
-  return { state: body ? parseControlState(body) : emptyControlState(), etag };
-}
-
-/** Write the control object. `ifMatch`/`ifNoneMatch` map to Scaleway's conditional-write headers; pass `ifNoneMatch: '*'` for atomic create-if-absent. */
-export async function writeControlState(
-  s3: S3Like,
-  bucket: string,
-  key: string,
-  state: ControlState,
-  opts: ConditionalWrite = {},
-): Promise<{ etag?: string }> {
-  return putJsonObject(s3, bucket, key, serializeControlState(state), opts);
-}
-
-// Orchestrator helpers: read process.env and build a client, so not part of the pure core above.
-
-/** Build an S3 client for the state bucket with an explicit key. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
+/** Build an S3 client with an explicit key. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
   return (await makeS3Client(region, accessKey, secretKey)) as unknown as S3Like;
 }
@@ -269,75 +181,13 @@ export function stateBackendUrl(bucket: string, region: string): string {
   return `s3://${bucket}?endpoint=s3.${region}.scw.cloud&region=${region}`;
 }
 
-/** Map the SCW_* pair a CI job supplies onto the AWS_* names the S3 state backend and the aws CLI read, and pin both region conventions. Existing values win. */
-export function adoptStateBackendEnv(region?: string, env: NodeJS.ProcessEnv = process.env): void {
-  env.AWS_ACCESS_KEY_ID ??= env.SCW_ACCESS_KEY ?? '';
-  env.AWS_SECRET_ACCESS_KEY ??= env.SCW_SECRET_KEY ?? '';
-  if (region) {
-    env.AWS_DEFAULT_REGION ??= region;
-    env.SCW_DEFAULT_REGION ??= region;
-  }
-}
-
-/** Identifies the writer in `updatedBy`: a main job run (its target) or a local operator. */
+/** Identifies the writer in `updatedBy` and the lease: a main job run (its target) or a local operator. */
 export function controlActor(): string {
   if (process.env.TARGET_SHA) return `job:${process.env.TARGET_SHA.slice(0, 10)}`;
   return `operator:${process.env.USER ?? process.env.LOGNAME ?? 'unknown'}`;
 }
 
-/** Everything a task needs to address a stack's control + lock objects. */
-export interface ControlContext {
-  s3: S3Like;
-  bucket: string;
-  /** Key of the control object for the stack. */
-  controlKey: string;
-  /** Key of the lock object for the stack. */
-  lockKey: string;
-}
-
-/**
- * Resolve a stack's control-object context from the environment: sets APP_MODE from the stack's short name, builds the S3 client, derives bucket and keys. Returns null when no credentials are present.
- * The AWS_* pair takes precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
- */
-export async function controlContextForStack(stack: string, log: (msg: string) => void = console.warn): Promise<ControlContext | null> {
-  const fromAws = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
-  const accessKey = fromAws ? process.env.AWS_ACCESS_KEY_ID : process.env.SCW_ACCESS_KEY;
-  const secretKey = fromAws ? process.env.AWS_SECRET_ACCESS_KEY : process.env.SCW_SECRET_KEY;
-  if (!accessKey || !secretKey) {
-    log('control-store: no S3 key (SCW_* or AWS_*); cannot read/write rollout state');
-    return null;
-  }
-  process.env.APP_MODE ??= stack.split('/').pop();
-  const { loadEngineConfig } = await import('../../config/engine-config');
-  const appConfig = await loadEngineConfig();
-  const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey);
-  return { s3, bucket: stateBucket(appConfig.slug), controlKey: controlKey(stack), lockKey: lockKey(stack) };
-}
-
-/** Read-modify-write one service's rollout entry under `If-Match` optimistic concurrency, retrying the whole read-patch-write on conflict. Entries are per-service, so re-applying the patch over the winner's state is safe. */
-export async function updateServiceRollout(
-  s3: S3Like,
-  bucket: string,
-  key: string,
-  slug: string,
-  patch: (current: ServiceRollout | undefined) => ServiceRollout,
-  attempts = 4,
-): Promise<void> {
-  for (let attempt = 1; ; attempt++) {
-    const { state, etag } = await readControlState(s3, bucket, key);
-    state.rollout[slug] = patch(state.rollout[slug]);
-    state.updatedAt = new Date().toISOString();
-    state.updatedBy = controlActor();
-    try {
-      await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
-      return;
-    } catch (err) {
-      if (attempt >= attempts) throw err;
-    }
-  }
-}
-
-/** Metadata for the conditional-write lock that serializes stack mutations. */
+/** Metadata for the conditional-write lock that serializes changes to an environment. */
 export interface LockInfo {
   owner: string;
   operation: string;
@@ -374,7 +224,7 @@ export async function peekLock(s3: S3Like, bucket: string, key: string): Promise
   return (await readLock(s3, bucket, key)).info;
 }
 
-/** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is held by someone else; breaks and takes an expired lock. */
+/** Acquire the lock. Returns `{acquired:false, held}` when a live lock is held by someone else; breaks and takes an expired lock. */
 export async function acquireLock(
   s3: S3Like,
   bucket: string,
@@ -398,7 +248,7 @@ export async function acquireLock(
   const { info: held, etag } = await readLock(s3, bucket, key);
   if (held && Date.parse(held.expiresAt) > now) return { acquired: false, held };
   try {
-    await putLock(s3, bucket, key, info, etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
+    await putLock(s3, bucket, key, info, conditionOn(etag));
     return { acquired: true, info };
   } catch (err) {
     if (!isPreconditionFailed(err)) throw err;
@@ -426,7 +276,7 @@ export async function renewLock(s3: S3Like, bucket: string, key: string, owner: 
   if (!info || info.owner !== owner) return { renewed: false, held: info };
   const next: LockInfo = { ...info, expiresAt: new Date(now + ttlMs).toISOString() };
   try {
-    await putLock(s3, bucket, key, next, etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
+    await putLock(s3, bucket, key, next, conditionOn(etag));
     return { renewed: true, info: next };
   } catch (err) {
     if (!isPreconditionFailed(err)) throw err;

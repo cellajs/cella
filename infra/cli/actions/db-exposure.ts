@@ -3,7 +3,6 @@ import { copyFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
-import { appStores } from '../../config/stores.config';
 import { parseAclInput } from '../../lib/db-exposure-acl';
 import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
 import { deriveInfra } from '../../lib/naming';
@@ -15,7 +14,7 @@ import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-r
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { ENGINE_FOLDER } from '../../lib/scaleway/secret-paths';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
-import { readStoreOutputs } from '../../lib/stack/store-outputs';
+import { readDatabaseOutputs } from '../../lib/stack/store-outputs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -28,9 +27,8 @@ import { type OperatorApplyOptions, runOperatorApply } from './operator-apply';
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
 const DB_ACL_KEY = 'infra:dbPublicAcl';
-// Key within the primary store's entry of the `storeOutputs` stack output.
+// Key within the database store's outputs.
 const DB_CA_OUTPUT = 'caCertificate';
-const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
 
 /**
  * Create the exposure overlay by copying the committed stack config, which carries `encryptionsalt` so secret config encrypts with the same passphrase.
@@ -59,11 +57,6 @@ export async function detectPublicIp(): Promise<string | undefined> {
   }
 }
 
-/** Read one key of the primary store's `storeOutputs` entry; empty when absent or unreadable. */
-function readPrimaryStoreOutput(env: NodeJS.ProcessEnv, stack: string, key: string): string {
-  return readStoreOutputs(env, stack)[PRIMARY_STORE_ID]?.[key] ?? '';
-}
-
 /**
  * The admin connection string over the public endpoint, empty while none is open: the endpoint from the store outputs, the admin role's
  * password from the engine folder, which the operator key of the converge reads. No password passes through the state.
@@ -73,9 +66,7 @@ export async function readPublicDsn(
   stack: string,
   context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
 ): Promise<string> {
-  const host = readPrimaryStoreOutput(env, stack, 'publicHost');
-  const port = readPrimaryStoreOutput(env, stack, 'publicPort');
-  const databaseName = readPrimaryStoreOutput(env, stack, 'databaseName');
+  const { publicHost: host, publicPort: port, databaseName } = readDatabaseOutputs(env, stack);
   if (!host || !port || !databaseName) return '';
   const secrets = createSecretManagerClient({ secretKey: convergeSecretKey(env), region: context.appConfig.s3.region, projectId: context.projectId });
   const kept = await secrets.getSecretByName(rolePasswordSecretName('admin'), ENGINE_FOLDER);
@@ -85,7 +76,7 @@ export async function readPublicDsn(
 
 /** Read the database instance CA certificate store output (PEM; empty when unavailable). */
 export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
-  return readPrimaryStoreOutput(env, stack, DB_CA_OUTPUT);
+  return readDatabaseOutputs(env, stack)[DB_CA_OUTPUT] ?? '';
 }
 
 /** Write the instance CA to a 0600 temp file for `sslrootcert`, so the printed break-glass DSN verifies the server certificate and hostname. Undefined when the CA output is unavailable. */
@@ -103,14 +94,20 @@ function convergeSecretKey(env: NodeJS.ProcessEnv): string {
   return env.SCW_SECRET_KEY;
 }
 
-/** The managed PostgreSQL instance, looked up by its name over the RDB API. */
-async function findDbInstance(context: InfraContext, secretKey: string) {
+/** The managed PostgreSQL instance, looked up by its name over the RDB API; `instanceId` is undefined before it exists. */
+async function lookupDbInstance(context: InfraContext, secretKey: string) {
   const { naming, region } = deriveInfra(context.appConfig);
   const client = createRdbClient({ secretKey, region });
   const name = naming.resource('postgres');
   const instance = await client.findInstance(name);
-  if (!instance) throw new Error(`no managed database instance named '${name}' in ${region}`);
-  return { client, instanceId: instance.id };
+  return { client, instanceId: instance?.id, name, region };
+}
+
+/** The managed PostgreSQL instance; throws before it exists. */
+async function findDbInstance(context: InfraContext, secretKey: string) {
+  const { client, instanceId, name, region } = await lookupDbInstance(context, secretKey);
+  if (!instanceId) throw new Error(`no managed database instance named '${name}' in ${region}`);
+  return { client, instanceId };
 }
 
 /** The instance's live public endpoints and ACL rules, read over the RDB API (RelationalDatabasesReadOnly is enough). */
@@ -120,13 +117,10 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };
 }
 
-/** The live public endpoints as `host:port`: none without a managed PostgreSQL store or before its instance exists. */
+/** The live public endpoints as `host:port`: none before the instance exists. */
 export async function openDbEndpoints(context: InfraContext, secretKey: string): Promise<string[]> {
-  if (!Object.values(appStores).some((store) => store.kind === 'postgres-managed')) return [];
-  const { naming, region } = deriveInfra(context.appConfig);
-  const client = createRdbClient({ secretKey, region });
-  const instance = await client.findInstance(naming.resource('postgres'));
-  return instance ? publicEndpoints(await client.getInstance(instance.id)).map(endpointAddress) : [];
+  const { client, instanceId } = await lookupDbInstance(context, secretKey);
+  return instanceId ? publicEndpoints(await client.getInstance(instanceId)).map(endpointAddress) : [];
 }
 
 /** The live public endpoints, read with the observer key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */

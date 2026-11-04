@@ -1,7 +1,6 @@
 /**
  * Shared validator for the `[{ service: …, … }, …]` JSON arrays the deploy
- * workflow passes between tasks (enabled services, build matrix, rollout
- * plans). One implementation so every task rejects malformed input with the
+ * passes between its steps (enabled services, the build matrix). One implementation so every task rejects malformed input with the
  * same `--flag[i].field must be a string` shape.
  */
 export function parseServiceRows<R extends string, O extends string = never>(

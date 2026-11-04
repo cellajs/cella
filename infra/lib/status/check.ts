@@ -1,5 +1,5 @@
 import { actionCommand, menuPath } from '../operator-actions';
-import type { Check, CheckStatus, CredentialTier, NextAction } from './types';
+import type { Check, CheckStatus, KeyTier, NextAction } from './types';
 
 /** The local setup/manage entrypoint. */
 export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
@@ -8,16 +8,12 @@ export const manageSecrets: NextAction = {
   command: actionCommand('secrets'),
 };
 export const unlock: NextAction = {
-  description: `Clear the stale stack lock via "${menuPath('unlock')}" (only when no run is in progress)`,
+  description: `Clear the stale lease via "${menuPath('unlock')}" (only when no run is in progress)`,
   command: actionCommand('unlock'),
 };
 export const manageDbEndpoint: NextAction = {
   description: `Close the public DB endpoint via "${menuPath('db-close')}"`,
   command: actionCommand('db-close'),
-};
-export const clearPending: NextAction = {
-  description: `Review the interrupted Pulumi operations via "${menuPath('unlock')}" (only when no run is in progress)`,
-  command: actionCommand('unlock'),
 };
 
 /** Deploy the environment's target: the runner does once its target moves, this starts a run now. */
@@ -44,10 +40,10 @@ export interface CheckBuilder {
 
 /** One verdict closure per status, so each check branch is a single call
  *  without repeating the object literal. */
-export function check(id: string, title: string, credential: CredentialTier = 'none'): CheckBuilder {
+export function check(id: string, title: string, key: KeyTier = 'none'): CheckBuilder {
   const verdict =
     (status: CheckStatus): Verdict =>
-    (detail, nextAction) => ({ id, title, status, detail, credential, ...(nextAction ? { nextAction } : {}) });
+    (detail, nextAction) => ({ id, title, status, detail, key, ...(nextAction ? { nextAction } : {}) });
   return { ok: verdict('ok'), warn: verdict('warn'), missing: verdict('missing'), error: verdict('error'), unknown: verdict('unknown') };
 }
 

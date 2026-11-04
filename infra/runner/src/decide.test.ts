@@ -11,7 +11,7 @@ const run = (id: string, state: string, target: string, retry?: string, exit_cod
 });
 
 describe('the runner', () => {
-  it('starts a target and retry counter once, never beside a run in progress, and never again by itself (C17, D21)', () => {
+  it('starts a target and retry counter once, never beside a run in progress, and never again by itself', () => {
     const target = { sha: sha('b'), retry: 0 };
     expect(decide(target, [run('r1', 'succeeded', sha('a'), '0')])).toEqual({ action: 'start' });
     expect(decide(target, [run('r2', 'running', sha('a'), '0'), run('r1', 'succeeded', sha('a'), '0')]).action).toBe('wait');

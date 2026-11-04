@@ -7,7 +7,7 @@ import type { ComposeFile } from './types';
 
 const GENERATED_HEADER = [
   '# DO NOT EDIT: generated from infra/compose/ by `pnpm --filter infra compose:generate`.',
-  '# Edit services.config.ts (the app-owned service registry) and re-run synth.',
+  '# Edit services.config.ts (the service registry) and re-run synth.',
   '# Deploy machinery and rationale live in infrastructure.ts.',
 ].join('\n');
 
@@ -44,7 +44,15 @@ function emitMapping(obj: object, indent: number): string[] {
         lines.push(`${pad}${key}: [${val.map((x) => scalar(String(x), quoted)).join(', ')}]`);
       } else {
         lines.push(`${pad}${key}:`);
-        for (const item of val) lines.push(`${pad}  - ${scalar(String(item))}`);
+        for (const item of val) {
+          if (item === null || typeof item !== 'object') {
+            lines.push(`${pad}  - ${scalar(String(item))}`);
+            continue;
+          }
+          // A mapping item: its first key on the dash line, the rest under it.
+          const [first = '', ...rest] = emitMapping(item, indent + 2);
+          lines.push(`${pad}  - ${first.trimStart()}`, ...rest);
+        }
       }
     } else if (typeof val === 'object') {
       lines.push(`${pad}${key}:`);
@@ -68,7 +76,7 @@ export function renderCompose(file: ComposeFile): string {
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`;
 }
 
-/** The generated deploy artifact, read by resources/compute.ts and shipped to each VM. */
+/** The generated deploy artifact, read by the deploy and written into each machine's user data. */
 export const OUTPUT_PATH = join(infraDir, 'compose.gen.yml');
 
 function main(): void {

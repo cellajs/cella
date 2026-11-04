@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { LockInfo, S3Like } from '../../lib/stack/control-store';
 
-/** Stateful single-object S3 fake honouring If-None-Match / If-Match, the conditional writes the stack lock and control object rely on. */
+/** Stateful single-object S3 fake honouring If-None-Match / If-Match, the conditional writes the lease and the live record rely on. */
 export function makeLockS3(initial?: LockInfo) {
   let obj: { body: string; etag: string } | undefined = initial ? { body: JSON.stringify(initial), etag: '"e1"' } : undefined;
   let counter = 1;

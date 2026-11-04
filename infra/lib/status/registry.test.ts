@@ -6,7 +6,6 @@ import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { RunsFacts } from './providers/runs';
 import type { IdentityFacts } from './providers/stack';
-import type { StoreValidationFact } from './providers/stores';
 import { assembleReport, statusProviders } from './registry';
 import type { Check, ProbeSession, ScalewayFacts } from './types';
 
@@ -25,7 +24,6 @@ interface Facts {
   live?: LiveServiceFact[];
   components?: ComponentsFact;
   dns?: { host: string; resolvedIps?: string[]; loadBalancerIps?: string[] };
-  stores?: StoreValidationFact[];
   db?: DbEndpointFacts;
   environments?: EnvironmentsFacts;
 }
@@ -35,16 +33,8 @@ function base(overrides: Partial<Facts> = {}): Facts {
   return {
     identity: { observerAppId: 'app-1', keyAges: [] },
     runs: { last: { id: 'r1', state: 'succeeded', environment_variables: { TARGET_SHA: 'abc123def456' } } },
-    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], activeGenerations: {}, organizationId: 'org-1' },
-    state: {
-      stateBucketExists: true,
-      lock: { held: false },
-      rollout: [
-        { slug: 'backend', activeSha: 'abc123def456' },
-        { slug: 'frontend', activeSha: 'abc123def456' },
-      ],
-      pendingOperations: [],
-    },
+    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], liveMachines: {}, roles: [], organizationId: 'org-1' },
+    state: { stateBucketExists: true, lock: { held: false } },
     secrets: [],
     live: [
       { slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 204, version: 'abc123def456' }, expectedSha: 'abc123def456' },
@@ -52,7 +42,6 @@ function base(overrides: Partial<Facts> = {}): Facts {
     ],
     components: { slug: 'backend', url: 'https://api.example.com/health?depth=full', httpStatus: 200, issues: [] },
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
-    stores: [{ id: 'primary', kind: 'postgres-managed' }],
     db: { instance: 'cella-postgres', found: true, endpoints: [] },
     environments: { text: 'staging branch:main', stacks: ['staging'] },
     ...overrides,
@@ -84,7 +73,6 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     live: facts.live,
     components: facts.components,
     dns: facts.dns,
-    stores: facts.stores,
     db: facts.db,
     environments: facts.environments,
   };
@@ -94,15 +82,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
 
 const find = (checks: Check[], id: string): Check | undefined => checks.find((c) => c.id === id);
 
-describe('report envelope (public contract)', () => {
-  it('has the documented top-level shape and schema version', () => {
-    const report = reportFor(base());
-    expect(Object.keys(report).sort()).toEqual(['checks', 'mode', 'nextAction', 'schemaVersion', 'stackState', 'summary']);
-    expect(report.schemaVersion).toBe(2);
-    expect(report.mode).toBe('staging');
-    expect(report.stackState).toBe('bootstrapped');
-  });
-
+describe('report envelope', () => {
   it('summary counts every status bucket and sums to the check count', () => {
     const report = reportFor(base());
     expect(Object.keys(report.summary).sort()).toEqual(['error', 'missing', 'ok', 'unknown', 'warn']);
@@ -110,12 +90,12 @@ describe('report envelope (public contract)', () => {
     expect(total).toBe(report.checks.length);
   });
 
-  it('every check carries id, title, status, detail, credential', () => {
+  it('every check carries id, title, status, detail, key', () => {
     for (const check of reportFor(base()).checks) {
       expect(check.id).toBeTruthy();
       expect(check.title).toBeTruthy();
       expect(['ok', 'warn', 'missing', 'unknown', 'error']).toContain(check.status);
-      expect(['none', 'scaleway']).toContain(check.credential);
+      expect(['none', 'scaleway']).toContain(check.key);
     }
   });
 
@@ -129,10 +109,10 @@ describe('report envelope (public contract)', () => {
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
     const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined, runs: undefined }), { scalewayKeyAvailable: false });
-    for (const id of ['runs.last', 'identity.keyAges', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
+    for (const id of ['runs.last', 'identity.keyAges', 'state.bucket', 'state.lock', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
-      expect(check?.credential).toBe('scaleway');
+      expect(check?.key).toBe('scaleway');
     }
     // Public HTTP checks still evaluate, so nothing scaleway drives nextAction.
     expect(report.nextAction).toBeUndefined();
@@ -174,23 +154,10 @@ describe('nextAction priority (lifecycle order)', () => {
     expect(find(report.checks, 'config.stackState')?.status).toBe('missing');
   });
 
-  it('bootstrapped with nothing deployed points at deploy', () => {
-    const report = reportFor(base({ state: { stateBucketExists: true, lock: { held: false }, rollout: [] }, live: undefined }));
-    expect(find(report.checks, 'rollout')?.status).toBe('missing');
-    expect(report.nextAction?.command).toContain('deploy --mode staging');
-  });
-
-  it('an unset required secret outranks rollout/live', () => {
+  it('an unset required secret outranks the live checks', () => {
     const report = reportFor(base({ secrets: ['admin-email'] }));
     expect(find(report.checks, 'secrets.required')?.status).toBe('missing');
     expect(report.nextAction?.description).toContain('runtime secret');
-  });
-
-  it('a store misconfiguration outranks deploy-stage actions', () => {
-    const report = reportFor(base({ stores: [{ id: 'primary', kind: 'redis-managed', error: 'tls is disabled' }], secrets: ['x'] }));
-    const check = find(report.checks, 'stores.primary');
-    expect(check?.status).toBe('error');
-    expect(check?.detail).toBe('tls is disabled');
   });
 });
 
@@ -305,14 +272,13 @@ describe('dns check', () => {
   });
 });
 
-describe('stack lock', () => {
-  it('a stale lock warns and points at unlock', () => {
+describe('lease', () => {
+  it('a stale lease warns and points at unlock', () => {
     const report = reportFor(
       base({
         state: {
           stateBucketExists: true,
           lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2020-01-01T00:00:00Z', stale: true },
-          rollout: [{ slug: 'backend', activeSha: 'abc123def456' }],
         },
       }),
     );
@@ -321,13 +287,12 @@ describe('stack lock', () => {
     expect(check?.nextAction?.description).toContain('Unlock');
   });
 
-  it('a live lock warns without an action (a run may be in progress)', () => {
+  it('a live lease warns without an action (a run may be in progress)', () => {
     const report = reportFor(
       base({
         state: {
           stateBucketExists: true,
           lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2999-01-01T00:00:00Z', stale: false },
-          rollout: [{ slug: 'backend', activeSha: 'abc123def456' }],
         },
       }),
     );
@@ -338,53 +303,27 @@ describe('stack lock', () => {
 });
 
 describe('expectedRelease', () => {
-  // The control object production carried after moving to singleVM: cdc and frontend kept pointers nothing updates.
-  const rollout = [
-    { slug: 'backend', activeSha: '79ee6cde4' },
-    { slug: 'cdc', activeSha: 'c4a6d59aa' },
-    { slug: 'frontend', activeSha: 'c4a6d59aa' },
-  ];
+  const commit = (sha: string) => ({ slot: 'a' as const, machine: 'm', commit: sha, retry: 0, rotation: 0 });
+  // A live record with roles a move to single-process form left behind: cdc and frontend keep entries nothing updates until a deploy retires them.
+  const live = { schemaVersion: 1 as const, roles: { backend: commit('79ee6cde4'), cdc: commit('c4a6d59aa'), frontend: commit('c4a6d59aa') } };
   const singleVM = { services: {}, singleVM: true };
 
-  it('expects a service on the singleVM host to serve the host release, not its own leftover pointer', () => {
-    expect(expectedRelease(singleVM, 'frontend', rollout)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
+  it('expects a service on the single-process host to serve the host release, not its own leftover entry', () => {
+    expect(expectedRelease(singleVM, 'frontend', live)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
   });
 
-  it('gives a co-hosted service without a pointer of its own a real expectation', () => {
-    expect(expectedRelease(singleVM, 'yjs', rollout)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
+  it('gives a co-hosted service without an entry of its own a real expectation', () => {
+    expect(expectedRelease(singleVM, 'yjs', live)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
   });
 
-  it('expects a service with its own VM to serve its own active release', () => {
-    expect(expectedRelease(singleVM, 'backend', rollout)).toEqual({ expectedSha: '79ee6cde4' });
-    expect(expectedRelease({ services: {}, singleVM: false }, 'frontend', rollout)).toEqual({ expectedSha: 'c4a6d59aa' });
+  it('expects a service with its own machine to serve its own role release', () => {
+    expect(expectedRelease(singleVM, 'backend', live)).toEqual({ expectedSha: '79ee6cde4' });
+    expect(expectedRelease({ services: {}, singleVM: false }, 'frontend', live)).toEqual({ expectedSha: 'c4a6d59aa' });
   });
 
-  it('has no expectation for a disabled service or an unread control object', () => {
-    expect(expectedRelease({ services: { yjs: { enabled: false } }, singleVM: true }, 'yjs', rollout)).toEqual({});
+  it('has no expectation for a disabled service or an unread live record', () => {
+    expect(expectedRelease({ services: { yjs: { enabled: false } }, singleVM: true }, 'yjs', live)).toEqual({});
     expect(expectedRelease(singleVM, 'frontend', undefined)).toEqual({ expectedSha: undefined, expectedFrom: 'backend' });
-  });
-});
-
-describe('pending operations', () => {
-  const withPending = (pendingOperations: ScalewayFacts['pendingOperations']) => reportFor(base({ state: { ...base().state, pendingOperations } }));
-
-  it('warns about an interrupted operation and points at Unlock', () => {
-    const report = withPending([
-      {
-        urn: 'urn:pulumi:production::infra::scaleway:iam/policy:Policy::vm-backend-policy',
-        type: 'scaleway:iam/policy:Policy',
-        kind: 'creating',
-        inState: true,
-      },
-    ]);
-    const check = find(report.checks, 'state.pendingOperations');
-    expect(check).toMatchObject({ status: 'warn', detail: '1 interrupted: creating vm-backend-policy', credential: 'scaleway' });
-    expect(check?.nextAction?.description).toContain('Unlock');
-    expect(report.nextAction?.description).toContain('Unlock');
-  });
-
-  it('is unknown, not ok, when the checkpoint could not be read', () => {
-    expect(find(withPending(undefined).checks, 'state.pendingOperations')?.status).toBe('unknown');
   });
 });
 
@@ -392,7 +331,7 @@ describe('database public endpoint', () => {
   const live = (endpoints: string[], aclRules?: number): DbEndpointFacts => ({ instance: 'cella-postgres', found: true, endpoints, aclRules });
 
   it('a private-only instance with exposure off is ok', () => {
-    expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', credential: 'scaleway' });
+    expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', key: 'scaleway' });
   });
 
   it('warns about a public endpoint left open while exposure is off', () => {

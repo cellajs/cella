@@ -1,4 +1,4 @@
-import { scrubSecretLines } from '../../boot/src/diagnostics';
+import { scrubSecretLines } from '../../agent/src/diagnostics';
 
 /** Where runs are kept in the environment's diagnostics bucket: one folder per run, `runs/<run>/`. */
 export const RUNS_PREFIX = 'runs/';
@@ -10,17 +10,21 @@ export interface RunStep {
   outcome: 'ok' | 'error';
 }
 
-/** How a run ended; `running` while it runs. Blocked: identities, a privileged change or a required secret is owed, which the operator settles. */
-export type RunOutcome = 'running' | 'deployed' | 'blocked' | 'failed';
+/**
+ * How a run ended; `running` while it runs. Unchanged: every role served the target already, under the same retry counter and rotation.
+ * Blocked: a required runtime value is missing, which the operator stores. Apply needed: the target describes the app otherwise than the
+ * applied engine, and an apply from it publishes its description. A job run ended either way exits blocked.
+ */
+export type RunOutcome = 'running' | 'deployed' | 'unchanged' | 'blocked' | 'apply needed' | 'failed';
 
-/** A new machine's account of the run's release (C16): its key under `boot-diag/`, or none when that machine never uploaded one. */
+/** A new machine's account of the run's release: its key under `boot-diag/`, or none when that machine never uploaded one. */
 export interface RunBootAccount {
   service: string;
   key?: string;
   failed?: boolean;
 }
 
-/** One run, one record (plan §3.8): what it deployed where, each step with its duration, the step that failed, and how it ended. */
+/** One run, one record: what it deployed where, each step with its duration, the step that failed, and how it ended. */
 export interface RunRecord {
   run: string;
   environment: string;
@@ -31,7 +35,7 @@ export interface RunRecord {
   steps: RunStep[];
   failedStep?: string;
   error?: string;
-  /** Set when the rollout failed: each service's account of the release, which Show runs prints for a failed boot. */
+  /** Set when a switch failed: each role's account of the release, which Show runs prints for a failed boot. */
   boot?: RunBootAccount[];
 }
 
@@ -83,7 +87,7 @@ export class RunRecorder {
     if (outcome === 'error') this.current.failedStep ??= title;
   }
 
-  /** Name the release's boot accounts, once the rollout failed. */
+  /** Name the release's boot accounts, once a switch failed. */
   boot(accounts: RunBootAccount[]): void {
     this.current.boot = accounts;
   }

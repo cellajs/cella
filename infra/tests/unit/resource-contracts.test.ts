@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -6,17 +6,28 @@ const read = (resource: string) => readFileSync(resolve(__dirname, '../../resour
 
 // Resource options never reach a mock render (resources/*.test.ts assert the rendered inputs), so the ones that keep live resources alive are pinned on the source.
 describe('resource options', () => {
-  it('protects the production database instance from deletion', () => {
-    expect(read('stores/postgres-managed.ts')).toMatch(/protect:\s*isProduction/);
+  it('protects no resource: the typed name and the Owner key guard a teardown, whose destroy a protected resource would stop', () => {
+    const sources = readdirSync(resolve(__dirname, '../../resources'), { recursive: true, encoding: 'utf-8' }).filter(
+      (file) => file.endsWith('.ts') && !file.endsWith('.test.ts'),
+    );
+    for (const file of sources) expect(read(file), file).not.toMatch(/\bprotect:/);
   });
 
-  it('keeps generation VMs immutable: cloud-init and image drift never replace a live VM outside a cutover', () => {
-    expect(read('compute.ts')).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/);
+  it('leaves what a teardown keeps live through a destroy by hand: the upload and boot-diag buckets with their policies, the state bucket policy, the keys that protect stored data', () => {
+    expect(read('storage.ts').match(/^\s+kept,$/gm)).toHaveLength(6);
+    expect(read('state-bucket-policy.ts')).toMatch(/retainOnDelete: true/);
+    expect(read('secrets.ts')).toMatch(/retainOnDelete: protectsStoredData\(definition\)/);
   });
 
-  it('lets the cutover task own the live LB server lists', () => {
-    // Pulumi seeds serverIps, then ignores drift so tasks/cutover.ts can expand and contract them with SetBackendServers.
-    expect(read('loadbalancer.ts').match(/ignoreChanges:\s*\['serverIps'\]/g)).toHaveLength(2);
+  it('declares no machine: a deploy makes and deletes them, so the state holds none and the deploy key needs no state', () => {
+    const sources = readdirSync(resolve(__dirname, '../../resources'), { recursive: true, encoding: 'utf-8' }).filter(
+      (file) => file.endsWith('.ts') && !file.endsWith('.test.ts'),
+    );
+    for (const file of sources) expect(read(file), file).not.toMatch(/instance\.(Server|PrivateNic|Ip)\(/);
+  });
+
+  it('lets no pool drift from the program: a deploy moves traffic by health and writes none', () => {
+    expect(read('loadbalancer.ts')).not.toMatch(/ignoreChanges:\s*\[[^\]]*'serverIps'/);
   });
 
   // Known gaps, listed here so a reviewer sees them in `pnpm test` output.

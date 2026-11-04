@@ -45,7 +45,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 ```
 
-The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed VM receives only the variables its runtime secrets and its service's `env` declare: a secret one beside the
+The other standard `OTEL_*` variables apply too, such as a per-signal endpoint or the trace sampler. A deployed machine receives only the variables its runtime secrets and its service's `env` declare: a secret one beside the
 Maple key in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts), any other in the service's `env` in [services.config.ts](../infra/config/services.config.ts).
 
 The browser reports to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals, with no
@@ -102,7 +102,7 @@ The two are not joined: the WAL carries no trace context, so the change a reques
 
 ## Health endpoints
 
-Every HTTP service answers `GET /health` with a shallow 204 for load balancers and liveness probes. `?depth=full` returns JSON diagnostics:
+Every HTTP service answers `GET /health` with a shallow 204 for the agent behind the load balancer's check and for liveness probes. `?depth=full` returns JSON diagnostics:
 
 | Service | Full depth adds |
 | --- | --- |

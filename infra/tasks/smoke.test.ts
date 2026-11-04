@@ -184,7 +184,7 @@ describe('runSmoke', () => {
     expect(check?.detail).toContain('/assets/index-OLD.js');
   });
 
-  it('checks deployed SHA for every public service in the rollout matrix', async () => {
+  it('checks deployed SHA for every public service in the services matrix', async () => {
     const results = await runSmoke({
       defaultRouteUrl: 'https://app',
       primaryUrl: 'https://api',
@@ -364,7 +364,7 @@ describe('parseArgs', () => {
     });
   });
 
-  it('parses the rollout services matrix', () => {
+  it('parses the services matrix', () => {
     const matrix = JSON.stringify([
       { service: 'backend', health_url: 'https://api' },
       { service: 'cdc', health_url: '' },

@@ -1,6 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { deriveInfra } from '../../lib/naming';
@@ -9,20 +7,23 @@ import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { stateKeyOf } from '../../lib/scaleway/s3-client';
+import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
+import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
-import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
-import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
+import { controlActor, makeControlClient, recordRotation } from '../../lib/stack/control-store';
+import { importPlan, keptResources } from '../../lib/stack/kept-resources';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { forgetRetiredResources } from '../../lib/stack/retired-state';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { recordRotation } from '../../tasks/record-rotation';
+import { type PublishedEngine, pruneEngines, publishEngine, recordAppliedEngine } from '../../tasks/publish-engine';
+import { moveMachinesOutOfProgram } from '../../tasks/retire-program-machines';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
@@ -60,11 +61,11 @@ interface SetupContext {
   /** The operator key: provider auth, Secret Manager writes and IAM reads. */
   accessKey: string;
   secretKey: string;
-  /** The key for the state side (backend login, stack lock): the operator key, naming this project. */
+  /** The key for the state side (backend login, lease): the operator key, naming this project. */
   stateKey: KeyPair;
   stackName: string;
   /** Child-process env carrying the provider key + passphrase. */
-  childEnv: NodeJS.ProcessEnv;
+  childEnv: Record<string, string>;
   must: ReturnType<typeof createStepRunner>['must'];
 }
 
@@ -91,6 +92,40 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
   } catch {
     // Secret Manager unreachable (e.g. fresh project): skip the gap check.
   }
+}
+
+/**
+ * Import what a teardown kept and the state lacks (lib/stack/kept-resources.ts), before the `up` that would otherwise make it again. Nothing
+ * on a stack that holds it all. A listing that fails is left to the `up`, which then names what exists.
+ */
+async function adoptKept(ctx: SetupContext): Promise<void> {
+  const region = ctx.appConfig.s3.region;
+  const live = await Promise.all([
+    makeS3Client(region, ctx.stateKey.accessKey, ctx.stateKey.secretKey).then(async (s3) => {
+      const { ListBucketsCommand } = await import('@aws-sdk/client-s3');
+      return ((await s3.send(new ListBucketsCommand({}))).Buckets ?? []).flatMap((bucket) => (bucket.Name ? [bucket.Name] : []));
+    }),
+    createSecretManagerClient({ secretKey: ctx.secretKey, region, projectId: ctx.projectId }).listSecrets(RUNTIME_FOLDER),
+  ]).catch((error) => {
+    console.warn(`  ${warningMark} Could not list what a teardown may have kept (${errorMessage(error)}).`);
+    return undefined;
+  });
+  if (!live) return;
+  const { LocalWorkspace } = await import('@pulumi/pulumi/automation');
+  const stack = await LocalWorkspace.createOrSelectStack({ stackName: ctx.stackName, workDir: infraDir }, { envVars: ctx.childEnv });
+  const plan = importPlan(keptResources(ctx.appConfig), { buckets: live[0], secrets: live[1] }, await stack.exportStack(), region);
+  if (plan.length === 0) return;
+  console.info(`\n→ Adopting what a teardown kept: ${plan.map((resource) => resource.name).join(', ')}`);
+  await stack.import({ resources: plan, protect: false, generateCode: false, onOutput: (line) => process.stdout.write(line) });
+  console.info(`  ${checkMark} Adopted: the \`up\` updates them in place.`);
+}
+
+/** The engine image of this checkout, published on the operator key; undefined while the registry does not exist or when the build failed. */
+async function publishEngineOrWarn(ctx: SetupContext): Promise<PublishedEngine | undefined> {
+  return publishEngine({ appConfig: ctx.appConfig, projectId: ctx.projectId, secretKey: ctx.secretKey }).catch((error) => {
+    console.warn(`${warningMark} The engine image could not be published (${errorMessage(error)}): \`${actionCommand('apply')}\` publishes it.`);
+    return undefined;
+  });
 }
 
 /**
@@ -121,27 +156,22 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
   const firstProvision = ctx.context.state === 'fresh';
   // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
   const firstProvisioning = inFirstProvisioning(ctx.context);
-  if (firstProvisioning) {
-    // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
-    const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
-      .listSecrets()
-      .catch(() => []);
-    const imports = operatorSecretImports(listed, operatorManagedRuntimeSecrets, { region: ctx.appConfig.s3.region });
-    if (imports) {
-      ctx.childEnv.OPERATOR_SECRET_IMPORTS = imports;
-      console.info(
-        `  ${checkMark} Adopting the operator values a teardown kept: ${imports
-          .split(',')
-          .map((entry) => entry.split('=')[0])
-          .join(', ')}`,
-      );
-    }
+  try {
+    await adoptKept(ctx);
+  } catch (error) {
+    await stackLock.release();
+    if (endsAction(error)) throw error;
+    endActionWithHint(
+      `Could not adopt what a teardown kept: ${errorMessage(error)}`,
+      { command: actionCommand('resume'), description: 'fix the cause above, then run it again to continue' },
+      1,
+    );
   }
   if (firstProvision) {
     console.info(
       `${pc.dim('  the first provisioning runs on the operator key (the deploy key is read-only on the VPC and the database and cannot create them)')}`,
     );
-    // Fresh provision: no images exist yet, so compute is deferred until a deploy builds them (helpers gate on this marker).
+    // Fresh provision: the marker says the first provisioning has not finished, until its `up` succeeds (lib/stack/bootstrap-stack-state.ts).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
       cwd: infraDir,
@@ -149,6 +179,25 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       stdio: 'inherit',
     });
   }
+
+  // A resume of a provisioned stack runs an `up` like an apply: the machines the program made keep their place in the pools and leave the
+  // state live, as every retired resource does.
+  if (!firstProvision) {
+    await moveMachinesOutOfProgram({
+      appConfig: ctx.appConfig,
+      stack: ctx.stackName,
+      secretKey: ctx.secretKey,
+      projectId: ctx.projectId,
+      s3: await makeControlClient(ctx.appConfig.s3.region, ctx.stateKey.accessKey, ctx.stateKey.secretKey),
+      env: ctx.childEnv,
+      log: (message) => console.info(pc.dim(message)),
+    });
+    forgetRetiredResources(ctx.stackName, ctx.childEnv);
+  }
+
+  // The engine the main job runs: built and pushed before the `up` once the registry exists, as on a resume, and after the first one else.
+  let engine = await publishEngineOrWarn(ctx);
+  if (engine) ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
 
   // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the operator key.
   while (true) {
@@ -170,7 +219,34 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       stdio: 'ignore',
     });
   }
-  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The first deploy brings the VMs up.`);
+  if (!engine) {
+    engine = await publishEngineOrWarn(ctx);
+    if (engine) {
+      ctx.childEnv.INFRA_ENGINE_IMAGE = engine.image;
+      const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
+      if (code !== 0) {
+        console.warn(`${warningMark} The main job's definition waits for \`${actionCommand('apply')}\` (pulumi up exited ${code}).`);
+        engine = undefined;
+      }
+    }
+  }
+  // Under the lease, as an apply records it: the next `up` that publishes no engine keeps the one recorded.
+  if (engine) {
+    try {
+      await recordAppliedEngine({ appConfig: ctx.appConfig, stack: ctx.stackName, projectId: ctx.projectId, key: ctx.stateKey, engine });
+    } catch (error) {
+      await stackLock.release();
+      endActionWithHint(
+        `The main job runs the new engine, and applied.json could not record it (${errorMessage(error)})`,
+        { command: actionCommand('resume'), description: 'run it again to record it' },
+        1,
+      );
+    }
+    await pruneEngines({ appConfig: ctx.appConfig, projectId: ctx.projectId, secretKey: ctx.secretKey, applied: engine }).catch((error) =>
+      console.warn(`${warningMark} The earlier engine images stay in the registry (${errorMessage(error)}).`),
+    );
+  }
+  console.info(`\n${checkMark} Base infrastructure provisioned. The first deploy brings the machines up.`);
 
   // The database roles and connection strings, and the generated values, are made outside the state once the `up` made their containers.
   await ensureDatabaseForStack({
@@ -219,7 +295,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
-  // operator lets it in first.
+  // operator application lets it in first.
   if (!firstSetup) await admitOperatorOrExit(context, operatorKey);
   const stateKey: KeyPair = stateKeyOf(operatorKey, projectId);
   const childEnv = buildProviderEnv(infraDir, {
@@ -257,15 +333,12 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
   if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
 
-  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it; the new stack's salt goes
-  // beside it, so the main job can deploy any commit without this stack file.
-  const stackFile = resolve(infraDir, `Pulumi.${environment}.yaml`);
+  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
   await storeCustodiedPassphrase({
     secretKey: operatorKey.secretKey,
     region: appConfig.s3.region,
     projectId,
     passphrase: pulumiPassphrase,
-    stackYaml: existsSync(stackFile) ? readFileSync(stackFile, 'utf8') : undefined,
   }).catch((error) =>
     console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
   );
@@ -283,7 +356,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 
   // Base infrastructure provisioning
-  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
+  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, load balancer; the deploys make the machines)`);
   const runNow = await confirmOrDefault({
     message: firstSetup ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
     default: firstSetup,
@@ -301,9 +374,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 }
 
-/** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
 /**
- * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it (plan §3.5). Both a setup
+ * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it. Both a setup
  * and a rotation of keys make one, and a rotation deletes the key the copy held before, so a rotation that skipped this would leave the
  * main job's runs a dead key. The secret key is shown only when the key is made, so a failed copy takes another rotation of keys.
  */
@@ -324,6 +396,7 @@ export async function copyDeployKeyForMainJob(
   );
 }
 
+/** Record a rotation of keys beside the live record, under the lease, with the operator key. */
 export async function recordKeyRotation(context: InfraContext, operatorKey: OperatorKey): Promise<void> {
   const { appConfig, projectId } = context;
   const stack = stackNameFor(context);
@@ -331,8 +404,10 @@ export async function recordKeyRotation(context: InfraContext, operatorKey: Oper
   const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'rotate-keys' });
   try {
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
-    const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'keys', by: controlActor() });
-    console.info(`${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine with the new machine keys.`);
+    const rotations = await recordRotation({ s3, bucket: deriveInfra(appConfig).naming.bootDiagBucket, stack, kind: 'keys', by: controlActor() });
+    console.info(
+      `${checkMark} Rotation ${rotations.counter} recorded: the deploy that follows replaces every machine, the backend's with the new uploads key.`,
+    );
   } finally {
     await lock.release();
   }

@@ -51,6 +51,11 @@ export function installKeylessMocks(
           if (opts.absentApplication?.(name)) return { id: '', applicationId: '', name };
           return { id: `${name}-id`, applicationId: `${name}-id`, name };
         }
+        // The operators group holds one member, so the bucket policies render a member's statement.
+        if (args.token.includes('getGroup')) {
+          const name = String((args.inputs as { name?: string }).name ?? 'group');
+          return { id: `${name}-id`, groupId: `${name}-id`, name, userIds: [`${name}-member-id`], applicationIds: [] };
+        }
         if (args.token.includes('getApiKey')) {
           return { id: 'mock-access-key', applicationId: 'mock-application-id', userId: 'mock-user-id', defaultProjectId: 'mock-project-id' };
         }
@@ -73,7 +78,7 @@ export function installKeylessMocks(
   return resources;
 }
 
-/** Wait until no new resource has registered for a run of event-loop turns: a VM registers only after its cloud-init's async output chain settles. */
+/** Wait until no new resource has registered for a run of event-loop turns: a resource made inside another's output chain registers only after that chain settles. */
 export async function settleRender(resources: readonly unknown[]): Promise<void> {
   let quiet = 0;
   for (let seen = resources.length; quiet < 25; quiet++) {

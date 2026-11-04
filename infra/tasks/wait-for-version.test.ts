@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFetchProbe, isHealthy, type ProbeResult, parseArgs, pollForVersion } from './wait-for-version';
+import { createFetchProbe, isHealthy, isServing, waitForPools } from './wait-for-version';
 
 const SHA = 'abc1234';
 
@@ -59,117 +59,60 @@ describe('isHealthy', () => {
   });
 });
 
-describe('pollForVersion', () => {
-  const noSleep = vi.fn(async () => {});
-  const noLog = () => {};
+describe('the pool read', () => {
+  const stat = (backend_id: string, ip: string, server_state: string) => ({ backend_id, ip, server_state, last_health_check_status: 'failed' });
 
-  it('returns ok on the first healthy probe', async () => {
-    const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 204, version: SHA }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, sleep: noSleep, log: noLog });
-    expect(out).toEqual({ ok: true, attempts: 1, lastStatus: 204, lastVersion: SHA });
-    expect(probe).toHaveBeenCalledTimes(1);
-    expect(noSleep).not.toHaveBeenCalled();
+  it('counts an address as serving only while its pool holds it running, whatever the last check status says', () => {
+    const stats = [stat('pool', '10.0.0.3', 'running'), stat('pool', '10.0.0.4', 'stopped'), stat('other', '10.0.0.4', 'running')];
+    expect(isServing(stats, 'pool', '10.0.0.3')).toBe(true);
+    expect(isServing(stats, 'pool', '10.0.0.4')).toBe(false);
+    expect(isServing([stat('pool', '10.0.0.3', 'starting')], 'pool', '10.0.0.3')).toBe(false);
   });
 
-  it('keeps polling while a stale version is served, then succeeds', async () => {
-    const results: ProbeResult[] = [
-      { status: 0, version: undefined },
-      { status: 204, version: 'oldsha' },
-      { status: 204, version: SHA },
+  it('waits until every pool of a role serves the address, and until none routes to it once it drains', async () => {
+    const rounds = [
+      [stat('api', '10.0.0.3', 'starting')],
+      [stat('api', '10.0.0.3', 'running'), stat('internal', '10.0.0.3', 'stopped')],
+      [stat('api', '10.0.0.3', 'running'), stat('internal', '10.0.0.3', 'running')],
     ];
-    let i = 0;
-    const probe = vi.fn(async () => results[i++]!);
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog });
-    expect(out.ok).toBe(true);
-    expect(out.attempts).toBe(3);
-    expect(probe).toHaveBeenCalledTimes(3);
-  });
-
-  it('fails after exhausting the attempt budget and reports the last seen state', async () => {
-    const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 204, version: 'oldsha' }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 3, sleep: noSleep, log: noLog });
-    expect(out).toEqual({ ok: false, attempts: 3, lastStatus: 204, lastVersion: 'oldsha' });
-    expect(probe).toHaveBeenCalledTimes(3);
-  });
-
-  it('does not sleep after the final failed attempt', async () => {
-    const sleep = vi.fn(async () => {});
-    const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 500, version: undefined }));
-    await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 3, sleep, log: noLog });
-    // sleeps between attempts only: 3 attempts => 2 sleeps
-    expect(sleep).toHaveBeenCalledTimes(2);
-  });
-
-  it('fast-fails with the reconciler reason on a terminal rollout failure (exit 5)', async () => {
-    const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 502, version: undefined }));
-    const status = vi.fn(() => ({ desired: SHA, result: 'failed', exitCode: '5', reason: 'bluegreen_rolled_back slot=green' }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 10, sleep: noSleep, log: noLog, status });
-    expect(out.ok).toBe(false);
-    expect(out.attempts).toBe(1);
-    expect(out.failReason).toBe('bluegreen_rolled_back slot=green');
-    // bailed before burning the budget
-    expect(probe).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps polling through a self-healing infra transient (exit 3 pull), then succeeds', async () => {
-    const results: ProbeResult[] = [
-      { status: 503, version: undefined },
-      { status: 204, version: SHA },
-    ];
-    let i = 0;
-    const probe = vi.fn(async () => results[i++]!);
-    // pull_exhausted is exit 3: NOT terminal; the next tick self-heals.
-    const status = vi.fn(() => ({ desired: SHA, result: 'failed', exitCode: '3', reason: 'pull_exhausted' }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status });
-    expect(out.ok).toBe(true);
-    expect(out.attempts).toBe(2);
-    expect(out.failReason).toBeUndefined();
-  });
-
-  it('ignores a failed status for a different sha (stale prior deploy)', async () => {
-    const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 204, version: 'oldsha' }));
-    const status = vi.fn(() => ({ desired: 'someother', result: 'failed', exitCode: '5', reason: 'old failure' }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 3, sleep: noSleep, log: noLog, status });
-    expect(out.ok).toBe(false);
-    expect(out.failReason).toBeUndefined();
-    expect(probe).toHaveBeenCalledTimes(3);
-  });
-
-  it('keeps polling while the reconciler reports a rolling phase', async () => {
-    const results: ProbeResult[] = [
-      { status: 502, version: undefined },
-      { status: 204, version: SHA },
-    ];
-    let i = 0;
-    const probe = vi.fn(async () => results[i++]!);
-    const status = vi.fn(() => ({ desired: SHA, result: 'rolling', phase: 'probing' }));
-    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status });
-    expect(out.ok).toBe(true);
-    expect(out.attempts).toBe(2);
-  });
-});
-
-describe('parseArgs', () => {
-  it('parses required flags and applies defaults', () => {
-    expect(parseArgs(['--url', 'https://x/health', '--sha', SHA])).toEqual({
-      url: 'https://x/health',
-      sha: SHA,
-      attempts: 100,
-      intervalMs: 3000,
-      timeoutMs: 8000,
+    let read = 0;
+    const stats = async () => rounds[Math.min(read++, rounds.length - 1)] ?? [];
+    const serving = await waitForPools({
+      backendIds: ['api', 'internal'],
+      address: '10.0.0.3',
+      want: 'serving',
+      stats,
+      timeoutMs: 60_000,
+      sleep: async () => {},
     });
+    expect([serving, read]).toEqual(['done', 3]);
+    const out = await waitForPools({
+      backendIds: ['api'],
+      address: '10.0.0.3',
+      want: 'out',
+      stats: async () => [stat('api', '10.0.0.3', 'stopped')],
+      timeoutMs: 1,
+    });
+    expect(out).toBe('done');
   });
 
-  it('overrides defaults when flags are provided', () => {
-    const out = parseArgs(['--url', 'u', '--sha', SHA, '--attempts', '10', '--interval', '500', '--timeout', '2000']);
-    expect(out).toMatchObject({ attempts: 10, intervalMs: 500, timeoutMs: 2000 });
-  });
-
-  it('throws when --url is missing', () => {
-    expect(() => parseArgs(['--sha', SHA])).toThrow(/Usage/);
-  });
-
-  it('throws when --sha is missing', () => {
-    expect(() => parseArgs(['--url', 'u'])).toThrow(/Usage/);
+  it('ends at once when the boot account says the boot failed, and at its timeout otherwise', async () => {
+    const stats = async () => [stat('api', '10.0.0.3', 'stopped')];
+    expect(
+      await waitForPools({ backendIds: ['api'], address: '10.0.0.3', want: 'serving', stats, timeoutMs: 60_000, failed: async () => true }),
+    ).toBe('failed');
+    let now = 0;
+    const outcome = await waitForPools({
+      backendIds: ['api'],
+      address: '10.0.0.3',
+      want: 'serving',
+      stats: async () => Promise.reject(new Error('stats unreadable')),
+      timeoutMs: 9_000,
+      now: () => now,
+      sleep: async (ms) => {
+        now += ms;
+      },
+    });
+    expect([outcome, now]).toEqual(['timeout', 9_000]);
   });
 });

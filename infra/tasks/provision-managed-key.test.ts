@@ -18,7 +18,7 @@ function resetMocks() {
 
 const aiKey = managedKeys.find((key) => key.id === 'ai')!;
 
-/** Synthetic two-half definition: the registry's s3 key is retired (REQ-20),
+/** Synthetic two-half definition: the registry's s3 key is retired,
  *  but the accessKey+secretKey assignment path must stay covered. Targets are
  *  real registry ids so runtimeSecretById resolves them. */
 const pairKey = {
@@ -73,9 +73,9 @@ describe('provisionManagedKey', () => {
 
     await provisionManagedKey({ ...baseOptions, definition: aiKey });
 
-    // The secret half only, into each consumer's copy (backend and mcp).
-    expect(putSecretValue).toHaveBeenCalledTimes(2);
-    for (const [input] of putSecretValue.mock.calls) expect(input).toMatchObject({ secretId: 'container-ai', value: 'SK' });
+    // The secret half only, into its one container.
+    expect(putSecretValue).toHaveBeenCalledTimes(1);
+    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-ai', value: 'SK' }));
   });
 
   it('aborts without minting when a target container does not exist yet', async () => {

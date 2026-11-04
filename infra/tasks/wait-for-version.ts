@@ -1,7 +1,5 @@
 import { healthContract } from '../config/health.config';
-import { isMain } from '../lib/utils/is-main';
-import { pollUntil } from '../lib/utils/retry';
-import { getFlag, getNumFlag, sleep } from './args';
+import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
 
 export interface ProbeResult {
   /** HTTP status of the response, or 0 if the request failed entirely. */
@@ -10,176 +8,82 @@ export interface ProbeResult {
   version: string | undefined;
 }
 
-/** Performs a single HTTP probe. Injectable so the poller can be unit-tested. */
+/** Performs a single HTTP probe. Injectable so a caller can be unit-tested. */
 export type ProbeFn = (url: string) => Promise<ProbeResult>;
 
 /**
- * The reconciler's self-reported roll status (s3://<tag-bucket>/status/<svc>.json).
- * Only the fields the poller acts on are typed; the object carries more.
- */
-export interface RollStatus {
-  /** Tag the reconciler is rolling TO; must match our SHA to be relevant. */
-  desired?: string;
-  /** Current phase: pulling|migrating|slot-up|probing|flipping|…|done. */
-  phase?: string;
-  /** rolling (in progress) | ok (committed) | failed (gave up this attempt). */
-  result?: string;
-  /** Human-readable failure reason when result=failed. */
-  reason?: string;
-  /** The die() exit code as a string; drives the terminal-vs-transient split. */
-  exitCode?: string;
-}
-
-/**
- * Reconciler exit codes meaning THE RELEASE ITSELF is bad and waiting cannot help: 4 compose-up, 5 health/blue-green, 6 migrate.
- * The reconciler is a converging loop, so infra transients (2 tag-fetch, 3 pull) self-heal on the next 20s tick and keep polling.
- */
-const TERMINAL_EXIT_CODES = new Set(['4', '5', '6']);
-
-/** Reads the reconciler status object. Injectable so the poller is testable. */
-export type StatusFn = () => RollStatus | undefined;
-
-export interface PollOptions {
-  url: string;
-  expectedSha: string;
-  probe: ProbeFn;
-  attempts?: number;
-  intervalMs?: number;
-  sleep?: (ms: number) => Promise<void>;
-  log?: (msg: string) => void;
-  /**
-   * Optional reconciler status reader. A TERMINAL failure for OUR sha (see TERMINAL_EXIT_CODES) aborts the poll with the reconciler's reason, preserving the remaining budget.
-   * Infra transients self-heal on the next tick, so polling continues and only reports the phase. Best-effort: a missing or unparseable status never changes the outcome.
-   */
-  status?: StatusFn;
-}
-
-export interface PollOutcome {
-  ok: boolean;
-  attempts: number;
-  lastStatus?: number;
-  lastVersion?: string;
-  /** Set when the reconciler reported a hard failure for our SHA. */
-  failReason?: string;
-}
-
-/**
- * A probe is healthy on any 2xx (the SPA proxy's 200, the API services' 204) AND a served version matching the SHA being rolled to.
- * A 2xx with a stale or missing version means the old container is still answering, so the poll continues.
+ * A probe is healthy on any 2xx (the SPA proxy's 200, the API services' 204) AND a served version matching the expected SHA.
+ * A 2xx with a stale or missing version means the old machine is still answering.
  */
 export function isHealthy(result: ProbeResult, expectedSha: string): boolean {
   const statusOk = result.status >= 200 && result.status < 300;
   return statusOk && result.version === expectedSha;
 }
 
-/** Default probe using global fetch with a per-request timeout. A network, TLS, or timeout failure reports status 0, so the caller keeps polling. */
+/** Default probe using global fetch with a per-request timeout. A network, TLS, or timeout failure reports status 0. */
 export function createFetchProbe(timeoutMs: number): ProbeFn {
   return async (url) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket; mirrors the backend health probe's scheme normalization.
-      const httpUrl = url.replace(/^ws(s?):/, 'http$1:');
-      const res = await fetch(httpUrl, { signal: controller.signal, redirect: 'follow' });
+      // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket.
+      const res = await fetch(url.replace(/^ws(s?):/, 'http$1:'), { signal: AbortSignal.timeout(timeoutMs), redirect: 'follow' });
       return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined };
     } catch {
       return { status: 0, version: undefined };
-    } finally {
-      clearTimeout(timer);
     }
   };
 }
 
-/** Poll until the service serves `expectedSha` or the attempt budget is spent. */
-export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
-  const { url, expectedSha, probe } = opts;
-  const attempts = opts.attempts ?? 100;
-  const intervalMs = opts.intervalMs ?? 3000;
-  const log = opts.log ?? ((msg: string) => console.info(msg));
-
-  let lastStatus: number | undefined;
-  let lastVersion: string | undefined;
-
-  const outcome = await pollUntil<PollOutcome>(
-    async (i) => {
-      const result = await probe(url);
-      lastStatus = result.status;
-      lastVersion = result.version;
-
-      if (isHealthy(result, expectedSha)) {
-        log(`Serving ${expectedSha} after ${i} attempt(s)`);
-        return { ok: true, attempts: i, lastStatus, lastVersion };
-      }
-
-      // Fail fast only on terminal rollout status, keep polling through self-healing transients, and log phase and reason for CI progress.
-      const roll = opts.status?.();
-      if (roll && roll.desired === expectedSha) {
-        if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {
-          const reason = roll.reason || 'unknown';
-          log(`Reconciler reported a terminal rollout failure for ${expectedSha} (exit ${roll.exitCode}): ${reason}`);
-          return { ok: false, attempts: i, lastStatus, lastVersion, failReason: reason };
-        }
-        const where = roll.result === 'failed' ? `retrying after ${roll.reason ?? 'failure'}` : `phase=${roll.phase ?? '<none>'}`;
-        log(`Attempt ${i}/${attempts}: reconciler ${where} status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`);
-      } else {
-        log(`Attempt ${i}/${attempts}: status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`);
-      }
-      return undefined;
-    },
-    { attempts, intervalMs, sleep: opts.sleep ?? sleep },
-  );
-
-  return outcome ?? { ok: false, attempts, lastStatus, lastVersion };
+/** One server of a pool as the load balancer's stats name it. */
+export interface PoolServerStat {
+  backend_id: string;
+  ip: string;
+  /** `running` while the load balancer routes to it; `stopped` once its check failed (`starting` and `stopping` between). */
+  server_state: string;
+  last_health_check_status?: string;
 }
 
-interface CliArgs {
-  url: string;
-  sha: string;
-  attempts: number;
-  intervalMs: number;
+/**
+ * Whether a pool routes to an address: its server there is `running`. The agent answers 200 only for the release its machine was made for,
+ * so a running server is that release serving. `last_health_check_status` is no guide: in a measured switch it read `failed` while the server ran.
+ */
+export function isServing(stats: readonly PoolServerStat[], backendId: string, address: string): boolean {
+  return stats.some((stat) => stat.backend_id === backendId && stat.ip === address && stat.server_state === 'running');
+}
+
+/** The load balancer's view of every server of every pool, read with `LoadBalancersReadOnly`. */
+export function lbServerStats(auth: ScwAuth, zone: string, lbId: string): () => Promise<PoolServerStat[]> {
+  return async () =>
+    (await scwFetch<{ backend_servers_stats?: PoolServerStat[] }>(auth, 'GET', `https://api.scaleway.com/lb/v1/zones/${zone}/lbs/${lbId}/stats`))
+      .backend_servers_stats ?? [];
+}
+
+/**
+ * Wait until every pool given routes to `address` (`serving`), or none does any more (`out`). `failed` is asked each round, so a machine
+ * whose boot account says it failed ends the wait at once. A stats read that fails counts as no answer yet.
+ * @returns `done`, `failed`, or `timeout` once `timeoutMs` passed
+ */
+export async function waitForPools(opts: {
+  backendIds: readonly string[];
+  address: string;
+  want: 'serving' | 'out';
+  stats: () => Promise<PoolServerStat[]>;
   timeoutMs: number;
-}
-
-/** Parse `--key value` flags. Exported for testing. */
-export function parseArgs(argv: string[]): CliArgs {
-  const url = getFlag(argv, '--url');
-  const sha = getFlag(argv, '--sha');
-  if (!url || !sha) {
-    throw new Error('Usage: wait-for-version.ts --url <health-url> --sha <git-sha> [--attempts N] [--interval ms] [--timeout ms]');
-  }
-
-  return {
-    url,
-    sha,
-    attempts: getNumFlag(argv, '--attempts', 100),
-    intervalMs: getNumFlag(argv, '--interval', 3000),
-    timeoutMs: getNumFlag(argv, '--timeout', 8000),
-  };
-}
-
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const args = parseArgs(argv);
-  console.info(`Probing ${args.url}, expecting X-App-Version: ${args.sha}`);
-
-  const outcome = await pollForVersion({
-    url: args.url,
-    expectedSha: args.sha,
-    attempts: args.attempts,
-    intervalMs: args.intervalMs,
-    probe: createFetchProbe(args.timeoutMs),
-  });
-
-  if (!outcome.ok) {
-    if (outcome.failReason) {
-      console.error(`✗ Failed to roll ${args.sha}: ${outcome.failReason}`);
-      process.exit(1);
+  intervalMs?: number;
+  failed?: () => Promise<boolean>;
+  sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
+}): Promise<'done' | 'failed' | 'timeout'> {
+  const now = opts.now ?? Date.now;
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  const deadline = now() + opts.timeoutMs;
+  for (;;) {
+    const stats = await opts.stats().catch(() => undefined);
+    if (stats) {
+      const routed = opts.backendIds.map((backendId) => isServing(stats, backendId, opts.address));
+      if (opts.want === 'serving' ? routed.every(Boolean) : !routed.some(Boolean)) return 'done';
     }
-    const budget = Math.round((args.attempts * args.intervalMs) / 1000);
-    console.error(
-      `✗ Did not roll to ${args.sha} within ~${budget}s (last served: ${outcome.lastVersion ?? '<unknown>'}, status: ${outcome.lastStatus ?? '<none>'})`,
-    );
-    process.exit(1);
+    if (opts.failed && (await opts.failed().catch(() => false))) return 'failed';
+    if (now() >= deadline) return 'timeout';
+    await sleep(opts.intervalMs ?? 3_000);
   }
 }
-
-if (isMain(import.meta.url)) await main();

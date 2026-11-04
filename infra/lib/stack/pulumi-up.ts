@@ -1,6 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { actionCommand } from '../operator-actions';
+import { exitCodeOf } from '../utils/child-exit';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
@@ -33,10 +34,6 @@ export function pulumiConfigSet(
 export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
   if (result.status !== 0) console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?): continuing.`);
-}
-
-function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
-  return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
 }
 
 /** The resource of a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr. */
@@ -134,7 +131,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     else process.stderr.write(chunk);
   });
 
-  const exitCode = await waitForExitCode(child);
+  const exitCode = await exitCodeOf(child);
   await new Promise<void>((resolve) => (debugStream ? debugStream.end(resolve) : resolve()));
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
@@ -147,11 +144,10 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     }
     const denied = deniedResource(stderrBuf);
     if (denied) {
-      // A deploy stops at its preflight before any resource the apply owns, so a denial is a set the run's key lacks, or the apply's change.
-      console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the key of this run may not write ${pc.cyan(denied)}.`);
-      console.error(
-        `  A change the apply owns runs on the operator key (${pc.cyan(actionCommand('apply'))}). A set the deploy key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('identity'))} writes it.`,
-      );
+      // The callers (runOperatorApply for an apply, the seed and the database exposure; the setup's operator part) all run on the operator
+      // key, so a denial is a set that key lacks.
+      console.error(`\n${warningMark} ${pc.bold('Permission hint:')} the operator key may not write ${pc.cyan(denied)}.`);
+      console.error(`  A set the operator key lacks goes in lib/scaleway/permissions.ts, then ${pc.cyan(actionCommand('operator-key'))} writes it.`);
     }
   }
 

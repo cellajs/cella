@@ -2,33 +2,27 @@ import { parseAclInput } from '../../lib/db-exposure-acl';
 import { DB_INSTANCE_RESOURCE } from '../../lib/db-public-endpoint';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
-/** Roles provisioned on the instance. Each maps to a PostgreSQL user + DSN. */
-export type PostgresRole = 'admin' | 'runtime' | 'cdc';
-
 /** Configuration for a managed Scaleway PostgreSQL store. */
 export interface PostgresManagedConfig {
-  /** Roles to provision, all three by default: `admin` has REPLICATION and owns the RLS tables (Scaleway grants no BYPASSRLS), `runtime` is RLS-subject, and `cdc` reuses admin credentials for the replication slot. */
-  roles?: readonly PostgresRole[];
-  /** Enable PostgreSQL logical replication via instance settings and expose the cdc connection string. Defaults to true. */
-  logicalReplication?: boolean;
-  /** Services consuming each role's DSN and the instance CA. When set the store owns the secret declarations; when omitted `runtime-secrets.config.ts` must declare them and the store only binds values. */
-  secretConsumers?: { runtime?: readonly string[]; admin?: readonly string[]; cdc?: readonly string[]; ca?: readonly string[] };
+  /** Services consuming each role's DSN and the instance CA. The store owns these secret declarations; an empty list declares none. */
+  secretConsumers: { runtime: readonly string[]; admin: readonly string[]; cdc: readonly string[]; ca: readonly string[] };
 }
 
-/** Managed Scaleway PostgreSQL store: an RDB instance with per-role users and RLS-backing privileges, binding the runtime/admin/cdc DSNs and the instance CA to their runtime secrets. Pure at import time. */
-export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvisioner {
-  const logicalReplication = config.logicalReplication ?? true;
+/**
+ * Managed Scaleway PostgreSQL store: an RDB instance with logical replication on, binding the runtime/admin/cdc DSNs and the instance CA to
+ * their runtime secrets. Its three roles are fixed: `admin` has REPLICATION and owns the RLS tables (Scaleway grants no BYPASSRLS),
+ * `runtime` is RLS-subject, and `cdc` connects as the admin role for the replication slot. Pure at import time.
+ */
+export function postgresManaged(config: PostgresManagedConfig): StoreProvisioner {
+  const consumers = config.secretConsumers;
 
   return {
     kind: 'postgres-managed',
+    settings: config,
 
     secrets(): StoreSecretContribution[] {
-      const consumers = config.secretConsumers;
-      if (!consumers) return [];
-      const contributions: StoreSecretContribution[] = [];
-      // The per-consumer union is genId-fingerprinted, so reordering these declarations rolls every generation.
-      if (consumers.runtime) {
-        contributions.push({
+      const contributions: StoreSecretContribution[] = [
+        {
           id: 'databaseUrlRuntime',
           secretName: 'database-url-runtime',
           envVar: 'DATABASE_URL',
@@ -37,10 +31,8 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           valueSource: 'engine',
           services: consumers.runtime,
           database: { role: 'runtime' },
-        });
-      }
-      if (consumers.admin) {
-        contributions.push({
+        },
+        {
           id: 'databaseUrlAdmin',
           secretName: 'database-url-admin',
           envVar: 'DATABASE_ADMIN_URL',
@@ -49,10 +41,8 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           valueSource: 'engine',
           services: consumers.admin,
           database: { role: 'admin' },
-        });
-      }
-      if (consumers.cdc) {
-        contributions.push({
+        },
+        {
           id: 'databaseUrlCdc',
           secretName: 'database-url-cdc',
           envVar: 'DATABASE_CDC_URL',
@@ -61,10 +51,8 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           valueSource: 'engine',
           services: consumers.cdc,
           database: { role: 'admin' },
-        });
-      }
-      if (consumers.ca) {
-        contributions.push({
+        },
+        {
           id: 'databaseSslCa',
           secretName: 'database-ssl-ca',
           envVar: 'DATABASE_SSL_CA',
@@ -73,9 +61,10 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           required: true,
           valueSource: 'engine',
           services: consumers.ca,
-        });
-      }
-      return contributions;
+        },
+      ];
+      // A secret no service reads fails validateRuntimeSecrets, so an app without a cdc service passes `cdc: []`.
+      return contributions.filter((contribution) => contribution.services.length > 0);
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
@@ -101,9 +90,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       // PostgreSQL Instance
 
       // Scaleway exposes logical replication only as vendor settings; feedback and synchronized slots preserve CDC across managed HA failovers.
-      const replicationSettings = logicalReplication
-        ? { 'rdb.enable_logical_replication': 'true', hot_standby_feedback: 'on', sync_replication_slots: 'on' }
-        : undefined;
+      const replicationSettings = { 'rdb.enable_logical_replication': 'true', hot_standby_feedback: 'on', sync_replication_slots: 'on' };
 
       const instance = new scaleway.databases.Instance(
         DB_INSTANCE_RESOURCE,
@@ -122,7 +109,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           // (cli/actions/db-exposure.ts), and a refresh of this instance before an expose lets `{}` plan a new one.
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
-        { deleteBeforeReplace: true, protect: isProduction },
+        { deleteBeforeReplace: true },
       );
 
       if (acl?.ok) {
