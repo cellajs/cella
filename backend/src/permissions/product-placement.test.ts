@@ -1,9 +1,10 @@
 import { PgDialect, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { type ChannelEntityType, type EntityHierarchy, entityIdColumnName, hierarchy, type PredicateActor, type ProductEntityType } from 'shared';
+import { type Access, type ChannelEntityType, type EntityHierarchy, entityIdColumnName, hierarchy, type ProductEntityType } from 'shared';
 import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
 import { describe, expect, it } from 'vitest';
-import type { OrgContext } from '#/core/context';
+import type { ActorBinding, OrgContext } from '#/core/context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { placementFieldsSchema, resolvePlacement, validatePlacement } from '#/permissions/product-placement';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { EntityModel } from '#/tables';
@@ -121,22 +122,22 @@ describe('the home column of a collection read', () => {
     courseSectionId: varchar('course_section_id'),
     projectId: varchar('project_id'),
   });
-  const actor: PredicateActor = { actorId: 'u1', isSystemAdmin: false, scopes: null };
-  const homeGrants = { homeChannelIds: ['p1'], conditionalScopes: [] };
-  const compiled = (entityType: ProductEntityType, hierarchy?: EntityHierarchy) => {
-    const where = buildCollectionReadWhere(homeGrants, table, entityType, actor, hierarchy);
+  const sysadmin: Access<ActorBinding> = { actorId: 'u1', isSystemAdmin: true, memberships: [], scopes: null };
+  /** A list narrowed to one home channel, as a placement-filtered read asks for it. */
+  const compiled = (entityType: ProductEntityType, from: typeof table | typeof attachmentsTable, homeHierarchy?: EntityHierarchy) => {
+    const filter = resolveCollectionReadFilter(sysadmin, entityType, 'org1', { homeChannelId: 'p1' }, { hierarchy: homeHierarchy });
+    const where = buildCollectionReadWhere(filter, from, sysadmin);
     return where.kind === 'where' ? new PgDialect().sqlToQuery(where.where).sql : where.kind;
   };
 
   it('is the declared parent column, whether or not that ancestor is nullable', () => {
     // The scope resolver collects home grants at the parent level in both hierarchies, so the predicate compares there.
-    expect(compiled(item, anyDepth)).toContain('"project_id" in');
-    expect(compiled(item, strict)).toContain('"project_id" in');
+    expect(compiled(item, table, anyDepth)).toContain('"project_id" in');
+    expect(compiled(item, table, strict)).toContain('"project_id" in');
   });
 
   it('is the parent column of the app attachment table', () => {
     const parent: string = hierarchy.getParent('attachment') ?? 'organization';
-    const where = buildCollectionReadWhere(homeGrants, attachmentsTable, 'attachment', actor);
-    expect(where.kind === 'where' && new PgDialect().sqlToQuery(where.where).sql).toContain(`"${entityIdColumnName(parent)}" in`);
+    expect(compiled('attachment', attachmentsTable)).toContain(`"${entityIdColumnName(parent)}" in`);
   });
 });

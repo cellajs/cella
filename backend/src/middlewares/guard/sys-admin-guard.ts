@@ -1,49 +1,32 @@
-import type { MiddlewareHandler } from 'hono';
-import { every } from 'hono/combine';
-import { ipRestriction } from 'hono/ip-restriction';
 import { scrubUrl } from 'shared/utils/scrub-url';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { setMiddlewareExtension } from '#/core/x-middleware';
+import { xMiddleware } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getIp } from '#/utils/get-ip';
-import { systemAdminAllowList } from '#/utils/system-access';
 
 /**
- * Only users holding the 'admin' system role proceed. Anyone else is refused and logged every time, and raises a
- * security notification at most once an hour.
+ * Only users holding the 'admin' system role proceed: `isSystemAdmin`, which `userGuard` sets only from an address on
+ * `SYSTEM_ADMIN_IP_ALLOWLIST`. Anyone else is refused and logged every time, and raises a security notification at
+ * most once an hour.
  */
-const sysAdminCheck: MiddlewareHandler<Env> = async (ctx, next) => {
-  const { user, isSystemAdmin } = ctx.var;
+export const sysAdminGuard = xMiddleware(
+  {
+    functionName: 'sysAdminGuard',
+    type: 'x-guard',
+    errors: [403],
+    requires: ['session'],
+    name: 'System admin',
+    description: 'Requires the system admin role and a request from an allowed IP address.',
+  },
+  async (ctx, next) => {
+    const { user, isSystemAdmin } = ctx.var;
 
-  if (!isSystemAdmin) {
-    const ip = getIp(ctx) ?? 'unknown';
-    await sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) }, user.id);
-    throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
-  }
+    if (!isSystemAdmin) {
+      const ip = getIp(ctx) ?? 'unknown';
+      await sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) }, user.id);
+      throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
+    }
 
-  await next();
-};
-
-/** Refuses an address outside `SYSTEM_ADMIN_IP_ALLOWLIST`, with a security notification. */
-const allowedIpCheck = ipRestriction(
-  // hono's ipRestriction wants a `(c) => string` getter. A request without an IP reads as '', which hono refuses with
-  // its own 403 before the allow-list and the refusal below run.
-  (c) => getIp(c) ?? '',
-  { allowList: systemAdminAllowList() },
-  async (remote, c) => {
-    const ip = remote.addr ?? 'unknown';
-    await sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted' }, c.var.user?.id);
-    throw new AppError(403, 'forbidden', 'warn');
+    await next();
   },
 );
-
-/** Both the system admin check and the IP restriction must pass, in that order. */
-export const sysAdminGuard = setMiddlewareExtension(every(sysAdminCheck, allowedIpCheck), {
-  functionName: 'sysAdminGuard',
-  type: 'x-guard',
-  errors: [403],
-  requires: ['session'],
-  name: 'System admin',
-  description: 'Requires the system admin role and a request from an allowed IP address.',
-});

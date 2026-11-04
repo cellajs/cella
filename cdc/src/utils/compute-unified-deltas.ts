@@ -1,6 +1,7 @@
 import type { ActivityAction, EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
-import { isMaxMergeKey } from '#/modules/entities/counter-keys';
+import { isMaxMergeKey, signalVersionPrefix } from '#/modules/entities/counter-keys';
+import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent, TableMeta } from '../types';
 import { getCountDeltas } from './count-deltas';
@@ -31,18 +32,6 @@ export function resolveChannelKey(entityType: string, rowData: CdcRowData, activ
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
   throw new Error(`No channel for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
-}
-
-/**
- * Channel-counter nodes a stamped row's frontier propagates to: the organization plus every non-null
- * ancestor, so `e:f:{type}` at any node answers "did anything of this type change at or below here".
- */
-export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organizationId: string, h: EntityHierarchy = hierarchy): string[] {
-  const nodes = [organizationId];
-  for (const ancestor of h.resolveNonNullAncestors(entityType, rowData)) {
-    if (ancestor.id !== organizationId) nodes.push(ancestor.id);
-  }
-  return nodes;
 }
 
 /** Merges deltas into those of a channel key: a count adds up, a stamp or a frontier keeps the highest value. */
@@ -88,4 +77,33 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHiera
   }
 
   return { orgSequenceGroups, countDeltasByChannelKey };
+}
+
+/**
+ * The version each change of a flush gave its versioned signals: the flush's changes of one signal type in one
+ * organization take the values just below the counter the flush left, in commit order, the last one the counter itself.
+ * What the flush moved without a change of its own (a cascade's counts) sits below them, so a client sees a gap.
+ * @param events - The changes the flush recorded, in commit order.
+ * @param counters - The counter row of each organization as the flush left it.
+ * @returns Per change, its versions by signal type; a change that moves none is absent.
+ */
+export function signalVersionsOf(
+  events: PendingEvent[],
+  counters: Map<string, Record<string, number>>,
+  h: EntityHierarchy = hierarchy,
+): Map<PendingEvent, Record<string, number>> {
+  const next = new Map<string, number>();
+  const versions = new Map<PendingEvent, Record<string, number>>();
+  for (const event of events.toReversed()) {
+    const { tableMeta, activity } = event.result;
+    if (!activity.organizationId) continue;
+    for (const { type } of versionedSignalsOf(tableMeta.type, activity.action, h)) {
+      const key = `${activity.organizationId}:${type}`;
+      const version = next.get(key) ?? counters.get(activity.organizationId)?.[`${signalVersionPrefix}${type}`];
+      if (version === undefined) continue;
+      next.set(key, version - 1);
+      versions.set(event, { ...versions.get(event), [type]: version });
+    }
+  }
+  return versions;
 }

@@ -8,8 +8,8 @@ import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 
 /** An attachment change as the CDC socket hands it to the bus; only `trace` matters here. */
 const eventWith = (eventTrace: ActivityEvent['trace']) =>
-  // A test mock: the bus reads the type, the ids and the trace, never the rest of the activity row.
-  ({ type: 'attachment.created', entityType: 'attachment', subjectId: 'attachment-1', trace: eventTrace }) as unknown as ActivityEvent;
+  // A test mock: the bus reads the type, the entity type and the trace, never the rest of the event.
+  ({ type: 'attachment.created', entityType: 'attachment', trace: eventTrace }) as unknown as ActivityEvent;
 
 describe('activity bus receive span', () => {
   afterAll(() => {

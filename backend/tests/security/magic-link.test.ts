@@ -12,6 +12,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
+import { getIsoDate } from '#/utils/iso-date';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -342,6 +343,29 @@ describe('magic-link sign-up', async () => {
     expect(users).toHaveLength(1);
     const [claimed] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
     expect(claimed.userId).toBe(users[0].id);
+  });
+
+  it.each([
+    { invitation: 'deleted', end: (id: string) => db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)) },
+    {
+      // A decline deletes the invitation's links; one a direct write left behind still permits nothing.
+      invitation: 'declined',
+      end: (id: string) => db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id)),
+    },
+  ])('must not sign up while registration is closed via the leftover link of a $invitation invitation', async ({ end }) => {
+    const organization = await createTestOrganization();
+    const inviter = await createTestUser(`inviter-${nanoid(6)}@security-test.com`.toLowerCase());
+    const email = newcomer();
+    const { inactiveMembership } = await createInvitation({ organization, email, createdBy: inviter.id });
+    const { rawToken, requestedHere } = await requestLink(email);
+
+    // The invitation's channel goes, or the invitee declines; then registration closes before the click.
+    await end(inactiveMembership.id);
+    closeRegistration();
+
+    const { error, response } = await openLink(rawToken, requestedHere);
+    await expectRefusal({ response, error }, 403, 'sign_up_restricted');
+    expect((await rowsFor(email)).users).toHaveLength(0);
   });
 
   it('signs in to an account that took the address since the link went out, creating no second one', async () => {

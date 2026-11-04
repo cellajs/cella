@@ -44,8 +44,8 @@ describe('runSweep', () => {
   });
 
   it('keeps the log when it was not written or compaction throws', async () => {
-    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' }), staleRow({ entityId: 'entity-3' })]);
-    vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockResolvedValueOnce('permanent').mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' })]);
+    vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockRejectedValueOnce(new Error('db down'));
     await runSweep();
     expect(deleteDocument).not.toHaveBeenCalled();
   });

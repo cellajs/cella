@@ -62,16 +62,11 @@ export type LogNotice =
   | { tenantId: string; entityType: string; entityId: string; logIds: number[] }
   | { tenantId: string; entityType: string; entityId: string; retired: true };
 
-/**
- * The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. One row travels
- * as `id`; more as `ids`, with the newest also as `id`, which a relay that reads `id` alone still acts on.
- */
+/** The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. */
 export function encodeLogNotice(notice: LogNotice): string {
   const key = { t: notice.tenantId, e: notice.entityType, i: notice.entityId };
   if ('retired' in notice) return JSON.stringify({ ...key, retired: true });
-  const { logIds } = notice;
-  const id = Math.max(...logIds);
-  return JSON.stringify(logIds.length === 1 ? { ...key, id } : { ...key, id, ids: logIds });
+  return JSON.stringify({ ...key, ids: notice.logIds });
 }
 
 const isKey = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
@@ -86,10 +81,9 @@ export function decodeLogNotice(payload: string): LogNotice | null {
     return null;
   }
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const { t, e, i, id, ids, retired } = parsed as Record<string, unknown>;
+  const { t, e, i, ids, retired } = parsed as Record<string, unknown>;
   if (!isKey(t) || !isKey(e) || !isKey(i)) return null;
   const key = { tenantId: t, entityType: e, entityId: i };
   if (retired === true) return { ...key, retired: true };
-  if (ids !== undefined) return Array.isArray(ids) && ids.length > 0 && ids.every(isLogId) ? { ...key, logIds: ids } : null;
-  return isLogId(id) ? { ...key, logIds: [id] } : null;
+  return Array.isArray(ids) && ids.length > 0 && ids.every(isLogId) ? { ...key, logIds: ids } : null;
 }

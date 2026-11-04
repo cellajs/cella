@@ -1,13 +1,13 @@
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { userStore } from '~/modules/user/user-store';
 import { deleteLocalUserDb } from '~/query/local-user-db';
-import { resetPersisters } from '~/query/persister';
+import { resetPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 
 /** Drops this tab's authenticated state from memory, the queued writes synchronously, and leaves the database and the stored user to the caller. */
 export const clearUserState = async (): Promise<void> => {
   // The database stays bound below: a flush of the cleared cache would delete its stored cache and queue.
-  resetPersisters();
+  resetPersister();
   queryClient.clear();
 
   // Stored collaborative edits commit before the database closes: a lost session keeps them for the same user's next one.
@@ -26,5 +26,5 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
   if (wipe) userStore.getState().reset();
-  else userStore.setState({ user: null, isSystemAdmin: false, yjsTokens: {} });
+  else userStore.setState({ user: null, isSystemAdmin: false });
 };

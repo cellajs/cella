@@ -1,33 +1,12 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { type ApiError, tearsDownSession } from '~/lib/api';
+import { isRecord } from 'shared/utils/as-record';
+import type { ApiError } from '~/lib/api';
 import { productTypeOf } from '~/query/cache-migration';
-import { quarantineFailedSync } from '~/query/offline/failed-sync';
-import { isReplayed, mutationIdOf } from '~/query/offline/mutation-variables';
 import { mutationRetry, replayRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
 // Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then(({ onError }) => onError(error, meta));
-
-/** What an stx mutation's variables carry, alone or once per item of a batch. */
-interface StxVariables {
-  stx?: { mutationId?: string; replayed?: boolean };
-}
-
-/**
- * Quarantines a replayed mutation that fails with a 4xx so no offline edit is lost after a cache bust. Best-effort. A
- * live edit's failure reaches the user through the toast and needs no salvage. A 401 that signs the tab out quarantines
- * nothing: the teardown keeps the stored queue, and the same user's next sign-in replays it.
- */
-function quarantineOnClientError(error: ApiError, variables: unknown, mutationKey: unknown): void {
-  const mutationId = mutationIdOf(variables);
-  if (!mutationId || !isReplayed(variables)) return;
-
-  const status = error?.status;
-  if (typeof status !== 'number' || status < 400 || status >= 500 || tearsDownSession(error)) return;
-
-  quarantineFailedSync({ mutationId, mutationKey, status, variables, error }).catch(() => {});
-}
 
 /** How long a query counts as fresh while online. */
 export const defaultStaleTime = 30 * 1000;
@@ -35,18 +14,17 @@ export const defaultStaleTime = 30 * 1000;
 const offlineStaleTime = Number.POSITIVE_INFINITY;
 const defaultGcTime = 7 * 24 * 60 * 60 * 1000;
 
-/** Sets `replayed` on the stx of a mutation's variables, alone or on each item of a batch. */
+/** Sets `replayed` on the stx of a mutation's variables. */
 function flagReplay(variables: unknown): void {
-  const items = (Array.isArray(variables) ? variables : [variables]) as Array<StxVariables | undefined>;
-  for (const item of items) if (item?.stx) item.stx.replayed = true;
+  if (isRecord(variables) && isRecord(variables.stx)) variables.stx.replayed = true;
 }
 
 /**
  * Flags a mutation as a replay when it pauses offline or is restored paused from the persisted cache, and, through
  * `applyOnlineState`, when the device goes offline while it waits: the request its `mutationFn` sends on resume is
- * arbitrated by intent time, retried through a gateway's outage, and quarantined on a 4xx. A live edit that waits
- * online behind another of its scope stays unflagged, so the server orders it by arrival. The flag is part of the
- * variables, so it persists with the mutation and no module sets it.
+ * arbitrated by intent time and retried through a gateway's outage. A live edit that waits online behind another of
+ * its scope stays unflagged, so the server orders it by arrival. The flag is part of the variables, so it persists
+ * with the mutation and no module sets it.
  */
 function flagReplays(client: QueryClient): void {
   client.getMutationCache().subscribe((event) => {
@@ -69,10 +47,7 @@ export const queryClient: QueryClient =
   import.meta.hot?.data?.queryClient ??
   new QueryClient({
     mutationCache: new MutationCache({
-      onError: (error, variables, _onMutateResult, mutation) => {
-        quarantineOnClientError(error, variables, mutation.options.mutationKey);
-        return handleError(error, mutation.meta);
-      },
+      onError: (error, _variables, _onMutateResult, mutation) => handleError(error, mutation.meta),
     }),
     queryCache: new QueryCache({
       onError: (error, query) => handleError(error, query.meta),
@@ -90,7 +65,7 @@ export const queryClient: QueryClient =
         retry: false,
       },
       mutations: {
-        // Connectivity failures reach an offline retry boundary and persist for replay; server errors do not retry, so quarantine and toast handlers run immediately.
+        // Connectivity failures reach an offline retry boundary and persist for replay; server errors do not retry, so the toast and rollback run at once.
         networkMode: 'offlineFirst',
         retry: mutationRetry,
       },

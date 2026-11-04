@@ -1,13 +1,15 @@
+import { checkAccess } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { checkAccess } from '#/permissions';
 import { getValidChannel, resolveChannelInScope } from '#/permissions/get-valid-channel';
 
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
-vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
-vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})), actorFrom: vi.fn(() => ({ actorId: 'user-1', scopes: null })) }));
-vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
+vi.mock('shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared')>()),
+  checkAccess: vi.fn(),
+  buildSubjectFromEntity: vi.fn(() => ({})),
+}));
 
 const tenant = 'tenant-a';
 const org = 'org-a';

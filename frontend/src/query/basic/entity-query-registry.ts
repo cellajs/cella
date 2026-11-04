@@ -1,4 +1,5 @@
 import { type EntityType, isProduct, type ProductEntityType } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import type { ItemData } from '~/query/basic/types';
 
 /** Minimal query keys interface needed by stream handlers. */
@@ -11,13 +12,27 @@ export interface EntityQueryKeys {
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
-/** The backend's max limit for range fetches: a response of exactly this size may truncate the range, and fetchRangeAndPatch treats that as overflow. */
+/** The backend's max limit for range fetches: a response of exactly this size may truncate the range. */
 export const syncChunkSize = 1000;
 
 /** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
 export interface SeqRange {
   afterSeq: number;
   untilSeq: number;
+}
+
+/** The org sequence position a product row carries, which `ItemData` does not type. */
+export function seqOf(row: ItemData): number | undefined {
+  const { seq } = asRecord(row);
+  return typeof seq === 'number' ? seq : undefined;
+}
+
+/** The first row a range read answered outside its range: a server that ignored the range answers an ordinary page, with no tombstones. */
+export function rowOutsideRange(rows: ItemData[], { afterSeq, untilSeq }: SeqRange): ItemData | undefined {
+  return rows.find((row) => {
+    const seq = seqOf(row);
+    return seq !== undefined && (seq <= afterSeq || seq > untilSeq);
+  });
 }
 
 /**

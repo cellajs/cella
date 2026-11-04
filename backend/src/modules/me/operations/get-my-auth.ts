@@ -38,7 +38,7 @@ const readSessions = async (ctx: UserContext) => {
 
   return sessions.map((session) => ({
     ...session,
-    isCurrent: session.id === ctx.var.sessionId,
+    isCurrent: session.id === ctx.var.session.id,
     isNewDevice: session.deviceIdHash !== null && newDeviceHashes.has(session.deviceIdHash),
   }));
 };

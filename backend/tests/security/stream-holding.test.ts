@@ -15,14 +15,14 @@ import { cancelOpenStreams, expectClosedWith, expectReleased, insertSession, ope
 const gate = vi.hoisted(() => ({ held: null as Promise<void> | null, entered: 0 }));
 
 // Holds a connect between its guard and its registration, where a membership event reaches no subscriber of it.
-vi.mock('#/modules/entities/operations/app-catchup', async (importOriginal) => {
-  const original = await importOriginal<typeof import('#/modules/entities/operations/app-catchup')>();
+vi.mock('#/modules/entities/stream/helpers', async (importOriginal) => {
+  const original = await importOriginal<typeof import('#/modules/entities/stream/helpers')>();
   return {
     ...original,
-    getLatestActivityId: async (...args: Parameters<typeof original.getLatestActivityId>) => {
+    writeOffset: async (...args: Parameters<typeof original.writeOffset>) => {
       gate.entered++;
       await gate.held;
-      return original.getLatestActivityId(...args);
+      return original.writeOffset(...args);
     },
   };
 });

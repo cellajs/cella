@@ -206,7 +206,7 @@ describe('yjs store: proofs', () => {
   const otherTabRow = (text: string) => {
     const doc = new Y.Doc();
     doc.getText('t').insert(0, text);
-    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1, tabId: 'closed-tab' });
+    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1 });
   };
 
   it("must not clear a row a clean proof does not cover: another page's, or one committed after the proof was taken", async () => {
@@ -244,20 +244,18 @@ describe('yjs store: proofs', () => {
     expect(applied.ids.size).toBe(1);
 
     const snapshot = { upTo: applied.upTo, ids: new Set(applied.ids) };
-    const vector = Y.encodeStateVector(doc);
     // Written after the handshake went out: not covered.
     const later = await otherTabRow('later');
 
-    await writer.prove({ kind: 'handshake', applied: snapshot, vector });
+    await writer.prove({ kind: 'handshake', applied: snapshot });
 
     const local = async () => (await rows()).filter((row) => row.local === 1).map((row) => row.id);
     expect(await local()).toEqual([later]);
-    expect((await record())?.syncedVector).toEqual(vector);
     expect((await record())?.unsynced).toBe(1);
 
     // Another generation's rows are another history, which no proof of this one covers.
     await db.yDocs.update(keyPath, { generation: 'gen-2' });
-    await writer.prove({ kind: 'handshake', applied: { upTo: Number.MAX_SAFE_INTEGER, ids: new Set() }, vector });
+    await writer.prove({ kind: 'handshake', applied: { upTo: Number.MAX_SAFE_INTEGER, ids: new Set() } });
     expect(await local()).toEqual([later]);
   });
 });
@@ -289,9 +287,9 @@ describe('yjs store: eviction', () => {
   async function seed(id: string, age: number, extra: Partial<{ unsynced: 0 | 1; bytes: number }> = {}) {
     const k = { entityType: 'attachment' as const, entityId: id };
     const at = Date.now() - age;
-    await db.yDocs.put({ ...k, ...scope, syncedVector: null, unsynced: 0, bytes: 10, updateBytes: 1, updatedAt: at, lastOpenedAt: at, ...extra });
+    await db.yDocs.put({ ...k, ...scope, unsynced: 0, bytes: 10, updateBytes: 1, updatedAt: at, lastOpenedAt: at, ...extra });
     await db.yDocStates.put({ ...k, state: new Uint8Array([0, 0]) });
-    await db.yDocUpdates.add({ ...k, update: new Uint8Array([0, 0]), local: extra.unsynced ?? 0, tabId: 'tab' });
+    await db.yDocUpdates.add({ ...k, update: new Uint8Array([0, 0]), local: extra.unsynced ?? 0 });
   }
   const storedIds = async () => (await db.yDocs.toArray()).map((r) => r.entityId).sort();
 

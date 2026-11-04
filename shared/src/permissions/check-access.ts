@@ -1,11 +1,10 @@
-import { hierarchy } from '../../config/hierarchy-config.ts';
 import { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 import type { EntityActionType, EntityType } from '../../types.ts';
 import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
-import { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access.ts';
+import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 import { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
-import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './engine/types.ts';
+import type { AccessMembership, PermissionCheckOptions, SubjectForPermission } from './engine/types.ts';
 
 /**
  * A signed-in actor as the checks read it. `actorId` is a user or service account id. `scopes` is the mask of the API
@@ -13,12 +12,6 @@ import type { AccessMembership, PermissionCheckOptions, PermissionDecision, Subj
  * session passes) and can never fail open by omission.
  */
 type ActorFields = { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null };
-
-/**
- * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
- * omitted actor id a type error, so no actor-based condition is denied by accident.
- */
-export type PredicateActor = ActorFields | { anonymous: true };
 
 /**
  * Memberships and actor travel together, so no call site can pair one user's memberships with
@@ -45,22 +38,10 @@ export interface PermissionResult<T extends AccessMembership = AccessMembership>
   membership: T | null;
 }
 
-export interface BatchPermissionResult<T extends AccessMembership = AccessMembership> {
-  /** Keyed by entity id. */
-  results: Map<string, PermissionResult<T>>;
-  /** Keyed by entity id; the full decision, for debugging and auditing. */
-  decisions: Map<string, PermissionDecision<T>>;
-}
-
-/** What the fan-out takes beyond the configured grants. */
-export type CheckAccessFanoutOptions = Pick<ResolveAccessOptions, 'onInvalidMembership'>;
-
-// Every entry point injects the same public and elevated grants. SQL collection predicates are
-// the tested database-side projection of the same decisions.
-const boundOptions = { publicGrants: publicReadGrants, elevatedGrants: hierarchy.elevatedGrants };
-
+// Every entry point injects the same public grants and reads elevation off the app's hierarchy. SQL collection
+// predicates are the tested database-side projection of the same decisions.
 const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>): PermissionCheckOptions => ({
-  ...boundOptions,
+  publicGrants: publicReadGrants,
   actorId: engineAccess.actorId,
   isSystemAdmin: engineAccess.isSystemAdmin,
 });
@@ -84,37 +65,35 @@ export const checkRoleGrant = <T extends AccessMembership>(access: Access<T>, gr
   return mayGrantRole(engineAccess.memberships, grant, allows, options);
 };
 
-/** One actor, many rows (bulk splits and list reads), in one engine pass. */
+/**
+ * One actor, many rows (bulk splits and list reads), in one engine pass.
+ * @returns Keyed by subject id, or `_idx:<position>` for a subject without one.
+ */
 export const checkAccessBatch = <T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,
   subjects: SubjectForPermission[],
-): BatchPermissionResult<T> => {
+): Map<string, PermissionResult<T>> => {
   const engineAccess = toEngineAccess(access);
   const decisions = getAllDecisions(policyMatrix, engineAccess.memberships, subjects, accessOptions(engineAccess));
   const results = new Map<string, PermissionResult<T>>();
-  for (const [id, decision] of decisions) {
-    results.set(id, { allowed: decision.can[action] && scopeAllows(access, decision.subject.entityType, action), membership: decision.membership });
-  }
-  return { results, decisions };
+  subjects.forEach((subject, i) => {
+    const key = subject.id ?? `_idx:${i}`;
+    const decision = decisions.get(key);
+    if (decision)
+      results.set(key, { allowed: decision.can[action] && scopeAllows(access, subject.entityType, action), membership: decision.membership });
+  });
+  return results;
 };
 
-/** Many actors, one row: stream fan-out. @see resolve-access.ts */
-export const checkAccessFanout = <T extends AccessMembership>(
-  accesses: Access<T>[],
-  action: EntityActionType,
-  subject: SubjectForPermission,
-  options?: CheckAccessFanoutOptions,
-): PermissionResult<T>[] => {
-  const decisions = getDecisionsForAccesses(policyMatrix, accesses.map(toEngineAccess), subject, {
-    ...boundOptions,
-    onInvalidMembership: options?.onInvalidMembership,
-  });
-  return decisions.map((decision, i) => {
+/**
+ * Many actors, one row: stream fan-out. An access whose memberships the engine cannot read is denied alone.
+ * @returns Whether each access may take the action, in their order. @see resolve-access.ts
+ */
+export const checkAccessFanout = (accesses: Access[], action: EntityActionType, subject: SubjectForPermission): boolean[] => {
+  const decisions = getDecisionsForAccesses(policyMatrix, accesses.map(toEngineAccess), subject, { publicGrants: publicReadGrants });
+  return decisions.map((can, i) => {
     const access = accesses[i];
-    return {
-      allowed: decision.can[action] && access !== undefined && scopeAllows(access, subject.entityType, action),
-      membership: decision.membership,
-    };
+    return can[action] && access !== undefined && scopeAllows(access, subject.entityType, action);
   });
 };

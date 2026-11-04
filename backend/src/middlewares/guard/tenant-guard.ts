@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import type { Actor, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { baseDb } from '#/db/db';
 import { routeTarget } from '#/middlewares/guard/route-target';
 import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findUserSsoConnection } from '#/modules/connections/connections-queries';
@@ -25,7 +24,7 @@ const holdsFoothold = async (ctx: Context<Env>, actor: Actor, tenant: TenantMode
 /**
  * Resolves the URL's tenant and checks the actor may act in it (see {@link holdsFoothold}). A missing tenant, one the
  * actor holds no foothold in and an inactive one without a foothold get one identical 403, which says only "not yours":
- * a tenant id is no secret. The tenant's status shows only past that check. Sets baseDb + tenant context; orgGuard
+ * a tenant id is no secret. The tenant's status shows only past that check. Sets the tenant context; orgGuard
  * resolves organizations.
  */
 export const tenantGuard = xMiddleware(
@@ -42,7 +41,6 @@ export const tenantGuard = xMiddleware(
     const { tenantId } = routeTarget(ctx);
 
     const actor = ctx.var.actor;
-    if (!actor) throw new AppError(500, 'server_error', 'error', { message: 'tenantGuard requires userGuard or serviceGuard' });
 
     // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
     // so a key learns nothing about other tenants.
@@ -76,8 +74,6 @@ export const tenantGuard = xMiddleware(
       }
     }
 
-    // Handlers use tenantRead for product entity RLS reads.
-    ctx.set('db', baseDb);
     ctx.set('tenantId', tenantId);
     ctx.set('tenant', tenant);
     await next();

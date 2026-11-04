@@ -105,7 +105,7 @@ export class FlushBuffer {
     // The end of the commit of the last source transaction: everything up to it is recorded. A change's own position
     // lies before that commit, and would leave its transaction to be delivered again.
     const last = transactions[transactions.length - 1].at(-1) as PendingEvent;
-    await this.acknowledge(last.commitEndLsn ?? last.lsn);
+    await this.acknowledge(last.commitEndLsn);
 
     if (this.pendingCount > 0) void this.flush();
     else this.onDrained?.();

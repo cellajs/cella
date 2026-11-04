@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, type WideChannelType, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
+import type { EntityActionType, EntityType } from '../../../types.ts';
+import { appConfig } from '../../config-builder/app-config.ts';
+import { type DeepChannelType, deepChannelRoles, deepElevatedHierarchy, deepEntityTypes } from '../../testing/deep-fixture.ts';
+import { configurePolicyMatrix } from '../../testing/policies.ts';
+import {
+  configureWidePermissions,
+  makeWideHierarchy,
+  type WideChannelType,
+  wideMembership,
+  wideOverrides,
+  wideSubject,
+} from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
 import type { AccessMembership, SubjectForPermission } from './types.ts';
 
@@ -106,10 +117,10 @@ describe('engine decisions (getAllDecisions)', () => {
   });
 });
 
-// With `elevatedGrants` set (what checkAccess passes), a product grant reaches rows homed below the granting channel
-// only through an elevated role; any other role's grant stops at the rows homed at that channel. The other describes
-// leave it undefined, which makes every grant subtree-wide.
-describe('home scoping under elevatedGrants', () => {
+// A product grant reaches rows homed below the granting channel only through a role the hierarchy elevates; any other
+// role's grant stops at the rows homed at that channel. The other describes elevate no role and decide on rows homed
+// at the granting channel.
+describe('home scoping under elevated roles', () => {
   const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
     switch (entityType) {
       case 'attachment':
@@ -118,15 +129,14 @@ describe('home scoping under elevatedGrants', () => {
         break;
     }
   });
-  const options = { ...wideOverrides, elevatedGrants: new Set(['organization:admin']) };
+  const options = { hierarchy: makeWideHierarchy({ organization: ['admin'] }) };
   const projectAttachment = attachmentSubject('att1', 'org1', { project: 'p1' });
 
   it('must not let an organization member reach a project-homed attachment via an organization grant', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const { can, actions } = getAllDecisions(policies, memberships, projectAttachment, options);
+    const { can } = getAllDecisions(policies, memberships, projectAttachment, options);
 
     expect([can.read, can.update, can.delete]).toEqual([false, false, false]);
-    expect(actions.read.grantedBy).toEqual([]);
   });
 
   it('the elevated admin keeps the grant on that row, and the member keeps it on an organization-homed row', () => {
@@ -139,7 +149,101 @@ describe('home scoping under elevatedGrants', () => {
   });
 });
 
-describe('PermissionDecision action attribution', () => {
+// The same rule on four levels, where a course or section role sits between the organization and the item's project.
+// The deep vocabulary is typed independently of the app config, so subjects, memberships and builders are cast to it.
+describe('home scoping on a deep chain', () => {
+  const hierarchy = deepElevatedHierarchy;
+  const actor = 'actor';
+  type Cells = Partial<Record<EntityActionType, 0 | 1 | 'own'>>;
+  // Organization admins and course and section staff are elevated; members and students are not.
+  const cellsByRole: Record<string, Cells> = {
+    admin: { create: 1, read: 1, update: 'own', delete: 0 },
+    staff: { create: 0, read: 1, update: 'own', delete: 'own' },
+    owner: { create: 1, read: 1, update: 1, delete: 0 },
+    member: { create: 1, read: 1, update: 'own', delete: 0 },
+    student: { create: 1, read: 1, update: 1, delete: 'own' },
+    follower: { read: 1, update: 'own' },
+  };
+
+  // Every entity type gets the role's cells on each channel of its chain.
+  const policies = configurePolicyMatrix(
+    deepEntityTypes as unknown as readonly EntityType[],
+    ({ entityType, channels }) => {
+      if ((entityType as string) === 'user') return;
+      const builders = channels as unknown as Record<string, Record<string, (cells: Cells) => void>>;
+      const chain = [...(hierarchy.isChannel(entityType) ? [entityType as string] : []), ...hierarchy.getOrderedAncestors(entityType)];
+      for (const channelType of chain) {
+        for (const role of deepChannelRoles[channelType as DeepChannelType]) builders[channelType][role]?.(cellsByRole[role]);
+      }
+    },
+    { hierarchy },
+  );
+
+  const at = (channelType: DeepChannelType, role: string): AccessMembership =>
+    ({ channelType, channelId: `${channelType}1`, role }) as unknown as AccessMembership;
+
+  /** The ids of `${type}1` from the organization down to `home`, null below it. */
+  const subjectHomedAt = (entityType: string, home: DeepChannelType, createdBy: string): SubjectForPermission => {
+    const ancestors = hierarchy.getOrderedAncestors(entityType);
+    const depth = ancestors.indexOf(home);
+    const channelIds = Object.fromEntries(ancestors.map((type, i) => [type, i >= depth ? `${type}1` : null]));
+    return { entityType, id: `${entityType}-${home}-${createdBy}`, createdBy, channelIds } as unknown as SubjectForPermission;
+  };
+
+  const can = (memberships: AccessMembership[], subject: SubjectForPermission) =>
+    getAllDecisions(policies, memberships, subject, { hierarchy, actorId: actor }).can;
+
+  it('must not let a course student (home-scoped) update or delete their own item homed in a project below', () => {
+    const student = [at('course', 'student')];
+    expect(can(student, subjectHomedAt('item', 'project', actor))).toMatchObject({ update: false, delete: false });
+
+    // Positive controls: the same item homed at the course, and the elevated course staff below.
+    expect(can(student, subjectHomedAt('item', 'course', actor))).toMatchObject({ update: true, delete: true });
+    expect(can([at('course', 'staff')], subjectHomedAt('item', 'project', actor))).toMatchObject({ update: true, delete: true });
+  });
+
+  it("takes either grant when a home-scoped grant on the channel meets an elevated 'own' cell above it", () => {
+    const memberships = [at('course', 'student'), at('organization', 'admin')];
+
+    expect(can(memberships, subjectHomedAt('item', 'course', 'other')).update).toBe(true);
+    expect(can(memberships, subjectHomedAt('item', 'project', actor)).update).toBe(true);
+    expect(can(memberships, subjectHomedAt('item', 'project', 'other')).update).toBe(false);
+  });
+
+  it('counts every grant above for a channel subject, and only an elevated one for the product rows below it', () => {
+    const project = subjectHomedAt('project', 'courseSection', 'other');
+    const item = subjectHomedAt('item', 'project', 'other');
+
+    expect(can([at('organization', 'admin')], project)).toEqual({ create: true, read: true, update: false, delete: false });
+    expect(can([at('organization', 'admin')], subjectHomedAt('project', 'courseSection', actor)).update).toBe(true);
+    expect(can([at('organization', 'admin')], item).read).toBe(true);
+
+    expect(can([at('organization', 'member')], project).read).toBe(true);
+    expect(can([at('organization', 'member')], item)).toEqual({ create: false, read: false, update: false, delete: false });
+  });
+
+  it('grants each role its cells on rows homed at its channel, and on rows homed below only when the role is elevated', () => {
+    for (const channelType of hierarchy.channelTypes as readonly DeepChannelType[]) {
+      for (const role of deepChannelRoles[channelType]) {
+        const elevated = hierarchy.elevatedGrants.has(`${channelType}:${role}`);
+        const homes: DeepChannelType[] = channelType === 'project' ? ['project'] : [channelType, 'project'];
+        for (const home of homes) {
+          for (const createdBy of [actor, 'other']) {
+            const decided = can([at(channelType, role)], subjectHomedAt('item', home, createdBy));
+            for (const action of appConfig.entityActions) {
+              const cell = cellsByRole[role][action] ?? 0;
+              const cellAllows = cell === 1 || (cell === 'own' && createdBy === actor);
+              const label = `${channelType} ${role}: ${action} on an item homed at ${home} created by ${createdBy}`;
+              expect(decided[action], label).toBe(cellAllows && (home === channelType || elevated));
+            }
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('roles held together', () => {
   const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
     switch (entityType) {
       case 'attachment':
@@ -149,46 +253,11 @@ describe('PermissionDecision action attribution', () => {
     }
   });
 
-  it('returns action attribution with grantedBy details', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
-
-    expect(decision.actions).toBeDefined();
-    expect(decision.actions.create).toBeDefined();
-    expect(decision.actions.read).toBeDefined();
-
-    expect(decision.actions.create.allowed).toBe(true);
-    expect(decision.actions.create.grantedBy).toHaveLength(1);
-    expect(decision.actions.create.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-
-    expect(decision.actions.delete.allowed).toBe(false);
-    expect(decision.actions.delete.grantedBy).toHaveLength(0);
-  });
-
-  it('returns subject channel IDs for debugging', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
-
-    expect(decision.subject.entityType).toBe('attachment');
-    expect(decision.subject.id).toBe('att1');
-    expect(decision.subject.channelIds).toEqual({ organization: 'org1' });
-  });
-
-  it('accumulates multiple grants for same action from different roles', () => {
+  it('grants what either role on the channel grants', () => {
     const memberships = [wideMembership('organization', 'org1', 'admin'), wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const decision = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
+    const { can } = getAllDecisions(policies, memberships, attachmentSubject('att1', 'org1'), { ...wideOverrides });
 
-    expect(decision.actions.read.allowed).toBe(true);
-    expect(decision.actions.read.grantedBy).toHaveLength(2);
-    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'admin' });
-    expect(decision.actions.read.grantedBy).toContainEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-
-    expect(decision.actions.delete.allowed).toBe(true);
-    expect(decision.actions.delete.grantedBy).toHaveLength(1);
-    expect(decision.actions.delete.grantedBy[0]).toMatchObject({ type: 'membership', role: 'admin' });
+    expect(can).toEqual({ create: true, read: true, update: true, delete: true });
   });
 });
 
@@ -286,62 +355,6 @@ describe('own permission policy, ownership-scoped access', () => {
     expect(can.read).toBe(false);
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
-  });
-});
-
-describe('own permission, grant attribution', () => {
-  const { policyMatrix: ownPolicies } = configureWidePermissions(({ entityType, channels }) => {
-    switch (entityType) {
-      case 'attachment':
-        channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        channels.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });
-        break;
-    }
-  });
-
-  const actorId = 'user-actor';
-
-  it('attributes own-granted actions to the condition name (relation:own)', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(true);
-    expect(decision.actions.update.grantedBy).toHaveLength(1);
-    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
-
-    expect(decision.actions.delete.allowed).toBe(true);
-    expect(decision.actions.delete.grantedBy).toHaveLength(1);
-    expect(decision.actions.delete.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
-  });
-
-  it('attributes unconditional grants to membership (not relation)', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.create.grantedBy).toHaveLength(1);
-    expect(decision.actions.create.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'member' });
-  });
-
-  it('does not attribute own grants when ownership check fails', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(false);
-    expect(decision.actions.update.grantedBy).toHaveLength(0);
-    expect(decision.actions.delete.allowed).toBe(false);
-    expect(decision.actions.delete.grantedBy).toHaveLength(0);
-  });
-
-  it('admin gets membership grant (not relation) even with createdBy set', () => {
-    const memberships = [wideMembership('organization', 'org1', 'admin')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
-
-    expect(decision.actions.update.allowed).toBe(true);
-    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'membership', channelType: 'organization', channelId: 'org1', role: 'admin' });
   });
 });
 

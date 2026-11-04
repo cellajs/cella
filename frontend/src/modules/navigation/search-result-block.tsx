@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
@@ -6,8 +7,10 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { SearchRecentRemoveButton } from '~/modules/common/search-clear-button';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
+import { findMembership } from '~/query/enrichment/helpers';
 import { cn } from '~/utils/cn';
 
 type SearchResult = EnrichedChannel | UserBase;
@@ -36,6 +39,7 @@ export function SearchResultBlock({
 }: SearchResultBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
   if (!results.length) return null;
 
@@ -57,8 +61,7 @@ export function SearchResultBlock({
           <ComboboxItem
             key={item.id}
             value={item}
-            disabled={isChannelType && 'membership' in item && item.membership === null}
-            data-already-member={isChannelType && 'membership' in item && item.membership !== null}
+            data-already-member={isChannelType && !!findMembership(myMemberships?.items ?? [], item.id)}
             className={cn('group group/recent justify-between', collapsed && 'hidden')}
           >
             <div className="flex min-w-0 items-center gap-2">

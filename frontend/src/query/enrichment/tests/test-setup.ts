@@ -35,7 +35,7 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
   };
 }
 
-export function makeInfiniteData(items: { id: string; membership?: TestMembership | null }[]) {
+export function makeInfiniteData(items: { id: string; slug?: string; organizationId?: string }[]) {
   return { pages: [{ items }], pageParams: [undefined] };
 }
 
@@ -45,21 +45,8 @@ export const mockHierarchy = wideHierarchy;
 export const mockAppConfig = {
   channelEntityTypes: [...wideHierarchy.channelTypes] as string[],
   entityIdColumnKeys: wideHierarchy.idColumnKeys as Record<string, string>,
-  entityActions: ['create', 'read', 'update', 'delete', 'search'] as string[],
   menuStructure: [
     { entityType: 'organization', subentityType: null },
     { entityType: 'workspace', subentityType: 'project' },
   ] as { entityType: string; subentityType: string | null }[],
 };
-
-/** Stub computeCan, returns all-false for each entity type (self + descendants). */
-export function mockComputeCan(_policies: unknown, channelType: string): Record<string, Record<string, boolean>> {
-  const denied = Object.fromEntries(mockAppConfig.entityActions.map((action) => [action, false]));
-  const map: Record<string, Record<string, boolean>> = { [channelType]: { ...denied } };
-  for (const descendant of mockHierarchy.getOrderedDescendants(channelType)) {
-    map[descendant] = { ...denied };
-  }
-  return map;
-}
-
-export const mockPolicyMatrix = {};

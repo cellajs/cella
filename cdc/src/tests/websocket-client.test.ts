@@ -157,29 +157,19 @@ describe('wsClient.send', () => {
     expect(wsClient.messagesSent).toBe(1);
   });
 
-  it('throws that the API is unreachable when no connection is open: a passing failure', async () => {
+  it('throws that the API is unreachable when no connection is open', async () => {
     const wsClient = await freshClient();
-    const { ApiUnreachableError, isPassingError } = await import('../services/failure');
     wsClient.connect();
 
-    let thrown: unknown;
-    try {
-      wsClient.send({ activity: { id: 'a-1' } });
-    } catch (error) {
-      thrown = error;
-    }
-
-    expect(thrown).toBeInstanceOf(ApiUnreachableError);
-    expect(isPassingError(thrown)).toBe(true);
+    expect(() => wsClient.send({ activity: { id: 'a-1' } })).toThrow('The API is not reachable');
     expect(wsClient.messagesSent).toBe(0);
   });
 
-  it('must not report a row that cannot be serialized as the API being away: it fails its flush, and counts toward stuck', async () => {
+  it('fails the flush of a row that cannot be serialized: nothing is acknowledged and nothing is sent', async () => {
     const wsClient = await freshClient();
     const { sendMessageToApi } = await import('../services/api-messages');
     const { FlushBuffer } = await import('../services/flush-buffer');
     const { replicationState } = await import('../services/replication-state');
-    const { resourceLimits } = await import('../constants');
     const { mockCdcActivity, mockPendingEvent } = await import('./factories');
     wsClient.connect();
     latest().open();
@@ -189,13 +179,9 @@ describe('wsClient.send', () => {
     const buffer = new FlushBuffer(async () => sendMessageToApi(mockCdcActivity(), { id: 'row-1', size: 10n }, {} as never), acknowledge, 10, 1);
     buffer.onFailed = (error, position) => replicationState.recordFailure(position, error);
 
-    for (let read = 1; read <= resourceLimits.reread.stuckAfter; read++) {
-      await buffer.enqueue([mockPendingEvent({ lsn: '0/50' })]);
-      expect(replicationState.failure).toMatchObject({ position: '0/50', count: read, passing: false, error: expect.stringContaining('BigInt') });
-      await buffer.reset();
-    }
+    await buffer.enqueue([mockPendingEvent({ lsn: '0/50' })]);
 
-    expect(replicationState.stuck).toBe(true);
+    expect(replicationState.failure).toMatchObject({ position: '0/50', error: expect.stringContaining('BigInt') });
     expect(acknowledge).not.toHaveBeenCalled();
     expect(latest().sent).toEqual([]);
   });

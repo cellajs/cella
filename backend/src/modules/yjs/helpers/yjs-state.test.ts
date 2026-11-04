@@ -89,11 +89,6 @@ describe('mergeLog', () => {
     expect(readMap(state!)).toEqual({ base: true, a: 1, b: 2 });
   });
 
-  it('must not return a lone undecodable row as the document', () => {
-    const bad = row(1, new Uint8Array([1, 2, 3]));
-    expect(mergeLog(null, [bad])).toEqual({ state: null, accepted: [], rejected: [bad] });
-  });
-
   it('must not let a row that decodes but will not merge block the rows around it', () => {
     const poison = row(2, mapUpdate('poison', true));
     unmergeable.add(poison.payload);

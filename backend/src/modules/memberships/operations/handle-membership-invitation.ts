@@ -66,9 +66,8 @@ export async function handleMembershipInvitationOp(
         ? []
         : await insertMemberships(txCtx, { items: [{ entity, userId, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy }] });
 
+      // The emailed links go with the row: they have no further use once the invitation is answered.
       await deleteInactiveMembership(txCtx, { id: inactiveMembership.id });
-      // The emailed link has no further use once the invitation is answered.
-      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
 
       log.info('Membership accepted', { ids: activatedMemberships.map((m) => m.id), viaToken, alreadyMember });
     }

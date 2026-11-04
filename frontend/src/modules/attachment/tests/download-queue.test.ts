@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 
 vi.mock('shared', async () => ({ appConfig: (await import('~/modules/attachment/tests/test-setup')).mockAttachmentAppConfig }));
-vi.mock('~/modules/attachment/offline/storage-service', () => ({ attachmentStorage: { getStoredVariants: vi.fn().mockResolvedValue([]) } }));
 
 import { downloadQueue } from '~/modules/attachment/offline/download-queue';
 import { makeAttachment, makeQueueEntry } from '~/modules/attachment/tests/test-setup';

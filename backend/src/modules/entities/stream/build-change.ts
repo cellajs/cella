@@ -1,14 +1,16 @@
 import { appConfig, hierarchy, pathHomeId } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { dbPoolPressure } from '#/db/db';
+import type { ActivityRow } from '#/lib/activity-bus';
+import { maxStreamChangeIds, maxStreamChangeRows } from '#/modules/entities/stream/helpers';
 import { organizationTopic, streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { StreamChange } from '#/schemas';
 
-/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
+/** ~20ms of client spread per online org subscriber: 10 users → near-instant, 1500 → the cap. */
 const spreadMsPerSubscriber = 20;
-/** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
-const maxSpreadWindowMs = 120_000;
+/** The client's background tier waits at most this long, so a wider window would pile the slots past it at its end. */
+const maxSpreadWindowMs = 30_000;
 
 /**
  * A spread window scaled by the organization topic's online audience and DB pool pressure. Identical for
@@ -22,81 +24,91 @@ function computeSpreadWindow(organizationId: string): number {
 }
 
 /**
- * The change frame of a product event, with no entity data. An event with one row carries that row's `seq` and the
- * activity's `stx`; one with more rows carries the range of their sequence values and their number.
- * @param event - The event to tell subscribers about.
- * @returns What every eligible subscriber receives.
+ * What a frame over the row cap names: the sequence range of a create's or update's rows, none of a delete's, and the
+ * rows' ids up to `maxStreamChangeIds`.
  */
-export function buildStreamChange(event: AppStreamProductEvent): StreamChange {
+function overflowOf(action: StreamChange['action'], entries: StreamChange['rows']): NonNullable<StreamChange['overflow']> {
+  const subjectIds = entries.length <= maxStreamChangeIds ? entries.map(({ subjectId }) => subjectId) : null;
+  if (action === 'delete') return { afterSeq: null, untilSeq: null, subjectIds };
+  let low = Number.POSITIVE_INFINITY;
+  let high = Number.NEGATIVE_INFINITY;
+  for (const { seq } of entries) {
+    if (seq === null) continue;
+    low = Math.min(low, seq);
+    high = Math.max(high, seq);
+  }
+  return { afterSeq: low - 1, untilSeq: high, subjectIds };
+}
+
+/**
+ * The change frame of rows of a product event, with no entity data, in two tiers by weight: up to
+ * `maxStreamChangeRows` each row with its seq, its writer and the stx of its write; past that their ids up to
+ * `maxStreamChangeIds` and their range, and past those the range alone.
+ * @param event - The event the rows belong to.
+ * @param rows - The rows to name: those of the event its receivers may read, a create's or update's each with its seq.
+ * @returns What every receiver of these rows gets.
+ */
+export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRow[] = event.rows): StreamChange {
   const { entityType } = event;
 
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
 
-  // A message is the rows of one audience, so the first row's path speaks for all of them.
-  const rows = event.rows;
-  const first = rows[0]?.rowData ?? null;
-  const seqs = rows.flatMap(({ seq }) => (seq === undefined ? [] : [seq]));
-  const several = rows.length > 1;
+  const named = rows.flatMap(({ rowData, seq, stx, userId }) =>
+    typeof rowData.id === 'string' ? [{ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId: userId } }] : [],
+  );
+  const entries = named.map(({ entry }) => entry);
+  const overflowed = entries.length > maxStreamChangeRows;
 
   let propagation: StreamChange['propagation'] = null;
-  const embedding = appConfig.productEmbeddings.find(({ embeddedProduct }) => embeddedProduct === entityType);
-  if (embedding) {
-    // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
-    // delete arrives as an update, and the host drops its copy of that row.
+  const embedded = appConfig.productEmbeddings.some(({ embeddedProduct }) => embeddedProduct === entityType);
+  if (embedded && !overflowed) {
+    // Every row the frame names is in the hint: a host learns of an embedded change by it, or past the cap by its lists'
+    // refetch. A soft delete arrives as an update, and the host drops its copy of that row.
     const update: string[] = [];
     const remove: string[] = [];
-    for (const { rowData } of rows) {
-      if (typeof rowData.id !== 'string') continue;
-      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(rowData.id);
-      else update.push(rowData.id);
+    for (const { rowData, entry } of named) {
+      if (event.action === 'delete' || rowData.deletedAt != null) remove.push(entry.subjectId);
+      else update.push(entry.subjectId);
     }
-    propagation = {
-      embeddedProduct: embedding.embeddedProduct,
-      hostProduct: embedding.hostProduct,
-      hostColumn: embedding.hostColumn,
-      update,
-      remove,
-    };
+    propagation = { embeddedProduct: entityType, update, remove };
   }
 
   return {
     action: event.action,
     productType: entityType,
-    subjectId: event.subjectId,
     organizationId: event.organizationId,
     tenantId: event.tenantId ?? null,
-    path: first ? hierarchy.computeProductPath(entityType, first) : null,
     channelId,
-    // Sequence values of one audience need not be contiguous: the range brackets them and `count` says how many rows it holds.
-    seq: seqs.length > 0 ? Math.min(...seqs) : null,
-    stx: event.stx ?? null,
-    actorId: event.userId ?? null,
-    batchUntilSeq: several && seqs.length > 0 ? Math.max(...seqs) : null,
-    count: several ? rows.length : null,
+    rows: overflowed ? [] : entries,
+    overflow: overflowed ? overflowOf(event.action, entries) : null,
     spreadWindow: computeSpreadWindow(event.organizationId),
     propagation,
   };
 }
 
 /**
- * Sent only to subscribers who could read the old location but not the new one: no delta fetch
- * returns the row for them, so this change is itself the removal instruction.
+ * Sent only to subscribers who could read rows where they were but not where they are: no range fetch returns those
+ * rows for them, so this change is itself the removal instruction, in the tiers of `buildStreamChange`.
+ * @param event - The update the rows moved in.
+ * @param rows - The moved rows its receivers lost, each with `movedFrom`, its permission fields where it was.
+ * @returns One frame of the rows, under their old home channel (unseen grouping) when they share one, else under none.
  */
-export function buildMoveOut(event: AppStreamProductEvent, movedFrom: Record<string, unknown>): StreamChange {
-  const base = buildStreamChange(event);
-  const oldPath = hierarchy.computeProductPath(event.entityType, movedFrom);
+export function buildMoveOut(event: AppStreamProductEvent, rows: ActivityRow[]): StreamChange {
+  const base = buildStreamChange(event, rows);
+  const homes = new Set(
+    rows.map(({ movedFrom }) => {
+      const oldPath = movedFrom ? hierarchy.computeProductPath(event.entityType, movedFrom) : null;
+      return oldPath ? pathHomeId(oldPath) : event.organizationId;
+    }),
+  );
   return {
     ...base,
     action: 'moveOut',
-    path: oldPath,
-    // The old path's deepest segment is the old home channel (unseen grouping).
-    channelId: oldPath ? pathHomeId(oldPath) : base.channelId,
-    // No range to fetch: the removal is the payload.
-    batchUntilSeq: null,
-    count: 1,
-    stx: null,
-    actorId: null,
+    channelId: homes.size === 1 ? [...homes][0] : null,
+    // The removal is the payload: no tab takes it for its own echo, and there is no range to fetch.
+    rows: base.rows.map((entry) => ({ ...entry, stx: null, actorId: null })),
+    overflow: base.overflow && { ...base.overflow, afterSeq: null, untilSeq: null },
     propagation: null,
   };
 }

@@ -26,14 +26,13 @@ vi.mock('../lib/db', () => ({
 }));
 
 const { appConfig } = await import('shared');
-const { embeddingsAfterDispatch, isEmbeddingCleanupWrite, suppressEmbeddingPropagation } = await import('../embeddings/embedding-hooks');
 const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cleanup');
 const { gcOwnedEmbeddedRows } = await import('../embeddings/owned-embedding-gc');
 
 const productType: ProductEntityType = appConfig.productEntityTypes[0];
 
 /**
- * A hard delete and a soft delete of one product type: what the hooks act on when an embedding is declared. The cast
+ * A hard delete and a soft delete of one product type: what the cleanup acts on when an embedding is declared. The cast
  * covers the rest of a change, which nothing reads without one.
  */
 const events = [
@@ -50,15 +49,6 @@ const events = [
 
 beforeEach(() => {
   touched.length = 0;
-});
-
-it('with no embedding declared, every hook returns at once and without a database call', async () => {
-  await embeddingsAfterDispatch(productType, 'delete', events);
-  await embeddingsAfterDispatch(productType, 'update', events);
-
-  expect(suppressEmbeddingPropagation(events)).toBe(events);
-  expect(isEmbeddingCleanupWrite(productType, ['name'])).toBe(false);
-  expect(touched).toEqual([]);
 });
 
 it('with no embedding declared, neither the reference cleanup nor the collection of owned rows issues a statement', async () => {

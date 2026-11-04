@@ -1,9 +1,11 @@
 import WebSocket from 'ws';
 import { env } from '../env';
 import { log } from '../lib/pino';
-import { ApiUnreachableError } from '../services/failure';
 
 const wsOpen = 1;
+
+/** What a send without a connection, and a wait the client closed, fail with. */
+const apiUnreachable = () => new Error('The API is not reachable');
 
 /** A flush waits for this socket, so the wait for the next attempt stays short. */
 const maxReconnectDelayMs = 5_000;
@@ -88,11 +90,10 @@ class WebSocketClient {
 
   /**
    * Sends one message to the API.
-   * @throws `ApiUnreachableError` when no connection is open: a passing failure. Data that cannot be serialized
-   *   throws the serializer's own error, which counts against the change.
+   * @throws When no connection is open. Data that cannot be serialized throws the serializer's own error.
    */
   send(data: unknown): void {
-    if (!this.isConnected()) throw new ApiUnreachableError();
+    if (!this.isConnected()) throw apiUnreachable();
     this.ws?.send(JSON.stringify(data));
     this.messagesSent++;
     this.lastMessageAt = new Date();
@@ -108,7 +109,7 @@ class WebSocketClient {
    */
   whenConnected(): Promise<void> {
     if (this.isConnected()) return Promise.resolve();
-    if (this.state === 'closed' && this.closedForGood) return Promise.reject(new ApiUnreachableError());
+    if (this.state === 'closed' && this.closedForGood) return Promise.reject(apiUnreachable());
     return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
   }
 
@@ -119,7 +120,7 @@ class WebSocketClient {
     this.ws?.close();
     this.ws = null;
     this.state = 'closed';
-    for (const waiter of this.waiters.splice(0)) waiter.reject(new ApiUnreachableError());
+    for (const waiter of this.waiters.splice(0)) waiter.reject(apiUnreachable());
   }
 
   private handleDisconnect(): void {

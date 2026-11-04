@@ -9,8 +9,6 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 // A window that delivers events, so another tab's write to `localStorage` reaches this tab as the browser sends it.
 const reload = vi.fn();
 vi.stubGlobal('window', Object.assign(new EventTarget(), { location: { reload }, setTimeout: window.setTimeout }));
-const quarantineFailedSync = vi.fn(async (_record: unknown) => {});
-vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync: (record: unknown) => quarantineFailedSync(record) }));
 
 const { ApiError } = await import('~/lib/api');
 /** What the API client throws for a gateway's 503. */
@@ -37,7 +35,6 @@ afterEach(async () => {
   queryClient.clear();
   onlineManager.setOnline(true);
   reload.mockClear();
-  quarantineFailedSync.mockClear();
   userStore.getState().reset();
   for (const owner of [admin.id, target.id]) await Dexie.delete(dbName(owner));
 });
@@ -48,7 +45,7 @@ const persistCache = async () => {
   await persister.flush();
 };
 const storedQueue = async () =>
-  (await getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray()).flatMap(({ mutations }) => mutations.map(({ state }) => state));
+  (await getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray()).flatMap(({ mutations = [] }) => mutations.map(({ state }) => state));
 const pausedInMemory = () =>
   queryClient
     .getMutationCache()
@@ -139,7 +136,7 @@ describe('the per-user database follows who is signed in', () => {
   });
 
   // Only paused mutations were stored, so the write after the replay's resume deleted it, and the 401 then cleared memory: it was nowhere.
-  it('must not lose an edit whose replay meets the lost session: it stays stored while its request runs, quarantines nothing and returns at the next sign-in', async () => {
+  it('must not lose an edit whose replay meets the lost session: it stays stored while its request runs and returns at the next sign-in', async () => {
     vi.stubGlobal('location', new URL('https://app.example/organization/attachments'));
     userStore.setState({ user: target as never });
     markCacheRestored();
@@ -159,7 +156,6 @@ describe('the per-user database follows who is signed in', () => {
     vi.mocked(onError).mockImplementationOnce(() => void teardownUserState(false));
     request.answer(Object.assign(new Error('Unauthorized'), { status: 401, type: 'session_expired' }));
     await vi.waitFor(() => expect(getLocalUserDb()).toBeNull());
-    expect(quarantineFailedSync).not.toHaveBeenCalled();
 
     userStore.setState({ user: target as never });
     await localUserStorageReady();
@@ -197,7 +193,6 @@ describe('the per-user database follows who is signed in', () => {
 
     expect(onlineManager.isOnline()).toBe(false);
     expect(await storedQueue()).toMatchObject([{ isPaused: true, variables: { name: 'offline edit' } }]);
-    expect(quarantineFailedSync).not.toHaveBeenCalled();
   });
 
   // Behind a healthy edge the probe found the API reachable, so the replay settled as an error after three sends and was dropped.
@@ -233,6 +228,5 @@ describe('the per-user database follows who is signed in', () => {
     await persistCache();
     expect(await storedQueue()).toEqual([]);
     expect(onlineManager.isOnline()).toBe(true);
-    expect(quarantineFailedSync).not.toHaveBeenCalled();
   });
 });

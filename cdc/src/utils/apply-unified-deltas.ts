@@ -1,18 +1,15 @@
 import { getTableName, sql } from 'drizzle-orm';
-import type { EntityHierarchy } from 'shared';
-import { hierarchy } from 'shared';
-import { frontierHomePrefix, frontierPrefix } from '#/modules/entities/counter-keys';
+import { frontierPrefix } from '#/modules/entities/counter-keys';
 import type { Executor } from '../lib/db';
 import { log } from '../lib/pino';
-import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
+import { type BatchUnifiedDeltaPlan, mergeDelta } from './compute-unified-deltas';
 
 /** Rows per stamp statement: two bind parameters each, far below the protocol's 65,535. */
 const stampChunkSize = 5000;
 
 /**
- * UPSERTs one channel_counters row through apply_count_deltas, which merges JSONB deltas as
- * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
- * fixed so PostgreSQL can cache the plan.
+ * UPSERTs one channel_counters row through apply_count_deltas, which adds JSONB deltas per key and max-merges the keys
+ * `isMaxMergeKey` names. The SQL shape is fixed so PostgreSQL can cache the plan.
  */
 async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
@@ -31,17 +28,19 @@ async function applyCounterDeltas(db: Executor, channelKey: string, deltas: Reco
 
 /**
  * Applies a batch delta plan on the flush's transaction and stamps eligible events with an organization sequence.
- * Phase 1 reserves WAL-ordered sequence ranges; phase 2 writes ancestor frontiers, remaining counts, and the row seq
- * values. Every statement runs in a fixed order (organizations and counter rows by key, product rows by id), so two
+ * Phase 1 reserves WAL-ordered sequence ranges; phase 2 writes the organization frontiers, remaining counts, and the row
+ * seq values. Every statement runs in a fixed order (organizations and counter rows by key, product rows by id), so two
  * transactions that touch the same rows take their locks the same way round.
+ * @returns The counter row of each channel the plan wrote, as the flush left it.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor, h: EntityHierarchy = hierarchy): Promise<void> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: Executor): Promise<Map<string, Record<string, number>>> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
+  const written = new Map<string, Record<string, number>>();
 
   const handledChannelKeys = new Set<string>();
   /** The last seq of each row by table: a row changed twice in one flush is stamped once, with its newest position. */
   const lastSeqByTable = new Map<string, Map<string, number>>();
-  /** `e:f:` deltas and org-row leftovers for phase 2, keyed by channel node. */
+  /** `e:f:` deltas of the organizations and the count deltas of the other channels for phase 2, keyed by channel. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one RETURNING UPSERT per organization sequence.
@@ -52,6 +51,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
     handledChannelKeys.add(group.orgKey);
 
     const counts = await applyCounterDeltas(db, group.orgKey, mergedDeltas);
+    written.set(group.orgKey, counts);
     const highSeq = counts.sequence ?? count;
     const baseSeq = highSeq - count;
 
@@ -64,12 +64,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
       rows.set(rowData.id, seq);
       lastSeqByTable.set(tableName, rows);
 
-      // Frontiers roll up to the organization and every populated ancestor; the home frontier stays at the home channel.
-      for (const node of frontierNodeKeys(tableMeta.type, rowData, group.orgKey, h)) {
-        mergeDelta(phase2Deltas, node, { [`${frontierPrefix}${tableMeta.type}`]: seq });
-      }
-      const home = h.resolveDeepestAncestorId(tableMeta.type, rowData) ?? group.orgKey;
-      mergeDelta(phase2Deltas, home, { [`${frontierHomePrefix}${tableMeta.type}`]: seq });
+      mergeDelta(phase2Deltas, group.orgKey, { [`${frontierPrefix}${tableMeta.type}`]: seq });
     }
 
     log.trace('Batch sequence stamped', { orgKey: group.orgKey, count, baseSeq: baseSeq + 1, highSeq });
@@ -81,7 +76,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
     mergeDelta(phase2Deltas, channelKey, deltas);
   }
   for (const channelKey of [...phase2Deltas.keys()].sort()) {
-    await applyCounterDeltas(db, channelKey, phase2Deltas.get(channelKey) ?? {});
+    const counts = await applyCounterDeltas(db, channelKey, phase2Deltas.get(channelKey) ?? {});
+    written.set(channelKey, { ...written.get(channelKey), ...counts });
   }
 
   for (const [tableName, rows] of lastSeqByTable) {
@@ -97,10 +93,11 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
       const valuesList = chunk.map((id) => sql`(${id}::uuid, ${rows.get(id)}::bigint)`);
       await db.execute(sql`
         UPDATE ${sql.identifier(tableName)} AS t
-        SET seq = v.seq, stx = t.stx - 'changedFields'
+        SET seq = v.seq
         FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
         WHERE t.id = v.id
       `);
     }
   }
+  return written;
 }

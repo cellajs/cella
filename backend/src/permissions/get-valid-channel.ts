@@ -1,10 +1,9 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
+import { buildSubjectFromEntity, checkAccess } from 'shared';
 import type { ActorBinding, ActorContext, DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { checkAccess } from '#/permissions';
-import { accessFrom, actorFrom, type BindingOf } from '#/permissions/access';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { accessFrom, type BindingOf } from '#/permissions/access';
 import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import type { EntityModel } from '#/tables';
 
@@ -72,7 +71,7 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);
   // A context without an actor (a public route) is anonymous here, as it is to `accessFrom`: it holds no grant.
-  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, ctx.var.actor?.bindings ?? [], actorFrom(ctx))) {
+  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, accessFrom(ctx))) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
 

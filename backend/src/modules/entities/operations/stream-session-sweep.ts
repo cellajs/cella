@@ -2,7 +2,7 @@ import { baseDb } from '#/db/db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams, isAppStream, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import type { StreamErrorPayload } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
@@ -39,12 +39,12 @@ function staleStreamError(
 
 /**
  * Re-checks the session behind every open app stream and closes each stream that must end: its session expired, was
- * revoked where no event reached this process (another instance) or went with its user, or the system role was
- * removed or granted since the stream connected (the client reconnects on `access_changed`). Streams without a
- * session, which an app may register, are left alone.
+ * revoked between its session check and its registration (the revoke closes only the streams registered by then) or
+ * went with its user, or the system role was removed or granted since the stream connected (the client reconnects on
+ * `access_changed`).
  */
 async function sweepAppStreamSessions(): Promise<void> {
-  const subscribers = streamSubscriberManager.all().filter(isAppStream);
+  const subscribers = streamSubscriberManager.all();
   if (subscribers.length === 0) return;
 
   const sessions = await findSessionStates(dbCtx, { ids: [...new Set(subscribers.map((subscriber) => subscriber.sessionId))] });

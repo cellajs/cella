@@ -70,18 +70,14 @@ export type Env = {
   Variables: {
     actor: Actor;
     user: UserModel;
-    /** User-only sugar for `actor.id`, kept for the user-only modules. */
-    userId: UserId;
     isSystemAdmin: boolean;
     /** `orgGuard` merges the config defaults under the row's sparse flags. */
     organization: OrganizationModel & { organizationFlags: OrganizationFlags; membership: MembershipBaseModel | null };
     organizationId: string;
     /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
-    /** The authenticated session's facts: its type, how it was proven and when (`userGuard` only). */
+    /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
     session: SessionFacts;
-    /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */
-    sessionId: string;
     requestId: string;
     db: DbOrTx;
     tenantId: string;
@@ -90,7 +86,7 @@ export type Env = {
     errorStatus?: number;
     /** Where a refusal of this request redirects to: set for a route that answers 302, a handler may point it elsewhere. */
     errorPagePath?: string;
-    /** The `operationId` of the matched route, set before anything can refuse the request; the error handler's documented-status check reads it. */
+    /** The `operationId` of the matched route where authoring rules are checked, set before anything can refuse the request; the error handler's documented-status check reads it. */
     operationId?: string;
   };
   /** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */

@@ -106,11 +106,10 @@ and the renderers.
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
 - `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })`, every route with
-  `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, the detail read with
-  `xCache: [productCache('<name>')]`, and `...errors(…)` in `responses` for the statuses its
-  handler throws beyond its guards and limiters, as attachment's routes list them. A route agents
-  may call takes `xTool`, which implies its scope; any other route takes `xScope: '<name>:read'`
-  or `'<name>:write'`.
+  `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, and `...errors(…)` in
+  `responses` for the statuses its handler throws beyond its guards and limiters, as attachment's
+  routes list them. A route agents may call takes `xTool`, which implies its scope; any other route
+  takes `xScope: '<name>:read'` or `'<name>:write'`.
 - `<name>-module.ts`: `defineBackendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
   description, productEntity: '<name>', routes: [{ path: '/:tenantId/:organizationId/<name>s', app, phase: 'tenant' }] })`,
   imported in `backend/src/modules.ts`.
@@ -149,9 +148,10 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
     (`cacheUpdate`, `cacheRemove`, `writeKeepingMark` for a detail, `cancelKeepingMark` in
     `onMutate`), never `setQueryData` or `cancelQueries`, so a query keeps its refetch mark. The
     update's `onSuccess` takes the stored row through `mergeServerResponse`: a column the server
-    stamps when another one is written goes in its `derivedKeys`, a key the response stubs in its
-    `skipKeys`.
-  - `addMutationRegistrar(…)` with the defaults of all three ([Paused writes](../../SYNC_ENGINE.md#paused-writes)).
+    stamps when another one is written goes in its `derivedKeys` (a description's columns come from
+    `registerDescriptionColumns`), a key the response stubs in its `skipKeys`.
+  - At the end of the file, `queryClient.setMutationDefaults(…)` for all three and `setQueryDefaults` for the detail
+    ([Paused writes](../../SYNC_ENGINE.md#paused-writes)), as attachment's `query.ts` sets them.
   - Lists filtered on a row column: `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new
     row refetches only the lists it can belong to.
 - `<name>-module.ts`: `defineFrontendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
@@ -236,7 +236,7 @@ exist need a data migration that gives them the new id column.
 ## 6. Optional capabilities
 
 - **Collaborative description**: a `description` in `blockFields`, `yjsMaterializer: update<Name>Op`
-  in the backend module, and in `query.ts` `registerYjsOwnedFields` plus
+  in the backend module, and in `query.ts` `registerDescriptionColumns` plus
   `registerDescriptionDerivation` for the columns derived from it, as attachment does. Model:
   [Sync engine](../../SYNC_ENGINE.md#yjs).
 - **Drafts** ([Sync engine](../../SYNC_ENGINE.md#drafts)): spread `...publishedColumn`

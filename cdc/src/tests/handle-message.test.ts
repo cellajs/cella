@@ -203,8 +203,10 @@ describe('handleDataMessage: the marker of a recount', () => {
       passed = streamPassed;
     });
 
-    // A change outside a transaction goes straight to the flush buffer, where it waits for the window to end.
-    await handleDataMessage('0/B0', mockDmlMessage('update', 'usr-1'));
+    // A committed transaction waits in the flush buffer for the window to end.
+    await begin('0/B0');
+    await handleDataMessage('0/A0', mockDmlMessage('update', 'usr-1'));
+    await commit('0/B8');
     await marker('marker-1');
     await Promise.resolve();
 
@@ -227,7 +229,9 @@ describe('handleDataMessage: the marker of a recount', () => {
         }),
     );
 
-    await handleDataMessage('0/B0', mockDmlMessage('update', 'usr-1'));
+    await begin('0/B0');
+    await handleDataMessage('0/A0', mockDmlMessage('update', 'usr-1'));
+    await commit('0/B8');
     const handled = marker('marker-1');
     // The loop starts the next subscription: the flush in flight is waited for.
     const reset = resetBuffers();
@@ -249,7 +253,7 @@ describe('handleDataMessage: a message it cannot handle', () => {
     await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
 
     expect(stop).toHaveBeenCalledTimes(1);
-    expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
+    expect(replicationState.failure).toMatchObject({ position: '0/30' });
   });
 
   it('must not acknowledge a later position after the failure, for a flush of what the service still delivers', async () => {
@@ -304,7 +308,7 @@ describe('handleDataMessage: a message it cannot handle', () => {
       await vi.runAllTimersAsync();
 
       expect(acknowledge).not.toHaveBeenCalled();
-      expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
+      expect(replicationState.failure).toMatchObject({ position: '0/30' });
     } finally {
       vi.useRealTimers();
     }

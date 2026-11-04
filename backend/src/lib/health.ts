@@ -18,10 +18,8 @@ import {
 import { probedWorkers, probeWorker } from '#/lib/health-probe';
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
+import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
-
-/** Components that reflect the process's own ability to serve; only these can drive an `unhealthy` rollup (503). */
-const criticalComponents = new Set(['api', 'database']);
 
 /** Check database connectivity with a timed `SELECT 1`. */
 async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
@@ -43,26 +41,13 @@ function buildCdcComponent(): HealthComponent {
   return mapCdcComponent(cdcWebSocketServer.getHealthStatus(), worker);
 }
 
-/** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */
-function buildMcpSelfComponent(): HealthComponent {
-  return { status: 'healthy', checkedVia: 'local' };
-}
+/** The jobs component for 10 s, concurrent requests sharing one read: the aggregate scans the whole job table and the answer is public. */
+const jobsCache = new TTLCache<HealthComponent>({ maxSize: 1, defaultTtl: 10_000 });
 
-const jobsCacheTtlMs = 10_000;
 /** Forgets the cached jobs component, so a test reads the store again. */
-export const clearJobsHealthCache = () => {
-  jobsCache = undefined;
-};
+export const clearJobsHealthCache = () => jobsCache.clear();
 
-let jobsCache: { at: number; component: HealthComponent } | undefined;
-
-/** The job store as read from the database, cached for `jobsCacheTtlMs`: the aggregate scans the whole job table and the answer is public. */
-async function buildJobsComponent(): Promise<HealthComponent> {
-  if (jobsCache && Date.now() - jobsCache.at < jobsCacheTtlMs) return jobsCache.component;
-  const component = await readJobsComponent();
-  jobsCache = { at: Date.now(), component };
-  return component;
-}
+const buildJobsComponent = () => jobsCache.load('jobs', readJobsComponent);
 
 /** The api process and the jobs worker report the same component. */
 async function readJobsComponent(): Promise<HealthComponent> {
@@ -78,7 +63,7 @@ async function readJobsComponent(): Promise<HealthComponent> {
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
  * itself, checks the database, reads the pushed CDC report, probes yjs/mcp/oauth and reads the job store; the mcp
- * worker grades the same two and reports itself; the jobs worker grades itself, the database and the store.
+ * worker grades the same two; the jobs worker grades itself, the database and the store.
  */
 async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};
@@ -87,14 +72,13 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
   components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
 
-  if (env.SERVICE === 'mcp') {
-    components.mcp = buildMcpSelfComponent();
-  } else if (env.SERVICE === 'jobs') {
+  if (env.SERVICE === 'jobs') {
     components.jobs = await buildJobsComponent();
-  } else {
+  } else if (env.SERVICE !== 'mcp') {
     if (appConfig.services.cdc.enabled) components.cdc = buildCdcComponent();
 
-    const enabledWorkers = probedWorkers.filter(({ name }) => appConfig.services[name].enabled);
+    // Folded under singleVM, the mcp listener answers with this health app: probing it would run this aggregate again.
+    const enabledWorkers = probedWorkers.filter(({ name }) => appConfig.services[name].enabled && !(name === 'mcp' && appConfig.singleVM));
     const workerChecks = await Promise.all(
       enabledWorkers.map(async ({ name, url, details }) => [name, mapProbeComponent(await probeWorker(url), details)] as const),
     );
@@ -103,7 +87,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
     if (appConfig.services.jobs.enabled) components.jobs = await buildJobsComponent();
   }
 
-  const status = rollupStatus(components, criticalComponents);
+  const status = rollupStatus(components);
   const response: HealthResponse = { status, uptime: Math.floor(process.uptime()), components };
   const httpStatus = status === 'unhealthy' ? 503 : 200;
   return { response, httpStatus };
@@ -111,7 +95,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
 
 /**
  * The health routes of both listeners, built once: `GET /health` answers 204 and `?depth=full` the diagnostics above
- * (503 when a critical component is unhealthy), both with the release SHA the load balancer contract requires.
+ * (503 when any component is unhealthy), both with the release SHA the load balancer contract requires.
  */
 export const healthApp = createHealthApp({
   version: env.RELEASE_SHA,

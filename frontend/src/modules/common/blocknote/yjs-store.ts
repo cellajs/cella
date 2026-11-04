@@ -41,9 +41,6 @@ export const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
 
-/** The page load writing rows: a clean proof clears this page's own `local` rows only. */
-export const storeTabId = crypto.randomUUID();
-
 /** The update rows a connection's document holds: every row up to `upTo` as its load read them, plus `ids` since. */
 export interface AppliedRows {
   /** The newest row id the load read; 0 when nothing was loaded. */
@@ -68,7 +65,7 @@ export interface UnsavedYDoc extends YjsDocScope {
 }
 
 /** The proof that the server holds a document's local rows: a saved handshake, or a connection that turned clean. */
-export type StoreProof = { kind: 'handshake'; applied: AppliedRows; vector: Uint8Array } | { kind: 'clean' };
+export type StoreProof = { kind: 'handshake'; applied: AppliedRows } | { kind: 'clean' };
 
 /**
  * Writes the document of a connection opened for editing to the per-user database, so it loads before the provider
@@ -296,11 +293,7 @@ class StoreWriter implements YDocWriter {
           const left = await rowsOf(this.db, this.key)
             .filter((row) => row.local === 1)
             .count();
-          await this.db.yDocs.put({
-            ...record,
-            unsynced: left > 0 ? 1 : 0,
-            ...(proof.kind === 'handshake' ? { syncedVector: proof.vector } : {}),
-          });
+          await this.db.yDocs.put({ ...record, unsynced: left > 0 ? 1 : 0 });
         })
         // A proof that failed leaves rows local, which is the safe direction: the next proof clears them.
         .catch((error) => console.warn('[yjs-store] Proof not stored', error));
@@ -439,7 +432,7 @@ class StoreWriter implements YDocWriter {
         record = undefined;
       }
 
-      const addRow = (update: Uint8Array, isLocal: boolean) => db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0, tabId: storeTabId });
+      const addRow = (update: Uint8Array, isLocal: boolean) => db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0 });
 
       if (!record) {
         // First stored, or deleted under this tab: the whole document, with one local row of it when unsynced. Own
@@ -452,7 +445,6 @@ class StoreWriter implements YDocWriter {
         await db.yDocs.put({
           ...scope,
           generation,
-          syncedVector: null,
           unsynced: unsynced ? 1 : 0,
           bytes: state.byteLength + updateBytes,
           updateBytes,

@@ -1,21 +1,18 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
 import { getIsoDate } from '#/utils/iso-date';
 import { resourceLimits } from '../constants';
-import { isPassingError } from './failure';
 
-const { delaysMs, stuckAfter } = resourceLimits.reread;
+const { delaysMs } = resourceLimits.reread;
+const { rereadUnhealthyMs } = resourceLimits.health;
 
 /** The failure the worker is reading again from. */
 export interface ReplicationFailure {
-  /** The position the failure belongs to: the first change of the flush that failed. */
-  position: string;
-  /** Failures in a row at this position that the change itself caused. */
-  count: number;
+  /** The first change of the flush that failed; null when no subscription could start and none had failed before. */
+  position: string | null;
   /** When the first failure at this position was, whatever its cause: how long the worker has made no progress. */
   since: string;
+  /** The message of the last failure. */
   error: string;
-  /** Whether the last failure said nothing about the change: a connection, a lock, the API being away. */
-  passing: boolean;
 }
 
 class ReplicationStateManager {
@@ -36,9 +33,9 @@ class ReplicationStateManager {
   /** What the last setup check found wrong; while it is not empty the worker does not read. */
   setupProblems: string[] = [];
 
-  /** The failure the worker is reading again from; null once a flush got past it. */
+  /** The failure the worker is reading again from; null once the worker got past it. */
   failure: ReplicationFailure | null = null;
-  /** Failed flushes since the last one that was recorded, passing ones too: it sets the wait before the next read. */
+  /** Failed flushes and subscriptions since the worker last got past a failure: it sets the wait before the next read. */
   private failuresInARow = 0;
 
   /** How long ago the source transaction the worker read last committed; null before the first one. */
@@ -47,28 +44,21 @@ class ReplicationStateManager {
   lastEventAt: Date | null = null;
 
   /**
-   * True when the same position failed `stuckAfter` times in a row because of the change itself. The worker keeps
-   * reading again, and the WAL waits behind it.
+   * True once the worker has read again for `rereadUnhealthyMs` without getting past its failure, whatever the cause:
+   * health reports it unhealthy, and at the WAL bound the slot is dropped. The WAL waits behind it until then.
    */
-  get stuck(): boolean {
-    return this.failure !== null && this.failure.count >= stuckAfter;
+  get stalled(): boolean {
+    return this.failure !== null && Date.now() - Date.parse(this.failure.since) > rereadUnhealthyMs;
   }
 
-  /**
-   * Records a failed flush. Failures the change caused are counted per position; a passing one neither adds to that
-   * count nor clears it.
-   */
-  recordFailure(position: string, error: unknown): void {
+  /** Records a failed flush, or a failed subscription at the position of the failure it reads again from. */
+  recordFailure(position: string | null, error: unknown): void {
     this.failuresInARow += 1;
-    const passing = isPassingError(error);
-    const message = error instanceof Error ? error.message : String(error);
-    const samePosition = this.failure?.position === position ? this.failure : null;
-    const before = samePosition?.count ?? 0;
-    const since = samePosition?.since ?? getIsoDate();
-    this.failure = { position, count: passing ? before : before + 1, since, error: message, passing };
+    const since = this.failure?.position === position ? this.failure.since : getIsoDate();
+    this.failure = { position, since, error: error instanceof Error ? error.message : String(error) };
   }
 
-  /** A flush was acknowledged, or a rebuild moved the slot past the failing position: whatever failed before is behind the worker. */
+  /** A position was acknowledged, or the books were rebuilt for a new slot: whatever failed before is behind the worker. */
   clearFailure(): void {
     this.failure = null;
     this.failuresInARow = 0;

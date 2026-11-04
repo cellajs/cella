@@ -11,7 +11,6 @@ type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
  */
 export type AppErrorStatus = ErrorCode | 410 | 500 | 503;
 type ErrorMeta = NonNullable<ErrorSchemaType['meta']> & {
-  errorPagePath?: string;
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
   tokenId?: string;
 };

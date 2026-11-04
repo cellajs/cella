@@ -1,7 +1,6 @@
 import { and, getColumns, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
-import { textFromDocument } from 'shared/blocknote';
 import type { DbOrTx } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import type { productColumns } from '#/db/utils/product-columns';
@@ -42,14 +41,11 @@ export function getNotificationSource(entityType: string): NotificationSource | 
   return sources.get(entityType);
 }
 
-// Subject reads: the declaration's function when the app gave one, else the product table.
-
 /**
  * Audience-bearing rows for the ids: live (non-deleted, published) rows without the search text,
- * and without the body unless `body` asks for it (the fan-out reads mentions from it).
+ * and without the body unless `body` asks for it (the fan-out reads mentions from it and mails it).
  */
 export async function loadSubjectRows(source: NotificationSource, tx: DbOrTx, ids: string[], { body = false } = {}) {
-  if (source.declaration.loadRows) return source.declaration.loadRows(tx, ids);
   const table = productTable(source.entityType);
   const { description, keywords: _keywords, ...columns } = getColumns(table);
   const rows = await tx
@@ -58,18 +54,6 @@ export async function loadSubjectRows(source: NotificationSource, tx: DbOrTx, id
     .where(liveRows(table, ids));
   // A product row satisfies NotificationSubjectRow; the generic table select is untyped.
   return rows as NotificationSubjectRow[];
-}
-
-/** Title and plain-text body for the instant email; null for a row that is gone. */
-export async function loadSubjectPreview(source: NotificationSource, tx: DbOrTx, subjectId: string) {
-  if (source.declaration.loadPreview) return source.declaration.loadPreview(tx, subjectId);
-  const table = productTable(source.entityType);
-  const [row] = await tx
-    .select({ name: table.name, description: table.description })
-    .from(table)
-    .where(liveRows(table, [subjectId]))
-    .limit(1);
-  return row ? { title: String(row.name ?? ''), body: descriptionText(row.description) } : null;
 }
 
 /** Display names for ids of the source's rows: the declaration's `loadContextNames`, else the product rows' names. */
@@ -122,10 +106,4 @@ function productTable(entityType: ProductEntityType): ProductTable {
 
 function liveRows(table: ProductTable, ids: string[]): SQL | undefined {
   return and(inArray(table.id, ids), isNull(table.deletedAt), publishedRowsPredicate(table));
-}
-
-/** Plain text of a stored body for email excerpts: block documents flatten, legacy HTML passes through. */
-function descriptionText(description: unknown): string {
-  if (typeof description !== 'string') return '';
-  return textFromDocument(description) ?? description;
 }

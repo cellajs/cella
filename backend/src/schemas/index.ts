@@ -49,7 +49,6 @@ export {
   appCatchupResponseSchema,
   type CatchupOrganizationSummary,
   type CatchupView,
-  type CatchupViewAnswer,
   type StreamChange,
   type StreamSignal,
   streamCatchupBodySchema,

@@ -16,14 +16,28 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
 
 /**
  * Marks the queries under `queryKey` for a refetch, and refetches the active ones only once the settling mutation is the
- * last of `mutationKey`: a refetch while a sibling is pending would replace its optimistic rows, and a sibling that
- * settles without a refetch leaves the mark for the next open or background fill.
+ * last of `mutationKey` and has left the pending set: a refetch while a sibling is pending would replace its optimistic
+ * rows, and a sibling that settles without a refetch leaves the mark for the next open or background fill.
  * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
  */
 export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: QueryKey, queryKey: QueryKey): void {
-  // onSettled still counts the settling mutation, so above one a sibling is pending.
-  const last = queryClient.isMutating({ mutationKey }) <= 1;
-  queryClient.invalidateQueries({ queryKey, refetchType: last ? 'active' : 'none' });
+  const mutationCache = queryClient.getMutationCache();
+  // onSettled still counts the settling mutation, so a second pending one is a sibling.
+  const [settling, sibling] = mutationCache.findAll({ mutationKey, status: 'pending' });
+  queryClient.invalidateQueries({ queryKey, refetchType: 'none' });
+  if (sibling) return;
+  const refetch = () => queryClient.refetchQueries({ queryKey, type: 'active' });
+  if (!settling) {
+    refetch();
+    return;
+  }
+
+  // A list read started while the settling mutation counts as pending keeps its rows as cached (`keepPendingRows`).
+  const unsubscribe = mutationCache.subscribe(({ type, mutation }) => {
+    if (mutation !== settling || (type !== 'removed' && settling.state.status === 'pending')) return;
+    unsubscribe();
+    refetch();
+  });
 }
 
 /** Invalidate an entity's detail + list (and parent-org detail if nested) after a membership change, to resync counts. */

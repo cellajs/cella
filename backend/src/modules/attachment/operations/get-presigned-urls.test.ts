@@ -9,10 +9,13 @@ vi.mock('#/modules/attachment/attachment-queries', () => ({ findAttachmentsByIds
 const getSignedUrlFromKey = vi.fn();
 vi.mock('#/modules/attachment/helpers/signed-url', () => ({ getSignedUrlFromKey: (...args: unknown[]) => getSignedUrlFromKey(...args) }));
 const checkAccessBatch = vi.fn();
-vi.mock('#/permissions', () => ({ checkAccessBatch: (...args: unknown[]) => checkAccessBatch(...args) }));
-vi.mock('#/permissions/access', () => ({ accessFrom: () => ({ actorId: 'user-1', memberships: [] }) }));
 const buildSubjectFromEntity = vi.fn();
-vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: (...args: unknown[]) => buildSubjectFromEntity(...args) }));
+vi.mock('shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('shared')>()),
+  checkAccessBatch: (...args: unknown[]) => checkAccessBatch(...args),
+  buildSubjectFromEntity: (...args: unknown[]) => buildSubjectFromEntity(...args),
+}));
+vi.mock('#/permissions/access', () => ({ accessFrom: () => ({ actorId: 'user-1', memberships: [] }) }));
 
 const { getPresignedUrlsOp } = await import('./get-presigned-urls');
 
@@ -38,10 +41,9 @@ const attachmentB = {
   keys: { original: 'org-1/user-2/b.doc', converted: 'org-1/user-2/b.pdf' },
 };
 
-/** Allow every subject the engine sees, keyed like the real BatchPermissionResult. */
+/** Allow every subject the engine sees, keyed by subject id as `checkAccessBatch` keys them. */
 const allowAll = (rows: { id: string }[]) => {
-  const results = new Map(rows.map((row) => [row.id, { allowed: true, membership: null }]));
-  checkAccessBatch.mockReturnValue({ results, decisions: new Map() });
+  checkAccessBatch.mockReturnValue(new Map(rows.map((row) => [row.id, { allowed: true, membership: null }])));
 };
 
 beforeEach(() => {
@@ -120,7 +122,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
       ['att-a', { allowed: true, membership: null }],
       ['att-b', { allowed: false, membership: null }],
     ]);
-    checkAccessBatch.mockReturnValue({ results, decisions: new Map() });
+    checkAccessBatch.mockReturnValue(results);
 
     const res = await getPresignedUrlsOp(ctx, {
       items: [
@@ -156,7 +158,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
   it('succeeds with empty data when every item is rejected', async () => {
     findAttachmentsByIds.mockResolvedValue([]);
-    checkAccessBatch.mockReturnValue({ results: new Map(), decisions: new Map() });
+    checkAccessBatch.mockReturnValue(new Map());
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-missing', variant: 'original' }] });
 

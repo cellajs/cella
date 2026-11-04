@@ -1,20 +1,12 @@
 import type { YjsDocKey } from '#/modules/yjs/helpers/yjs-log';
 
-/**
- * Grace period after the last client leaves before the session's log is compacted and the session forgotten; also the
- * retry interval when the backend cannot take the final write.
- */
+/** Grace period after the last client leaves before the session's log is compacted and the session forgotten. */
 export const yjsCleanupDelayMs = 5 * 60 * 1000;
 /**
  * How often a session stamps its row live: well inside yjsCleanupDelayMs, the sweep's cutoff, so no relay's sweep takes
  * a live session for an orphan.
  */
 export const yjsLiveStampMs = yjsCleanupDelayMs / 5;
-/**
- * Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its
- * rows stay for the next session or the sweep.
- */
-export const yjsCleanupMaxAttempts = 12;
 /** Debounces compaction (merge the log into the base state and materialize) after the last received update, up to yjsCompactMaxWaitMs. */
 export const yjsCompactDebounceMs = 3000;
 /**

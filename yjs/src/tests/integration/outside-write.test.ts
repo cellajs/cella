@@ -293,7 +293,6 @@ describe('a deleted entity', () => {
     // retirement, which notifies `retired`.
     await withRlsTx(
       tenantId,
-      userId,
       async (tx) => {
         await tx.execute(sql`UPDATE attachments SET deleted_at = now(), deleted_by = ${userId} WHERE id = ${scope.entityId}`);
         await retireYjsDocuments({ var: { db: tx } }, { entityType: 'attachment', entityIds: [scope.entityId] });

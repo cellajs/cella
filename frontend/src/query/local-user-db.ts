@@ -2,7 +2,6 @@ import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig, type ProductEntityType } from 'shared';
 import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
-import type { FailedSyncRecord } from '~/query/offline/failed-sync';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -16,18 +15,17 @@ export interface KvRecord {
 
 /** Per-query React Query row for product entity queries, stored individually for incremental diffing. */
 export interface PersistedQueryRecord {
-  /** Compound key: `${scope}:${queryHash}`. */
+  /** `rq:<queryHash>`. */
   id: string;
-  scope: string;
   queryHash: string;
   queryKey: DehydratedQuery['queryKey'];
   state: DehydratedQuery['state'];
   dataUpdatedAt: number;
 }
 
-/** A React Query meta row: a scope's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
+/** A React Query meta row: the cache's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
 export interface PersistedMetaRecord {
-  /** The scope's row: `rq`. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
+  /** The cache's row: `rq`, with no mutations. A tab's row: `rq:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
   buster: string;
@@ -35,7 +33,7 @@ export interface PersistedMetaRecord {
   clientCacheVersion?: string;
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
-  mutations: DehydratedState['mutations'];
+  mutations?: DehydratedState['mutations'];
   bundledQueries: DehydratedQuery[];
 }
 
@@ -55,8 +53,6 @@ export interface YjsDocScope extends YDocKey {
 export interface YDocRecord extends YjsDocScope {
   /** The document's generation as the relay announced it; another one means the server reseeded the document. */
   generation: string;
-  /** The server's state vector as the last proof established it; null before the first. */
-  syncedVector: Uint8Array | null;
   /** 1 while a `local` row is left: an edit no server answer has proven saved. */
   unsynced: 0 | 1;
   /** Base plus update rows, for the byte budget. */
@@ -77,8 +73,6 @@ export interface YDocUpdateRecord extends YDocKey {
   id?: number;
   update: Uint8Array;
   local: 0 | 1;
-  /** The page load that wrote the row; its own clean proof clears it. */
-  tabId: string;
 }
 
 /** Why edits can never be saved: the entity was deleted, edit rights were lost, the server reseeded the document, or it refused it. */
@@ -121,8 +115,6 @@ export class LocalUserDatabase extends Dexie {
   blobs!: Dexie.Table<AttachmentBlob, string>;
   /** Background download queue for offline attachment caching. */
   downloadQueue!: Dexie.Table<DownloadQueueEntry, string>;
-  /** Queued mutations kept for repair: replays the server refused with a 4xx, and ones this bundle cannot read. */
-  failedSync!: Dexie.Table<FailedSyncRecord, number>;
   /** Collaborative documents opened for editing: metadata only, so a scan over all of them loads no state. */
   yDocs!: Dexie.Table<YDocRecord, [ProductEntityType, string]>;
   /** Each stored document's base state. */
@@ -134,19 +126,26 @@ export class LocalUserDatabase extends Dexie {
 
   constructor(userId: string) {
     super(`${appConfig.slug}:${userId}`);
-    // A database still on version 1 upgrades in place: Dexie adds the missing tables and keeps every row.
-    this.version(2).stores({
-      kv: 'key',
-      queries: 'id, scope',
-      meta: 'key',
-      blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
-      downloadQueue: '&id, organizationId, [organizationId+status]',
-      failedSync: '++id, mutationId, entityType, createdAt',
-      yDocs: '[entityType+entityId], lastOpenedAt',
-      yDocStates: '[entityType+entityId]',
-      yDocUpdates: '++id, [entityType+entityId]',
-      unsaveableYDocs: '++id, [entityType+entityId]',
-    });
+    // An older database upgrades in place: Dexie adds the missing tables and indexes, drops the undeclared ones and keeps every other row.
+    this.version(3)
+      .stores({
+        kv: 'key',
+        queries: 'id',
+        meta: 'key',
+        blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
+        downloadQueue: '&id, organizationId, [organizationId+status]',
+        yDocs: '[entityType+entityId], lastOpenedAt',
+        yDocStates: '[entityType+entityId]',
+        yDocUpdates: '++id, [entityType+entityId]',
+        unsaveableYDocs: '++id, [entityType+entityId]',
+      })
+      // No bundle selects a row stored as skipped: deleted, it is queued again by the list write that brings its file.
+      .upgrade((tx) =>
+        tx
+          .table('downloadQueue')
+          .filter((row) => row.status === 'skipped')
+          .delete(),
+      );
 
     // A delete from another connection is a hard sign-out in another tab: close for good and unbind, so a late write
     // here cannot recreate the database (Dexie's default handler keeps auto-open). Upgrades keep the default: a tab on

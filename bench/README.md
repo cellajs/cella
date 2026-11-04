@@ -38,6 +38,7 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 | --- | --- | --- |
 | `get-me` | What the guard chain alone costs: the cheapest signed-in request, repeated | Responses |
 | `page-load` | How the read path holds when every visitor also reads data, a product list included | Responses |
+| `detail-read` | What a few hundred signed-in readers of one row at once cost the detail route | Responses |
 | `attachment-edit` | How many edits per second the write path takes | Responses, one activity per edit |
 | `attachment-churn` | Whether creating and deleting rows in batches keeps the books right | Responses, one activity per row, the attachment count |
 | `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it | Responses, one activity per edit, notifications heard, no stream errors |

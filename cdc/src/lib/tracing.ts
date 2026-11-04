@@ -43,10 +43,14 @@ meter
   });
 
 meter
-  .createObservableGauge('cdc.replication.failures_at_position', { description: 'Failures in a row at the position the worker reads again from' })
+  .createObservableGauge('cdc.replication.failing_for', {
+    description: 'How long the worker has read again from its failure; 0 while it reads',
+    unit: 's',
+  })
   .addCallback(async (result) => {
     const { replicationState } = await import('../services/replication-state');
-    result.observe(replicationState.failure?.count ?? 0);
+    const { failure } = replicationState;
+    result.observe(failure ? Math.round((Date.now() - Date.parse(failure.since)) / 1000) : 0);
   });
 
 meter

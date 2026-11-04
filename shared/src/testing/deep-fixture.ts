@@ -4,9 +4,9 @@ import type { HierarchyOverrides, PolicyCellInput, PolicyMatrix } from '../permi
 import { configurePolicyMatrix } from '../permissions/policy-matrix.ts';
 
 // Deep synthetic hierarchy: 4 channel levels with an `item` product whose rows attach at any
-// depth, typed independently of any app config. The path, home-resolution, counter, permission
-// and view-derivation suites all run against this one hierarchy, so every subsystem that must
-// agree on path semantics is tested against the same shape.
+// depth, typed independently of any app config. The path, home-resolution, counter and permission
+// suites all run against this one hierarchy, so every subsystem that must agree on path semantics
+// is tested against the same shape.
 export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
 export type DeepNullableAncestor = 'project' | 'courseSection' | 'course';
 
@@ -47,6 +47,12 @@ export const makeDeepHierarchy = (
 
 /** `item` attaches at any depth. */
 export const deepHierarchy = makeDeepHierarchy();
+
+/** `deepHierarchy` with organization admins and course and section staff elevated. */
+export const deepElevatedHierarchy = makeDeepHierarchy(undefined, { organization: ['admin'], course: ['staff'], courseSection: ['staff'] });
+
+/** `deepHierarchy` with every role elevated: each product grant reaches its channel's whole subtree. */
+export const deepSubtreeHierarchy = makeDeepHierarchy(undefined, deepChannelRoles);
 
 /** Passed to the permission engine and the scope compiler. */
 export const deepOverrides: HierarchyOverrides = { hierarchy: deepHierarchy };

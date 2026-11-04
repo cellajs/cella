@@ -263,14 +263,9 @@ const unwrapDrizzle = <T>(promise: Promise<T>) =>
 type NodePgTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0];
 
 /** Query as runtime_role with the RLS session variables set. */
-async function queryAsRuntimeRole<T = Record<string, unknown>>(
-  tenantId: string,
-  userId: string,
-  queryFn: (tx: NodePgTx) => Promise<unknown>,
-): Promise<T[]> {
+async function queryAsRuntimeRole<T = Record<string, unknown>>(tenantId: string, queryFn: (tx: NodePgTx) => Promise<unknown>): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
-    await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
     const result = await queryFn(tx);
     return getRows<T>(result);
   });
@@ -280,7 +275,6 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
 async function queryWithoutChannel<T = Record<string, unknown>>(queryFn: (tx: NodePgTx) => Promise<unknown>): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.tenant_id', '', true)`);
-    await tx.execute(sql`SELECT set_config('app.user_id', '', true)`);
     const result = await queryFn(tx);
     return getRows<T>(result);
   });
@@ -289,17 +283,16 @@ async function queryWithoutChannel<T = Record<string, unknown>>(queryFn: (tx: No
 describe('RLS Security Tests', () => {
   // The read transaction of code with no request behind it (CDC listeners, jobs): the app's own helper, not a copy.
   describe('tenantReadById', () => {
-    it('sets the tenant context for the transaction only, with no user and no deleted rows', async () => {
+    it('sets the tenant context for the transaction only, with no deleted rows', async () => {
       const inside = await tenantReadById(TEST_TENANT_A, async (tx) =>
-        getRows<{ tenant: string; user: string; deleted: string }>(
+        getRows<{ tenant: string; deleted: string }>(
           await tx.execute(sql`
             SELECT current_setting('app.tenant_id', true) AS tenant,
-                   current_setting('app.user_id', true) AS user,
                    current_setting('app.include_deleted', true) AS deleted
           `),
         ),
       );
-      expect(inside[0]).toEqual({ tenant: TEST_TENANT_A, user: '', deleted: 'false' });
+      expect(inside[0]).toEqual({ tenant: TEST_TENANT_A, deleted: 'false' });
 
       // Transaction-scoped: the pooled connection carries no tenant into its next statement.
       const after = getRows<{ value: string | null }>(await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) AS value`));
@@ -407,14 +400,12 @@ const rlsSuiteReady = await (async () => {
 
   describe('Tenant-scoped attachment access', () => {
     it('should deny access to attachments in another tenant', async () => {
-      const rows = await queryAsRuntimeRole(TEST_TENANT_B, TEST_USER_B, async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
-      );
+      const rows = await queryAsRuntimeRole(TEST_TENANT_B, async (tx) => tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`));
       expect(rows).toHaveLength(0);
     });
 
     it('should allow access to attachments within own tenant', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, async (tx) =>
         tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
       );
       expect(rows).toHaveLength(1);
@@ -445,7 +436,7 @@ const rlsSuiteReady = await (async () => {
 
     it('counts in-window unseen entities under tenant context', async () => {
       if (!rolesAvailable || !requiredTablesAvailable || !seenByAvailable || !trackedFixture) return;
-      const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
+      const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, countUnseen);
       const homeRow = rows.find((r) => r.channelId === trackedFixture.homeChannelId);
       expect(homeRow).toBeDefined();
       expect(homeRow?.productType).toBe(trackedType);
@@ -468,7 +459,7 @@ const rlsSuiteReady = await (async () => {
         VALUES (${seenId}, ${TEST_USER_A}, ${trackedFixture.rowId}, ${trackedType}, NOW())
       `);
       try {
-        const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, TEST_USER_A, countUnseen);
+        const rows = await queryAsRuntimeRole<UnseenRow>(TEST_TENANT_A, countUnseen);
         expect(rows.find((r) => r.channelId === trackedFixture.homeChannelId)).toBeUndefined();
       } finally {
         await adminDb.execute(sql`DELETE FROM seen_by WHERE id = ${seenId}`);
@@ -484,14 +475,12 @@ const rlsSuiteReady = await (async () => {
     describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
       it('should allow INSERT as runtime_role', async () => {
         const id = randomUUID();
-        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-          fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }),
-        );
+        await queryAsRuntimeRole(TEST_TENANT_A, async (tx) => fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }));
         await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
       });
 
       it('should allow UPDATE as runtime_role, and the row changes', async () => {
-        const updated = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+        const updated = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, async (tx) =>
           tx.execute(sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}' RETURNING id`)),
         );
         // A policy that leaves no row to update makes the statement a silent no-op, so the row count is the proof.
@@ -504,7 +493,7 @@ const rlsSuiteReady = await (async () => {
       it('should allow DELETE as runtime_role', async () => {
         const id = randomUUID();
         await fixture.insert(adminDb, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A });
-        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) => tx.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`)));
+        await queryAsRuntimeRole(TEST_TENANT_A, async (tx) => tx.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`)));
         const rows = getRows(await adminDb.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)));
         expect(rows).toHaveLength(0);
       });
@@ -512,7 +501,7 @@ const rlsSuiteReady = await (async () => {
 
     it.skipIf(iterableRlsProducts.length === 0)('should allow inserting a yjs_document as runtime_role', async () => {
       const [entityType, fixture] = iterableRlsProducts[0];
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+      await queryAsRuntimeRole(TEST_TENANT_A, async (tx) =>
         tx.execute(sql`
           INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
           VALUES (${entityType}, ${fixture.rowId}, ${TEST_TENANT_A}, ${TEST_ORG_A}, '\\x00')
@@ -634,12 +623,11 @@ const rlsSuiteReady = await (async () => {
     it.skipIf(iterableRlsProducts.length === 0)('tenant-scoped runtime read matches the admin_role read and is empty without context', async () => {
       if (!rolesAvailable) return;
       const [entityType, fixture] = iterableRlsProducts[0];
-      // The generic table read; app declarations with their own loadRows take the same tx.
       const source: NotificationSource = { entityType, declaration: {} };
       const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
 
       const asAdmin = await loadSubjectRows(source, adminRoleDb as unknown as DbOrTx, [fixture.rowId]);
-      const asRuntime = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, (tx) =>
+      const asRuntime = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, (tx) =>
         loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]),
       );
       const withoutContext = await queryWithoutChannel<{ id: string }>((tx) => loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]));
@@ -687,9 +675,7 @@ const rlsSuiteReady = await (async () => {
 
       // bigint columns come back as strings from node-pg; coerce
       const newSeq = Number(before[0].seq ?? 0) + 1;
-      const updateResult = await adminRoleDb.execute(
-        sql.raw(`UPDATE ${fixture.table} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = '${fixture.rowId}'`),
-      );
+      const updateResult = await adminRoleDb.execute(sql.raw(`UPDATE ${fixture.table} SET seq = ${newSeq} WHERE id = '${fixture.rowId}'`));
 
       expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(1);
 

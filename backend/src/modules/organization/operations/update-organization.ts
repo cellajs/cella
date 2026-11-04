@@ -10,7 +10,7 @@ import { withOrganizationDefaults } from '#/modules/organization/helpers/select'
 import { toOrganizationResponse } from '#/modules/organization/operations/to-organization-response';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract, type organizationUpdateBodySchema } from '#/modules/organization/organization-schema';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-media';
 

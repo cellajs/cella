@@ -92,30 +92,24 @@ describe('joinCollab / leaveCollab', () => {
     expect(getCollab(ctx)).toBeUndefined();
   });
 
-  it('a retryable materialize failure keeps the log and reschedules cleanup', async () => {
-    const ctx = uniqueCtx();
-    const ws = mockWebSocket();
-    joinCollab(ctx, ws as never);
-    vi.mocked(compactDocument).mockResolvedValueOnce('retry');
-    leaveCollab(ctx, ws as never);
+  it('must not delete a log the backend did not write, nor retry it at cleanup: the session goes and the sweep takes the log', async () => {
+    for (const fail of [
+      () => vi.mocked(compactDocument).mockResolvedValueOnce('retry'),
+      () => vi.mocked(compactDocument).mockRejectedValueOnce(new Error('db down')),
+    ]) {
+      const ctx = uniqueCtx();
+      const ws = mockWebSocket();
+      joinCollab(ctx, ws as never);
+      fail();
+      leaveCollab(ctx, ws as never);
 
-    await vi.advanceTimersByTimeAsync(grace);
-    expect(getCollab(ctx)).toBeDefined();
-
-    await vi.advanceTimersByTimeAsync(grace);
+      await vi.advanceTimersByTimeAsync(grace);
+      expect(deleteDocument).not.toHaveBeenCalled();
+      expect(getCollab(ctx)).toBeUndefined();
+    }
+    // No timer is left behind: nothing runs again.
+    await vi.advanceTimersByTimeAsync(grace * 2);
     expect(compactDocument).toHaveBeenCalledTimes(2);
-    expect(getCollab(ctx)).toBeUndefined();
-  });
-
-  it('a thrown compaction error is treated as retry', async () => {
-    const ctx = uniqueCtx();
-    const ws = mockWebSocket();
-    joinCollab(ctx, ws as never);
-    vi.mocked(compactDocument).mockRejectedValueOnce(new Error('db down'));
-    leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(grace);
-    expect(deleteDocument).not.toHaveBeenCalled();
-    expect(getCollab(ctx)).toBeDefined();
   });
 
   it('a failed delete of a gone document still forgets the session', async () => {
@@ -251,25 +245,6 @@ describe('joinCollab / leaveCollab', () => {
     await vi.advanceTimersByTimeAsync(grace * 2);
     expect(compactDocument).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBe(collab);
-  });
-
-  it('must not retry a refused cleanup forever: after an hour it keeps the log for the sweep and forgets the session', async () => {
-    const ctx = uniqueCtx();
-    const ws = mockWebSocket();
-    joinCollab(ctx, ws as never);
-    vi.mocked(compactDocument).mockResolvedValue('retry');
-    leaveCollab(ctx, ws as never);
-
-    await vi.advanceTimersByTimeAsync(grace * 12);
-    expect(compactDocument).toHaveBeenCalledTimes(12);
-    expect(getCollab(ctx)).toBeUndefined();
-    expect(deleteDocument).not.toHaveBeenCalled();
-
-    // No timer is left behind: nothing runs again.
-    await vi.advanceTimersByTimeAsync(grace * 12);
-    expect(compactDocument).toHaveBeenCalledTimes(12);
-    vi.mocked(compactDocument).mockReset();
-    vi.mocked(compactDocument).mockResolvedValue('ok');
   });
 
   it('must not share a session between tenants via the same entity id', () => {

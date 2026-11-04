@@ -3,7 +3,6 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, v
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
 import { overrideConfig } from '../fixtures';
@@ -175,31 +174,5 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     await expectClosedWith(lateStream, 'unauthorized');
 
     await expectReleased(stalled.id, stalledStream);
-  });
-
-  it('must not close a stream without a session, such as a public stream an app registers, via the session sweep', async () => {
-    const user = await createTestUser('app-stream@security-test.com');
-    const [revoked, live] = [await insertSession(user), await insertSession(user)];
-    const revokedStream = await openStream(user.id, revoked);
-    const liveStream = await openStream(user.id, live);
-
-    const publicStream = { aborted: false, written: [] as unknown[] };
-    Object.assign(publicStream, {
-      writeSSE: async (message: unknown) => void publicStream.written.push(message),
-      abort: () => (publicStream.aborted = true),
-      close: async () => {},
-    });
-    // A stub stream records what the sweep does to it; it implements only the calls a close makes.
-    const publicSubscriber = { id: 'public-stream', topic: 'public:board', stream: publicStream } as never;
-    streamSubscriberManager.register(publicSubscriber);
-    onTestFinished(() => streamSubscriberManager.unregister('public-stream'));
-
-    await stamp(revoked.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
-
-    await expectClosedWith(revokedStream, 'unauthorized');
-    expectStillOpen(user.id, liveStream);
-    expect(streamSubscriberManager.getByTopic('public:board').map(({ id }) => id)).toEqual(['public-stream']);
-    expect(publicStream).toMatchObject({ aborted: false, written: [] });
   });
 });

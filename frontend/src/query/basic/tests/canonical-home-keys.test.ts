@@ -1,10 +1,10 @@
+import '~/query/tests/query-client-env';
 import { hierarchy } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 
 // The canonical list options build their key at call time from placement ids only, but the module
-// they live in pulls in the router and the persisted query client at import time. Stub both.
+// they live in pulls in the router at import time, and sets its defaults on the query client.
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ state: { matches: [] } }) }));
-vi.mock('~/query/query-client', () => ({ queryClient: { getQueryData: () => undefined } }));
 
 const { matchesCanonicalHome } = await import('~/query/basic/apply-entity-to-lists');
 const { attachmentsCanonicalOptions } = await import('~/modules/attachment/query');

@@ -8,13 +8,13 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
-import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { deleteProviderSession, findConsentTargetNames, stampGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
+import { runWithLogContext } from '#/utils/logger';
 
 /** The consent page's decision; a missing `accept` refuses. */
 const decisionBodySchema = z.object({ accept: z.boolean().optional() });
@@ -42,8 +42,8 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
   // An interaction this browser does not hold (expired, or ended with a sign-out) is the request's refusal, not a fault.
   app.onError((err, c) => appErrorHandler(err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err, c));
   // Consent resolves the client again, which may fetch its metadata document: that fetch draws on the budget the
-  // provider's own routes charge (`server.ts`).
-  app.use(limiterScope);
+  // provider's own routes charge (`server.ts`), for the request bound here.
+  app.use((ctx, next) => runWithLogContext(ctx, next));
   // The provider caps the bodies of its own routes only, and the decision below is parsed whatever its Content-Type.
   app.use(dynamicBodyLimit);
 

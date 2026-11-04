@@ -1,6 +1,7 @@
 import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
+import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { assertMaterializeWindow } from '#/modules/yjs/operations/assert-materialize-window';
 import { recordYjsOutsideWrite, type YjsWrittenRow } from '#/modules/yjs/operations/record-outside-write';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
@@ -33,15 +34,17 @@ const wroteDescription = (row: PayloadRow, before: PayloadRow | undefined) => {
 /**
  * A description written by anything but the relay (a REST update, an MCP tool, an import) becomes an update of the
  * collaborative document of each row whose description the write wrote, in the writing transaction. The relay's own
- * materialization carries `materialized` and records nothing: it is refused (409) when its merge lacks an outside
- * write. Only entity types with a materializer hold documents.
+ * write is the row of the materialize window's entity: it records nothing, and is refused (409) when its merge lacks
+ * an outside write. Another row written inside the window (a sibling the materializer moves) is an outside write.
+ * Only entity types with a materializer hold documents.
  */
 const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
-  return async (ctx, { before = [], after = [], materialized }) => {
+  return async (ctx, { before = [], after = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
-    if (materialized) return assertMaterializeWindow(ctx, { entityType, rows: after });
-    const written = after.filter((row, index) => wroteDescription(row, before[index]));
+    await assertMaterializeWindow(ctx, { entityType, rows: after });
+    const relayEntityId = yjsMaterializeWindow.getStore()?.entityId;
+    const written = after.filter((row, index) => row.id !== relayEntityId && wroteDescription(row, before[index]));
     await recordYjsOutsideWrite(ctx, { entityType, rows: written.flatMap((row) => writtenRowOf(row) ?? []) });
   };
 };

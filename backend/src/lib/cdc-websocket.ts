@@ -1,54 +1,67 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
-import { appConfig, isValidEventType } from 'shared';
+import { appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { serviceSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
-import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
-import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
+import { activitySchema } from '#/modules/activities/activities-schema';
+import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
 import { log } from '#/utils/logger';
 
 const rowDataSchema = z.record(z.string(), z.unknown());
 
-/** One product row: its permission fields, its org-sequence position, and for a moved row the permission fields it had before. */
+/** The activity columns that differ between the rows of one product message: a row carries its own, and no commit time. */
+const ownActivityColumns = { id: true, userId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
+
+/**
+ * One product row: the activity it was recorded as, its permission fields, its org-sequence position, and for a moved
+ * row the permission fields it had before.
+ */
 const messageRowSchema = z.object({
+  activityId: activitySchema.shape.id,
+  userId: activitySchema.shape.userId,
+  changedFields: activitySchema.shape.changedFields,
+  stx: activitySchema.shape.stx,
   rowData: rowDataSchema,
   seq: z.number().optional(),
   movedFrom: rowDataSchema.nullable().optional(),
 });
-
-/** The activity of a message's row, or of its first row. `action` and `subjectId` override fields that are always present. */
-const messageActivityShape = { ...activitySchema.shape, action: activityActionSchema, subjectId: z.string().nullable() };
 
 const messageTraceSchema = z
   .object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number().optional(), cdcTimestamp: z.number(), lsn: z.string().optional() })
   .optional();
 
 /**
- * Validates the CDC worker payload: the product rows of one audience as `rows`, or the one whole row of a change that
- * is no product as `rowData`. @see cdc/src/services/api-messages.ts for the producing type.
+ * Validates the CDC worker payload: the product rows of one audience as `rows` beside what they share, or the one
+ * whole row of a change that is no product as `rowData` beside its activity. @see cdc/src/services/api-messages.ts
+ * for the producing type.
  */
 const cdcMessageSchema = z.union([
-  z.object({ activity: z.object(messageActivityShape), rows: z.array(messageRowSchema).min(1), _trace: messageTraceSchema }),
   z.object({
-    activity: z.object(messageActivityShape),
+    activity: activitySchema.omit(ownActivityColumns).extend({ entityType: z.enum(appConfig.productEntityTypes) }),
+    rows: z.array(messageRowSchema).min(1),
+    _trace: messageTraceSchema,
+  }),
+  z.object({
+    activity: activitySchema.extend({ subjectId: z.string().nullable() }),
     rowData: rowDataSchema,
     movedFrom: rowDataSchema.nullable().optional(),
+    // Optional: a worker of an earlier release sends none, and the live signal then goes without one.
+    signalVersions: z.record(z.string(), z.number().int()).optional(),
     _trace: messageTraceSchema,
   }),
 ]);
 
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;
 
-/**
- * What a message holds, as everything behind the socket reads it: the rows of a product message, or the one whole row
- * of any other.
- */
-function contentOf(message: CdcMessage): Pick<ActivityEvent, 'rows' | 'rowData'> {
-  return 'rows' in message ? { rows: message.rows, rowData: null } : { rows: null, rowData: message.rowData };
+/** The event a message becomes on the bus: a product message with its rows, any other with its whole row. */
+function eventOf(message: CdcMessage): ActivityEvent {
+  const trace = message._trace ?? null;
+  if ('rows' in message) return { ...message.activity, rows: message.rows, rowData: null, trace };
+  return { ...message.activity, rowData: message.rowData, rows: null, signalVersions: message.signalVersions, trace };
 }
 
 /** The worker pushes its health report several times within this span, so a connection that sends nothing this long is dead. */
@@ -75,9 +88,8 @@ export interface CdcWorkerHealth {
   /** The worker's own grade. */
   status: HealthStatus;
   /**
-   * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`,
-   * `reading_again`, `worker_stuck`, `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`,
-   * `event_loop_lag`.
+   * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`,
+   * `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`, `event_loop_lag`.
    */
   reasons: string[];
   /** Diagnosis for a person: replication status and positions, lag, the failure it reads again from, setup problems, the slot. */
@@ -111,10 +123,10 @@ class CdcWebSocketServer {
   private parseErrors = 0;
   private workerHealth: WorkerHealthReport | null = null;
   private generation: number | null = null;
-  private generationListeners: ((generation: number) => void)[] = [];
   /**
-   * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read
-   * or that it is unhealthy. Null while one reads. A process that just started has no worker yet.
+   * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read,
+   * that it reads again from a failure, or that it is unhealthy. Null while one reads. A process that just started has
+   * no worker yet.
    */
   private notReadingSince: number | null = Date.now();
 
@@ -176,35 +188,18 @@ class CdcWebSocketServer {
 
       if (!result.success) {
         this.parseErrors++;
-        const preview = { type: parsed?.activity?.type, subjectId: parsed?.activity?.subjectId, action: parsed?.activity?.action };
+        const preview = { type: parsed?.activity?.type, action: parsed?.activity?.action };
         log.error('CDC message schema validation failed - message dropped', { errors: result.error.issues, preview });
         return;
       }
 
-      const message = result.data;
+      const event = eventOf(result.data);
       this.messagesReceived++;
       this.lastMessageAt = new Date();
 
-      const { type } = message.activity;
-      if (!isValidEventType(type)) {
-        this.parseErrors++;
-        log.error('Unknown event type in CDC message - message dropped', { type, subjectId: message.activity.subjectId });
-        return;
-      }
+      log.trace('CDC message processed', { type: event.type });
 
-      const { rows, rowData } = contentOf(message);
-
-      // Drop the detail cache entry of each changed product row, so a later detail fetch re-enriches (entity-keyed cache, no token)
-      const { entityType } = message.activity;
-      for (const row of rows ?? []) {
-        if (entityType && typeof row.rowData.id === 'string') productCacheStore.invalidateProduct(entityType, row.rowData.id);
-      }
-
-      const activityEvent = { ...message.activity, type, rowData, rows, trace: message._trace ?? null } as ActivityEvent;
-
-      log.trace('CDC message processed', { type: message.activity.type, subjectId: message.activity.subjectId });
-
-      activityBus.emit(activityEvent);
+      activityBus.emit(event);
     } catch (err) {
       this.parseErrors++;
       log.error('Failed to parse CDC message', { err });
@@ -213,18 +208,15 @@ class CdcWebSocketServer {
 
   /**
    * The first generation the worker reports is where this process starts; a later, other one means the books were
-   * corrected or rebuilt while clients were connected.
+   * corrected or rebuilt while clients were connected, so the cursors a client holds say nothing about them any more.
    */
   private noteGeneration(generation: number | undefined): void {
     if (typeof generation !== 'number' || generation === this.generation) return;
     const moved = this.generation !== null;
     this.generation = generation;
-    if (moved) for (const listener of this.generationListeners) listener(generation);
-  }
-
-  /** Registers what to do when the worker's books move to another generation. */
-  onGenerationChange(listener: (generation: number) => void): void {
-    this.generationListeners.push(listener);
+    if (!moved) return;
+    log.warn('The sync books moved to another generation: clients reconnect and refetch', { generation });
+    void resyncAppStreams();
   }
 
   /**
@@ -242,7 +234,7 @@ class CdcWebSocketServer {
     const readable = workerGrades.includes(payload.status) && Array.isArray(payload.reasons);
     this.workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
     // A report this process cannot read says nothing of reading: it is taken as none, like the messages beside it.
-    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active');
+    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active' && !payload.details.failure);
     this.noteGeneration(payload.generation);
   }
 

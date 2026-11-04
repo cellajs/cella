@@ -8,12 +8,6 @@ export const checksAuthoringRules = appConfig.mode === 'development' || appConfi
 /** The parts of a generated OpenAPI document these checks read. */
 type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
 
-/** The boot checks of the generated document: its schema tags, and its route examples where authoring rules are checked. */
-export const validateOpenApiDocument = (doc: OpenApiDocument) => {
-  validateSchemaTags(doc);
-  if (checksAuthoringRules) validateRouteExamples(doc);
-};
-
 /** Normalize generated OpenAPI fields that need source-library compatibility fixes, and fold the shared error responses into their `$ref`s. */
 export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
@@ -39,8 +33,8 @@ export const undocumentedErrorStatus = (operationId: string | undefined, status:
   return `${operationId} answered ${status}, which its route does not document: spread errors(${status}) into its responses, or let the guard, limiter or lock that refuses with it declare it in errors.`;
 };
 
-/** Every `x-tags` entry must name a registered tag. Throws at boot on the first violation. */
-const validateSchemaTags = (doc: OpenApiDocument) => {
+/** The boot check of the generated document: every `x-tags` entry must name a registered tag. Throws on the first violation. */
+export const validateOpenApiDocument = (doc: OpenApiDocument) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));
   const schemas = (doc.components?.schemas ?? {}) as Record<string, Record<string, unknown>>;
 
@@ -51,35 +45,6 @@ const validateSchemaTags = (doc: OpenApiDocument) => {
     for (const t of tags) {
       if (typeof t !== 'string' || !known.has(t)) {
         throw new Error(`Schema "${name}" references unknown x-tag "${String(t)}". Register it in openapi-tag-registry.ts.`);
-      }
-    }
-  }
-};
-
-type MediaType = { schema?: { $ref?: string }; example?: unknown };
-type Operation = { responses?: Record<string, { content?: Record<string, MediaType> }> };
-
-/**
- * A route gives its own response example only where it differs from its schema's example, so the one that does stands
- * out (and wins in the docs). A copy of the schema's example throws on the first violation, in development and tests.
- */
-const validateRouteExamples = (doc: OpenApiDocument) => {
-  const schemas = (doc.components?.schemas ?? {}) as Record<string, { example?: unknown }>;
-  const paths = (doc.paths ?? {}) as Record<string, Record<string, Operation>>;
-
-  for (const [path, pathItem] of Object.entries(paths)) {
-    for (const [method, operation] of Object.entries(pathItem)) {
-      for (const [status, response] of Object.entries(operation.responses ?? {})) {
-        for (const media of Object.values(response.content ?? {})) {
-          const name = media.schema?.$ref?.split('/').pop();
-          const schemaExample = name ? schemas[name]?.example : undefined;
-          if (media.example === undefined || schemaExample === undefined) continue;
-          if (JSON.stringify(media.example) === JSON.stringify(schemaExample)) {
-            throw new Error(
-              `${method.toUpperCase()} ${path} ${status} repeats the example of schema "${name}": drop the example argument of its json() response.`,
-            );
-          }
-        }
       }
     }
   }

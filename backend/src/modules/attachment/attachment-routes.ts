@@ -1,6 +1,5 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { productCache } from '#/middlewares/product-cache';
 import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   mockBatchAttachmentsResponse,
@@ -64,15 +63,13 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     method: 'get',
     path: '/{id}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    xCache: [productCache('attachment')],
     xTool: {
       description: 'Read one attachment: its metadata and the description as text.',
       approvalRequired: false,
       entity: 'attachment',
     },
     summary: 'Get attachment',
-    description:
-      'Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.',
+    description: 'Returns a single attachment by ID.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 200: json('Attachment', attachmentSchema) },
   }),
@@ -100,7 +97,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Link attachment keys',
     description:
-      'Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
+      'Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
     request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
     responses: { 200: json('Attachment with stored file', attachmentSchema), ...errors(409) },
   }),

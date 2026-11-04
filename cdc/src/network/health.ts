@@ -57,18 +57,16 @@ function holding(rules: [holds: boolean, reason: string][]): string[] {
  * handing the slot over during a deploy.
  */
 export function gradeWorker(): WorkerGrade {
-  const { failure, stuck, setupProblems, subscribed } = replicationState;
+  const { failure, stalled, setupProblems, subscribed } = replicationState;
   const { lagBytes, slotActive, slotStatus } = metrics;
   const apiAwayMs = wsClient.apiAwaySince ? Date.now() - wsClient.apiAwaySince.getTime() : null;
   const eventLoopLagMs = getEventLoopLagMs();
 
   const unhealthy = holding([
-    [stuck, 'worker_stuck'],
     [setupProblems.length > 0, 'setup_problems'],
     // Without the API nothing is recorded: after a while that is an outage of sync, not a restart.
     [apiAwayMs !== null && apiAwayMs > limits.apiAwayUnhealthyMs, 'api_away'],
-    // No progress for this long is a stall, also when every failure was one that passes.
-    [failure !== null && Date.now() - Date.parse(failure.since) > limits.rereadUnhealthyMs, 'reading_again'],
+    [stalled, 'reading_again'],
     // The slot does not hold the WAL the worker needs any more, or is about to lose it.
     [slotStatus === 'lost' || slotStatus === 'unreserved', 'slot_lost'],
     [lagBytes !== null && lagBytes >= limits.walLagUnhealthyBytes, 'wal_lag_critical'],
@@ -79,7 +77,7 @@ export function gradeWorker(): WorkerGrade {
     [apiAwayMs !== null, 'api_away'],
     // Between two reads, and while another worker still holds the slot during a deploy.
     [!subscribed && apiAwayMs === null && setupProblems.length === 0, 'replication_stopped'],
-    [failure !== null && !stuck, 'reading_again'],
+    [failure !== null, 'reading_again'],
     // Known only after the first poll of the slot: before it there is nothing to judge.
     [subscribed && slotStatus !== null && slotActive === false, 'slot_inactive'],
     [lagBytes !== null && lagBytes >= limits.walLagDegradedBytes && lagBytes < limits.walLagUnhealthyBytes, 'wal_lag_high'],

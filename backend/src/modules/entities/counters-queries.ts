@@ -94,31 +94,17 @@ const channelCounterSelects = (): string[] => {
 
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tableNameOf(entityType);
-    const frontierKey = `e:f:${entityType}`;
-    // Unpublished drafts are not delta-fetchable so they are excluded; tombstones are retained.
-    const frontierPredicate = publishedPredicate(entityType, 't');
-
-    // Every ancestor level with a FK column, the organization included, matching CDC's frontierNodeKeys.
-    for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-      const col = entityIdColumnName(ancestor);
-      selects.push(`
-        SELECT t.${col}, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
-        FROM ${tableName} t
-        WHERE t.${col} IS NOT NULL${frontierPredicate}
-        GROUP BY t.${col}
-      `);
-    }
+    // The organization's frontier, as in CDC: unpublished drafts are not delta-fetchable so they are excluded; tombstones are retained.
+    selects.push(`
+      SELECT t.organization_id, jsonb_build_object('e:f:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
+      FROM ${tableName} t
+      WHERE t.organization_id IS NOT NULL${publishedPredicate(entityType, 't')}
+      GROUP BY t.organization_id
+    `);
 
     const homeExpr = hierarchy.deepestAncestorSql(entityType, 't');
     if (!homeExpr) continue;
-    // Self family, home node only: e:f:h:{type} = MAX(seq) of homed rows (drafts excluded,
-    // tombstones included); e:c:h:{type} = COUNT of live and published homed rows.
-    selects.push(`
-      SELECT ${homeExpr}, jsonb_build_object('e:f:h:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
-      FROM ${tableName} t
-      WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
-      GROUP BY ${homeExpr}
-    `);
+    // Home node only: e:c:h:{type} = COUNT of live and published homed rows.
     selects.push(`
       SELECT ${homeExpr}, jsonb_build_object('e:c:h:${entityType}', COUNT(*)::int), NOW()
       FROM ${tableName} t
@@ -194,15 +180,6 @@ export const recalculateCounters = async (ctx: DbContext) => {
   `),
   );
   for (const select of channelCounterSelects()) await upsertChannelCounters(db, select);
-
-  // CDC keeps the channel paths; this copies the ones that differ.
-  for (const channelType of hierarchy.channelTypes) {
-    await db.execute(
-      sql.raw(`UPDATE channel_counters cc SET path = c.path
-      FROM ${tableNameOf(channelType)} c
-      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path`),
-    );
-  }
 
   const [{ channelRows }] = await db.select({ channelRows: count() }).from(channelCountersTable);
   return { channelRows };

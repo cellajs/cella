@@ -10,12 +10,15 @@ const addressLimits = { points: 1, duration: day };
  * first and keep a real invitation from going out; it holds the address, not the row, so withdrawing and inviting again
  * stays inside it.
  */
-const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits, inMemoryBlock: false });
+const addressMails = getRateLimiterInstance({ keyPrefix: 'invitationMailAddress', ...addressLimits });
 
 /** A tenant's invitation mails a day, against its `invitationMailsPerDay` restriction, so admin accounts do not multiply it. */
-const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day, inMemoryBlock: false });
+const tenantMails = getRateLimiterInstance({ keyPrefix: 'invitationMailTenant', points: 1, duration: day });
 
 const addressKey = (tenantId: string, email: string) => subjectSegment('tenantId', tenantId) + subjectSegment('email', email);
+
+/** The tenant whose day the caps count. */
+export type InvitationMailsContext = { var: Pick<ActorContext['var'], 'tenantId' | 'tenant'> };
 
 interface TakeInvitationMailsInput {
   /** The addresses an inviter's request mails now. */
@@ -32,7 +35,10 @@ interface TakeInvitationMailsInput {
  * @throws AppError 429 `invitation_limit_reached` with `meta.retryAfter` in seconds when the tenant's day cannot hold
  *   the mails; nothing is taken then.
  */
-export async function takeInvitationMails(ctx: ActorContext, { mailNow, mailAtPublish = 0 }: TakeInvitationMailsInput): Promise<Set<string>> {
+export async function takeInvitationMails(
+  ctx: InvitationMailsContext,
+  { mailNow, mailAtPublish = 0 }: TakeInvitationMailsInput,
+): Promise<Set<string>> {
   const { tenantId, tenant } = ctx.var;
 
   const reservations = await Promise.all(
@@ -51,4 +57,13 @@ export async function takeInvitationMails(ctx: ActorContext, { mailNow, mailAtPu
     if (reservation.granted) await refundAttempt(reservation.store, addressKey(tenantId, email));
   }
   throw new AppError(429, 'invitation_limit_reached', 'warn', { meta: { retryAfter: getRetryAfter(total.state.msBeforeNext) } });
+}
+
+/** Gives back what {@link takeInvitationMails} took for addresses whose mail did not go out, so a resend the same day can. */
+export async function refundInvitationMails(ctx: InvitationMailsContext, emails: string[]): Promise<void> {
+  if (!emails.length) return;
+  const { tenantId, tenant } = ctx.var;
+
+  for (const email of emails) await refundAttempt(addressMails, addressKey(tenantId, email));
+  if (tenant.restrictions.rateLimits.invitationMailsPerDay !== 0) await refundAttempt(tenantMails, tenantId, emails.length);
 }

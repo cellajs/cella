@@ -102,8 +102,8 @@ describe('mutation pausing on connectivity failure', () => {
     expect(sent).toEqual([{ mutationId: 'm-5' }, { mutationId: 'm-6' }]);
   });
 
-  it('flags a mutation restored paused from the persisted cache, each item of a batch included', () => {
-    const batch = [{ stx: { mutationId: 'm-3' } }, { stx: { mutationId: 'm-3' } }];
+  it('flags a mutation restored paused from the persisted cache', () => {
+    const paused = { stx: { mutationId: 'm-3' } };
     const live = { stx: { mutationId: 'm-4' } };
     const restore = (variables: unknown, isPaused: boolean) =>
       queryClient.getMutationCache().build(
@@ -122,13 +122,10 @@ describe('mutation pausing on connectivity failure', () => {
         },
       );
 
-    restore(batch, true);
+    restore(paused, true);
     restore(live, false);
 
-    expect(batch.map((item) => item.stx)).toEqual([
-      { mutationId: 'm-3', replayed: true },
-      { mutationId: 'm-3', replayed: true },
-    ]);
+    expect(paused.stx).toEqual({ mutationId: 'm-3', replayed: true });
     expect(live.stx).toEqual({ mutationId: 'm-4' });
   });
 });

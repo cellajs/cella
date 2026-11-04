@@ -15,8 +15,9 @@ export const loggerMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
 
   const status = ctx.res.status;
   const responseTime = Date.now() - start;
-  const { user, tenantId, requestId, sessionId } = ctx.var;
+  const { user, tenantId, requestId, session } = ctx.var;
   const userId = user?.id || 'na';
+  const sessionId = session?.id;
 
   // Outside production, bench traffic logs its server errors alone.
   if (isBenchTraffic(userId, tenantId) && status < 500) return;

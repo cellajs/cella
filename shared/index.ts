@@ -25,10 +25,7 @@ export { nonEmpty, recordFromKeys, typedEntries } from './src/config-builder/uti
 export type {
   AccessMembership,
   AncestorChannelIds,
-  CanHome,
-  CanState,
   ChannelIdColumns,
-  EntityCanMap,
   HierarchyOverrides,
   PolicyCell,
   PolicyCellInput,
@@ -43,27 +40,22 @@ export {
   type AccessScopedEntityType,
   accessScopes,
   allActionsAllowed,
-  type BatchPermissionResult,
   buildSubject,
   buildSubjectFromEntity,
   checkAccess,
   checkAccessBatch,
   checkAccessFanout,
   checkRoleGrant,
-  computeCan,
   getAllDecisions,
   getEntityPolicies,
   getPolicyPermissions,
   isRowCondition,
-  isUnconditionalCan,
   MissingAncestorError,
   mayGrantRole,
   type PermissionResult,
-  type PredicateActor,
   policyMatrix,
   publicReadGrants,
   type RoleGrant,
-  resolveCan,
   validateAncestorScope,
 } from './src/permissions/index.ts';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows.ts';
@@ -100,7 +92,7 @@ export type {
   UploadTemplateId,
   UserFlags,
 } from './types.ts';
-export { actionToVerb, activityActions, isValidEventType, trackedEventTypes } from './types.ts';
+export { actionToVerb, activityActions, trackedEventTypes } from './types.ts';
 
 // Side-effect import: the config checks that need the policy matrix run in every program that imports `shared`.
 import './src/config-builder/config-validation.ts';

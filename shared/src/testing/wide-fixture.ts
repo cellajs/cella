@@ -2,14 +2,11 @@ import type { EntityActionType, EntityType } from '../../types.ts';
 import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy.ts';
 import {
   type AccessMembership,
-  type CanState,
-  computeCan,
   configurePermissions,
   type HierarchyOverrides,
   type PermissionsConfigResult,
   type PolicyCallback,
   type PolicyCellInput,
-  type PolicyMatrix,
   type PublicReadGrants,
   type SubjectForPermission,
 } from '../permissions/index.ts';
@@ -23,19 +20,30 @@ export type WideRole = 'admin' | 'member' | 'guest';
 
 export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as const);
 
+/** Elevated roles per channel (subtree-wide product grants); `wideHierarchy` declares none. */
+export type WideElevated = { organization?: readonly ('admin' | 'member')[]; workspace?: readonly WideRole[]; project?: readonly WideRole[] };
+
 /**
  * Configuration-independent hierarchy with sibling channels, deep products, and guest roles. A project membership
  * brings along an organization one of the same role where the organization has it, admin included.
  */
-export const wideHierarchy = createEntityHierarchy(wideRoles)
-  .user()
-  .organization({ roles: ['admin', 'member'] })
-  .channel('workspace', { parent: 'organization', roles: wideRoles.all })
-  .channel('project', { parent: 'organization', roles: wideRoles.all, organizationRoles: { admin: 'admin', member: 'member', guest: 'member' } })
-  .product('task', { parent: 'project' })
-  .product('label', { parent: 'project' })
-  .product('attachment', { parent: 'project' })
-  .build();
+export const makeWideHierarchy = (elevated: WideElevated = {}) =>
+  createEntityHierarchy(wideRoles)
+    .user()
+    .organization({ roles: ['admin', 'member'], elevated: elevated.organization })
+    .channel('workspace', { parent: 'organization', roles: wideRoles.all, elevated: elevated.workspace })
+    .channel('project', {
+      parent: 'organization',
+      roles: wideRoles.all,
+      organizationRoles: { admin: 'admin', member: 'member', guest: 'member' },
+      elevated: elevated.project,
+    })
+    .product('task', { parent: 'project' })
+    .product('label', { parent: 'project' })
+    .product('attachment', { parent: 'project' })
+    .build();
+
+export const wideHierarchy = makeWideHierarchy();
 
 export const wideEntityTypes: readonly WideEntityType[] = ['user', 'organization', 'workspace', 'project', 'task', 'label', 'attachment'];
 
@@ -74,14 +82,3 @@ export const wideSubject = (input: {
 
 /** For the engine's `publicGrants` option. */
 export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants => grants as PublicReadGrants;
-
-/** Keyed by the wide vocabulary, so tests read `.task` cast-free. */
-export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, CanState>>>;
-
-export const computeWideCan = (channelType: WideChannelType, membership: AccessMembership | undefined | null, policies: PolicyMatrix): WideCanMap =>
-  computeCan(
-    policies,
-    channelType as unknown as Parameters<typeof computeCan>[1],
-    membership as unknown as Parameters<typeof computeCan>[2],
-    wideOverrides,
-  ) as unknown as WideCanMap;

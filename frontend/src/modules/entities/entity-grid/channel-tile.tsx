@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { UsersIcon } from 'lucide-react';
 import { createContext, type ReactNode, useContext } from 'react';
@@ -9,10 +10,12 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { ChannelTileEntity, EnrichedChannel } from '~/modules/entities/types';
+import { meInvitationsQueryOptions, myMembershipsQueryOptions } from '~/modules/me/query';
 import { JoinedButton } from '~/modules/memberships/joined-button';
 import { Badge } from '~/modules/ui/badge';
 import { Card } from '~/modules/ui/card';
 import { MemberAvatarGroup } from '~/modules/user/member-avatar';
+import { findMembership } from '~/query/enrichment/helpers';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { dateFull } from '~/utils/date-full';
@@ -282,13 +285,16 @@ interface ChannelTileMembershipProps {
   fallback?: ReactNode;
 }
 
-/** The viewer's own state: a pending-invite badge or the joined button, else `fallback`. */
+/** The viewer's own state: a pending-invite badge once the invites list is cached, or the joined button, else `fallback`. */
 export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: ChannelTileMembershipProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const { data: myInvites } = useQuery({ ...meInvitationsQueryOptions(), enabled: false });
+  const membership = findMembership(myMemberships?.items ?? [], entity.id);
   if (hideOwnRole) return fallback;
-  if (entity.invited) return <Badge variant="secondary">{t('c:pending')}</Badge>;
-  if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} redirectPath={null} />;
+  if (myInvites?.items.some((invite) => invite.entity.id === entity.id)) return <Badge variant="secondary">{t('c:pending')}</Badge>;
+  if (membership) return <JoinedButton channel={entity} role={membership.role} redirectPath={null} />;
   return fallback;
 }
 

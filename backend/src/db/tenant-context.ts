@@ -5,7 +5,7 @@ import { type TenantSessionVars, tenantTransactionOpening } from '#/db/tenant-tr
 
 /**
  * A transaction on the runtime pool that starts with the session variables the RLS policies read.
- * @throws An id outside the id alphabet, before a connection is taken.
+ * @throws A tenant id outside the id alphabet, before a connection is taken.
  */
 async function tenantTransaction<T>(vars: TenantSessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), fn);
@@ -18,23 +18,21 @@ const requestTransaction = <T>(
   includeDeleted: boolean,
   readOnly: boolean,
   fn: (txCtx: ActorContext) => Promise<T>,
-) => tenantTransaction({ tenantId, userId: ctx.var.actor.id, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
+) => tenantTransaction({ tenantId, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
 
 /**
  * Read-only RLS transaction for code with no request behind it, such as a CDC listener or a
  * scheduled job. Opens with `tenantTransactionOpening` like every tenant transaction, so a policy
- * that starts reading a new `app.*` variable needs no change in background callers.
- *
- * `app.user_id` is set empty: product read policies are tenant-scoped, and any per-user rule must
- * be applied explicitly by the caller.
+ * that starts reading a new `app.*` variable needs no change in background callers. Product read
+ * policies are tenant-scoped, so any per-user rule must be applied explicitly by the caller.
  */
 export function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Promise<T>): Promise<T> {
-  return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, true, fn);
+  return tenantTransaction({ tenantId, includeDeleted: false }, true, fn);
 }
 
-/** Read-write RLS transaction for a scheduled job that works one tenant's rows, with `app.user_id` empty as in {@link tenantReadById}. */
+/** Read-write RLS transaction for a scheduled job that works one tenant's rows, as {@link tenantReadById} reads them. */
 export function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, false, fn);
+  return tenantTransaction({ tenantId, includeDeleted: false }, false, fn);
 }
 
 /**

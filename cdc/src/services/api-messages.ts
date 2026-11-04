@@ -1,3 +1,4 @@
+import type { StxBase } from 'sdk/types.gen';
 import { hierarchy, type ProductEntityType } from 'shared';
 import type { TraceContext } from 'shared/tracing';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
@@ -6,35 +7,42 @@ import type { CdcRowData, PendingEvent } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
+/** The activity columns that differ between the rows of one message, which holds several transactions and writers. */
+type OwnActivityColumns = 'id' | 'userId' | 'subjectId' | 'changedFields' | 'stx' | 'createdAt';
+
 /**
- * One product row of a message: the fields that decide who may read it (see `pickPermissionRowData`), the sequence value
- * the row holds, and for a row whose path changed the same fields of the row before the move, so that dispatch can tell
- * those who lost access.
+ * One product row of a message: the activity it was recorded as (its id, writer, changed fields and stx), the fields
+ * that decide who may read it (see `pickPermissionRowData`), the sequence value the row holds, and for a row whose path
+ * changed the same fields of the row before the move, so that dispatch can tell those who lost access.
  */
 interface CdcMessageRow {
+  activityId: string;
+  userId: string | null;
+  changedFields: string[] | null;
+  stx: StxBase | null;
   rowData: CdcRowData;
   seq?: number;
   movedFrom?: CdcRowData | null;
 }
 
-/** What every message carries: the activity of its row, or of its first row, and the trace it belongs to. */
-interface CdcMessageBase {
+/** The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row. */
+interface CdcRowMessage {
   activity: InsertActivityModel & { id?: string };
+  rowData: CdcRowData;
+  movedFrom?: CdcRowData | null;
+  /** Per signal type, the version this change moved it to; a change delivered again carries none. */
+  signalVersions?: Record<string, number>;
   _trace: TraceContext;
 }
 
-/** The message of one row that is no product (a membership, a tenant, a channel): its listeners act on the whole row. */
-interface CdcRowMessage extends CdcMessageBase {
-  rowData: CdcRowData;
-  movedFrom?: CdcRowData | null;
-}
-
 /**
- * The message of the product rows of one audience, one or more. The API derives the change frame from the list: one row
- * gives its `seq` and the activity's `stx`, more rows give the range of their sequence values and their number.
+ * The message of the product rows of one audience, one or more: what they share (type, action, table and place) as
+ * `activity`, and each row with its own activity. The API derives the change frames from the rows.
  */
-interface CdcProductMessage extends CdcMessageBase {
+interface CdcProductMessage {
+  activity: Omit<InsertActivityModel, OwnActivityColumns> & { entityType: ProductEntityType };
   rows: CdcMessageRow[];
+  _trace: TraceContext;
 }
 
 /**
@@ -43,23 +51,20 @@ interface CdcProductMessage extends CdcMessageBase {
  */
 export type CdcOutboundMessage = CdcRowMessage | CdcProductMessage;
 
-/** Both halves of an LSN zero-padded to eight digits and dash-joined; null for a string that is no LSN. */
-function padLsn(lsn: string): string | null {
+/** Both halves of an LSN zero-padded to eight digits and dash-joined. */
+function padLsn(lsn: string): string {
   const [hi, lo] = lsn.split('/');
-  return lo === undefined ? null : `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
+  return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
 }
 
 /**
  * Activity id of a change: the commit position of its transaction and its index in that transaction. Both are the
  * same on every delivery, which makes replay idempotent, no two changes share them, and padding keeps ids in commit
- * order under lexical comparison. An event outside a transaction takes its own position.
- * @param event - The change: its LSN, and its transaction's commit LSN and its index there when it has one.
+ * order under lexical comparison.
  * @returns Zero-padded, dash-joined commit LSN and index.
  */
-export function generateActivityId({ lsn, commitLsn, index = 0 }: Pick<PendingEvent, 'lsn' | 'commitLsn' | 'index'>): string {
-  const position = padLsn(commitLsn ?? lsn);
-  if (position === null) return lsn; // Not in LSN format.
-  return `${position}-${String(index).padStart(8, '0')}`;
+export function generateActivityId({ commitLsn, index }: Pick<PendingEvent, 'commitLsn' | 'index'>): string {
+  return `${padLsn(commitLsn)}-${String(index).padStart(8, '0')}`;
 }
 
 /**
@@ -71,9 +76,11 @@ export function sendMessageToApi(
   rowData: CdcRowData,
   traceContext: TraceContext,
   movedFrom?: CdcRowData | null,
+  signalVersions?: Record<string, number>,
 ): void {
   const message: CdcRowMessage = { activity, rowData, _trace: traceContext };
   if (movedFrom) message.movedFrom = movedFrom;
+  if (signalVersions) message.signalVersions = signalVersions;
   wsClient.send(message);
 }
 
@@ -85,11 +92,20 @@ export interface ProductRow {
   movedFrom?: CdcRowData | null;
 }
 
-/** The message of one audience: the first row's activity speaks for all, and each row carries its own permission fields. */
-function buildProductMessage(rows: ProductRow[], traceContext: TraceContext): CdcProductMessage {
+/** The message of one audience: what its rows share, and each row with its own activity and permission fields. */
+function buildProductMessage(productType: ProductEntityType, rows: ProductRow[], traceContext: TraceContext): CdcProductMessage {
+  const { id, userId, subjectId, changedFields, stx, createdAt, ...shared } = rows[0].activity;
   return {
-    activity: rows[0].activity,
-    rows: rows.map(({ rowData, seq, movedFrom }) => ({ rowData: pickPermissionRowData(rowData), seq, ...(movedFrom ? { movedFrom } : {}) })),
+    activity: { ...shared, entityType: productType },
+    rows: rows.map(({ activity, rowData, seq, movedFrom }) => ({
+      activityId: activity.id,
+      userId: activity.userId ?? null,
+      changedFields: activity.changedFields ?? null,
+      stx: activity.stx ?? null,
+      rowData: pickPermissionRowData(rowData),
+      seq,
+      ...(movedFrom ? { movedFrom } : {}),
+    })),
     _trace: traceContext,
   };
 }
@@ -104,5 +120,5 @@ export function sendProductMessagesToApi(productType: ProductEntityType, rows: P
     rows,
     (row) => hierarchy.computeProductPath(productType, row.rowData) ?? resolveChannelKey(productType, row.rowData, row.activity),
   );
-  for (const audience of audiences.values()) wsClient.send(buildProductMessage(audience, traceContext));
+  for (const audience of audiences.values()) wsClient.send(buildProductMessage(productType, audience, traceContext));
 }

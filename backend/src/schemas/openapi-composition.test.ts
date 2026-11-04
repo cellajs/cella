@@ -45,7 +45,7 @@ describe('OpenAPI composition conventions', () => {
       ReusableUnionFixture: {
         properties: { user: nullableUserRef, stx: nullableStxRef },
       },
-      StreamChange: { properties: { stx: nullableStxRef } },
+      StreamChange: { properties: { rows: { items: { properties: { stx: nullableStxRef } } } } },
     });
 
     // Nullable wrappers must not surface as named component schemas (SDK/docs export noise).

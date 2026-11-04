@@ -35,15 +35,15 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │      │       condition   → grant iff the row matches            │            │
 │      │       0           → nothing                              │            │
 │      │  4. public read      widens `read` only                  │            │
-│      │  5. emit `can` + why each action was granted             │            │
+│      │  5. emit `can`       one boolean per action              │            │
 │      └───┬───────────┬────────────────┬────────────────┬────────┘            │
 │          │           │                │                │                     │
 │   ┌──────▼─────┐ ┌───▼──────────┐ ┌───▼───────────┐ ┌──▼─────────────┐       │
 │   │ Backend    │ │ SSE dispatch │ │ Yjs relay     │ │ Frontend       │       │
 │   │ routes     │ │              │ │               │ │                │       │
-│   │ single row │ │ per change,  │ │ WS upgrade,   │ │ `can` map      │       │
-│   │ + compiled │ │ every        │ │ no backend    │ │ drives UI      │       │
-│   │ SQL for    │ │ subscriber   │ │ round-trip    │ │ controls       │       │
+│   │ single row │ │ per change,  │ │ WS upgrade,   │ │ `useCan` per   │       │
+│   │ + compiled │ │ every        │ │ no backend    │ │ control, over  │       │
+│   │ SQL for    │ │ subscriber   │ │ round-trip    │ │ memberships    │       │
 │   │ list reads │ │ at once      │ │               │ │ (never trusted)│       │
 │   └────────────┘ └──────────────┘ └───────────────┘ └────────────────┘       │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -64,7 +64,6 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | **Subject** | What is acted on: entity type, optional id, its ancestor channel ids, optionally the row. |
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'`: allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete`. |
-| **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
 | **Access scope** | The mask an API key or access token puts over its actor's bindings. |
 
 ## The access you present
@@ -119,8 +118,8 @@ The **`checkAccess*` family** is what every tier calls:
 
 ```ts
 checkAccess(access, action, subject); // → PermissionResult: the request-path check
-checkAccessBatch(access, action, subjects); // → BatchPermissionResult: one actor, many rows (list splitting)
-checkAccessFanout(accesses, action, subject, options?); // → PermissionResult[]: many actors, one row (stream fan-out)
+checkAccessBatch(access, action, subjects); // → Map of PermissionResult by subject id: one actor, many rows (list splitting)
+checkAccessFanout(accesses, action, subject); // → boolean[]: many actors, one row (stream fan-out)
 ```
 
 A subject's ancestor scope is **tri-state**: a channel id, `null` for explicitly not scoped to that ancestor, or `undefined` for a required scope left out, which throws. A missing scope never defaults to unscoped, which would bypass permissions.
@@ -135,11 +134,11 @@ Public read is declared per subject with `publicRead()` and holds for any actor,
 
 A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone. A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish, except those for its `prepareRoles`, which go out at once so those people can set it up.
 
-## Frontend map
+## In the interface
 
-The UI reads a `can` map per channel (`entity.can[entityType][action]`), built by `computeCan` from the same policy matrix and the actor's grants on the channel and above it. A cell is `true`, `false` or a condition `resolveCan` checks per row: `'own'` for the creator's rows, `'home'` for rows homed at the map's channel, or both combined. A row control passes the row and the channel; a channel-wide feature asks `isUnconditionalCan`.
+The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone.
 
-A route gate (`requireEntityAction`) asks the same map before the page loads, and lets the page load when it cannot read the memberships (offline with none cached): the server decides. The map shapes the interface only, and a parity test checks it against the engine for every combination of roles.
+A route gate (`requireEntityAction`) asks the same question before the page loads. Where the memberships cannot be read (offline with none cached), the gate lets the user through, and the server decides.
 
 ## Enforcement paths
 
@@ -151,7 +150,7 @@ A route gate (`requireEntityAction`) asks the same map before the page loads, an
 | Bulk | `splitByPermission` | The single-row checks for every id | Rejected ids listed; 403 only when nothing is allowed |
 | Collection read | `buildCollectionReadWhere` | Compiles readable scope, row conditions, and public read into one SQL predicate. Never loads rows to reject them. | An empty list |
 | SSE dispatch | `accessDecisions` | One `checkAccessFanout` per change or signal over the organization's subscribers | No frame. A change sent too wide leaks data because announced rows are fetchable |
-| Catchup views | `resolveViewReadStatus` | May the caller see a subtree's frontiers and counts | `opaque` or `forbidden` |
+| Catchup views | `resolveViewReadStatus` | May the caller see an organization's frontier of a type | `opaque` or `forbidden` |
 
 Two rules bind every path: **the system-admin bypass applies to collection reads too** (a system admin passes `orgGuard` with no membership, so scope resolution must not be membership-only), and **any grant the single-row path honours must appear in lists and over SSE**.
 
@@ -171,12 +170,12 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `act
 | `tokenGuard` | An access token only, for the MCP face | 401 |
 | `actorGuard` | Any of the three proofs | 401, 403 |
 | `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's sign-in policy | 403 `forbidden`, `sso_required` |
-| `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin | 404 |
+| `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |
 | `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks | 403 `step_up_required` |
 | `sysAdminGuard` | A system admin from an allowed IP address | 403 |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
-`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above.
+`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above. A tenant holds one organization, so an actor bound to nothing in it gets `tenantGuard`'s 403; `orgGuard`'s 404 remains for the tenant's creator racing the first organization.
 
 ## Refusals
 
@@ -185,7 +184,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | Situation | Answer | Why |
 | --- | --- | --- |
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `meta.resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
-| Anything under a tenant the caller may not read, missing and unreadable alike: an organization, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
+| Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `meta.action` | The caller already knows the row |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `meta.reason: 'role_exceeds_actor'`, `meta.role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
@@ -215,6 +214,6 @@ Support reads before it writes: the users table says what role and last-seen a u
 
 | Scenario | Outcome |
 | --- | --- |
-| Member with `update: 'own'` edits someone else's row | Denied: the UI resolves `'own'` against the row's creator, and the backend refuses a save all the same |
+| Member with `update: 'own'` edits someone else's row | Denied: the UI asks the engine on the row, and the backend refuses a save all the same |
 | Actor loses access mid-Yjs-session | The socket closes when its short-lived token expires, and a reconnect is authorized again |
 | System admin joins a Yjs collab session | No bypass: authorized as the acting user |

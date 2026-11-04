@@ -30,14 +30,9 @@ export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
   return statusRank[a] >= statusRank[b] ? a : b;
 }
 
-/** Only critical components reach `unhealthy`; others cap at `degraded` so a flaky worker keeps the API registered. */
-export function rollupStatus(components: Record<string, HealthComponent>, criticalComponents: Set<string>): HealthStatus {
-  let result: HealthStatus = 'healthy';
-  for (const [name, component] of Object.entries(components)) {
-    const capped = criticalComponents.has(name) || component.status !== 'unhealthy' ? component.status : 'degraded';
-    result = worstStatus(result, capped);
-  }
-  return result;
+/** The worst status among the components: one unhealthy component, a worker's included, makes the rollup unhealthy. */
+export function rollupStatus(components: Record<string, HealthComponent>): HealthStatus {
+  return Object.values(components).reduce<HealthStatus>((status, component) => worstStatus(status, component.status), 'healthy');
 }
 
 /** Grade a Node service's own runtime from event-loop lag. */

@@ -1,19 +1,8 @@
 export { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 export type { AccessScope, AccessScopedEntityType } from './access-scopes.ts';
-export { allActionsAllowed, type CanHome, isUnconditionalCan, resolveCan } from './action-helpers.ts';
+export { allActionsAllowed } from './action-helpers.ts';
 export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
-export {
-  type Access,
-  type BatchPermissionResult,
-  checkAccess,
-  checkAccessBatch,
-  checkAccessFanout,
-  checkRoleGrant,
-  type PermissionResult,
-  type PredicateActor,
-} from './check-access.ts';
-export type { EntityCanMap } from './compute-can.ts';
-export { computeCan } from './compute-can.ts';
+export { type Access, checkAccess, checkAccessBatch, checkAccessFanout, checkRoleGrant, type PermissionResult } from './check-access.ts';
 export { getAllDecisions } from './engine/check.ts';
 export type { HierarchyOverrides } from './engine/resolve-hierarchy.ts';
 export { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
@@ -25,5 +14,5 @@ export { configurePermissions, getEntityPolicies, getPolicyPermissions } from '.
 export type { PublicReadGrants } from './public-read.ts';
 export type { RowConditionName } from './row-conditions.ts';
 export { isRowCondition } from './row-conditions.ts';
-export type { CanState, PolicyCallback, PolicyCell, PolicyCellInput, PolicyMatrix } from './types.ts';
+export type { PolicyCallback, PolicyCell, PolicyCellInput, PolicyMatrix } from './types.ts';
 export { validateAncestorScope } from './validate-ancestor-scope.ts';

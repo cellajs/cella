@@ -3,6 +3,7 @@ import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAccountLanguages } from '#/modules/memberships/memberships-queries';
+import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
@@ -32,8 +33,10 @@ interface InvitationMailOpts {
  * Sends the invitation mails, built in one place. The link is the invitation token's for an address without an
  * account, else the invited channel's page. The language is the account's own when the address has one, else the
  * organization's default, else the app's.
+ * @returns Whether every mail went out. A failed send is logged, since every caller stored its rows before the mail and
+ *   records the mail only once it went out; a failed render still throws.
  */
-export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOpts): Promise<void> {
+export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOpts): Promise<boolean> {
   const { sender = { name: 'System' }, channel, organization, invited, added = [] } = opts;
 
   const userIds = [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : []));
@@ -47,10 +50,16 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
     address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
   );
   const senderProps = { senderName: sender.name, senderEmail: sender.email };
+  let sent = true;
+  const logFailure = (err: unknown) => {
+    if (!(err instanceof AggregateError)) throw err;
+    log.error('Failed to send invitation mails', { err });
+    sent = false;
+  };
 
   if (!channel) {
-    if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email);
-    return;
+    if (withToken.length) await mailer.sendEmails(systemInviteEmail, senderProps, withToken, sender.email).catch(logFailure);
+    return sent;
   }
 
   const statics = { ...senderProps, entityName: channel.name, role: channel.role };
@@ -58,7 +67,8 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }]));
   const addedRecipients = added.map((address) => ({ ...recipient(address), entityLink: page }));
 
-  if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email);
-  if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email);
-  if (addedRecipients.length) await mailer.sendEmails(memberAddedEmail, statics, addedRecipients, sender.email);
+  if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email).catch(logFailure);
+  if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email).catch(logFailure);
+  if (addedRecipients.length) await mailer.sendEmails(memberAddedEmail, statics, addedRecipients, sender.email).catch(logFailure);
+  return sent;
 }

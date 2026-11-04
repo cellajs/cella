@@ -1,14 +1,10 @@
 import { TTLCache as BaseTTLCache } from '@isaacs/ttlcache';
 import { coalesce } from '#/utils/request-coalescing';
 
-type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
-
-interface TTLCacheOptions<T> {
+interface TTLCacheOptions {
   /** Maximum number of entries */
   maxSize: number;
   defaultTtl: number;
-  /** Optional callback when entries are removed */
-  onDispose?: (key: string, value: T, reason: DisposeReason) => void;
 }
 
 /** Caches created so far: each one's number keeps its reads in flight apart from every other cache's. */
@@ -22,14 +18,9 @@ export class TTLCache<T> {
   /** Counts invalidations: a read that started under an earlier count stores nothing. */
   private generation = 0;
 
-  constructor(options: TTLCacheOptions<T>) {
+  constructor(options: TTLCacheOptions) {
     this.defaultTtl = options.defaultTtl;
-
-    this.cache = new BaseTTLCache<string, T>({
-      max: options.maxSize,
-      ttl: options.defaultTtl,
-      dispose: options.onDispose ? (value, key, reason) => options.onDispose?.(key, value, reason) : undefined,
-    });
+    this.cache = new BaseTTLCache<string, T>({ max: options.maxSize, ttl: options.defaultTtl });
   }
 
   /** Returns undefined when the key is missing or expired. */

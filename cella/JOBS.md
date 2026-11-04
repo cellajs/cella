@@ -19,13 +19,13 @@ PostgreSQL schema pgboss  ◀─────────────────
         └── a consumer process works its own queues (SERVICE of its own)
 ```
 
-The jobs worker runs from the backend image. Cron and supervision belong to exactly one process, so it cuts over stop-first, and nothing routes to it.
+The jobs worker runs from the backend image. Cron and supervision belong to one process, so its own service cuts over stop-first, and nothing routes to it. Under `singleVM` it runs inside the backend process, which cuts over start-first: a deploy runs two jobs workers until the old machine is removed.
 
 ## Declaring jobs and queues
 
 A cron job is `{ name, cron, run }` on `defineBackendModule`, with five cron fields in UTC. A rule that only deletes old rows is no job: it belongs to the database's nightly retention procedure ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 
-A cron job runs once per period: a run that overruns delays the next one, never overlaps it, and a period missed while no maintainer ran sends one catch-up job. A run that throws is logged, and the next period runs again.
+A cron job runs once per period, and a period missed while no maintainer ran sends one catch-up job. Two runs never overlap while each ends within its expiry. Past it the store fails the run while its handler goes on, and a second jobs worker, such as a `singleVM` deploy runs, can start the next run beside it: a job whose runs must not overlap stops taking work before its expiry. A run that throws is logged, and the next period runs again.
 
 ```ts
 defineBackendModule({

@@ -11,8 +11,12 @@ import { usersTable } from '#/modules/user/user-db';
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
 export type DigestFrequency = (typeof digestFrequencies)[number];
 
-/** Cadence of a user without a preferences row, and the column default. */
-export const defaultDigestFrequency: DigestFrequency = 'weekly';
+/** The preferences of a user without a row, and the column defaults: every reader answers a missing row with these. */
+export const defaultPreferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' } as const satisfies {
+  mentionEmail: boolean;
+  commentEmail: boolean;
+  digest: DigestFrequency;
+};
 
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product
@@ -21,9 +25,9 @@ export const defaultDigestFrequency: DigestFrequency = 'weekly';
  *
  * Partitioned by `created_at` (weekly, kept `retention.activityDays`) like `seen_by`, so clearing is automatic. Two
  * consequences follow from that and must not be undone: the primary key has to include the partition column, and no
- * other unique constraint may exist. Redelivery is therefore deduped by an `INSERT ... WHERE NOT EXISTS` guard over
- * `(user_id, activity_id, type)` in `insertNotificationsIgnoringDuplicates`. Excluded from CDC: it is per-user state,
- * not synced content.
+ * other unique constraint may exist. A user is therefore told of a subject once by an `INSERT ... WHERE NOT EXISTS`
+ * guard over `(user_id, subject_id)` in `insertNotificationsIgnoringDuplicates`. Excluded from CDC: it is per-user
+ * state, not synced content.
  */
 export const notificationsTable = snakeCase.table(
   'notifications',
@@ -44,16 +48,14 @@ export const notificationsTable = snakeCase.table(
     channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar({ length: tenantIdLength }).notNull(),
-    /** CDC activity id: the dedupe key for at-least-once delivery. */
+    /** The CDC activity of the write that told the user. */
     activityId: varchar({ length: 64 }).notNull(),
     readAt: isoTimestamp(),
-    /** Set once the instant-mail pass took the row, mailed or skipped for good; the pass and the digest skip it. */
+    /** Set once the row's instant mail went out, and on every seeded row; the digest skips it. */
     emailedAt: isoTimestamp(),
-    digestedAt: isoTimestamp(),
   },
   (table) => [
     primaryKey({ columns: [table.id, table.createdAt] }),
-    index('notifications_user_activity_index').on(table.userId, table.activityId, table.type),
     index('notifications_user_unread_index').on(table.userId, table.readAt),
     index('notifications_user_created_index').on(table.userId, table.createdAt.desc()),
     index('notifications_subject_index').on(table.subjectId),
@@ -72,9 +74,9 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .$type<UserId>(),
   /** In-app delivery is never opt-out; only email is. */
-  mentionEmail: boolean().notNull().default(true),
-  commentEmail: boolean().notNull().default(false),
-  digest: varchar({ enum: digestFrequencies }).notNull().default(defaultDigestFrequency),
+  mentionEmail: boolean().notNull().default(defaultPreferences.mentionEmail),
+  commentEmail: boolean().notNull().default(defaultPreferences.commentEmail),
+  digest: varchar({ enum: digestFrequencies }).notNull().default(defaultPreferences.digest),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: isoTimestamp(),
   updatedAt: timestampColumns.updatedAt,

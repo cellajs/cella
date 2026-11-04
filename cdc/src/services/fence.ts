@@ -100,8 +100,8 @@ export const fence = {
   },
 
   /** Whether the count behind the open fence already saw this transaction. False when no fence is open. */
-  sawTransaction(xid: number | undefined): boolean {
-    return current !== null && xid !== undefined && isVisibleIn(xid, current.snapshot);
+  sawTransaction(xid: number): boolean {
+    return current !== null && isVisibleIn(xid, current.snapshot);
   },
 
   /** Records plain counts of already counted transactions that a flush has just committed. */

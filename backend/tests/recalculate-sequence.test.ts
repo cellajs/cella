@@ -17,7 +17,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
  * Recalculation must agree with CDC's incremental writes: `sequence` = max stamped seq across
- * the org's product tables, `e:f:{type}` = max seq per (node, type), `e:c:{type}` = live published.
+ * the org's product tables, `e:f:{type}` = max seq per (organization, type), `e:c:{type}` = live published.
  */
 describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
@@ -92,31 +92,25 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   });
 
   const readCounts = async (channelKey: string) => {
-    const [counterRow] = await db
-      .select({ counts: channelCountersTable.counts, path: channelCountersTable.path })
-      .from(channelCountersTable)
-      .where(sql`channel_key = ${channelKey}`);
+    const [counterRow] = await db.select({ counts: channelCountersTable.counts }).from(channelCountersTable).where(sql`channel_key = ${channelKey}`);
     return counterRow;
   };
 
-  it('rebuilds sequence, subtree and self-family counters from row state', async () => {
+  it('rebuilds sequence, frontier, subtree and home counters from row state', async () => {
     // Recalculation is an admin path (seed and CDC recovery): it reads every RLS table without tenant context.
     await recalculateCounters({ var: { db: seedDb } });
 
     const orgRow = await readCounts(tenant.organization.id);
     const orgCounts = orgRow.counts as Record<string, number>;
-    // Path backfill: the org channel's canonical path is its own id.
-    expect(orgRow.path).toBe(tenant.organization.id);
     // Sequence reservation counter: max stamped value across product tables.
     expect(orgCounts.sequence).toBe(47);
-    // Subtree frontier includes tombstones (they keep their seq for delta reads).
+    // Organization frontier includes tombstones (they keep their seq for delta reads).
     expect(orgCounts[`e:f:${PRODUCT}`]).toBe(47);
     // Subtree live count excludes the soft-deleted row.
     expect(orgCounts[`e:c:${PRODUCT}`]).toBe(2);
 
-    // Self-family keys land at the home node, the deepest ancestor.
+    // Home keys land at the home node, the deepest ancestor.
     const homeCounts = (await readCounts(homeChannelId())).counts as Record<string, number>;
-    expect(homeCounts[`e:f:h:${PRODUCT}`]).toBe(47);
     expect(homeCounts[`e:c:h:${PRODUCT}`]).toBe(2);
   });
 
@@ -173,6 +167,5 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     // The values that were handed out stay handed out: a client holds them as its cursor.
     expect(org.sequence).toBe(orgBefore.sequence);
     expect(org[`e:f:${PRODUCT}`]).toBe(orgBefore[`e:f:${PRODUCT}`]);
-    expect(home[`e:f:h:${PRODUCT}`]).toBe(homeBefore[`e:f:h:${PRODUCT}`]);
   });
 });

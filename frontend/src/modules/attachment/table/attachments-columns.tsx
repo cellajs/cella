@@ -1,7 +1,7 @@
 import { TrashIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig, hierarchy, seenWindowMs } from 'shared';
+import { appConfig, seenWindowMs } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DownloadCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
@@ -13,7 +13,7 @@ import { HighlightText, MatchReason } from '~/modules/common/match-highlight/hig
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { DeleteQuestion } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
+import { useCan } from '~/modules/entities/use-can';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { ActorCell } from '~/modules/user/actor-cell';
 import { cn } from '~/utils/cn';
@@ -30,19 +30,11 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
-/** Per-row delete: 'own' resolves against the row's creator, 'home' against the row's placement. */
-export const useCanDeleteAttachment = (channel: EnrichedChannel) => {
-  const resolveCan = useResolveCan();
-  return (row: Attachment) =>
-    resolveCan(channel.can?.attachment?.delete, row.createdBy, { row: hierarchy.resolveDeepestAncestorId('attachment', row), channel: channel.id });
-};
-
 export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOrColumnGroup<Attachment>[] => {
   const { t } = useTranslation();
 
-  // Table editing covers unconditional, owner and home-scoped grants; the backend resolves them per row.
-  const canUpdate = !!channel.can?.attachment?.update;
-  const canDelete = useCanDeleteAttachment(channel);
+  const can = useCan();
+  const canUpdate = (row: Attachment) => can('update', 'attachment', row);
 
   return [
     CheckboxColumn,
@@ -55,7 +47,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
     {
       key: 'name',
       name: t('c:name'),
-      editable: true,
+      editable: canUpdate,
       sortable: true,
       resizable: true,
       minWidth: 180,
@@ -70,12 +62,9 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
           </span>
         </>
       ),
-      // For 'own' policies the backend enforces the final owner check on save.
-      ...(canUpdate && {
-        renderEditCell: ({ row, column, onRowChange }) => (
-          <EditCellInput name={column.key} value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
-        ),
-      }),
+      renderEditCell: ({ row, column, onRowChange }) => (
+        <EditCellInput name={column.key} value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
+      ),
     },
     {
       key: 'description',
@@ -85,11 +74,10 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       minWidth: 200,
       placeholderValue: '-',
       renderCell: ({ row, isCellEditable }) => <DescriptionCell row={row} editable={isCellEditable} />,
+      editable: canUpdate,
       // The editor is the description sheet: entering edit mode opens it and leaves edit mode again.
-      ...(canUpdate && {
-        editorOptions: externalEditorOptions,
-        renderEditCell: ({ row, onClose }) => <RenderExternalEditor onClose={onClose} open={(cell) => openDescriptionSheetFromCell(row.id, cell)} />,
-      }),
+      editorOptions: externalEditorOptions,
+      renderEditCell: ({ row, onClose }) => <RenderExternalEditor onClose={onClose} open={(cell) => openDescriptionSheetFromCell(row.id, cell)} />,
     },
     {
       key: 'download',
@@ -100,7 +88,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
     },
     // Delete is the only row action, so a row the user cannot delete gets no menu.
     ellipsisColumn<Attachment>((row) => {
-      if (!canDelete(row)) return [];
+      if (!can('delete', 'attachment', row)) return [];
 
       return [
         {

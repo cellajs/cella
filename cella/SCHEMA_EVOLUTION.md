@@ -10,7 +10,7 @@ When the fields returned by the API change incompatibly, add one permanent conve
 
 A breaking schema change (rename `attachment.name` to `attachment.title`, say) ships as an **append-only lens module**. The lens declares the change once. Everything else derives from it: widened request schemas, key maps for writes, and migrations for cached rows.
 
-- **Canonical inside, dual-emit at the edge.** Database logic, CDC, activities, the detail cache and the stream see the newest shape only. The **frozen envelope** around entities (the `stx` and `ops` structure, stream frames, catchup summaries, counter keys, the auth and session contract) changes only additively or through an `apiVersion` bump, never through a lens.
+- **Canonical inside, dual-emit at the edge.** Database logic, CDC, activities and the stream see the newest shape only. The **frozen envelope** around entities (the `stx` and `ops` structure, counter keys, the auth and session contract) changes only additively, never through a lens. Stream frames, catchup answers and the CDC worker's messages are never stored, so they change with a release: a tab open across a deploy meets the new shapes until it reloads, and a breaking spec diff moves `clientCacheVersion`.
 - **No version negotiation.** The server tells old from new by which fields a request carries. The client cache knows which version it holds from its persisted `schemaVersion` pointer, not from the rows.
 - **One global version.** `currentSchemaVersion` is the lens count, baked into both bundles from `shared`.
 
@@ -19,10 +19,10 @@ A breaking schema change (rename `attachment.name` to `attachment.title`, say) s
 Until the first lens ships, a breaking schema change resets client caches:
 
 1. **Bump `appConfig.clientCacheVersion`** ([config.default.ts](../shared/config/config.default.ts)) in the same PR as any breaking change to a cached entity's wire shape, and give the PR a `feat!` title, as for any breaking change.
-2. **Clients wipe, mutations stay.** On boot the persister compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses is quarantined, never dropped.
+2. **Clients wipe, mutations stay.** On boot the persister compares the persisted version with the bundle's. On a mismatch it wipes cached query data but keeps queued mutations, which replay against the fresh cache. A replay the server then refuses rolls back and toasts.
 3. **CI gate.** `schema-bust-gate` in [ci.yml](../.github/workflows/ci.yml) fails a PR with a breaking OpenAPI diff unless it bumps `clientCacheVersion`.
 
-**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job. The `failedSync` quarantine stays: it also holds queued mutations no upgrade can read.
+**Teardown**: once lenses are stable, delete `clientCacheVersion`, the persister's wipe and the `schema-bust-gate` job.
 
 ## Transformation points
 
@@ -63,7 +63,7 @@ A `delta` renames, adds, drops or retypes a field ([define.ts](../shared/src/sch
 | **Channel** (`organization`) | Reduced: body widening and normalization, cache and mutation migration. No key maps: a plain `PUT` body has no per-field merge. |
 | **Frozen envelope** | None: changes only through `apiVersion` |
 
-Membership fields, enrichment output (`membership`, `can`) and Yjs-edited descriptions sit outside the lens system.
+Membership fields, enrichment output (`ancestorSlugs`) and Yjs-edited descriptions sit outside the lens system.
 
 ## Evolution contract
 

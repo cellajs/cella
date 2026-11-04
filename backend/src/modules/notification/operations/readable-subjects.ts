@@ -1,17 +1,16 @@
 import type { Access } from 'shared';
+import { buildSubjectFromEntity, checkAccessBatch } from 'shared';
 import { tenantReadById } from '#/db/tenant-context';
 import type { NotificationModel } from '#/modules/notification/notification-db';
 import { getNotificationSource, groupByTenantAndType, loadSubjectRows } from '#/modules/notification/notification-sources';
-import { checkAccessBatch } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /** The subject a notification row names. */
 type NotificationRef = Pick<NotificationModel, 'tenantId' | 'entityType' | 'subjectId'>;
 
 /**
  * The subjects among `refs` that `access` may read now: the row is live and the permission engine allows read. A
- * notification went only to readers, but access can end afterwards, so the inbox, the digest and the mention mail ask
- * again before they name a subject or its channel.
+ * notification went only to readers, but access can end afterwards, so the inbox and the digest ask again before they
+ * name a subject or its channel.
  */
 export async function findReadableSubjectIds(access: Access, refs: NotificationRef[]): Promise<Set<string>> {
   const readable = new Set<string>();
@@ -20,7 +19,7 @@ export async function findReadableSubjectIds(access: Access, refs: NotificationR
     if (!source) continue;
     const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, ids));
     const subjects = rows.map((row) => buildSubjectFromEntity(source.entityType, row));
-    const { results } = checkAccessBatch(access, 'read', subjects);
+    const results = checkAccessBatch(access, 'read', subjects);
     for (const [id, { allowed }] of results) if (allowed) readable.add(id);
   }
   return readable;

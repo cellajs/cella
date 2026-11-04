@@ -4,6 +4,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import type { TrackedEventType } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
@@ -41,13 +42,13 @@ export async function clearDatabase() {
   });
 }
 
-import type { ActivityEvent } from '#/lib/activity-bus';
+import type { ActivityEventOf } from '#/lib/activity-bus';
 
 interface CdcTestHarness {
   stop(): Promise<void>;
 }
 
-export function waitForEvent(eventType: Parameters<typeof activityBus.once>[0], timeoutMs = 10000): Promise<ActivityEvent> {
+export function waitForEvent<T extends TrackedEventType>(eventType: T, timeoutMs = 10000): Promise<ActivityEventOf<T>> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));

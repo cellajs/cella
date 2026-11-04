@@ -21,7 +21,7 @@ import {
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { registerDescriptionDerivation } from '~/modules/common/blocknote/description-derivation';
-import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
+import { registerDescriptionColumns } from '~/modules/common/blocknote/yjs-owned-fields';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, cancelKeepingMark, removeDetailQueriesById, writeKeepingMark } from '~/query/basic/cache-mutations';
@@ -35,8 +35,6 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
 import type { OrgRoutableItemData } from '~/query/basic/types';
-import { addMutationRegistrar } from '~/query/mutation-registry';
-import { registerVariablesVersion } from '~/query/offline/mutation-variables';
 import { prepareProductDelete } from '~/query/offline/prepare-delete';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
 import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
@@ -62,12 +60,8 @@ registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channel
 });
 export const attachmentQueryKeys = keys;
 
-/** The columns `update-attachment.ts` stores from a description. */
-const descriptionDerivedKeys = ['keywords'];
-
-// A derived column follows the description's stamp.
-registerYjsOwnedFields('attachment', ['description', ...descriptionDerivedKeys]);
-// The derivation `update-attachment.ts` runs on every description write.
+// The columns `update-attachment.ts` stores from a description, and the derivation it runs on every description write.
+registerDescriptionColumns('attachment', ['keywords']);
 registerDescriptionDerivation('attachment', (description) => ({ keywords: deriveDocument(description).keywords }));
 
 const handleError = createResourceError('attachment');
@@ -226,13 +220,7 @@ const attachmentUpdateOptions = (
     const detailKey = keys.detail.byId(updatedAttachment.id);
     const cached = findAttachmentInCache(updatedAttachment.id);
     const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
-    const merged = mergeServerResponse({
-      queryClient,
-      cached,
-      serverEntity: updatedAttachment,
-      mutatedKeys,
-      derivedKeys: { description: descriptionDerivedKeys },
-    });
+    const merged = mergeServerResponse({ queryClient, cached, serverEntity: updatedAttachment, mutatedKeys });
     writeEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {
@@ -331,34 +319,25 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
-// Mutation defaults (offline persistence)
-addMutationRegistrar((queryClient: QueryClient) => {
-  queryClient.setQueryDefaults(keys.detail.base, {
-    queryFn: ({ queryKey, meta }) => {
-      const id = queryKey[2] as string;
-      const cached = findAttachmentInCache(id);
-      const { organizationId, tenantId } = resolveQueryOrgTenantIds(meta, cached, 'attachment');
-      return getAttachment({ path: { id, organizationId, tenantId } });
-    },
-  });
-
-  queryClient.setMutationDefaults(keys.create, attachmentCreateOptions(queryClient));
-  queryClient.setMutationDefaults(keys.update, attachmentUpdateOptions(queryClient));
-  queryClient.setMutationDefaults(keys.delete, attachmentDeleteOptions(queryClient));
-
-  // A placeholder turns into its file once a row with stored keys reaches the cache: from sync, a create or a key link.
-  queryClient.getQueryCache().subscribe((event) => {
-    if (event.type !== 'updated' || event.query.queryKey[0] !== 'attachment' || !hasPendingUploads()) return;
-    clearStoredUploads((id) => {
-      const row = findAttachmentInCache(id);
-      return !!row && !isPendingUpload(row);
-    });
-  });
+// Mutation defaults (offline persistence): set when the module loads, before the cache restore hydrates a queued mutation.
+queryClient.setQueryDefaults(keys.detail.base, {
+  queryFn: ({ queryKey }) => {
+    const id = queryKey[2] as string;
+    const cached = findAttachmentInCache(id);
+    const { organizationId, tenantId } = resolveQueryOrgTenantIds(cached, 'attachment');
+    return getAttachment({ path: { id, organizationId, tenantId } });
+  },
 });
 
-// Version 2 of a delete carries its rows under `rows`; a bundle of version 1 queued them as `attachments`.
-registerVariablesVersion(keys.delete, 2, (variables) => {
-  if (typeof variables !== 'object' || variables === null || !('attachments' in variables)) return null;
-  const { attachments, ...rest } = variables;
-  return Array.isArray(attachments) ? { ...rest, rows: attachments } : null;
+queryClient.setMutationDefaults(keys.create, attachmentCreateOptions(queryClient));
+queryClient.setMutationDefaults(keys.update, attachmentUpdateOptions(queryClient));
+queryClient.setMutationDefaults(keys.delete, attachmentDeleteOptions(queryClient));
+
+// A placeholder turns into its file once a row with stored keys reaches the cache: from sync, a create or a key link.
+queryClient.getQueryCache().subscribe((event) => {
+  if (event.type !== 'updated' || event.query.queryKey[0] !== 'attachment' || !hasPendingUploads()) return;
+  clearStoredUploads((id) => {
+    const row = findAttachmentInCache(id);
+    return !!row && !isPendingUpload(row);
+  });
 });

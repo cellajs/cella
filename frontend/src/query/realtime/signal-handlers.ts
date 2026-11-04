@@ -1,5 +1,6 @@
 import type { StreamSignal } from 'sdk';
 import { onFrontendModuleRegister } from '~/lib/module';
+import { syncStore } from '~/query/realtime/sync-store';
 
 /** `missed` is true when catchup found a version this client had not seen: there is no frame, only its type and organization. */
 export type StreamSignalHandler = (signal: StreamSignal, context: { missed: boolean }) => void;
@@ -18,11 +19,16 @@ onFrontendModuleRegister((module) => {
 export function handleStreamSignal(signal: StreamSignal, missed = false): void {
   const registered = handlers.get(signal.type) ?? [];
   if (registered.length === 0) console.debug('[StreamSignal] No handler for type', signal.type);
+  let failed = false;
   for (const handler of registered) {
     try {
       handler(signal, { missed });
     } catch (error) {
+      failed = true;
       console.error(`[StreamSignal] ${signal.type} handler failed:`, error);
     }
+  }
+  if (!missed && !failed && signal.organizationId && signal.version !== undefined) {
+    syncStore.getState().noteHeardSignal(signal.organizationId, signal.type, signal.version);
   }
 }

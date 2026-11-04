@@ -77,6 +77,16 @@ export function mockParseResult(
 
 type Row = Record<string, unknown> & { id?: string };
 
+/** A change as the transaction buffer hands it on, in a source transaction of its own that commits at the change's position. */
+export const pendingEvent = (lsn: string, result: ParseMessageResult): PendingEvent => ({
+  lsn,
+  commitLsn: lsn,
+  commitEndLsn: lsn,
+  index: 0,
+  xid: 1,
+  result,
+});
+
 /** A parsed change of one row as the pipeline hands it on; the activity's organization defaults to the row's. */
 export function changeEvent({
   tableMeta,
@@ -94,20 +104,17 @@ export function changeEvent({
   lsn?: string;
 }): PendingEvent {
   const entity = tableMeta.kind === 'entity';
-  return {
-    lsn,
-    result: {
-      activity: mockCdcActivity({
-        action,
-        organizationId,
-        entityType: entity ? (tableMeta.type as InsertActivityModel['entityType']) : null,
-        resourceType: entity ? null : (tableMeta.type as InsertActivityModel['resourceType']),
-      }),
-      rowData: rowData as ParseMessageResult['rowData'],
-      oldRowData: oldRowData as ParseMessageResult['oldRowData'],
-      tableMeta,
-    },
-  };
+  return pendingEvent(lsn, {
+    activity: mockCdcActivity({
+      action,
+      organizationId,
+      entityType: entity ? (tableMeta.type as InsertActivityModel['entityType']) : null,
+      resourceType: entity ? null : (tableMeta.type as InsertActivityModel['resourceType']),
+    }),
+    rowData: rowData as ParseMessageResult['rowData'],
+    oldRowData: oldRowData as ParseMessageResult['oldRowData'],
+    tableMeta,
+  });
 }
 
 /** PendingEvent fixture. */
@@ -120,7 +127,7 @@ export function mockPendingEvent(overrides: {
   organizationId?: string | null;
   tableMeta?: 'entity' | 'resource';
 }): PendingEvent {
-  return { lsn: overrides.lsn, result: mockParseResult(overrides) };
+  return pendingEvent(overrides.lsn, mockParseResult(overrides));
 }
 
 /** A recorded attachment row as its message is built from it; `extra` adds columns to the row. */

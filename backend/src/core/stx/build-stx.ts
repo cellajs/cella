@@ -1,7 +1,7 @@
 import { advanceClock } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/** StxBase with optional changedFields for CDC consumption (stored in jsonb, not part of API schema). */
+/** StxBase with the fields a write wrote, which the yjs module reads inside its transaction (stored in jsonb, not part of API schema). */
 type StxStored = StxBase & { changedFields?: string[] };
 
 /**
@@ -20,7 +20,7 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
     if (incomingTimestamps[field]) mergedTimestamps[field] = incomingTimestamps[field];
   }
 
-  // Every user-driven update writes updatedAt, which is how the CDC worker tells user edits from its own writes.
+  // An update's list also names updatedAt: a worker of the previous release reads a stored list without it as its own cleanup.
   const changedFields = acceptedFieldNames && entity ? [...acceptedFieldNames, 'updatedAt'] : acceptedFieldNames;
 
   return { mutationId: stx.mutationId, sourceId: stx.sourceId, fieldTimestamps: mergedTimestamps, ...(changedFields && { changedFields }) };

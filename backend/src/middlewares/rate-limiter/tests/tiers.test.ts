@@ -117,13 +117,13 @@ describe('the buckets a failure budget counts in', () => {
 describe('rate limiter outcome behind a redirecting error', () => {
   it('must not let token guesses go uncounted via an error answered with a redirect', async () => {
     const route = guardedRoute('failseries', () => {
-      throw new AppError(401, 'invalid_token', 'warn', { willRedirect: true, meta: { errorPagePath: '/auth/error' } });
+      throw new AppError(401, 'invalid_token', 'warn', { willRedirect: true });
     });
     const ip = randomIp();
 
     const res = await route.attempt(ip);
     expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toContain('/auth/error?error=invalid_token');
+    expect(res.headers.get('location')).toContain('/error?error=invalid_token');
     expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([1, 1]);
   });
 

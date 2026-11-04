@@ -90,8 +90,8 @@ type GcEvents = Parameters<typeof gcOwnedEmbeddedRows>[1];
 /** The synthetic products exist only in the mocked hierarchy, so their names need widening here. */
 const gc = (hostProduct: string, events: GcEvents) => gcOwnedEmbeddedRows(hostProduct as ProductEntityType, events);
 
-const hostEvent = (rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null) => ({
-  result: { rowData: rowData as CdcRowData, oldRowData: oldRowData as CdcRowData | null },
+const hostEvent = (rowData: Record<string, unknown>, oldRowData: Record<string, unknown>) => ({
+  result: { rowData: rowData as CdcRowData, oldRowData: oldRowData as CdcRowData },
 });
 
 const base = { id: 't1', organizationId: 'o1', updatedBy: 'u1', deletedAt: null, deletedBy: null };
@@ -110,7 +110,7 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates).toHaveLength(1);
     expect(updates[0].values).toMatchObject({ deletedBy: 'u1', updatedBy: 'u1' });
     expect(updates[0].values.deletedAt).toEqual(expect.any(String));
-    // Stripped changedFields keeps the write attributed to the WAL diff.
+    // The stx without changedFields, as every server-driven write stores it.
     expect(updates[0].values.stx).toBeDefined();
     expect(updates[0].params).toContain('i2');
     expect(updates[0].params).not.toContain('i1');
@@ -150,8 +150,7 @@ describe('gcOwnedEmbeddedRows', () => {
     ]);
   });
 
-  it('no-ops without an old image, without removals, or for a non-host product', async () => {
-    await gc('task', [hostEvent({ ...base, items: ['i1'] }, null)]);
+  it('no-ops without removals, or for a non-host product', async () => {
     await gc('task', [hostEvent({ ...base, items: ['i1', 'i2'] }, { ...base, items: ['i1'] })]);
     await gc('item', [hostEvent({ ...base, items: [] }, { ...base, items: ['i1'] })]);
 

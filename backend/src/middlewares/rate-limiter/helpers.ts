@@ -1,6 +1,5 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { and, eq, gt, gte, lte, or, sql } from 'drizzle-orm';
-import type { Context, MiddlewareHandler } from 'hono';
+import type { Context } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
@@ -11,18 +10,13 @@ import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
 import { hashRateLimitSubject } from '#/utils/hash-pii';
 import { toRateLimitIp } from '#/utils/ip-subnet';
-import { log } from '#/utils/logger';
+import { ambientRequest, log } from '#/utils/logger';
 
 type RateLimiterOptions = {
   keyPrefix?: string;
   points: number;
   duration: number;
   blockDuration?: number;
-  /**
-   * Also block an over-limit key in this process's memory, as long as the database block (default true). Buckets that
-   * reserve attempts pass false: an attempt given back must free the budget, and a block lives in the database only.
-   */
-  inMemoryBlock?: boolean;
 };
 
 /** Limiter instances by key prefix, so limiters that share a prefix share one store and its in-memory state. */
@@ -32,7 +26,7 @@ const limiterRegistry = new Map<string, LimiterStore>();
 const insurances = new WeakMap<RateLimiterDrizzle, RateLimiterMemory>();
 
 /** The database store for a key prefix, created once; an in-memory insurance limiter covers database outages. */
-export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: RateLimiterOptions): LimiterStore => {
+export const getRateLimiterInstance = (options: RateLimiterOptions): LimiterStore => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
   if (existing) return existing;
@@ -44,15 +38,7 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
   } else {
     // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
     const insurance = new RateLimiterMemory(options);
-    instance = new RateLimiterDrizzle({
-      ...options,
-      storeClient: db,
-      schema: rateLimitsTable,
-      insuranceLimiter: insurance,
-      // Both blocks last blockDuration: an in-memory block without a duration of its own ends with the window, and the
-      // library then skips the database block every process reads. A zero blockDuration blocks for the rest of the window.
-      ...(inMemoryBlock && { inMemoryBlockOnConsumed: options.points, inMemoryBlockDuration: options.blockDuration }),
-    });
+    instance = new RateLimiterDrizzle({ ...options, storeClient: db, schema: rateLimitsTable, insuranceLimiter: insurance });
     insurances.set(instance, insurance);
   }
 
@@ -66,27 +52,32 @@ const insuranceOf = (store: LimiterStore) => (store instanceof RateLimiterDrizzl
 const msUntil = (expire: Date | null) => (expire ? Math.max(expire.getTime() - Date.now(), 0) : -1);
 
 /**
- * Creates a bucket's row, or restarts an expired one, in one statement, leaving a live count alone. The database
- * store's own upsert reads the row before it writes, so the first requests of a parallel burst on a new key would each
- * start the count at one; after this, every consume increments the row atomically.
- * @param store - The bucket's limiter; only the database store needs the row.
- * @param rateLimitKey - The key as the middleware passes it to the store.
- * @param durationSeconds - The counting window a new or restarted row gets.
+ * Adds `cost` to a bucket's row in one statement: a new or expired row starts at `cost` with a window of `duration`
+ * seconds, a live one gains it, and with `within` only while it stays within that many points.
+ * @returns The row with the cost, or none when `within` refused it.
  */
-export const openBucket = async (store: LimiterStore, rateLimitKey: string, durationSeconds: number) => {
-  if (!(store instanceof RateLimiterDrizzle)) return;
+const addToRow = (key: string, cost: number, duration: number, within?: number) => {
   const now = new Date();
-  const expire = new Date(now.getTime() + durationSeconds * 1000);
-  await db
+  const expired = lte(rateLimitsTable.expire, now);
+  return db
     .insert(rateLimitsTable)
-    .values({ key: store.getKey(rateLimitKey), points: 0, expire })
-    .onConflictDoUpdate({ target: rateLimitsTable.key, set: { points: 0, expire }, setWhere: lte(rateLimitsTable.expire, now) });
+    .values({ key, points: cost, expire: new Date(now.getTime() + duration * 1000) })
+    .onConflictDoUpdate({
+      target: rateLimitsTable.key,
+      set: {
+        points: sql`case when ${expired} then ${cost} else ${rateLimitsTable.points} + ${cost} end`,
+        expire: sql`case when ${expired} then excluded.expire else ${rateLimitsTable.expire} end`,
+      },
+      setWhere: within === undefined ? undefined : or(expired, lte(rateLimitsTable.points, within - cost)),
+    })
+    .returning({ points: rateLimitsTable.points, expire: rateLimitsTable.expire });
 };
 
 /**
  * Takes `cost` points from a bucket while its budget lasts, in one statement: a new or expired bucket starts at `cost`,
  * a live one gains it while it stays within `points`. A spent bucket stays as it is, so a refused request neither counts
- * nor blocks.
+ * nor blocks. `debt` is points already spent that the bucket has not counted: the attempt fits only on top of it, and a
+ * refusal adds it in a second statement.
  * @returns The bucket with this attempt, or null when its budget cannot hold it.
  */
 const takeAttempt = async (
@@ -94,28 +85,18 @@ const takeAttempt = async (
   rateLimitKey: string,
   { points, duration }: { points: number; duration: number },
   cost: number,
+  debt: number,
 ): Promise<RateLimiterRes | null> => {
-  if (cost > points) return null;
+  if (cost > points && !debt) return null;
   if (store instanceof RateLimiterDrizzle) {
-    const now = new Date();
-    const expired = lte(rateLimitsTable.expire, now);
-    const [bucket] = await db
-      .insert(rateLimitsTable)
-      .values({ key: store.getKey(rateLimitKey), points: cost, expire: new Date(now.getTime() + duration * 1000) })
-      .onConflictDoUpdate({
-        target: rateLimitsTable.key,
-        set: {
-          points: sql`case when ${expired} then ${cost} else ${rateLimitsTable.points} + ${cost} end`,
-          expire: sql`case when ${expired} then excluded.expire else ${rateLimitsTable.expire} end`,
-        },
-        setWhere: or(expired, lte(rateLimitsTable.points, points - cost)),
-      })
-      .returning({ points: rateLimitsTable.points, expire: rateLimitsTable.expire });
-    if (!bucket) return null;
-    return new RateLimiterRes(Math.max(points - bucket.points, 0), msUntil(bucket.expire), bucket.points);
+    const key = store.getKey(rateLimitKey);
+    const [bucket] = cost + debt <= points ? await addToRow(key, cost + debt, duration, points) : [];
+    if (bucket) return new RateLimiterRes(Math.max(points - bucket.points, 0), msUntil(bucket.expire), bucket.points);
+    if (debt) await addToRow(key, debt, duration);
+    return null;
   }
   // In memory the count this attempt reads back is its own, so a parallel burst takes the budget one by one here too.
-  const taken = await store.penalty(rateLimitKey, cost);
+  const taken = await store.penalty(rateLimitKey, cost + debt, { customDuration: duration });
   if (taken.consumedPoints <= points) return taken;
   await store.reward(rateLimitKey, cost);
   return null;
@@ -123,8 +104,9 @@ const takeAttempt = async (
 
 /**
  * Counts an attempt before the work it bounds runs, so a parallel burst takes the budget one point at a time and at
- * most `points` attempts go through. A spent budget refuses without counting or blocking.
+ * most `points` attempts go through. A spent budget refuses without counting the attempt or blocking.
  * @param cost - Points the attempt takes at once: a batch of mails counts each one.
+ * @param debt - Points the in-process fast path let through since its last count here: counted, refused or not.
  * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
  *   or the spent bucket that refused it.
  */
@@ -133,17 +115,18 @@ export const reserveAttempt = async (
   rateLimitKey: string,
   limits: { points: number; duration: number },
   cost = 1,
+  debt = 0,
 ): Promise<{ granted: true; store: LimiterStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }> => {
   let holder = store;
   let taken: RateLimiterRes | null;
   try {
-    taken = await takeAttempt(holder, rateLimitKey, limits, cost);
+    taken = await takeAttempt(holder, rateLimitKey, limits, cost, debt);
   } catch (err) {
     const insurance = insuranceOf(store);
     if (!insurance) throw err;
     log.warn('Rate limit attempt counted in process memory', { rateLimitKey, err });
     holder = insurance;
-    taken = await takeAttempt(holder, rateLimitKey, limits, cost);
+    taken = await takeAttempt(holder, rateLimitKey, limits, cost, debt);
   }
   if (taken) return { granted: true, store: holder, state: taken };
   // Read for Retry-After; a bucket reset, expired or given back since the refusal lets the client retry at once.
@@ -277,24 +260,15 @@ export const bulkBodyLength = async (ctx: Context<Env>): Promise<number> => {
   return 1;
 };
 
-/** The request whose code runs now, for a limiter charged where its cost arises (`chargeLimiter`). */
-const scopedRequests = new AsyncLocalStorage<Context<Env>>();
-
 /**
- * Binds the request to everything its handler runs, so `chargeLimiter` can charge a limiter from code that has no
- * request context of its own: a library hook about to do the work a budget bounds.
- */
-export const limiterScope: MiddlewareHandler<Env> = (ctx, next) => scopedRequests.run(ctx, next);
-
-/**
- * Charges `limiter` for the request `limiterScope` bound, at the moment the work it bounds starts, as the limiter does in
- * front of a route.
- * @param limiter - A route limiter; its key reads the bound request.
+ * Charges `limiter` for the request this code runs in (`ambientRequest`), at the moment the work it bounds starts, as
+ * the limiter does in front of a route: for a library hook that has no request context of its own.
+ * @param limiter - A route limiter; its key reads the ambient request.
  * @throws AppError 429 `too_many_requests` once the budget is spent, with the wait in `meta.retryAfter`.
- * @returns False outside a bound request, so the caller can refuse the work.
+ * @returns False outside a request, so the caller can refuse the work.
  */
 export const chargeLimiter = async (limiter: RateLimiterHandler): Promise<boolean> => {
-  const ctx = scopedRequests.getStore();
+  const ctx = ambientRequest();
   if (!ctx) return false;
   await limiter(ctx, async () => {});
   return true;

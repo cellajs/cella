@@ -40,7 +40,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
       cacheRemove(keys.list.base, [channel]);
       queryClient.invalidateQueries({ queryKey: keys.detail.base });
 
-      // Invalidate memberships so enrichment subscriber rebuilds menu
+      // Invalidate memberships so the menu rebuilds
       invalidateMemberships();
 
       callback?.({ status: 'success' });

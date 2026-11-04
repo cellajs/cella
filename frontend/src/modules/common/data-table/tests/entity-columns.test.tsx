@@ -16,6 +16,7 @@ vi.mock('i18next', async (importOriginal) => {
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 const { queryClient } = await import('~/query/query-client');
+const { meKeys } = await import('~/modules/me/query');
 const organizations = await import('~/modules/organization/table/organizations-columns');
 const members = await import('~/modules/memberships/members-table/members-columns');
 const { exportToCsv } = await import('~/lib/export');
@@ -52,6 +53,7 @@ const seenAt = '2026-06-01T08:30:00.000Z';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  queryClient.clear();
 });
 
 describe('row actions column', () => {
@@ -94,12 +96,13 @@ describe('csv export', () => {
     // One count column per organization role, in the hierarchy's order; each role gets its own count.
     const orgRoles: readonly string[] = hierarchy.getRoles('organization');
     const roleCount = (role: string) => orgRoles.indexOf(role) + 2;
+    // The table reads the caller's role from their memberships.
+    queryClient.setQueryData(meKeys.memberships, { items: [{ channelType: 'organization', channelId: 'org-48', role: 'admin' }] });
     const rows = [
       {
         id: 'org-48',
         name: 'Tenant 48',
         createdAt: created,
-        membership: { role: 'admin' },
         included: {
           counts: {
             membership: Object.fromEntries(orgRoles.map((role) => [role, roleCount(role)])),
@@ -107,7 +110,7 @@ describe('csv export', () => {
           },
         },
       },
-      { id: 'org-12', name: 'Organization 12', createdAt: null, membership: null, included: {} },
+      { id: 'org-12', name: 'Organization 12', createdAt: null, included: {} },
       // A row fetched for the export carries the caller's membership under `included`.
       { id: 'org-7', name: 'Seven', included: { membership: { role: 'member' } } },
     ];

@@ -1,20 +1,24 @@
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 
-/** Runtime registry of Yjs-owned fields: the description and the columns derived from it, which the cache takes only from a server write of them. */
-const yjsOwnedFields = new Map<ProductEntityType, string[]>();
+/** Per type, the columns its update operation derives from the description, those only the server computes included. */
+const descriptionColumns = new Map<string, readonly string[]>();
 
-/** Call at module load, in the entity's query.ts. */
-export function registerYjsOwnedFields(entityType: ProductEntityType, fields: string[]): void {
-  yjsOwnedFields.set(entityType, fields);
+/**
+ * Call at module load, in the entity's query.ts. The cache takes these columns only from a server write of the
+ * description, as it takes the description, and a description write's answer brings them (`mergeServerResponse`).
+ */
+export function registerDescriptionColumns(entityType: ProductEntityType, columns: readonly string[]): void {
+  descriptionColumns.set(entityType, columns);
 }
 
 /**
- * The type's registered fields; `description` alone for an unregistered type. An app's test reads its registration here.
+ * The type's Yjs-owned fields: the description and its registered columns. Rows name their type as a runtime string.
+ * An app's test reads its registration here.
  * @public
  */
-export function getYjsOwnedFields(entityType: ProductEntityType): string[] {
-  return yjsOwnedFields.get(entityType) ?? ['description'];
+export function getYjsOwnedFields(entityType: string): string[] {
+  return ['description', ...(descriptionColumns.get(entityType) ?? [])];
 }
 
 /** The stamp a Yjs-owned field is compared by: its own, else the description's, which derived columns follow. */
@@ -39,8 +43,7 @@ export function guardYjsOwnedFields<T extends object>(entityType: string, incomi
   if (!cached) return incoming;
   const guarded = { ...incoming };
   const bothCarryStx = hasStx(incoming) && hasStx(cached);
-  // Rows name their type as a runtime string; an unregistered type gets the default fields.
-  for (const field of getYjsOwnedFields(entityType as ProductEntityType)) {
+  for (const field of getYjsOwnedFields(entityType)) {
     const stamp = yjsFieldStamp(incoming, field);
     const unwritten = stamp === yjsFieldStamp(cached, field) && (stamp !== undefined || bothCarryStx);
     if (unwritten && field in cached) asRecord(guarded)[field] = asRecord(cached)[field];

@@ -186,7 +186,7 @@ describe('per-query IDB persister', () => {
     await persister.persistClient(client);
     await persister.flush();
 
-    expect(await db.queries.where('scope').equals('rq').count()).toBe(1);
+    expect(await db.queries.count()).toBe(1);
     failOnce.mockRestore();
     logged.mockRestore();
   });
@@ -339,7 +339,7 @@ describe('queued mutations across a change of their variables shape', () => {
       buster: '',
       bundledQueries: [],
       mutations: [
-        queuedMutation(versionedKey, { tenantId: 't', tasks: 'throws', stx: { mutationId: 'mut-3' } }),
+        queuedMutation(versionedKey, { tenantId: 't', tasks: 'throws' }),
         queuedMutation(['label', 'update'], { id: 'l1', ops: { name: 'Kept' } }),
       ],
     });
@@ -348,7 +348,6 @@ describe('queued mutations across a change of their variables shape', () => {
 
     expect(restored!.clientState.queries).toHaveLength(1);
     expect(restored!.clientState.mutations.map(({ state }) => state.variables)).toEqual([{ id: 'l1', ops: { name: 'Kept' } }]);
-    await vi.waitFor(async () => expect(await db.failedSync.toArray()).toMatchObject([{ mutationId: 'mut-3', status: 0 }]));
   });
 
   it('hands the lens pass the queue in the shape this bundle reads, so it finds the rows of an older delete', async () => {

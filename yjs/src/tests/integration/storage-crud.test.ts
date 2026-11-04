@@ -254,7 +254,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
         const log = await conn.select({ id: yjsUpdatesTable.id }).from(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, ids.rls));
         return [docs.length, log.length];
       };
-      return tenantId === null ? read(db) : withRlsTx(tenantId, '', read);
+      return tenantId === null ? read(db) : withRlsTx(tenantId, read);
     };
     expect(await rowsVisible('some-other-tenant')).toEqual([0, 0]);
     expect(await rowsVisible(null)).toEqual([0, 0]);

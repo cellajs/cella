@@ -1,9 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
-import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { deleteInactiveMembership, findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 
 /**
@@ -17,11 +15,7 @@ export async function withdrawPendingInvitationOp(ctx: UserContext, id: string) 
 
   await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
 
-  await baseDb.transaction(async (tx) => {
-    const txCtx = { var: { db: tx } };
-    await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [invitation.id] });
-    await deleteInactiveMembership(txCtx, { id: invitation.id });
-  });
+  await deleteInactiveMembership(ctx, { id: invitation.id });
 
   log.info('Membership invitation withdrawn', { inactiveMembershipId: invitation.id });
 }

@@ -183,15 +183,6 @@ class AttachmentStorageService {
     }
   }
 
-  async getStoredVariants(attachmentId: string): Promise<BlobVariant[]> {
-    try {
-      const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
-      return blobs.map((blob) => blob.variant);
-    } catch {
-      return [];
-    }
-  }
-
   /** Store a blob from Uppy file upload (stores as 'raw' variant). */
   async storeUploadBlob(
     file: CustomUppyFile,

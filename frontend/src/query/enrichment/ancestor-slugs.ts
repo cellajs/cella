@@ -1,6 +1,7 @@
 import type { MembershipBase } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { AncestorSlugs } from '~/modules/entities/types';
+import { findMembership } from '~/query/enrichment/helpers';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 import { getField } from '~/utils/get-field';
 import { objectKeys } from '~/utils/object-keys';
@@ -16,11 +17,19 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
   return aKeys.some((type) => a[type] !== b[type]);
 }
 
-/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. */
-export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: readonly ChannelEntityType[], slugIndex: SlugIndex): EnrichableChannel {
+/**
+ * Reads ancestor ids from the caller's membership of the row, which also names its menu parent, then from the row. Reads
+ * a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later.
+ */
+export function enrichWithAncestorSlugs(
+  item: EnrichableChannel,
+  memberships: MembershipBase[],
+  ancestors: readonly ChannelEntityType[],
+  slugIndex: SlugIndex,
+): EnrichableChannel {
   if (ancestors.length === 0) return item;
 
-  const membership: MembershipBase | null = item.membership ?? null;
+  const membership = findMembership(memberships, item.id);
   const slugs: AncestorSlugs = {};
   let found = false;
 

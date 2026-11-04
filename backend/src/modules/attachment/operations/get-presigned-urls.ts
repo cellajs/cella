@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { buildSubjectFromEntity, checkAccessBatch } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
@@ -10,9 +11,7 @@ import type {
 } from '#/modules/attachment/attachment-schema';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
-import { checkAccessBatch } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 type PresignedUrlsBody = z.infer<typeof attachmentPresignedUrlsBodySchema>;
 type PresignedUrlItem = z.infer<typeof attachmentPresignedUrlSchema>;
@@ -55,7 +54,7 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
 
   // The actor carries the system-admin bypass, so `allowed` is already the final verdict.
   const subjects = rows.map((row) => buildSubjectFromEntity('attachment', row));
-  const { results } = checkAccessBatch(accessFrom(ctx), 'read', subjects);
+  const results = checkAccessBatch(accessFrom(ctx), 'read', subjects);
 
   // A row naming storage outside its organization is refused like a denied one, whatever wrote it: an id is signed
   // for every requested variant or rejected whole.

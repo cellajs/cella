@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { elevateAcross } from '../../testing/elevate.ts';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import {
   configureWidePermissions,
+  makeWideHierarchy,
   type WideChannelType,
   type WideProductType,
   type WideRole,
   wideHierarchy,
   wideMembership,
   wideOverrides,
+  wideRoles,
   wideSubject,
 } from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
@@ -27,7 +29,7 @@ const users = ['user1', 'user2', 'user3', 'user4'];
 interface PolicyScenario {
   name: string;
   result: ReturnType<typeof configureWidePermissions>;
-  elevatedGrants?: ReadonlySet<string>;
+  hierarchy: EntityHierarchy;
 }
 
 const scenarios: PolicyScenario[] = [
@@ -52,6 +54,7 @@ const scenarios: PolicyScenario[] = [
           break;
       }
     }),
+    hierarchy: makeWideHierarchy({ organization: ['admin', 'member'], workspace: wideRoles.all, project: wideRoles.all }),
   },
   {
     name: 'own-conditional grants',
@@ -74,6 +77,7 @@ const scenarios: PolicyScenario[] = [
           break;
       }
     }),
+    hierarchy: wideHierarchy,
   },
   {
     name: 'public read + elevated roles',
@@ -95,7 +99,7 @@ const scenarios: PolicyScenario[] = [
           break;
       }
     }),
-    elevatedGrants: elevateAcross(wideHierarchy, ['admin']),
+    hierarchy: makeWideHierarchy({ organization: ['admin'], workspace: ['admin'], project: ['admin'] }),
   },
 ];
 
@@ -158,11 +162,11 @@ const makeRandomizer = (seed: number) => {
 
 describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
   for (const scenario of scenarios) {
-    it(`agrees on can + membership for every access: ${scenario.name}`, () => {
+    it(`agrees on can for every access: ${scenario.name}`, () => {
       const SEED = 0xacce55;
       const { randomSubject, randomAccess } = makeRandomizer(SEED);
       const { policyMatrix, publicReadGrants } = scenario.result;
-      const baseOptions = { ...wideOverrides, publicGrants: publicReadGrants, elevatedGrants: scenario.elevatedGrants };
+      const baseOptions = { hierarchy: scenario.hierarchy, publicGrants: publicReadGrants };
 
       for (let iteration = 0; iteration < 150; iteration++) {
         const subject = randomSubject();
@@ -177,8 +181,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
             isSystemAdmin: access.isSystemAdmin,
           });
           const label = `seed=0x${SEED.toString(16)} scenario=${scenario.name} iteration=${iteration} access=${index}`;
-          expect(batch[index].can, label).toEqual(single.can);
-          expect(batch[index].membership, label).toBe(single.membership);
+          expect(batch[index], label).toEqual(single.can);
         }
       }
     });
@@ -197,15 +200,10 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
     actorId: 'user2',
   };
 
-  it("'deny' fail-closes just the invalid access, order-independent", () => {
+  it('fail-closes just the invalid access, order-independent', () => {
     // invalid FIRST: a shared class would cache its deny onto the valid access
-    const decisions = getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides, onInvalidMembership: 'deny' });
-    expect(decisions[0].can.read).toBe(false);
-    expect(decisions[0].membership).toBeNull();
-    expect(decisions[1].can.read).toBe(true);
-  });
-
-  it("default ('throw') surfaces the malformed membership like the single-access path", () => {
-    expect(() => getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides })).toThrow(/Membership/);
+    const decisions = getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides });
+    expect(decisions[0].read).toBe(false);
+    expect(decisions[1].read).toBe(true);
   });
 });

@@ -1,14 +1,24 @@
 import { sql } from 'drizzle-orm';
+import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { cdcPublicationName } from '../constants';
 import { cdcDb, type Executor } from '../lib/db';
 import { log } from '../lib/pino';
 import { tableRegistry } from '../table-registry';
 
+/** The row filter the CDC migration gives a tracked table, as `pg_publication_tables` shows it; null for none. */
+function expectedRowFilter(table: string): string | null {
+  const meta = tableRegistry.get(table);
+  const filter = meta?.kind === 'entity' ? publicationRowFilter(meta.type, meta.table) : undefined;
+  // Postgres shows a filter in parentheses.
+  return filter ? `(${filter})` : null;
+}
+
 /**
- * What the stream depends on: `wal_level`, a publication that holds exactly the tables of the worker's registry,
- * replica identity FULL on each (the worker diffs old and new rows, and a delete needs the old one), and a role that
- * may read the slot and write past row-level security. The CDC migration sets up the first three, and a failure in it
- * is only a warning in its log, so the worker checks before it reads.
+ * What the stream depends on: `wal_level`, a publication that holds exactly the tables of the worker's registry, each
+ * with its row filter (the draft boundary: no draft of a product reaches the worker), replica identity FULL on each
+ * (the worker diffs old and new rows, and a delete needs the old one), and a role that may read the slot and write past
+ * row-level security. The CDC migration sets up the publication and the replica identity, and a failure in it is only a
+ * warning in its log, so the worker checks before it reads.
  * @param db - What the catalog is read through: the worker's pool, or a transaction a test set a role in.
  * @returns What is wrong, in sentences for the log and health; empty when the setup holds.
  */
@@ -19,15 +29,23 @@ export async function checkReplicationSetup(db: Executor = cdcDb): Promise<strin
   const walLevel = (await db.execute<{ wal_level: string }>(sql`SHOW wal_level`)).rows[0]?.wal_level;
   if (walLevel !== 'logical') problems.push(`wal_level is '${walLevel}': logical replication needs 'logical'`);
 
-  const published = (
-    await db.execute<{ tablename: string }>(
-      sql`SELECT tablename FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND schemaname = 'public'`,
-    )
-  ).rows.map((row) => row.tablename);
-  const missing = tracked.filter((table) => !published.includes(table));
+  const publishedFilters = new Map(
+    (
+      await db.execute<{ tablename: string; rowfilter: string | null }>(
+        sql`SELECT tablename, rowfilter FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND schemaname = 'public'`,
+      )
+    ).rows.map((row) => [row.tablename, row.rowfilter]),
+  );
+  const published = [...publishedFilters.keys()];
+  const missing = tracked.filter((table) => !publishedFilters.has(table));
   const extra = published.filter((table) => !tracked.includes(table));
+  const misfiltered = tracked.filter((table) => publishedFilters.has(table) && publishedFilters.get(table) !== expectedRowFilter(table));
   if (missing.length) problems.push(`publication '${cdcPublicationName}' lacks tracked tables: ${missing.join(', ')}. Run the CDC migration`);
   if (extra.length) problems.push(`publication '${cdcPublicationName}' holds tables the worker does not track: ${extra.sort().join(', ')}`);
+  if (misfiltered.length) {
+    const found = misfiltered.map((table) => `${table} (${publishedFilters.get(table) ?? 'none'}, expected ${expectedRowFilter(table) ?? 'none'})`);
+    problems.push(`publication '${cdcPublicationName}' has another row filter on: ${found.join(', ')}. Run the CDC migration`);
+  }
 
   const identities = await db.execute<{ relname: string }>(
     sql`SELECT c.relname FROM pg_class c

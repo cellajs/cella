@@ -3,9 +3,11 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import type { LogicalReplicationService, PgoutputPlugin } from 'pg-logical-replication';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-/** A stand-in for Postgres: whether it answers, whether the slot exists, and every statement it was sent. */
-const postgres = vi.hoisted(() => ({ reachable: true, slot: true, heldByAnother: false, statements: [] as string[] }));
-const books = vi.hoisted(() => ({ rebuildAllowed: true }));
+/**
+ * A stand-in for Postgres: whether it answers, whether the slot exists and predates its publication, and every
+ * statement it was sent.
+ */
+const postgres = vi.hoisted(() => ({ reachable: true, slot: true, stale: false, heldByAnother: false, statements: [] as string[] }));
 
 vi.mock('../lib/db', () => {
   const dialect = new PgDialect();
@@ -15,7 +17,7 @@ vi.mock('../lib/db', () => {
         const text = dialect.sqlToQuery(query).sql;
         postgres.statements.push(text);
         if (!postgres.reachable) throw new Error('ECONNREFUSED');
-        if (text.includes('pg_create_logical_replication_slot')) postgres.slot = true;
+        if (text.includes('pg_create_logical_replication_slot')) Object.assign(postgres, { slot: true, stale: false });
         if (text.includes('pg_drop_replication_slot')) postgres.slot = false;
         if (text.includes('FROM pg_replication_slots'))
           return { rows: postgres.slot ? [{ wal_status: 'reserved', active: postgres.heldByAnother }] : [] };
@@ -28,24 +30,26 @@ vi.mock('../lib/db', () => {
 
 vi.mock('../network/websocket-client', () => ({ wsClient: { isConnected: () => true, whenConnected: async () => {}, apiAwaySince: null } }));
 
-// The lost cases have their own tests: here the loop gets a `settle` step, and only the rebuild limit is read.
+// The lost cases have their own tests: here the loop gets a `settle` step.
 vi.mock('../pipeline/verify', () => ({
-  rebuildAllowed: () => books.rebuildAllowed,
   readLostCaseFacts: vi.fn(async () => ({ hasHistory: false, countersAreLost: false })),
   rebuildBooks: vi.fn(),
   rebuildWasInterrupted: vi.fn(),
   ensureBooksStateRestored: vi.fn(),
 }));
 
-import { resourceLimits } from '../constants';
+import { cdcSlotName, resourceLimits } from '../constants';
+import { log } from '../lib/pino';
+import { gradeWorker } from '../network/health';
 import { runBetweenFlushes } from '../pipeline/handle-message';
 import { subscribeWithReconnect } from '../pipeline/replication';
+import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 
-const { slotTakeover } = resourceLimits;
+const { delaysMs } = resourceLimits.reread;
+const { rereadUnhealthyMs, walLagUnhealthyBytes } = resourceLimits.health;
 
 const slotIsMissing = Object.assign(new Error('replication slot "cdc_slot" does not exist'), { code: '42704' });
-const slotPredatesPublication = Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' });
 
 /** A service whose subscribe() rejects `failures` times with `error`, then stays pending as a live subscription does. */
 function makeService(failures: number, error: Error = slotIsMissing): LogicalReplicationService {
@@ -72,8 +76,8 @@ const noOtherSteps = { checkSetup: async () => [], settle: async () => {} };
 beforeEach(() => {
   vi.useFakeTimers();
   replicationState.reset();
-  Object.assign(postgres, { reachable: true, slot: true, heldByAnother: false, statements: [] });
-  books.rebuildAllowed = true;
+  Object.assign(postgres, { reachable: true, slot: true, stale: false, heldByAnother: false, statements: [] });
+  metrics.lagBytes = null;
 });
 
 afterEach(() => {
@@ -86,7 +90,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
   it('stops the service of an attempt that failed before the next one starts', async () => {
     const service = makeService(1);
     void subscribeWithReconnect(plugin, { createService: () => service, ...noOtherSteps });
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs + 10);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + 10);
 
     expect(service.stop).toHaveBeenCalledTimes(1);
     expect(service.subscribe).toHaveBeenCalledTimes(2);
@@ -127,7 +131,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     expect(replicationState.setupProblems).toEqual(["publication 'cdc_pub' lacks tracked tables: attachments"]);
 
     // Once the setup holds, the worker reads.
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs * 2 + 10);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + delaysMs[1] + 10);
     expect(service.subscribe).toHaveBeenCalledTimes(1);
     expect(replicationState.setupProblems).toEqual([]);
   });
@@ -138,7 +142,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     const checkSetup = async () => ["publication 'cdc_pub' lacks tracked tables: attachments, tenants"];
 
     void subscribeWithReconnect(plugin, { createService: () => service, checkSetup, settle: async () => {} });
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs * 3);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + delaysMs[1] + delaysMs[2]);
 
     expect(slotsMade()).toBe(0);
     expect(service.subscribe).not.toHaveBeenCalled();
@@ -152,10 +156,10 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     expect(slotLookups()).toBe(1);
 
     // Each attempt looks again: a database that was dropped took its slots with it.
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(delaysMs[0]);
     expect(slotLookups()).toBe(2);
 
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(delaysMs[1]);
     expect(slotLookups()).toBe(3);
   });
 
@@ -172,7 +176,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     expect(slotsMade()).toBe(0);
 
     postgres.reachable = true;
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(delaysMs[0]);
 
     expect(slotsMade()).toBe(1);
     expect(service.subscribe).toHaveBeenCalledTimes(2);
@@ -184,7 +188,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     const service = makeService(2, held);
 
     void subscribeWithReconnect(plugin, { createService: () => service, ...noOtherSteps });
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs * 2);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + delaysMs[1]);
 
     expect(service.subscribe).toHaveBeenCalledTimes(3);
     expect(slotsMade()).toBe(0);
@@ -202,13 +206,13 @@ describe('subscribeWithReconnect: between two subscriptions', () => {
     postgres.heldByAnother = true;
 
     void subscribeWithReconnect(plugin, { createService: () => service, checkSetup: async () => [], settle });
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs + 10);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + 10);
     expect(service.subscribe).toHaveBeenCalledTimes(2);
     expect(settle).not.toHaveBeenCalled();
 
     // The outgoing worker is gone: this attempt settles, then subscribes.
     postgres.heldByAnother = false;
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+    await vi.advanceTimersByTimeAsync(delaysMs[1]);
     expect(settle).toHaveBeenCalledTimes(1);
     expect(service.subscribe).toHaveBeenCalledTimes(3);
   });
@@ -238,41 +242,71 @@ describe('subscribeWithReconnect: between two subscriptions', () => {
   });
 });
 
-describe('subscribeWithReconnect: a slot that predates its publication', () => {
-  it('drops the slot, and treats the new one as a lost case', async () => {
-    const service = makeService(1, slotPredatesPublication);
-    const settle = vi.fn(async () => {});
+describe('subscribeWithReconnect: past the WAL bound', () => {
+  const held = Object.assign(new Error('replication slot "cdc_slot" is active for PID 4242'), { code: '55006' });
 
-    void subscribeWithReconnect(plugin, { createService: () => service, checkSetup: async () => [], settle });
-    await vi.advanceTimersByTimeAsync(0);
-
-    // The sender is ended first, then the slot goes. Nothing is made here.
-    expect(sent('pg_terminate_backend')).toBe(1);
-    expect(slotsDropped()).toBe(1);
-    expect(slotsMade()).toBe(0);
-    expect(settle).toHaveBeenCalledExactlyOnceWith(false);
-
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
-
-    // The next attempt finds no slot and makes one, and the loss is handled before the stream is read.
-    expect(slotsMade()).toBe(1);
-    expect(settle).toHaveBeenLastCalledWith(true);
-    expect(service.subscribe).toHaveBeenCalledTimes(2);
-  });
-
-  it('must not drop a slot again while a rebuild is not allowed: every given-up position shares one limit', async () => {
-    books.rebuildAllowed = false;
-    const service = makeService(4, slotPredatesPublication);
+  it('must not drop a slot past the bound for a failure of a moment: a worker behind it that reads keeps its backlog', async () => {
+    // A deploy of a worker that is far behind: the outgoing one hands the slot over.
+    metrics.lagBytes = walLagUnhealthyBytes;
+    const service = makeService(2, held);
 
     void subscribeWithReconnect(plugin, { createService: () => service, ...noOtherSteps });
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs * 2);
+    await vi.advanceTimersByTimeAsync(delaysMs[0] + delaysMs[1]);
 
     expect(service.subscribe).toHaveBeenCalledTimes(3);
     expect(slotsDropped()).toBe(0);
+  });
 
-    // The interval has passed: the slot goes now.
-    books.rebuildAllowed = true;
-    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
+  it('drops a slot past the bound once the worker has not got past its failure for ten minutes, and makes a new one as a lost case', async () => {
+    metrics.lagBytes = walLagUnhealthyBytes;
+    const service = makeService(Number.POSITIVE_INFINITY, new Error('Connection terminated unexpectedly'));
+    const settle = vi.fn(async () => {});
+
+    void subscribeWithReconnect(plugin, { createService: () => service, checkSetup: async () => [], settle });
+    await vi.advanceTimersByTimeAsync(rereadUnhealthyMs - 1000);
+    expect(slotsDropped()).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(delaysMs.at(-1) ?? 0);
     expect(slotsDropped()).toBe(1);
+    expect(slotsMade()).toBe(1);
+    expect(settle).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('subscribeWithReconnect: a slot that predates its publication', () => {
+  const slotPredatesPublication = Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' });
+
+  /** A slot made by hand ahead of its publication: every stream of it fails, until the slot is made anew. */
+  const staleService = () => {
+    const service = makeService(0);
+    vi.mocked(service.subscribe).mockImplementation(() => (postgres.stale ? Promise.reject(slotPredatesPublication) : new Promise<never>(() => {})));
+    return service;
+  };
+
+  it('keeps the slot and turns unhealthy, naming the slot; one an operator drops is made anew as a lost case', async () => {
+    postgres.stale = true;
+    vi.mocked(log.error).mockClear();
+    const service = staleService();
+    const settle = vi.fn(async () => {});
+
+    void subscribeWithReconnect(plugin, { createService: () => service, checkSetup: async () => [], settle });
+    await vi.advanceTimersByTimeAsync(rereadUnhealthyMs + 60_000);
+
+    // Read again at every attempt, and nothing drops the slot.
+    expect(slotsDropped()).toBe(0);
+    expect(sent('pg_terminate_backend')).toBe(0);
+    expect(settle).not.toHaveBeenCalledWith(true);
+    expect(gradeWorker().status).toBe('unhealthy');
+    expect(gradeWorker().reasons).toContain('reading_again');
+    expect(vi.mocked(log.error)).toHaveBeenCalledWith(expect.stringContaining(`replication slot '${cdcSlotName}'`), expect.anything());
+
+    // The operator runs pg_drop_replication_slot: the next attempt makes a slot, and the loss is settled before the stream is read.
+    postgres.slot = false;
+    const attempts = vi.mocked(service.subscribe).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(delaysMs.at(-1) ?? 0);
+
+    expect(slotsMade()).toBe(1);
+    expect(settle).toHaveBeenLastCalledWith(true);
+    expect(service.subscribe).toHaveBeenCalledTimes(attempts + 1);
   });
 });

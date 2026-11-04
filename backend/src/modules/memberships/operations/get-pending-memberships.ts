@@ -4,7 +4,7 @@ import { withActorRefs } from '#/modules/actors/actor-refs';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 
 type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchema>;
 

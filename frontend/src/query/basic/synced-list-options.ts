@@ -1,7 +1,7 @@
 import type { QueryClient, QueryKey, QueryMeta, SkipToken } from '@tanstack/react-query';
 import { asRecord } from 'shared/utils/as-record';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
-import { getEntityRangeFetch, syncChunkSize } from '~/query/basic/entity-query-registry';
+import { getEntityRangeFetch, rowOutsideRange, seqOf, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
@@ -75,12 +75,6 @@ function scopeCursor(entityType: string, { organizationId, channelId }: SyncedLi
   return channelId ? Math.max(orgSeq, store.getChannelSeq(organizationId, channelId, entityType)) : orgSeq;
 }
 
-/** The org sequence position a product row carries, which `ItemData` does not type. */
-function seqOf(row: ItemData): number | undefined {
-  const { seq } = asRecord(row);
-  return typeof seq === 'number' ? seq : undefined;
-}
-
 /** A live range row belongs to a home list when it is homed there, and to a list that spans homes always. */
 function fitsList(entityType: string, queryKey: QueryKey, row: ItemData): boolean {
   const { deletedAt } = asRecord(row);
@@ -121,14 +115,12 @@ async function readOverlapped(entityType: string, scope: SyncedListScope, afterS
     const answer = await rangeFetch({ organizationId, tenantId, channelId, query }).catch((cause) => {
       throw new OverlappedChangesError('The changes a list read overlapped could not be read', { cause });
     });
-    const seqs = answer.items.flatMap((row) => seqOf(row) ?? []);
-    // As `fetchRangeAndPatch` reads it: a server that ignored the range answers an ordinary page, with no tombstones.
-    if (seqs.some((seq) => seq <= query.afterSeq || seq > untilSeq)) throw new OverlappedChangesError('A range read answered rows outside its range');
+    if (rowOutsideRange(answer.items, query)) throw new OverlappedChangesError('A range read answered rows outside its range');
     for (const row of answer.items) ranged.set(row.id, row);
 
-    // Each row change has a position of its own, so a full chunk, ordered by position, continues after its newest row.
+    // A canonical read reads on past a full chunk of a list it holds whole: each row change has a position of its own, so it continues after its newest row.
     const full = answer.items.length >= syncChunkSize;
-    const newest = Math.max(fromSeq, ...seqs);
+    const newest = Math.max(fromSeq, ...answer.items.flatMap((row) => seqOf(row) ?? []));
     if (full && newest === fromSeq) throw new OverlappedChangesError('A full range chunk carried no positions');
     fromSeq = full ? newest : untilSeq;
     // Changes may have arrived while the range was read.

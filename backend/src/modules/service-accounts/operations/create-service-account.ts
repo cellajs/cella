@@ -1,11 +1,11 @@
+import { buildSubjectFromEntity } from 'shared';
 import type { UserContext } from '#/core/context';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { issueApiKey } from '#/modules/service-accounts/operations/issue-api-key';
 import { countActiveServiceAccounts, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
-import { getValidChannel } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 import { log } from '#/utils/logger';
 

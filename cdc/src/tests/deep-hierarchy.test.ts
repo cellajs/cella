@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
 import { createActivity } from '../services/create-activity';
-import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
+import { computeBatchUnifiedDeltas, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/count-deltas';
 import { changeEvent, mockCdcActivity, tableMetaOf } from './factories';
 
@@ -73,11 +73,6 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
     const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })], h);
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
-  });
-
-  it('frontierNodeKeys rolls a full-depth row up to org + every non-null ancestor', () => {
-    expect(frontierNodeKeys('item', fullDepthRow, 'o1', h)).toEqual(['o1', 'p1', 's1', 'c1']);
-    expect(frontierNodeKeys('item', courseStreamRow, 'o1', h)).toEqual(['o1', 'c1']);
   });
 
   it('an org-less row fails the batch loudly instead of inventing a scope', () => {
@@ -227,6 +222,31 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
       ]),
     );
     expect(deltas).toHaveLength(3);
+  });
+});
+
+// ── Versioned signals ────────────────────────────────────────────────────────
+
+describe('the version of channel.deleted (getCountDeltas)', () => {
+  const channelChange = (type: string, action: InsertActivityModel['action'], organizationId: string | null = 'o1') =>
+    getCountDeltas(
+      tableMetaOf('entity', type),
+      mockCdcActivity({ action, organizationId }),
+      { id: `${type}-1` },
+      { id: `${type}-1`, organizationId },
+      h,
+    );
+  const versions = (deltas: ReturnType<typeof getCountDeltas>) =>
+    deltas.filter((delta) => Object.keys(delta.deltas).some((key) => key.startsWith('s:')));
+
+  it("moves on the organization's row at the delete of every channel below it, and at no other change of one", () => {
+    for (const type of ['course', 'courseSection', 'project']) {
+      expect(versions(channelChange(type, 'delete'))).toEqual([{ channelKey: 'o1', deltas: { 's:channel.deleted': 1 } }]);
+      expect(versions(channelChange(type, 'create'))).toEqual([]);
+      expect(versions(channelChange(type, 'update'))).toEqual([]);
+    }
+    // An organization's activity names no organization: its delete follows the archive of its tenant.
+    expect(versions(channelChange('organization', 'delete', null))).toEqual([]);
   });
 });
 

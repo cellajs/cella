@@ -1,7 +1,7 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
-import { getValidChannel } from '#/permissions';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 
 interface CheckInvitesInput {
   emails: string[];

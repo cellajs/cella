@@ -4,7 +4,7 @@ import { appConfig, type ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
 import { type ChannelEntityContext, getTools, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
 import { heldContextRoles } from '~/modules/entities/context-roles';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
+import { useCan } from '~/modules/entities/use-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
 export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityContext<C> & { entityType: C; toolsConfig?: ToolsConfig };
@@ -19,10 +19,9 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   const channelType = entity.entityType;
   const slot: `${C}.settings` = `${channelType}.settings`;
 
-  // Grants: every entity action the actor holds on this channel, resolved per row
-  const resolveCan = useResolveCan();
-  const can = entity.can?.[channelType];
-  const grants = appConfig.entityActions.filter((action) => resolveCan(can?.[action], entity.createdBy));
+  // Grants: every entity action the actor holds on this channel
+  const can = useCan();
+  const grants = appConfig.entityActions.filter((action) => can(action, channelType, entity));
 
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const pairs = heldContextRoles(entity, myMemberships?.items ?? []);

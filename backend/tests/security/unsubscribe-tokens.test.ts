@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb } from '#/db/db';
 import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
-import { findOrCreatePreferences } from '#/modules/notification/notification-queries';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUser } from '#/modules/user/user-mocks';
@@ -97,7 +96,7 @@ describe('Unsubscribe links', () => {
       ['digest', { ...everythingOn, digest: 'off' }],
     ] as const) {
       const owner = await signUp(`${category}-reader`);
-      await findOrCreatePreferences({ var: { db: baseDb } }, { userId: owner.id });
+      await adminDb.insert(notificationPreferencesTable).values({ userId: owner.id });
       const link = buildUnsubscribeLink(owner.id, category);
 
       // Mail scanners and link previews open links on their own: opening leads to the confirmation page only.

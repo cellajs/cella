@@ -4,7 +4,7 @@ import type { UserContext } from '#/core/context';
 import { tenantReadAs } from '#/db/tenant-context';
 import { groupingChannelTypes } from '#/modules/seen/helpers/tracked-products';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
-import { actorFrom } from '#/permissions/access';
+import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
@@ -16,7 +16,7 @@ import { getEntityTable } from '#/tables';
 export async function getUnseenCountsOp(ctx: UserContext) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
-  const actor = actorFrom(ctx);
+  const access = accessFrom(ctx);
 
   // No memberships means no channels to badge: administrator bypass widens rows inside an organization, not the organization set.
   if (memberships.length === 0) {
@@ -40,9 +40,9 @@ export async function getUnseenCountsOp(ctx: UserContext) {
     const readableTypes: SeenTrackedProductType[] = [];
 
     for (const productType of appConfig.seenTrackedProductTypes) {
-      const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
+      const readFilter = resolveCollectionReadFilter(access, productType, organizationId);
       const entityTable = getEntityTable(productType);
-      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
+      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, access);
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(productType);
       if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;

@@ -12,7 +12,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/auth/tokens/`: `token-lifecycle.ts`, `token-policies.ts`, `tokens-queries.ts` (the compare-and-set), `tokens-db.ts`, `operations/open-link-token.ts`, tests `token-lifecycle.test.ts`, `token-policies.test.ts`.
   - Token types in `shared/config/config.default.ts` (and `config.template.ts`): six, `oauth-verification, invitation, confirm-mfa, magic, oauth-connect, step-up`; policies are exhaustive through `satisfies Record<TokenType, TokenPolicy>`.
   - Issuers: `auth/magic/operations/send-magic-link.ts`, `auth/oauth/operations/send-oauth-verification-email.ts`, `auth/oauth/oauth-handlers.ts` (connect pin), `auth/mfa/operations/mfa-challenge.ts`, `auth/step-up/operations/send-step-up-code.ts`.
-  - Invitation issuers: `auth/invitations/operations/{resend-invitation,confirm-invitation-address}.ts`, `modules/system/operations/create-invite.ts`, `modules/memberships/operations/create-memberships.ts`, `deferred-invites.ts`.
+  - Invitation issuers: `modules/memberships/operations/mail-invitations.ts` (every membership invitation link), `auth/invitations/operations/{resend-invitation,confirm-invitation-address}.ts`, `modules/system/operations/create-invite.ts`.
   - Spenders: `auth/sessions/operations/sign-out.ts`, `auth/mfa/operations/mfa-challenge.ts`, `auth/passkeys/passkeys-handlers.ts`, `auth/oauth/operations/{spend-connect-pin,handle-oauth-callback}.ts`, `auth/general/general-handlers.ts` (invitation), `auth/step-up/step-up-handlers.ts`.
   - Unsubscribe: `modules/notification/helpers/category-token.ts`, `operations/unsubscribe.ts`, routes in `notification-routes.ts`.
   - Other random sources: `auth/passkeys/operations/passkey-challenges.ts` and `auth/totps/totps-handlers.ts` (A3), `modules/service-accounts/helpers/api-key.ts` (A5), `lib/mailer.ts` (CSP nonce).
@@ -132,10 +132,10 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### A6 Address-based trust
 - **Gain:** system admin from a spoofed address.
-- **Merges:** `SYSTEM_ADMIN_IP_ALLOWLIST` through `ipRestriction`, where the client address comes from behind the load balancer (which forwarded header, set by whom), the internal listener's peer check (`internalSourceRefusal`), rate-limiter keys by address, geoip, request details in mails.
+- **Merges:** `SYSTEM_ADMIN_IP_ALLOWLIST` through `isSystemAccessAllowed`, where the client address comes from behind the load balancer (which forwarded header, set by whom), the internal listener's peer check (`internalSourceRefusal`), rate-limiter keys by address, geoip, request details in mails.
 - **Advisories:** 3, plus 1 pattern lesson (hono `ipRestriction` IPv4-mapped IPv6, non-canonical IPv6, IPv4 bypass; pattern: spoofed connection info).
 - **Files:**
-  - `backend/src/middlewares/guard/sys-admin-guard.ts` (the one `ipRestriction` use).
+  - `backend/src/middlewares/guard/sys-admin-guard.ts` (reads the `isSystemAdmin` that `userGuard` sets only from an allowed address).
   - `backend/src/lib/listeners.ts` (`internalSourceRefusal`), `backend/src/lib/request-details.ts` (country, browser, os; no address), `backend/src/lib/geoip.ts`, `backend/src/middlewares/rate-limiter/` (`helpers.ts`, `core.ts`).
   - Added files: `backend/src/utils/get-ip.ts` (the one function that yields the client address), `backend/src/utils/system-access.ts` (allowlist parsing and `isSystemAccessAllowed`), `backend/src/utils/ip-subnet.ts` (`toRateLimitIp`, `isPublicIp`, `unmapIPv4`).
   - Other call sites: `middlewares/guard/user-guard.ts` (sets `isSystemAdmin`), `modules/auth/sessions/operations/{resolve-session,create-session}.ts`, `modules/entities/entities-handlers.ts` (reports `systemAccessAllowed`), `modules/mcp/mcp-tools.ts` (copies `x-forwarded-for` and `authorization` into the in-process request), `modules/oauth-server/interaction-policy.ts` (rebuilds a Context from `cookie`, `x-forwarded-for` and the node socket).
@@ -160,20 +160,20 @@ One class is one review iteration. The scout verifies every path below at the re
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
   - `backend/src/permissions/`: `get-valid-product.ts`, `get-valid-channel.ts` (re-exported by `index.ts`), `row-predicates.ts` (`buildCollectionReadWhere`), `collection-scope.ts`, `split-by-permission.ts`, `view-read-status.ts` (`resolveViewReadStatus`), `channel-collection-scope.ts`.
   - `backend/src/db/tenant-context.ts` (`tenantRead`, `tenantReadAs`, `tenantReadUnlessInTransaction`).
-  - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`; `backend/src/middlewares/product-cache/product-cache.ts`.
+  - `backend/src/modules/entities/entities-queries.ts`; `backend/src/modules/memberships/helpers/member-counts.ts`.
   - `backend/src/modules/entities/helpers/dispatch-to-stream.ts` (dispatch and read decisions) and `entities/stream/` (`send-signal.ts`, `audiences.ts`, `build-change.ts`, `subscriber-manager.ts`).
   - `backend/src/modules/mcp/` (`mcp-tools.ts`, `mcp-server.ts`, `mcp-routes.ts`; no read code of its own); `backend/src/modules/yjs/operations/authorize-yjs-editor.ts` (the document-to-entity access check); `shared/src/utils/yjs-token.ts` (B5).
   - `getUsersOp` in `backend/src/modules/user/operations/get-users.ts`, query in `user-queries.ts`; `backend/src/middlewares/guard/relatable-guard.ts`.
-  - Activities: no read route; the table is read only for a cursor id in `entities-queries.ts`.
+  - Activities: no read route, and no API code reads the table.
   - Callers: `getValidProduct` in `modules/attachment/operations/{get-attachment,update-attachment,link-attachment-keys}.ts` and `authorize-yjs-editor.ts`; `getValidChannel` in organization, memberships (`get-members`, `get-pending-memberships`, `check-invites`, `create-memberships`, `delete-memberships`, `update-membership`, `resend-pending-invitation`, `withdraw-pending-invitation`) and service-accounts operations; `resolveCollectionReadFilter` in the attachments list, `get-unseen-counts.ts`, `mark-seen.ts`, `propagation-hints.ts`, `view-read-status.ts`; `splitByPermission` in `delete-attachments.ts`, `delete-organizations.ts`; `filterExistingProductIds` in `entities/embedding-queries.ts`; `checkAccessFanout` in `notification/operations/fan-out.ts`.
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
 - **Holds:**
   - `cross-tenant`: a user of tenant A listing or reading tenant B attachments and organization, or signing tenant A's attachment from B's session.
   - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`getUsers` outside a shared org, a cache warmed on org A's path served on org B's.
   - `defense-in-depth`: `getOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
-  - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; forged prefixes and cross-org claims on counters.
+  - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; a grant below the organization or a row condition proving no catchup frontier.
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
-  - `entities/operations/app-catchup.test.ts`, `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a forged prefix, a hint naming an unreadable row.
+  - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
   - `notification-access`: inbox, instant mail and digest naming a left organization's items. `mark-seen`: confirming a deleted or hidden attachment.
   - `relatable-organizations`, `user-list-system-role`, `member-personal-view`, `archived-tenant`, `tenant-access`.
   - `yjs-token` and `tests/yjs-http`: token or pull/push for an entity the caller may not update; `tests/mcp` and `mcp-server.test.ts`: a call outside scopes.
@@ -201,8 +201,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/service-accounts`: a member cannot create an account, key scopes mask grants, revoke through another account, no grant at the tenant door, quota.
   - `tests/integration/system-roles-write-guard`: `runtime_role` cannot insert, update or delete `system_roles` even with the grant open; the admin connection and the user-delete cascade still work.
   - `user-list-system-role` (B3 field visibility, listed because the plan names it); `tests/system-update-user`; `tests/tenants`.
-  - The frontend parity test of the `can` map.
-- **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table; the parity test under an app's hierarchy.
+- **Asks:** every write that carries a role or a binding, who may set it and the cap, as a table.
 - **Not this class:** field visibility of `role` and the system role in user lists belongs to B3. Cross-tenant and object reads belong to B1. Invitation address takeover belongs to C7. API key hashing and token signing belong to A5. Session cache and bindings cache staleness belong to C8. SSE and catchup grants belong to B1 and B4.
 
 ### B3 Property-level access
@@ -233,10 +232,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/entities/stream/`: audiences, build-change, helpers, send-signal, signal-registry, subscriber-manager, types, versioned-signals.
   - `backend/src/modules/entities/entities-handlers.ts` (stream handler, catchup), `backend/src/schemas/stream-schemas.ts`.
   - `sync-events.ts` is the frontend prioritizer file; the backend equivalents are `modules/entities/entities-listeners.ts` and `stream/send-signal.ts`.
-  - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/pipeline/parse-message.ts` (draft filter).
-  - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `organizationSubscribers`, `productEventReaders`, `dispatchChange`, `dispatchMoveOuts`.
-  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal, generation resync.
-  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStream`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
+  - `cdc/src/services/api-messages.ts` (audience key, activity id), `cdc/src/services/setup-check.ts` (the publication's draft row filter, compared before every subscription).
+  - `backend/src/modules/entities/helpers/dispatch-to-stream.ts`: `accessDecisions`, `rowReadDecisions`, `readerFrames`, `dispatchChange`, `dispatchMoveOuts`.
+  - `backend/src/modules/entities/entities-listeners.ts`: bus listeners for product events, session end, membership refresh plus user signal, versioned reader signal; `backend/src/lib/cdc-websocket.ts` (`noteGeneration` ends every app stream on a new generation).
+  - `backend/src/modules/entities/helpers/session-streams.ts` (`closeAppStreams`, `endOrganizationStreams`, `resyncAppStreams`); `backend/src/modules/entities/operations/stream-session-sweep.ts` (60 s sweep).
   - `backend/src/modules/tenants/operations/apply-tenant-status-change.ts` (archive and restore close the streams); `backend/src/modules/auth/sessions/operations/revoke-sessions.ts` (emits `session.revoked`).
   - `sendSignal` callers: `entities-listeners.ts`, `modules/notification/operations/{fan-out,mark-read}.ts`; declarations in `modules/memberships/memberships-module.ts` and `modules/notification/notification-module.ts`.
   - Catchup: `modules/entities/operations/{app-catchup,propagation-hints}.ts`, `backend/src/permissions/view-read-status.ts`.
@@ -336,7 +335,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Zod 4 drops `__proto__` from record and object input.
   - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
   - jsonb merge is done in SQL from `JSON.stringify` of the parsed value, so a JS object merge never sees stored keys.
-  - The persisted sync store saves only `cursor, generation, caughtUpAt, contrast, publicAlertsSeen, hintsSeen`; the keyed maps are never persisted.
+  - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` map; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).
 - **Asks:** a record with `__proto__` through every record-taking route; the JSON column table; the dexie and immer version minimums.
 - **Not this class:** block JSON walking and HTML sanitizing belong to C4. The metadata document fetch by `oidc-provider` (`modules/oauth-server/provider.ts`) belongs to C5 and C7. Rate limit on that fetch belongs to C1. `sql.raw` keys (counter keys in `modules/entities/counters-queries.ts`) belong to C3. Record size caps belong to C1. Yjs map keys: no app code reads user map keys; document size belongs to C1.
@@ -426,7 +425,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `deleted-storage` and `replaced-images`: a sweep or release deleting a key a live row, a seed or another holder names.
   - A missing storage key in the bucket is refused (`storedFileSize` HEADs every variant, 400 `missing_object`). Signed upload params expire in 15 minutes with a nonce per token; the token route is limited per user (`limiters.ts`).
 - **Asks:** a presigned URL for another tenant's key; a key with `..`; a file declared `text/html` on the public bucket; what the bucket origin shares with the app origin (with C4).
-- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. A product cache serving a deleted attachment belongs to C8. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
+- **Not this class:** content-type rendering, CSP, SVG in the editor and the `img-src https:` beacon belong to C4. Tombstone range reads leaking `keys` and filenames to later members belong to B1. Storage keys and S3 secrets in logs, and `S3_ACCESS_KEY_*` at rest, belong to D1. Bucket policies, `minimumReleaseAge`, the frontend bucket's hashed paths and the builder key belong to the infra review (G1). Rate limiter bypass of the upload-token limiter belongs to A6 and B4. Transloadit's own fetching through `/document/convert` belongs to C5.
 
 ### C7 Request parsing, routing and cross-site differentials
 - **Gain:** guard bypass, reaching internal routes.
@@ -452,20 +451,18 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C8 Caches and cross-request state
 - **Gain:** cross-user read.
-- **Merges:** the product cache (re-authorizes per request: holds), the membership, organization, tenant, session, API key and token-grant caches with their invalidation across processes, module-level state that outlives a request, `ttl-cache.ts`, `points-cache.ts`, the per-user database in the browser (holds), service-worker caches of API responses.
+- **Merges:** the membership, organization, tenant, session, API key and token-grant caches with their invalidation across processes, module-level state that outlives a request, `ttl-cache.ts`, `points-cache.ts`, the per-user database in the browser (holds), service-worker caches of API responses.
 - **Advisories:** 1, plus 1 pattern lesson (hono cache middleware; pattern: per-request context not isolated).
 - **Files:**
   - `backend/src/middlewares/guard/*-cache.ts` (api-key, membership, org, session, tenant, token-grant) and `invalidate-cache.ts`.
-  - `backend/src/middlewares/product-cache/` (`product-cache.ts`, `product-cache-store.ts`, `index.ts`).
   - `backend/src/lib/ttl-cache.ts`: every cache wraps it (`@isaacs/ttlcache`; `load()` coalesces reads per cache and drops results of reads older than the last invalidation). `backend/src/utils/request-coalescing.ts` (in-flight map, keys scoped by the caller).
   - `backend/src/middlewares/rate-limiter/points-cache.ts`; `frontend/src/lib/sw.ts` (Serwist).
   - The `mcp` and `oauth` workers hold no cache of their own; their code is `backend/src/modules/mcp/*` and `backend/src/modules/oauth-server/*`.
-  - Tests: `backend/tests/security/{outside-writes,session-cache-race}.test.ts`, `backend/src/middlewares/guard/api-key-cache.test.ts`, `backend/src/middlewares/product-cache/{product-cache,product-cache-store}.test.ts`, `backend/src/lib/ttl-cache.test.ts`, `backend/src/middlewares/rate-limiter/tests/points-cache.test.ts`.
+  - Tests: `backend/tests/security/{outside-writes,session-cache-race}.test.ts`, `backend/src/middlewares/guard/api-key-cache.test.ts`, `backend/src/lib/ttl-cache.test.ts`, `backend/src/middlewares/rate-limiter/tests/points-cache.test.ts`.
 - **Holds:**
   - `session-cache-race`: a session read in flight at a revoke stores nothing; a burst shares one read.
   - `outside-writes`: a membership removal reported by CDC drops the cached session; a revoke by another process is seen after the 10 s TTL; every membership insert, update, delete and cascade moves `actors.bindings_version` (trigger in `backend/src/db/membership-rules.ts`), which is why `membership-cache.ts` needs no drop.
   - A tenant archive or suspend moves the members' bindings version (`modules/tenants/operations/apply-tenant-status-change.ts`).
-  - Product cache: re-authorizes every hit against the cached row, requires tenant and organization of the URL, draft veto (`product-cache.test.ts`); a read in flight at an invalidation or write stores nothing (`product-cache-store.test.ts`).
   - `api-key-cache.test.ts`: account-wide drop, in-flight read at the drop not stored, unknown key not cached.
   - `ttl-cache.test.ts`: no value read before an invalidation is stored or handed out; two caches' flights stay apart.
   - Session expiry is rechecked outside the cache (`resolve-session.ts`); the token grant is read per use (`service-guard.ts`).
@@ -535,7 +532,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/push/{push-sender,push-queries,push-schema,push-routes,push-handlers}.ts`, `helpers/push-service-endpoint.ts`.
   - `backend/src/modules/requests/helpers/send-matrix-message.ts` (caller `requests/operations/create-request.ts`).
   - `mailer.sendEmails` callers: `send-invitation-mails.ts`, `send-magic-link.ts`, `send-step-up-code.ts`, `send-oauth-verification-email.ts`, `send-account-security-email.ts`, `confirm-invitation-address.ts`, `create-request.ts`, `remove-archived-tenants.ts`, `send-newsletter.ts`, `run-digest.ts`, `send-instant-emails.ts`.
-  - `sendInvitationMails` callers: `create-memberships.ts`, `deferred-invites.ts`, `resend-pending-invitation.ts`, `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
+  - `sendInvitationMails` callers: `mail-invitations.ts`, `create-memberships.ts` (added members), `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
   - CSRF skip: `backend/src/middlewares/app.ts`. Limiters: `backend/src/middlewares/rate-limiter/limiters.ts` (`spamLimiter`), `core.ts`.
 - **Holds:**
   - Brevo tag injection: `neutralizeBrevoTags` breaks every opener except the mailer's nonce-keyed placeholders (`tests/emails/brevo-send`).
@@ -543,7 +540,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Declared HTML params go out sanitized; digest section HTML escapes channel names (`brevo-send`, `email-escaping`). HTML in names: invite, mention and digest templates escape names (`email-escaping`, `email-templates`); names refuse `<>` and control characters (`common-schemas.ts`).
   - Sender and reply-to are fixed to `appConfig.senderEmail` and the inviter's own address. `X-Request-Id` is server-generated (`request-id`). The inviter's whereabouts never reach the invitee (`tests/emails/request-details`).
   - Unsubscribe: HMAC over `userId:category`, constant-time, verified before any read; GET only redirects; POST needs the token; a per-address failed-proof limiter (`unsubscribe-tokens`). One-click header per recipient, one recipient per request (`brevo-send`).
-  - Digest and instant mail: rows need a current membership of the row's organization or a system admin role, then per row `findReadableSubjectIds` (`notification-access`). The digest query is per `userId`, so one digest spans every organization the user is still in, never others.
+  - Digest: rows need a current membership of the row's organization or a system admin role, then per row `findReadableSubjectIds`. Instant mail: the fan-out mails only the rows it just wrote, each for a member of the row's organization or a system admin who may read the row, a public row included (`notification-access`). The digest query is per `userId`, so one digest spans every organization the user is still in, never others.
   - Push: endpoint allowlist at store and at send, payload is ids only, delete is scoped to the caller (`push-endpoints`, `push-sender.test.ts`).
   - Account-exists mail: one per address per day. Waitlist and newsletter repeats dropped by a unique index. Sign-in notices: three per user per 24 hours, none for inbox sign-ins. Magic link per address cap 3 per 30 minutes (`brute-force-limits`).
 - **Asks:** the Brevo params and headers as a table; a member mailing a non-member; push endpoint host validation.
@@ -572,7 +569,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### E2 Write integrity and the sync engine
 - **Gain:** integrity, cross-tenant write.
-- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, CDC attribution (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
+- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
 - **Advisories:** none.
 - **Files:**
   - `backend/tests/security/attachment-idempotency.test.ts`; in `backend/tests/`: `attachment-overlapping-edits.test.ts`, `attachment-seq-reads.test.ts`, `recalculate-sequence.test.ts`, `filter-existing-product-ids.test.ts`, `catchup-baseline.test.ts`, `catchup-propagation.test.ts`.
@@ -613,9 +610,9 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tests/health`: a failed job-store read puts `jobs_unreadable` in the anonymous diagnostics, never the query text; shallow is 204, full carries the components; the CDC worker's grade passes through. `tests/health-helpers`: only `api` and `database` reach `unhealthy`; a stale CDC report is never graded better than the worker graded it.
   - `tests/integration/jobs-store`: queues and crons converge as the runtime role, a job runs, `supervise` works, health reads the store.
   - `failed-query-redaction` (D1): logs and spans carry no request value from a failed query.
-  - In code: a session read failure stays the request's failure, never "signed out" (`resolve-session.ts`); the cookie is kept on a failed read. Yjs authorization failure closes the socket 4503; its connection limiter refuses on any error. CDC: an unknown flush failure never acknowledges; the setup check keeps the stream stopped while replica identity or the publication is wrong. Mail and Matrix helpers never throw. `@hono/node-server` answers an unparsable Host with 400, not a throw.
+  - In code: a session read failure stays the request's failure, never "signed out" (`resolve-session.ts`); the cookie is kept on a failed read. Yjs authorization failure closes the socket 4503; its connection limiter refuses on any error. CDC: an unknown flush failure never acknowledges; the setup check keeps the stream stopped while replica identity or the publication is wrong. The Matrix helper never throws; a failed mail send throws to its caller, and a request that stored its rows before the mail logs it. `@hono/node-server` answers an unparsable Host with 400, not a throw.
 - **Asks:** a dependency outage table (dependency -> request outcome -> closed or open -> test); process-level handlers; what pages an operator.
-- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows and the product cache belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health gate, rollout and runbooks belong to the infra review.
+- **Not this class:** limiter budget values and the TOTP guessing ceiling belong to A3. Sign-out ordering belongs to A2. Invitation takeover and TRACE belong to C7. Cache staleness windows belong to C8. SQL and secrets in logs belong to D1. Outbound fetch limits and the geoip download belong to C5. Relay tokens and backpressure belong to B5, B4 and C1. Federation address proof belongs to A4. Deploy health gate, rollout and runbooks belong to the infra review.
 
 ## F. Platform
 
