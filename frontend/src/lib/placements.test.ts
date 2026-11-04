@@ -56,7 +56,7 @@ describe('isPlacementHidden', () => {
 describe('resolvePlacementList', () => {
   const items = [
     { id: 'general', label: key('c:general'), order: 10, locked: true },
-    { id: 'danger', label: key('c:danger'), order: 90, requires: 'delete', locked: true },
+    { id: 'danger', label: key('c:danger'), order: 90, requires: 'delete' as const, locked: true },
     { id: 'extra', label: key('c:extra'), order: 50 },
     { id: 'staff-only', label: key('c:staff'), order: 40, visibleTo: ['organization.admin' as const] },
   ];
