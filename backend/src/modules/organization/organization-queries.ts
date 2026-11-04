@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
@@ -9,6 +10,7 @@ import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { type InsertOrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
+import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
@@ -87,14 +89,12 @@ export const publishOrganization = async (ctx: UserContext, { id }: PublishOrgan
   return published;
 };
 
-interface FindOrganizationsPaginatedOpts {
+interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizationListQuerySchema>, 'sort' | 'order'> {
   isSystemAdmin: boolean;
   targetUserId: string;
   /** Limits the list, its total and its includes to these organizations; unset lists every one the target belongs to. */
   organizationIds?: string[];
   q?: string;
-  sort: 'id' | 'name' | 'createdAt' | 'displayOrder';
-  order: 'asc' | 'desc';
   offset: number;
   limit: number;
   excludeArchived?: boolean;

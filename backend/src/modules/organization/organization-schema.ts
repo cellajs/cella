@@ -13,6 +13,7 @@ import {
   languageSchema,
   maxLength,
   noDuplicateSlugsRefine,
+  orderSchema,
   paginationQuerySchema,
   timeZoneSchema,
   translatedError,
@@ -129,7 +130,7 @@ export const organizationUpdateBodySchema = organizationContract.updateBodySchem
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
-  order: z.enum(['asc', 'desc']).default('asc'),
+  order: orderSchema.default('asc'),
   relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: booleanTransformSchema,

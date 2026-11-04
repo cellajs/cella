@@ -97,6 +97,11 @@ export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?
   );
 };
 
+/** A list's sort direction; each list query sets its own default. */
+export const orderSchema = z.enum(['asc', 'desc']);
+
+export type OrderDirection = z.infer<typeof orderSchema>;
+
 /** Search, sort and paging: newest first from offset 0, the configured default `limit` when absent, at most 1000. */
 export const paginationQuerySchema = z.object({
   q: z
@@ -107,7 +112,7 @@ export const paginationQuerySchema = z.object({
       'Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.',
     ),
   sort: z.enum(['createdAt']).default('createdAt'),
-  order: z.enum(['asc', 'desc']).default('desc'),
+  order: orderSchema.default('desc'),
   offset: integerQuerySchema({ error: translatedError('error:invalid_offset') }).default(0),
   limit: integerQuerySchema({ min: 1, max: limitMax, error: translatedError('error:invalid_limit', { max: limitMax }) }).default(
     appConfig.requestLimits.default,

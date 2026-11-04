@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, inArray, lte, max, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
@@ -7,6 +8,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
+import type { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpers/select';
@@ -132,13 +134,11 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMe
   return updated ?? null;
 };
 
-interface FindMembersPaginatedOpts {
+interface FindMembersPaginatedOpts extends Pick<z.infer<typeof memberListQuerySchema>, 'sort' | 'order'> {
   organizationId: string;
   entityId: string;
   entityType: ChannelEntityType;
   q?: string;
-  sort: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role' | 'lastPostedAt';
-  order: 'asc' | 'desc';
   offset: number;
   limit: number;
   role?: EntityRole;

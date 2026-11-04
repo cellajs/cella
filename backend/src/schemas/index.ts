@@ -19,6 +19,7 @@ export {
   locationSchema,
   maxLength,
   noDuplicateSlugsRefine,
+  orderSchema,
   paginationQuerySchema,
   productEntityTypeSchema,
   productListQuerySchema,

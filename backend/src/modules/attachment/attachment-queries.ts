@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, getTableName, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { appConfig, entityIdColumnName } from 'shared';
@@ -11,6 +12,7 @@ import { requestScopeWhere } from '#/db/utils/request-scope';
 import { deleteStamps } from '#/db/utils/stamps';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
+import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -79,15 +81,13 @@ export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttac
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
 };
 
-interface FindAttachmentsPaginatedOpts {
+interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>, 'sort' | 'order'> {
   organizationId: string;
   /** The caller's request scope and read scope, from guarded context and the permission layer. */
   filters: SQL[];
   /** The read scope is the whole organization, so an unfiltered total can come from the counter. */
   orgWide: boolean;
   q?: string;
-  sort: 'name' | 'createdAt' | 'contentType';
-  order: 'asc' | 'desc';
   limit: number;
   offset: number;
   /** A range read for sync (`seqRangeRead`). */
