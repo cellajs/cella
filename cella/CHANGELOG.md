@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.35.0](https://github.com/cellajs/cella/compare/0.34.0...0.35.0) (2026-11-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* every table bar searches with chips, a list's sort default lives in its schema, one hover fill ([#1701](https://github.com/cellajs/cella/issues/1701))
+* fields every writer sets are required ([#1700](https://github.com/cellajs/cella/issues/1700))
+* a list's main action floats on a phone, phone dialogs fill the screen ([#1699](https://github.com/cellajs/cella/issues/1699))
+* **infra:** one-day keys, no key on a machine, machines out of Pulumi, traffic by health, the applied engine, teardown in one act ([#1691](https://github.com/cellajs/cella/issues/1691))
+* mechanism review: one pattern per failure, one engine, one path per job ([#1696](https://github.com/cellajs/cella/issues/1696))
+* tooling review verdicts, groups 1 to 6 ([#1695](https://github.com/cellajs/cella/issues/1695))
+* apps print their own ASCII art from appConfig.asciiArt ([#1688](https://github.com/cellajs/cella/issues/1688))
+* drop impersonation ([#1685](https://github.com/cellajs/cella/issues/1685))
+* one origin per mode, service ports on config, menu rows drag across Archived, resizable panels that fit ([#1684](https://github.com/cellajs/cella/issues/1684))
+* durable refetch marks, replays that survive a lost session and a deploy, list reads merged with the changes they overlap ([#1683](https://github.com/cellajs/cella/issues/1683))
+
+### 🎉 New features
+
+* a list's main action floats on a phone, phone dialogs fill the screen ([#1699](https://github.com/cellajs/cella/issues/1699)) ([e11bec3](https://github.com/cellajs/cella/commit/e11bec359cd12ec21de1498393fb044c82630e85))
+* apps print their own ASCII art from appConfig.asciiArt ([#1688](https://github.com/cellajs/cella/issues/1688)) ([afbd918](https://github.com/cellajs/cella/commit/afbd918b606892964a431049c52804446457ddb9))
+* **docs:** a schema description reads as a prose line under its field ([#1692](https://github.com/cellajs/cella/issues/1692)) ([d11e53a](https://github.com/cellajs/cella/commit/d11e53a7eeceb1ee3f099670f764be9c52099641))
+* **docs:** one Errors row with short labels, schema names that open a sheet ([#1690](https://github.com/cellajs/cella/issues/1690)) ([09f3606](https://github.com/cellajs/cella/commit/09f3606bfdf2f39ad43511c8a3884cf6b33377ea))
+* drop impersonation ([#1685](https://github.com/cellajs/cella/issues/1685)) ([de26a31](https://github.com/cellajs/cella/commit/de26a3147dac001b97a4614f3df697b2816dcee5))
+* every table bar searches with chips, a list's sort default lives in its schema, one hover fill ([#1701](https://github.com/cellajs/cella/issues/1701)) ([3403cfe](https://github.com/cellajs/cella/commit/3403cfe06f99db8d9836211212e1204f300314e3))
+* fields every writer sets are required ([#1700](https://github.com/cellajs/cella/issues/1700)) ([8b21735](https://github.com/cellajs/cella/commit/8b217355c46fc290e81e20b8c073d54f64b54232))
+* **infra:** one-day keys, no key on a machine, machines out of Pulumi, traffic by health, the applied engine, teardown in one act ([#1691](https://github.com/cellajs/cella/issues/1691)) ([ea86a5e](https://github.com/cellajs/cella/commit/ea86a5edf2fc9e7a50c1e00d38a6ba0fa3595c28))
+* one origin per mode, service ports on config, menu rows drag across Archived, resizable panels that fit ([#1684](https://github.com/cellajs/cella/issues/1684)) ([a83ad20](https://github.com/cellajs/cella/commit/a83ad2071140ec9397dc0caac6cbaaf67bfa50dd))
+
+
+### 🐞 Bug fixes
+
+* a new app's first run says where to go, and pnpm test passes on it ([#1681](https://github.com/cellajs/cella/issues/1681)) ([ed4f4d8](https://github.com/cellajs/cella/commit/ed4f4d890810ebbd5bc6c5e16117772ced09a52e))
+* app-shape check anchor follows the commentEmail type cleanup ([#1694](https://github.com/cellajs/cella/issues/1694)) ([8c2cd8f](https://github.com/cellajs/cella/commit/8c2cd8f84b4385a22e8d2290890e5ec6ad6bd57c))
+* durable refetch marks, replays that survive a lost session and a deploy, list reads merged with the changes they overlap ([#1683](https://github.com/cellajs/cella/issues/1683)) ([11e2dfc](https://github.com/cellajs/cella/commit/11e2dfcc268e62ab668c568021729e07df6ec59e))
+* **infra:** rotations redeploy the live release, run records read in order, no metadata for app containers ([#1686](https://github.com/cellajs/cella/issues/1686)) ([62060a1](https://github.com/cellajs/cella/commit/62060a1971c05f538141054b65fffaebfa23b0ea))
+* **tests:** every member row in the CSV export test has a membership ([#1702](https://github.com/cellajs/cella/issues/1702)) ([f736832](https://github.com/cellajs/cella/commit/f736832a94165ae2e6200dcf7b58c0d1998644ad))
+* **tests:** the deleted-storage test empties the queue first, invite stories wait for a rolled summary ([#1698](https://github.com/cellajs/cella/issues/1698)) ([56dad5c](https://github.com/cellajs/cella/commit/56dad5c2eb3189b99de18433d8ca491c31b79f81))
+* ui tuning: board fit handle, touch-only hover, theme stroke width, icon-only search chips ([#1697](https://github.com/cellajs/cella/issues/1697)) ([c605c52](https://github.com/cellajs/cella/commit/c605c525cf6348d7ed4caa4897bac992e5db37b7))
+* UI tuning: dev email note, menu edit rows, auth email pill, docs hairline, drawer lead names ([#1689](https://github.com/cellajs/cella/issues/1689)) ([4fbe330](https://github.com/cellajs/cella/commit/4fbe33007d12940d6b1fb2fca5d2e4000f50394b))
+
+
+### 🔧 Small improvements
+
+* mechanism review: one pattern per failure, one engine, one path per job ([#1696](https://github.com/cellajs/cella/issues/1696)) ([6d53a48](https://github.com/cellajs/cella/commit/6d53a489b40ce0b110115332d0217bc5c2a9d0ec))
+* tooling review verdicts, groups 1 to 6 ([#1695](https://github.com/cellajs/cella/issues/1695)) ([87ac567](https://github.com/cellajs/cella/commit/87ac567181ced123a647a13592610e2c9f655fb3))
+
+
+### 🧹 Chores
+
+* remove one-run tooling, temporary scripts live in the gitignored .scratch folder ([#1693](https://github.com/cellajs/cella/issues/1693)) ([a224036](https://github.com/cellajs/cella/commit/a22403612c81a6452cde331b17aad7d097281c19))
+
 ## [0.34.0](https://github.com/cellajs/cella/compare/0.33.0...0.34.0) (2026-11-02)
 
 
