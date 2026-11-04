@@ -1,11 +1,6 @@
-import { appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { hierarchy, type ProductEntityType } from 'shared';
 
 export const seenKeys = { unseenCounts: ['me', 'unseen', 'counts'] };
-
-export const isSeenTracked = (entityType: string): boolean => (appConfig.seenTrackedProductTypes as readonly string[]).includes(entityType);
-
-/** Every channel type a seen-tracked product can be homed in; mirrors the server's grouping set in mark-seen.ts. */
-export const seenGroupingChannelTypes = new Set(appConfig.seenTrackedProductTypes.flatMap((type) => hierarchy.possibleHomeChannels(type)));
 
 /**
  * Grouping channel for a row: its deepest non-null ancestor, matching mark-seen, unseen counts and unseen-sync.

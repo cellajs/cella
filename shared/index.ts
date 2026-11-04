@@ -60,6 +60,7 @@ export {
   validateAncestorScope,
 } from './src/permissions/index.ts';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows.ts';
+export { isSeenTracked, seenGroupingChannelTypes } from './src/seen-tracked.ts';
 export { seenWindowMs } from './src/seen-window.ts';
 export { toColumnName, toTableName } from './src/utils/schema-naming.ts';
 export type {
