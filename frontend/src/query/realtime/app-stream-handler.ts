@@ -23,7 +23,7 @@ export function handleStreamChange(change: StreamChange): void {
     if (!isProduct(entityType)) return console.error('Unknown entityType in app stream change:', entityType);
 
     // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
-    for (const subjectId of subjectIds) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId ?? null, subjectId });
+    for (const subjectId of subjectIds) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId, subjectId });
 
     if (overflow) handleOverflow(change, overflow);
     else handleProductChange(change);
@@ -42,7 +42,7 @@ function handleOverflow(change: StreamChange, { afterSeq, untilSeq, subjectIds }
   if (!removal && afterSeq !== null && untilSeq !== null) enqueueAnnouncedRange(change, { afterSeq, untilSeq });
   else if (removal && subjectIds) removeRows(change, subjectIds);
   else {
-    invalidateUndelivered(entityType, organizationId, [change.channelId ?? null], true);
+    invalidateUndelivered(entityType, organizationId, [change.channelId], true);
     if (removal) cacheOps.removeEntityDetailsBelow(entityType, change.channelId ?? organizationId);
   }
 }
@@ -53,7 +53,7 @@ function handleOverflow(change: StreamChange, { afterSeq, untilSeq, subjectIds }
  */
 function removeRows(change: StreamChange, subjectIds: string[]): void {
   const { productType: entityType, action, organizationId } = change;
-  const channelId = change.channelId ?? null;
+  const channelId = change.channelId;
   const keys = getEntityQueryKeys(entityType);
   for (const subjectId of subjectIds) {
     if (action === 'moveOut') cacheOps.removeEntity(entityType, subjectId, organizationId);
@@ -68,8 +68,8 @@ function enqueueAnnouncedRange(change: StreamChange, range: SeqRange): void {
   enqueueRange({
     entityType: change.productType,
     organizationId: change.organizationId,
-    tenantId: change.tenantId ?? null,
-    channelId: change.channelId ?? null,
+    tenantId: change.tenantId,
+    channelId: change.channelId,
     ...range,
     isCreate: change.action === 'create',
     spreadWindowMs: change.spreadWindow ?? undefined,

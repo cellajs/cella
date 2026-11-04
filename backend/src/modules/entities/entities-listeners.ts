@@ -24,10 +24,8 @@ import { log } from '#/utils/logger';
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated', 'deleted'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {
-      const { organizationId } = event;
-      if (!organizationId) return;
       try {
-        const productEvent: AppStreamProductEvent = { ...event, organizationId };
+        const productEvent: AppStreamProductEvent = event;
         // Reparented rows also tell old-path readers who lost visibility, side by side so a stalled reader delays neither.
         await Promise.all([dispatchChange(productEvent), action === 'updated' && dispatchMoveOuts(productEvent)]);
       } catch (error) {

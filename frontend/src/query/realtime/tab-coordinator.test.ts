@@ -144,7 +144,7 @@ describe('what the leader tells the other tabs', () => {
       action: 'update',
       productType: 'attachment',
       organizationId: 'org-1',
-      tenantId: null,
+      tenantId: 'tenant-1',
       channelId: null,
       rows: [],
       overflow: null,
@@ -152,7 +152,7 @@ describe('what the leader tells the other tabs', () => {
       propagation: null,
     };
     const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
-    const answer: PostAppCatchupResponse = { organizations: {}, generation: 7 };
+    const answer: PostAppCatchupResponse = { organizations: {}, views: [], generation: 7 };
     const messages: LeaderMessage[] = [
       { type: 'stream-change', change },
       { type: 'stream-signal', signal },

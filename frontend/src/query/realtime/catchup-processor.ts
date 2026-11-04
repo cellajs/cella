@@ -60,7 +60,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
   syncState.markCaughtUp();
   opaqueScopes.clear();
 
-  if (views?.length) {
+  if (views.length) {
     if (!baselineOnly) resetFetchPrioritizer();
 
     for (const answer of views) {
@@ -161,7 +161,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
   }
 
   if (baselineOnly) {
-    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${organizationIds.length} orgs`);
+    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views.length} views, ${organizationIds.length} orgs`);
     return;
   }
 

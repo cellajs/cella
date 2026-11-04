@@ -20,7 +20,7 @@ export const yjsDocumentsTable = snakeCase.table(
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
-    organizationId: uuid(),
+    organizationId: uuid().notNull(),
     state: bytea().notNull(),
     /**
      * Names one seed of the document. The relay announces it at every handshake; a client whose document is of another
@@ -60,7 +60,7 @@ export const yjsUpdatesTable = snakeCase.table(
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
-    organizationId: uuid(),
+    organizationId: uuid().notNull(),
     /** The client whose update this is; null for a server-origin row. Credits the materialized write. */
     userId: uuid(),
     payload: bytea().notNull(),

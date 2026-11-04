@@ -47,7 +47,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
-    defaultValues: { ...organization, languages: organization.languages || [] },
+    defaultValues: organization,
   };
 
   const formContainerId = 'update-organization';

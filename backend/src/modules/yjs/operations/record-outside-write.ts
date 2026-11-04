@@ -9,7 +9,7 @@ import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 export interface YjsWrittenRow {
   id: string;
   tenantId: string;
-  organizationId: string | null;
+  organizationId: string;
   description: string | null;
 }
 

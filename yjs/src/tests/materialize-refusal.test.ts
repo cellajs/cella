@@ -75,7 +75,7 @@ describe('a refused materialize keeps the edits', () => {
     // The relay crashed before cleanup: only the rows remain.
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
     storage.findStaleDocuments.mockResolvedValueOnce([
-      { entityType: ctx.entityType, entityId: `${ctx.entityId}-orphan`, tenantId: ctx.tenantId, organizationId: null },
+      { entityType: ctx.entityType, entityId: `${ctx.entityId}-orphan`, tenantId: ctx.tenantId, organizationId: ctx.organizationId },
     ]);
     const orphanKey = `${key}-orphan`;
     storage.bases.set(orphanKey, storage.bases.get(key)!);

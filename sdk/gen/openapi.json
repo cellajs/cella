@@ -514,26 +514,52 @@
     },
     "schemas": {
       "ActorRef": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["user"]
+              },
+              "slug": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
           },
-          "kind": {
-            "type": "string",
-            "enum": ["user", "service"]
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": ["string", "null"]
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"]
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["service"]
+              },
+              "slug": {
+                "type": "null"
+              }
+            },
+            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
           }
-        },
-        "required": ["id", "kind", "name", "slug", "thumbnailUrl"],
+        ],
         "description": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.",
         "example": {
           "id": "91d9225c-2c64-4773-9f1f-8a6a6004192d",
@@ -825,7 +851,7 @@
             "type": "string"
           },
           "tenantId": {
-            "type": ["string", "null"]
+            "type": "string"
           },
           "channelId": {
             "type": ["string", "null"],
@@ -1854,14 +1880,7 @@
             "type": ["string", "null"]
           },
           "createdBy": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ActorRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/ActorRef"
           },
           "organizationId": {
             "type": "string",
@@ -2115,7 +2134,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2128,7 +2188,48 @@
           "updatedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2281,7 +2382,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2294,7 +2436,48 @@
           "updatedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2407,7 +2590,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2420,7 +2644,48 @@
           "updatedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2748,7 +3013,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2761,7 +3067,48 @@
           "updatedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -2785,7 +3132,48 @@
           "deletedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -3022,7 +3410,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -3035,7 +3464,48 @@
           "updatedBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -3141,7 +3611,48 @@
           "createdBy": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorRef"
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["user"]
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["service"]
+                  },
+                  "slug": {
+                    "type": "null"
+                  }
+                },
+                "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
               },
               {
                 "type": "null"
@@ -5592,7 +6103,9 @@
                         "membership.changed": 1
                       }
                     }
-                  }
+                  },
+                  "views": [],
+                  "generation": 1
                 },
                 "schema": {
                   "type": "object",
@@ -5679,7 +6192,7 @@
                       "description": "Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines"
                     }
                   },
-                  "required": ["organizations"]
+                  "required": ["organizations", "views", "generation"]
                 }
               }
             }
@@ -12448,7 +12961,48 @@
                     "createdBy": {
                       "anyOf": [
                         {
-                          "$ref": "#/components/schemas/ActorRef"
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["user"]
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["service"]
+                            },
+                            "slug": {
+                              "type": "null"
+                            }
+                          },
+                          "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
                         },
                         {
                           "type": "null"
@@ -12461,7 +13015,48 @@
                     "updatedBy": {
                       "anyOf": [
                         {
-                          "$ref": "#/components/schemas/ActorRef"
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["user"]
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "thumbnailUrl": {
+                              "type": ["string", "null"]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["service"]
+                            },
+                            "slug": {
+                              "type": "null"
+                            }
+                          },
+                          "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
                         },
                         {
                           "type": "null"
@@ -13086,14 +13681,7 @@
                             "type": ["string", "null"]
                           },
                           "createdBy": {
-                            "anyOf": [
-                              {
-                                "$ref": "#/components/schemas/ActorRef"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
+                            "$ref": "#/components/schemas/ActorRef"
                           }
                         },
                         "required": ["id", "email", "role", "createdAt", "remindedAt", "linkExpiresAt", "createdBy"]

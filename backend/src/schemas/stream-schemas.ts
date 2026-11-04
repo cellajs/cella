@@ -54,7 +54,7 @@ export const streamChangeSchema = z
       .describe('Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there'),
     productType: z.enum(appConfig.productEntityTypes),
     organizationId: z.string(),
-    tenantId: z.string().nullable(),
+    tenantId: z.string(),
     channelId: z.string().nullable().describe('Deepest channel entity ID above the rows, which groups unseen counts'),
     rows: z
       .array(streamChangeRowSchema)
@@ -163,11 +163,8 @@ export const appCatchupResponseSchema = z.object({
   organizations: z
     .record(z.string(), catchupOrganizationSummarySchema)
     .openapi({ description: 'Per organization: signal versions and propagation hints, { [organizationId]: { signals?, propagation? } }' }),
-  views: z
-    .array(catchupViewAnswerSchema)
-    .optional()
-    .openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
-  generation: z.number().int().optional().openapi({
+  views: z.array(catchupViewAnswerSchema).openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
+  generation: z.number().int().openapi({
     description: 'Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines',
   }),
 });

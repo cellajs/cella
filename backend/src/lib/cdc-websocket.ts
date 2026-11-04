@@ -41,7 +41,9 @@ const messageTraceSchema = z
  */
 const cdcMessageSchema = z.union([
   z.object({
-    activity: activitySchema.omit(ownActivityColumns).extend({ entityType: z.enum(appConfig.productEntityTypes) }),
+    activity: activitySchema
+      .omit(ownActivityColumns)
+      .extend({ entityType: z.enum(appConfig.productEntityTypes), organizationId: z.string(), tenantId: z.string() }),
     rows: z.array(messageRowSchema).min(1),
     _trace: messageTraceSchema,
   }),

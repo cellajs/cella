@@ -24,13 +24,7 @@ export function ActorCell({ actor, tabIndex, compactable, className, readOnly }:
     // No list searches its writers, so a writer's name never takes the list's marks
     return (
       <MatchScope terms={[]}>
-        <UserCell
-          user={{ ...actor, slug: actor.slug ?? '', entityType: 'user' }}
-          tabIndex={tabIndex}
-          compactable={compactable}
-          className={className}
-          readOnly={readOnly}
-        />
+        <UserCell user={{ ...actor, entityType: 'user' }} tabIndex={tabIndex} compactable={compactable} className={className} readOnly={readOnly} />
       </MatchScope>
     );
   }

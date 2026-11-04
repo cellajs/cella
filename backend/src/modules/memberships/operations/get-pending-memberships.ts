@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
-import { withActorRefs } from '#/modules/actors/actor-refs';
+import { withCreatorRefs } from '#/modules/actors/actor-refs';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
@@ -35,7 +35,7 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
     linkExpiresAt: item.remindedAt ? new Date(Date.parse(item.remindedAt) + linkMs).toISOString() : null,
   }));
 
-  const items = await withActorRefs(ctx, withExpiry);
+  const items = await withCreatorRefs(ctx, withExpiry);
 
   return { items, total };
 }

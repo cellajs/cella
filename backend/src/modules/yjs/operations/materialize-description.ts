@@ -20,7 +20,7 @@ interface MaterializeDescriptionInput {
   entityType: string;
   entityId: string;
   tenantId: string;
-  organizationId: string | null;
+  organizationId: string;
   description: string;
   /** Senders of the compacted log, newest first: the first who may still update the entity is credited with the write. */
   editors: string[];

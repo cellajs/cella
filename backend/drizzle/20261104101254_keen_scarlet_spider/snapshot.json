@@ -1,0 +1,88 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "83861fe1-f271-4ca2-85b2-e8c65dffcffd",
+  "prevIds": [
+    "a46295a9-71fb-4e4b-a0de-6690497fa5dc"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "yjs_documents",
+        "organization_id"
+      ],
+      "writes": [
+        "s|colprop|public.yjs_documents.organization_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_documents",
+        "n|sch|public",
+        "n|col|public.yjs_documents.organization_id"
+      ],
+      "sqlHash": "e25a196491ccdef2"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "push_subscriptions",
+        "last_seen_at"
+      ],
+      "writes": [
+        "s|colprop|public.push_subscriptions.last_seen_at.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.push_subscriptions",
+        "n|sch|public",
+        "n|col|public.push_subscriptions.last_seen_at"
+      ],
+      "sqlHash": "30e0f9a884db06bc"
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "yjs_updates",
+        "organization_id"
+      ],
+      "writes": [
+        "s|colprop|public.yjs_updates.organization_id.notNull"
+      ],
+      "reads": [
+        "n|tbl|public.yjs_updates",
+        "n|sch|public",
+        "n|col|public.yjs_updates.organization_id"
+      ],
+      "sqlHash": "61910a404e6e8136"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"yjs_documents\",\"organization_id\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"push_subscriptions\",\"last_seen_at\"]",
+      "set": {
+        "notNull": true
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"yjs_updates\",\"organization_id\"]",
+      "set": {
+        "notNull": true
+      }
+    }
+  ]
+}

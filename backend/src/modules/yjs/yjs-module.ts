@@ -14,9 +14,9 @@ const idsOf = (rows: PayloadRow[] = []) => rows.flatMap((row) => (typeof row.id 
 
 /** The keys and description of a written entity row; null for a row that lacks them. */
 const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow): YjsWrittenRow | null => {
-  if (typeof id !== 'string' || typeof tenantId !== 'string') return null;
+  if (typeof id !== 'string' || typeof tenantId !== 'string' || typeof organizationId !== 'string') return null;
   if (description !== null && typeof description !== 'string') return null;
-  return { id, tenantId, organizationId: typeof organizationId === 'string' ? organizationId : null, description };
+  return { id, tenantId, organizationId, description };
 };
 
 /**

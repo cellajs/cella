@@ -22,13 +22,11 @@ export async function appCatchupOp(ctx: UserContext, { views = [] }: z.infer<typ
   const counterRows = keys.length > 0 ? await findChannelCountersByKeys(ctx, { keys }) : [];
   const counters = new Map(counterRows.map((row) => [row.channelKey, parseCounterCounts(row.counts)]));
 
-  const viewAnswers = views.length
-    ? views.map(({ organizationId, entityType }) => {
-        const status = resolveViewReadStatus(access, entityType, organizationId);
-        if (status !== 'ok') return { organizationId, entityType, status };
-        return { organizationId, entityType, status, frontier: counters.get(organizationId)?.frontiers[entityType] };
-      })
-    : undefined;
+  const viewAnswers = views.map(({ organizationId, entityType }) => {
+    const status = resolveViewReadStatus(access, entityType, organizationId);
+    if (status !== 'ok') return { organizationId, entityType, status };
+    return { organizationId, entityType, status, frontier: counters.get(organizationId)?.frontiers[entityType] };
+  });
 
   const generation = await findSyncGeneration(ctx);
 

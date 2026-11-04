@@ -78,7 +78,7 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
     action: event.action,
     productType: entityType,
     organizationId: event.organizationId,
-    tenantId: event.tenantId ?? null,
+    tenantId: event.tenantId,
     channelId,
     rows: overflowed ? [] : entries,
     overflow: overflowed ? overflowOf(event.action, entries) : null,

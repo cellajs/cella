@@ -139,10 +139,11 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   });
 
   it("must not write through a body that names another tenant's organization", async () => {
-    for (const organizationId of [other.organization.id, null]) {
-      const { status, body } = await materialize(bodyFor({ tenantId: owner.tenantId, organizationId }, 'forged organization'));
-      await expectRefusal({ status, body }, 403, 'forbidden', String(organizationId));
-    }
+    const forged = await materialize(bodyFor({ tenantId: owner.tenantId, organizationId: other.organization.id }, 'forged organization'));
+    await expectRefusal(forged, 403, 'forbidden');
+    // A document always belongs to an organization: a body without one fails validation.
+    const unscoped = await materialize(bodyFor({ tenantId: owner.tenantId, organizationId: null }, 'no organization'));
+    await expectRefusal(unscoped, 400, 'invalid_request');
     expect((await stored())?.description).toBe(original);
   });
 

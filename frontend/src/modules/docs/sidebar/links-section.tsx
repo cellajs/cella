@@ -17,7 +17,7 @@ const rowClass = tw('w-full justify-start');
 export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement>(null);
-  const hasStatusPage = !!appConfig.statusUrl?.trim();
+  const hasStatusPage = !!appConfig.statusUrl.trim();
 
   return (
     <DocsSidebarSection label={label}>

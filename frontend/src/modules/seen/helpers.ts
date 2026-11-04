@@ -11,8 +11,8 @@ export const seenGroupingChannelTypes = new Set(appConfig.seenTrackedProductType
  * Grouping channel for a row: its deepest non-null ancestor, matching mark-seen, unseen counts and unseen-sync.
  * @public
  */
-export function getSeenChannelId(entityType: ProductEntityType, entity: Record<string, unknown>): string {
-  return String(hierarchy.resolveDeepestAncestorId(entityType, entity) ?? entity.organizationId);
+export function getSeenChannelId(entityType: ProductEntityType, entity: Record<string, unknown> & { organizationId: string }): string {
+  return hierarchy.resolveDeepestAncestorId(entityType, entity) ?? entity.organizationId;
 }
 
 /** Mirrors the server's unseen exclusions (unpublished drafts included); app feed filters belong here too. */

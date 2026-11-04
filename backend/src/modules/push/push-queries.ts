@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -37,7 +37,7 @@ export async function upsertPushSubscription(ctx: DbContext, { values }: UpsertP
       .select({ id: pushSubscriptionsTable.id })
       .from(pushSubscriptionsTable)
       .where(eq(pushSubscriptionsTable.userId, values.userId))
-      .orderBy(desc(sql`coalesce(${pushSubscriptionsTable.lastSeenAt}, ${pushSubscriptionsTable.createdAt})`), desc(pushSubscriptionsTable.id))
+      .orderBy(desc(pushSubscriptionsTable.lastSeenAt), desc(pushSubscriptionsTable.id))
       .limit(pushSubscriptionsPerUser);
     await tx.delete(pushSubscriptionsTable).where(and(eq(pushSubscriptionsTable.userId, values.userId), notInArray(pushSubscriptionsTable.id, kept)));
     return row;

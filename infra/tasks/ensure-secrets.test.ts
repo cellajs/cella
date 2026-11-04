@@ -43,7 +43,7 @@ describe('ensureSecrets', () => {
     const { client, writes } = fakeClient({ '/runtime/yjs-token-private-key': material, '/runtime/yjs-token-public-key': undefined });
     await ensureSecrets({ client, secrets: yjs, log: () => {} });
     const token = signYjsToken(
-      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: 'o' },
       yjsTokenSigningKey(material),
       60_000,
     );
@@ -91,7 +91,7 @@ describe('ensureSecrets', () => {
     expect(writes['/runtime/cookie-secret']).not.toBe('old');
     const material = writes['/runtime/yjs-token-private-key'] ?? '';
     const token = signYjsToken(
-      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: 'o' },
       yjsTokenSigningKey(material),
       60_000,
     );

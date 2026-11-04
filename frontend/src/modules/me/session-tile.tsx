@@ -47,7 +47,7 @@ interface SessionTileProps {
 export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: SessionTileProps) {
   const { t, i18n } = useTranslation();
   /** A federation names itself in config; every other method has a locale key. */
-  const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
+  const strategyLabel = (strategy: Session['authStrategy']) =>
     strategy in appConfig.federations
       ? appConfig.federations[strategy as FederationKey].label
       : t(`c:${strategy as Exclude<typeof strategy, DeclaredFederation>}`);
@@ -89,7 +89,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
           {session.revocationReason && session.revocationReason !== 'sign_out' && (
             <ExpandableTileDetail label={t('c:reason')}>{t(`c:revocation_reason.${session.revocationReason}`)}</ExpandableTileDetail>
           )}
-          {session.authStrategy && <ExpandableTileDetail label={t('c:strategy')}>{strategyLabel(session.authStrategy)}</ExpandableTileDetail>}
+          <ExpandableTileDetail label={t('c:strategy')}>{strategyLabel(session.authStrategy)}</ExpandableTileDetail>
           {countryName && <ExpandableTileDetail label={t('c:country')}>{countryName}</ExpandableTileDetail>}
         </>
       }

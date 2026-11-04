@@ -100,6 +100,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
 const okViewResponse = (frontier: number): PostAppCatchupResponse => ({
   organizations: {},
   views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'ok', frontier }],
+  generation: 1,
 });
 
 /** The org-1 list mounted, as on screen, counting the list requests it sends. */
@@ -190,7 +191,7 @@ describe('catchup processor (view-driven)', () => {
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    await processAppCatchup({ organizations: {}, views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }] });
+    await processAppCatchup({ organizations: {}, views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }], generation: 1 });
 
     expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
@@ -216,6 +217,7 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup({
       organizations: { 'org-1': { propagation: [{ embeddedProduct: label, update: ['label-1'], remove: [], untilSeq: 9 }] } },
       views: [{ organizationId: 'org-1', entityType: label, status: 'opaque' }],
+      generation: 1,
     });
 
     expect(syncStore.getState().getOrgSeq('org-1', label)).toBe(9);
@@ -377,7 +379,11 @@ describe('a versioned signal heard live', () => {
   });
 
   /** A catchup answer that holds only the organization's version of `channel.deleted`. */
-  const signalsAnswer = (version: number): PostAppCatchupResponse => ({ organizations: { 'org-1': { signals: { 'channel.deleted': version } } } });
+  const signalsAnswer = (version: number): PostAppCatchupResponse => ({
+    organizations: { 'org-1': { signals: { 'channel.deleted': version } } },
+    views: [],
+    generation: 1,
+  });
   const deleted = (version: number) => ({ type: 'channel.deleted', organizationId: 'org-1', subjectId: `project-${version}`, version });
 
   it('is not run again at the next catchup', async () => {

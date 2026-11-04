@@ -58,7 +58,7 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
         <>
           <ExpandableTileDetail label={t('c:invited_at')}>{dateShort(createdAt)}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:last_email')}>{remindedAt ? dateShort(remindedAt) : t('c:not_sent_yet')}</ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:invited_by')}>{createdBy?.name ?? '-'}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:invited_by')}>{createdBy.name}</ExpandableTileDetail>
         </>
       }
       actions={

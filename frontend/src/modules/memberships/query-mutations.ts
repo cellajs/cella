@@ -28,7 +28,10 @@ const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | '
 
 type ApiResponseWithIncludedMembership = { included?: { membership?: MembershipBase } | null };
 
-/** Extract API-only included membership data for seeding the myMemberships cache. */
+/**
+ * Extract API-only included membership data for seeding the myMemberships cache.
+ * @public
+ */
 export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
 
 /** Writes to myMemberships, which every membership reader looks up. An uncached list starts empty unless `onlyIfCached`. */

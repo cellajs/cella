@@ -13,7 +13,7 @@ const yjsTokenPayloadSchema = z.object({
   entityType: z.string(),
   entityId: z.string(),
   tenantId: z.string(),
-  organizationId: z.string().nullable(),
+  organizationId: z.string(),
   /** Expiry in epoch milliseconds. */
   exp: z.number(),
 });

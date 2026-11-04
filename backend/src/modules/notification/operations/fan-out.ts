@@ -45,7 +45,6 @@ export async function fanOutNotifications(event: ProductActivityEvent): Promise<
   const source = getNotificationSource(event.entityType);
   if (!source) return;
   const { organizationId, tenantId } = event;
-  if (!organizationId || !tenantId) return;
 
   // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
   const changes = event.rows.flatMap((row) => {

@@ -5,13 +5,22 @@ import * as z from 'zod';
 /**
  * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
  */
-export const zActorRef = z.object({
-  id: z.string(),
-  kind: z.enum(['user', 'service']),
-  name: z.string(),
-  slug: z.string().nullable(),
-  thumbnailUrl: z.string().nullable(),
-});
+export const zActorRef = z.union([
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    kind: z.enum(['user']),
+    slug: z.string(),
+  }),
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    kind: z.enum(['service']),
+    slug: z.null(),
+  }),
+]);
 
 /**
  * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
@@ -101,7 +110,7 @@ export const zStreamChange = z.object({
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
   productType: z.enum(['attachment']),
   organizationId: z.string(),
-  tenantId: z.string().nullable(),
+  tenantId: z.string(),
   channelId: z.string().nullable(),
   rows: z.array(
     z.object({
@@ -370,7 +379,7 @@ export const zInactiveMembership = z.object({
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
   remindedAt: z.string().nullable(),
-  createdBy: zActorRef.nullable(),
+  createdBy: zActorRef,
   organizationId: z.uuid(),
 });
 
@@ -438,9 +447,43 @@ export const zTenant = z.object({
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   organization: z
     .object({
       id: z.string(),
@@ -469,9 +512,43 @@ export const zConnection = z.object({
     logoUrl: z.url().max(255).optional(),
   }),
   createdAt: z.string(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
 });
 
 /**
@@ -494,9 +571,43 @@ export const zOrganization = z.object({
   tenantId: z.string().max(24),
   name: z.string().max(255),
   createdAt: z.string(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   slug: z.string().max(255),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
@@ -567,14 +678,65 @@ export const zAttachment = z.object({
   tenantId: z.string().max(24),
   name: z.string().max(255),
   createdAt: z.string(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
   deletedAt: z.string().nullable(),
-  deletedBy: zActorRef.nullable(),
+  deletedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   public: z.boolean(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
   publicBucket: z.boolean(),
@@ -623,9 +785,43 @@ export const zServiceAccount = z.object({
   ),
   oauthClientId: z.string().max(255).nullable(),
   createdAt: z.string(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   role: z.enum(['admin', 'member']),
   lastSeenAt: z.string().nullable(),
 });
@@ -644,7 +840,24 @@ export const zApiKey = z.object({
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   createdAt: z.string(),
 });
 
@@ -1068,17 +1281,15 @@ export const zPostAppCatchupResponse = z.object({
         .optional(),
     }),
   ),
-  views: z
-    .array(
-      z.object({
-        organizationId: z.string(),
-        entityType: z.enum(['attachment']),
-        status: z.enum(['ok', 'opaque', 'forbidden']),
-        frontier: z.int().optional(),
-      }),
-    )
-    .optional(),
-  generation: z.int().optional(),
+  views: z.array(
+    z.object({
+      organizationId: z.string(),
+      entityType: z.enum(['attachment']),
+      status: z.enum(['ok', 'opaque', 'forbidden']),
+      frontier: z.int().optional(),
+    }),
+  ),
+  generation: z.int(),
 });
 
 /**
@@ -2249,9 +2460,43 @@ export const zUpdateMembershipResponse = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  createdBy: zActorRef.nullable(),
+  createdBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: zActorRef.nullable(),
+  updatedBy: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['user']),
+        slug: z.string(),
+      }),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.string().nullable(),
+        kind: z.enum(['service']),
+        slug: z.null(),
+      }),
+    ])
+    .nullable(),
   organizationId: z.uuid(),
   archived: z.boolean().optional(),
   muted: z.boolean().optional(),
@@ -2351,7 +2596,7 @@ export const zGetPendingMembershipsResponse = z.object({
       createdAt: z.string(),
       remindedAt: z.string().nullable(),
       linkExpiresAt: z.string().nullable(),
-      createdBy: zActorRef.nullable(),
+      createdBy: zActorRef,
     }),
   ),
   total: z.number(),
