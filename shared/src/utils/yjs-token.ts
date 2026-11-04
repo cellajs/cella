@@ -1,5 +1,6 @@
 import { createPrivateKey, createPublicKey, hkdfSync, type KeyObject, sign, verify } from 'node:crypto';
 import { z } from 'zod';
+import { appConfig } from '../config-builder/app-config.ts';
 
 const delimiter = '.';
 const signatureBytes = 64;
@@ -10,7 +11,7 @@ const keyDerivationInfo = 'yjs-token-ed25519';
 
 const yjsTokenPayloadSchema = z.object({
   userId: z.string(),
-  entityType: z.string(),
+  entityType: z.enum(appConfig.productEntityTypes),
   entityId: z.string(),
   tenantId: z.string(),
   organizationId: z.string(),
@@ -23,7 +24,8 @@ export type YjsTokenPayload = z.infer<typeof yjsTokenPayloadSchema>;
 /**
  * The reason lets callers log by severity. `expired` is routine and self-healing: the token lapses
  * on a long-lived editor socket and the client reconnects with a fresh one. `bad_signature` and
- * `malformed` mean a mismatched key pair, truncation or tampering.
+ * `malformed` mean a mismatched key pair, truncation or tampering; `malformed` also answers a token
+ * naming a product type this app no longer declares.
  */
 export type VerifyYjsTokenResult = { ok: true; payload: YjsTokenPayload } | { ok: false; reason: 'malformed' | 'bad_signature' | 'expired' };
 

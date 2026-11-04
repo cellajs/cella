@@ -11,7 +11,7 @@ const { compactDocument } = await import('../sync/compaction');
 const { getCollab, joinCollab, withDocumentLock } = await import('../sync/session-manager');
 
 const staleRow = (overrides: Record<string, unknown> = {}) => ({
-  entityType: 'task',
+  entityType: 'attachment',
   entityId: 'entity-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',

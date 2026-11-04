@@ -42,7 +42,7 @@ vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () =
 
 const { getCollab } = await import('../sync/session-manager');
 
-const entityType = 'task';
+const entityType = 'attachment';
 /** A document of tenant-1, as the relay keys its session and rows. */
 const docOf = (entityId: string) => ({ entityType, entityId, tenantId: 'tenant-1' });
 const relay = await startRelayServer();

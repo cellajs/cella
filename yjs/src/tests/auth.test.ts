@@ -6,7 +6,7 @@ import { createExpiredToken, createSignedToken, signPayload } from './helpers';
 const relaySecret = 'test-yjs-relay-secret-for-unit-tests';
 const claims = () => ({
   userId: 'user-1',
-  entityType: 'task',
+  entityType: 'attachment',
   entityId: 'entity-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
