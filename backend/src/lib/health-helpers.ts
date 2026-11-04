@@ -79,10 +79,7 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
 
   // The diagnostics are public, and a flush failure's message carries the failed SQL: the worker's log keeps it.
   const { failure, ...workerDetails } = health?.details ?? {};
-  const publicFailure =
-    typeof failure === 'object' && failure !== null
-      ? { failure: Object.fromEntries(Object.entries(failure).filter(([key]) => key !== 'error')) }
-      : {};
+  const publicFailure = failure ? { failure: Object.fromEntries(Object.entries(failure).filter(([key]) => key !== 'error')) } : {};
 
   return {
     status: worstStatus(health?.status ?? 'degraded', ownReason ? 'degraded' : 'healthy'),
