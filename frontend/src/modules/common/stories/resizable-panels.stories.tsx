@@ -17,6 +17,9 @@ interface BoardState {
   /** `scroll` is a member board's ScrollArea, `clip` the public page's wrapper. */
   parent?: 'scroll' | 'clip';
   mustFit?: boolean;
+  /** Renders the end handle after the last panel (E1) */
+  end?: boolean;
+  fit?: boolean;
 }
 
 const specId = (spec: PanelSpec) => (typeof spec === 'string' ? spec : spec.id);
@@ -25,10 +28,10 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 100));
 class Board {
   saves: Layout[] = [];
   collapses: string[] = [];
+  fits: boolean[] = [];
   api?: PanelGroupApi;
   canvas?: HTMLElement;
   update?: (next: Partial<BoardState>) => void;
-  private lastPress = 0;
 
   constructor(readonly initial: BoardState) {}
 
@@ -68,9 +71,16 @@ class Board {
     return this.canvas?.querySelector<HTMLElement>('.group\\/board')?.style.minWidth ?? '';
   }
 
+  fitLine() {
+    const line = this.canvas?.querySelector<HTMLElement>('[data-fit-line]');
+    return !line || line.hidden ? 'hidden' : line.hasAttribute('data-snapped') ? 'solid' : 'dashed';
+  }
+
   async set(next: Partial<BoardState>) {
     this.update?.(next);
     await settle();
+    // P1: a resize saves once it settles
+    if (next.width !== undefined) await settle();
   }
 
   async press(key: string, index = 0) {
@@ -78,11 +88,7 @@ class Board {
     await settle();
   }
 
-  async pointerDown(index = 0, button = 0) {
-    // Two presses within 300ms are a double press (T5)
-    const sincePress = Date.now() - this.lastPress;
-    if (sincePress < 310) await new Promise((resolve) => setTimeout(resolve, 310 - sincePress));
-    this.lastPress = Date.now();
+  pointerDown(index = 0, button = 0) {
     this.separator(index).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 1000, clientY: 50, pointerId: 1, button }));
   }
 
@@ -96,15 +102,8 @@ class Board {
   }
 
   async drag(dx: number, index = 0) {
-    await this.pointerDown(index);
+    this.pointerDown(index);
     this.pointerMove(dx);
-    await this.pointerUp();
-  }
-
-  async doublePress(index = 0) {
-    await this.pointerDown(index);
-    await this.pointerUp();
-    this.separator(index).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 1000, clientY: 50, pointerId: 1, button: 0 }));
     await this.pointerUp();
   }
 
@@ -120,13 +119,18 @@ function PanelBoard({ board }: { board: Board }) {
     board.update = (next) => setState((previous) => ({ ...previous, ...next }));
   }, [board]);
 
-  const { width, panels, layout, groupId = 'group', parent = 'scroll', mustFit } = state;
+  const { width, panels, layout, groupId = 'group', parent = 'scroll', mustFit, end, fit } = state;
   const group = (
     <ResizablePanelGroup
       id={groupId}
       className={parent === 'scroll' ? 'group/board h-[inherit] min-h-40' : 'group/board h-40'}
       defaultLayout={layout}
       mustFit={mustFit}
+      fit={fit}
+      onFitChange={(next) => {
+        board.fits.push(next);
+        setState((previous) => ({ ...previous, fit: next }));
+      }}
       onLayoutChanged={(saved) => board.saves.push(saved)}
       onCollapseChange={(id, collapsed) => board.collapses.push(`${id}:${collapsed ? 'closed' : 'open'}`)}
       onReady={(api) => {
@@ -138,7 +142,7 @@ function PanelBoard({ board }: { board: Board }) {
         return (
           <div key={specId(spec)} className="relative flex shrink-0">
             <ResizablePanel id={specId(spec)} minWidth={minWidth} collapsedWidth={collapsedWidth} collapsible={collapsible} label={specId(spec)} />
-            {index < panels.length - 1 && <ResizableSeparator index={index} className="mx-[0.02rem] w-1.5 bg-border" />}
+            {(index < panels.length - 1 || end) && <ResizableSeparator index={index} className="mx-[0.02rem] w-1.5 bg-border" />}
           </div>
         );
       })}
@@ -181,7 +185,7 @@ function scenario(initial: BoardState, play: (board: Board) => Promise<void>): S
 const wide = { a: 600, b: 593.36 };
 
 export const FirstMountFills = scenario({ width: 1000, panels: ['a', 'b'] }, async (board) => {
-  await expect(board.widths()).toEqual({ a: 496, b: 497 });
+  await expect(board.widths()).toEqual({ a: 497, b: 497 });
   await expect(board.saves).toHaveLength(1);
   await expect(board.collapses).toEqual(['a:open', 'b:open']);
 });
@@ -233,7 +237,7 @@ export const RemovePanelFillsTheRoom = scenario({ width: 1200, panels: ['a', 'b'
 export const RemovePanelClearsMinWidth = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: { a: 400, b: 400, c: 400 } }, async (board) => {
   await expect(board.minWidth()).toBe('1214px');
   await board.set({ panels: ['a', 'b'] });
-  await expect(board.widths()).toEqual({ a: 496, b: 497 });
+  await expect(board.widths()).toEqual({ a: 497, b: 497 });
   await expect(board.minWidth()).toBe('');
 });
 
@@ -252,13 +256,13 @@ export const NewGroupIdRereadsLayout = scenario({ width: 1200, panels: ['a', 'b'
 });
 
 export const PanelChangeAbortsDrag = scenario({ width: 1200, panels: ['a', 'b'], layout: { ...wide, c: 300 } }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-100);
   await expect(board.widths()).toEqual({ a: 500, b: 693 });
   await board.set({ panels: ['a', 'b', 'c'] });
-  await expect(board.widths()).toEqual({ a: 445, b: 442, c: 300 });
+  await expect(board.widths()).toEqual({ a: 446, b: 441, c: 300 });
   board.pointerMove(-200);
-  await expect(board.widths()).toEqual({ a: 445, b: 442, c: 300 });
+  await expect(board.widths()).toEqual({ a: 446, b: 441, c: 300 });
   await board.pointerUp();
   await expect(board.saves).toHaveLength(1);
 });
@@ -274,7 +278,7 @@ export const RefitCrossesTheModeThreshold = scenario({ width: 760, panels: ['a',
   await expect(board.minWidth()).toBe('760px');
   await board.set({ width: 1000 });
   await expect(board.minWidth()).toBe('');
-  await expect(board.widths()).toEqual({ a: 495, b: 498 });
+  await expect(board.widths()).toEqual({ a: 496, b: 498 });
 });
 
 export const RefitPaysForAPanelAtMin = scenario({ width: 1000, panels: ['a', 'b'], layout: { a: 900, b: 300 } }, async (board) => {
@@ -282,28 +286,38 @@ export const RefitPaysForAPanelAtMin = scenario({ width: 1000, panels: ['a', 'b'
   await expect(board.over()).toBe(0);
 });
 
-export const RefitToleranceLeavesThatMuch = scenario({ width: 1500, panels: ['a', 'b'], layout: { a: 750, b: 750 } }, async (board) => {
-  await expect(board.widths()).toEqual({ a: 750, b: 750 });
-  await expect(board.over()).toBe(7);
-  await expect(board.saves).toHaveLength(0);
+export const RefitTakesBackEveryPixel = scenario({ width: 1500, panels: ['a', 'b'], layout: { a: 750, b: 750 } }, async (board) => {
+  await expect(board.widths()).toEqual({ a: 747, b: 747 });
+  await expect(board.over()).toBe(0);
+  await expect(board.saves).toHaveLength(1);
 });
 
-export const RefitHasNoMemory = scenario({ width: 1600, panels: ['a', 'b'], layout: { a: 300, b: 1294 } }, async (board) => {
+export const RefitKeepsProportionsThroughAResize = scenario(
+  { width: 1300, panels: ['a', 'b', 'c'], layout: { a: 400, b: 500, c: 386.72 } },
+  async (board) => {
+    for (let width = 1293; width >= 1200; width -= 7) await board.set({ width });
+    await expect(board.over()).toBe(0);
+    await board.set({ width: 1300 });
+    await expect(board.widths()).toEqual({ a: 400, b: 500, c: 387 });
+  },
+);
+
+export const RefitHasNoMemory = scenario({ width: 1600, panels: ['a', 'b'], layout: { a: 300, b: 1293.36 } }, async (board) => {
   await board.set({ width: 700 });
   await expect(board.widths()).toEqual({ a: 481, b: 693 });
   await expect(board.minWidth()).toBe('1182px');
   await board.set({ width: 1600 });
-  await expect(board.widths()).toEqual({ a: 652, b: 941 });
+  await expect(board.widths()).toEqual({ a: 653, b: 941 });
   await expect(board.saves).toHaveLength(2);
 });
 
 export const ResizeDuringDragWaitsForDrop = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-50);
   await board.set({ width: 1000 });
   await expect(board.widths()).toEqual({ a: 550, b: 643 });
   await board.pointerUp();
-  await expect(board.widths()).toEqual({ a: 457, b: 536 });
+  await expect(board.widths()).toEqual({ a: 458, b: 536 });
 });
 
 export const ToggleClosesAndReopensScaled = scenario({ width: 1200, panels: ['a', 'b'], layout: { a: 800, b: 393.36 } }, async (board) => {
@@ -312,7 +326,7 @@ export const ToggleClosesAndReopensScaled = scenario({ width: 1200, panels: ['a'
   await expect(board.widths()).toEqual({ a: 1143, b: 50 });
   board.api?.togglePanel('b');
   await settle();
-  await expect(board.widths()).toEqual({ a: 887, b: 306 });
+  await expect(board.widths()).toEqual({ a: 888, b: 305 });
   await expect(board.saves).toHaveLength(2);
   board.api?.expandPanel('a');
   await settle();
@@ -338,17 +352,12 @@ export const AllClosedIsAllowed = scenario({ width: 1200, panels: ['a', 'b'], la
   await expect(board.widths()).toEqual({ a: 50, b: 1143 });
 });
 
-export const EnterAndDoublePressToggleLeftPanel = scenario(
-  { width: 1200, panels: ['a', 'b', 'c'], layout: { a: 400, b: 400, c: 386.72 } },
-  async (board) => {
-    await board.press('Enter');
-    await expect(board.widths()).toEqual({ a: 50, b: 577, c: 560 });
-    await board.press('Enter');
-    await expect(board.widths().a).toBeGreaterThan(50);
-    await board.doublePress();
-    await expect(board.widths().a).toBe(50);
-  },
-);
+export const EnterTogglesLeftPanel = scenario({ width: 1200, panels: ['a', 'b', 'c'], layout: { a: 400, b: 400, c: 386.72 } }, async (board) => {
+  await board.press('Enter');
+  await expect(board.widths()).toEqual({ a: 50, b: 578, c: 559 });
+  await board.press('Enter');
+  await expect(board.widths().a).toBeGreaterThan(50);
+});
 
 export const PressWithoutMovingSaves = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
   await board.drag(0);
@@ -357,7 +366,7 @@ export const PressWithoutMovingSaves = scenario({ width: 1200, panels: ['a', 'b'
 });
 
 export const DragReleasedInTheZoneStaysAtMin = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(450);
   await expect(board.widths()).toEqual({ a: 1143, b: 50 });
   board.pointerMove(200);
@@ -369,7 +378,7 @@ export const DragReleasedInTheZoneStaysAtMin = scenario({ width: 1200, panels: [
 });
 
 export const DragOpensWithoutFundingThenOverflows = scenario({ width: 500, panels: ['a', 'b'], layout: { a: 443.36, b: 50 } }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-260);
   await expect(board.widths()).toEqual({ a: 300, b: 300 });
   await expect(board.over()).toBe(107);
@@ -415,7 +424,7 @@ export const ArrowOpensClosedGrowerWithVictimAtMin = scenario(
 );
 
 export const ArrowStopsAtMin = scenario({ width: 706, panels: ['a', 'b'], layout: { a: 400, b: 300 } }, async (board) => {
-  await expect(board.widths()).toEqual({ a: 428, b: 322 });
+  await expect(board.widths()).toEqual({ a: 429, b: 322 });
   await board.press('ArrowRight');
   await board.press('ArrowRight');
   await expect(board.widths()).toEqual({ a: 450, b: 300 });
@@ -430,7 +439,7 @@ export const ArrowGrowerIsUncappedInOverflow = scenario(
 );
 
 export const CancelledPointerAbortsDrag = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-20);
   board.cancelPointer();
   board.pointerMove(-120);
@@ -440,7 +449,7 @@ export const CancelledPointerAbortsDrag = scenario({ width: 1200, panels: ['a', 
 });
 
 export const OtherPointerIsIgnored = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-100, 2);
   await expect(board.widths()).toEqual({ a: 600, b: 593 });
   board.pointerMove(-50);
@@ -449,7 +458,7 @@ export const OtherPointerIsIgnored = scenario({ width: 1200, panels: ['a', 'b'],
 });
 
 export const SecondaryButtonIsIgnored = scenario({ width: 1200, panels: ['a', 'b'], layout: wide }, async (board) => {
-  await board.pointerDown(0, 2);
+  board.pointerDown(0, 2);
   board.pointerMove(-100);
   await expect(board.widths()).toEqual({ a: 600, b: 593 });
   await board.pointerUp();
@@ -494,7 +503,7 @@ export const FitSharesTheRow = scenario({ ...fitting, width: 1256, panels: four 
 });
 
 export const FitGoesBelowTheIdealWidth = scenario({ ...fitting, width: 700, panels: ['a', 'b'] }, async (board) => {
-  await expect(board.widths()).toEqual({ a: 346, b: 347 });
+  await expect(board.widths()).toEqual({ a: 347, b: 347 });
   await expect(board.minWidth()).toBe('');
 });
 
@@ -537,7 +546,7 @@ export const FitAddedPanelStaysOpen = scenario({ ...fitting, width: 1000, panels
 
 export const FitRemovedPanelFreesARoom = scenario({ ...fitting, width: 1000, panels: four }, async (board) => {
   await board.set({ panels: ['a', 'b', 'd'] });
-  await expect(board.widths()).toEqual({ a: 328, b: 328, d: 331 });
+  await expect(board.widths()).toEqual({ a: 329, b: 329, d: 329 });
   await board.set({ panels: ['a', 'b', 'c', 'd'] });
   await expect(board.over()).toBe(0);
 });
@@ -570,7 +579,7 @@ export const FitOneStaysOpen = scenario({ ...fitting, width: 1000, panels: ['a',
 });
 
 export const FitDragHoldsThenSwaps = scenario({ ...fitting, width: 500, panels: ['a', 'b'], layout: { a: 443.36, b: 50 } }, async (board) => {
-  await board.pointerDown();
+  board.pointerDown();
   board.pointerMove(-200);
   await expect(board.widths()).toEqual({ a: 443, b: 50 });
   board.pointerMove(-400);
@@ -599,5 +608,77 @@ export const FitArrowOpensAStripAndClosesAnother = scenario(
     await expect(board.widths().a).toBe(50);
     await expect(board.widths().b).toBe(443);
     await expect(board.over()).toBe(0);
+  },
+);
+
+// Three open panels at 375 with the end handle: the ideal of 1125 plus three separators overflows 1000, at 300 each the row fits
+const roomy = { a: 375, b: 375, c: 375 };
+
+export const EndDragToTheLineFits = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+  await expect(board.minWidth()).toBe('1145px');
+  board.pointerDown(2);
+  board.pointerMove(-60);
+  await expect(board.fitLine()).toBe('dashed');
+  await expect(board.widths()).toEqual({ a: 375, b: 375, c: 315 });
+  board.pointerMove(-150);
+  await expect(board.fitLine()).toBe('solid');
+  await board.pointerUp();
+  await expect(board.fitLine()).toBe('hidden');
+  await expect(board.fits).toEqual([true]);
+  await expect(board.minWidth()).toBe('');
+  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
+  await expect(board.over()).toBe(0);
+});
+
+export const EndReleasedShortChangesNothing = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+  await board.drag(-60, 2);
+  await expect(board.fits).toEqual([]);
+  await expect(board.widths()).toEqual(roomy);
+  await expect(board.minWidth()).toBe('1145px');
+});
+
+export const EndFitsAtMinWhenTheRoomIsShort = scenario({ width: 800, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+  await board.drag(-400, 2);
+  await expect(board.fits).toEqual([true]);
+  await expect(board.widths()).toEqual({ a: 300, b: 300, c: 300 });
+  await expect(board.minWidth()).toBe('920px');
+});
+
+export const EndPullPastTheGateGoesRoomy = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true, fit: true }, async (board) => {
+  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
+  await board.drag(30, 2);
+  await expect(board.fits).toEqual([]);
+  await expect(board.minWidth()).toBe('');
+  await board.drag(60, 2);
+  await expect(board.fits).toEqual([false]);
+  await expect(board.minWidth()).toBe('1145px');
+  await expect(board.widths()).toEqual(roomy);
+});
+
+export const EndKeysSwitchFit = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+  await board.press('Home', 2);
+  await expect(board.fits).toEqual([true]);
+  await expect(board.minWidth()).toBe('');
+  await board.press('End', 2);
+  await expect(board.fits).toEqual([true, false]);
+  await expect(board.minWidth()).toBe('1145px');
+});
+
+export const EndFitFromTheConsumerApplies = scenario({ width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true }, async (board) => {
+  await board.set({ fit: true });
+  await expect(board.fits).toEqual([]);
+  await expect(board.widths()).toEqual({ a: 327, b: 327, c: 327 });
+  await expect(board.minWidth()).toBe('');
+});
+
+export const EndFitKeepsTheRowNarrowOnResize = scenario(
+  { width: 1000, panels: ['a', 'b', 'c'], layout: roomy, end: true, fit: true },
+  async (board) => {
+    await board.set({ width: 960 });
+    await expect(board.minWidth()).toBe('');
+    await expect(board.widths()).toEqual({ a: 313, b: 313, c: 313 });
+    for (const width of [940, 920, 900]) await board.set({ width });
+    await expect(board.minWidth()).toBe('920px');
+    await expect(board.widths()).toEqual({ a: 300, b: 300, c: 300 });
   },
 );

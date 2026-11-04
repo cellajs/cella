@@ -37,7 +37,7 @@ export function DocsLandingPage() {
   );
 }
 
-const cardClass = tw('group/docs-tile flex items-center gap-3 rounded-lg border border-input p-4 transition-colors hover:bg-muted');
+const cardClass = tw('group/docs-tile flex items-start gap-3 rounded-lg border border-input p-4 transition-colors hover:bg-muted');
 
 /** A docs tile: the landing tiles and a page's child pages; internal targets go through the router. */
 export function DocsTileCard({ tile }: { tile: DocsTile }) {
@@ -51,7 +51,7 @@ export function DocsTileCard({ tile }: { tile: DocsTile }) {
         </h3>
         {tile.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{tile.description}</p>}
       </div>
-      <TrailingIcon className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/docs-tile:opacity-100" />
+      <TrailingIcon className="mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/docs-tile:opacity-100" />
     </>
   );
 

@@ -9,6 +9,7 @@ import {
   type HintData,
   type LayoutResult,
   type PanelConfig,
+  resolveEndDrag,
   resolveLayout,
 } from '~/modules/common/resizable-panels/panel-layout';
 import { cn } from '~/utils/cn';
@@ -125,6 +126,8 @@ function markOpening(element: HTMLElement) {
   );
 }
 
+const resizeSaveDelay = 150;
+
 export interface PanelGroupApi {
   /** No-op when the panel is already expanded */
   expandPanel: (panelId: string) => void;
@@ -144,6 +147,9 @@ interface ResizablePanelGroupProps {
   onReady?: (api: PanelGroupApi) => void;
   /** The row always fits its parent, closing panels when there are too many, and `onLayoutChanged` reports what the user chose (F rules). Fixed for the group's lifetime. */
   mustFit?: boolean;
+  /** Mode detection counts open panels at `minWidth`, not their ideal width (E2). The end handle switches it. */
+  fit?: boolean;
+  onFitChange?: (fit: boolean) => void;
   className?: string;
   children: ReactNode;
 }
@@ -155,12 +161,14 @@ export function ResizablePanelGroup({
   onCollapseChange,
   onReady,
   mustFit = false,
+  fit = false,
+  onFitChange,
   className,
   children,
 }: ResizablePanelGroupProps) {
   const panelsRef = useRef<PanelEntry[]>([]);
   const widthsRef = useRef<Record<string, number>>({});
-  const dragRef = useRef<(DragState & { pointerId: number }) | null>(null);
+  const dragRef = useRef<(DragState & { pointerId: number; snapped?: boolean }) | null>(null);
   const expandedWidthsRef = useRef<Record<string, number>>({});
   const panelChangePendingRef = useRef(false);
   const unregisteredPanelsRef = useRef<Set<string>>(new Set());
@@ -171,9 +179,14 @@ export function ResizablePanelGroup({
   const autoCollapsedRef = useRef<string[]>([]);
   const recencyRef = useRef<string[]>([]);
   const fittedParentWidthRef = useRef(0);
+  const resizeSaveRef = useRef(0);
+  // Ahead of the prop: a switch applies at once, before the consumer renders it back
+  const fitRef = useRef(fit);
   const separatorsRef = useRef<Map<number, HTMLDivElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
+  const fitLineRef = useRef<HTMLDivElement>(null);
   const onLayoutChangedRef = useLatestRef(onLayoutChanged);
+  const onFitChangeRef = useLatestRef(onFitChange);
   const onCollapseChangeRef = useLatestRef(onCollapseChange);
   const defaultLayoutRef = useLatestRef(defaultLayout);
 
@@ -198,13 +211,46 @@ export function ResizablePanelGroup({
     if (width > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = width;
   };
 
+  // Covers a pending resize save too
+  const saveLayout = () => {
+    clearTimeout(resizeSaveRef.current);
+    onLayoutChangedRef.current?.(getWidths());
+  };
+
+  // P1: a resize refits on every frame, and each save re-renders the consumer
+  const saveAfterResize = () => {
+    clearTimeout(resizeSaveRef.current);
+    resizeSaveRef.current = window.setTimeout(saveLayout, resizeSaveDelay);
+  };
+
   // Writes the widths, refits the container and reports the settled layout
   const commitLayout = () => {
     applyWidths();
     updateContainerWidth();
     redistributePanels();
-    onLayoutChangedRef.current?.(getWidths());
+    saveLayout();
   };
+
+  // E4: in proportion to the room, or at minWidth when not even that fits, which a refit alone would not shrink to
+  const applyFit = () => {
+    const parent = containerRef.current?.parentElement;
+    if (fitRef.current && parent) {
+      const open = panelsRef.current.filter((panel) => !isCollapsed(panel));
+      const closed = panelsRef.current.reduce((sum, panel) => sum + (isCollapsed(panel) ? widthOf(panel) : 0), 0);
+      const room = parent.getBoundingClientRect().width - getSeparatorSpace() - closed;
+      const least = open.reduce((sum, panel) => sum + panel.minWidth, 0);
+      setWidths(distributeWidths(open, Object.fromEntries(open.map((panel) => [panel.id, widthOf(panel)])), Math.max(room, least)));
+    }
+    commitLayout();
+  };
+
+  const setFit = (next: boolean) => {
+    fitRef.current = next;
+    onFitChangeRef.current?.(next);
+    applyFit();
+  };
+
+  const isEndSeparator = (separatorIndex: number) => !mustFitRef.current && separatorIndex === panelsRef.current.length - 1;
 
   // Every width is in place before anyone hears of a change: a listener can call back into the group
   const setWidths = (widths: Record<string, number>) => {
@@ -313,7 +359,8 @@ export function ResizablePanelGroup({
       handoff = Math.max(handoff, curtainProgress(hint));
     }
     const drag = dragRef.current;
-    if (drag) separatorsRef.current.get(drag.separatorIndex)?.style.setProperty('--hint-strength', `${handoff}`);
+    // The end handle stays: its gate curtain marks a release, not a separator handing over
+    if (drag && !drag.end) separatorsRef.current.get(drag.separatorIndex)?.style.setProperty('--hint-strength', `${handoff}`);
 
     applyWidths();
   };
@@ -336,6 +383,8 @@ export function ResizablePanelGroup({
   // `toLimit` is Home/End: as far as the victim goes, closed if it can. An arrow stops at its minWidth.
   const applyKeyboardStep = (separatorIndex: number, delta: number, toLimit = false) => {
     sortPanels();
+    // E6
+    if (isEndSeparator(separatorIndex)) return setFit(delta < 0);
 
     const panels = panelsRef.current;
     const draggingLeft = delta < 0;
@@ -395,6 +444,13 @@ export function ResizablePanelGroup({
       if (isCollapsed(panel)) collapsedAtStart.add(panel.id);
     }
 
+    const last = panelsRef.current.at(-1);
+    const parentWidth = containerRef.current?.parentElement?.getBoundingClientRect().width ?? 0;
+    const end =
+      isEndSeparator(separatorIndex) && last
+        ? { fit: fitRef.current, room: parentWidth - getSeparatorSpace(), reach: last.minWidth * (idealWidthFactor - 1) }
+        : undefined;
+
     dragRef.current = {
       separatorIndex,
       startX,
@@ -403,7 +459,15 @@ export function ResizablePanelGroup({
       mustFit: mustFitRef.current,
       initialWidths,
       collapsedAtStart,
+      end,
     };
+
+    // E3: where the row's end has to land
+    const fitLine = fitLineRef.current;
+    if (end && !end.fit && fitLine) {
+      fitLine.style.left = `${parentWidth}px`;
+      fitLine.hidden = false;
+    }
 
     // clientWidth leaves out the border, which the board draws in the background color
     const separatorWidth = separatorsRef.current.get(separatorIndex)?.clientWidth;
@@ -415,6 +479,10 @@ export function ResizablePanelGroup({
   const cleanupDrag = () => {
     dragRef.current = null;
     clearCursorOverride();
+    if (fitLineRef.current) {
+      fitLineRef.current.hidden = true;
+      fitLineRef.current.removeAttribute('data-snapped');
+    }
     containerRef.current?.style.removeProperty('--separator-width');
     for (const panel of panelsRef.current) clearResizeHint(panel.element);
     for (const separator of separatorsRef.current.values()) {
@@ -427,6 +495,11 @@ export function ResizablePanelGroup({
     const drag = dragRef.current;
     if (!drag) return;
     cleanupDrag();
+    if (drag.end) {
+      // E4: fit shares the room from the widths the row had before the drag
+      setWidths(drag.initialWidths);
+      return drag.snapped ? setFit(!drag.end.fit) : commitLayout();
+    }
     if (!mustFitRef.current) return commitLayout();
 
     const grown = panelsRef.current.filter((panel) => widthOf(panel) > drag.initialWidths[panel.id]).map((panel) => panel.id);
@@ -552,7 +625,8 @@ export function ResizablePanelGroup({
 
   const getIdealPanelSum = () => {
     let sum = 0;
-    for (const panel of panelsRef.current) sum += isCollapsed(panel) ? panel.collapsedWidth : panel.minWidth * idealWidthFactor;
+    const factor = fitRef.current ? 1 : idealWidthFactor;
+    for (const panel of panelsRef.current) sum += isCollapsed(panel) ? panel.collapsedWidth : panel.minWidth * factor;
     return sum;
   };
 
@@ -572,9 +646,9 @@ export function ResizablePanelGroup({
   };
 
   // Resizing the parent can cross the autoFill/overflow threshold
-  const refit = () => {
+  const refit = (save = saveLayout) => {
     updateContainerWidth();
-    if (redistributePanels()) onLayoutChangedRef.current?.(getWidths());
+    if (redistributePanels()) save();
   };
 
   // Scale non-collapsed panels so their total matches the available container space.
@@ -602,9 +676,10 @@ export function ResizablePanelGroup({
     const panelSum = getPanelSum();
     if (panelSum <= 0) return false;
 
-    const ratio = available / panelSum;
-    if (Math.abs(ratio - 1) < 0.005) {
-      // The pre-pass clamp may have changed widths even when ratio is ~1
+    // R2: a pixel over would scroll the board sideways; a gap under a pixel is overflow mode's ceiled min-width
+    const gap = available - panelSum;
+    if (gap > -0.01 && gap < 1) {
+      // The pre-pass clamp may have changed widths even when the row fits
       if (changed) {
         applyWidths();
         updateContainerWidth();
@@ -620,7 +695,7 @@ export function ResizablePanelGroup({
     for (const panel of expandedPanels) {
       const width = widthOf(panel);
       const newWidth = Math.min(shares[panel.id], viewportWidth);
-      if (Math.abs(newWidth - width) >= 1) {
+      if (newWidth !== width) {
         widthsRef.current[panel.id] = newWidth;
         if (newWidth > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = newWidth;
         changed = true;
@@ -641,7 +716,7 @@ export function ResizablePanelGroup({
 
     const handleResize = () => {
       if (dragRef.current) return;
-      if (!mustFitRef.current) return refit();
+      if (!mustFitRef.current) return refit(saveAfterResize);
 
       // F9: list heights change this page's size all the time, and only a width can change the fit
       const parentWidth = container.parentElement?.getBoundingClientRect().width;
@@ -651,13 +726,25 @@ export function ResizablePanelGroup({
     const observer = new ResizeObserver(handleResize);
     observer.observe(container);
     if (container.parentElement) observer.observe(container.parentElement);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Dropped: a remount refits the stored widths to the new width anyway
+      clearTimeout(resizeSaveRef.current);
+    };
   }, []);
 
   const notifyReady = useEffectEvent(() => onReady?.({ expandPanel, togglePanel }));
   useEffect(() => {
     notifyReady();
   }, []);
+
+  // E8: a store that loads after mount changes the prop
+  const syncFit = useEffectEvent((next: boolean) => {
+    if (next === fitRef.current) return;
+    fitRef.current = next;
+    applyFit();
+  });
+  useEffect(() => syncFit(fit), [fit]);
 
   // A reorder re-renders the group but registers nothing
   useEffect(() => updateSeparatorAria());
@@ -666,7 +753,13 @@ export function ResizablePanelGroup({
     const handlePointerMove = (event: PointerEvent) => {
       const drag = dragRef.current;
       if (drag?.pointerId !== event.pointerId) return;
-      applyLayoutResult(resolveLayout(panelsRef.current, drag, event.clientX - drag.startX), event.clientY);
+      const dx = event.clientX - drag.startX;
+      if (!drag.end) return applyLayoutResult(resolveLayout(panelsRef.current, drag, dx), event.clientY);
+
+      const result = resolveEndDrag(panelsRef.current, drag, dx);
+      drag.snapped = result.snapped;
+      fitLineRef.current?.toggleAttribute('data-snapped', result.snapped);
+      applyLayoutResult(result, event.clientY);
     };
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -703,8 +796,14 @@ export function ResizablePanelGroup({
 
   return (
     <PanelGroupContext.Provider value={contextValue}>
-      <div ref={containerRef} className={cn('flex', className)}>
+      <div ref={containerRef} className={cn('relative flex', className)}>
         {children}
+        <div
+          ref={fitLineRef}
+          hidden
+          data-fit-line=""
+          className="pointer-events-none absolute inset-y-0 z-999 -translate-x-full border-primary border-r-2 border-dashed data-snapped:border-solid"
+        />
       </div>
     </PanelGroupContext.Provider>
   );
@@ -776,20 +875,9 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
     return () => context.unregisterSeparator(index);
   }, [index, context]);
 
-  const lastPointerDownRef = useRef(0);
-
   const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
     if (!context || !separatorRef.current || event.button !== 0) return;
     event.preventDefault();
-
-    const now = Date.now();
-    if (now - lastPointerDownRef.current < 300) {
-      lastPointerDownRef.current = 0;
-      context.toggleCollapseAtSeparator(index);
-      return;
-    }
-    lastPointerDownRef.current = now;
-
     separatorRef.current.setPointerCapture(event.pointerId);
     separatorRef.current.setAttribute('data-separator', 'drag');
     separatorRef.current.focus();

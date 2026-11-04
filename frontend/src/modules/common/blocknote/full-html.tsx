@@ -3,7 +3,8 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import DOMPurify from 'dompurify';
-import { type MouseEventHandler, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { type MouseEventHandler, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { MediaRefContext } from 'shared/utils/media-ref';
 import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
@@ -82,6 +83,22 @@ export function precomputeDocumentHtml(document: string, organizationId?: string
   if (!blocks) return;
   cacheFirstPass(key, toFullHtml(renderableBlocks(blocks, { organizationId })) ?? '');
 }
+
+// A layout effect may not call blocksToFullHTML (flushSync), but its microtask still runs before the browser paints. One
+// microtask computes every first pass a commit queued and applies them in one synchronous render, so the rows of a list
+// paint at full height in the frame they mount.
+const queuedFirstPasses: (() => (() => void) | undefined)[] = [];
+
+const queueFirstPass = (compute: () => (() => void) | undefined) => {
+  queuedFirstPasses.push(compute);
+  if (queuedFirstPasses.length > 1) return;
+  queueMicrotask(() => {
+    const applies = queuedFirstPasses.splice(0).map((run) => run());
+    flushSync(() => {
+      for (const apply of applies) apply?.();
+    });
+  });
+};
 
 interface BlockNoteFullHtmlProps extends Pick<CommonBlockNoteProps, 'id' | 'className' | 'dense' | 'clickOpensPreview'> {
   defaultValue: string;
@@ -166,8 +183,7 @@ export function BlockNoteFullHtml({
     }
   }, [renderState.ready]);
 
-  // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const parsed = getParsedContent(defaultValue);
     if (!parsed) {
       setRenderState({ html: '', mediaItems: [], ready: true });
@@ -183,11 +199,14 @@ export function BlockNoteFullHtml({
       // Covers defaultValue changes after mount; on first mount the initializer already painted it.
       setRenderState((prev) => (prev.html === cached && prev.ready ? prev : { html: cached, mediaItems: [], ready: true }));
     } else {
-      queueMicrotask(() => {
+      queueFirstPass(() => {
         if (cancelled) return;
-        const html = toFullHtml(blocks) ?? '';
-        cacheFirstPass(cacheKey, html);
-        setRenderState({ html, mediaItems: [], ready: true });
+        let html = firstPassHtmlCache.get(cacheKey);
+        if (html === undefined) {
+          html = toFullHtml(blocks) ?? '';
+          cacheFirstPass(cacheKey, html);
+        }
+        return () => setRenderState({ html, mediaItems: [], ready: true });
       });
     }
 

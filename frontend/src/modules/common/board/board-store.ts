@@ -15,6 +15,10 @@ interface BoardUIState {
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
+  /** boardId => whether the panels fit at their minimum width before the row scrolls (resizable-panels.md, E2). */
+  boardFits: Record<string, boolean>;
+  setBoardFit: (boardId: string, fit: boolean) => void;
+
   /** Local displayOrder of panels the server does not own, fractional like membership.displayOrder so one comparator sorts both. */
   boardPanelOrders: Record<string, Record<string, number>>;
   setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
@@ -24,10 +28,11 @@ interface BoardUIState {
   reset: () => void;
 }
 
-const initStore: Pick<BoardUIState, 'panelCollapseState' | 'activeBoardId' | 'boardLayouts' | 'boardPanelOrders'> = {
+const initStore: Pick<BoardUIState, 'panelCollapseState' | 'activeBoardId' | 'boardLayouts' | 'boardFits' | 'boardPanelOrders'> = {
   panelCollapseState: {},
   activeBoardId: null,
   boardLayouts: {},
+  boardFits: {},
   boardPanelOrders: {},
 };
 
@@ -54,6 +59,13 @@ export const useBoardStore = create<BoardUIState>()(
         updateBoardLayout: (boardId, layout) => {
           set((state) => {
             state.boardLayouts[boardId] = layout;
+          });
+        },
+
+        setBoardFit: (boardId, fit) => {
+          set((state) => {
+            if (fit) state.boardFits[boardId] = true;
+            else delete state.boardFits[boardId];
           });
         },
 
@@ -88,6 +100,7 @@ export const useBoardStore = create<BoardUIState>()(
         partialize: (state) => ({
           panelCollapseState: state.panelCollapseState,
           boardLayouts: state.boardLayouts,
+          boardFits: state.boardFits,
           boardPanelOrders: state.boardPanelOrders,
         }),
         storage: createJSONStorage(() => idbKvStorage('board')),

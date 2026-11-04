@@ -306,7 +306,7 @@ export const config = {
   theme: {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
-    strokeWidth: 1.5,
+    strokeWidth: 1.75,
     /**
      * Mail colors, hex: mail clients read neither CSS variables nor oklch. Some clients recolor a mail for dark mode and
      * leave dark fills alone, so the button's edge, or a mid-tone fill, must stand out on white and on a dark panel;

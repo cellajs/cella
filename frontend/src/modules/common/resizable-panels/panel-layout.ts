@@ -33,6 +33,17 @@ export interface DragState {
   collapsedAtStart: Set<string>;
   /** The drag may swap a closed panel open (F7), and never ends over budget */
   mustFit?: boolean;
+  /** Set when the end handle is dragged (E rules) */
+  end?: EndDragState;
+}
+
+export interface EndDragState {
+  /** Fit at drag start */
+  fit: boolean;
+  /** What the panels may take for the row to fit: the parent's width less the separators */
+  room: number;
+  /** Curtain width at the end of the gate (E5) */
+  reach: number;
 }
 
 export interface FitInput {
@@ -62,7 +73,7 @@ function collapseProgress(panel: PanelConfig, rawWidth: number): number {
 }
 
 // Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses.
-/** Shares `available` by `weights`: whoever a share would take below `minWidth` holds it, the others share the rest, and the last takes the rounding. */
+/** Shares `available` by `weights`: whoever a share would take below `minWidth` holds it, and the others share the rest exactly. */
 export function distributeWidths(panels: PanelConfig[], weights: Record<string, number>, available: number): Record<string, number> {
   const widths: Record<string, number> = {};
   const totalWeight = (group: PanelConfig[]) => group.reduce((sum, panel) => sum + weights[panel.id], 0);
@@ -84,8 +95,8 @@ export function distributeWidths(panels: PanelConfig[], weights: Record<string, 
   const total = totalWeight(rest);
   let given = 0;
   rest.forEach((panel, index) => {
-    // The nudge keeps float noise from losing a pixel each time a row is refitted to its own widths
-    widths[panel.id] = index === rest.length - 1 ? free - given : Math.floor((free * weights[panel.id]) / total + 1e-6);
+    // Unrounded: a row refits on every pixel of a resize, and rounding down each time would hand the last panel a pixel per refit
+    widths[panel.id] = index === rest.length - 1 ? free - given : (free * weights[panel.id]) / total;
     given += widths[panel.id];
   });
   return widths;
@@ -219,6 +230,35 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
   }
 
   return { widths, hints };
+}
+
+// E5: how far a drag right pulls before its release turns fit off
+const endGate = 40;
+
+/** The end handle's drag: without fit, a drag left narrows the row toward its fit (E3); with fit, a drag right pulls through a gate (E5). `snapped` is whether a release switches fit. */
+export function resolveEndDrag(panels: PanelConfig[], drag: DragState, dx: number): LayoutResult & { snapped: boolean } {
+  const { initialWidths, collapsedAtStart, end } = drag;
+  const widths = { ...initialWidths };
+  const last = panels.at(-1);
+  // E7: the other direction does nothing
+  if (!end || !last || (end.fit ? dx <= 0 : dx >= 0)) return { widths, hints: [], snapped: false };
+
+  if (end.fit) {
+    const progress = Math.min(dx / endGate, 1);
+    return { widths, hints: [{ panelId: last.id, side: 'right', mode: 'cover', progress, reach: end.reach }], snapped: progress === 1 };
+  }
+
+  let remaining = -dx;
+  for (const panel of [...panels].reverse()) {
+    if (remaining <= 0) break;
+    if (collapsedAtStart.has(panel.id)) continue;
+    const initialWidth = initialWidths[panel.id] ?? panel.minWidth;
+    const shrink = Math.min(remaining, Math.max(0, initialWidth - panel.minWidth));
+    widths[panel.id] = initialWidth - shrink;
+    remaining -= shrink;
+  }
+  const total = panels.reduce((sum, panel) => sum + (widths[panel.id] ?? panel.minWidth), 0);
+  return { widths, hints: [], snapped: total <= end.room || remaining > 0 };
 }
 
 /** Must-fit layout from what the user chose: closes panels until the row fits, reopens them when room returns, and shares the rest exactly. Valid for any stored value. */

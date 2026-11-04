@@ -15,8 +15,6 @@ interface NavItemButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-export const navIconStrokeWidth = 1.8;
-
 /** The button's 4px inset from the sidebar edge, plus a 4px gap outside it. */
 const tooltipSideOffset = 8;
 
@@ -30,7 +28,7 @@ function NavItemIcon({ navItem }: { navItem: NavItem }) {
   }
 
   const Icon = navItem.icon;
-  return <Icon className={navItemIconClass} strokeWidth={navIconStrokeWidth} />;
+  return <Icon className={navItemIconClass} />;
 }
 
 function NavItemBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {

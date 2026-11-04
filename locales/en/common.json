@@ -294,6 +294,7 @@
   "filter": "Filter",
   "filter_resource": "Filter {{resource, lowercase}}",
   "first_name": "First name",
+  "fit_panels": "Fit panels to the board",
   "focus_view": "Focus view",
   "full_access": "Full access",
   "general": "General",

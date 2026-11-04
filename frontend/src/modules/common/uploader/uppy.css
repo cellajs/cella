@@ -48,14 +48,20 @@
   display: flex;
 }
 
-[data-uppy-theme] .uppy-DashboardTab-btn:hover,
-[data-uppy-theme] .uppy-DashboardTab-btn:focus,
+/* :focus-visible, not :focus: a tap leaves focus on the button, which would hold the fill until the next tap elsewhere */
+[data-uppy-theme] .uppy-DashboardTab-btn:focus-visible,
 [data-uppy-theme] .uppy-DashboardTab-btn:active,
-[data-uppy-theme] .uppy-DashboardContent-back:focus,
-[data-uppy-theme] .uppy-DashboardContent-save:focus,
-[data-uppy-theme] .uppy-DashboardContent-addMore:focus,
-[data-uppy-theme] .uppy-StatusBar-actionBtn--done:focus {
+[data-uppy-theme] .uppy-DashboardContent-back:focus-visible,
+[data-uppy-theme] .uppy-DashboardContent-save:focus-visible,
+[data-uppy-theme] .uppy-DashboardContent-addMore:focus-visible,
+[data-uppy-theme] .uppy-StatusBar-actionBtn--done:focus-visible {
   background-color: var(--accent);
+}
+
+@media (hover: hover) {
+  [data-uppy-theme] .uppy-DashboardTab-btn:hover {
+    background-color: var(--accent);
+  }
 }
 
 [data-uppy-theme] .uppy-DashboardTab-inner {
@@ -106,9 +112,14 @@
   color: var(--primary);
 }
 
-[data-uppy-theme] .uppy-Dashboard-browse:focus,
-[data-uppy-theme] .uppy-Dashboard-browse:hover {
+[data-uppy-theme] .uppy-Dashboard-browse:focus-visible {
   border-bottom: 0.125rem solid var(--primary);
+}
+
+@media (hover: hover) {
+  [data-uppy-theme] .uppy-Dashboard-browse:hover {
+    border-bottom: 0.125rem solid var(--primary);
+  }
 }
 
 [data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload,
@@ -117,8 +128,10 @@
   color: var(--primary-foreground);
 }
 
-[data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload:hover {
-  background-color: oklch(from var(--primary) l c h / 0.9);
+@media (hover: hover) {
+  [data-uppy-theme] .uppy-StatusBar.is-waiting .uppy-StatusBar-actionBtn--upload:hover {
+    background-color: oklch(from var(--primary) l c h / 0.9);
+  }
 }
 
 .uppy-Url-input {

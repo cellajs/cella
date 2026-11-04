@@ -289,13 +289,20 @@
       color: var(--foreground);
     }
   }
-  :root &:focus-within {
+  /* On a touch screen only keyboard focus counts: a tap leaves focus behind, which would hold it up */
+  @media (pointer: fine) {
+    :root &:focus-within {
+      color: var(--foreground);
+    }
+  }
+  :root &:is(:focus-visible, :has(:focus-visible)) {
     color: var(--foreground);
   }
 }
 
 /* An avatar's color names who or what it is, which a dense list seldom needs: at rest it is grey. A photo turns grayscale.
-   An app applies it through a variant that lifts it on hover and focus, such as `group-[:not(:hover,:focus-visible)]:`. */
+   An app applies it through a variant that lifts it on hover and focus, such as `pointer-fine:group-[:not(:hover,:focus-visible)]:`,
+   with a `pointer-coarse:` twin that leaves out :hover, which a tap would leave on. */
 @utility resting-avatar {
   & [data-slot="avatar-fallback"] {
     background-color: var(--avatar-rest);

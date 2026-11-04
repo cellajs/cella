@@ -19,22 +19,23 @@ export function PreserveDescriptionHeight({ children }: PreserveDescriptionHeigh
     if (!inner || !outer) return;
 
     let releaseTimer = 0;
-    const measure = () => {
-      const hasContent = (inner.textContent?.trim().length ?? 0) > 0 || inner.querySelector('img, svg') !== null;
-      clearTimeout(releaseTimer);
-      if (hasContent) {
-        outer.style.minHeight = `${inner.offsetHeight}px`;
-      } else {
-        releaseTimer = window.setTimeout(() => {
-          outer.style.minHeight = '';
-        }, 150);
-      }
-    };
+    const hasContent = () => (inner.textContent?.trim().length ?? 0) > 0 || inner.querySelector('img, svg') !== null;
 
-    measure();
-    const resizeObserver = new ResizeObserver(measure);
+    // The height comes from the observer's entry, never from offsetHeight: a board mounts dozens of these in one commit,
+    // and each read after the previous one's write would lay out the whole board again.
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      if (!entry || !hasContent()) return;
+      clearTimeout(releaseTimer);
+      outer.style.minHeight = `${entry.contentRect.height}px`;
+    });
     resizeObserver.observe(inner);
-    const mutationObserver = new MutationObserver(measure);
+    const mutationObserver = new MutationObserver(() => {
+      clearTimeout(releaseTimer);
+      if (hasContent()) return;
+      releaseTimer = window.setTimeout(() => {
+        outer.style.minHeight = '';
+      }, 150);
+    });
     mutationObserver.observe(inner, { childList: true, subtree: true, characterData: true });
     return () => {
       clearTimeout(releaseTimer);

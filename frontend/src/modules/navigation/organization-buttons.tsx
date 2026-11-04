@@ -1,6 +1,7 @@
 import { PlusIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { getMenuSection } from '~/lib/entity-modules';
 import { CountBadge } from '~/modules/common/count-badge';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -9,7 +10,7 @@ import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
-import { navIconStrokeWidth, SidebarNavButton } from '~/modules/navigation/nav-buttons';
+import { SidebarNavButton } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { TriggerOrganizationFn } from '~/modules/navigation/types';
 import { useRouteOrganizationId } from '~/modules/navigation/use-route-organization-id';
@@ -52,7 +53,9 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
           'size-8 shrink-0 transition-transform group-hover:scale-110',
           isCurrent && 'outline-2 outline-primary outline-offset-2',
           // Only the organization you are in, or are opening, shows its color
-          !isCurrent && !isActive && 'group-[:not(:hover,:focus-visible)]:resting-avatar',
+          !isCurrent &&
+            !isActive &&
+            'pointer-fine:group-[:not(:hover,:focus-visible)]:resting-avatar pointer-coarse:group-[:not(:focus-visible)]:resting-avatar',
         )}
         type={organization.entityType}
         id={organization.id}
@@ -83,7 +86,7 @@ function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreate
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-foreground/30 more-contrast:border-sidebar-foreground/40 border-dashed transition-transform group-hover:scale-110">
         {/* The nav icons' rendered stroke: theirs is drawn at size-5, this one at size-4 */}
-        <PlusIcon className="size-4" strokeWidth={(navIconStrokeWidth * 5) / 4} />
+        <PlusIcon className="size-4" strokeWidth={(appConfig.theme.strokeWidth * 5) / 4} />
       </span>
     </SidebarNavButton>
   );

@@ -30,6 +30,8 @@ export interface SearchOptionGroup {
   onReplace?: (from: string, to: string) => void;
   /** Smaller chips, for a row of many values such as labels. */
   isCompact?: boolean;
+  /** Its row shows each value by its icon alone, raised to avatar size, such as people; the label still names it to typing, a hover and assistive technology. */
+  isIconOnly?: boolean;
   /** Marks this filter's values among the typed suggestions, where a row's context is gone; its row of chips goes without. */
   matchIcon?: ReactNode;
   /** How many options the row shows; a selected one always shows, and typing finds the rest. */

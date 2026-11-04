@@ -7,7 +7,6 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useDelayedFlag } from '~/hooks/use-delayed-flag';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { LogoMark } from '~/modules/common/logo-art';
-import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Spinner } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
@@ -77,7 +76,7 @@ export function AppIcon({ className }: { className?: string }) {
           transition={popTransition}
           className="absolute flex"
         >
-          {showHome ? <HomeIcon strokeWidth={navIconStrokeWidth} className="size-5" /> : <LogoMark className="size-7" />}
+          {showHome ? <HomeIcon className="size-5" /> : <LogoMark className="size-7" />}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -146,11 +145,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             transition={popTransition}
             className="absolute"
           >
-            {isLoading ? (
-              <Spinner strokeWidth={navIconStrokeWidth} className={cn('size-5', className)} />
-            ) : (
-              <Icon strokeWidth={navIconStrokeWidth} className={cn('size-5', className)} />
-            )}
+            {isLoading ? <Spinner className={cn('size-5', className)} /> : <Icon className={cn('size-5', className)} />}
           </motion.div>
         )}
       </AnimatePresence>
