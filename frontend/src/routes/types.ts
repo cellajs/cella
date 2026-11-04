@@ -7,6 +7,7 @@ declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     boundary?: BoundaryType;
     isAuth: boolean;
+    /** Nav items floating on a phone in place of the bottom bar; `right` stays empty where a page floats its main action. */
     floatingNavButtons?: { right?: NavItemId; left?: NavItemId };
     /** Nav tab placement for PageTabNav: default order 0, lower first, ties keep route order. */
     navTab?: PlacementDescriptor;

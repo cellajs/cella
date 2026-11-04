@@ -139,7 +139,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   enableVirtualization?: Maybe<boolean>;
   /** Overrides enableVirtualization for rows when set. */
   enableRowVirtualization?: Maybe<boolean>;
-  /** Pin header rows below the sticky stack while a window-scrolled grid passes the top of the viewport. @default true from the `sm` breakpoint up */
+  /** Pin header rows below the sticky stack while a window-scrolled grid passes the top of the viewport; never below `sm`. @default true */
   enableStickyHeader?: Maybe<boolean>;
   /** Vertical auto-scroll of the viewport during pragmatic-dnd drag. Opt-in; only for row-drag tables. @default false */
   enableDragAutoScroll?: Maybe<boolean>;
@@ -294,7 +294,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
 
   // On the smallest breakpoint (xs) the header is not pinned by default: it takes a row of a short screen. An explicit value wins.
-  const enableStickyHeader = (rawEnableStickyHeader ?? !isMobileBreakpoint) && !hideHeader;
+  const enableStickyHeader = (rawEnableStickyHeader ?? true) && !isMobileBreakpoint && !hideHeader;
 
   // states
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());

@@ -1,15 +1,20 @@
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ViewMenu, type ViewMenuExport, type ViewMenuSort } from '~/modules/common/data-table/view-menu';
+import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { SearchChipsField } from '~/modules/common/search-chips/search-chips-field';
 import type { SearchFilters } from '~/modules/common/search-chips/types';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
+import { FloatingAction } from '~/modules/navigation/floating-nav/floating-action';
+import { Button } from '~/modules/ui/button';
 
 interface TableBarFiltersOptions<T extends { q?: string }> {
   searchVars: T;
@@ -40,6 +45,27 @@ export function useTableBarFilters<T extends { q?: string }>(options: TableBarFi
   return { isFiltered, onSearch, onResetFilters };
 }
 
+export interface TableBarAction {
+  icon: IconComponent;
+  /** Translated, such as "Invite"; a phone row keeps it for screen readers only. */
+  label: string;
+  /** Receives the button, which a dialog it opens returns focus to. */
+  onClick: (triggerRef: TriggerRef) => void;
+}
+
+/** A list's main action in its bar row: a phone has room for its icon only. */
+export function TableBarActionButton({ action }: { action: TableBarAction }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const { icon: Icon, label, onClick } = action;
+
+  return (
+    <Button ref={ref} onClick={() => onClick(ref)}>
+      <Icon />
+      <span className="max-sm:sr-only">{label}</span>
+    </Button>
+  );
+}
+
 interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useTableBarFilters> {
   searchVars: { q?: string };
   total: number | null;
@@ -51,8 +77,10 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   /** Columns the view menu lists and an export writes; a grid has none. */
   columns?: ColumnOrColumnGroup<TRow>[];
   setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
-  /** Buttons before the count, hidden while filtered. */
-  actions?: ReactNode;
+  /** The list's main action, such as create: before the count, hidden while filtered; on a phone a floating button. */
+  action?: TableBarAction;
+  /** Floats the action on a phone. Defaults to true; a list in a sheet keeps it in the row. */
+  floatAction?: boolean;
   /** Rendered after the count. */
   countExtra?: ReactNode;
   /** What the list filters on beside its search words: its search then takes chips and offers them. */
@@ -70,7 +98,7 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   after?: ReactNode;
 }
 
-/** The bar above an entity table: actions and count, search, view controls and focus view. */
+/** The bar above an entity table: action and count, search, view controls and focus view. */
 export function TableBarShell<TRow extends object>({
   isFiltered,
   onSearch,
@@ -82,7 +110,8 @@ export function TableBarShell<TRow extends object>({
   allowOfflineSearch,
   columns,
   setColumns,
-  actions,
+  action,
+  floatAction = true,
   countExtra,
   searchFilters,
   sort,
@@ -94,6 +123,8 @@ export function TableBarShell<TRow extends object>({
   after,
 }: TableBarShellProps<TRow>) {
   const { t } = useTranslation();
+  const isMobile = useBreakpointBelow('sm');
+  const isActionFloating = !!action && floatAction && isMobile;
   const searchLabel = t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) });
   const foundCount = isFiltered && total !== null ? t('c:resource_count', { count: total, resource: t(label, { count: total }) }) : '';
 
@@ -137,18 +168,7 @@ export function TableBarShell<TRow extends object>({
         onResetFilters={onResetFilters}
         sticky={sticky}
         {...searchProps}
-        // Beside a view toggle a phone has room for the actions' icons only
-        actions={
-          !isFiltered &&
-          actions &&
-          (controls ? (
-            <div data-compact className="contents">
-              {actions}
-            </div>
-          ) : (
-            actions
-          ))
-        }
+        actions={!isFiltered && action && !isActionFloating && <TableBarActionButton action={action} />}
         count={
           <TableCount count={isFiltered ? null : total} label={label}>
             {countExtra}
@@ -163,6 +183,7 @@ export function TableBarShell<TRow extends object>({
         }
       />
 
+      {isActionFloating && <FloatingAction {...action} />}
       {selection && <SelectionActionBar {...selection} />}
       {after}
     </>

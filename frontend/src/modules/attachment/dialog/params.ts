@@ -19,7 +19,7 @@ export const attachmentDialogId = 'attachment-dialog';
  * panel 1.25rem inside the viewport, so the page stays in view around it under the scrim.
  */
 const attachmentDialogClassName = tw(
-  'flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0 lg:h-[calc(100%-2.5rem)] lg:w-[calc(100%-2.5rem)] lg:min-w-0 lg:rounded-lg',
+  'flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0 max-sm:pt-0 lg:h-[calc(100%-2.5rem)] lg:w-[calc(100%-2.5rem)] lg:min-w-0 lg:rounded-lg',
 );
 
 /**

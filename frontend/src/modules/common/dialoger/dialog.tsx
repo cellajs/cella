@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dialoger';
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { OverlayCloseContext } from '~/modules/common/overlay-close';
@@ -26,14 +27,16 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
     outsideScroll = false,
     className,
     headerClassName,
-    container,
     searchLayout,
     dock,
-    containerElement,
     layer,
   } = dialog;
 
-  // A container renders the dialog inline: the page keeps scrolling, and takes pointer input unless `overlay` dims it; focus stays in the dialog
+  // A container renders the dialog inline: the page keeps scrolling, and takes pointer input unless `overlay` dims it; focus stays in the dialog.
+  // A phone has no room beside the form, so it fills the screen there.
+  const isMobile = useBreakpointBelow('sm');
+  const container = isMobile ? undefined : dialog.container;
+  const containerElement = isMobile ? undefined : dialog.containerElement;
   const inline = !!container;
 
   const removeDialog = () => dialoger.getState().remove(dialog.id);

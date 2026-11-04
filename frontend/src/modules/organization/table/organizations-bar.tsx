@@ -30,7 +30,6 @@ export function OrganizationsTableBar({
 
   const total = useListQueryTotal(queryKey);
 
-  const createButtonRef = useRef<HTMLButtonElement>(null);
   const newsletterButtonRef = useRef<HTMLButtonElement>(null);
 
   const { q, order, sort } = searchVars;
@@ -66,9 +65,7 @@ export function OrganizationsTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:organization"
       searchName="organizationSearch"
-      actions={
-        <TableBarButton ref={createButtonRef} label="c:create" icon={PlusIcon} onClick={() => openCreateOrganizationDialog(createButtonRef)} />
-      }
+      action={{ icon: PlusIcon, label: t('c:create'), onClick: openCreateOrganizationDialog }}
       export={{ filename: `${appConfig.slug}-organizations`, selectedRows: selected, fetchRows: fetchExport }}
       selection={{
         count: selected.length,

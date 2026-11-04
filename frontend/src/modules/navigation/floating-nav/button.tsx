@@ -2,8 +2,14 @@ import { type ReactNode, type Ref, type TouchEvent, useRef } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const tapSlopPx = 12; // Max finger travel for a touchend to still count as a tap
+
+/** A floating button scrolled out of view: focus brings it back, since it is how the keyboard reaches its action. */
+export const floatingHiddenClass = tw(
+  'pointer-events-none translate-y-16 scale-50 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100',
+);
 
 export interface FloatingNavItem {
   id: string;
@@ -22,6 +28,8 @@ export interface FloatingNavItem {
 interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'ariaLabel'> {
   /** Required on a nav item; an inert placeholder button may go without. */
   ariaLabel?: string;
+  /** Defaults to 'secondary'; a page's main action is 'default'. */
+  variant?: 'default' | 'secondary';
   className?: string;
   tabIndex?: number;
   ref?: Ref<HTMLButtonElement>;
@@ -39,6 +47,7 @@ export function FloatingNavButton({
   direction = 'right',
   label,
   labelVisible,
+  variant = 'secondary',
   ref,
   children,
 }: FloatingNavButtonProps) {
@@ -75,7 +84,7 @@ export function FloatingNavButton({
       tabIndex={tabIndex}
       size="icon"
       data-direction={direction}
-      variant="secondary"
+      variant={variant}
       press={false}
       onClick={onClick}
       onTouchStart={handleTouchStart}
