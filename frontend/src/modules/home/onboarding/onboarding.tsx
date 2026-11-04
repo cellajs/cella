@@ -46,8 +46,8 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
       <div className="my-auto w-full">
         {state === 'start' && <WelcomeText invitations={invitations} onStart={onStart} />}
         {state === 'stepper' && (
-          <div className="mx-auto flex max-w-3xl starting:translate-y-4 starting:scale-95 flex-col gap-4 px-4 py-8 starting:opacity-0 transition-[opacity,translate,scale] duration-500 ease-out sm:w-10/12">
-            {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
+          <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8 transition-[opacity,translate,scale] duration-500 ease-out sm:w-10/12 starting:translate-y-4 starting:scale-95 starting:opacity-0">
+            {steps.length === 1 && <h2 className="flex justify-center text-lg font-semibold">{steps[0].label}</h2>}
             <Stepper steps={steps} onClickStep={(step, setStep) => setStep(step)} onComplete={onComplete}>
               {steps.map(({ description, label, id }) => (
                 <Step key={id} label={label} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
@@ -81,7 +81,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
                       )}
                       {id === 'invitation' && !organization && (
                         <div>
-                          <p className="mb-4 text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
+                          <p className="text-muted-foreground mb-4 text-sm">{t('c:need_org_to_invite.text')}</p>
                           {skipButton}
                         </div>
                       )}

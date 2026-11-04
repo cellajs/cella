@@ -42,7 +42,7 @@ export function MenuSheetHeader() {
         </Link>
 
         {user && (
-          <div className={cn('flex items-center gap-1', navBar && 'in-[.floating-nav]:flex hidden')}>
+          <div className={cn('flex items-center gap-1', navBar && 'hidden in-[.floating-nav]:flex')}>
             <Button
               ref={notificationsButtonRef}
               size="icon"

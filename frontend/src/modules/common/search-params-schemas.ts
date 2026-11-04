@@ -31,3 +31,23 @@ export const listSearchSchema = <TSort extends string>(query: ListQuery<TSort>, 
     sort: query.shape.sort.unwrap().default(defaults.sort).catch(defaults.sort),
     order: query.shape.order.unwrap().default(defaults.order).catch(defaults.order),
   });
+
+/** A boolean search param: `true` or `false` in the URL, absent when unset; a navigate may pass the boolean. */
+export const booleanSearchParam = z
+  .union([z.enum(['true', 'false']), z.boolean()])
+  .optional()
+  .transform((value) => (value === undefined ? undefined : value === true || value === 'true'));
+
+/**
+ * A list in one key, comma-separated, as the API reads it through `csvQuerySchema`: `?status=started,finished`.
+ * A value `item` refuses is dropped, so a stale bookmark still opens; a navigate may pass the array.
+ * @public
+ */
+export const csvSearchParam = <T extends string>(item: z.ZodType<T>) =>
+  z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((value) => {
+      const values = value === undefined ? [] : Array.isArray(value) ? value : value.split(',');
+      return values.filter((entry): entry is T => item.safeParse(entry).success);
+    });

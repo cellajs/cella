@@ -27,7 +27,7 @@ export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
 }
 
 interface OAuthProvidersProps {
-  /** Picks the buttons' wording: sign in, sign up, or continue on any other step. */
+  /** Picks the wording: sign in, sign up or continue. */
   authStep: AuthStep;
 }
 
@@ -64,7 +64,6 @@ export function OAuthProviders({ authStep }: OAuthProvidersProps) {
   if (!enabledOAuthProviders.length) return null;
 
   return (
-    // The backdrop sets these alternatives apart, so their outline edge drops; increased contrast brings it back
     <div className="edgeless flex flex-col gap-2">
       {enabledOAuthProviders.map(({ id, name }) => (
         <Button loading={loadingProvider === id} key={id} variant="outline" onClick={() => authenticateWithProvider(id)}>

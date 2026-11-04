@@ -14,18 +14,16 @@ import { Button } from '~/modules/ui/button';
 import { DrawerRowGroup, DrawerRowSeparator } from '~/modules/ui/drawer';
 
 export interface ConfirmFormProps {
-  /** The act, translated: "Delete organization", "Publish". */
+  /** Translated. */
   label: string;
   onConfirm: () => void;
-  /** By default Cancel steps back out of the confirmation: to the menu it replaced, or closing its dropdown or dialog. */
+  /** Defaults to stepping back: to the menu it replaced, or closing its overlay. */
   onCancel?: () => void;
   pending: boolean;
-  /** Lets the act through offline, for a write that queues. */
   allowOffline?: boolean;
-  /** `destructive` for a loss, which also starts focus on Cancel. */
+  /** `destructive` also starts focus on Cancel. */
   variant?: 'default' | 'destructive';
   icon?: IconComponent;
-  /** `c:cancel` by default. */
   cancelLabel?: TKey;
 }
 
@@ -55,7 +53,7 @@ export function ConfirmForm({
 
   if (surface !== 'menu' && !overlay?.drawer) {
     return (
-      <div className="flex flex-col in-data-dock:justify-center gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 in-data-dock:justify-center sm:flex-row">
         <SubmitButton
           variant={variant}
           icon={Icon && <Icon />}

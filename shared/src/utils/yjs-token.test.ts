@@ -1,6 +1,6 @@
 import { sign } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { signYjsToken, verifyYjsToken, type YjsTokenPayload, yjsTokenPublicKey, yjsTokenSigningKey, yjsTokenVerifyKey } from './yjs-token';
+import { signYjsToken, verifyYjsToken, type YjsTokenPayload, yjsTokenPublicKey, yjsTokenSigningKey, yjsTokenVerifyKey } from './yjs-token.ts';
 
 const material = 'backend-key-material-of-at-least-32-chars';
 const claims = {

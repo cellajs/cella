@@ -12,7 +12,7 @@ const publishDialogId = 'publish-channel';
 
 interface DraftBannerProps {
   channel: { name: string; entityType: ChannelEntityType };
-  /** The dialog's buttons, which own the publish mutation so its loading state lives in the dialog; `close` removes it. */
+  /** The dialog's buttons, owning the publish mutation; `close` removes the dialog. */
   publishForm: (close: () => void) => ReactNode;
 }
 
@@ -35,8 +35,8 @@ export function DraftBanner({ channel, publishForm }: DraftBannerProps) {
   return (
     <Alert variant="plain" className="rounded-none border-0 border-b px-3 py-2 shadow-[inset_0_0_8px_rgba(0,0,0,0.15)]">
       <AlertDescription className="flex w-full flex-wrap items-center justify-between gap-2">
-        <span className="flex max-w-measure gap-2 text-muted-foreground">
-          <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
+        <span className="max-w-measure text-muted-foreground flex gap-2">
+          <CircleAlertIcon className="text-warning mt-0.5 size-4 shrink-0" />
           <span>
             <Trans
               t={t}

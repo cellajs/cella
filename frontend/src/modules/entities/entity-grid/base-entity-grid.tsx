@@ -21,7 +21,7 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   entities?: TEntity[];
   /** Renders one tile; a grid passes its own props through the closure, and tiles keep their identity when those change. */
   renderTile: (entity: TEntity) => ReactNode;
-  /** Approximate height of each tile in px while loading (default: 215, a banner ChannelTile). */
+  /** Tile height in px while loading. */
   skeletonHeight?: number;
   isLoading: boolean;
   isFetching: boolean;
@@ -31,7 +31,7 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   fetchMore: () => Promise<unknown>;
   /** A search or filter is active: an empty list shows "No … found" (else "No … yet"). */
   isFiltered: boolean;
-  /** Clears the search, offered under its empty state. */
+  /** Offered under the empty state. */
   onResetFilters?: () => void;
   /** Shows at most {@link gridPreviewLimit} tiles and a "Show N more" button. */
   limitedView?: boolean;
@@ -45,7 +45,7 @@ const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
 function EntityGridSkeleton({ tileHeight = 215 }: { tileHeight?: number }) {
   return (
-    <div className={cn(entityGridClass, 'fade-in mb-12 animate-in duration-300')}>
+    <div className={cn(entityGridClass, 'fade-in animate-in mb-12 duration-300')}>
       {Array.from({ length: 6 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${tileHeight}px` }} />

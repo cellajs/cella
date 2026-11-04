@@ -3,7 +3,7 @@ import { cn } from '~/utils/cn';
 import '~/modules/common/success-checkmark.css';
 
 interface SuccessCheckmarkProps {
-  /** Sizes it with a size-* class (rem, so it scales with icons beside it); placement is the caller's. */
+  /** A size-* class sizes it; placement is the caller's. */
   className?: string;
 }
 
@@ -11,7 +11,7 @@ export function SuccessCheckmark({ className }: SuccessCheckmarkProps) {
   const { t } = useTranslation();
 
   return (
-    <div className={cn('fade-in zoom-in-0 size-12.5 animate-in duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]', className)}>
+    <div className={cn('fade-in zoom-in-0 animate-in size-12.5 duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]', className)}>
       <svg
         className="block size-full animate-[checkmark-fill_.4s_ease-in-out_.7s_forwards,checkmark-scale_.3s_ease-in-out_1.2s_both] rounded-full shadow-[inset_0_0_0_var(--success)] [stroke-miterlimit:10]"
         xmlns="http://www.w3.org/2000/svg"
@@ -20,13 +20,13 @@ export function SuccessCheckmark({ className }: SuccessCheckmarkProps) {
         aria-label={t('c:success')}
       >
         <circle
-          className="animate-[checkmark-stroke_.6s_cubic-bezier(0.65,0,0.45,1)_.3s_forwards] fill-white stroke-4 stroke-success [stroke-dasharray:166] [stroke-dashoffset:166] [stroke-miterlimit:10]"
+          className="stroke-success animate-[checkmark-stroke_.6s_cubic-bezier(0.65,0,0.45,1)_.3s_forwards] fill-white stroke-4 [stroke-dasharray:166] [stroke-dashoffset:166] [stroke-miterlimit:10]"
           cx="26"
           cy="26"
           r="25"
         />
         <path
-          className="origin-center animate-[checkmark-stroke_.3s_cubic-bezier(0.65,0,0.45,1)_1.1s_forwards] stroke-4 stroke-success [stroke-dasharray:48] [stroke-dashoffset:48]"
+          className="stroke-success origin-center animate-[checkmark-stroke_.3s_cubic-bezier(0.65,0,0.45,1)_1.1s_forwards] stroke-4 [stroke-dasharray:48] [stroke-dashoffset:48]"
           fill="none"
           d="M14.1 27.2l7.1 7.2 16.7-16.8"
         />

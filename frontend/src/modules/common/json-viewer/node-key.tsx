@@ -12,7 +12,7 @@ interface NodeKeyProps {
   ref?: Ref<HTMLSpanElement>;
 }
 
-const colon = <span className="mr-1 text-faint-foreground">:</span>;
+const colon = <span className="text-faint-foreground mr-1">:</span>;
 
 export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: NodeKeyProps) {
   if (keyName === false) return null;
@@ -33,7 +33,7 @@ export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired
   const isMuted = isDictionaryKey || (openapiMode === 'schema' && !isObjectValue);
 
   return (
-    // One unit, so the colon never wraps away from its key. A path key longer than the viewer breaks anywhere.
+    // One unit, so the colon never wraps away from its key
     <span className="wrap-anywhere">
       <span ref={ref} className={cn(isMuted ? 'text-muted-foreground' : jsonViewerTheme.key, isDictionaryKey && 'italic')}>
         <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />

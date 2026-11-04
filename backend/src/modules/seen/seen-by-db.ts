@@ -25,6 +25,3 @@ export const seenByTable = snakeCase.table(
     foreignKey({ columns: [table.userId], foreignColumns: [usersTable.id] }).onDelete('cascade'),
   ],
 );
-
-export type SeenByModel = typeof seenByTable.$inferSelect;
-export type InsertSeenByModel = typeof seenByTable.$inferInsert;

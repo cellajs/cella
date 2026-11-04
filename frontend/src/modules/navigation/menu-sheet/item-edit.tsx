@@ -23,9 +23,8 @@ const avatarBoxClass = tw('relative z-2 mx-3 my-2 flex shrink-0 group-data-[subi
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
-  /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
+  /** Sorted; the handle's arrow keys step through it. */
   siblings: UserMenuItem[];
-  /** It is a row of a submenu: a smaller row, joined to the row above by two dots. */
   isSubitem: boolean;
   icon?: IconComponent;
   /** It mounted by moving here from the other list, so it travels above the rows it passes. */
@@ -46,7 +45,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
     <EntityAvatar
       // An icon avatar's tile would stand out on the row's fill
       className={cn(
-        'size-8 group-data-[subitem=true]/options-item:size-6 group-data-[archived=true]/options-item:opacity-70',
+        'size-8 group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:size-6',
         Icon && 'bg-transparent shadow-none',
       )}
       type={item.entityType}
@@ -63,11 +62,9 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       onLayoutAnimationComplete={() => setIsTravelling(false)}
       data-subitem={isSubitem}
       data-archived={archived}
-      // The ghost button's hover tint (8% foreground) mixed into the fill, opaque so the grip box can repaint it. The fill
-      // is muted/70 on the card made opaque, so a row travelling past covers the rows under it. Height, gap and avatar box
-      // match the row outside edit mode (item.tsx), so entering edit mode moves no avatar or name.
+      // Opaque, so a travelling row covers the rows it passes; height, gap and avatar box match item.tsx
       className={cn(
-        'group/options-item relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-muted-hover data-[subitem=true]:h-10',
+        'group/options-item hover:text-accent-foreground hover:before:bg-muted-hover relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors data-[subitem=true]:h-10',
         isMovable && 'cursor-grab',
         isTravelling && 'z-3',
       )}
@@ -76,7 +73,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       {isSubitem && !archived && <SubmenuConnector className="-top-2 h-4" />}
       {moves.isSaving && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
+          <Spinner className="text-muted-foreground m-1 mr-3 size-10 p-1 group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
         </div>
       )}
       {isMovable ? (
@@ -101,7 +98,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
             avatarBoxClass,
             // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset
             // clear over the row's fill.
-            'group/drag relative cursor-grab rounded-md outline-hidden focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-muted-hover active:cursor-grabbing group-hover/options-item:bg-muted-hover',
+            'group/drag focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-muted-hover group-hover/options-item:bg-muted-hover relative cursor-grab rounded-md outline-hidden active:cursor-grabbing',
           )}
         >
           <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]">
@@ -116,7 +113,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       )}
 
       {/* A sub-row's name sits 0.125rem above center, as it does outside edit mode */}
-      <div className="relative min-w-0 grow truncate text-left font-medium text-md leading-5 group-data-[subitem=true]/options-item:pb-1 group-data-[subitem=true]/options-item:font-normal group-data-[subitem=true]/options-item:text-sm group-data-[archived=true]/options-item:opacity-70">
+      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:pb-1 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
         {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (

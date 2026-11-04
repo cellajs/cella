@@ -33,10 +33,10 @@ export function OfflineFilesPreference() {
 
   return (
     <PreferencesGroup title={t('c:offline')}>
-      {/* The icon takes the switch column, so the label lines up with the switches; the percent sits under it beside the meter */}
+      {/* The icon takes the switch column, so the label lines up with the switches */}
       <div className="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3">
         <HardDriveDownloadIcon className="size-4 justify-self-center" />
-        <span className="font-medium text-sm">{t(offlineFilesTierText[tier].store)}</span>
+        <span className="text-sm font-medium">{t(offlineFilesTierText[tier].store)}</span>
         <Button
           ref={triggerRef}
           variant="ghost"
@@ -44,7 +44,7 @@ export function OfflineFilesPreference() {
           aria-haspopup="dialog"
           aria-label={t('c:change_resource', { resource: label })}
           onClick={openSetting}
-          className="-mr-2 gap-0.5 pr-1 text-muted-foreground"
+          className="text-muted-foreground -mr-2 gap-0.5 pr-1"
         >
           {t('c:change')}
           <ChevronRightIcon className="size-4" />
@@ -54,13 +54,13 @@ export function OfflineFilesPreference() {
             value={Math.min(100, (footprint.bytes / budget) * 100)}
             aria-label={label}
             getAriaValueText={() => t('c:offline_files.percent_full', { percent })}
-            className={cn('col-span-3 grid grid-cols-subgrid items-center text-muted-foreground', almostFull && 'text-destructive')}
+            className={cn('text-muted-foreground col-span-3 grid grid-cols-subgrid items-center', almostFull && 'text-destructive')}
           >
-            <span aria-hidden="true" className="justify-self-center whitespace-nowrap text-xs tabular-nums">
+            <span aria-hidden="true" className="justify-self-center text-xs whitespace-nowrap tabular-nums">
               {percent}
             </span>
-            <Meter.Track className="col-span-2 h-2 overflow-hidden rounded-full bg-muted">
-              <Meter.Indicator className={cn('rounded-full bg-primary transition-[width] duration-500', almostFull && 'bg-destructive')} />
+            <Meter.Track className="bg-muted col-span-2 h-2 overflow-hidden rounded-full">
+              <Meter.Indicator className={cn('bg-primary rounded-full transition-[width] duration-500', almostFull && 'bg-destructive')} />
             </Meter.Track>
           </Meter.Root>
         )}

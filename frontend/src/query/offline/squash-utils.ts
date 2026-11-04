@@ -17,7 +17,7 @@ function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TO
 }
 
 /** Merged ops plus an stx whose field timestamps keep each inherited field's original intent time and carry the incoming edit's timestamps for the fields it changed. */
-export type SquashedUpdate<TOps extends object> = { ops: TOps; stx: StxBase };
+type SquashedUpdate<TOps extends object> = { ops: TOps; stx: StxBase };
 
 /** Merge queued offline entity updates while preserving inherited LWW timestamps and AWSet intent. */
 export function squashPendingMutation<TOps extends object>(

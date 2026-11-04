@@ -28,7 +28,7 @@ function MemberAvatar({ member, className }: MemberAvatarProps) {
           id={member.id}
           name={member.name}
           url={member.thumbnailUrl}
-          className={cn('size-7 border-2 border-black/25 more-contrast:border-black/85 text-xs', className)}
+          className={cn('more-contrast:border-black/85 size-7 border-2 border-black/25 text-xs', className)}
         />
       </button>
     </TooltipButton>
@@ -56,7 +56,7 @@ export function MemberAvatarGroup({ members, total, itemClassName, className }: 
       {overflow > 0 && (
         <div
           className={cn(
-            'z-10 flex items-center justify-center rounded-full border-2 border-background/70 more-contrast:border-black/85 bg-muted/75 bg-clip-padding font-semibold more-contrast:text-foreground text-muted-foreground text-xs tracking-tighter backdrop-blur-xs',
+            'border-background/70 more-contrast:border-black/85 bg-muted/75 more-contrast:text-foreground text-muted-foreground z-10 flex items-center justify-center rounded-full border-2 bg-clip-padding text-xs font-semibold tracking-tighter backdrop-blur-xs',
             itemClassName,
           )}
         >

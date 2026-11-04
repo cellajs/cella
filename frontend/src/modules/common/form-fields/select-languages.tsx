@@ -56,7 +56,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
           key={option.value}
           role="option"
           aria-selected={selected.includes(option.value)}
-          className="group/language-option flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground active:bg-accent aria-selected:font-medium"
+          className="group/language-option hover:bg-accent hover:text-accent-foreground active:bg-accent flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden select-none aria-selected:font-medium"
           onClick={() => toggleLanguage(option.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
@@ -67,7 +67,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
           tabIndex={0}
         >
           {option.label}
-          <CheckIcon className="invisible text-success group-aria-selected/language-option:visible" />
+          <CheckIcon className="text-success invisible group-aria-selected/language-option:visible" />
         </div>
       ))}
     </div>
@@ -92,7 +92,7 @@ export function SelectLanguages({ value, onChange, id }: SelectLanguagesProps) {
       id={id}
       disabled={appConfig.languages.length < 2}
       aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
-      className="w-full data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
+      className="data-dropdowner-active:ring-ring w-full data-dropdowner-active:ring-1"
       onClick={openDropdown}
     >
       {value.length > 0 ? (

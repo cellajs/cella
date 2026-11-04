@@ -4,6 +4,7 @@ export {
   channelEntityTypeSchema,
   cookieSchema,
   countryCodeSchema,
+  csvQuerySchema,
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,
@@ -60,4 +61,11 @@ export {
   paginationSchema,
   productListResponseSchema,
 } from '#/schemas/success-response-schemas';
-export { idsWithStxBodySchema, type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+export {
+  idsWithStxBodySchema,
+  type StxBase,
+  type StxStored,
+  /** @public */
+  stxBaseSchema,
+  stxStoredSchema,
+} from '#/schemas/sync-transaction-schemas';

@@ -18,6 +18,5 @@ export async function notificationLinkBeforeLoad(search: NotificationLinkSearch)
   await cacheRestored;
   await getMenuData();
   const route = getProductRoute(search);
-  if (!route) throw redirect({ to: '/home', replace: true });
   throw redirect({ to: route.to, params: route.params, search: route.search, replace: true });
 }

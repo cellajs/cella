@@ -14,7 +14,7 @@ const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/
 
 const rowClass = tw('flex gap-5 border-t py-4');
 // The marker box is one text line tall, so "or" and the icon center on the first line of a wrapped row
-const markerClass = tw('flex h-6 w-5 shrink-0 items-center font-mono text-muted-foreground text-sm lowercase sm:h-7');
+const markerClass = tw('text-muted-foreground flex h-6 w-5 shrink-0 items-center font-mono text-sm lowercase sm:h-7');
 const rowTextClass = tw('font-medium sm:text-lg');
 
 export function SyncEnginePage() {
@@ -26,7 +26,7 @@ export function SyncEnginePage() {
       <AboutSection>
         <AboutStatement text="about:selective_sync.text" className="glow-underline mb-12 leading-relaxed md:mb-20" />
 
-        <p className="mx-auto max-w-measure">
+        <p className="max-w-measure mx-auto">
           <Trans
             t={t}
             i18nKey="about:cella_approach_intro"
@@ -35,7 +35,7 @@ export function SyncEnginePage() {
             }}
           />
         </p>
-        <p className="mx-auto mt-4 mb-6 max-w-measure">{t('about:cella_approach_fit')}</p>
+        <p className="max-w-measure mx-auto mt-4 mb-6">{t('about:cella_approach_fit')}</p>
 
         {/* Any one point is enough, so the rows after the first start with "or" */}
         <ul className="mx-auto max-w-3xl border-b">
@@ -54,7 +54,7 @@ export function SyncEnginePage() {
       {isDesktop && (
         <div className="relative overflow-x-clip" aria-hidden="true">
           <Suspense fallback={null}>
-            <div className="mask-[linear-gradient(to_right,transparent_7rem,black_11rem)] pointer-events-none absolute -top-24 left-[calc(50%+18rem)] size-300 -translate-y-1/2 opacity-30 saturate-300 dark:opacity-25">
+            <div className="pointer-events-none absolute -top-24 left-[calc(50%+18rem)] size-300 -translate-y-1/2 mask-[linear-gradient(to_right,transparent_7rem,black_11rem)] opacity-30 saturate-300 dark:opacity-25">
               <MorphAnimation palette="brand" still={31} fizz={1} grid={230} stamp="plus" />
             </div>
           </Suspense>

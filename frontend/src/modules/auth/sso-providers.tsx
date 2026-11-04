@@ -29,11 +29,11 @@ export const ssoStartUrl = (
 const federationLogo = (key: FederationKey) => appConfig.federations[key].logo;
 
 interface SsoProvidersProps {
-  /** The institution the context names (an invitation's organization): its button comes first. */
+  /** The invitation's institution; its button comes first. */
   connectionId?: string;
-  /** Federations with a connected institution: one "sign in with your institution" button each, through the federation's own picker. */
+  /** One button each, through the federation's own picker. */
   federations?: GetAuthHealthResponse['federations'];
-  /** The context's institution is the main way in: its button takes the primary look. */
+  /** Gives the institution's button the primary look. */
   primary?: boolean;
 }
 

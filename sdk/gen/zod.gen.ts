@@ -91,6 +91,15 @@ export const zStxBase = z.object({
 });
 
 /**
+ * The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.
+ */
+export const zStxStored = zStxBase.and(
+  z.object({
+    changedFields: z.array(z.string().max(64)).max(100).optional(),
+  }),
+);
+
+/**
  * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export const zStreamChange = z.object({
@@ -338,7 +347,6 @@ export const zMeAuthData = z.object({
       createdAt: z.string(),
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
-      revokedBy: z.uuid().nullable(),
       revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
@@ -716,7 +724,7 @@ export const zAttachment = z.object({
       }),
     ])
     .nullable(),
-  stx: zStxBase,
+  stx: zStxStored,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
   deletedAt: z.string().nullable(),
@@ -840,7 +848,6 @@ export const zApiKey = z.object({
   scopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write'])).nullable(),
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
-  revokedBy: z.uuid().nullable(),
   createdBy: z
     .union([
       z.object({
@@ -1394,7 +1401,6 @@ export const zRevokeMySessionsResponse = z.object({
       createdAt: z.string(),
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
-      revokedBy: z.uuid().nullable(),
       revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email', 'sso']).nullable(),
@@ -1924,7 +1930,7 @@ export const zGetUserQuery = z.object({
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),
-  include: z.string().max(255).optional(),
+  include: z.string().max(2048).optional(),
 });
 
 /**
@@ -2044,7 +2050,7 @@ export const zGetOrganizationsQuery = z.object({
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),
-  include: z.string().max(255).optional(),
+  include: z.string().max(2048).optional(),
 });
 
 /**
@@ -2065,7 +2071,7 @@ export const zGetOrganizationQuery = z.object({
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),
-  include: z.string().max(255).optional(),
+  include: z.string().max(2048).optional(),
 });
 
 /**
@@ -2528,7 +2534,7 @@ export const zGetMembersQuery = z.object({
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
   role: z.enum(['admin', 'member']).optional(),
-  include: z.string().max(255).optional(),
+  include: z.string().max(2048).optional(),
   userIds: z.string().max(2048).optional(),
 });
 

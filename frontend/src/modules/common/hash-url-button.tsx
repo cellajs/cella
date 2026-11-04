@@ -6,9 +6,9 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface HashUrlButtonProps {
-  /** Section id the copied link points to, on the current page. */
+  /** Section id, without `#`. */
   hash: string;
-  /** Path, search and hash to copy for a section shown away from its page, such as in a sheet. */
+  /** Path, search and hash, for a section shown away from its page. */
   href?: string;
   className?: string;
 }
@@ -24,7 +24,7 @@ export function HashUrlButton({ hash, href, className }: HashUrlButtonProps) {
       tabIndex={-1}
       size="xs"
       onClick={() => copyToClipboard(`${window.location.origin}${href ?? `${window.location.pathname}${window.location.search}#${hash}`}`)}
-      className={cn('opacity-0 transition-opacity hover:opacity-100 group-hover/hash-url:opacity-70', className)}
+      className={cn('opacity-0 transition-opacity group-hover/hash-url:opacity-70 hover:opacity-100', className)}
       aria-label={t('c:copy_link')}
     >
       <CopiedIcon copied={copied} icon={HashIcon} />

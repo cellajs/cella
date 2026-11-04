@@ -18,9 +18,8 @@ export interface FloatingNavItem {
   ariaLabel: string;
   /** Defaults to true. */
   visible?: boolean;
-  /** Defaults to 'right'. */
   direction?: 'left' | 'right';
-  /** Text shown after the icon while `labelVisible`, expanding the circle into a pill (e.g. a first-visit hint). */
+  /** Shown after the icon while `labelVisible`, widening the circle into a pill. */
   label?: string;
   labelVisible?: boolean;
 }
@@ -28,12 +27,11 @@ export interface FloatingNavItem {
 interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'ariaLabel'> {
   /** Required on a nav item; an inert placeholder button may go without. */
   ariaLabel?: string;
-  /** Defaults to 'secondary'; a page's main action is 'default'. */
+  /** 'default' for a page's main action. */
   variant?: 'default' | 'secondary';
   className?: string;
   tabIndex?: number;
   ref?: Ref<HTMLButtonElement>;
-  /** Marks on the button, such as a `Badge context="button"`. */
   children?: ReactNode;
 }
 
@@ -91,11 +89,10 @@ export function FloatingNavButton({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 select-none rounded-full transition-[translate,scale,opacity] duration-300 ease-in-out [-webkit-touch-callout:none] active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
-        // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included.
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 rounded-full transition-[translate,scale,opacity] duration-300 ease-in-out select-none [-webkit-touch-callout:none] active:scale-95 data-[direction=left]:left-4 data-[direction=right]:right-4',
         // No border: the base button's transparent one would leave a 1px band between the ring and the fill
-        'border-0 shadow-floating',
-        // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
+        'shadow-floating border-0',
+        // pl-4 keeps the icon where the circle centers it
         label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
         // Hiding moves by translate, which skips layout
         'chrome-hidden:pointer-events-none chrome-hidden:translate-y-16 chrome-hidden:scale-50 chrome-hidden:opacity-0',
@@ -115,7 +112,7 @@ export function FloatingNavButton({
           <span className="overflow-hidden">
             <span
               className={cn(
-                'block -translate-x-2 pr-4 pl-2 font-semibold text-xs opacity-0 transition-[opacity,translate] duration-300 ease-in-out motion-reduce:transition-none',
+                'block -translate-x-2 pr-4 pl-2 text-xs font-semibold opacity-0 transition-[opacity,translate] duration-300 ease-in-out motion-reduce:transition-none',
                 labelVisible && 'translate-x-0 opacity-100 delay-150',
               )}
             >

@@ -37,7 +37,7 @@ function PageSizeCell({ slug }: { slug: string }) {
     );
   }
   return (
-    <span className="font-mono text-muted-foreground text-xs tabular-nums" {...tooltip}>
+    <span className="text-muted-foreground font-mono text-xs tabular-nums" {...tooltip}>
       {format.format(size.chars)}
     </span>
   );
@@ -70,7 +70,7 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
           {row.draft && <Badge variant="secondary">{t('c:draft')}</Badge>}
           {row._hasChildren && !row._isExpanded && (
             <span
-              className="shrink-0 text-muted-foreground text-xs"
+              className="text-muted-foreground shrink-0 text-xs"
               data-tooltip="true"
               data-tooltip-content={t('c:child_page_count', { count: row._childCount })}
             >
@@ -92,7 +92,7 @@ export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => 
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 160,
-      renderCell: ({ row }) => <span className="truncate font-mono text-muted-foreground text-xs">{row.id}</span>,
+      renderCell: ({ row }) => <span className="text-muted-foreground truncate font-mono text-xs">{row.id}</span>,
     },
     {
       key: 'status',

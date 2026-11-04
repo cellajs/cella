@@ -15,9 +15,8 @@ import { Button } from '~/modules/ui/button';
 const keyExpiryMs = 4.5 * 60 * 1000;
 
 interface TotpSetupProps {
-  /** After the key is confirmed; defaults to closing the setup dialog. */
+  /** After the key is confirmed. */
   onDone?: () => void;
-  /** Defaults to closing the setup dialog. */
   onCancel?: () => void;
 }
 

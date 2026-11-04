@@ -3,7 +3,7 @@ import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tw } from '~/utils/tw';
 
-const stepButtonClass = tw('focus-effect flex size-7 items-center justify-center rounded-md hover:bg-hover disabled:opacity-50');
+const stepButtonClass = tw('focus-effect hover:bg-hover flex size-7 items-center justify-center rounded-md disabled:opacity-50');
 
 /**
  * Next/previous over a view's matching ids in view order, for a find that keeps the content around its matches; the ids
@@ -53,7 +53,7 @@ export function FindSteps({ steps }: { steps: MatchSteps }) {
 
   return (
     <>
-      <span className="mr-1 whitespace-nowrap text-muted-foreground text-sm tabular-nums">
+      <span className="text-muted-foreground mr-1 text-sm whitespace-nowrap tabular-nums">
         {steps.total === 0 && t('c:no_results')}
         {steps.total > 0 && (steps.index >= 0 ? t('c:match_position', { current: steps.index + 1, total: steps.total }) : steps.total)}
       </span>

@@ -32,7 +32,7 @@ export function SelectRoleRadio({ onChange, value, entityType, label, className 
   return (
     <div className={cn('inline-flex items-center gap-3', className)}>
       {label && (
-        <span id={id} className="font-medium text-sm">
+        <span id={id} className="text-sm font-medium">
           {label}
         </span>
       )}

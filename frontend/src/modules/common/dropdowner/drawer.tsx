@@ -37,10 +37,8 @@ export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
           {triggerLabel && <DrawerTitle className="sr-only">{triggerLabel}</DrawerTitle>}
           <DropdownerContent dropdown={dropdown} surface="drawer">
             <div ref={containerRef}>
-              {/* A menu's items are one group of rows; a panel (a form) lays out its own. */}
               <div ref={contentRef} className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
                 {/* A pushed confirmation asks its own question about the same thing */}
-                {/* Two lines at most, so a long name leaves the rows in view; a confirmation's question shows whole */}
                 {lead && !history.length && <DrawerLead className="line-clamp-2">{lead}</DrawerLead>}
                 {kind === 'menu' ? <DrawerRowGroup>{content}</DrawerRowGroup> : content}
               </div>

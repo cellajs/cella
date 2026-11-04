@@ -69,34 +69,34 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
   };
 
   return (
-    <div className={cn('relative flex flex-col justify-between rounded-lg border bg-card p-6', isFlexLayout && 'md:w-1/2 lg:w-1/3', className)}>
+    <div className={cn('bg-card relative flex flex-col justify-between rounded-lg border p-6', isFlexLayout && 'md:w-1/2 lg:w-1/3', className)}>
       {popular && (
         <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 text-center">
           🚀 {t('about:pricing.popular')}
         </Badge>
       )}
       <div className="mt-4">
-        <h3 className="flex justify-center text-center font-bold text-2xl">
+        <h3 className="flex justify-center text-center text-2xl font-bold">
           {t(title)}
-          {popular && <SparklesIcon className="ml-1 size-5 text-primary" />}
+          {popular && <SparklesIcon className="text-primary ml-1 size-5" />}
         </h3>
-        <div className="mt-4 flex items-center justify-center text-muted-foreground">
+        <div className="text-muted-foreground mt-4 flex items-center justify-center">
           {discount && (
             <Badge size="md" className="mr-2 px-2 py-0 text-lg">
               {discount}
             </Badge>
           )}
-          <span className={cn('font-bold text-3xl', discount ? 'mr-2 line-through' : 'mr-1')}>{t(price)}</span>
+          <span className={cn('text-3xl font-bold', discount ? 'mr-2 line-through' : 'mr-1')}>{t(price)}</span>
           <span>/ {t('c:year')}</span>
         </div>
 
-        <div className="mt-4 text-center text-muted-foreground">{t(text)}</div>
+        <div className="text-muted-foreground mt-4 text-center">{t(text)}</div>
 
         <ul className="mt-4 space-y-2">
           {Array.from({ length: featureCount }).map((_, featureIndex) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
             <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
-              <CheckIcon className="mr-2 size-6 p-1 text-success" />
+              <CheckIcon className="text-success mr-2 size-6 p-1" />
               {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}` as TKey)}
             </li>
           ))}

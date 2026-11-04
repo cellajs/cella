@@ -22,7 +22,7 @@ export function RenderModeLabel({ mode }: RenderModeLabelProps) {
   const Icon = renderModeIcons[mode];
   return (
     <span className="flex items-center gap-1.5">
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+      <Icon className="text-muted-foreground size-3.5 shrink-0" />
       <span className="truncate">{t(renderModeLabelKeys[mode])}</span>
     </span>
   );

@@ -96,11 +96,11 @@ export function AccountSheet() {
           tabIndex={-1}
           aria-label={profileLabel}
           onClick={openProfile}
-          className={cn('block h-40 w-full bg-center bg-cover transition-colors duration-300', !user.bannerUrl && placeholderColorClass(user.id))}
+          className={cn('block h-40 w-full bg-cover bg-center transition-colors duration-300', !user.bannerUrl && placeholderColorClass(user.id))}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         />
-        {/* Cover and bar line up with a page header without an uploaded cover; the avatar sits above the bar's middle to leave the name room */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-18 bg-background/50 px-3 pt-9 text-center backdrop-blur-xs dark:bg-background/75">
+        {/* Cover and bar line up with a page header without an uploaded cover */}
+        <div className="bg-background/50 dark:bg-background/75 pointer-events-none absolute inset-x-0 bottom-0 h-18 px-3 pt-9 text-center backdrop-blur-xs">
           <div className="absolute -top-13 left-1/2 -translate-x-1/2">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -111,7 +111,7 @@ export function AccountSheet() {
             </motion.div>
             <ProfilePictureButton user={user} className={revealOnCoverHover} />
           </div>
-          <p className="max-w-full truncate font-semibold text-base">{user.name}</p>
+          <p className="max-w-full truncate text-base font-semibold">{user.name}</p>
         </div>
         {appConfig.has.uploadEnabled && (
           <TooltipButton toolTipContent={coverLabel} side="left">

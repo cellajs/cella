@@ -19,5 +19,3 @@ export const oauthClientsTable = snakeCase.table('oauth_clients', {
   logoUri: varchar({ length: maxLength.url }),
   ...auditColumns(),
 });
-
-export type OauthClientModel = typeof oauthClientsTable.$inferSelect;

@@ -33,7 +33,7 @@ export function InfoCards() {
               rel="noreferrer"
               draggable={false}
               key={id}
-              className="group/external-link focus-effect active:press flex h-96 w-64 shrink-0 flex-col rounded-lg border border-input p-5 hover:border-primary hover:ring-4 hover:ring-primary/10 sm:w-80"
+              className="group/external-link focus-effect active:press border-input hover:border-primary hover:ring-primary/10 flex h-96 w-64 shrink-0 flex-col rounded-lg border p-5 hover:ring-4 sm:w-80"
             >
               <div className="flex items-center gap-2">
                 <img
@@ -47,7 +47,7 @@ export function InfoCards() {
               </div>
               <div className="grow overflow-hidden pt-4">{t(text)}</div>
               <div className="pt-2 text-sm">
-                <div className="mb-2 text-muted-foreground">{t(purpose)}</div>
+                <div className="text-muted-foreground mb-2">{t(purpose)}</div>
                 <div className="link-decoration group-active/external-link:link-decoration-strong font-semibold group-hover/external-link:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}

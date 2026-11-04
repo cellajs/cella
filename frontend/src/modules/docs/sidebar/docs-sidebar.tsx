@@ -21,7 +21,7 @@ export function DocsSidebar() {
 
   return (
     <SidebarContent className="min-h-dvh flex-none overflow-visible pt-2 pb-12">
-      <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 bg-card" />
+      <div aria-hidden="true" className="bg-card sticky top-0 z-20 -mb-4 h-2" />
 
       <div className="my-2 flex items-center gap-2 px-4 pt-2">
         <TooltipButton toolTipContent={t('c:go_to_about')}>
@@ -35,12 +35,12 @@ export function DocsSidebar() {
           </Link>
         </TooltipButton>
         {/* 0.75rem each side: the Docs link's own padding adds to the gap after the line */}
-        <div aria-hidden="true" className="ml-1 h-6 w-px bg-foreground/15 more-contrast:bg-foreground/40" />
+        <div aria-hidden="true" className="bg-foreground/15 more-contrast:bg-foreground/40 ml-1 h-6 w-px" />
         <TooltipButton toolTipContent={t('c:go_to_docs')}>
           <Link
             to="/docs"
             draggable={false}
-            className="focus-effect flex h-8 items-center rounded-md px-1 font-medium text-lg transition-opacity hover:opacity-70"
+            className="focus-effect flex h-8 items-center rounded-md px-1 text-lg font-medium transition-opacity hover:opacity-70"
             onClick={closeSidebarSheetAndNavigate}
           >
             {t('c:docs')}

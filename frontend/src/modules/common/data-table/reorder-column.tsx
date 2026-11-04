@@ -18,7 +18,6 @@ interface ReorderColumnOptions<TRow> {
   getPosition?: (rowIdx: number) => ReorderPosition;
   /** A tree's outdent (-1) and indent (1), returning the new place or null. */
   onShift?: (rowIdx: number, direction: -1 | 1) => ReorderPosition | null;
-  /** Extra classes for the grip's cell, for a table that places it itself. */
   cellClass?: string;
 }
 
@@ -38,7 +37,7 @@ export function reorderColumn<TRow>({
     width: 36,
     maxWidth: 36,
     // The grip draws its own ring
-    cellClass: cn('justify-center focus-ring:has-focus:outline-hidden', cellClass),
+    cellClass: cn('focus-ring:has-focus:outline-hidden justify-center', cellClass),
     rowDragHandle: true,
     renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
     renderCell: ({ row, rowIdx, tabIndex }) => {
@@ -74,7 +73,7 @@ function ReorderCell(props: ReorderCellProps) {
       ref={registerHandle}
       // Any focus shows the outline, a click's too: the grip then takes the arrow keys. `outline-solid` because
       // `outline-hidden` sets the style to none.
-      className="flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground outline-hidden hover:bg-hover hover:text-foreground focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-accent/50 focus:text-foreground active:cursor-grabbing data-popup-open:bg-accent/50 data-popup-open:text-foreground"
+      className="text-muted-foreground hover:bg-hover hover:text-foreground focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-accent/50 focus:text-foreground data-popup-open:bg-accent/50 data-popup-open:text-foreground flex size-7 cursor-grab items-center justify-center rounded-sm outline-hidden active:cursor-grabbing"
     >
       <GripVerticalIcon className="size-3.5" />
     </ReorderHandle>

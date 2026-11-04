@@ -67,16 +67,16 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
 
   return (
     <div className="contents" style={cssVars}>
-      {/* Pushes content; data-started keeps the width transition off on initial mount. */}
+      {/* data-started keeps the width transition off on initial mount */}
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="w-(--spacer-w) transition-[width] duration-300 ease-out focus-view:hidden data-[started=false]:transition-none"
+        className="focus-view:hidden w-(--spacer-w) transition-[width] duration-300 ease-out data-[started=false]:transition-none"
       />
       <Sidebar
         id="sidebar-nav"
         data-started={hasStarted}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden data-[started=false]:-translate-x-full"
+        className="focus-view:hidden fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full">
@@ -88,11 +88,11 @@ export function SidebarNav({ onNavItemClick, onOrganizationClick }: SidebarNavPr
                   <SidebarGroup className="shrink-0 p-0">
                     <SidebarMenu className="gap-1">{leadNavItems.map((navItem) => renderNavItem(navItem, 'pb-0'))}</SidebarMenu>
                   </SidebarGroup>
-                  <div className="mx-3 h-px shrink-0 bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40" />
+                  <div className="bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40 mx-3 h-px shrink-0" />
                   <SidebarGroup className="min-h-0 p-0">
                     <SidebarOrganizationButtons isCollapsed={!isExpanded} onClick={onOrganizationClick} />
                   </SidebarGroup>
-                  <div className="mx-3 h-px shrink-0 bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40" />
+                  <div className="bg-sidebar-foreground/15 more-contrast:bg-sidebar-foreground/40 mx-3 h-px shrink-0" />
                 </>
               )}
               <SidebarGroup className="shrink-0 p-0">

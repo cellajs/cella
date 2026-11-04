@@ -7,11 +7,11 @@ const height = '1rem';
 const barTop = 'calc(0.25rem + (var(--leaf-row) - 1rem) / 2)';
 
 interface ActiveIndicatorProps {
-  /** Index of the active row in the list. Pass -1 (or any negative) to hide. */
+  /** Negative hides the bar. */
   activeIndex: number;
-  /** Unique id for the motion layout animation between sibling lists. */
+  /** Shared by sibling lists, so the bar animates between them. */
   layoutId: string;
-  /** Below `md`, where the sidebar is a sheet: the bar moves by a CSS transform, without motion's shared layout. */
+  /** Moves by a CSS transform, without motion's shared layout. */
   isMobile: boolean;
 }
 

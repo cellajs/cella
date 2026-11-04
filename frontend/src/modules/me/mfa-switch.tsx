@@ -29,7 +29,6 @@ export function MfaSwitch() {
     });
   };
 
-  // A wide card keeps the note beside the title at button height; a narrow one stacks it below.
   return (
     <div className="@container mb-8">
       <FieldLabel htmlFor="mfaRequired" card className="@xl:*:data-[slot=field]:py-2">

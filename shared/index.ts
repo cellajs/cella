@@ -88,7 +88,6 @@ export type {
   SeenTrackedProductType,
   SeqRange,
   Severity,
-  SystemRole,
   Theme,
   TokenType,
   TrackedEventType,

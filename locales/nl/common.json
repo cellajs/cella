@@ -156,8 +156,8 @@
   "time_mini.now": "Zojuist",
   "time_mini.seconds": "{{count}}s",
   "title": "Titel",
-  "update_tenant.text": "Tenant <strong>{{id}}</strong> bevat de organisatie <strong>{{name}}</strong>.",
-  "update_tenant_no_organization.text": "Tenant <strong>{{id}}</strong> bevat nog geen organisatie.",
+  "update_tenant.text": "Bevat de organisatie <strong>{{name}}</strong>.",
+  "update_tenant_no_organization.text": "Bevat nog geen organisatie.",
   "video": "Video",
   "view_mode": "Weergave"
 }

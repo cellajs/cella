@@ -20,10 +20,7 @@ interface MenuSheetOrganizationProps {
   hasSwitcher: boolean;
 }
 
-/**
- * The menu sheet of one organization: its name, as a link to its page unless its pages show in the menu below it, then
- * its channel sections. A switcher above already heads it.
- */
+/** One organization's menu sheet: its name, a link to its page unless its pages show below, then its channel sections. */
 export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuSheetOrganizationProps) {
   const { t } = useTranslation();
   const { to, params, search } = getChannelRoute(organization);
@@ -38,7 +35,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
       {!hasSwitcher &&
         (hasTabsInMenu ? (
           <div className="flex items-center gap-2 px-6 pt-3 pb-2">
-            <h2 className="truncate font-semibold text-base">{organization.name}</h2>
+            <h2 className="truncate text-base font-semibold">{organization.name}</h2>
             {badge}
           </div>
         ) : (
@@ -48,11 +45,11 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
               params={params}
               search={search}
               draggable={false}
-              className="group/organization-link focus-effect focus-inset flex h-12 items-center gap-3 rounded-md px-3 transition-colors hover:bg-hover"
+              className="group/organization-link focus-effect focus-inset hover:bg-hover flex h-12 items-center gap-3 rounded-md px-3 transition-colors"
             >
               <span className="flex min-w-0 grow flex-col gap-0.5">
-                <h2 className="truncate font-semibold text-base leading-5">{organization.name}</h2>
-                <span className="grid overflow-hidden text-muted-foreground text-xs">
+                <h2 className="truncate text-base leading-5 font-semibold">{organization.name}</h2>
+                <span className="text-muted-foreground grid overflow-hidden text-xs">
                   <span className="truncate transition [grid-area:1/1] group-hover/organization-link:-translate-y-2 group-hover/organization-link:opacity-0 group-hover/organization-link:delay-300 group-focus-visible/organization-link:-translate-y-2 group-focus-visible/organization-link:opacity-0">
                     {t(organization.membership.role)}
                   </span>

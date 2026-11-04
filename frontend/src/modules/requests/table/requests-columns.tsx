@@ -42,7 +42,7 @@ export const useColumns = () => {
       resizable: true,
       minWidth: 200,
       placeholderValue: '-',
-      renderCell: ({ row }) => (row.message ? <span className="whitespace-pre-line leading-5">{row.message}</span> : null),
+      renderCell: ({ row }) => (row.message ? <span className="leading-5 whitespace-pre-line">{row.message}</span> : null),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];

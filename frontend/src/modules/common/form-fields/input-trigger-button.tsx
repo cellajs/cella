@@ -3,12 +3,12 @@ import type { ComponentProps } from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-/** An input-styled button that opens a picker: its content at the start, a chevron at the end. */
+/** An input-styled button that opens a picker */
 export function InputTriggerButton({ className, children, ...props }: ComponentProps<typeof Button>) {
   return (
     <Button variant="input" className={cn('justify-between font-normal', className)} {...props}>
       {children}
-      <ChevronDownIcon className="shrink-0 text-faint-foreground" />
+      <ChevronDownIcon className="text-faint-foreground shrink-0" />
     </Button>
   );
 }

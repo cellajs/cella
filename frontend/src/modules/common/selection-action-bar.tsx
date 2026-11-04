@@ -16,19 +16,17 @@ import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 interface SelectionActionBarProps {
-  /** Number of selected items; shown as a badge on the bar's edge, the bar is hidden while zero. */
+  /** The bar hides while zero. */
   count: number;
-  /** Clears the selection; the bar's own clear button and Escape call it. */
+  /** Called by the clear button and Escape. */
   onClear: () => void;
-  /** Bulk action buttons acting on the selection. */
   children: ReactNode;
 }
 
 /**
- * Floating action bar for the current selection, at the bottom of the viewport, or of the sheet it renders in. Portaled to
- * body (or the sheet's layer, `sheetLayerOf`) so sticky or transformed ancestors cannot trap it. While visible on the page
- * it sets the `selection-active` body class, which moves FABs and the mobile bottom nav out of its way. A confirmation
- * opened from it docks in its place (`openDeleteDialog`), and the bar steps down meanwhile.
+ * Floating action bar for the current selection, portaled to body or the sheet's layer so sticky or transformed ancestors
+ * cannot trap it. On the page it sets the `selection-active` body class, which moves FABs and the bottom nav out of its
+ * way; a confirmation opened from it docks in its place (`openDeleteDialog`).
  */
 export function SelectionActionBar({ count, onClear, children }: SelectionActionBarProps) {
   const { t } = useTranslation();
@@ -69,7 +67,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
               transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
               // z-108 keeps it under the spotlight's dim (110), with the rest of the page
               className={cn(
-                'text-editing:invisible inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg bg-background p-2 shadow-floating',
+                'text-editing:invisible bg-background shadow-floating inset-x-0 bottom-4 z-108 mx-auto flex w-fit items-center gap-2 rounded-lg p-2',
                 sheetLayer ? 'absolute' : 'fixed',
               )}
             >

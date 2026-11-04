@@ -48,7 +48,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
 
   return (
     <div
-      className="flex max-h-[40vh] flex-col overflow-y-auto rounded-lg border-[0.05rem] bg-popover p-1 shadow-[0_0.05rem_0.3rem_0_rgb(0_0_0/0.1)]"
+      className="bg-popover flex max-h-[40vh] flex-col overflow-y-auto rounded-lg border-[0.05rem] p-1 shadow-[0_0.05rem_0.3rem_0_rgb(0_0_0/0.1)]"
       role="listbox"
       ref={menuRef}
     >
@@ -63,7 +63,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
             type="button"
             aria-selected={selectedIndex === index}
             // BlockNote's shadcn theme resets icons without a size-* class from an unlayered rule, which only `!` outranks.
-            className="flex h-9 min-w-56 items-center justify-between rounded-sm px-2 hover:bg-accent aria-selected:bg-accent [&_svg]:size-4!"
+            className="hover:bg-accent aria-selected:bg-accent flex h-9 min-w-56 items-center justify-between rounded-sm px-2 [&_svg]:size-4!"
             onClick={() => onItemClick?.(item)}
             tabIndex={-1}
           >
@@ -72,7 +72,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
               {item.title}
             </div>
             {items.length === originalItemCount && index < indexedItemCount && (
-              <span className="flex min-w-4 py-0.5 pl-1 text-[0.8rem] text-faint-foreground">{index + 1}</span>
+              <span className="text-faint-foreground flex min-w-4 py-0.5 pl-1 text-[0.8rem]">{index + 1}</span>
             )}
           </button>
         </div>

@@ -41,7 +41,7 @@ export function MenuSheetSectionButton({
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="sticky top-0 z-10 flex items-center bg-card pt-2">
+    <div className="bg-card sticky top-0 z-10 flex items-center pt-2">
       {isCollapsible ? (
         <Button
           onClick={() => setSectionOpen(options.entityType, !isSectionVisible)}
@@ -50,13 +50,12 @@ export function MenuSheetSectionButton({
         >
           <div className="flex items-center">
             <span className="mr-1 flex items-center">{t(options.label)}</span>
-            {/* Unseen count, or the item count while the section is collapsed. */}
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="inline-block px-2 py-1 font-normal text-faint-foreground group-data-[visible=true]/menu-section:hidden"
+              className="text-faint-foreground inline-block px-2 py-1 font-normal group-data-[visible=true]/menu-section:hidden"
             >
               {sectionUnseenCount > 0 ? (
                 <CountBadge count={sectionUnseenCount} className="inline-flex" />
@@ -70,7 +69,7 @@ export function MenuSheetSectionButton({
         </Button>
       ) : (
         // Matches the toggle's text box, so the label sits where a collapsible section shows it
-        <div className="group-label flex h-10 min-w-0 flex-1 items-center whitespace-nowrap px-3">{t(options.label)}</div>
+        <div className="group-label flex h-10 min-w-0 flex-1 items-center px-3 whitespace-nowrap">{t(options.label)}</div>
       )}
 
       {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}

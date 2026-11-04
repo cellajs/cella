@@ -62,11 +62,11 @@ export function Counters() {
           return (
             <Card key={id} className="bg-background">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-sm sm:text-lg">{t(title)}</CardTitle>
-                <Icon className="size-4 text-muted-foreground sm:size-6" />
+                <CardTitle className="text-sm font-medium sm:text-lg">{t(title)}</CardTitle>
+                <Icon className="text-muted-foreground size-4 sm:size-6" />
               </CardHeader>
               <CardContent>
-                <div className="font-bold text-3xl">
+                <div className="text-3xl font-bold">
                   <CountUp start={Math.floor(countValue / 2)} end={countValue} />
                 </div>
               </CardContent>

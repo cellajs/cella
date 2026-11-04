@@ -16,30 +16,16 @@ export const tileTones = {
 
 export type TileTone = keyof typeof tileTones;
 
-interface StatusDotProps {
-  tone: TileTone;
-  /** Still being worked out: the dot pulses. */
-  checking?: boolean;
-}
-
-/** A status's dot on its own, beside text that names the status. */
-export function StatusDot({ tone, checking }: StatusDotProps) {
-  return <span className={cn('size-2 shrink-0 rounded-full', tileTones[tone].dot, checking && 'animate-pulse')} />;
-}
-
 interface TileHeadProps {
-  /** An icon or image element, sized by the tile. */
+  /** Sized by the tile. */
   icon: ReactNode;
-  /** Names the icon for assistive technology; without it the icon is decorative. */
+  /** Without it the icon is decorative. */
   iconLabel?: string;
   title: ReactNode;
-  /** After the title: badges or a small icon. */
   badges?: ReactNode;
-  /** Opens the line under the title, as a dot on the icon and a colored word. A new `pulse` ripples the dot, as when something lands in the tile. */
+  /** A new `pulse` value ripples the dot. */
   status?: { tone: TileTone; label: string; pulse?: number };
-  /** The line under the title, after the status. */
   meta: ReactNode;
-  /** The line under the title explains the tile, so it wraps and is never cut. */
   wrapMeta?: boolean;
 }
 
@@ -50,13 +36,13 @@ function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: Ti
       <span className="relative shrink-0 [&>img]:size-6 [&>svg]:size-6" aria-hidden="true">
         {icon}
         {status && (
-          <span className={cn('absolute -right-0.5 bottom-0.5 size-2.5 rounded-full ring-2 ring-card', tileTones[status.tone].dot)}>
+          <span className={cn('ring-card absolute -right-0.5 bottom-0.5 size-2.5 rounded-full ring-2', tileTones[status.tone].dot)}>
             {/* Inside the dot, so the ripple leaves the dot's ring in place */}
             {status.pulse !== undefined && (
               <span
                 key={status.pulse}
                 className={cn(
-                  'absolute inset-0 animate-dot-landed rounded-full bg-current opacity-0 motion-reduce:animate-none',
+                  'animate-dot-landed absolute inset-0 rounded-full bg-current opacity-0 motion-reduce:animate-none',
                   tileTones[status.tone].text,
                 )}
               />
@@ -66,7 +52,7 @@ function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: Ti
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 truncate font-medium text-sm">{title}</span>
+          <span className="min-w-0 truncate text-sm font-medium">{title}</span>
           {badges}
         </span>
         <span className={cn('text-muted-foreground text-sm', !wrapMeta && 'truncate')}>
@@ -84,28 +70,25 @@ function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: Ti
 }
 
 export interface ExpandableTileProps extends TileHeadProps {
-  /** The tile's id in its `Accordion`; unique among the tiles there. */
+  /** Unique among the tiles of its `Accordion`. */
   value: string;
-  /** Above the details while the tile is open, such as a secret to copy. */
   lead?: ReactNode;
-  /** `ExpandableTileDetail`s, shown while the tile is open. */
+  /** `ExpandableTileDetail`s. */
   details?: ReactNode;
-  /** Buttons under the details. */
   actions?: ReactNode;
   className?: string;
   panelClassName?: string;
 }
 
-/** A list item as a card that opens to its details and actions. An `Accordion` holds its tiles and keeps one of them open at a time. */
+/** A list item as a card that opens to its details and actions; an `Accordion` holds the tiles. */
 export function ExpandableTile({ value, lead, details, actions, className, panelClassName, ...head }: ExpandableTileProps) {
   return (
-    // The trigger's focus ring draws on the card, so an open tile rings its details too
     <AccordionPrimitive.Item
       value={value}
       render={
         <Card
           className={cn(
-            'gap-0 py-0 focus-ring:has-[>button:focus-visible]:ring-2 focus-ring:has-[>button:focus-visible]:ring-ring focus-ring:has-[>button:focus-visible]:ring-offset-2 focus-ring:has-[>button:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
+            'focus-ring:has-[>button:focus-visible]:ring-2 focus-ring:has-[>button:focus-visible]:ring-ring focus-ring:has-[>button:focus-visible]:ring-offset-2 focus-ring:has-[>button:focus-visible]:ring-offset-background gap-0 py-0 sm:gap-0 sm:py-0',
             className,
           )}
         />
@@ -113,9 +96,9 @@ export function ExpandableTile({ value, lead, details, actions, className, panel
     >
       <AccordionPrimitive.Trigger className="group/expandable-tile flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left focus-visible:outline-hidden">
         <TileHead {...head} />
-        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-panel-open/expandable-tile:rotate-180" />
+        <ChevronDownIcon className="text-muted-foreground size-4 shrink-0 transition-transform duration-200 group-data-panel-open/expandable-tile:rotate-180" />
       </AccordionPrimitive.Trigger>
-      {/* pl-12 lines the panel up with the title: px-3, the size-6 icon and gap-3 */}
+      {/* pl-12 lines up with the title: px-3, the size-6 icon and gap-3 */}
       <AccordionContent className={cn('flex flex-col gap-3 pr-3 pb-3 pl-12', panelClassName)}>
         {lead}
         {details && <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">{details}</dl>}
@@ -126,7 +109,6 @@ export function ExpandableTile({ value, lead, details, actions, className, panel
 }
 
 interface StatusTileProps extends TileHeadProps {
-  /** At the end of the row, such as a remove button. */
   end?: ReactNode;
 }
 
@@ -142,7 +124,7 @@ export function StatusTile({ end, ...head }: StatusTileProps) {
 
 interface ExpandableTileDetailProps {
   label: string;
-  /** Takes the panel's full width, for a value that wraps such as a list of badges. */
+  /** Full width, and wraps. */
   wide?: boolean;
   children: ReactNode;
 }
@@ -159,23 +141,19 @@ export function ExpandableTileDetail({ label, wide, children }: ExpandableTileDe
 interface TileListHeadingProps {
   title: string;
   count: number;
-  /** The heading's level in the page outline; 3 inside a card. */
-  level?: 2 | 3 | 4;
   className?: string;
-  /** An action for the whole list, at the end of the row. */
+  /** An action for the whole list. */
   children?: ReactNode;
 }
 
 /** A list of tiles: its name, how many it holds and an optional action. */
-export function TileListHeading({ title, count, level = 3, className, children }: TileListHeadingProps) {
-  const Heading = level === 2 ? 'h2' : level === 4 ? 'h4' : 'h3';
-
+export function TileListHeading({ title, count, className, children }: TileListHeadingProps) {
   return (
     <div className={cn('flex items-center justify-between gap-2', children && 'min-h-9', className)}>
-      <Heading className="group-label">
+      <h3 className="group-label">
         {title}
-        <span className="ml-3 font-normal text-faint-foreground">{count}</span>
-      </Heading>
+        <span className="text-faint-foreground ml-3 font-normal">{count}</span>
+      </h3>
       {children}
     </div>
   );

@@ -623,6 +623,7 @@ export type {
   StreamError,
   StreamSignal,
   StxBase,
+  StxStored,
   SystemInviteData,
   SystemInviteError,
   SystemInviteErrors,

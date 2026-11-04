@@ -7,9 +7,8 @@ import { cn } from '~/utils/cn';
 
 interface TagExpandLinkProps extends Pick<LinkProps, 'to' | 'search' | 'hash'> {
   isOpen: boolean;
-  /** The section the link expands; it joins the link's accessible name, since every section repeats the same text. */
+  /** Joins the accessible name, since every section repeats the same text. */
   tagName: string;
-  /** Show a spinner while details data is loading. */
   loading?: boolean;
   onMouseEnter?: () => void;
   onClick?: () => void;

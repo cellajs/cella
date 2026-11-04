@@ -102,7 +102,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               excludeBlockTypes: ['checklistItem', 'notify'],
-              className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background'),
+              className: cn(blockNoteFieldClass, 'bg-background max-h-[50vh] overflow-auto'),
               baseFilePanelProps: canUpload
                 ? {
                     mediaMode: 'private-attachment',

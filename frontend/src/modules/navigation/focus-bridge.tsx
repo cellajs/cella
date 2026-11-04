@@ -34,7 +34,7 @@ const focusById = (id: string) => focusElement(document.getElementById(id));
  * `size-px border-0 p-0` outranks the button's own box, which would otherwise add its height to the page at the end of a layout.
  */
 const layoutStopClass = tw(
-  'sr-only size-px border-0 p-0 focus:not-sr-only focus:fixed focus:z-200 focus:h-10 focus:border focus:px-4 focus:shadow-floating',
+  'focus:shadow-floating sr-only size-px border-0 p-0 focus:not-sr-only focus:fixed focus:z-200 focus:h-10 focus:border focus:px-4',
 );
 
 /** First Tab stop of a layout, visible on focus: moves focus to the page's `<main>`, past the navigation (WCAG 2.4.1). */

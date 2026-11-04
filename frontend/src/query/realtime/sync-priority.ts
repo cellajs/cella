@@ -19,7 +19,7 @@ export function getRouteOrganizationId(): string | null {
 function getRouteTenantId(): string | null {
   for (const match of getRouter().state.matches) {
     const context = match.context;
-    if (context && 'tenantId' in context && typeof context.tenantId === 'string') {
+    if (context && 'tenantId' in context) {
       return context.tenantId;
     }
   }

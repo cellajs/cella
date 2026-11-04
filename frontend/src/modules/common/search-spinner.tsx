@@ -6,7 +6,7 @@ import { cn } from '~/utils/cn';
 interface SearchSpinnerProps {
   isSearching: boolean;
   hasSearch: boolean;
-  /** Seconds before the spinner fades in (default 0.3, so a fast response shows no flicker); 0 shows it at once. */
+  /** Seconds before the spinner fades in. */
   appearDelay?: number;
 }
 

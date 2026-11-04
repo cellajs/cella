@@ -90,8 +90,6 @@ export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEven
 
 export type TokenType = (typeof appConfig.tokenTypes)[number];
 
-export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
-
 // Entity hierarchy helpers
 
 export type EntityRole = (typeof roles.all)[number];

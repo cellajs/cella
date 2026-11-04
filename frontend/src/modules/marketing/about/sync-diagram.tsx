@@ -397,7 +397,7 @@ export function SyncDiagram() {
     <div ref={inViewRef} className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
       <div className="relative mb-6">
         {showHint && (
-          <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
+          <div className="text-muted-foreground absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap max-sm:hidden">
             {t('about:try_me')}
             <motion.span
               animate={{ x: animateHint ? [0, 4, 0] : 0 }}
@@ -423,9 +423,9 @@ export function SyncDiagram() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeInOut' }}
-          className="mx-auto mb-4 max-w-measure font-light text-muted-foreground text-sm sm:text-center"
+          className="max-w-measure text-muted-foreground mx-auto mb-4 text-sm font-light sm:text-center"
         >
-          <Trans t={t} i18nKey={modeText[mode].text as never} components={{ strong: <strong className="font-normal text-foreground" /> }} />
+          <Trans t={t} i18nKey={modeText[mode].text as never} components={{ strong: <strong className="text-foreground font-normal" /> }} />
         </motion.p>
       </AnimatePresence>
 
@@ -445,7 +445,7 @@ export function SyncDiagram() {
         aria-label={t('about:sync_diagram.toggle_labels')}
         className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
-        {/* SVG overlay drawn in real pixel space and re-measured on resize. Unclipped and above the boxes, so a label wider than its gap stays whole. */}
+        {/* Unclipped and above the boxes, so a label wider than its gap stays whole */}
         {geometry && (
           <svg className="absolute inset-0 z-1 size-full overflow-visible" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
             <defs>
@@ -567,9 +567,9 @@ export function SyncDiagram() {
                   boxRefs.current[key] = el;
                 }}
                 className={cn(
-                  'relative flex items-center justify-center rounded-xl border bg-background shadow-sm',
+                  'bg-background relative flex items-center justify-center rounded-xl border shadow-sm',
                   key === 'api' && 'transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
-                  becomesVm ? 'h-14 w-24 border-foreground/40 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
+                  becomesVm ? 'border-foreground/40 h-14 w-24 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
                 )}
                 style={{ transitionDuration: `${foldTimeline.morph}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
               >
@@ -606,7 +606,7 @@ export function SyncDiagram() {
                       initial={false}
                       animate={{ opacity: isVm ? 1 : 0 }}
                       transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.swap } : { duration: 0.2 }}
-                      className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap font-medium text-xs"
+                      className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 text-xs font-medium whitespace-nowrap"
                     >
                       {t('about:sync_diagram.one_vm')}
                     </motion.span>
@@ -614,7 +614,7 @@ export function SyncDiagram() {
                 )}
               </div>
               <span
-                className={cn('truncate text-muted-foreground text-xs transition-opacity', becomesVm && 'opacity-0')}
+                className={cn('text-muted-foreground truncate text-xs transition-opacity', becomesVm && 'opacity-0')}
                 style={{ transitionDuration: `${foldTimeline.swap}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
               >
                 {label}

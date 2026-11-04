@@ -12,7 +12,7 @@ export function DropdownerTriggerIcon({ icon: Icon, className }: DropdownerTrigg
     <span className="inline-grid place-items-center">
       <Icon
         className={cn(
-          'col-start-1 row-start-1 in-data-dropdowner-done:scale-50 in-data-dropdowner-done:opacity-0 transition-[opacity,scale] duration-200 motion-reduce:transition-none',
+          'col-start-1 row-start-1 transition-[opacity,scale] duration-200 in-data-dropdowner-done:scale-50 in-data-dropdowner-done:opacity-0 motion-reduce:transition-none',
           className,
         )}
       />
@@ -25,7 +25,7 @@ export function DropdownerTriggerIcon({ icon: Icon, className }: DropdownerTrigg
         strokeLinecap="round"
         strokeLinejoin="round"
         className={cn(
-          'col-start-1 row-start-1 text-success in-data-dropdowner-done:opacity-100 opacity-0 transition-opacity motion-reduce:transition-none',
+          'text-success col-start-1 row-start-1 opacity-0 transition-opacity in-data-dropdowner-done:opacity-100 motion-reduce:transition-none',
           className,
         )}
       >

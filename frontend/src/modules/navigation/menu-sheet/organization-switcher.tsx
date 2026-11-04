@@ -103,7 +103,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
         : archived.length > 0 && (
             <DropdownActionItem icon={ArchiveIcon} closeOnSelect={false} onSelect={() => setShowsArchived(true)}>
               {t('c:show_archived')}
-              <span className="ml-auto text-faint-foreground text-xs">{archived.length}</span>
+              <span className="text-faint-foreground ml-auto text-xs">{archived.length}</span>
             </DropdownActionItem>
           )}
       {createOrganization && (
@@ -122,10 +122,7 @@ interface OrganizationSwitcherProps {
   organization: UserMenuItem;
 }
 
-/**
- * Heads the mobile menu sheet with the organization it shows: a row built like the channel rows under it, which opens
- * the switcher menu to reach the organization's page, pick another organization or create one.
- */
+/** Heads the mobile menu sheet: a row like the channel rows under it, which opens the organization switcher menu. */
 export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -152,7 +149,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
           variant="ghost"
           onClick={openMenu}
           aria-label={t(hasUnseenElsewhere ? 'c:switch_organization_unseen' : 'c:switch_organization', { name: organization.name })}
-          className={cn('h-12 w-full justify-start border-0 text-md data-dropdowner-active:bg-muted', menuColumnsClass)}
+          className={cn('text-md data-dropdowner-active:bg-muted h-12 w-full justify-start border-0', menuColumnsClass)}
         >
           <EntityAvatar
             className="size-8 shrink-0"
@@ -162,7 +159,7 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
             url={organization.thumbnailUrl}
           />
           <span className="min-w-0 grow truncate text-left">{organization.name}</span>
-          {hasUnseenElsewhere && <span className="-mr-2 size-2 shrink-0 rounded-full bg-primary" />}
+          {hasUnseenElsewhere && <span className="bg-primary -mr-2 size-2 shrink-0 rounded-full" />}
           <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
         </Button>
       </div>

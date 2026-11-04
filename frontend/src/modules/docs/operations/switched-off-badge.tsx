@@ -21,7 +21,7 @@ export const isSwitchedOff = ({ enabledBy }: GenOperationSummary) => !!enabledBy
 
 interface SwitchedOffBadgeProps {
   enabledBy?: ConfigSwitch;
-  /** Spells out the reason beside the badge; without it, the reason is the badge's tooltip. */
+  /** Without it, the reason is the badge's tooltip. */
   withReason?: boolean;
 }
 

@@ -160,7 +160,7 @@ export function ViewMenu<TRow extends object>({ sort, columns, setColumns, expor
 
   return (
     <TooltipButton className={className} toolTipContent={t('c:view')}>
-      <Button ref={triggerRef} variant="outline" className="relative flex data-dropdowner-active:bg-accent" onClick={open}>
+      <Button ref={triggerRef} variant="outline" className="data-dropdowner-active:bg-accent relative flex" onClick={open}>
         {hasHidden && <Badge className="absolute -top-1 -right-1 z-10 size-2 p-0" />}
         <SlidersHorizontalIcon />
         <span className="max-xl:sr-only">{t('c:view')}</span>

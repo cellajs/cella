@@ -18,7 +18,7 @@ const proofs: Record<string, { label: TKey; text: TKey }> = {
   oauth2: { label: 'c:access_token', text: 'c:docs.proof_access_token.text' },
 };
 
-const codeChip = (text: string) => <code className="break-all rounded bg-muted px-1.5 py-0.5 font-mono text-muted-foreground text-xs">{text}</code>;
+const codeChip = (text: string) => <code className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs break-all">{text}</code>;
 
 /** Writes the explanations out, for the bar that opens them all at once. */
 function WrittenOut({ open, values }: { open: boolean; values: AccessValue[] }) {
@@ -76,8 +76,7 @@ export function OperationAccess({ operation }: { operation: GenOperationSummary 
         <span className="sr-only">{t('c:help')}</span>
         <HelpToggleIcon open={helpOpen} className="opacity-40 group-hover/operation-access:opacity-70" />
       </Button>
-      {/* A phone stacks each label over its value */}
-      <dl className="mt-2 grid max-w-measure gap-x-4 gap-y-1 px-3 text-sm sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-y-2">
+      <dl className="max-w-measure mt-2 grid gap-x-4 gap-y-1 px-3 text-sm sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-y-2">
         {schemes.length > 0 && (
           <AccessRow label={t('c:docs.accepts')}>
             <div className="flex flex-wrap items-center gap-2">

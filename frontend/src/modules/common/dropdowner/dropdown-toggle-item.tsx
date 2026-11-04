@@ -22,7 +22,7 @@ export function DropdownToggleItem({ checked, onCheckedChange, icon: Icon, child
       <Button variant="row" aria-pressed={checked} onClick={() => onCheckedChange(!checked)}>
         {Icon && <Icon />}
         <span className="min-w-0 grow truncate text-left">{children}</span>
-        <CheckIcon className={cn('size-4 shrink-0 text-success', !checked && 'invisible')} />
+        <CheckIcon className={cn('text-success size-4 shrink-0', !checked && 'invisible')} />
       </Button>
     );
   }

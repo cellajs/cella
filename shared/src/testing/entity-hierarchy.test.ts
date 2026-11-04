@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { channelsDownToStrictHome } from './entity-hierarchy';
+import { channelsDownToStrictHome } from './entity-hierarchy.ts';
 
 describe('channelsDownToStrictHome', () => {
   const ancestors = ['project', 'courseSection', 'course', 'organization'];

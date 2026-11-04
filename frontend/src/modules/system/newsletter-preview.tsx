@@ -14,7 +14,7 @@ export function NewsletterPreview() {
 
   return (
     <section className="mt-5 rounded-lg border p-6 leading-normal">
-      <h2 className="mb-4 font-semibold text-lg text-muted-foreground">{subject}</h2>
+      <h2 className="text-muted-foreground mb-4 text-lg font-semibold">{subject}</h2>
 
       <Suspense fallback={<Spinner className="my-16" noDelay />}>
         <BlockNoteFullHtml

@@ -147,7 +147,7 @@ function PanelBoard({ board }: { board: Board }) {
         return (
           <div key={specId(spec)} className="relative flex shrink-0">
             <ResizablePanel id={specId(spec)} minWidth={minWidth} collapsedWidth={collapsedWidth} collapsible={collapsible} label={specId(spec)} />
-            {(index < panels.length - 1 || end) && <ResizableSeparator index={index} className="mx-[0.02rem] w-1.5 bg-border" />}
+            {(index < panels.length - 1 || end) && <ResizableSeparator index={index} className="bg-border mx-[0.02rem] w-1.5" />}
           </div>
         );
       })}
@@ -157,7 +157,7 @@ function PanelBoard({ board }: { board: Board }) {
   return (
     <div data-frame style={{ width, height: 200 }} className={parent === 'clip' ? 'overflow-x-clip' : undefined}>
       {parent === 'scroll' ? (
-        <ScrollArea className="h-[200px]" viewportClassName="overflow-y-hidden! overscroll-x-contain overscroll-y-auto" horizontalScroll>
+        <ScrollArea className="h-[200px]" viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto" horizontalScroll>
           {group}
         </ScrollArea>
       ) : (

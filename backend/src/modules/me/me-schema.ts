@@ -11,8 +11,8 @@ import { enabledOAuthProvidersSchema, userFlagsSchema, userSchema, userUpdateBod
 import { validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
-/** A session row as stored, secret omitted: what a revoke returns. */
-export const sessionBaseSchema = createSelectSchema(sessionsTable);
+/** A session row as stored, secret and revoker omitted: what a revoke returns. */
+export const sessionBaseSchema = createSelectSchema(sessionsTable).omit({ revokedBy: true });
 
 /** A session as the account page lists it. */
 const sessionSchema = sessionBaseSchema.extend({

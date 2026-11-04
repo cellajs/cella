@@ -15,15 +15,15 @@ const meta = {
     <Dialog {...args}>
       <DialogTrigger>Open</DialogTrigger>
       <DialogContent>
-        <DialogHeader className="with-close-btn">
+        <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-          </DialogDescription>
         </DialogHeader>
+        <DialogDescription>
+          This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+        </DialogDescription>
         <DialogFooter className="gap-4">
           <DialogClose className="hover:underline">Cancel</DialogClose>
-          <DialogClose className="rounded bg-primary px-4 py-2 text-primary-foreground">Continue</DialogClose>
+          <DialogClose className="bg-primary text-primary-foreground rounded px-4 py-2">Continue</DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>

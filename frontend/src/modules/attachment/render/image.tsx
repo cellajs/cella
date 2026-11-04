@@ -13,7 +13,7 @@ interface RenderImageProps {
   alt?: string;
   imageClassName?: string;
   showButtons?: boolean;
-  /** Dialog viewer: sizes the image to its content so the letterbox falls through to the backdrop, while panning on the image still works. */
+  /** Sizes the image to its content, so a letterbox click reaches the backdrop. */
   backdropDismiss?: boolean;
 }
 

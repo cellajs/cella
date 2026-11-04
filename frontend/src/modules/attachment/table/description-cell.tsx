@@ -30,7 +30,7 @@ export function DescriptionCell({ row, editable }: DescriptionCellProps) {
 
   return (
     <span
-      className="flex size-full items-center text-foreground-soft group-focus-within/cell:text-foreground group-hover/cell:text-foreground"
+      className="text-foreground-soft group-focus-within/cell:text-foreground group-hover/cell:text-foreground flex size-full items-center"
       onDoubleClick={handleDoubleClick}
     >
       <span className="truncate">{text}</span>

@@ -19,7 +19,7 @@ export function DropdownSelectItem({ selected, onSelect, icon, children }: Dropd
   return (
     <DropdownActionItem icon={icon} selected={selected} onSelect={onSelect}>
       <span className="min-w-0 grow truncate text-left">{children}</span>
-      <CheckIcon className={cn('size-4 shrink-0 text-success', !selected && 'invisible')} />
+      <CheckIcon className={cn('text-success size-4 shrink-0', !selected && 'invisible')} />
     </DropdownActionItem>
   );
 }

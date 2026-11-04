@@ -10,6 +10,7 @@ export interface JsonViewerContextValue {
   collapseStringsAfterLength: number;
   /** Path from $ref navigation; nodes along it expand, the node at its end scrolls into view and flashes */
   targetPath: string[] | null;
+  setTargetPath: (path: string[]) => void;
   searchMatchPath: JsonPath | null;
   searchText: string;
   expandAll: boolean;

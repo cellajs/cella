@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organiza
   beforeLoad: ({ context, matches }) => {
     // Opens the first tab the surface resolves and forwards away from disabled tabs.
     guardNavTabs(matches, '/_app/$tenantId/$organizationSlug/organization', {
-      slotConfig: context.organization?.toolsConfig?.['organization.tabs'],
+      slotConfig: context.organization.toolsConfig['organization.tabs'],
     });
   },
   head: ({ match }) => pageHead(match.context.organization?.name),

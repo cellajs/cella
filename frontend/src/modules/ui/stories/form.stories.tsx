@@ -39,7 +39,7 @@ function ProfileForm(args: Story['args']) {
             <FormItem>
               <FormLabel help="This is your public display name.">Username</FormLabel>
               <FormControl>
-                <input className="w-full rounded-md border border-input bg-background px-3 py-2" placeholder="username" {...field} />
+                <input className="border-input bg-background w-full rounded-md border px-3 py-2" placeholder="username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -38,9 +38,9 @@ function Explanations({ items }: { items: AccessValue[] }) {
     <>
       {items.map(({ value, name, description, code }) => (
         <div key={value} className="flex flex-col gap-1">
-          <p className="font-medium text-sm">{name}</p>
-          {description && <p className="text-pretty text-muted-foreground text-sm">{description}</p>}
-          {code && <code className="font-mono text-muted-foreground text-xs">{code}</code>}
+          <p className="text-sm font-medium">{name}</p>
+          {description && <p className="text-muted-foreground text-sm text-pretty">{description}</p>}
+          {code && <code className="text-muted-foreground font-mono text-xs">{code}</code>}
         </div>
       ))}
       {items.some(({ isGuard }) => isGuard) && (
@@ -58,7 +58,6 @@ function Explanations({ items }: { items: AccessValue[] }) {
 
 interface ExplainedValueProps {
   item: AccessValue;
-  /** Off while the same text is written out on the page. */
   enabled?: boolean;
   className?: string;
   children: ReactNode;
@@ -91,7 +90,7 @@ const cellHandle = createPopoverHandle<CellPayload>();
 const maxCellText = 28;
 
 interface AccessCellProps {
-  /** The column's name, which labels the card. */
+  /** Labels the card. */
   label: string;
   items: AccessValue[];
   tabIndex: number;
@@ -101,7 +100,7 @@ interface AccessCellProps {
 /** A grid cell's values behind one trigger. The one popup they share lives in `AccessCellPopover`, so a hover never renders the grid. */
 export function AccessCell({ label, items, tabIndex, className }: AccessCellProps) {
   const text = items.map(({ name }) => name).join(', ');
-  if (!items.some(({ description }) => description)) return <div className={cn('truncate text-muted-foreground text-xs', className)}>{text}</div>;
+  if (!items.some(({ description }) => description)) return <div className={cn('text-muted-foreground truncate text-xs', className)}>{text}</div>;
 
   const isLong = items.length > 1 && text.length > maxCellText;
 
@@ -113,12 +112,12 @@ export function AccessCell({ label, items, tabIndex, className }: AccessCellProp
       {...openBehavior}
       className={cn(
         triggerClass,
-        'flex max-w-full items-center gap-1.5 text-left text-muted-foreground text-xs hover:text-foreground data-popup-open:text-foreground',
+        'text-muted-foreground hover:text-foreground data-popup-open:text-foreground flex max-w-full items-center gap-1.5 text-left text-xs',
         className,
       )}
     >
       <span className={cn('truncate', explainedUnderline)}>{isLong ? items[0].name : text}</span>
-      {isLong && <span className="shrink-0 rounded-full bg-muted px-1.5 text-muted-foreground">+{items.length - 1}</span>}
+      {isLong && <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-1.5">+{items.length - 1}</span>}
     </PopoverTrigger>
   );
 }

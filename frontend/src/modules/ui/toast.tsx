@@ -24,7 +24,7 @@ const toastIcons: Record<string, ReactNode> = {
 
 // `--toast-dir` (1 for bottom, -1 for top, set on the viewport) flips every vertical offset, so one class list serves both edges.
 const toastRootClassName = cn(
-  'group/toast focus-effect pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom select-none rounded-lg bg-popover text-popover-foreground shadow-floating will-change-transform',
+  'group/toast focus-effect bg-popover text-popover-foreground shadow-floating pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-lg will-change-transform select-none',
   'group-data-[position=top]/toast-viewport:top-0 group-data-[position=top]/toast-viewport:bottom-auto group-data-[position=top]/toast-viewport:origin-top',
   '[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-dir)*-1*(var(--toast-offset-y)+var(--toast-index)*var(--gap))+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]',
   'h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-var(--toast-dir)*(var(--toast-index)*var(--peek)+var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]',
@@ -61,11 +61,11 @@ function ToastList({ position }: { position: ToastPosition }) {
         )}
         {/* A mouse drag selects the text, so a message can be copied for support; touch keeps swipe-to-dismiss. */}
         <div
-          className="flex min-w-0 flex-1 select-text flex-col gap-1"
+          className="flex min-w-0 flex-1 flex-col gap-1 select-text"
           onPointerDown={(event) => event.pointerType === 'mouse' && event.stopPropagation()}
         >
-          <ToastPrimitive.Title data-slot="toast-title" className="wrap-break-word font-medium text-sm" />
-          <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="wrap-break-word text-muted-foreground text-sm" />
+          <ToastPrimitive.Title data-slot="toast-title" className="text-sm font-medium wrap-break-word" />
+          <ToastPrimitive.Description data-slot="toast-description" render={<div />} className="text-muted-foreground text-sm wrap-break-word" />
         </div>
         <ToastPrimitive.Action data-slot="toast-action" render={<Button variant="outline" size="sm" />} className="shrink-0" />
         {!toast.data?.hideClose && (
@@ -92,7 +92,7 @@ export function Toaster({ children, position = 'bottom', ...props }: ToastPrimit
         <ToastPrimitive.Viewport
           data-slot="toast-viewport"
           data-position={position}
-          className="group/toast-viewport pointer-events-none fixed inset-x-4 z-500 mx-auto w-auto max-w-115 outline-hidden [--toast-dir:1] data-[position=top]:top-[calc(1rem+env(safe-area-inset-top,0px))] data-[position=bottom]:bottom-4 sm:right-4 sm:left-auto sm:mx-0 sm:w-full data-[position=top]:[--toast-dir:-1]"
+          className="group/toast-viewport pointer-events-none fixed inset-x-4 z-500 mx-auto w-auto max-w-115 outline-hidden [--toast-dir:1] data-[position=bottom]:bottom-4 data-[position=top]:top-[calc(1rem+env(safe-area-inset-top,0px))] data-[position=top]:[--toast-dir:-1] sm:right-4 sm:left-auto sm:mx-0 sm:w-full"
         >
           <ToastList position={position} />
         </ToastPrimitive.Viewport>

@@ -21,7 +21,7 @@ export function Subprocessors() {
                 {legalName.includes(name) ? legalName : `${name} (${legalName})`}
               </a>
             </TableCell>
-            <TableCell role="cell" className="whitespace-normal max-sm:p-0 max-sm:text-muted-foreground">
+            <TableCell role="cell" className="max-sm:text-muted-foreground whitespace-normal max-sm:p-0">
               {country}
             </TableCell>
             <LegalFieldCell label="Services" className="max-sm:w-full">

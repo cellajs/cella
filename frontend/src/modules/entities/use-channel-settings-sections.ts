@@ -7,7 +7,7 @@ import { heldContextRoles } from '~/modules/entities/context-roles';
 import { useCan } from '~/modules/entities/use-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
-export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityContext<C> & { entityType: C; toolsConfig?: ToolsConfig };
+export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityContext<C> & { entityType: C; toolsConfig: ToolsConfig };
 
 export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor & {
   order: number;
@@ -29,5 +29,5 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   // Cast: registered settings tools carry a render the descriptor type erases
   const tools = getTools(slot) as ChannelSettingsSection<C>[];
 
-  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig?.[slot] });
+  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig[slot] });
 }

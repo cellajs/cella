@@ -31,8 +31,8 @@ export function ContactPage() {
   return (
     <MarketingLayout title="c:contact_us">
       <div className="container pt-20 pb-16">
-        <h2 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">{t('c:leave_message')}</h2>
-        <p className="mb-8 text-center text-muted-foreground sm:text-left sm:text-lg">{t('c:contact_us.text')}</p>
+        <h2 className="mb-4 text-center text-3xl font-semibold sm:text-left md:text-4xl">{t('c:leave_message')}</h2>
+        <p className="text-muted-foreground mb-8 text-center sm:text-left sm:text-lg">{t('c:contact_us.text')}</p>
         <ContactForm />
       </div>
       <div className="container mb-12">
@@ -42,10 +42,10 @@ export function ContactPage() {
             const isWebPage = method.link.startsWith('http');
             return (
               <div key={method.title} className="mb-10 h-48 w-40 text-center sm:w-48">
-                <div className="mx-auto mb-5 flex size-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:size-32">
+                <div className="bg-accent/50 text-primary mx-auto mb-5 flex size-24 items-center justify-center rounded-full sm:size-32">
                   <method.icon className="size-12" strokeWidth={1} />
                 </div>
-                <h3 className="mb-3 font-semibold text-lg">{t(method.title)}</h3>
+                <h3 className="mb-3 text-lg font-semibold">{t(method.title)}</h3>
                 <p>
                   <a
                     href={method.link}

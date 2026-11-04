@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeEqual } from './safe-equal';
+import { safeEqual } from './safe-equal.ts';
 
 describe('safeEqual', () => {
   it('accepts only the identical string', () => {

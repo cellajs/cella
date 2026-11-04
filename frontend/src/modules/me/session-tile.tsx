@@ -65,9 +65,9 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       badges={
         <>
           {session.type === 'mfa' && (
-            <span className="flex shrink-0 items-center gap-1 text-success">
+            <span className="text-success flex shrink-0 items-center gap-1">
               <ShieldCheckIcon className="size-4" />
-              <span className="font-medium text-xs max-sm:sr-only">{t('c:mfa_short')}</span>
+              <span className="text-xs font-medium max-sm:sr-only">{t('c:mfa_short')}</span>
             </span>
           )}
           {isCurrentDevice && <Badge variant="outline">{t('c:this_device')}</Badge>}
@@ -76,7 +76,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       }
       meta={
         <>
-          {/* object-cover fills the box, so the radius rounds the flag and not the space around it */}
+          {/* object-cover, so the radius rounds the flag and not the space around it */}
           {session.ipCountry && <CountryFlag countryCode={session.ipCountry} height={11} className="mr-1.5 rounded-xs object-cover align-[-1px]" />}
           {when}
         </>

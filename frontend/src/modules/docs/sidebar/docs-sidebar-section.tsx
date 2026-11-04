@@ -2,20 +2,16 @@ import type { ReactNode } from 'react';
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '~/modules/ui/sidebar';
 import { tw } from '~/utils/tw';
 
-/** A sticky tier-1 row's wrapper: its opaque fill hides the rows scrolling under it, also behind the ghost hover, translucent in dark mode. */
-export const sidebarStickyRowClass = tw('sticky top-2 z-10 bg-card');
+/** A sticky tier-1 row's wrapper, opaque so rows scrolling under its translucent hover stay hidden. */
+export const sidebarStickyRowClass = tw('bg-card sticky top-2 z-10');
 
-/**
- * The bullet on the rail of a collapsible row (`h-8`, `h-9` without a focus ring), darker while open. It sits in the row's `data-expanded` item, beside
- * the row: inside it, the row's press transform would become its containing block and shift it off the rail.
- */
+/** A collapsible row's rail bullet, beside the row: inside it, the row's press transform would shift it off the rail. */
 export const sidebarBulletClass = tw(
-  'pointer-events-none absolute no-focus-ring:top-4 top-3.5 left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 [[data-expanded=true]>&]:bg-muted-foreground/60',
+  'no-focus-ring:top-4 bg-muted-foreground/30 [[data-expanded=true]>&]:bg-muted-foreground/60 pointer-events-none absolute top-3.5 left-[0.53rem] size-1 rounded-full',
 );
 
 interface DocsSidebarSectionProps {
   label: string;
-  /** Sits at the end of the label row. */
   action?: ReactNode;
   children: ReactNode;
 }
@@ -29,7 +25,7 @@ export function DocsSidebarSection({ label, action, children }: DocsSidebarSecti
         {action}
       </div>
       <SidebarGroupContent>
-        <SidebarGroup className="gap-1 no-focus-ring:gap-0 p-1 pt-0">{children}</SidebarGroup>
+        <SidebarGroup className="no-focus-ring:gap-0 gap-1 p-1 pt-0">{children}</SidebarGroup>
       </SidebarGroupContent>
     </SidebarGroup>
   );

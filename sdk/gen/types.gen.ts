@@ -109,6 +109,16 @@ export type StxBase = {
 };
 
 /**
+ * The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.
+ */
+export type StxStored = StxBase & {
+  /**
+   * The fields the last write changed, set by the server; absent after a create or a server-driven write
+   */
+  changedFields?: Array<string>;
+};
+
+/**
  * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
@@ -390,7 +400,6 @@ export type MeAuthData = {
     createdAt: string;
     expiresAt: string;
     revokedAt: string | null;
-    revokedBy: string | null;
     revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
     steppedUpAt: string | null;
     steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
@@ -771,7 +780,7 @@ export type Attachment = {
         slug: null;
       }
     | null;
-  stx: StxBase;
+  stx: StxStored;
   description: string | null;
   keywords: string;
   deletedAt: string | null;
@@ -905,7 +914,6 @@ export type ApiKey = {
   scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
   expiresAt: string | null;
   revokedAt: string | null;
-  revokedBy: string | null;
   createdBy:
     | {
         id: string;
@@ -2890,7 +2898,6 @@ export type RevokeMySessionsResponses = {
       createdAt: string;
       expiresAt: string;
       revokedAt: string | null;
-      revokedBy: string | null;
       revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
       steppedUpAt: string | null;
       steppedUpVia: 'passkey' | 'totp' | 'email' | 'sso' | null;
@@ -4425,6 +4432,9 @@ export type GetUserData = {
   };
   query?: {
     slug?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
     include?: string;
   };
   url: '/users/users/{relatableUserId}';
@@ -4671,6 +4681,9 @@ export type GetOrganizationsData = {
     relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
     include?: string;
   };
   url: '/organizations';
@@ -4717,6 +4730,9 @@ export type GetOrganizationData = {
   };
   query?: {
     slug?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
     include?: string;
   };
   url: '/{tenantId}/organizations/{id}';
@@ -5830,7 +5846,13 @@ export type GetMembersData = {
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
+    /**
+     * Comma-separated values
+     */
     include?: string;
+    /**
+     * Comma-separated values
+     */
     userIds?: string;
   };
   url: '/{tenantId}/{organizationId}/memberships/members';

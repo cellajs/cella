@@ -5,7 +5,7 @@ export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card"
-      className={cn('flex flex-col gap-3 rounded-lg border bg-card py-3 text-card-foreground sm:gap-6 sm:py-6', className)}
+      className={cn('bg-card text-card-foreground flex flex-col gap-3 rounded-lg border py-3 sm:gap-6 sm:py-6', className)}
       {...props}
     />
   );
@@ -27,11 +27,11 @@ export function CardHeader({ className, ...props }: React.ComponentProps<'div'>)
 /** `level` makes the title a heading (h1 to h4) where it heads a section of the page, so assistive technology can jump to it. */
 export function CardTitle({ className, level, ...props }: React.ComponentProps<'div'> & { level?: 1 | 2 | 3 | 4 }) {
   const Tag = (level ? `h${level}` : 'div') as 'div';
-  return <Tag data-slot="card-title" className={cn('flex min-h-3 items-center font-semibold leading-none sm:min-h-6', className)} {...props} />;
+  return <Tag data-slot="card-title" className={cn('flex min-h-3 items-center leading-none font-semibold sm:min-h-6', className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-description" className={cn('wrap-break-word min-w-0 text-muted-foreground text-sm', className)} {...props} />;
+  return <div data-slot="card-description" className={cn('text-muted-foreground min-w-0 text-sm wrap-break-word', className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: React.ComponentProps<'div'>) {

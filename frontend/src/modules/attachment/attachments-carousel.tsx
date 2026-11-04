@@ -137,10 +137,9 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       className={cn('group/carousel size-full', isDialog && 'p-2')}
       setApi={handleSetApi}
     >
-      {/* Positioned on the carousel's padding box, so the bar spans the dialog edge to edge past the p-2 around the slides.
-          z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
+      {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title */}
       {isDialog && (
-        <div className="absolute top-0 left-0 z-20 w-full bg-background/60 p-3 backdrop-blur-xs">
+        <div className="bg-background/60 absolute top-0 left-0 z-20 w-full p-3 backdrop-blur-xs">
           <div className="flex gap-2">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
@@ -190,7 +189,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className={headerButtonClass}
                 onClick={() => download(currentItem.url, currentItem.filename)}
               >
-                {isInProgress ? <Spinner className="size-5 text-foreground-soft" noDelay /> : <DownloadIcon className="size-5" />}
+                {isInProgress ? <Spinner className="text-foreground-soft size-5" noDelay /> : <DownloadIcon className="size-5" />}
               </Button>
             )}
 
@@ -198,7 +197,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
           </div>
           {descriptionText && (
             <HelpCollapse open={descriptionOpen}>
-              <p className="mt-2 ml-1 max-w-measure">{descriptionText}</p>
+              <p className="max-w-measure mt-2 ml-1">{descriptionText}</p>
             </HelpCollapse>
           )}
         </div>
@@ -235,11 +234,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
 
       {items.length > 1 && (
         <>
-          {/* Solid on every backdrop: the slide behind can be any image, so neither the button nor its hover fill lets it through. */}
-          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 [&_svg]:size-5" />
+          <CarouselPrevious className="shadow-floating left-4 size-11 opacity-0 transition-opacity group-hover/carousel:opacity-100 focus-visible:opacity-100 lg:left-8 [&_svg]:size-5" />
           <CarouselNext
             ref={nextButtonRef}
-            className="right-4 size-11 opacity-0 shadow-floating transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 [&_svg]:size-5"
+            className="shadow-floating right-4 size-11 opacity-0 transition-opacity group-hover/carousel:opacity-100 focus-visible:opacity-100 lg:right-8 [&_svg]:size-5"
           />
         </>
       )}
@@ -253,7 +251,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               size="micro"
               aria-label={t(autoplaying ? 'c:pause' : 'c:play')}
               onClick={toggleAutoplay}
-              className="absolute top-1/2 left-full z-10 ml-3 size-6 -translate-y-1/2 rounded-full p-0 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 left-full z-10 ml-3 size-6 -translate-y-1/2 rounded-full p-0"
             >
               {autoplaying ? <PauseIcon className="size-3" /> : <PlayIcon className="size-3" />}
             </Button>

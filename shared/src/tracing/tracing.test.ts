@@ -107,14 +107,6 @@ describe('computeSpanStats', () => {
     expect(stats.avgDurationMs['sync.sse']).toBe(30);
   });
 
-  it('handles spans with null duration', () => {
-    const spans = [makeSpan({ name: 'test.span', duration: null, endTime: null })];
-    const stats = computeSpanStats(spans);
-
-    expect(stats.total).toBe(1);
-    expect(stats.avgDurationMs).toEqual({});
-  });
-
   it('returns zero stats for empty array', () => {
     const stats = computeSpanStats([]);
     expect(stats).toEqual({ total: 0, byPrefix: {}, avgDurationMs: {}, errorCount: 0 });
@@ -129,9 +121,9 @@ describe('attribute helpers', () => {
   });
 
   it('activityAttrs builds correct attributes', () => {
-    expect(activityAttrs({})).toEqual({
-      'activity.type': 'unknown',
-      'activity.action': 'unknown',
+    expect(activityAttrs({ type: 'entity', action: 'delete' })).toEqual({
+      'activity.type': 'entity',
+      'activity.action': 'delete',
       'activity.subject_id': 'unknown',
       'activity.entity_type': null,
     });

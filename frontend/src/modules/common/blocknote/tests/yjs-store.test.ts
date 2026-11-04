@@ -217,7 +217,8 @@ describe('yjs store: proofs', () => {
     await db.yDocs.update(keyPath, { unsynced: 1 });
     editLocally(doc, writer, 'mine');
     await flushYjsStore();
-    const mine = (await rows()).at(-1)?.id;
+    const stored = await rows();
+    const mine = stored[stored.length - 1].id;
 
     editLocally(doc, writer, ' not yet');
     const proof = writer.prove({ kind: 'clean' });

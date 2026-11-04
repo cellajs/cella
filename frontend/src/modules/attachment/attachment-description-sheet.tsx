@@ -51,7 +51,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
 
   // The stored text wherever no live editor is: faded and inert while the relay syncs, at the editor's height so the swap does not reflow.
   const waitingFallback = (
-    <div className={cn('min-h-40', canEdit && 'pointer-events-none select-none opacity-50')}>
+    <div className={cn('min-h-40', canEdit && 'pointer-events-none opacity-50 select-none')}>
       {attachment.description && (
         <Suspense fallback={null}>
           <BlockNoteFullHtml

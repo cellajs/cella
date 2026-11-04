@@ -39,7 +39,7 @@ export function OpenApiSpecViewer() {
         className="mb-2 w-full *:flex-1 sm:hidden"
       />
 
-      <div className="sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 bg-background py-2 max-sm:flex-col">
+      <div className="bg-background sticky top-0 z-10 -mt-2 mb-2 flex items-center gap-2 py-2 max-sm:flex-col">
         <SearchField
           id="openapi-search"
           label={t('c:placeholder.search')}
@@ -67,11 +67,10 @@ export function OpenApiSpecViewer() {
           <span>{isExpanded ? t('c:reset') : t('c:expand')}</span>
         </Button>
 
-        {/* Desktop-only actions; the mobile copy sits above the sticky bar */}
         <JsonActions url={openApiUrl} data={data} filename="openapi.json" resourceName={t('c:docs.openapi_json')} className="max-sm:hidden" />
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-muted/30 p-4">
+      <div className="bg-muted/30 overflow-x-auto rounded-lg p-4">
         <JsonViewer
           key={resetKey}
           value={data}

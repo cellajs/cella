@@ -45,6 +45,7 @@ export const serviceAccountSchema = z
   });
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
+  .omit({ revokedBy: true })
   .extend({ scopes: z.array(scopeEnum).nullable(), createdBy: nullableActorRefSchema })
   .openapi('ApiKey', {
     description:

@@ -109,7 +109,7 @@ interface TabIndicatorProps {
  */
 export function TabIndicatorBar({ indicator }: TabIndicatorProps) {
   const { setBar } = indicator;
-  return <span ref={setBar} aria-hidden className="pointer-events-none absolute bottom-0 left-0 h-1 origin-left rounded-sm bg-primary opacity-0" />;
+  return <span ref={setBar} aria-hidden className="bg-primary pointer-events-none absolute bottom-0 left-0 h-1 origin-left rounded-sm opacity-0" />;
 }
 
 /** Rendered inside the active tab: the bar takes this marker's box, and the tab scrolls into view. */

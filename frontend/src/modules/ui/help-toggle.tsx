@@ -25,7 +25,7 @@ export function HelpToggle({ open, onToggle, className, tabIndex }: HelpTogglePr
       tabIndex={tabIndex}
       onClick={onToggle}
       press={false}
-      className={cn('size-6 text-muted-foreground focus-visible:text-foreground', className)}
+      className={cn('text-muted-foreground focus-visible:text-foreground size-6', className)}
     >
       <HelpToggleIcon open={open} />
     </Button>
@@ -57,7 +57,7 @@ export function HelpCollapse({ open, children }: HelpCollapseProps) {
     >
       <div
         className={cn(
-          'overflow-hidden text-muted-foreground text-sm transition-opacity duration-200 motion-reduce:transition-none',
+          'text-muted-foreground overflow-hidden text-sm transition-opacity duration-200 motion-reduce:transition-none',
           !open && 'opacity-0',
         )}
       >

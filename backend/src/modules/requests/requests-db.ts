@@ -28,4 +28,3 @@ export const requestsTable = snakeCase.table(
 );
 
 export type RequestModel = typeof requestsTable.$inferSelect;
-export type InsertRequestModel = typeof requestsTable.$inferInsert;

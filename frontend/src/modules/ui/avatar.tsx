@@ -11,7 +11,7 @@ export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
     <AvatarPrimitive.Root
       data-slot="avatar"
       data-size={size}
-      className={cn('group/avatar relative flex size-8 shrink-0 select-none overflow-hidden data-[size=lg]:size-10 data-[size=sm]:size-6', className)}
+      className={cn('group/avatar relative flex size-8 shrink-0 overflow-hidden select-none data-[size=lg]:size-10 data-[size=sm]:size-6', className)}
       {...props}
     />
   );
@@ -25,7 +25,7 @@ export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
-      className={cn('flex size-full items-center justify-center bg-muted text-muted-foreground group-data-[size=sm]/avatar:text-xs', className)}
+      className={cn('bg-muted text-muted-foreground flex size-full items-center justify-center group-data-[size=sm]/avatar:text-xs', className)}
       {...props}
     />
   );
@@ -77,7 +77,7 @@ export function AvatarOverflowIndicator({ className, ...props }: React.Component
   const { limit, count } = React.useContext(AvatarGroupContext);
   if (!limit || !count || count <= limit) return null;
   return (
-    <span className={cn('relative flex size-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)} {...props}>
+    <span className={cn('bg-background relative flex size-10 shrink-0 items-center justify-center rounded-full shadow-xs', className)} {...props}>
       +{count - limit + 1}
     </span>
   );

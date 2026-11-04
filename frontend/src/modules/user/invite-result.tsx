@@ -107,7 +107,6 @@ interface InviteResultProps {
   onDone: () => void;
   /** Without one the screen offers no way to the pending invitations. */
   onOpenPending?: () => void;
-  /** Back to an empty form. */
   onInviteMore: () => void;
 }
 

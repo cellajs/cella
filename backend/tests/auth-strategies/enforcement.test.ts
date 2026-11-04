@@ -118,7 +118,7 @@ describe('all strategies disabled', async () => {
   });
 });
 
-describe('passkey strategy disabled', () => {
+describe('passkey strategy disabled as a second factor', () => {
   beforeAll(() => {
     setTestConfig({ enabledAuthStrategies: ['oauth', 'totp', 'magic'], selfRegistration: true });
   });

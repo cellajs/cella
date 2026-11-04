@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -30,7 +30,9 @@
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
-      "sdk/openapi-ts.config.ts"
+      "sdk/openapi-ts.config.ts",
+      // Agent worktrees stay out of the index, which `pnpm sdk` walks with the ignore file off.
+      "!!.claude"
     ]
   },
   "assist": {
@@ -55,6 +57,13 @@
     "parser": {
       "tailwindDirectives": true
     }
+  },
+  // The Markdown formatter pads every table cell to its column width; `infra/compose.gen.yml` is generator output.
+  "markdown": {
+    "formatter": { "enabled": false }
+  },
+  "yaml": {
+    "formatter": { "enabled": false }
   },
   "linter": {
     "includes": ["**", "!frontend/src/api.gen/**", "!sdk/gen/**", "!frontend/src/routes/routeTree.gen.ts"],
@@ -120,13 +129,8 @@
         }
       },
       "nursery": {
-        "useSortedClasses": {
-          "level": "warn",
-          "options": {
-            "attributes": ["className", "classList"],
-            "functions": ["clsx", "cva", "cn", "tw"]
-          }
-        }
+        "useTailwindSortedClasses": "warn",
+        "noTailwindRawColors": "error"
       }
     }
   },
@@ -414,6 +418,17 @@
       }
     },
     {
+      // A drawn device: bezel and button colors belong to the hardware, not to a role in the theme.
+      "includes": ["frontend/src/modules/marketing/device-mockup-frame.tsx"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noTailwindRawColors": "off"
+          }
+        }
+      }
+    },
+    {
       // react-data-grid imposes its own ARIA grid pattern (role="grid"/"row"/"gridcell").
       // Suppress a11y rules that conflict with the library's design.
       "includes": ["frontend/src/modules/common/data-grid/**"],
@@ -478,9 +493,8 @@
       }
     },
     {
-      // Tests: relax rules that are intentionally common in test code.
-      // - `noExplicitAny`: tests often stub partial shapes or generic helpers.
-      // - `noProcessEnv` / `noProcessGlobal`: tests sometimes read env directly.
+      // Tests stub partial shapes (`noExplicitAny`), read env directly (`noProcessEnv`, `noProcessGlobal`) and render a
+      // probe component that closes over the test's locals (`noComponentHookFactories`).
       "includes": ["**/*.test.ts", "**/*.test.tsx", "**/tests/**"],
       "linter": {
         "rules": {
@@ -491,7 +505,8 @@
             "noProcessEnv": "off"
           },
           "correctness": {
-            "noProcessGlobal": "off"
+            "noProcessGlobal": "off",
+            "noComponentHookFactories": "off"
           }
         }
       }
@@ -525,5 +540,10 @@
         }
       }
     }
-  ]
+  ],
+  "tailwind": {
+    "attributes": ["class", "className", "classList"],
+    "mergeFunctions": ["clsx", "cn", "tw"],
+    "variantFunctions": ["cva"]
+  }
 }

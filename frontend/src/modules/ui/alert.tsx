@@ -71,16 +71,13 @@ export function AlertDescription({ className, ...props }: React.ComponentProps<'
   return (
     <div
       data-slot="alert-description"
-      className={cn('wrap-break-word col-start-2 w-full min-w-0 justify-items-start gap-1 text-sm', className)}
+      className={cn('col-start-2 w-full min-w-0 justify-items-start gap-1 text-sm wrap-break-word', className)}
       {...props}
     />
   );
 }
 
-/**
- * The alert's button or link: beside the text, centered on it, from `sm` up; under the text on a phone. Beside the text
- * it also holds the close button, stretched square to the action's height, so the two always line up.
- */
+/** The alert's button or link; from `sm` up it also holds the close button, square to the action's height. */
 export function AlertAction({ className, children, ...props }: React.ComponentProps<'div'>) {
   const onClose = use(AlertCloseContext);
 

@@ -96,7 +96,6 @@ export function DocsSearch() {
     close();
   };
 
-  // Scope chips carry the docs config's sidebar section labels
   const scopeChips: { value: DocsSearchScope; label: string }[] = [
     { value: 'pages', label: docsConfig.sections.find((section) => section.id === 'pages')?.label ?? t('c:documentation') },
     { value: 'api', label: docsConfig.sections.find((section) => section.id === 'apiReference')?.label ?? t('c:docs.api_reference') },
@@ -134,11 +133,10 @@ export function DocsSearch() {
             placeholder={placeholder}
           />
         </SearchDialogBar>
-        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized. On a phone
-            the results take what the dialog has left above the keyboard, below the scope chips. */}
+        {/* Height and scrolling live on the ScrollArea viewport, so the list's own max-h and overflow are off */}
         <ScrollArea
           className="max-sm:order-1 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col sm:h-[45vh]"
-          viewportClassName="max-sm:min-h-0 overscroll-contain max-sm:pb-[env(safe-area-inset-bottom)]"
+          viewportClassName="max-sm:min-h-0 overscroll-none max-sm:pb-[env(safe-area-inset-bottom)]"
         >
           {results === null && recentSearches.length === 0 && (
             <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
@@ -161,7 +159,7 @@ export function DocsSearch() {
             )}
           </ComboboxList>
         </ScrollArea>
-        {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. On a phone under the field, clear of the keyboard. */}
+        {/* Outside the tab order, so arrow keys stay on the list; on a phone under the field, clear of the keyboard */}
         <div className="flex shrink-0 items-center gap-1 border-t px-4 py-2 max-sm:border-t-0 max-sm:border-b">
           {[{ value: 'all' as const, label: t('c:all') }, ...scopeChips].map((chip) => (
             <button
@@ -170,7 +168,7 @@ export function DocsSearch() {
               tabIndex={-1}
               aria-pressed={scope === chip.value}
               onClick={() => setScope(chip.value)}
-              className="rounded-md border border-input px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-hover hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
+              className="border-input text-muted-foreground hover:bg-hover hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground rounded-md border px-2 py-0.5 text-xs font-medium transition-colors"
             >
               {chip.label}
             </button>

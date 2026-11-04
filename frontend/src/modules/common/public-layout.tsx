@@ -31,9 +31,9 @@ export function PublicLayout() {
       </ErrorBoundary>
       <BackToStart />
 
-      {/* Bottom-left, above the docs sidebar but under the dev sign-in banner; below md it clears the docs floating nav */}
+      {/* Above the docs sidebar but under the dev sign-in banner; below md it clears the docs floating nav */}
       <Suspense fallback={null}>
-        <DebugDropdown className="fixed bottom-[calc(1rem+var(--bottom-inset,0px))] left-4 z-35 size-8 rounded-full bg-secondary/70 opacity-60 hover:opacity-100 max-md:bottom-[calc(5rem+var(--bottom-inset,0px))]" />
+        <DebugDropdown className="bg-secondary/70 fixed bottom-[calc(1rem+var(--bottom-inset,0px))] left-4 z-35 size-8 rounded-full opacity-60 hover:opacity-100 max-md:bottom-[calc(5rem+var(--bottom-inset,0px))]" />
       </Suspense>
     </div>
   );

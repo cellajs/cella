@@ -23,7 +23,7 @@ import { dateShort } from '~/utils/date-short';
 interface PendingTileProps {
   row: PendingMembership;
   channel: EnrichedChannel;
-  /** Refreshes the list after a resend, which moves the row's last email and link expiry. */
+  /** Called after a resend, to refresh the list. */
   onResent: () => Promise<unknown>;
 }
 

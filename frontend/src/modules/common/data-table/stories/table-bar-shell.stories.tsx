@@ -74,7 +74,7 @@ function BarFor({ bar, q, role, selected = [], isSheet, canUpdate = true, setSea
   if (bar === 'tenants') return <TenantsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'requests') return <RequestsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpdate={canUpdate} />;
-  if (bar === 'attachments') return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpload />;
+  if (bar === 'attachments') return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} canUpload />;
   return <PagesTableBar total={2} searchVars={{ q }} setSearch={setSearch} columns={[]} setColumns={() => {}} />;
 }
 
@@ -227,12 +227,12 @@ export const MembersReadOnly: Story = {
   },
 };
 
-export const AttachmentsSheet: Story = {
-  args: { bar: 'attachments', isSheet: true, selected: attachmentRows },
+export const Attachments: Story = {
+  args: { bar: 'attachments', selected: attachmentRows },
   play: async ({ canvasElement }) => {
     await expect(searchInput(canvasElement, 'attachmentSearch')).not.toBeNull();
     await expect(within(canvasElement).getByRole('button', { name: 'upload' })).toBeInTheDocument();
-    await expect(hasIcon(canvasElement, 'expand')).toBe(false);
+    await expect(hasIcon(canvasElement, 'expand')).toBe(true);
     await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expect(await body().findByRole('button', { name: 'delete' })).toBeInTheDocument();
     // With rows in the list the edit hint shows below the bar.

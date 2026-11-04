@@ -33,7 +33,7 @@ export function Spotlighter() {
     <AnimatePresence>
       {hasSpotlight && (
         <motion.div
-          className={cn('inset-0 z-110 bg-overlay', shownScope ? 'absolute' : 'fixed')}
+          className={cn('bg-overlay inset-0 z-110', shownScope ? 'absolute' : 'fixed')}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

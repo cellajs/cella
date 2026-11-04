@@ -40,7 +40,7 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
 
   return (
     <ComboboxGroup>
-      <ComboboxGroupLabel className="pointer-coarse:px-(--search-icon-start) px-(--search-icon-start) pt-2 pb-0 pointer-coarse:pb-0">
+      <ComboboxGroupLabel className="px-(--search-icon-start) pt-2 pb-0 pointer-coarse:px-(--search-icon-start) pointer-coarse:pb-0">
         {group.label}
       </ComboboxGroupLabel>
       <div className="flex flex-wrap gap-1 px-(--search-icon-start) py-1.5">
@@ -51,18 +51,18 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
             aria-selected={option.isSelected}
             title={group.isIconOnly ? option.label : undefined}
             className={cn(
-              'w-auto shrink-0 rounded-full border border-input px-2.5 py-0',
+              'border-input w-auto shrink-0 rounded-full border px-2.5 py-0',
               group.isIconOnly
-                ? 'h-7.5 pointer-coarse:h-8.5 gap-1.5 pl-0 pointer-coarse:pl-0.75 *:first:size-7'
+                ? 'h-7.5 gap-1.5 pl-0 *:first:size-7 pointer-coarse:h-8.5 pointer-coarse:pl-0.75'
                 : group.isCompact
                   ? 'h-6.5 pointer-coarse:h-8.5'
-                  : 'h-7.5 pointer-coarse:h-8.5 max-sm:h-6.5 max-sm:pointer-coarse:h-8.5 max-sm:gap-1.5 max-sm:px-2',
+                  : 'h-7.5 max-sm:h-6.5 max-sm:gap-1.5 max-sm:px-2 pointer-coarse:h-8.5 max-sm:pointer-coarse:h-8.5',
               (group.isCompact || group.isIconOnly) &&
                 !option.isSelected &&
-                'border-transparent hover:border-input active:border-input data-highlighted:border-input',
-              option.count === 0 && !option.isSelected && 'border-dashed text-muted-foreground',
+                'hover:border-input active:border-input data-highlighted:border-input border-transparent',
+              option.count === 0 && !option.isSelected && 'text-muted-foreground border-dashed',
               option.isSelected &&
-                'border-transparent more-contrast:border-foreground bg-foreground/12 font-medium active:bg-foreground/18 data-highlighted:bg-foreground/18',
+                'more-contrast:border-foreground bg-foreground/12 active:bg-foreground/18 data-highlighted:bg-foreground/18 border-transparent font-medium',
             )}
           >
             {option.icon}
@@ -142,7 +142,7 @@ function SearchSuggestions({ word, groups, recents, result, isResultPending }: S
             <span className="truncate">
               <HighlightText text={option.label} />
             </span>
-            {option.count !== undefined && <span className="ml-auto text-muted-foreground text-xs tabular-nums">{option.count}</span>}
+            {option.count !== undefined && <span className="text-muted-foreground ml-auto text-xs tabular-nums">{option.count}</span>}
           </ComboboxItem>
         ))}
         {recentMatches.length > 0 && <ComboboxSeparator />}
@@ -167,10 +167,10 @@ interface SearchOptionsListProps {
   typingWord: string;
   groups: SearchOptionGroup[];
   recents: SearchRecent[];
-  /** Once a search is under way the filters get the room of the latest recent search; typing still finds them all. */
+  /** Hides the latest recent search, which typing still finds. */
   hasChips: boolean;
   resultCount?: ResultCount;
-  /** The count is for an earlier search: the typed words still wait to apply, or their search fetches. */
+  /** The count is for an earlier search. */
   isResultPending: boolean;
 }
 

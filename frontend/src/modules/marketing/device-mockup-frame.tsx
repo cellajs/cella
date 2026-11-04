@@ -25,11 +25,11 @@ export function DeviceMockupFrame({ type, inView, renderCarousel }: DeviceMockup
       return (
         <div className="w-full">
           <div className="relative mx-auto mb-[.05rem] aspect-video max-w-[85%] rounded-t-xl border-4 border-zinc-400 dark:border-zinc-700">
-            <div className="size-full cursor-pointer rounded-lg bg-background">{inView && renderCarousel('rounded-t-lg')}</div>
+            <div className="bg-background size-full cursor-pointer rounded-lg">{inView && renderCarousel('rounded-t-lg')}</div>
           </div>
           {/* Base takes the bezel's color, so the chassis reads as one piece */}
           <div className="relative mx-auto h-3 rounded-t-sm rounded-b-xl bg-zinc-400 md:h-4 dark:bg-zinc-700">
-            <div className="absolute top-0 left-1/2 h-1 w-14 -translate-x-1/2 rounded-b-xl border border-background border-t-0 bg-zinc-500/25 md:h-2 md:w-24 dark:bg-zinc-900/25" />
+            <div className="border-background absolute top-0 left-1/2 h-1 w-14 -translate-x-1/2 rounded-b-xl border border-t-0 bg-zinc-500/25 md:h-2 md:w-24 dark:bg-zinc-900/25" />
           </div>
         </div>
       );

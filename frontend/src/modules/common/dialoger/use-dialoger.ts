@@ -59,7 +59,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   create: (content, data) => {
     blurAndStashTrigger();
 
-    const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
+    const defaults = { drawerOnMobile: true, open: true };
     const containerElement = data.container?.ref.current ?? undefined;
     const layer = data.dock ? sheetLayerOf(data.triggerRef.current) : null;
 

@@ -28,7 +28,6 @@ interface MenuSheetDraggableItemProps {
   siblings: UserMenuItem[];
   /** Every row of its list, active and archived: a row can drop on any of them. */
   listItems: UserMenuItem[];
-  /** It is a row of a submenu. */
   isSubitem: boolean;
   /** Its list is already on screen; read at mount, when it tells a restored row from one the list opened with. */
   isArriving: boolean;

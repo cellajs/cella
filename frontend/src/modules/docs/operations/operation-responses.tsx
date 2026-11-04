@@ -15,7 +15,7 @@ import { tw } from '~/utils/tw';
 
 const statusBadgeClass = tw('rounded px-2 py-0.5 font-mono font-semibold transition-colors');
 const triggerClass = tw(
-  'focus-inset py-2 font-normal text-foreground-soft hover:text-foreground hover:no-underline group-data-open/accordion-header:text-foreground [&>svg]:size-4 [&>svg]:translate-y-1',
+  'focus-inset text-foreground-soft hover:text-foreground group-data-open/accordion-header:text-foreground py-2 font-normal hover:no-underline [&>svg]:size-4 [&>svg]:translate-y-1',
 );
 
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
@@ -31,7 +31,7 @@ const isSharedError = (response: GenResponseSummary) => response.ref?.startsWith
 const isError = (response: GenResponseSummary) => response.status >= 400;
 
 /** Chip of a name under a response: a body schema or a header. */
-const chipClass = tw('rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs');
+const chipClass = tw('bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-xs');
 
 interface ResponseLineProps {
   label: string;
@@ -90,10 +90,10 @@ function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: E
       <AccordionTrigger className={triggerClass}>
         <div className="flex w-full items-center justify-between gap-3 pr-2">
           {statusClasses.size === 1 && <div className={cn(statusBadgeClass, getStatusColor(responses[0].status))}>{[...statusClasses][0]}xx</div>}
-          <div className="link-decoration group-active/accordion-header:link-decoration-strong grow text-foreground group-hover/accordion-header:underline group-data-open/accordion-header:text-primary">
+          <div className="link-decoration group-active/accordion-header:link-decoration-strong text-foreground group-data-open/accordion-header:text-primary grow group-hover/accordion-header:underline">
             {t('c:docs.errors')}
           </div>
-          <span className="flex gap-2 font-mono text-muted-foreground text-xs max-md:hidden">
+          <span className="text-muted-foreground flex gap-2 font-mono text-xs max-md:hidden">
             {responses.map((response) => (
               <span key={response.status}>{response.status}</span>
             ))}
@@ -114,16 +114,16 @@ function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: E
                 <dt className={cn(statusBadgeClass, getStatusColor(response.status))}>{response.status}</dt>
                 <dd className="min-w-0 grow">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-medium text-foreground">{response.description}</span>
+                    <span className="text-foreground font-medium">{response.description}</span>
                     {body && <SchemaLink schema={body} className={chipClass} />}
                     {!body && !inlineSchema && <span className="text-muted-foreground text-xs">{t('c:docs.no_response_body')}</span>}
                   </div>
                   {text && (
-                    <p className="mt-0.5 max-w-measure text-foreground-soft">
+                    <p className="max-w-measure text-foreground-soft mt-0.5">
                       <SpecText text={text} />
                     </p>
                   )}
-                  {response.headers && <ResponseHeaders headers={response.headers} className="mt-1.5 max-w-measure" />}
+                  {response.headers && <ResponseHeaders headers={response.headers} className="max-w-measure mt-1.5" />}
                   {inlineSchema && (
                     <div className="mt-2">
                       <ViewerGroup
@@ -166,7 +166,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
 
   if (responses.length === 0) {
     return (
-      <div className="py-2 text-muted-foreground text-sm">{examplesOnly ? t('c:docs.no_examples_defined') : t('c:docs.no_responses_defined')}</div>
+      <div className="text-muted-foreground py-2 text-sm">{examplesOnly ? t('c:docs.no_examples_defined') : t('c:docs.no_responses_defined')}</div>
     );
   }
 
@@ -194,12 +194,12 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
             </AccordionTrigger>
             <AccordionContent>
               {response.detail && (
-                <p className="max-w-measure px-3 pt-1 pb-3 text-foreground-soft">
+                <p className="max-w-measure text-foreground-soft px-3 pt-1 pb-3">
                   <SpecText text={response.detail} />
                 </p>
               )}
               {(namedBody || response.headers) && (
-                <div className="flex max-w-measure flex-col gap-1.5 px-3 pt-1 pb-3">
+                <div className="max-w-measure flex flex-col gap-1.5 px-3 pt-1 pb-3">
                   {/* A link cannot sit in the trigger button, so the body's schema link follows the detail in the panel */}
                   {namedBody && <ResponseLine label={t('c:docs.body')} chip={<SchemaLink schema={namedBody} className={chipClass} />} />}
                   {response.headers && <ResponseHeaders headers={response.headers} />}
@@ -216,7 +216,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   renderRef={renderRef}
                 />
               ) : (
-                <div className="p-3 text-muted-foreground">{t('c:docs.no_response_body')}</div>
+                <div className="text-muted-foreground p-3">{t('c:docs.no_response_body')}</div>
               )}
             </AccordionContent>
           </AccordionItem>

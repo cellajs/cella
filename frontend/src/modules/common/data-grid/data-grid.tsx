@@ -92,15 +92,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   onRowsChange?: Maybe<(rows: NoInfer<R>[], data: RowsChangeData<NoInfer<R>, NoInfer<SR>>) => void>;
 
   // Dimensions
-  /**
-   * Height of each row in pixels
-   * @default 35
-   */
+  /** In px */
   rowHeight?: Maybe<number | ((row: NoInfer<R>) => number)>;
-  /**
-   * Height of the header row in pixels
-   * @default 35
-   */
+  /** In px */
   headerRowHeight?: Maybe<number>;
   columnWidths?: Maybe<ColumnWidths>;
   onColumnWidthsChange?: Maybe<(columnWidths: ColumnWidths) => void>;
@@ -135,22 +129,18 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   renderRowDragPreview?: Maybe<(row: NoInfer<R>) => React.ReactNode>;
 
   // Toggles and modes
-  /** @default true */
   enableVirtualization?: Maybe<boolean>;
   /** Overrides enableVirtualization for rows when set. */
   enableRowVirtualization?: Maybe<boolean>;
-  /** Pin header rows below the sticky stack while a window-scrolled grid passes the top of the viewport; never below `sm`. @default true */
+  /** Pins header rows below the sticky stack while a window-scrolled grid passes the viewport top; never below `sm` */
   enableStickyHeader?: Maybe<boolean>;
-  /** Vertical auto-scroll of the viewport during pragmatic-dnd drag. Opt-in; only for row-drag tables. @default false */
+  /** Vertical auto-scroll of the viewport during a row drag */
   enableDragAutoScroll?: Maybe<boolean>;
 
   // Infinite scroll
   /** Level-triggered near-end state, reported as false on exit and on unmount. */
   onNearEndChange?: Maybe<(nearEnd: boolean) => void>;
-  /**
-   * Number of rows from the end at which onNearEndChange reports true.
-   * @default Dynamic: 25% of rows, clamped between 10 and 50
-   */
+  /** Rows from the end at which onNearEndChange reports true; defaults to 25% of rows, between 10 and 50 */
   nearEndThreshold?: Maybe<number>;
 
   // Miscellaneous
@@ -960,11 +950,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       aria-rowcount={ariaRowCount}
       // Explicit tabIndex makes the scrollable container keyboard focusable the same way in Chrome and Firefox.
       tabIndex={-1}
-      className={cn(
-        // Tabular digits keep numeric columns aligned across rows.
-        'rdg grid h-full overflow-x-auto text-foreground text-sm tabular-nums accent-primary [contain:style]',
-        className,
-      )}
+      className={cn('rdg text-foreground accent-primary grid h-full overflow-x-auto text-sm tabular-nums [contain:style]', className)}
       style={{
         // set scrollPadding to correctly position non-sticky cells after scrolling
         scrollPaddingInlineStart: selectedPosition.idx > lastFrozenColumnIndex ? `${totalFrozenColumnWidth}px` : undefined,
@@ -983,7 +969,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       data-testid={testId}
       data-cy={dataCy}
       data-is-compact={isCompact || undefined}
-      // Tile mode: mobile breakpoint with at least one merged host column
       data-tiled={(activeModes.mobile && columns.some((column) => column.mergedSlots != null)) || undefined}
     >
       {!hideHeader && (

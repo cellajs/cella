@@ -3,7 +3,7 @@ import type { ComponentProps, MouseEvent, ReactNode } from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-/** `lg` for a chip pressed by touch in a row of its own: taller, with a larger remove button and less space around it. */
+/** `lg` for a chip pressed by touch in a row of its own. */
 export type ChipSize = 'default' | 'lg';
 
 export type Removable =
@@ -16,7 +16,7 @@ export type Removable =
 
 type ChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   children: ReactNode;
-  /** Media as tall as the chip, such as an avatar. It covers the chip's start edge and border, so the two read as one piece. */
+  /** Media as tall as the chip, such as an avatar; it covers the chip's start edge. */
   start?: ReactNode;
   /** Keeps its width while the text truncates, such as a count. */
   end?: ReactNode;
@@ -24,7 +24,6 @@ type ChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   onPress?: () => void;
   /** Accessible name of the value's button, when its text alone does not say what a press does. */
   pressLabel?: string;
-  /** Whether the value's button has opened what it controls. */
   isExpanded?: boolean;
   size?: ChipSize;
 } & Removable;
@@ -55,7 +54,7 @@ export function Chip({
     <span
       data-slot="chip"
       className={cn(
-        'flex min-w-0 max-w-full items-center rounded-full border bg-border text-sm',
+        'bg-border flex max-w-full min-w-0 items-center rounded-full border text-sm',
         size === 'lg' ? 'h-7' : 'h-6',
         start || onPress ? 'pl-0' : 'pl-2.5',
         onRemove ? 'pr-0.5' : 'pr-2.5',
@@ -73,7 +72,7 @@ export function Chip({
           onMouseDown={keepFocus}
           onClick={onPress}
           className={cn(
-            'focus-effect focus-inset pointer-events-auto flex h-full min-w-0 cursor-pointer items-center rounded-[inherit] transition-colors hover:bg-hover',
+            'focus-effect focus-inset hover:bg-hover pointer-events-auto flex h-full min-w-0 cursor-pointer items-center rounded-[inherit] transition-colors',
             start ? 'pl-0' : 'pl-2.5',
             size === 'lg' ? 'pr-1.5' : 'pr-2.5',
           )}

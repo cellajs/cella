@@ -10,7 +10,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const options = { cMapUrl: '/cmaps/' };
 
-// Centered over the viewer stage, where the Suspense fallback before it stood.
+// Stands where the Suspense fallback before it stood
 const loadingSpinner = (
   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
     <Spinner size="lg" noDelay />

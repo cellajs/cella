@@ -19,7 +19,7 @@ import { getErrorInfo } from '~/utils/get-error-info';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
-  /** Any thrown value, as error boundaries hand it over; one that is no `Error` reads as none. */
+  /** As a boundary hands it over; a value that is no `Error` reads as none. */
   error?: unknown;
   children?: ReactNode;
   resetErrorBoundary?: () => void;
@@ -92,24 +92,24 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
         <div className="mx-auto my-auto">
           <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
             <CardHeader className="px-0 text-center">
-              <CardTitle level={1} className="mb-2 justify-center font-normal text-2xl">
+              <CardTitle level={1} className="mb-2 justify-center text-2xl font-normal">
                 {title}
               </CardTitle>
-              <CardDescription className="text-base text-foreground">
+              <CardDescription className="text-foreground text-base">
                 <span className="block">{message}</span>
                 <span className="mt-2 block">
-                  <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
-                  <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
+                  {severity === 'warn' && t('error:contact_mistake')}
+                  {severity === 'error' && t('error:try_again_later')}
                 </span>
               </CardDescription>
             </CardHeader>
             {apiError?.type && (
-              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-destructive">
+              <CardContent className="text-destructive px-0 py-4 font-mono whitespace-pre-wrap">
                 <Button
                   variant="link"
                   size="sm"
                   onClick={() => setShowDetails((prev) => !prev)}
-                  className="flex w-full whitespace-pre-wrap text-destructive"
+                  className="text-destructive flex w-full whitespace-pre-wrap"
                 >
                   <span>{showDetails ? t('c:hide_details') : t('c:show_details')}</span>
                   <ChevronUpIcon className={cn('transition-transform', !showDetails && 'rotate-180')} />

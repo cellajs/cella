@@ -123,7 +123,7 @@ export function DocsLayout() {
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       {isDesktop ? (
-        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-card focus-view:hidden">
+        <aside ref={sidebarRef} className="bg-card focus-view:hidden fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width)">
           <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
           {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
           <div
@@ -137,13 +137,13 @@ export function DocsLayout() {
             onPointerDown={startSidebarResize}
             onDoubleClick={() => setResizedSidebarWidth(null)}
             onKeyDown={resizeSidebarByKey}
-            className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 hover:bg-primary/50 focus-visible:bg-primary"
+            className="bg-border hover:bg-primary/50 focus-visible:bg-primary absolute top-0 right-0 z-30 h-full w-px cursor-col-resize transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3"
           />
         </aside>
       ) : (
         <FloatingNav items={floatingNavItems} resetTrigger={isSidebarOpen} />
       )}
-      <main className={cn('focus-view-scope pb-[70vh] focus:outline-hidden', isDesktop ? 'ml-(--docs-sidebar-width) focus-view:ml-0' : 'pt-4')}>
+      <main className={cn('focus-view-scope pb-[70vh] focus:outline-hidden', isDesktop ? 'focus-view:ml-0 ml-(--docs-sidebar-width)' : 'pt-4')}>
         <Outlet />
       </main>
     </div>

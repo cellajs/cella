@@ -45,7 +45,7 @@ export function ProfilePictureButton({ user, className }: ProfilePictureButtonPr
       onClick={upload}
       // Frosted like the bar behind the name
       className={cn(
-        'pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full bg-background/50 backdrop-blur-xs hover:bg-background/75 max-sm:size-8 dark:bg-background/75',
+        'bg-background/50 hover:bg-background/75 dark:bg-background/75 pointer-events-auto absolute -right-1 -bottom-1 size-7 rounded-full backdrop-blur-xs max-sm:size-8',
         className,
       )}
     >

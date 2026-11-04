@@ -20,7 +20,6 @@ export function AuthLayout() {
 
   return (
     <div className="group/auth-layout rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
-      {/* The colony mark behind the card: the module lays itself out as the page background */}
       <Suspense fallback={null}>
         {/* Overscan below 1 zooms in, a phone further, so the window always crops the colony; the zoom magnifies motion, hence the lower speed */}
         <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={isMobile ? 0.26 : 0.31} speed={0.4} />
@@ -28,18 +27,18 @@ export function AuthLayout() {
 
       {/* The box the veil measures itself on, clear of the content column's entrance transform */}
       <div className="relative my-auto">
-        {/* Veil that calms the colony under the content, entering with it at mount through `starting:` */}
-        <div className="pointer-events-none absolute inset-0 starting:opacity-0 transition-opacity duration-500 ease-out">
+        {/* Veil that calms the colony under the content */}
+        <div className="pointer-events-none absolute inset-0 transition-opacity duration-500 ease-out starting:opacity-0">
           <div className="rich-veil-gradient" />
           <div className="rich-veil-background" />
         </div>
 
-        <div className="flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col gap-4 starting:opacity-0 transition-[opacity,scale] duration-500 ease-out has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
+        <div className="xs:w-80 flex w-[90vw] translate-y-4 flex-col gap-4 transition-[opacity,scale] duration-500 ease-out has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200 starting:scale-95 starting:opacity-0">
           <main className="flex flex-col gap-4 focus:outline-hidden">
             <Outlet />
           </main>
 
-          {/* An error notice brings a footer of its own, so the layout's logo and links step aside for it */}
+          {/* An error notice brings its own footer, so this one hides */}
           <div className="contents group-has-[.error-notice]/auth-layout:hidden">
             <Link
               to="/about"

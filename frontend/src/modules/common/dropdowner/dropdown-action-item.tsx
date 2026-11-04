@@ -15,15 +15,13 @@ interface DropdownActionItemProps {
   children: ReactNode;
   variant?: 'default' | 'destructive';
   className?: string;
-  /** Close the dropdown after selection (default true); an item that swaps it for another, such as `openPopConfirm`, stays either way. */
+  /** An item that swaps the dropdown for another, such as `openPopConfirm`, stays either way. */
   closeOnSelect?: boolean;
-  /** Marks the row of a single-select list as the current choice. */
+  /** The current choice of a single-select list. */
   selected?: boolean;
-  /** Asks first: selecting turns the menu into this confirmation, whose Cancel steps back to the menu. */
+  /** Selecting turns the menu into this confirmation, whose Cancel steps back. */
   confirm?: { title: ReactNode; content: ReactNode };
-  /** Shows a spinner in place of the icon and ignores presses, e.g. while a confirmed delete runs. */
   loading?: boolean;
-  /** Takes focus when its menu or confirmation opens. */
   initialFocus?: boolean;
 }
 

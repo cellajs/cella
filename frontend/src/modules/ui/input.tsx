@@ -4,7 +4,7 @@ import { tw } from '~/utils/tw';
 
 /** The text field frame Input and Textarea share. */
 export const inputClass = tw(
-  'focus-effect w-full rounded-md border border-input bg-background px-3 py-2 text-md outline-hidden transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-faint-foreground disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive sm:text-sm',
+  'focus-effect border-input bg-background text-md selection:bg-primary selection:text-primary-foreground placeholder:text-faint-foreground aria-invalid:border-destructive w-full rounded-md border px-3 py-2 outline-hidden transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm',
 );
 
 /** Spread on a field that takes someone else's address or a search: 1Password, LastPass and NordPass then add no icon or hidden markup beside it. */

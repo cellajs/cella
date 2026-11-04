@@ -22,7 +22,7 @@ interface JsonNodeProps {
   path: JsonPath;
   keyName: string | number | false;
   depth: number;
-  /** Visual depth for indentation; does not increment for flattened nodes */
+  /** Does not increment for flattened nodes. */
   visualDepth?: number;
 }
 
@@ -78,7 +78,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
   // Schema mode: a description reads as prose under its field, whole and without its key
   if (openapiMode === 'schema' && keyName !== false && isDescriptionKeyword(keyName, value)) {
     return (
-      <div {...rowProps} className="max-w-measure py-0.5 font-sans text-foreground-soft">
+      <div {...rowProps} className="max-w-measure text-foreground-soft py-0.5 font-sans">
         {renderDescription ? renderDescription(value) : value}
       </div>
     );
@@ -143,7 +143,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
             isExpandable
               ? cn(
                   labelRowClass,
-                  'group/node relative -mx-1 -my-px w-fit cursor-pointer gap-x-0.5 rounded py-px hover:bg-hover',
+                  'group/node hover:bg-hover relative -mx-1 -my-px w-fit cursor-pointer gap-x-0.5 rounded py-px',
                   enableClipboard ? 'pe-6' : 'pr-1',
                 )
               : labelRowClass

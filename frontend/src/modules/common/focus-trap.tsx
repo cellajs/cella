@@ -40,11 +40,10 @@ function FocusGuard({ onFocus }: FocusGuardProps) {
 interface FocusTrapProps {
   children: ReactNode;
   active?: boolean;
-  /** Move focus into the trap when activated (true = first element, or the trap itself after touch; ref = specific element) */
+  /** `true`: the first element, or the trap itself after touch; a ref: that element. */
   initialFocus?: boolean | RefObject<HTMLElement | null>;
-  /** Restore focus to the earlier focused element on deactivation. */
   returnFocus?: boolean;
-  /** Pull focus back inside when it escapes via click or programmatic move */
+  /** Also pull back focus that escapes by click or script. */
   containFocus?: boolean;
 }
 

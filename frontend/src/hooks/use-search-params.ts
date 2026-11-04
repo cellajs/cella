@@ -54,14 +54,13 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     const written: Partial<T> = {};
     for (const key of objectKeys(newValues)) {
       const value = newValues[key];
-      // Clear empty values; the route's zod defaults fill them back in on read
-      if (value === '') written[key] = undefined;
-      // Flatten array values into underscore-joined string
-      else if (Array.isArray(value)) written[key] = (value.length <= 1 ? value[0] : value.join('_')) as T[keyof T];
-      else written[key] = value;
+      // An empty value is absent in the URL; the route's zod defaults fill it back in on read
+      const isEmpty = value === '' || (Array.isArray(value) && value.length === 0);
+      written[key] = isEmpty ? undefined : value;
     }
 
-    if (!objectKeys(written).some((key) => written[key] !== currentSearch[key])) return;
+    // A list compares by content: the router writes it comma-separated
+    if (!objectKeys(written).some((key) => JSON.stringify(written[key]) !== JSON.stringify(currentSearch[key]))) return;
 
     setCurrentSearch((current) => ({ ...current, ...written }));
     if (saveDataInSearch) {

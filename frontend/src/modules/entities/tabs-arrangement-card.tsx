@@ -22,20 +22,19 @@ interface TabRow {
   id: string;
   label: TKey;
   resource?: TKey;
-  /** Pre-translated label, resolved once per render so module-scope renderers can use it. */
+  /** Translated, so module-scope renderers can use it. */
   name: string;
-  /** Pre-translated single-sentence explanation of the tab's content, absent when the tab declares none. */
+  /** Translated; absent when the tab declares none. */
   description?: string;
   order: number;
   locked?: boolean;
   visible: boolean;
 }
 
-// The label cell stacks a tab's name and description, centred in the row
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// The top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
+// 1.5rem is the help toggle's height: the name stays where a centred row has it as the description unfolds
 const helpLabelCellClass = tw('justify-start pt-[calc((var(--rdg-row-height)-1.5rem)/2)] pb-3');
-// The other cells keep their content on the row's first line, so nothing shifts while a description unfolds, and still fill the row
+// Content stays on the row's first line, so nothing shifts while a description unfolds
 const firstLineCellClass = tw('grid grid-rows-(--rdg-row-height) content-start justify-center');
 
 function renderRowDragPreview(row: TabRow) {
@@ -43,10 +42,9 @@ function renderRowDragPreview(row: TabRow) {
 }
 
 interface TabsArrangementCardProps {
-  entity: EnrichedChannel & { toolsConfig?: ToolsConfig };
+  entity: EnrichedChannel & { toolsConfig: ToolsConfig };
   /** Layout route whose tabs it arranges: its `navTab` child routes plus the tools of its `tabsSlot`. */
   parentRouteId: string;
-  /** Persists the next toolsConfig through the channel's update mutation. */
   onPersist: (toolsConfig: ToolsConfig) => void;
 }
 
@@ -56,7 +54,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
   const isMobile = useBreakpointBelow('sm');
 
   const slot: ChannelSlot = `${entity.entityType}.tabs`;
-  const slotConfig = entity.toolsConfig?.[slot];
+  const slotConfig = entity.toolsConfig[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
   // Draft order applied at drop time so the reorder does not wait on the mutation round-trip
@@ -123,7 +121,7 @@ export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsAr
       wrapText: true,
       cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
       renderCell: ({ row, tabIndex }) => {
-        const name = <span className="font-medium text-sm leading-tight">{row.name}</span>;
+        const name = <span className="text-sm leading-tight font-medium">{row.name}</span>;
         if (!row.description) return name;
         return (
           <HelpText content={<p className="pt-1">{row.description}</p>} tabIndex={tabIndex}>

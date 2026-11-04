@@ -8,23 +8,21 @@ import { UserCell } from '~/modules/user/user-cell';
 import { cn } from '~/utils/cn';
 
 interface ActorCellProps {
-  /** Who wrote the row, as `createdBy`, `updatedBy` and `deletedBy` carry it. */
   actor: ActorRef;
   tabIndex: number;
   compactable?: boolean;
   className?: string;
-  readOnly?: boolean;
 }
 
 /** A writer of a row: a user opens the user sheet like any user cell; a service account shows as a name with a badge. */
-export function ActorCell({ actor, tabIndex, compactable, className, readOnly }: ActorCellProps) {
+export function ActorCell({ actor, tabIndex, compactable, className }: ActorCellProps) {
   const { t } = useTranslation();
 
   if (actor.kind === 'user') {
     // No list searches its writers, so a writer's name never takes the list's marks
     return (
       <MatchScope terms={[]}>
-        <UserCell user={{ ...actor, entityType: 'user' }} tabIndex={tabIndex} compactable={compactable} className={className} readOnly={readOnly} />
+        <UserCell user={{ ...actor, entityType: 'user' }} tabIndex={tabIndex} compactable={compactable} className={className} />
       </MatchScope>
     );
   }

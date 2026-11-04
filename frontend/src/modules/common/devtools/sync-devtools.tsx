@@ -6,8 +6,7 @@ import { clearSpans, getSpans, type SpanData, subscribeToSpans } from '~/lib/tra
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-function formatDuration(ms: number | null): string {
-  if (ms === null) return '...';
+function formatDuration(ms: number): string {
   if (ms < 1) return '<1ms';
   if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
@@ -42,11 +41,11 @@ function getCategoryColorClass(name: string): string {
   return 'text-muted-foreground';
 }
 
-const emptyClass = tw('p-6 text-center text-faint-foreground');
-const tabClass = tw('cursor-pointer rounded px-2 py-1 text-muted-foreground hover:text-foreground');
-const statCardClass = tw('mb-2 rounded-md bg-card p-3');
+const emptyClass = tw('text-faint-foreground p-6 text-center');
+const tabClass = tw('text-muted-foreground hover:text-foreground cursor-pointer rounded px-2 py-1');
+const statCardClass = tw('bg-card mb-2 rounded-md p-3');
 const statLabelClass = tw('group-label');
-const statValueClass = tw('mt-1 font-semibold text-xl');
+const statValueClass = tw('mt-1 text-xl font-semibold');
 
 interface SpanListProps {
   spans: SpanData[];
@@ -63,7 +62,7 @@ function SpanList({ spans, filter }: SpanListProps) {
   return (
     <div>
       {newestFirst(filtered, 50).map((span) => (
-        <div key={span.spanId} className="mb-1 flex items-center gap-2 rounded bg-card px-2 py-1.5">
+        <div key={span.spanId} className="bg-card mb-1 flex items-center gap-2 rounded px-2 py-1.5">
           <div className={cn('size-2 rounded-full', getStatusColorClass(span.status))} />
           <div className={cn('flex-1 truncate', getCategoryColorClass(span.name))} title={span.name}>
             {span.name.replace('sync.', '')}
@@ -110,7 +109,7 @@ function StatsView({ spans }: SpansViewProps) {
         </div>
         <div className={statCardClass}>
           <div className={statLabelClass}>Errors</div>
-          <div className={cn(statValueClass, stats.errorCount > 0 ? 'text-red-500' : 'text-green-500')}>{stats.errorCount}</div>
+          <div className={cn(statValueClass, stats.errorCount > 0 ? 'text-destructive' : 'text-success')}>{stats.errorCount}</div>
         </div>
       </div>
 
@@ -145,9 +144,9 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
 
   return (
     // A dark scope: the panel reads the dark tokens over either theme
-    <div className="dark fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border bg-background font-mono text-foreground text-xs shadow-2xl">
-      <div className="flex items-center justify-between border-b bg-card p-3">
-        <div className="font-semibold text-sm">⚡ Sync devtools</div>
+    <div className="dark bg-background text-foreground fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border font-mono text-xs shadow-2xl">
+      <div className="bg-card flex items-center justify-between border-b p-3">
+        <div className="text-sm font-semibold">⚡ Sync devtools</div>
         <div className="flex gap-1">
           {tabs.map((tab) => (
             <button
@@ -175,11 +174,11 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
           id="sync-devtools-filter"
           type="text"
           placeholder="Filter spans..."
-          className="flex-1 rounded border bg-card px-2 py-1.5 outline-none placeholder:text-faint-foreground"
+          className="bg-card placeholder:text-faint-foreground flex-1 rounded border px-2 py-1.5 outline-none"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         />
-        <button type="button" className="cursor-pointer rounded bg-muted px-3 py-1.5" onClick={clearSpans}>
+        <button type="button" className="bg-muted cursor-pointer rounded px-3 py-1.5" onClick={clearSpans}>
           Clear
         </button>
       </div>

@@ -19,7 +19,7 @@ export function TocAside({ headings }: TocAsideProps) {
 
   return (
     <nav className="flex w-full flex-col" aria-label={t('c:docs.on_this_page')}>
-      <TextAlignStartIcon className="mb-2 ml-5 text-muted-foreground" />
+      <TextAlignStartIcon className="text-muted-foreground mb-2 ml-5" />
       {headings.map(({ id, text, depth }) => (
         <SpyNavItem
           key={id}

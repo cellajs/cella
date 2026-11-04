@@ -6,20 +6,20 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface MorphAnimationProps {
-  /** `single` (hero) and `database`, the database icon's strokes, fill the container they are given; `colony` positions itself as a fixed page background (auth) */
+  /** `colony` is a fixed page background; the others fill their container. */
   variant?: MorphVariant;
-  /** Grain cells across the canvas (default: 96); lower is chunkier */
+  /** Grain cells across the canvas. */
   grid?: number;
-  /** Clock scale (default: 0.7); 1 is the pace the piece was tuned at */
+  /** Clock scale; 1 is the tuned pace. */
   speed?: number;
-  /** Canvas margin around the shape (default: 1.2); below 1 it magnifies */
+  /** Canvas margin around the shape; below 1 it magnifies. */
   overscan?: number;
   stamp?: MorphStamp;
-  /** `violet` (default) suits the marketing gradient; `brand` rotates its four hues and suits a plain page background */
+  /** `violet` suits the marketing gradient, `brand` a plain page background. */
   palette?: MorphPalette;
-  /** Clock value to freeze the piece at: it condenses in on mount, then holds that frame */
+  /** Clock value to hold, after condensing in on mount. */
   still?: number;
-  /** With `still`: how strongly its grains keep fizzing while the shape holds, 0 to 1 (default: 0) */
+  /** With `still`: grain fizz while the shape holds, 0 to 1. */
   fizz?: number;
   className?: string;
 }
@@ -115,7 +115,7 @@ export function MorphAnimation({
   const canvas = (
     <canvas
       ref={canvasRef}
-      className={cn('size-full motion-reduce:starting:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-2000', className)}
+      className={cn('size-full motion-reduce:transition-opacity motion-reduce:duration-2000 motion-reduce:starting:opacity-0', className)}
     />
   );
   if (variant !== 'colony') return canvas;

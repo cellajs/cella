@@ -39,9 +39,8 @@ const canAddFilter = (groups: SearchOptionGroup[], picked?: PickedOption) =>
     return group.onReplace ? group.options.some((option) => !isChosen(option)) : !group.options.some(isChosen);
   });
 
-// While open the field holds its options: one frame and one shadow around both, a line between them.
 const connectedClass = tw(
-  'border-transparent shadow-[0_8px_24px_-4px_rgb(0_0_0/0.16),0_24px_48px_-12px_rgb(0_0_0/0.2)] ring-2 ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-0 dark:bg-card dark:shadow-[0_12px_32px_rgb(0_0_0/0.6),0_32px_64px_rgb(0_0_0/0.55)]',
+  'ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-0 dark:bg-card border-transparent shadow-[0_8px_24px_-4px_rgb(0_0_0/0.16),0_24px_48px_-12px_rgb(0_0_0/0.2)] ring-2 dark:shadow-[0_12px_32px_rgb(0_0_0/0.6),0_32px_64px_rgb(0_0_0/0.55)]',
 );
 
 /**
@@ -234,8 +233,7 @@ export function InlineSearchChips({
   };
 
   return (
-    // Holds the field's one line in the bar: the field in use grows over the page from there. Its own layer, above the
-    // list and below a sticky page header, which its options share
+    // Holds the field's one line in the bar; its layer sits above the list and below a sticky page header
     <div
       ref={fieldRef}
       data-in-use={isInUse || undefined}
@@ -266,7 +264,7 @@ export function InlineSearchChips({
         }}
       >
         <ComboboxPrimitive.InputGroup
-          // The input and the clear addon fit inside the border, so a row of one line stands as tall as the h-10 buttons beside it
+          // Input and clear addon fit inside the border, so one line stands as tall as the h-10 buttons beside it
           render={
             <InputGroup
               className={cn('absolute inset-x-0 top-0 h-auto min-h-10 flex-col items-stretch', isConnected ? connectedClass : edgeless && 'edgeless')}
@@ -285,7 +283,7 @@ export function InlineSearchChips({
               <SearchSpinner hasSearch={hasSearch} isSearching={isSearching} />
             </InputGroupAddon>
 
-            {/* Chips and input in one row, each line as tall as the input: the icon and the X keep the first line */}
+            {/* Each line as tall as the input, so the icon and the X keep the first line */}
             <div
               ref={rowRef}
               className={cn('flex min-w-0 grow items-center gap-x-1 *:data-[slot=chip]:my-1.75', isInUse ? 'flex-wrap' : 'overflow-hidden')}
@@ -320,7 +318,7 @@ export function InlineSearchChips({
                       onChange={(event) => setWordEdit({ word: text, text: event.target.value })}
                       onKeyDown={handleWordKeyDown}
                       onBlur={handleWordBlur}
-                      className="field-sizing-content min-w-2 max-w-full bg-transparent outline-hidden"
+                      className="field-sizing-content max-w-full min-w-2 bg-transparent outline-hidden"
                     />
                   </Chip>
                 ) : (
@@ -353,9 +351,8 @@ export function InlineSearchChips({
             </div>
 
             <InputGroupAddon className="h-9.5 gap-0.5 py-0 pr-1.5 has-[>button]:mr-0" align="inline-end">
-              {/* Mounted while empty too: a status region announces changes only once it exists */}
               {isCountInField && (
-                <span role="status" className="mr-1 whitespace-nowrap font-normal text-muted-foreground text-sm tabular-nums">
+                <span role="status" className="text-muted-foreground mr-1 text-sm font-normal whitespace-nowrap tabular-nums">
                   {resultCount && countText(t, resultCount)}
                 </span>
               )}

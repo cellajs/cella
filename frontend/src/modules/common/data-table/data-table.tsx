@@ -73,7 +73,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
 
-  /** Row height in px, for the grid and its skeleton. Defaults to 52. */
+  /** In px, for the grid and its skeleton */
   rowHeight?: number;
 }
 
@@ -163,7 +163,6 @@ export function DataTable<TData>({
         <DataTableSkeleton
           cellWidths={['3rem', '10rem', '4rem']}
           cellHeight={rowHeight}
-          // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       </div>

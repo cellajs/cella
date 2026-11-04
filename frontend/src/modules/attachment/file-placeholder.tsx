@@ -21,7 +21,6 @@ export function getFileIcon(contentType?: string) {
 interface FilePlaceholderProps {
   contentType?: string;
   strokeWidth?: number;
-  /** The icon's classes, `size-*` included; defaults to `size-5`. */
   className?: string;
 }
 

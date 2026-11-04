@@ -164,13 +164,29 @@ export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransform
 const includeOptions = ['counts', 'membership', 'members', 'mfa'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
 
-/** Comma-separated, e.g. `?include=counts,membership`. */
-export const includeQuerySchema = z
-  .string()
-  .max(maxLength.field)
-  .optional()
-  .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
-  .pipe(z.array(z.enum(includeOptions)));
+/**
+ * A list in one query key, comma-separated: `?include=counts,membership`. Absent reads as an empty array and a value
+ * `item` refuses answers 400. The frontend writes the same form through `csvSearchParam`.
+ * @param item schema of one value, which holds no comma
+ * @param maxItems most values one request names; default 50
+ */
+export const csvQuerySchema = <T extends z.ZodType<unknown, string>>(item: T, maxItems = 50) =>
+  z
+    .string()
+    .max(maxLength.url)
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : [],
+    )
+    .pipe(z.array(item).max(maxItems))
+    .openapi({ description: 'Comma-separated values' });
+
+export const includeQuerySchema = csvQuerySchema(z.enum(includeOptions));
 
 export const slugIncludeQuerySchema = z.object({ slug: booleanTransformSchema.optional(), include: includeQuerySchema });
 

@@ -7,7 +7,7 @@ import { CopiedIcon } from '~/modules/common/copied-icon';
 import { Button } from '~/modules/ui/button';
 
 interface CodeCopyButtonProps {
-  /** The text to copy, or a getter for text that exists only once rendered. */
+  /** A getter for text that exists only once rendered. */
   value: string | (() => string);
 }
 

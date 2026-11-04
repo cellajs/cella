@@ -35,7 +35,7 @@ export function ButtonGroupText({ className, render, ...props }: useRender.Compo
     render,
     props: {
       className: cn(
-        "flex items-center gap-2 rounded-md border border-input bg-muted px-4 font-medium text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        "border-input bg-muted flex items-center gap-2 rounded-md border px-4 text-sm font-medium [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,
       ),
       ...props,
@@ -48,7 +48,7 @@ export function ButtonGroupSeparator({ className, orientation = 'vertical', ...p
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
-      className={cn('relative self-stretch bg-input data-vertical:h-auto', className)}
+      className={cn('bg-input relative self-stretch data-vertical:h-auto', className)}
       {...props}
     />
   );

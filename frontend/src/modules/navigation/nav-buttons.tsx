@@ -42,11 +42,11 @@ interface SidebarNavButtonProps {
   isCollapsed: boolean;
   onClick: () => void;
   isActive?: boolean;
-  /** Marks the button as the place the page belongs to; the caller draws the cue. */
+  /** Sets `aria-current`; the caller draws the cue. */
   isCurrent?: boolean;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
-  /** Classes of the list item around the button, e.g. to drop the space below it. */
+  /** On the list item around the button. */
   itemClassName?: string;
   /** The icon. */
   children: ReactNode;
@@ -80,7 +80,7 @@ export function SidebarNavButton({
         aria-current={isCurrent || undefined}
         // The icon's scale answers the pointer, so a fill only ever means the sheet it opened
         className={cn(
-          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear data-[collapsed=true]:w-16 data-[active=false]:hover:bg-transparent [&>svg]:size-5',
+          'group text-sidebar-foreground h-14 justify-center transition-[width] duration-200 ease-linear ring-inset data-[active=false]:hover:bg-transparent data-[collapsed=true]:w-16 [&>svg]:size-5',
           className,
         )}
       >
@@ -88,7 +88,7 @@ export function SidebarNavButton({
         {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
         {badge}
         {hasSidebarTextLabels && (
-          <span className="overflow-hidden whitespace-nowrap pl-1.5 font-medium transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
+          <span className="overflow-hidden pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
             {label}
           </span>
         )}
@@ -135,7 +135,7 @@ export function BottomBarNavItemButton({ navItem, isActive, onClick }: Omit<NavI
       id={`${navItem.id}-nav`}
       data-active={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
-      className="group active:press relative flex size-14 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent"
+      className="group active:press text-sidebar-foreground hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent relative flex size-14 items-center justify-center rounded-md"
     >
       <NavItemIcon navItem={navItem} />
       <span className="sr-only">{t(`c:${navItem.id}`)}</span>

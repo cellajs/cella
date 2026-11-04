@@ -30,7 +30,7 @@ jobs:
       pull-requests: write
     steps:
       # Mint a short-lived token from the release GitHub App, for two reasons: the
-      # release PR it opens must trigger the CI/pr-title checks required for merge,
+      # release PR it opens must trigger the ci-passed and pr-title checks required for merge,
       # which no event produced by GITHUB_TOKEN does, and the tag ruleset lets only
       # this App create the release tag.
       - name: Generate app token

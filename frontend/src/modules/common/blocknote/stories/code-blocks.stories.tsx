@@ -13,6 +13,7 @@ const samples: Record<Language, string> = {
   json: '{ "name": "launch", "private": true, "steps": [1, 2, 3] }',
   jsonc: '{\n  // Comments are allowed here\n  "strict": true\n}',
   markdown: '# Release notes\n\nSome **bold** text and a [link](https://example.com).\n\n- first item',
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: sample TypeScript source with a template literal
   typescript: 'interface User {\n  id: string;\n  name: string;\n}\n\nexport const greet = (user: User): string => `Hello ${user.name}`;',
 };
 

@@ -16,7 +16,7 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import { useCan } from '~/modules/entities/use-can';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
+type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & { canUpload: boolean };
 
 export function AttachmentsTableBar({
   channel,
@@ -26,8 +26,7 @@ export function AttachmentsTableBar({
   columns,
   setColumns,
   clearSelection,
-  isSheet = false,
-  canUpload = false,
+  canUpload,
   queryKey,
 }: AttachmentsTableBarProps) {
   const { t } = useTranslation();
@@ -66,8 +65,6 @@ export function AttachmentsTableBar({
       searchName="attachmentSearch"
       allowOfflineSearch
       action={canUpload ? { icon: UploadIcon, label: t('c:upload'), onClick: () => open() } : undefined}
-      floatAction={!isSheet}
-      focusView={!isSheet}
       selection={{
         count: selected.length,
         onClear: clearSelection,

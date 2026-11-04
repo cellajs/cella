@@ -23,14 +23,14 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
-/** Minimum width of an expanded board panel, in px. */
+/** In px */
 export const panelMinWidth = 300;
-/** Minimum width of a collapsed board panel, in px. */
+/** In px */
 export const collapsedPanelMinWidth = 50;
 
 export interface BoardLayoutPanel {
   panelId: string;
-  /** Accessible name of the panel's region. */
+  /** Accessible name */
   label?: string;
 }
 
@@ -44,7 +44,7 @@ interface BoardLayoutProps {
   defaultLayout: Record<string, number>;
   onLayoutChanged?: (layout: Record<string, number>) => void;
   children: (panelId: string, index: number) => ReactNode;
-  /** When true, panels grow with content without a viewport-height constraint. */
+  /** Panels grow with their content, with no fixed viewport height */
   autoHeight?: boolean;
   reorderable?: boolean;
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
@@ -199,7 +199,7 @@ export function BoardLayout({
             <ResizableSeparator
               index={i}
               aria-label={i === panels.length - 1 ? t('c:fit_panels') : undefined}
-              className="mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary"
+              className="border-background hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary mx-[0.02rem] w-1.5 rounded border bg-transparent transition-colors"
             />
           )}
         </motion.div>
@@ -207,17 +207,16 @@ export function BoardLayout({
     </ResizablePanelGroup>
   );
 
-  // Window-scroll mode clips horizontal overflow without creating a scroll container, so section
-  // bars and card headers stay sticky to the window.
+  // Clips without a scroll container, so section bars and card headers stay sticky to the window
   if (autoHeight) {
     return <div className="overflow-x-clip transition">{panelGroup}</div>;
   }
 
-  // contain on x bounces the board at its ends: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
+  // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (
     <ScrollArea
       className="transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]"
-      viewportClassName="overflow-y-hidden! overscroll-x-contain overscroll-y-auto"
+      viewportClassName="overflow-y-hidden! overscroll-x-none overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"
     >

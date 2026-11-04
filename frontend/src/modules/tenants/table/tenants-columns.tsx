@@ -40,10 +40,11 @@ export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
     id: 'update-tenant',
     resource: 'c:tenant',
     description: tenant.organization ? (
-      <NamedText i18nKey="c:update_tenant.text" name={tenant.organization.name} values={{ id: tenant.id }} />
+      <NamedText i18nKey="c:update_tenant.text" name={tenant.organization.name} />
     ) : (
-      <NamedText i18nKey="c:update_tenant_no_organization.text" values={{ id: tenant.id }} />
+      <NamedText i18nKey="c:update_tenant_no_organization.text" />
     ),
+    identifier: tenant.id,
     triggerRef,
     section: { label: 'c:general', id: 'update-tenant-general' },
     children: <UpdateTenantForm tenant={tenant} sheet />,

@@ -179,7 +179,7 @@ export const Compact: Story = {
       <ChannelTileRow>
         <ChannelTileHeading
           leading={<div className="flex size-10 items-center justify-center rounded-md border text-xs">3</div>}
-          meta={<span className="truncate text-muted-foreground text-sm">Roadmap, Website, Support</span>}
+          meta={<span className="text-muted-foreground truncate text-sm">Roadmap, Website, Support</span>}
         />
       </ChannelTileRow>
     </ChannelTileCard>

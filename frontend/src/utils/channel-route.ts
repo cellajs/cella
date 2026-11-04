@@ -131,12 +131,11 @@ function getSubjectSearch({ entityType, subjectId, contextId }: ProductLocation)
 /**
  * Route to a product's channel page with the product opened. A cached channel routes as it does from the menu, a
  * subitem onto its parent's page; one not in cache travels by id in its own param and the organization's, which the
- * routes' `beforeLoad` rewrite to slugs. Null for a channel type without a route.
+ * routes' `beforeLoad` rewrite to slugs.
  */
-export function getProductRoute(location: ProductLocation): EntityRoute | null {
+export function getProductRoute(location: ProductLocation): EntityRoute {
   const { tenantId, organizationId, channelType, channelId } = location;
   const config = channelRouteConfig[channelType];
-  if (!config) return null;
   const search = getSubjectSearch(location);
 
   const channel = findInCache<EnrichedChannel>(channelType, channelId);

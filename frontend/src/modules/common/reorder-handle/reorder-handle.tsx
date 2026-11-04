@@ -48,25 +48,25 @@ const stepKeys: Record<'vertical' | 'horizontal', Partial<Record<string, Step>>>
 const shiftKeys: Partial<Record<string, Step>> = { ArrowLeft: -1, ArrowRight: 1 };
 
 interface ReorderHandleProps {
-  /** Identifies the item across renders, so focus follows it to its new place. */
+  /** Stable across renders, so focus follows the item to its new place. */
   id: string;
   /** Announced with its place: "Name, 2 of 5". */
   name: string;
   /** 0-based place among the items the arrow keys step through. */
   index: number;
   total: number;
-  /** `horizontal` steps with ←/→, as board panels do. */
+  /** `horizontal` steps with ←/→. */
   orientation?: 'vertical' | 'horizontal';
   onMove: (step: Step) => void;
-  /** An arrow press past either end of the list, never a held key: the list goes on elsewhere, and the caller announces the result. */
+  /** An arrow press past either end, never a held key; the caller announces the result. */
   onMovePastEnd?: (step: Step) => void;
   /** ←/→ of a tree item: outdent (-1) or indent (1); returns the new place, or null when the item cannot go there. */
   onShift?: (direction: Step) => ReorderPosition | null;
-  /** A click while the move menu is off, such as a board panel's collapse. */
+  /** A click while the move menu is off. */
   onClick?: () => void;
-  /** Items ahead of the moves in the menu, such as that collapse. */
+  /** Items ahead of the moves in the menu. */
   menuItems?: ReactNode;
-  /** What a screen reader hears the arrow keys do; defaults to moving it within the list. */
+  /** What a screen reader hears the arrow keys do. */
   description?: string;
   /** A grid cell's tab index, so the grid keeps one tab stop. */
   tabIndex?: number;

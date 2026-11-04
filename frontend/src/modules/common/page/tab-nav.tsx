@@ -22,7 +22,6 @@ import { getHasNavigated } from '~/utils/nav-transition';
 
 export type PageTab = TabLabel & {
   id: string;
-  /** Sits before the label. */
   icon?: ReactNode;
   path: LinkComponentProps['to'];
   params?: LinkComponentProps['params'];

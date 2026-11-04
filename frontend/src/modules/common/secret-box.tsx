@@ -10,8 +10,8 @@ export function SecretBox({ value }: { value: string }) {
   const { copied, copyToClipboard } = useCopyToClipboard();
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-dashed bg-background py-1 pr-1 pl-3 font-mono text-sm">
-      <div className="min-w-0 grow select-all break-all">{value}</div>
+    <div className="bg-background flex items-center gap-2 rounded-lg border border-dashed py-1 pr-1 pl-3 font-mono text-sm">
+      <div className="min-w-0 grow break-all select-all">{value}</div>
       <Button
         variant="ghost"
         size="icon"

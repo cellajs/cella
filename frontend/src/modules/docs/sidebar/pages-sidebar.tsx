@@ -56,7 +56,7 @@ export function PagesSidebar() {
   };
 
   return (
-    <SidebarMenu className="gap-1 no-focus-ring:gap-0 p-0 pt-1">
+    <SidebarMenu className="no-focus-ring:gap-0 gap-1 p-0 pt-1">
       {pageTree.length > 0 ? (
         pageTree.map((node) => (
           <PageBranch
@@ -70,7 +70,7 @@ export function PagesSidebar() {
         ))
       ) : (
         <SidebarMenuItem>
-          <span className="px-3 py-2 text-faint-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:page_other') })}</span>
+          <span className="text-faint-foreground px-3 py-2 text-sm">{t('c:no_resource_yet', { resource: t('c:page_other') })}</span>
         </SidebarMenuItem>
       )}
     </SidebarMenu>

@@ -44,9 +44,6 @@ export const yjsDocumentsTable = snakeCase.table(
   ],
 );
 
-export type YjsDocumentModel = typeof yjsDocumentsTable.$inferSelect;
-export type InsertYjsDocumentModel = typeof yjsDocumentsTable.$inferInsert;
-
 /**
  * Append-only log of updates, one row per received update, in arrival order: a client's, or a server-origin one an
  * outside write of the description left. Durable before the update is broadcast, so a relay crash loses nothing.
@@ -75,6 +72,3 @@ export const yjsUpdatesTable = snakeCase.table(
     ...writeThroughPolicies('yjs_updates'),
   ],
 );
-
-export type YjsUpdateModel = typeof yjsUpdatesTable.$inferSelect;
-export type InsertYjsUpdateModel = typeof yjsUpdatesTable.$inferInsert;

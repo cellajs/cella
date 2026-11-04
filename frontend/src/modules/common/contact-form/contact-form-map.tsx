@@ -27,7 +27,7 @@ function CompanyMarker() {
   return (
     <div className="relative">
       {cardOpen && (
-        <div className="absolute bottom-full left-1/2 mb-3 min-w-36 -translate-x-1/2 rounded-md border bg-popover p-2 text-popover-foreground text-xs shadow-md">
+        <div className="bg-popover text-popover-foreground absolute bottom-full left-1/2 mb-3 min-w-36 -translate-x-1/2 rounded-md border p-2 text-xs shadow-md">
           <div className="flex items-center justify-between gap-2">
             <strong className="text-sm">{appConfig.company.name}</strong>
             <CloseButton onClick={() => setCardOpen(false)} size="sm" />
@@ -44,7 +44,7 @@ function CompanyMarker() {
             {t('c:get_directions')}
             <ArrowUpRightIcon className="size-3 opacity-50" />
           </a>
-          <span className="absolute top-full left-1/2 -mt-1.5 size-3 -translate-x-1/2 rotate-45 border-r border-b bg-popover" />
+          <span className="bg-popover absolute top-full left-1/2 -mt-1.5 size-3 -translate-x-1/2 rotate-45 border-r border-b" />
         </div>
       )}
       <button type="button" onClick={() => setCardOpen(true)} className="block cursor-pointer" title={appConfig.company.name}>

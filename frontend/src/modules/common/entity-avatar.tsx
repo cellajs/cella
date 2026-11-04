@@ -21,9 +21,9 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
       <Avatar
         {...props}
         data-type={type}
-        className={cn('items-center justify-center rounded-md bg-background data-[type=user]:rounded-full', className)}
+        className={cn('bg-background items-center justify-center rounded-md data-[type=user]:rounded-full', className)}
       >
-        <Icon className="size-[70%] fill-accent opacity-70" />
+        <Icon className="fill-accent size-[70%] opacity-70" />
       </Avatar>
     );
 
@@ -34,18 +34,18 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
   return (
     <Avatar {...props} data-type={type} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} className="transition-[filter]" />}
-      {/* The fallback is the container: the letter scales with the avatar. A user gets a second one, both smaller, when it is wider than size-6 */}
+      {/* The fallback is the container, so the letters scale with the avatar; a user wider than size-6 shows two */}
       <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
         <span className="sr-only">{name}</span>
         <div
           aria-hidden
           className={cn(
-            'flex h-full items-center justify-center font-semibold more-contrast:text-black/85 text-[50cqi] text-black/50 leading-none transition-colors',
+            'more-contrast:text-black/85 flex h-full items-center justify-center text-[50cqi] leading-none font-semibold text-black/50 transition-colors',
             isUser && '@min-[calc(1.5rem+1px)]:text-[40cqi]',
           )}
         >
           {initial ?? '-'}
-          {isUser && secondInitial && <span className="@min-[calc(1.5rem+1px)]:inline hidden">{secondInitial}</span>}
+          {isUser && secondInitial && <span className="hidden @min-[calc(1.5rem+1px)]:inline">{secondInitial}</span>}
         </div>
       </AvatarFallback>
     </Avatar>

@@ -18,7 +18,7 @@ export const searchDialogLayout = {
 interface SearchDialogBarProps {
   /** The search field. */
   children: ReactNode;
-  /** What `onClear` would empty is there: typed text, and for a field with chips its chips. */
+  /** Typed text, or chips in a field with chips. */
   hasSearch: boolean;
   onClear: () => void;
 }

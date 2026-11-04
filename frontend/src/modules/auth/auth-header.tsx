@@ -2,9 +2,7 @@ import type { ReactNode } from 'react';
 
 interface AuthHeaderProps {
   title: string;
-  /** Above the title: a logo, an avatar or an icon. */
   image?: ReactNode;
-  /** The lines under the title: text, or the account the step is for. */
   children?: ReactNode;
 }
 

@@ -74,7 +74,7 @@ function ResizeHint() {
     >
       {/* Widens to the separator's width: at the snap the dragged separator stops on this edge (G4) */}
       <div
-        className="relative shrink-0 rounded bg-primary"
+        className="bg-primary relative shrink-0 rounded"
         style={{ width: 'calc(2px + (var(--separator-width, 2px) - 2px) * var(--hint-strength, 0))' }}
       >
         <div
@@ -82,7 +82,7 @@ function ResizeHint() {
           style={{ background: 'radial-gradient(closest-side, color-mix(in oklch, var(--primary) 35%, transparent), transparent)' }}
         />
       </div>
-      <div className="grow bg-card/92" style={{ backgroundImage: curtainPleats }} />
+      <div className="bg-card/92 grow" style={{ backgroundImage: curtainPleats }} />
     </div>
   );
 }
@@ -161,7 +161,7 @@ interface ResizablePanelGroupProps {
   onLayoutChanged?: (layout: Record<string, number>) => void;
   /** Fires with a collapsible panel's state when it registers and on each change; collapsed is width <= collapsedWidth */
   onCollapseChange?: (panelId: string, collapsed: boolean) => void;
-  /** Called after mount with imperative methods for external panel control. */
+  /** Called after mount */
   onReady?: (api: PanelGroupApi) => void;
   /** The row always fits its parent, closing panels when there are too many, and `onLayoutChanged` reports what the user chose (F rules). Fixed for the group's lifetime. */
   mustFit?: boolean;
@@ -878,7 +878,7 @@ export function ResizablePanelGroup({
           ref={fitLineRef}
           hidden
           data-fit-line=""
-          className="pointer-events-none absolute inset-y-0 z-999 -translate-x-full border-primary border-r-2 border-dashed data-snapped:border-solid"
+          className="border-primary pointer-events-none absolute inset-y-0 z-999 -translate-x-full border-r-2 border-dashed data-snapped:border-solid"
         />
       </div>
     </PanelGroupContext.Provider>
@@ -886,17 +886,16 @@ export function ResizablePanelGroup({
 }
 
 interface ResizablePanelProps {
-  /** Stable panel identifier */
   id: string;
-  /** Minimum width in pixels */
+  /** In pixels */
   minWidth: number;
-  /** Width when collapsed in pixels (default: 0). Must be < minWidth. */
+  /** In pixels, below `minWidth` */
   collapsedWidth?: number;
-  /** Whether the panel can be collapsed by dragging it past its collapse snap point (G2) */
+  /** Dragged past its snap point, the panel collapses (G2) */
   collapsible?: boolean;
   /** What a resize hint fades: all content (default), or only elements carrying `hintFadeOut` / `hintFadeIn` */
   fade?: 'all' | 'marked';
-  /** Accessible name. A named section is a region, a landmark screen reader users can jump between; unnamed it stays generic. */
+  /** Named, the panel is a region landmark; unnamed it stays generic */
   label?: string;
   children?: ReactNode;
 }
@@ -937,7 +936,7 @@ interface ResizableSeparatorProps {
   /** 0-based among the separators: separator i sits between panels i and i + 1 */
   index: number;
   className?: string;
-  /** Accessible name; defaults to a generic "resize panels". Pass one that names the panel it resizes. */
+  /** Name the panel it resizes */
   'aria-label'?: string;
 }
 
@@ -998,7 +997,7 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
       aria-orientation="vertical"
       tabIndex={0}
       // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
-      className={cn('shrink-0 cursor-col-resize touch-none select-none outline-hidden', className)}
+      className={cn('shrink-0 cursor-col-resize touch-none outline-hidden select-none', className)}
       style={{
         // Thins and fades while the curtain's leading edge widens to take its place (G4)
         opacity: 'calc(1 - 0.65 * var(--hint-strength, 0))',

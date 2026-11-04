@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { SearchScope } from '~/modules/common/match-highlight/match-scope';
@@ -15,14 +14,9 @@ interface OrganizationsGridProps {
   fixedQuery?: Partial<OrgSearch>;
   focusView?: boolean;
   saveDataInSearch?: boolean;
-  /** Opens as the grid's preview, without the search bar, until its "Show all" button expands it. */
-  limitedView?: boolean;
 }
 
-export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: OrganizationsGridProps) {
-  const [expanded, setExpanded] = useState(false);
-  const limitedView = initialLimitedView && !expanded;
-
+export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: OrganizationsGridProps) {
   const relatableUserId = fixedQuery?.relatableUserId;
   const ofAnotherUser = useUserStore((state) => !!relatableUserId && relatableUserId !== state.user?.id);
 
@@ -38,19 +32,17 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
 
   return (
     <div className="flex h-full flex-col gap-2">
-      {!limitedView && (
-        <EntityGridBar
-          queryKey={queryOptions.queryKey}
-          searchVars={baseSearch}
-          label="c:organization"
-          entityType="organization"
-          roleFilter={false}
-          alwaysShow
-          setSearch={setSearch}
-          sortOptions={sortOptions}
-          focusView={focusView}
-        />
-      )}
+      <EntityGridBar
+        queryKey={queryOptions.queryKey}
+        searchVars={baseSearch}
+        label="c:organization"
+        entityType="organization"
+        roleFilter={false}
+        alwaysShow
+        setSearch={setSearch}
+        sortOptions={sortOptions}
+        focusView={focusView}
+      />
 
       <SearchScope q={search.q}>
         <BaseEntityGrid
@@ -64,8 +56,6 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           fetchMore={fetchMore}
           isFiltered={isFiltered}
           onResetFilters={() => setSearch({ q: '' })}
-          limitedView={limitedView}
-          onExpand={() => setExpanded(true)}
           queryKey={queryOptions.queryKey}
         />
       </SearchScope>

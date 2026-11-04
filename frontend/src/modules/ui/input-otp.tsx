@@ -17,7 +17,7 @@ export function InputOTPSlot({ className, ...props }: OTPField.Input.Props) {
     <OTPField.Input
       data-slot="input-otp-slot"
       className={cn(
-        'relative size-9 border-input border-y border-r bg-background text-center text-sm outline-hidden transition-all first:rounded-l-md first:border-l last:rounded-r-md focus:z-10 focus:border-ring focus:ring-2 focus:ring-ring disabled:cursor-not-allowed data-invalid:border-destructive',
+        'border-input bg-background focus:border-ring focus:ring-ring data-invalid:border-destructive relative size-9 border-y border-r text-center text-sm outline-hidden transition-all first:rounded-l-md first:border-l last:rounded-r-md focus:z-10 focus:ring-2 disabled:cursor-not-allowed',
         className,
       )}
       {...props}

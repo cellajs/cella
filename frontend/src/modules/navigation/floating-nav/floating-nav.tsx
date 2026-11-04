@@ -7,7 +7,7 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
   items: FloatingNavItem[];
-  /** Any change to this value resets visibility to visible: pass a page key, sidebar state, etc. */
+  /** A change shows the buttons again, e.g. a page key or sidebar state. */
   resetTrigger?: unknown;
 }
 

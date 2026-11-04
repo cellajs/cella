@@ -25,8 +25,8 @@ export function AboutSectionHeader({ title, text, textComponents, className }: A
   if (!title && !text) return null;
 
   return (
-    <div className={cn('mx-auto flex max-w-measure flex-col gap-4', className)}>
-      {title && <h2 className="font-heading font-semibold text-2xl leading-[1.1] sm:text-center sm:text-3xl md:text-4xl">{t(title)}</h2>}
+    <div className={cn('max-w-measure mx-auto flex flex-col gap-4', className)}>
+      {title && <h2 className="font-heading text-2xl leading-[1.1] font-semibold sm:text-center sm:text-3xl md:text-4xl">{t(title)}</h2>}
       {text && (
         <p className="text-muted-foreground sm:text-center sm:text-lg sm:leading-7">
           <Trans i18nKey={text as never} components={textComponents} />
@@ -41,16 +41,16 @@ interface AboutStatementProps {
   className?: string;
 }
 
-/** Large centered statement: muted text whose `<strong>` parts carry the message in the foreground color. */
+/** A statement whose `<strong>` parts carry the message in the foreground color. */
 export function AboutStatement({ text, className }: AboutStatementProps) {
   return (
     <p
       className={cn(
-        'mx-auto max-w-3xl text-balance text-center font-semibold text-2xl text-muted-foreground leading-tight md:text-3xl lg:text-4xl',
+        'text-muted-foreground mx-auto max-w-3xl text-center text-2xl leading-tight font-semibold text-balance md:text-3xl lg:text-4xl',
         className,
       )}
     >
-      <Trans i18nKey={text as never} components={{ strong: <strong className="font-semibold text-foreground" /> }} />
+      <Trans i18nKey={text as never} components={{ strong: <strong className="text-foreground font-semibold" /> }} />
     </p>
   );
 }

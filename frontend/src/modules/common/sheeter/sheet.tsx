@@ -25,6 +25,7 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
     description,
     title,
     titleContent = title,
+    titleAside,
     headerClassName,
     className,
     content,
@@ -90,12 +91,13 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
         autoScrollOnDrag={autoScrollOnDrag}
         keepMounted={keepMounted}
       >
-        {(title || description) && (
+        {title && (
           <SheetHeader sticky className={headerClassName}>
-            {title && <SheetTitle className="h-6 truncate leading-6">{titleContent}</SheetTitle>}
-            {description && <SheetDescription>{description}</SheetDescription>}
+            <SheetTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</SheetTitle>
+            {titleAside}
           </SheetHeader>
         )}
+        {description && <SheetDescription className="px-4 pb-4">{description}</SheetDescription>}
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>

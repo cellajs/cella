@@ -46,7 +46,7 @@ export function FieldGroup({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-const fieldLayoutVariants = cva('group/field flex w-full gap-3 data-[invalid=true]:text-destructive', {
+const fieldLayoutVariants = cva('group/field data-[invalid=true]:text-destructive flex w-full gap-3', {
   variants: {
     orientation: {
       vertical: ['flex-col [&>*]:w-full [&>.sr-only]:w-auto'],
@@ -56,7 +56,7 @@ const fieldLayoutVariants = cva('group/field flex w-full gap-3 data-[invalid=tru
         'has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
       ],
       responsive: [
-        '@md/field-group:flex-row flex-col @md/field-group:items-center @md/field-group:[&>*]:w-auto [&>*]:w-full [&>.sr-only]:w-auto',
+        'flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto',
         '@md/field-group:[&>[data-slot=field-label]]:flex-auto',
         '@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
       ],
@@ -93,11 +93,11 @@ export function FieldLabel({
       className={cn(
         'group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50',
         card && [
-          'w-full cursor-pointer flex-col rounded-md border border-input hover:border-input-hover *:data-[slot=field]:p-4',
+          'border-input hover:border-input-hover w-full cursor-pointer flex-col rounded-md border *:data-[slot=field]:p-4',
           // The tile's padding is room for a description; an option without one stays no taller than a button
           '[&:not(:has([data-slot=field-description]))>[data-slot=field]]:py-2',
           'has-data-checked:border-primary has-data-checked:bg-primary/5 dark:has-data-checked:bg-primary/10',
-          'has-data-disabled:cursor-not-allowed has-data-disabled:hover:border-input',
+          'has-data-disabled:hover:border-input has-data-disabled:cursor-not-allowed',
         ],
         className,
       )}
@@ -110,14 +110,14 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="field-label"
-      className={cn('flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled=true]/field:opacity-50', className)}
+      className={cn('flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50', className)}
       {...props}
     />
   );
 }
 
 export function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  return <p data-slot="field-description" className={cn('font-normal text-muted-foreground text-sm', className)} {...props} />;
+  return <p data-slot="field-description" className={cn('text-muted-foreground text-sm font-normal', className)} {...props} />;
 }
 
 export function FieldSeparator({ children, className, ...props }: React.ComponentProps<'div'> & { children?: React.ReactNode }) {
@@ -130,7 +130,7 @@ export function FieldSeparator({ children, className, ...props }: React.Componen
     >
       <Separator className="absolute inset-0 top-1/2" />
       {children && (
-        <span className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground" data-slot="field-separator-content">
+        <span className="bg-background text-muted-foreground relative mx-auto block w-fit px-2" data-slot="field-separator-content">
           {children}
         </span>
       )}
@@ -162,7 +162,7 @@ export function FieldError({
   if (!content) return null;
 
   return (
-    <div role="alert" data-slot="field-error" className={cn('font-normal text-destructive text-sm', className)} {...props}>
+    <div role="alert" data-slot="field-error" className={cn('text-destructive text-sm font-normal', className)} {...props}>
       {content}
     </div>
   );
@@ -249,7 +249,7 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
 
 /** The star after a required field's label or legend. */
 export function RequiredMark() {
-  return <span className="ml-1 text-faint-foreground">*</span>;
+  return <span className="text-faint-foreground ml-1">*</span>;
 }
 
 export function FormLabel({
@@ -273,7 +273,7 @@ export function FormLabel({
       nativeLabel={nativeLabel}
       // A group control, such as a radio group, is named by a non-native label, which Base UI expects to be no <label>
       render={nativeLabel ? undefined : <div />}
-      className={cn('w-fit select-none font-medium text-sm/4.5 data-invalid:text-destructive', className)}
+      className={cn('data-invalid:text-destructive w-fit text-sm/4.5 font-medium select-none', className)}
       {...props}
     >
       {children}

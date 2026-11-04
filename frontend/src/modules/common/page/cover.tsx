@@ -47,14 +47,14 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
   return (
     <div
       data-url={!!coverUrl}
-      className={cn('relative flex h-32 bg-center bg-cover', placeholderColorClass(id), 'min-h-40 data-[url=true]:h-[20vw] sm:min-w-52')}
+      className={cn('relative flex h-32 bg-cover bg-center', placeholderColorClass(id), 'min-h-40 data-[url=true]:h-[20vw] sm:min-w-52')}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (
         <Button
           variant="outline-ghost"
           size="xs"
-          className="absolute top-2.5 right-2.5 bg-background/50 backdrop-blur-xs hover:bg-background/75 max-sm:size-10 dark:bg-background/75"
+          className="bg-background/50 hover:bg-background/75 dark:bg-background/75 absolute top-2.5 right-2.5 backdrop-blur-xs max-sm:size-10"
           onClick={openUploadDialog}
         >
           <ImageUpIcon />

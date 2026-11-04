@@ -6,16 +6,9 @@ import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-pare
 const passiveArg = { passive: true } as const;
 
 interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
-  /** Offset (px) from the top of the scroll container at which the bar pins. */
+  /** In px, from the top of the scroll container. */
   offsetTop?: number;
-  /** Release the bar this many px before the bottom of its containing block (e.g. to clear a footer). */
-  offsetBottom?: number;
-  /** Disable sticky behaviour entirely (renders children in a plain div). */
-  enabled?: boolean;
-  /**
-   * The bar scrolls away with the page on the way down, and slides in at the pin line when the reader scrolls up
-   * while its own place is off screen. It is never hidden while that place is on screen.
-   */
+  /** Scrolls away on the way down and slides in at the pin line on scroll up, while its own place is off screen. */
   hideWhenOutOfView?: boolean;
   /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
@@ -100,32 +93,17 @@ type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
  * publishes one of those variables never consumes it, since it would inherit its own value back
  * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
  */
-export function StickyBox({
-  enabled = true,
-  offsetTop = 0,
-  offsetBottom = 0,
-  hideWhenOutOfView,
-  publishVar,
-  children,
-  className,
-  style,
-  ...rest
-}: StickyBoxProps) {
+export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, children, className, style, ...rest }: StickyBoxProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [stuck, setStuck] = useState(false);
   const [phase, setPhase] = useState<HidePhase>('flow');
-  // When set, the bar is docked near the container bottom via `position: relative` and scrolls away
-  const [clampedTop, setClampedTop] = useState<number | null>(null);
 
   // `data-sticky` follows the sentinel: once it scrolls past the pin line the bar counts as stuck
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!enabled || !sentinel) {
-      setStuck(false);
-      return;
-    }
+    if (!sentinel) return;
     const scrollParent = getScrollParent(sentinel);
     const root = scrollParent instanceof HTMLElement ? scrollParent : null;
     const observer = new IntersectionObserver(
@@ -138,49 +116,13 @@ export function StickyBox({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [enabled, offsetTop]);
-
-  // Release sticky positioning early when the bar approaches the configured bottom offset.
-  useEffect(() => {
-    const bar = barRef.current;
-    const parent = bar?.parentElement;
-    if (!enabled || offsetBottom <= 0 || !bar || !parent) {
-      setClampedTop(null);
-      return;
-    }
-    const scrollParent = getScrollParent(bar);
-    let raf = 0;
-    const check = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const parentRect = parent.getBoundingClientRect();
-        const barHeight = bar.offsetHeight;
-        const stickyBottom = viewportTopOf(scrollParent) + stackOffset(bar, publishVar) + offsetTop + barHeight;
-        const spaceBelow = parentRect.bottom - stickyBottom;
-        // Offset from the sentinel: at the release boundary it equals the stuck position exactly
-        const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
-        const releasedTop = parentRect.bottom - offsetBottom - barHeight - naturalTop;
-        setClampedTop(spaceBelow <= offsetBottom ? Math.max(0, releasedTop) : null);
-      });
-    };
-    check();
-    scrollParent.addEventListener('scroll', check, passiveArg);
-    window.addEventListener('resize', check, passiveArg);
-    const observer = new ResizeObserver(check);
-    observer.observe(parent);
-    return () => {
-      cancelAnimationFrame(raf);
-      scrollParent.removeEventListener('scroll', check);
-      window.removeEventListener('resize', check);
-      observer.disconnect();
-    };
-  }, [enabled, offsetBottom, offsetTop, publishVar]);
+  }, [offsetTop]);
 
   // hideWhenOutOfView: the bar sits in its place while that is on screen, and slides in or out at the pin line by scroll direction once it is not
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const bar = barRef.current;
-    if (!hideWhenOutOfView || !enabled || !sentinel || !bar) {
+    if (!hideWhenOutOfView || !sentinel || !bar) {
       setPhase('flow');
       return;
     }
@@ -219,13 +161,13 @@ export function StickyBox({
     };
     scrollParent.addEventListener('scroll', onScroll, passiveArg);
     return () => scrollParent.removeEventListener('scroll', onScroll);
-  }, [hideWhenOutOfView, enabled, offsetTop, publishVar]);
+  }, [hideWhenOutOfView, offsetTop, publishVar]);
 
   // Publish the height on the parent so dependent sticky bars can pin below this one
   useEffect(() => {
     const bar = barRef.current;
     const host = bar?.parentElement;
-    if (!publishVar || !enabled || !bar || !host) return;
+    if (!publishVar || !bar || !host) return;
     const publish = () => host.style.setProperty(publishVar, `${bar.offsetHeight}px`);
     publish();
     const observer = new ResizeObserver(publish);
@@ -234,23 +176,11 @@ export function StickyBox({
       observer.disconnect();
       host.style.removeProperty(publishVar);
     };
-  }, [publishVar, enabled]);
+  }, [publishVar]);
 
-  if (!enabled) {
-    return (
-      <div className={className} style={style} {...rest}>
-        {children}
-      </div>
-    );
-  }
-
-  // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
+  // `top` must never transition: it would interpolate the switch between flow and pinned and park at stale offsets
   const barStyle: CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
-  if (clampedTop !== null) {
-    barStyle.position = 'relative';
-    barStyle.top = clampedTop;
-  }
-  if (hideWhenOutOfView && clampedTop === null) {
+  if (hideWhenOutOfView) {
     if (phase === 'flow') {
       // In its place it is ordinary content: it scrolls away with the page and never pins
       barStyle.position = 'relative';
@@ -272,7 +202,7 @@ export function StickyBox({
       <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
       <div
         ref={barRef}
-        // Through CSS, not `enabled`: that renders another tree, which would remount the bar's content on every focus change
+        // Unstuck while editing through CSS: a second render tree would remount the bar's content on every focus change
         className={cn(className, 'text-editing:static!')}
         data-sticky={stuck}
         style={barStyle}

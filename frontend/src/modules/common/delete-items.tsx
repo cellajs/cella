@@ -8,21 +8,20 @@ import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 
 export interface DeleteItemsProps<TItem, TVariables> {
   items: TItem[];
-  /** The delete mutation, created by the caller inside the dropdowner or dialog content that renders this form. */
+  /** Created inside the dropdowner or dialog content that renders this form. */
   mutation: { mutate: (variables: TVariables, options?: { onSuccess: () => void }) => void; isPending: boolean };
   toVariables: (items: TItem[]) => TVariables;
   callback?: (args: CallbackArgs<TItem[]>) => void;
-  /** Names the items, e.g. `c:project`: in the act ("Delete projects") and, for a delete that waits for the server, the success toast. */
+  /** E.g. `c:project`: names the act ("Delete projects") and, unless `optimistic`, the success toast. */
   resource?: TKey;
-  /** The act, interpolated with `resource`, e.g. `c:remove_resource`; a delete by default. */
+  /** Interpolated with `resource`, e.g. `c:remove_resource`. */
   label?: TKey;
-  /** Warn and send nothing while offline. */
   onlineOnly?: boolean;
-  /** Report to `callback` before closing; by default the confirmation closes first. */
+  /** Report to `callback` before closing. */
   callbackFirst?: boolean;
-  /** Replaces the default cancel, which steps back out of the confirmation and leaves `callback` unreported, so a selection survives it. */
+  /** The default steps back and leaves `callback` unreported, so a selection survives. */
   onCancel?: () => void;
-  /** For a delete that is optimistic and queues offline: finish right after `mutate`, and let the press through offline. */
+  /** For a delete that queues offline: finish right after `mutate`, and allow the press offline. */
   optimistic?: boolean;
 }
 

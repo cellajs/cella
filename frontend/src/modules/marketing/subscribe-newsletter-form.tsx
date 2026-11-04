@@ -30,7 +30,7 @@ export function SubscribeNewsletterForm() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <InputGroup className="mt-6 h-14 rounded-2xl border-gray-300/60 bg-transparent ring-4 ring-primary/10 transition focus-within:border-gray-300 focus-within:ring-primary/20">
+      <InputGroup className="ring-primary/10 focus-within:ring-primary/20 border-input/60 focus-within:border-input mt-6 h-14 rounded-2xl bg-transparent ring-4 transition">
         <InputGroupInput
           type="email"
           name="email"
@@ -39,7 +39,7 @@ export function SubscribeNewsletterForm() {
           aria-label={t('c:newsletter_email')}
           required
           // The footer band stays dark in both themes, so the field reads the dark text steps
-          className="dark py-4 pl-6 text-base/6 text-foreground"
+          className="dark text-foreground py-4 pl-6 text-base/6"
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton type="submit" aria-label={t('c:newsletter_submit')} className="mr-0.5 size-10 rounded-lg text-white">

@@ -43,7 +43,7 @@ interface SyncStatusProps {
 /** One line above the description saying why it is read-only, or what happens to its edits. */
 function SyncStatus({ text }: SyncStatusProps) {
   return (
-    <p role="status" className="mb-2 text-muted-foreground text-sm">
+    <p role="status" className="text-muted-foreground mb-2 text-sm">
       {text}
     </p>
   );

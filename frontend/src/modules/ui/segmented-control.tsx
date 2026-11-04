@@ -6,7 +6,7 @@ import { type ComponentProps, useLayoutEffect, useRef } from 'react';
 import { cn } from '~/utils/cn';
 
 const trackVariants = cva(
-  'relative isolate inline-flex w-fit max-w-full items-stretch gap-0.5 rounded-md border border-input bg-muted p-0.5 dark:bg-black/40',
+  'border-input bg-muted relative isolate inline-flex w-fit max-w-full items-stretch gap-0.5 rounded-md border p-0.5 dark:bg-black/40',
   {
     variants: {
       size: {
@@ -60,7 +60,7 @@ function SegmentedPill() {
     <span
       ref={ref}
       aria-hidden
-      className="pointer-events-none absolute inset-ring inset-ring-input inset-y-0.5 left-0 -z-1 rounded-sm bg-background data-placed:transition-[width,transform] data-placed:duration-200 motion-reduce:transition-none dark:inset-ring-input-hover dark:bg-input"
+      className="inset-ring-input bg-background dark:inset-ring-input-hover dark:bg-input pointer-events-none absolute inset-y-0.5 left-0 -z-1 rounded-sm inset-ring data-placed:transition-[width,transform] data-placed:duration-200 motion-reduce:transition-none"
     />
   );
 }
@@ -98,7 +98,7 @@ export function SegmentedMenuItem({ className, ...props }: MenuPrimitive.RadioIt
   return (
     <MenuPrimitive.RadioItem
       data-slot="segmented-menu-item"
-      className={cn(segmentClassName, 'outline-hidden focus:bg-hover', className)}
+      className={cn(segmentClassName, 'focus:bg-hover outline-hidden', className)}
       {...props}
     />
   );

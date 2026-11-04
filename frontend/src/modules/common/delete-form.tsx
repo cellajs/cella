@@ -6,15 +6,15 @@ import { ConfirmForm, type ConfirmFormProps } from '~/modules/common/confirm-for
 interface DeleteFormProps extends Pick<ConfirmFormProps, 'onCancel' | 'pending' | 'icon' | 'cancelLabel'> {
   onDelete: () => void;
   allowOfflineDelete?: boolean;
-  /** What goes, e.g. `c:organization`: the act reads "Delete organization". */
+  /** E.g. `c:organization`: the act reads "Delete organization". */
   resource?: TKey;
-  /** How many `resource`s go, for its plural. */
+  /** For the plural of `resource`. */
   count?: number;
-  /** The act, interpolated with `resource`: `c:delete_resource`, or `c:delete` without a resource. */
+  /** Interpolated with `resource`. */
   label?: TKey;
 }
 
-/** A delete confirmation whose act names what goes, "Delete organization"; a trash can unless `icon` says otherwise. */
+/** A delete confirmation whose act names what goes: "Delete organization". */
 export function DeleteForm({
   onDelete,
   allowOfflineDelete = false,

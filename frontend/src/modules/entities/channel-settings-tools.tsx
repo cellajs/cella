@@ -62,7 +62,7 @@ function ArchiveForMe({ channel, name }: { channel: EnrichedChannel; name: strin
 
   return (
     <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3 border-t pt-4">
-      <p className="min-w-64 flex-1 text-muted-foreground text-sm">
+      <p className="text-muted-foreground min-w-64 flex-1 text-sm">
         <NamedText i18nKey={archived ? 'c:archived_for_me_notice.text' : 'c:archive_for_me_notice.text'} name={name} />
       </p>
       <Button variant="outline" size="sm" onClick={toggleArchived}>
@@ -74,19 +74,18 @@ function ArchiveForMe({ channel, name }: { channel: EnrichedChannel; name: strin
 }
 
 interface DeleteToolCardProps {
-  /** Entity display name, interpolated into the notice and confirm texts. */
+  /** Display name for the notice and confirm texts. */
   name: string;
-  /** i18n resource key for the entity, e.g. 'c:organization'. */
   resource: TKey;
-  /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
+  /** Also the aside anchor's danger id (e.g. 'delete-organization'). */
   dialogId: string;
   renderDialog: () => ReactNode;
-  /** The card's notice; defaults to the permanent-delete notice, interpolated with `name`, `resource` and `values`. */
+  /** Interpolated with `name`, `resource` and `values`. */
   notice?: TKey;
   values?: Record<string, string | number>;
-  /** Why the entity cannot be deleted now: the button is disabled and this note shows below it. */
+  /** Disables the button and shows below it. */
   disabledReason?: TKey;
-  /** The channel the card deletes: below the button, viewers with a membership can also archive it for themselves. */
+  /** Lets a member archive it for themselves, below the button. */
   channel?: EnrichedChannel;
 }
 
@@ -127,7 +126,7 @@ export function DeleteToolCard({
         <span>{t('c:delete_resource', { resource: resourceName })}</span>
       </Button>
       {disabledReason && (
-        <p className="mt-4 flex items-center gap-1 text-muted-foreground text-sm italic">
+        <p className="text-muted-foreground mt-4 flex items-center gap-1 text-sm italic">
           <CircleAlertIcon />
           {t(disabledReason)}
         </p>

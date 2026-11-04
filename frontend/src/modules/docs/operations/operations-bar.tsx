@@ -8,7 +8,7 @@ import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import type { OperationSearch } from '~/modules/docs/types';
 
 interface OperationsBarProps {
-  /** Every operation, unfiltered: the filter options and their counts come from it. */
+  /** Unfiltered: the filter counts come from it. */
   operations: GenOperationSummary[];
   total: number;
   search: OperationSearch;

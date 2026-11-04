@@ -10,15 +10,14 @@ type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   id?: string;
   name: string;
   url?: string | null;
-  /** Shown in place of the image or initials, as the menu shows a workspace. */
+  /** Shown in place of the image or initials. */
   icon?: IconComponent;
   size?: 'default' | 'lg';
-  /** Text in place of the name, such as a sentence that names the entity. */
   children?: ReactNode;
   end?: ReactNode;
 } & Removable;
 
-/** An entity as a chip that starts with its avatar. A user's chip is a pill like its avatar, any other entity's has rounded corners. */
+/** An entity as a chip that starts with its avatar. */
 export function EntityChip({ type, id, name, url, icon, size = 'default', className, children, ...props }: EntityChipProps) {
   const isUser = type === 'user';
 

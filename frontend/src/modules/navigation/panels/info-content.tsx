@@ -36,7 +36,7 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
           <p className="mt-1 flex items-center gap-2 text-xs">
             <StatusDot variant={statusVariant[status]} />
             {t(`c:${status}`)}
-            {component && <span className="truncate font-mono text-muted-foreground">{reason ? `${component}: ${reason}` : component}</span>}
+            {component && <span className="text-muted-foreground truncate font-mono">{reason ? `${component}: ${reason}` : component}</span>}
           </p>
         )}
       </HoverCardContent>
@@ -107,7 +107,7 @@ function StatusTile() {
             variant="ghost"
             size="icon"
             aria-label={t('c:details')}
-            className="-my-1 -mr-1.5 size-7 text-muted-foreground"
+            className="text-muted-foreground -my-1 -mr-1.5 size-7"
             onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
           >
             <ExternalLinkIcon className="size-4" />

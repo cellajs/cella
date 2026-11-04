@@ -55,9 +55,8 @@ function releaseObserver() {
 interface SeenMarkProps {
   productId: string;
   tenantId: string;
-  /** Organization ID for the POST API route. */
   organizationId: string;
-  /** Parent channel entity ID for badge grouping. Defaults to organizationId. */
+  /** Parent channel id for badge grouping. */
   channelId?: string;
   productType: ProductEntityType;
 }

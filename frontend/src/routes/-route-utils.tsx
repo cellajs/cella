@@ -17,6 +17,7 @@ export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => 
 export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <SpinnerPage />);
 
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
+  // biome-ignore lint/correctness/noComponentHookFactories: a route module calls this once at import, so the component keeps one identity
   const ErrorComponent = ({ error, reset }: { error: unknown; reset: () => void }) => (
     <ErrorNotice error={error} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
   );
@@ -25,6 +26,7 @@ export const createErrorComponent = (boundary: BoundaryType, homePath?: string) 
 };
 
 export const createNotFoundComponent = (boundary: BoundaryType, homePath?: string) => {
+  // biome-ignore lint/correctness/noComponentHookFactories: called once per route module at import, like createErrorComponent
   const NotFoundComponent = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
   NotFoundComponent.displayName = `NotFoundComponent(${boundary})`;
   return NotFoundComponent;

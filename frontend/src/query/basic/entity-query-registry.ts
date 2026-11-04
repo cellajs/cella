@@ -32,12 +32,12 @@ export function rowOutsideRange(rows: ItemData[], { afterSeq, untilSeq }: SeqRan
 }
 
 /**
- * Fetches one sequence range for catchup, optionally narrowed to a subtree. Public entities omit organization. `query`
- * holds the range and the chunk limit, ready to spread into the product's list request.
+ * Fetches one sequence range for catchup, optionally narrowed to a subtree. `query` holds the range and the chunk limit,
+ * ready to spread into the product's list request.
  */
 export type RangeFetch = (request: {
-  organizationId: string | null;
-  tenantId: string | null;
+  organizationId: string;
+  tenantId: string;
   channelId?: string;
   query: SeqRange & { limit: number };
 }) => Promise<{ items: ItemData[]; total: number }>;

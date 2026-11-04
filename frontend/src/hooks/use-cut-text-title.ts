@@ -16,6 +16,7 @@ const findCutText = (target: Element) => {
   if (middleCut) return [...middleCut.children].some(isCut) ? { element: middleCut, text: middleCut.dataset.wholeText } : null;
 
   for (let element = target.closest<HTMLElement>('*:not(svg, svg *)'); element; element = element.parentElement) {
+    // biome-ignore lint/performance/useDomNodeTextContent: the title repeats the rendered text, without visually hidden parts
     if (isCut(element)) return { element, text: element.innerText.trim() };
   }
   return null;

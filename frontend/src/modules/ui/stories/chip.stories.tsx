@@ -50,7 +50,7 @@ function PickerField() {
           )}
         </div>
       </div>
-      <p className="mt-2 text-muted-foreground text-xs">opened: {opened}</p>
+      <p className="text-muted-foreground mt-2 text-xs">opened: {opened}</p>
     </div>
   );
 }

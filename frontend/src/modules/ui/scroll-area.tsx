@@ -17,11 +17,10 @@ export function ScrollArea({
 }: ScrollAreaPrimitive.Root.Props & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
-  /** Enable horizontal scrolling (min-width: fit-content on content). */
+  /** Sets min-width: fit-content on the content. */
   horizontalScroll?: boolean;
-  /** Enable auto-scrolling when dragging elements near edges (uses @atlaskit/pragmatic-drag-and-drop). */
+  /** Auto-scrolls while a drag nears an edge. */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
-  /** Disable clicking the scrollbar track to jump scroll position. Only the thumb remains draggable. */
   disableTrackClick?: boolean;
   /** `false` takes the viewport out of the tab order: only for content with its own tab stops, which scroll it already. */
   focusableViewport?: boolean;
@@ -90,7 +89,7 @@ export function ScrollBar({
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        'z-20 flex select-none p-px transition-colors',
+        'z-20 flex p-px transition-colors select-none',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         disableTrackClick && 'pointer-events-none',
@@ -100,7 +99,7 @@ export function ScrollBar({
     >
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className={cn('relative flex-1 rounded-full bg-border', disableTrackClick && 'pointer-events-auto')}
+        className={cn('bg-border relative flex-1 rounded-full', disableTrackClick && 'pointer-events-auto')}
       />
     </ScrollAreaPrimitive.Scrollbar>
   );

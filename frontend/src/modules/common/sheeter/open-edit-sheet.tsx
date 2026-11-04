@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
+import { CopyChip } from '~/modules/common/copy-chip';
 import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ToolCard } from '~/modules/common/tool-card';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
@@ -12,6 +13,8 @@ interface OpenEditSheetOptions {
   resource: TKey;
   /** Names the edited item under the title, usually a `NamedText`. */
   description?: ReactNode;
+  /** An id people quote, such as to support: a chip after the title that copies it. */
+  identifier?: string;
   triggerRef: TriggerRef;
   /** The edit form, rendered in the first card. */
   children: ReactNode;
@@ -30,6 +33,7 @@ export function openEditSheet({
   id,
   resource,
   description,
+  identifier,
   triggerRef,
   children,
   section,
@@ -51,6 +55,7 @@ export function openEditSheet({
       triggerRef,
       side: 'right',
       title,
+      titleAside: identifier && <CopyChip value={identifier} />,
       description,
       // A sectioned sheet shows the badge per section, on the card the form marks.
       titleContent: section ? undefined : <UnsavedBadge title={title} />,

@@ -6,10 +6,9 @@ import { Button } from '~/modules/ui/button';
 
 interface NoRowsProps {
   isFiltered?: boolean;
-  /** Clears the search, offered under a search's empty state. */
   onResetFilters?: () => void;
   isFetching?: boolean;
-  /** Replaces the default empty text while nothing is filtered; it pads itself, as a ContentPlaceholder does. */
+  /** Pads itself, as a ContentPlaceholder does */
   emptyContent?: ReactNode;
 }
 

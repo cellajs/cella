@@ -47,4 +47,3 @@ export const inactiveMembershipsTable = snakeCase.table(
 );
 
 export type InactiveMembershipModel = typeof inactiveMembershipsTable.$inferSelect;
-export type InsertInactiveMembershipModel = typeof inactiveMembershipsTable.$inferInsert;

@@ -4,11 +4,12 @@ name: CI
 permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
-#   • Every PR: cheap checks (lint, pr-title, schema-bust-gate, frontend-build, build-services) for fast feedback.
+#   • Every PR: cheap checks (lint, schema-bust-gate, frontend-build, build-services) for fast feedback.
 #   • Release PR only: the heavy suites (test, storybook-test, all docker-images targets) run on the
 #     release-please PR, which every merge to main refreshes. That PR is what you merge to cut the
 #     release + deploy, so gating its merge gates production. On feature PRs these jobs are skipped.
-# The one required status check is `ci-passed`, the last job, which waits for all the others.
+# The required status check is `ci-passed`, the last job, which waits for all the others. The PR title has its
+# own workflow and check (pr-title.yml).
 on:
   pull_request:
     branches: [main]
@@ -19,32 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lint the PR title as a Conventional Commit.
-  pr-title:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read
-    steps:
-      - name: Lint PR title
-        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            perf
-            refactor
-            revert
-            docs
-            chore
-            build
-            ci
-            style
-            test
-
   # Runs linting. Cheap: runs on both PR (fast feedback) and merge queue (gate).
   lint:
     runs-on: ubuntu-latest
@@ -417,11 +392,11 @@ jobs:
           echo "Bump appConfig.clientCacheVersion (e.g. 'v1' → 'v2') in $CFG and use a 'feat!' PR title so clients wipe stale cache."
           exit 1
 
-  # The one required status check: the `main` ruleset names this job alone, so a job joins the merge gate by joining
+  # The `main` ruleset requires this job and `pr-title`, so a job of this workflow joins the merge gate by joining
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
   ci-passed:
     if: always()
-    needs: [pr-title, lint, frontend-build, build-services, test, docker-images, storybook-test, schema-bust-gate]
+    needs: [lint, frontend-build, build-services, test, docker-images, storybook-test, schema-bust-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
