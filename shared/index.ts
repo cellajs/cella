@@ -73,6 +73,7 @@ export type {
   EntityRole,
   EntityType,
   FederationKey,
+  HomeChannelType,
   Language,
   MenuSection,
   NullableAncestorType,

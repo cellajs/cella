@@ -62,7 +62,7 @@ export const mockCreateAttachmentsBody = () =>
     const { id, name, filename, contentType, size, keys } = attachment;
     // Where the hierarchy homes attachments below the organization, the body names that channel (the deepest home).
     const home = hierarchy.possibleHomeChannels('attachment').find((type) => type !== 'organization');
-    const placement = home && { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] };
+    const placement = home ? { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] } : {};
     return [{ id, name, filename, contentType, size, keys, ...placement, stx: mockStx() }];
   });
 

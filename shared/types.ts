@@ -107,6 +107,9 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
     : never
   : never;
 
+/** The channels below the organization a product row may be homed at: `HomeChannelType<'task'>` gives `'project'`. */
+export type HomeChannelType<T extends ProductEntityType> = Exclude<AncestorChannelType<T>, 'organization'>;
+
 /** Non-ancestor channels declared via `relatedChannels`. */
 export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 

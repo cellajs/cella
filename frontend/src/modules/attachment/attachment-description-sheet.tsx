@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { Suspense } from 'react';
 import type { Attachment } from 'sdk';
-import { hierarchy, isChannel } from 'shared';
+import { hierarchy } from 'shared';
 import { attachmentsCanonicalOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { createDescriptionUpdater } from '~/modules/common/blocknote/description-updater';
 import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
@@ -37,9 +37,8 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
   });
   const attachment = liveRow ?? openedRow;
   const [deepest] = hierarchy.resolveNonNullAncestors('attachment', attachment);
-  const home = deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : null;
-  const homeId = home?.id ?? organizationId;
-  const homeType = home?.type ?? 'organization';
+  const homeId = deepest?.id ?? organizationId;
+  const homeType = deepest?.type ?? 'organization';
 
   const canAsMember = useCan({ asMember: true });
   const canEdit = canAsMember('update', 'attachment', attachment);

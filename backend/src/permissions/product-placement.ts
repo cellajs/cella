@@ -1,13 +1,13 @@
 import type { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import {
-  type AncestorChannelType,
   hierarchy as appHierarchy,
   type ChannelEntityType,
   type EntityHierarchy,
   type EntityIdColumns,
   type EntityType,
   entityIdColumnKey,
+  type HomeChannelType,
   type NullableAncestorType,
   type ProductEntityType,
 } from 'shared';
@@ -17,17 +17,15 @@ import { resolveChannelInScope } from '#/permissions/get-valid-channel';
 import { validUuidSchema } from '#/schemas';
 import type { EntityModel } from '#/tables';
 
-type SubOrgAncestor<T extends ProductEntityType> = Exclude<AncestorChannelType<T>, 'organization'>;
-
 /**
  * The ancestor id columns of a product row below the organization, typed like its table columns: a strict ancestor
  * is `string`, a nullable one `string | null`. Empty for a product that lives in the organization.
  */
 export type ResolvedPlacement<T extends ProductEntityType> = EntityIdColumns<
-  Exclude<SubOrgAncestor<T>, NullableAncestorType<T>> & EntityType,
+  Exclude<HomeChannelType<T>, NullableAncestorType<T>> & EntityType,
   string
 > &
-  EntityIdColumns<Extract<SubOrgAncestor<T>, NullableAncestorType<T>> & EntityType, string | null>;
+  EntityIdColumns<Extract<HomeChannelType<T>, NullableAncestorType<T>> & EntityType, string | null>;
 
 /** The channel a product row lives in. */
 export interface PlacementHome {
