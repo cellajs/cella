@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, EntityType, ProductEntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
 import { type AccessScopedEntityType, type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
@@ -13,10 +13,11 @@ import type {
   PolicyConfiguration,
   PolicyEntry,
   PolicyMatrix,
+  PolicySetter,
 } from './types.ts';
 
-const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly string[], entries: PolicyEntry[]): ChannelPolicyBuilder => {
-  const builder: Record<string, ChannelPolicyBuilder[EntityRole]> = {};
+const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly string[], entries: PolicyEntry[]) => {
+  const builder: Record<string, PolicySetter> = {};
 
   for (const role of roles) {
     builder[role] = (permissions) => {
@@ -37,7 +38,7 @@ const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: reado
     };
   }
 
-  return builder as ChannelPolicyBuilder;
+  return builder;
 };
 
 export interface PermissionsConfigResult {
@@ -65,7 +66,10 @@ export const configurePermissions = (
 
   for (const entityType of permissionableTypes) {
     const entries: PolicyEntry[] = [];
-    const channels = recordFromKeys(channelEntityTypes, (channelType) => createChannelPolicyBuilder(channelType, getRoles(channelType), entries));
+    // Cast: each channel's builder holds the roles the hierarchy declares for it, a pairing `recordFromKeys` cannot follow.
+    const channels = recordFromKeys(channelEntityTypes, (channelType) =>
+      createChannelPolicyBuilder(channelType, getRoles(channelType), entries),
+    ) as ChannelPolicyBuilder;
 
     const config: PolicyConfiguration = {
       entityType,

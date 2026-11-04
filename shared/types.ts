@@ -78,8 +78,11 @@ export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 
 export type EntityRole = (typeof roles.all)[number];
 
+/** The roles the hierarchy declares for one channel, a subset of `EntityRole`. */
+export type ChannelRoleOf<C extends ChannelEntityType> = (typeof hierarchy._roleMap)[C];
+
 /** The organization's own roles, narrower than `EntityRole` in an app whose other channels declare more. */
-export type OrganizationRole = (typeof hierarchy._roleMap)['organization'];
+export type OrganizationRole = ChannelRoleOf<'organization'>;
 
 /** For example `{ organization: 'organizationId' }`. */
 export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;

@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import type { ChannelEntityType, ChannelRoleOf, EntityActionType, EntityType, ProductEntityType } from '../../types.ts';
 import type { RowConditionName } from './row-conditions.ts';
 
 /**
@@ -29,14 +29,15 @@ export type EntityPolicies = PolicyEntry[];
 export type PolicyMatrix = Partial<Record<ChannelEntityType | ProductEntityType, EntityPolicies>>;
 
 /** Permissions are partial: an omitted action denies, so a policy lists only what it grants. */
-export type ChannelPolicyBuilder = {
-  [R in EntityRole]: (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void;
-};
+export type PolicySetter = (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void;
+
+/** Each channel keyed by the roles the hierarchy declares for it, so a role the channel lacks fails to compile. */
+export type ChannelPolicyBuilder = { [C in ChannelEntityType]: Record<ChannelRoleOf<C>, PolicySetter> };
 
 /** Passed to the policy callback once per entity type. */
 export interface PolicyConfiguration {
   entityType: EntityType;
-  channels: Record<ChannelEntityType, ChannelPolicyBuilder>;
+  channels: ChannelPolicyBuilder;
   /** Call at most once per entity type; omitting it leaves the `public` flag dormant. @see public-read.ts */
   publicRead: () => void;
 }
