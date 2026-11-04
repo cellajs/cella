@@ -25,6 +25,9 @@ import { findMembership } from '~/query/enrichment/helpers';
 import { cn } from '~/utils/cn';
 
 const descendants = hierarchy.getOrderedDescendants('organization');
+const organizationRoles = hierarchy.getRoles('organization');
+// A membership types its role as any channel's; matched against this list, it types as an organization role.
+const asOrganizationRole = (role: string | undefined) => organizationRoles.find((organizationRole) => organizationRole === role);
 const lastChannel = descendants.filter(isChannel).at(-1);
 const firstProduct = descendants.find(isProduct);
 
@@ -40,7 +43,7 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   // A role picked in the table shows until the save settles, then the caller's membership.
-  const roleOf = (row: OrganizationRow) => row.role ?? findMembership(myMemberships?.items ?? [], row.id)?.role;
+  const roleOf = (row: OrganizationRow) => row.role ?? asOrganizationRole(findMembership(myMemberships?.items ?? [], row.id)?.role);
 
   const columns: ColumnOrColumnGroup<OrganizationRow>[] = [
     CheckboxColumn,
@@ -113,7 +116,7 @@ export const useColumns = () => {
       renderEditCell: (props) => (
         <RenderEnumSelect
           {...props}
-          options={hierarchy.getRoles('organization')}
+          options={organizationRoles}
           currentValue={roleOf(props.row)}
           setValue={(row, role) => ({ ...row, role })}
           renderOption={(role) => t(role)}
@@ -130,10 +133,10 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
       exportValue: (row) => row.createdBy?.name,
     },
-    ...hierarchy.getRoles('organization').map((role) => ({
+    ...organizationRoles.map((role) => ({
       ...countColumn<OrganizationRow>(`${role}Count`, {
         name: t(`c:${role}`, { count: 2 }),
-        icon: role === 'admin' ? ShieldUserIcon : UserRoundIcon,
+        icon: role === hierarchy.getMostPrivilegedRole('organization') ? ShieldUserIcon : UserRoundIcon,
         get: (row) => row.included.counts?.membership[role],
       }),
       maxWidth: 140,

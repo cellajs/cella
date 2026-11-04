@@ -148,9 +148,11 @@ describe('a remote change of a row with a pending mutation', () => {
   });
 
   it('reads the list again after the server refuses a delete: the row put back missed what arrived while it was pending', async () => {
-    seedHomeList([attachment('att-1'), attachment('att-2')]);
+    // The home list, or a filtered key where attachments also live below the organization.
+    const canonical = attachmentsCanonicalOptions(ctx);
+    queryClient.setQueryData(canonical.queryKey, { items: [attachment('att-1'), attachment('att-2')], total: 2 });
     // A screen shows the list, so the read the refusal starts runs at once.
-    onTestFinished(new QueryObserver(queryClient, attachmentsCanonicalOptions(ctx)).subscribe(() => {}));
+    onTestFinished(new QueryObserver(queryClient, canonical).subscribe(() => {}));
     goOffline(deleteAttachments);
     hooks().remove.mutate([attachment('att-1')]);
     await vi.waitFor(() => expect(queued('delete')).toHaveLength(1));
@@ -167,8 +169,8 @@ describe('a remote change of a row with a pending mutation', () => {
     await settled('delete');
 
     // The row put back is read again once the delete has settled, with the rename it missed.
-    await vi.waitFor(() => expect(queryClient.getQueryState(homeKey)).toMatchObject({ isInvalidated: false, fetchStatus: 'idle' }));
-    expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }, { id: 'att-2' }]);
+    await vi.waitFor(() => expect(queryClient.getQueryState(canonical.queryKey)).toMatchObject({ isInvalidated: false, fetchStatus: 'idle' }));
+    expect(queryClient.getQueryData(canonical.queryKey)?.items).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }, { id: 'att-2' }]);
   });
 
   // The settle took only the fields the edit changed, so the remote edit of another field was gone for good.

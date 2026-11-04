@@ -19,7 +19,10 @@ vi.mock('~/query/realtime/fetch-prioritizer', () => ({
   enqueueRange: (...a: unknown[]) => enqueueRange(...a),
   invalidateUndelivered: (...a: unknown[]) => invalidateUndelivered(...a),
 }));
-vi.mock('~/query/basic/entity-query-registry', () => ({ getEntityQueryKeys: () => ({}) }));
+vi.mock('~/query/basic/entity-query-registry', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/query/basic/entity-query-registry')>()),
+  getEntityQueryKeys: () => ({}),
+}));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'tab-a' }));
 const session = { user: { id: 'user-a' } };
 vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => session } }));
