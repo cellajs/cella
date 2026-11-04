@@ -5,7 +5,7 @@ import process from 'node:process';
 import { chromium } from 'playwright';
 import { appConfig } from 'shared';
 import { manualSteps, screenReaderSteps } from './criteria.ts';
-import { automated, type LedgerRow, product, readLedger } from './ledger.ts';
+import { automated, type LedgerRow, product, readLedger, type Status } from './ledger.ts';
 import { repoRoot } from './session.ts';
 
 /**
@@ -25,7 +25,7 @@ if (!ledger) {
 const { version } = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as { version: string };
 const resultsDir = path.join(import.meta.dirname, '../results');
 
-const statusLabel: Record<string, string> = {
+const statusLabel: Record<Status, string> = {
   supports: 'Supports',
   'partially-supports': 'Partially Supports',
   'does-not-support': 'Does Not Support',
@@ -165,7 +165,7 @@ ${byAgent
   .map((r) => {
     const review = r.evidence.find((e) => e.check === 'review:agent');
     return [
-      `- [ ] **${r.id} ${r.name}** (${r.level}): ${statusLabel[r.status ?? '']}${r.remarks ? `. ${r.remarks}` : ''}`,
+      `- [ ] **${r.id} ${r.name}** (${r.level}): ${r.status ? statusLabel[r.status] : 'Not evaluated yet'}${r.remarks ? `. ${r.remarks}` : ''}`,
       `  - Agent's evidence (${review?.date}): ${review?.summary}`,
     ].join('\n');
   })
