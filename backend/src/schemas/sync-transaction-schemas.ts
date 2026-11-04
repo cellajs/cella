@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { hlcMaxLength, isValidHLC } from '#/core/stx/hlc';
-import { boundedRecord } from '#/schemas/common-schemas';
+import { boundedRecord, idsBodySchema } from '#/schemas/common-schemas';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 
 /** Used for both storage and request validation. */
@@ -25,3 +25,7 @@ export const stxBaseSchema = z
 export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 
 export type StxBase = z.infer<typeof stxBaseSchema>;
+
+/** The optional stx is what prevents echoing the change back to its source. */
+export const idsWithStxBodySchema = (maxItems = 50) =>
+  idsBodySchema(maxItems).extend({ stx: stxBaseSchema.pick({ mutationId: true, sourceId: true }).optional() });

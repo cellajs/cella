@@ -509,7 +509,6 @@ export type {
   PostAppCatchupErrors,
   PostAppCatchupResponse,
   PostAppCatchupResponses,
-  ProductBase,
   ProtectedResourceMetadata,
   PublishOrganizationData,
   PublishOrganizationError,

@@ -69,19 +69,6 @@ export type ChannelBase = {
 };
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
- */
-export type ProductBase = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string | null;
-  description: string | null;
-  entityType: 'attachment';
-  keywords: string;
-};
-
-/**
  * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export type MembershipBase = {
@@ -3106,6 +3093,7 @@ export type GetNotificationsResponses = {
     items: Array<{
       id: string;
       createdAt: string;
+      actorId: string | null;
       type: 'mention' | 'comment' | 'reply';
       entityType: 'attachment';
       subjectId: string;
@@ -3114,11 +3102,10 @@ export type GetNotificationsResponses = {
       channelType: 'organization';
       organizationId: string;
       tenantId: string;
-      actorId: string | null;
+      readAt: string | null;
       actor: UserMinimalBase | null;
       channelName: string;
       subjectTitle: string;
-      readAt: string | null;
     }>;
     unreadCount: number;
   };
@@ -4763,7 +4750,13 @@ export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
     stx?: {
+      /**
+       * Unique mutation ID
+       */
       mutationId: string;
+      /**
+       * Tab/instance identifier for echo prevention
+       */
       sourceId: string;
     };
   };

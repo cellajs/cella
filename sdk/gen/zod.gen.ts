@@ -65,19 +65,6 @@ export const zChannelBase = z.object({
 });
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
- */
-export const zProductBase = z.object({
-  id: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string().nullable(),
-  description: z.string().nullable(),
-  entityType: z.enum(['attachment']),
-  keywords: z.string(),
-});
-
-/**
  * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export const zMembershipBase = z.object({
@@ -1489,21 +1476,21 @@ export const zGetNotificationsQuery = z.object({
 export const zGetNotificationsResponse = z.object({
   items: z.array(
     z.object({
-      id: z.string(),
+      id: z.uuid(),
       createdAt: z.string(),
+      actorId: z.uuid().nullable(),
       type: z.enum(['mention', 'comment', 'reply']),
       entityType: z.enum(['attachment']),
-      subjectId: z.string(),
-      contextId: z.string().nullable(),
-      channelId: z.string(),
+      subjectId: z.uuid(),
+      contextId: z.uuid().nullable(),
+      channelId: z.uuid(),
       channelType: z.enum(['organization']),
-      organizationId: z.string(),
-      tenantId: z.string(),
-      actorId: z.string().nullable(),
+      organizationId: z.uuid(),
+      tenantId: z.string().max(24),
+      readAt: z.string().nullable(),
       actor: zUserMinimalBase.nullable(),
       channelName: z.string(),
       subjectTitle: z.string(),
-      readAt: z.string().nullable(),
     }),
   ),
   unreadCount: z.int().gte(0),
@@ -2172,8 +2159,8 @@ export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
   stx: z
     .object({
-      mutationId: z.string().max(255),
-      sourceId: z.string().max(255),
+      mutationId: z.string().max(36),
+      sourceId: z.string().max(64),
     })
     .optional(),
 });

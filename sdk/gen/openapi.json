@@ -701,45 +701,6 @@
         },
         "x-tags": ["base", "entities", "cella"]
       },
-      "ProductBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["attachment"]
-          },
-          "keywords": {
-            "type": "string"
-          }
-        },
-        "required": ["id", "name", "createdAt", "updatedAt", "description", "entityType", "keywords"],
-        "description": "The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.",
-        "example": {
-          "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
-          "createdAt": "2024-07-02T14:28:38.152Z",
-          "updatedAt": "2024-07-03T04:17:25.780Z",
-          "name": "Capitulus vesco cursim alter.",
-          "description": "Veritas itaque basium a. Sufficio ter nostrum cilicium tersus ara. Earum ascit trans somniculosus.",
-          "keywords": "sint clementia corrigo",
-          "entityType": "attachment"
-        },
-        "x-tags": ["base", "entities", "cella"]
-      },
       "MembershipBase": {
         "type": "object",
         "properties": {
@@ -7211,10 +7172,15 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "createdAt": {
                             "type": "string"
+                          },
+                          "actorId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
                           },
                           "type": {
                             "type": "string",
@@ -7225,25 +7191,30 @@
                             "enum": ["attachment"]
                           },
                           "subjectId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "contextId": {
-                            "type": ["string", "null"]
+                            "type": ["string", "null"],
+                            "format": "uuid"
                           },
                           "channelId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "channelType": {
                             "type": "string",
                             "enum": ["organization"]
                           },
                           "organizationId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "tenantId": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 24
                           },
-                          "actorId": {
+                          "readAt": {
                             "type": ["string", "null"]
                           },
                           "actor": {
@@ -7261,14 +7232,12 @@
                           },
                           "subjectTitle": {
                             "type": "string"
-                          },
-                          "readAt": {
-                            "type": ["string", "null"]
                           }
                         },
                         "required": [
                           "id",
                           "createdAt",
+                          "actorId",
                           "type",
                           "entityType",
                           "subjectId",
@@ -7277,11 +7246,10 @@
                           "channelType",
                           "organizationId",
                           "tenantId",
-                          "actorId",
+                          "readAt",
                           "actor",
                           "channelName",
-                          "subjectTitle",
-                          "readAt"
+                          "subjectTitle"
                         ]
                       }
                     },
@@ -11647,11 +11615,13 @@
                     "properties": {
                       "mutationId": {
                         "type": "string",
-                        "maxLength": 255
+                        "maxLength": 36,
+                        "description": "Unique mutation ID"
                       },
                       "sourceId": {
                         "type": "string",
-                        "maxLength": 255
+                        "maxLength": 64,
+                        "description": "Tab/instance identifier for echo prevention"
                       }
                     },
                     "required": ["mutationId", "sourceId"]

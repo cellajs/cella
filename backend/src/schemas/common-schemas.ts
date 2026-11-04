@@ -183,12 +183,6 @@ export const idsBodySchema = (maxItems = 50) =>
       .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
-/** The optional stx is what prevents echoing the change back to its source. */
-export const idsWithStxBodySchema = (maxItems = 50) =>
-  idsBodySchema(maxItems).extend({
-    stx: z.object({ mutationId: z.string().max(maxLength.field), sourceId: z.string().max(maxLength.field) }).optional(),
-  });
-
 /** The `Location` header of a redirect. */
 export const locationSchema = z.object({ Location: z.string() });
 

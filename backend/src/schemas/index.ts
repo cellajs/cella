@@ -12,7 +12,6 @@ export {
   type IncludeOption,
   idInTenantOrgParamSchema,
   idsBodySchema,
-  idsWithStxBodySchema,
   includeQuerySchema,
   integerQuerySchema,
   languageSchema,
@@ -61,4 +60,4 @@ export {
   paginationSchema,
   productListResponseSchema,
 } from '#/schemas/success-response-schemas';
-export { type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+export { idsWithStxBodySchema, type StxBase, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
