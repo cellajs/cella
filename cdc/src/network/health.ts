@@ -1,4 +1,6 @@
 import process from 'node:process';
+import type { FullHealth } from 'shared/health-app';
+import type { HealthStatus } from 'shared/health-status';
 import { eventLoopLagLimitsMs, getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { resourceLimits } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
@@ -30,7 +32,7 @@ type WorkerHealthDetails = {
 
 /** The worker's health as the worker itself grades it: the one grade the endpoint answers and the API is pushed. */
 export interface WorkerGrade {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: HealthStatus;
   /** Why the status is not healthy, one identifier per rule that holds; the rules that make it unhealthy come first. */
   reasons: string[];
   details: WorkerHealthDetails;
@@ -105,7 +107,7 @@ export function gradeWorker(): WorkerGrade {
 }
 
 /** The body of `GET /health?depth=full`: the grade, with what only the endpoint shows. Answers 503 when unhealthy. */
-export function getHealthResponse(): { response: HealthResponse; httpStatus: number } {
+export function getHealthResponse(): { response: HealthResponse; httpStatus: FullHealth['httpStatus'] } {
   const { status, reasons, details } = gradeWorker();
   const { replication, messagesSent, eventLoopLagMs, ...rest } = details;
 

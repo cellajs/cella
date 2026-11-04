@@ -4,12 +4,13 @@ import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { HealthStatus } from 'shared/health-status';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { askForHelp } from '~/modules/common/error-helpers';
 import { StatusDot, type StatusDotVariant } from '~/modules/common/status-dot';
 import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
-import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/panels/query';
+import { healthQueryOptions } from '~/modules/navigation/panels/query';
 import { type GradedStatusEntry, gradeStatusEntries, worstStatus } from '~/modules/navigation/panels/status-entries';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

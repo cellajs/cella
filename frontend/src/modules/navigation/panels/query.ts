@@ -1,11 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'shared';
-
-export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
-
-export type HealthComponent = { status: HealthStatus; reason?: string };
-
-export type HealthResponse = { status: HealthStatus; components: Record<string, HealthComponent> };
+import type { HealthResponse } from 'shared/health-status';
 
 const healthUrl = `${appConfig.backendUrl}/health?depth=full`;
 const healthPollMs = 30_000;
