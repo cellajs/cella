@@ -1254,7 +1254,9 @@
             "type": "object",
             "properties": {
               "key": {
-                "type": "string"
+                "type": "string",
+                "description": "A federation key in appConfig.federations",
+                "enum": ["surfconext"]
               },
               "label": {
                 "type": "string"
@@ -1537,7 +1539,9 @@
                   "type": "object",
                   "properties": {
                     "key": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A federation key in appConfig.federations",
+                      "enum": ["surfconext"]
                     },
                     "label": {
                       "type": "string"
@@ -3732,7 +3736,9 @@
                         "type": "object",
                         "properties": {
                           "key": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "A federation key in appConfig.federations",
+                            "enum": ["surfconext"]
                           },
                           "label": {
                             "type": "string"

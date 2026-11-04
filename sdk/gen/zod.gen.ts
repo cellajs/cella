@@ -232,7 +232,7 @@ export const zSsoEntry = z.object({
   id: z.string(),
   status: z.enum(['pending', 'active', 'disabled']),
   federation: z.object({
-    key: z.string(),
+    key: z.enum(['surfconext']),
     label: z.string(),
   }),
   institution: z.object({
@@ -301,7 +301,7 @@ export const zMeAuthData = z.object({
       connectionId: z.string(),
       displayName: z.string(),
       federation: z.object({
-        key: z.string(),
+        key: z.enum(['surfconext']),
         label: z.string(),
       }),
       identity: z
@@ -870,7 +870,7 @@ export const zGetAuthHealthResponse = z.object({
   retryAfter: z.number().optional(),
   federations: z.array(
     z.object({
-      key: z.string(),
+      key: z.enum(['surfconext']),
       label: z.string(),
     }),
   ),

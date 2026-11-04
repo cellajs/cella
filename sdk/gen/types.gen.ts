@@ -280,7 +280,10 @@ export type SsoEntry = {
    */
   status: 'pending' | 'active' | 'disabled';
   federation: {
-    key: string;
+    /**
+     * A federation key in appConfig.federations
+     */
+    key: 'surfconext';
     label: string;
   };
   institution: {
@@ -347,7 +350,10 @@ export type MeAuthData = {
     connectionId: string;
     displayName: string;
     federation: {
-      key: string;
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
       label: string;
     };
     /**
@@ -937,7 +943,10 @@ export type GetAuthHealthResponses = {
      * Federations with a connected institution, for the "sign in with your institution" entrance
      */
     federations: Array<{
-      key: string;
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
       label: string;
     }>;
     /**

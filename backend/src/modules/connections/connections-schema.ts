@@ -2,18 +2,11 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
-import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
+import { federationKeySchema } from '#/modules/auth/sso/sso-schema';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
 import { validDomainSchema, validNameSchema, validUrlSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
-
-/** A federation key of this app's config; the enum is listed when the app declares any. */
-const federationKeySchema = z
-  .string()
-  .refine(isFederationKey, { message: 'Unknown federation' })
-  .openapi({ description: 'A federation key in appConfig.federations', ...(federationKeys.length ? { enum: federationKeys } : {}) });
 
 const idpEntityIdSchema = z.string().min(1).max(maxLength.field);
 
