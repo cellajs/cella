@@ -149,14 +149,14 @@ export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
 }
 
 /** The detail queries of `ids` under `detailBase`, their descendants included; null for no ids. */
-function detailsById(detailBase: QueryKey, ids: Iterable<string | number>): QueryFilters | null {
+function detailsById(detailBase: QueryKey, ids: Iterable<string>): QueryFilters | null {
   const idSet = new Set<unknown>(ids);
   if (idSet.size === 0) return null;
   const idIndex = detailBase.length;
   return { queryKey: detailBase, predicate: ({ queryKey }) => idSet.has(queryKey[idIndex]) };
 }
 
-export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
+export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string>) {
   const filters = detailsById(detailBase, ids);
   if (filters) client.removeQueries(filters);
 }
@@ -166,7 +166,7 @@ export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKe
  * lets go of it, since its observer would fetch it again at once. An optimistic delete uses the immediate form: its callbacks
  * read a missing detail as deleted.
  */
-export function removeDetailQueriesOnceUnobserved(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
+export function removeDetailQueriesOnceUnobserved(client: QueryClient, detailBase: QueryKey, ids: Iterable<string>) {
   const filters = detailsById(detailBase, ids);
   if (!filters) return;
 
