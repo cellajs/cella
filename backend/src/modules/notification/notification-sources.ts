@@ -24,7 +24,7 @@ export interface NotificationSource {
  * modules registered before this file loaded, so import order does not matter). Empty when no
  * module declares a source: the machinery is then dormant.
  */
-const sources = new Map<string, NotificationSource>();
+const sources = new Map<ProductEntityType, NotificationSource>();
 
 onBackendModuleRegister((module) => {
   if (!module.notifications) return;
@@ -37,7 +37,7 @@ onBackendModuleRegister((module) => {
 });
 
 /** The source a module declared for this product type; undefined when none did. */
-export function getNotificationSource(entityType: string): NotificationSource | undefined {
+export function getNotificationSource(entityType: ProductEntityType): NotificationSource | undefined {
   return sources.get(entityType);
 }
 
@@ -69,7 +69,7 @@ async function loadContextNames(source: NotificationSource, tx: DbOrTx, ids: str
 
 interface SubjectRef {
   tenantId: string;
-  entityType: string;
+  entityType: ProductEntityType;
   /** The subject or context id; a ref without one is skipped. */
   id: string | null;
 }
@@ -88,7 +88,7 @@ export async function findContextNames(refs: SubjectRef[]): Promise<Map<string, 
 
 /** The refs' ids per tenant and entity type: one tenant transaction and source read each. */
 export function groupByTenantAndType(refs: SubjectRef[]) {
-  const groups = new Map<string, { tenantId: string; entityType: string; ids: Set<string> }>();
+  const groups = new Map<string, { tenantId: string; entityType: ProductEntityType; ids: Set<string> }>();
   for (const { tenantId, entityType, id } of refs) {
     if (!id) continue;
     const key = `${tenantId}:${entityType}`;

@@ -1,9 +1,11 @@
 import type { QueryClient, QueryKey, QueryMeta, SkipToken } from '@tanstack/react-query';
+import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { getEntityRangeFetch, rowOutsideRange, seqOf, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
+import { productTypeOf } from '~/query/cache-migration';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
 import { deletedIdsOf } from '~/query/offline/mutation-variables';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -59,7 +61,7 @@ interface PendingRows {
   deleted: Set<string>;
 }
 
-function pendingRows(client: QueryClient, entityType: string): PendingRows {
+function pendingRows(client: QueryClient, entityType: ProductEntityType): PendingRows {
   return { ids: rowIdsOfMutations(client, entityType, isPending), deleted: rowIdsOfMutations(client, entityType, isPending, deletedIdsOf) };
 }
 
@@ -69,14 +71,14 @@ const union = (a: PendingRows, b: PendingRows): PendingRows => ({
 });
 
 /** The organization's cursor or the home channel's, whichever is further: catchup moves the first, the stream's ranges of the channel the second. */
-function scopeCursor(entityType: string, { organizationId, channelId }: SyncedListScope): number {
+function scopeCursor(entityType: ProductEntityType, { organizationId, channelId }: SyncedListScope): number {
   const store = syncStore.getState();
   const orgSeq = store.getOrgSeq(organizationId, entityType);
   return channelId ? Math.max(orgSeq, store.getChannelSeq(organizationId, channelId, entityType)) : orgSeq;
 }
 
 /** A live range row belongs to a home list when it is homed there, and to a list that spans homes always. */
-function fitsList(entityType: string, queryKey: QueryKey, row: ItemData): boolean {
+function fitsList(entityType: ProductEntityType, queryKey: QueryKey, row: ItemData): boolean {
   const { deletedAt } = asRecord(row);
   if (typeof deletedAt === 'string' && deletedAt.length > 0) return false;
   // A home key ends with its channel's id (`createEntityKeys`), a key that spans homes with its filters.
@@ -103,7 +105,12 @@ function withRange(read: List, rows: ItemData[], fits: (row: ItemData) => boolea
  * moved meanwhile, until it stops or `isCurrent` says a newer read or a cancel replaced this one.
  * @throws {OverlappedChangesError} When a range read fails or answers rows outside its range.
  */
-async function readOverlapped(entityType: string, scope: SyncedListScope, afterSeq: number, isCurrent: () => boolean): Promise<ItemData[]> {
+async function readOverlapped(
+  entityType: ProductEntityType,
+  scope: SyncedListScope,
+  afterSeq: number,
+  isCurrent: () => boolean,
+): Promise<ItemData[]> {
   const rangeFetch = getEntityRangeFetch(entityType);
   const { organizationId, tenantId, channelId } = scope;
   const ranged = new Map<string, ItemData>();
@@ -146,8 +153,13 @@ function markOnceCached(client: QueryClient, queryHash: string, list: List): voi
  * overwrites. The range starts at the cursor the read started at, 0 before the scope's first catchup.
  * @throws {OverlappedChangesError} When the overlapped changes cannot be read and the list has data, which the failed read keeps.
  */
-async function readAgainstDeltas(client: QueryClient, read: () => Promise<List>, queryKey: QueryKey, scope: SyncedListScope): Promise<List> {
-  const entityType = String(queryKey[0]);
+async function readAgainstDeltas(
+  client: QueryClient,
+  read: () => Promise<List>,
+  entityType: ProductEntityType,
+  queryKey: QueryKey,
+  scope: SyncedListScope,
+): Promise<List> {
   const queryHash = client.defaultQueryOptions({ queryKey }).queryHash;
   const token = {};
   newestReads.set(queryHash, token);
@@ -206,7 +218,9 @@ export function syncedListOptions<T extends ListOptions<T>>(options: T, scope?: 
 export function syncedListOptions<T extends PagedListOptions<T>>(options: T): T;
 export function syncedListOptions(options: AnyListOptions, scope?: SyncedListScope): AnyListOptions {
   const { queryKey } = options;
-  const entityType = String(queryKey[0]);
+  // A key that names no product has no cursor or queued writes for the sync rules to read.
+  const entityType = productTypeOf(queryKey);
+  if (!entityType) return options;
 
   if ('getNextPageParam' in options) {
     const { queryFn: readPage } = options;
@@ -233,7 +247,7 @@ export function syncedListOptions(options: AnyListOptions, scope?: SyncedListSco
       queryFn: async ({ client, meta }: Omit<ListReadContext<QueryKey>, 'queryKey' | 'signal'>) => {
         const pendingAtStart = pendingRows(client, entityType);
         const read = async () => readList({ client, queryKey, meta, signal: neverAborted });
-        const list = scope ? await readAgainstDeltas(client, read, queryKey, scope) : await read();
+        const list = scope ? await readAgainstDeltas(client, read, entityType, queryKey, scope) : await read();
         return keepPendingRows(client, queryKey, list, pendingAtStart, pendingRows(client, entityType), true);
       },
     },

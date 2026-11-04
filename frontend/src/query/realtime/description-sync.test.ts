@@ -1,4 +1,4 @@
-import type { EntityType, ProductEntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
@@ -34,9 +34,8 @@ const { registerDescriptionColumns } = await import('~/modules/common/blocknote/
 const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
 
-// The synthetic 'task' type exists only in this file's shared mock, hence the casts.
-const task = 'task' as EntityType;
-const taskProduct = 'task' as ProductEntityType;
+// The synthetic 'task' type exists only in this file's shared mock, hence the cast.
+const task = 'task' as ProductEntityType;
 
 type TaskRow = {
   id: string;
@@ -102,7 +101,7 @@ function buildPendingUpdate(id: string) {
 }
 
 afterEach(() => {
-  registerDescriptionColumns(taskProduct, []);
+  registerDescriptionColumns(task, []);
   queryClient.clear();
 });
 
@@ -124,7 +123,7 @@ describe('Yjs-owned fields on a server row', () => {
     'keeps a collaborative patch in every cached copy over a read that lags the relay, detail cached: $withDetail',
     async ({ withDetail }) => {
       seedCaches(row('older'), { withDetail });
-      patchCollaborativeDescription(taskProduct, row('older'), 'newer');
+      patchCollaborativeDescription(task, row('older'), 'newer');
       // The relay has not saved yet: the server row holds the older body under the seeded row's stamp.
       serverReturns(row('older'));
 
@@ -138,7 +137,7 @@ describe('Yjs-owned fields on a server row', () => {
 
   it('takes the description from a server write of it, which carries a new stamp', async () => {
     seedCaches(row('older'));
-    patchCollaborativeDescription(taskProduct, row('older'), 'newer');
+    patchCollaborativeDescription(task, row('older'), 'newer');
     serverReturns(row('saved', { stx: written({ description: 'T2' }) }));
 
     await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
@@ -150,7 +149,7 @@ describe('Yjs-owned fields on a server row', () => {
 
   it('keeps a patch on a row never edited since its create when another field is written meanwhile', async () => {
     seedCaches(row('created', { stx: written({}) }));
-    patchCollaborativeDescription(taskProduct, row('created', { stx: written({}) }), 'edited');
+    patchCollaborativeDescription(task, row('created', { stx: written({}) }), 'edited');
     // Another user's write of a different field: the stale row stamps that field alone.
     serverReturns(row('created', { name: 'Reordered', stx: written({ name: 'T5' }) }));
 
@@ -172,7 +171,7 @@ describe('Yjs-owned fields on a server row', () => {
   });
 
   it('guards a derived field by the description stamp', async () => {
-    registerDescriptionColumns(taskProduct, ['keywords']);
+    registerDescriptionColumns(task, ['keywords']);
     seedCaches(row('patched', { keywords: 'patched words' }));
     serverReturns(row('older', { keywords: 'older words' }));
 

@@ -22,8 +22,8 @@ const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
 vi.mock('~/query/offline/hlc', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
-const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
-vi.mock('~/query/realtime/view-declaration', () => ({ resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a) }));
+const resolveChannelPath = vi.fn((_channelId: string): string | null => null);
+vi.mock('~/query/realtime/view-declaration', () => ({ resolveChannelPath: (channelId: string) => resolveChannelPath(channelId) }));
 
 // Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
 vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
@@ -137,7 +137,7 @@ describe('fetch-prioritizer', () => {
 
   it('narrows a covering fetch no further than the channel every due channel lies under', async () => {
     const knownPaths: Record<string, string> = { 'proj-a': 'org-1/course-1/proj-a', 'proj-b': 'org-1/course-1/proj-b' };
-    resolveChannelPath.mockImplementation((_type, channelId) => knownPaths[channelId] ?? null);
+    resolveChannelPath.mockImplementation((channelId) => knownPaths[channelId] ?? null);
 
     enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
     enqueueRange({ ...base, channelId: 'proj-b', afterSeq: 8, untilSeq: 12 });

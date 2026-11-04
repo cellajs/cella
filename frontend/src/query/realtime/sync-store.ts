@@ -45,8 +45,8 @@ interface SyncStoreState {
   trackOrg: (organizationId: string) => void;
   /** Drop a stale org from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
   removeOrg: (organizationId: string) => void;
-  setOrgSeq: (organizationId: string, entityType: string, seq: number) => void;
-  getOrgSeq: (organizationId: string, entityType: string) => number;
+  setOrgSeq: (organizationId: string, entityType: ProductEntityType, seq: number) => void;
+  getOrgSeq: (organizationId: string, entityType: ProductEntityType) => number;
   setSignalVersion: (organizationId: string, type: string, version: number) => void;
   getSignalVersion: (organizationId: string, type: string) => number;
   /**
@@ -56,8 +56,8 @@ interface SyncStoreState {
    * read before a version taken here sets it back, and the signal runs at most twice more: nothing is lost.
    */
   noteHeardSignal: (organizationId: string, type: string, version: number) => void;
-  setChannelSeq: (organizationId: string, channelId: string, entityType: string, seq: number) => void;
-  getChannelSeq: (organizationId: string, channelId: string, entityType: string) => number;
+  setChannelSeq: (organizationId: string, channelId: string, entityType: ProductEntityType, seq: number) => void;
+  getChannelSeq: (organizationId: string, channelId: string, entityType: ProductEntityType) => number;
   /** Build the view-driven catchup body: one org view per (org, entityType). */
   getCatchupViews: (entityTypes: readonly ProductEntityType[]) => CatchupView[];
   reset: () => void;

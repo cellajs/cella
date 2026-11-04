@@ -1,5 +1,5 @@
 import '~/query/tests/query-client-env';
-import type { EntityType } from 'shared';
+import type { ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Synthetic sub-org hierarchy as a real builder instance: 'task' is a product homed at the
@@ -34,8 +34,8 @@ const { queryClient } = await import('~/query/query-client');
 const { fetchRangeAndPatch, removeEntityDetailsBelow } = await import('~/query/realtime/cache-ops');
 
 // The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
-const TASK = 'task' as EntityType;
-const comment = 'comment' as EntityType;
+const TASK = 'task' as ProductEntityType;
+const comment = 'comment' as ProductEntityType;
 
 describe('realtime cache ops', () => {
   afterEach(() => {

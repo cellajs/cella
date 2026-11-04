@@ -47,9 +47,9 @@ export type RangeFetch = (request: {
 }) => Promise<{ items: ItemData[]; total: number }>;
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
-const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
-const rangeFetchRegistry = new Map<string, RangeFetch>();
-const equalityFilterKeysRegistry = new Map<string, readonly string[]>();
+const entityQueryKeysRegistry = new Map<EntityType, EntityQueryKeys>();
+const rangeFetchRegistry = new Map<EntityType, RangeFetch>();
+const equalityFilterKeysRegistry = new Map<EntityType, readonly string[]>();
 
 const sentinelOrg = '__org__';
 const sentinelHome = '__home__';
@@ -84,17 +84,19 @@ export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQuer
 }
 
 /** Throws if the entity type was not registered. All types must register before stream/cache code runs. */
-export function getEntityQueryKeys(entityType: string): EntityQueryKeys {
+export function getEntityQueryKeys(entityType: EntityType): EntityQueryKeys {
   const keys = entityQueryKeysRegistry.get(entityType);
   if (!keys) throw new Error(`No query keys registered for entity type: ${entityType}`);
   return keys;
 }
 
-export function hasEntityQueryKeys(entityType: string): boolean {
-  return entityQueryKeysRegistry.has(entityType);
+/** The one guard for an entity type read back from a cache key or a stored record: true when a module registered its keys. */
+export function hasEntityQueryKeys(entityType: unknown): entityType is EntityType {
+  const registered: ReadonlyMap<unknown, EntityQueryKeys> = entityQueryKeysRegistry;
+  return registered.has(entityType);
 }
 
-export function getRegisteredEntityTypes(): string[] {
+export function getRegisteredEntityTypes(): EntityType[] {
   return Array.from(entityQueryKeysRegistry.keys());
 }
 
@@ -103,7 +105,7 @@ export function getRegisteredProductEntityTypes(): ProductEntityType[] {
 }
 
 /** Undefined when the entity type does not support range fetching. */
-export function getEntityRangeFetch(entityType: string): RangeFetch | undefined {
+export function getEntityRangeFetch(entityType: ProductEntityType): RangeFetch | undefined {
   return rangeFetchRegistry.get(entityType);
 }
 
@@ -116,6 +118,6 @@ export function registerEqualityFilterKeys(entityType: EntityType, filterKeys: r
 }
 
 /** Undefined when the entity type declared no equality filter keys: every filtered list refetches on a new row. */
-export function getEqualityFilterKeys(entityType: string): readonly string[] | undefined {
+export function getEqualityFilterKeys(entityType: ProductEntityType): readonly string[] | undefined {
   return equalityFilterKeysRegistry.get(entityType);
 }
