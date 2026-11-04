@@ -17,7 +17,8 @@
     "pg": "^8.23.1",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
-    "uuidv7": "^1.2.1"
+    "uuidv7": "^1.2.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
