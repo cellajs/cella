@@ -1,5 +1,4 @@
 import type { GetMyMembershipsResponse } from 'sdk';
-import { isProduct } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
@@ -10,7 +9,7 @@ export function getRouteOrganizationId(): string | null {
   for (const match of getRouter().state.matches) {
     const context = match.context;
     if (context && 'organization' in context && context.organization) {
-      return (context.organization as { id: string }).id;
+      return context.organization.id;
     }
   }
   return null;
@@ -73,8 +72,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
 }
 
 /** The one sync priority: viewed scopes live, muted scopes on open, the others in the background. */
-export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
-  if (!isProduct(entityType)) return tierOnOpen;
+export function getSyncTier(organizationId: string, channelId: string | null): SyncTier {
   if (isViewingChannel(organizationId, channelId)) return tierViewing;
   if (isMutedOrArchived(organizationId, channelId)) return tierOnOpen;
   return tierBackground;

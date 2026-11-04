@@ -73,7 +73,7 @@ function readLocalAssets(): { assets: SeedAsset[]; files: LocalFile[] } {
       filename: `${basename}${extname(original.path)}`,
       contentType: original.contentType,
       convertedContentType: byVariant.get('converted')?.contentType ?? null,
-      size: String(original.size),
+      size: original.size,
       keys,
     });
     files.push(...byVariant.values());

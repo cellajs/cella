@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import type { FieldPath, FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
+import type { FieldPath, FieldPathValue, FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { useForm, useFormState } from 'react-hook-form';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { flushKvWrites } from '~/query/idb-kv-storage';
@@ -96,10 +96,12 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   }, [isDirty]);
 
   useEffect(() => {
-    const draftData = getDraftForm<TFieldValues>(formId);
+    const draftData = getDraftForm(formId);
 
     if (draftData) {
-      for (const [key, value] of Object.entries(draftData)) form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
+      // The store keeps drafts untyped; these values are the ones saveDraft took from this form.
+      for (const [key, value] of Object.entries(draftData))
+        form.setValue(key as FieldPath<TFieldValues>, value as FieldPathValue<TFieldValues, FieldPath<TFieldValues>>, { shouldDirty: true });
     }
 
     setLoading(false);

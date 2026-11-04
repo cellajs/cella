@@ -1,5 +1,5 @@
+import { type HealthResponse, type HealthStatus, statusRank } from 'shared/health-status';
 import type { TKey } from '~/lib/i18n-locales';
-import type { HealthResponse, HealthStatus } from '~/modules/navigation/panels/query';
 
 /** One status entry users recognise, graded by the worst of the backend health components it is built from. */
 interface StatusEntry {
@@ -28,8 +28,6 @@ const statusEntries: readonly StatusEntry[] = [
   { id: 'ai_assistants', label: 'c:ai_assistants', description: 'c:ai_assistants_status.text', components: ['mcp'] },
   { id: 'connected_apps', label: 'c:connected_apps', description: 'c:connected_apps_status.text', components: ['oauth'] },
 ];
-
-const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
 
 /** The worst status among graded entries; healthy when there are none. */
 export const worstStatus = (graded: GradedStatusEntry[]) =>

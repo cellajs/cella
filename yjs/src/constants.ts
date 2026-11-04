@@ -1,4 +1,4 @@
-import type { YjsDocKey } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocKey } from 'shared';
 
 /** Grace period after the last client leaves before the session's log is compacted and the session forgotten. */
 export const yjsCleanupDelayMs = 5 * 60 * 1000;
@@ -38,18 +38,3 @@ export const yjsAwarenessMaxStateBytes = 4096;
 export function docKey({ tenantId, entityType, entityId }: YjsDocKey): string {
   return `${tenantId}:${entityType}:${entityId}`;
 }
-
-/**
- * Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`. The
- * frontend's `yjsMessageTypes` (yjs-connections.ts) must match.
- */
-export const yjsMessageTypes = {
-  Sync: 0,
-  Awareness: 1,
-  Generation: 4,
-  /**
-   * Empty body, to the sender alone, after each of its Step2 or Update frames the relay logged, found empty or dropped
-   * as covered by a pending reply.
-   */
-  Saved: 5,
-} as const;

@@ -71,10 +71,11 @@ export async function runApply(context: InfraContext): Promise<void> {
     engine,
   });
   if (declined) await discard();
-  if (completed && verified === false) endAction(1);
   if (completed) {
     await startBlockedTarget(context, operator).catch((error) =>
       console.warn(`${warningMark} Could not start the blocked target again (${errorMessage(error)}): \`${actionCommand('start-deploy')}\` does.`),
     );
   }
+  // A verified difference is reported, not a failure of the apply: the target still starts, and the exit code says to look.
+  if (completed && verified === false) endAction(1);
 }

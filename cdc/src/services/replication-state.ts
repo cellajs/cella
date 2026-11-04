@@ -5,15 +5,15 @@ import { resourceLimits } from '../constants';
 const { delaysMs } = resourceLimits.reread;
 const { rereadUnhealthyMs } = resourceLimits.health;
 
-/** The failure the worker is reading again from. */
-export interface ReplicationFailure {
+/** The failure the worker is reading again from. A type alias: the health report's `failure` is a record, which an interface does not satisfy. */
+export type ReplicationFailure = {
   /** The first change of the flush that failed; null when no subscription could start and none had failed before. */
   position: string | null;
   /** When the first failure at this position was, whatever its cause: how long the worker has made no progress. */
   since: string;
   /** The message of the last failure. */
   error: string;
-}
+};
 
 class ReplicationStateManager {
   /** True from the moment the loop subscribes until that subscription ends. */

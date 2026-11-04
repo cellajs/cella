@@ -1,3 +1,4 @@
+import type { StreamSignalType } from 'shared/stream-signal-types';
 import { type AppStreamSubscriber, accessDecisions } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { Audience } from '#/modules/entities/stream/audiences';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
@@ -25,7 +26,7 @@ function audienceSubscribers(audience: Audience): AppStreamSubscriber[] {
  *   versioned signal adds the `version` its change gave it, when the worker sent one.
  */
 export async function sendSignal(
-  type: string,
+  type: StreamSignalType,
   audience: Audience,
   about: { organizationId?: string | null; subjectId?: string | null; version?: number },
 ): Promise<void> {

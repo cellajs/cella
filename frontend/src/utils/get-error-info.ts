@@ -1,7 +1,7 @@
 import { SearchParamError } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { ApiError } from '~/lib/api';
-import type { TKey } from '~/lib/i18n-locales';
+import { isTKey, type TKey } from '~/lib/i18n-locales';
 
 /** What an error page or toast describes: a failed API call, any other thrown error, or nothing at all. */
 export type ErrorNoticeError = ApiError | Error | null;
@@ -19,7 +19,7 @@ const statusKeys: Partial<Record<number, TKey>> = {
 const errorNamespaces = ['appError', 'error'];
 
 /** The key with the first namespace that holds it. */
-const findKey = (key: string) => errorNamespaces.map((namespace) => `${namespace}:${key}`).find((prefixed) => i18n.exists(prefixed));
+const findKey = (key: string) => errorNamespaces.map((namespace) => `${namespace}:${key}`).find(isTKey);
 
 /**
  * The keys of the error namespaces that may describe the error, most specific first. An error names itself; the
@@ -72,11 +72,11 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const resource = error instanceof ApiError && error.entityType ? i18n.t(error.entityType) : undefined;
   const options = resource ? { resource } : {};
 
-  const title = key ? i18n.t(key as TKey, options) : getFallbackTitle(error);
+  const title = key ? i18n.t(key, options) : getFallbackTitle(error);
 
   const errorMessage = getErrorMessage(error);
   const isInfo = error instanceof ApiError && error.severity === 'info';
-  const text = textKey && !isInfo ? i18n.t(textKey as TKey, options) : errorMessage;
+  const text = textKey && !isInfo ? i18n.t(textKey, options) : errorMessage;
 
   return { title, message: text === title ? '' : text };
 };

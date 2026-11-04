@@ -1,3 +1,4 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -11,6 +12,7 @@ import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-
 import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
 import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
+import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
@@ -26,14 +28,12 @@ const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
   );
 };
 
-interface FindUsersPaginatedOpts {
+interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema>, 'sort' | 'order'> {
   /** Searches name and email. */
   q?: string;
   role?: SystemRoleModel['role'];
   /** Limits the list to members of one of these organizations; unset lists every user. */
   memberOfAny?: string[];
-  sort: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
-  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }

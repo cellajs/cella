@@ -1,10 +1,6 @@
-import type { Block } from '@blocknote/core';
 import { isRecord } from './as-record.ts';
 import { isUuid } from './entity-id.ts';
-import { getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
-
-/** Tolerant of custom block types. */
-export type DescriptionBlock = { type: string; props?: Record<string, unknown>; content?: unknown[]; children?: DescriptionBlock[] };
+import { type DescriptionBlock, getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
 
 export type DescriptionCounts = {
   /** True with more than one top-level block. */
@@ -56,24 +52,16 @@ export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionC
   return counts;
 };
 
-type SummarySource = { source: DescriptionBlock | undefined; summaryLength: number };
-
-/** The first non-checklist block with text, else the first block, with its plain-text length. */
-export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => {
+/** The first non-checklist block with text, else the first block, with its plain-text length; the block keeps its caller's type. */
+export const findSummarySource = <B extends DescriptionBlock>(blocks: B[]): { source: B | undefined; summaryLength: number } => {
   const source =
     blocks.find(
       ({ type, content }) =>
-        type !== 'checklistItem' &&
-        Array.isArray(content) &&
-        content.some((item) => {
-          const text = (item as { text?: unknown }).text;
-          return typeof text === 'string' && text.trim().length > 0;
-        }),
+        type !== 'checklistItem' && Array.isArray(content) && content.some(({ text }) => typeof text === 'string' && text.trim().length > 0),
     ) || blocks[0];
 
-  const summaryLength = Array.isArray(source?.content)
-    ? (source.content as { text?: string }[]).reduce((len, item) => len + (item.text?.length ?? 0), 0)
-    : 0;
+  const content = source?.content;
+  const summaryLength = Array.isArray(content) ? content.reduce((len, { text }) => len + (typeof text === 'string' ? text.length : 0), 0) : 0;
 
   return { source, summaryLength };
 };
@@ -163,11 +151,7 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
     () => '',
   );
   const keywords = attempt(
-    () =>
-      withoutNul(getSearchableTextFromBlocks(blocks as Block[]))
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, keywordsBudget),
+    () => withoutNul(getSearchableTextFromBlocks(blocks)).replace(/\s+/g, ' ').trim().slice(0, keywordsBudget),
     () => '',
   );
   const { summary, summaryLength } = attempt(() => {

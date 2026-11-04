@@ -36,12 +36,14 @@ export const withAttachmentRef = <S extends { config: { propSchema: Record<strin
 /** Presentation lives in the frontend: icons and titles in notify-options, colors in the blocknote styles.css. */
 const notifyTypeValues = ['warning', 'error', 'info', 'success'] as const;
 
+export type NotifyType = (typeof notifyTypeValues)[number];
+
 export const notifyConfig = {
   type: 'notify' as const,
   propSchema: {
     textAlignment: defaultProps.textAlignment,
     textColor: defaultProps.textColor,
-    type: { default: notifyTypeValues[0] as string, values: [...notifyTypeValues] as string[] },
+    type: { default: notifyTypeValues[0], values: notifyTypeValues },
   },
   content: 'inline' as const,
 };

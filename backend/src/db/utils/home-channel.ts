@@ -1,6 +1,6 @@
 import { getColumns, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, type ChannelEntityType, hierarchy, isChannel, type ProductEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, type ProductEntityType } from 'shared';
 
 /**
  * SQL for a product row's home channel id: deepest non-null ancestor, the organization as the
@@ -24,6 +24,6 @@ export function homeChannelOf(
   row: Record<string, unknown> & { organizationId: string },
 ): { id: string; type: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(productType, row);
-  if (deepest && isChannel(deepest.type)) return { id: deepest.id, type: deepest.type };
+  if (deepest) return { id: deepest.id, type: deepest.type };
   return { id: row.organizationId, type: 'organization' };
 }

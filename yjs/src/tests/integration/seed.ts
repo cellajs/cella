@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
-import { appConfig, hierarchy, toColumnName, toTableName } from 'shared';
+import { appConfig, hierarchy, toColumnName, toTableName, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
-import type { YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';

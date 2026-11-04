@@ -1,9 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, lt, notInArray, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
+import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
@@ -56,12 +58,10 @@ const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
-interface FindTenantsPaginatedOpts {
+interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>, 'sort' | 'order'> {
   /** Searches the name. */
   q?: string;
   status?: TenantModel['status'];
-  sort: 'name' | 'createdAt';
-  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }

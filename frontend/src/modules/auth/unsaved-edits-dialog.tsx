@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductEntityType } from 'shared';
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import type * as Y from 'yjs';
-import { cachedEntityName, firstLineOf, firstLineOfUpdates, yDocFragment, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
+import { cachedEntityName, firstLineOf, firstLineOfUpdates, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
 import { type UnstoredYDoc, watchUnstoredYDocs } from '~/modules/common/blocknote/yjs-connections';
 import { loadYDoc, type UnsavedYDoc, watchUnsavedYDocs } from '~/modules/common/blocknote/yjs-store';
 import { Button } from '~/modules/ui/button';
@@ -54,7 +55,7 @@ export function useUnsavedEdits(): UnsavedEdit[] | undefined {
 
 /** The first line of an unsaved document, from memory, its parked row or its stored rows. */
 async function readFirstLine({ entityId, entityType, parked, yDoc }: Omit<UnsavedEdit, 'key'>): Promise<string | null> {
-  if (yDoc) return firstLineOf(yDoc.getXmlFragment(yDocFragment));
+  if (yDoc) return firstLineOf(yDoc.getXmlFragment(yjsFragmentName));
   if (!entityType) return null;
   if (parked) {
     const row = await getLocalUserDb()?.unsaveableYDocs.where('[entityType+entityId]').equals([entityType, entityId]).last();

@@ -1,12 +1,11 @@
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { createSignedToken, startRelayServer, until } from '../helpers';
 import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, storedState } from './seed';
 

@@ -1,4 +1,4 @@
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntitiesIntoListCaches } from '~/query/basic/apply-entity-to-lists';
@@ -20,7 +20,7 @@ import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
 /** A remote write skips the row while this is true, so optimistic state survives; the row the server returns when the mutation settles replaces the cached one. */
-function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
+function hasPendingMutationForEntity(entityType: ProductEntityType, entityId: string): boolean {
   return hasMutationOfRow(queryClient, entityType, entityId, isPending);
 }
 
@@ -30,7 +30,7 @@ function isSoftDeleted(entity: ItemData): boolean {
 }
 
 /** Removes one entity from detail and list caches without triggering a refetch; an organizationId narrows the list scan to that org. */
-export function removeEntity(entityType: string, entityId: string, organizationId?: string): void {
+export function removeEntity(entityType: ProductEntityType, entityId: string, organizationId?: string): void {
   if (!hasEntityQueryKeys(entityType)) return;
   const keys = getEntityQueryKeys(entityType);
   queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
@@ -42,7 +42,7 @@ export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, 
 }
 
 /** Drops every cached detail of a type whose ancestor ids name the channel, the organization included, once nothing observes it. */
-export function removeEntityDetailsBelow(entityType: string, channelId: string): void {
+export function removeEntityDetailsBelow(entityType: ProductEntityType, channelId: string): void {
   const keys = getEntityQueryKeys(entityType);
   const columns = hierarchy.getOrderedAncestors(entityType).map((type) => appConfig.entityIdColumnKeys[type]);
   const below = queryClient
@@ -85,7 +85,7 @@ function filtersExcludeRow(filters: object[], row: Record<string, unknown>, equa
  * Invalidates org-scoped lists whose key tail holds a filter object; canonical home lists have string-only tails and are patched directly.
  * A list whose declared equality filters exclude every new row keeps its data, see `registerEqualityFilterKeys`.
  */
-function invalidateFilteredLists(entityType: string, orgListKey: readonly unknown[], newRows: ItemData[]): void {
+function invalidateFilteredLists(entityType: ProductEntityType, orgListKey: readonly unknown[], newRows: ItemData[]): void {
   const equalityKeys = getEqualityFilterKeys(entityType);
   queryClient.invalidateQueries({
     queryKey: orgListKey,
@@ -105,7 +105,7 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
  * detail and rows new to a list guard against the cached copy read before any write.
  * @returns The rows every list lacked, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerRows(entityType: string, rows: ItemData[], keys: EntityQueryKeys, organizationId: string | null): ItemData[] {
+function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: EntityQueryKeys, organizationId: string | null): ItemData[] {
   const tombstones = rows.filter(isSoftDeleted);
   const live = rows.filter((row) => {
     if (isSoftDeleted(row)) return false;
@@ -155,7 +155,7 @@ export interface RangeFetchResult {
 const failedRange = (status: Exclude<RangeFetchResult['status'], 'ok'>): RangeFetchResult => ({ status, items: [], reachedSeq: 0 });
 
 export async function fetchRangeAndPatch(
-  entityType: string,
+  entityType: ProductEntityType,
   organizationId: string | null,
   tenantId: string | null,
   range: SeqRange,

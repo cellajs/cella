@@ -65,19 +65,6 @@ export const zChannelBase = z.object({
 });
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
- */
-export const zProductBase = z.object({
-  id: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string().nullable(),
-  description: z.string().nullable(),
-  entityType: z.enum(['attachment']),
-  keywords: z.string(),
-});
-
-/**
  * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export const zMembershipBase = z.object({
@@ -145,6 +132,14 @@ export const zStreamSignal = z.object({
   organizationId: z.string().nullable(),
   subjectId: z.string().nullable(),
   version: z.int().optional(),
+});
+
+/**
+ * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export const zStreamError = z.object({
+  code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
+  message: z.string(),
 });
 
 /**
@@ -237,7 +232,7 @@ export const zSsoEntry = z.object({
   id: z.string(),
   status: z.enum(['pending', 'active', 'disabled']),
   federation: z.object({
-    key: z.string(),
+    key: z.enum(['surfconext']),
     label: z.string(),
   }),
   institution: z.object({
@@ -306,7 +301,7 @@ export const zMeAuthData = z.object({
       connectionId: z.string(),
       displayName: z.string(),
       federation: z.object({
-        key: z.string(),
+        key: z.enum(['surfconext']),
         label: z.string(),
       }),
       identity: z
@@ -435,7 +430,13 @@ export const zTenant = z.object({
   status: z.enum(['active', 'suspended', 'archived']),
   statusChangedAt: z.string(),
   restrictions: z.object({
-    quotas: z.record(z.string(), z.int().gte(0)),
+    quotas: z.object({
+      user: z.int().gte(0),
+      organization: z.int().gte(0),
+      attachment: z.int().gte(0),
+      serviceAccount: z.int().gte(0),
+      apiKey: z.int().gte(0),
+    }),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
       invitationMailsPerDay: z.int().gte(0),
@@ -745,7 +746,7 @@ export const zAttachment = z.object({
   filename: z.string().max(255),
   contentType: z.string().max(255),
   convertedContentType: z.string().max(255).nullable(),
-  size: z.string().max(255),
+  size: z.int().gte(-9007199254740991).lte(9007199254740991),
   keys: z.object({
     original: z.string().max(2048),
     preview: z.string().max(2048).optional(),
@@ -869,7 +870,7 @@ export const zGetAuthHealthResponse = z.object({
   retryAfter: z.number().optional(),
   federations: z.array(
     z.object({
-      key: z.string(),
+      key: z.enum(['surfconext']),
       label: z.string(),
     }),
   ),
@@ -1466,7 +1467,7 @@ export const zGetNotificationsQuery = z.object({
     .optional()
     .default('false'),
   limit: z.int().gte(1).lte(100).optional().default(30),
-  before: z.iso.datetime().optional(),
+  before: z.iso.datetime().max(64).optional(),
 });
 
 /**
@@ -1475,21 +1476,21 @@ export const zGetNotificationsQuery = z.object({
 export const zGetNotificationsResponse = z.object({
   items: z.array(
     z.object({
-      id: z.string(),
+      id: z.uuid(),
       createdAt: z.string(),
+      actorId: z.uuid().nullable(),
       type: z.enum(['mention', 'comment', 'reply']),
       entityType: z.enum(['attachment']),
-      subjectId: z.string(),
-      contextId: z.string().nullable(),
-      channelId: z.string(),
+      subjectId: z.uuid(),
+      contextId: z.uuid().nullable(),
+      channelId: z.uuid(),
       channelType: z.enum(['organization']),
-      organizationId: z.string(),
-      tenantId: z.string(),
-      actorId: z.string().nullable(),
+      organizationId: z.uuid(),
+      tenantId: z.string().max(24),
+      readAt: z.string().nullable(),
       actor: zUserMinimalBase.nullable(),
       channelName: z.string(),
       subjectTitle: z.string(),
-      readAt: z.string().nullable(),
     }),
   ),
   unreadCount: z.int().gte(0),
@@ -2158,8 +2159,8 @@ export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
   stx: z
     .object({
-      mutationId: z.string().max(255),
-      sourceId: z.string().max(255),
+      mutationId: z.string().max(36),
+      sourceId: z.string().max(64),
     })
     .optional(),
 });
@@ -2220,7 +2221,7 @@ export const zCreateAttachmentsBody = z
       name: z.string().max(255).optional(),
       filename: z.string().max(255),
       contentType: z.string().max(255),
-      size: z.string().max(255),
+      size: z.int().gte(0),
       keys: z.object({
         original: z.string().max(2048),
         preview: z.string().max(2048).optional(),
@@ -2679,7 +2680,7 @@ export const zCreateServiceAccountBody = z.object({
         .min(1)
         .max(4)
         .nullish(),
-      expiresAt: z.iso.datetime().optional(),
+      expiresAt: z.iso.datetime().max(64).optional(),
     })
     .optional(),
 });
@@ -2748,7 +2749,7 @@ export const zCreateApiKeyBody = z.object({
     .min(1)
     .max(4)
     .nullish(),
-  expiresAt: z.iso.datetime().optional(),
+  expiresAt: z.iso.datetime().max(64).optional(),
   rollFrom: z.string().max(50).optional(),
   rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
 });

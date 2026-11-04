@@ -2,16 +2,18 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { trace } from '@opentelemetry/api';
 import pino from 'pino';
+import type { z } from 'zod';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
 import type { OtelLogTransportOptions } from './otel-log-transport.ts';
 import { type OtlpSink, type OtlpSinkEnv, resolveOtlpSink } from './otlp-sink.ts';
 import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils/failed-query.ts';
 import { scrubText, scrubUrl } from './utils/scrub-url.ts';
+import type { workerEnvBase } from './utils/worker-env.ts';
 
 interface CreateLoggerOptions {
   /** Pino level. Absent, tests log nothing and other modes log at `info`. */
-  level?: string;
+  level?: Severity | 'silent';
   isProduction: boolean;
   isTest: boolean;
   /** Keys censored in every line (fast-redact paths): secret columns and transport keys. Required, so no logger skips it. */
@@ -234,11 +236,7 @@ export const createLog = (logger: pino.Logger): Log => {
   };
 };
 
-interface WorkerLogEnv extends OtlpSinkEnv {
-  NODE_ENV: string;
-  PINO_LOG_LEVEL?: string;
-  RELEASE_SHA?: string;
-}
+type WorkerLogEnv = Pick<z.infer<typeof workerEnvBase>, 'NODE_ENV' | 'PINO_LOG_LEVEL' | 'RELEASE_SHA'> & OtlpSinkEnv;
 
 /**
  * For cdc and yjs: same construction, with the OTel service name `<app-slug>-<suffix>`. `redactPaths` is the

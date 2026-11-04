@@ -8,10 +8,9 @@ import { syncStore } from '~/query/realtime/sync-store';
 /** Sub-organization channel types: every channel below the organization carries a server-computed `path`. */
 const nestedChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) !== null);
 
-/** Root-first id path of a cached channel row, or null when uncached. A null `channelType` (the caller knows only the id) searches every nested type. */
-export function resolveChannelPath(channelType: string | null, channelId: string): string | null {
-  const types = channelType ? [channelType] : nestedChannelTypes;
-  for (const type of types) {
+/** Root-first id path of a cached channel row of any nested type, or null when uncached. */
+export function resolveChannelPath(channelId: string): string | null {
+  for (const type of nestedChannelTypes) {
     const row = findInCache<{ id: string; path?: string | null }>(type, channelId);
     if (row?.path) return row.path;
   }

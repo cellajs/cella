@@ -1,34 +1,8 @@
+import { type HealthComponent, type HealthStatus, worstStatus } from 'shared/health-status';
 import { eventLoopLagLimitsMs } from 'shared/utils/event-loop-monitor';
 import type { CdcWorkerHealth } from '#/lib/cdc-websocket';
 
-export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
-
-/** One service or dependency in the health envelope: `status` grades it, the open `details` bag diagnoses it. */
-export interface HealthComponent {
-  status: HealthStatus;
-  /** How the status was obtained: `local` self-check, worker `push`, or active `probe`. */
-  checkedVia?: 'local' | 'push' | 'probe';
-  /** Age of the underlying data (ms), set for pushed/cached reports. */
-  ageMs?: number | null;
-  /** Round-trip latency of the check (ms), set for db/probe checks. */
-  latencyMs?: number | null;
-  /** Short machine-readable reason when degraded/unhealthy. */
-  reason?: string;
-  details?: Record<string, unknown>;
-}
-
-export interface HealthResponse {
-  status: HealthStatus;
-  uptime: number;
-  components: Record<string, HealthComponent>;
-}
-
-const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
-
-/** Return the worse (higher-severity) of two statuses. */
-export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
-  return statusRank[a] >= statusRank[b] ? a : b;
-}
+export { type HealthComponent, type HealthResponse, type HealthStatus, worstStatus } from 'shared/health-status';
 
 /** The worst status among the components: one unhealthy component, a worker's included, makes the rollup unhealthy. */
 export function rollupStatus(components: Record<string, HealthComponent>): HealthStatus {
@@ -105,10 +79,7 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
 
   // The diagnostics are public, and a flush failure's message carries the failed SQL: the worker's log keeps it.
   const { failure, ...workerDetails } = health?.details ?? {};
-  const publicFailure =
-    typeof failure === 'object' && failure !== null
-      ? { failure: Object.fromEntries(Object.entries(failure).filter(([key]) => key !== 'error')) }
-      : {};
+  const publicFailure = failure ? { failure: Object.fromEntries(Object.entries(failure).filter(([key]) => key !== 'error')) } : {};
 
   return {
     status: worstStatus(health?.status ?? 'degraded', ownReason ? 'degraded' : 'healthy'),

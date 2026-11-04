@@ -1,3 +1,4 @@
+import type { YjsDocScope } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { yjsCleanupDelayMs } from '../constants';
 import { deferred, flushMicrotasks, mockScope, mockWebSocket, storageMock } from './helpers';
@@ -10,8 +11,8 @@ const { findStaleDocuments, deleteDocument } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
 const { getCollab, joinCollab, withDocumentLock } = await import('../sync/session-manager');
 
-const staleRow = (overrides: Record<string, unknown> = {}) => ({
-  entityType: 'task',
+const staleRow = (overrides: Partial<YjsDocScope> = {}): YjsDocScope => ({
+  entityType: 'attachment',
   entityId: 'entity-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',

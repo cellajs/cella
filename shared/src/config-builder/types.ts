@@ -59,7 +59,9 @@ export interface FederationConfig {
    */
   mfaAcr?: readonly string[];
 }
-export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
+/** The OAuth providers the template signs in with; `enabledOAuthProviders` picks among them. */
+export const oauthProviders = ['github', 'google', 'microsoft'] as const;
+export type BaseOAuthProviders = (typeof oauthProviders)[number];
 
 /** Only host and region are required; app-config derives the rest from the slug. */
 export interface S3ConfigInput {
@@ -216,9 +218,10 @@ export interface ProductEmbedding<P extends string = string> {
   readonly lifecycle?: 'shared' | 'owned';
 }
 
-export interface MenuStructureItem<C extends string = string> {
+/** A `menuStructure` section: the channel type `C` it lists, and the channel type `S` nested under each of its items. */
+export interface MenuStructureItem<C extends string = string, S extends string = C> {
   entityType: C;
-  subentityType: C | null;
+  subentityType: S | null;
   /**
    * A subentity membership auto-creates one on the parent, by default with the least-privileged
    * fitting role (`member` where the parent vocabulary has it). `carryRole` keeps the invited

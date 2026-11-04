@@ -1,5 +1,4 @@
 import type { StreamChange } from 'sdk';
-import { isProduct } from 'shared';
 import { frontendSpanNames } from 'shared/tracing';
 import { withSpanSync } from '~/lib/tracing';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
@@ -19,9 +18,6 @@ export function handleStreamChange(change: StreamChange): void {
   const spanAttributes = { 'sync.entity_type': entityType, 'sync.action': action, 'sync.row_count': subjectIds.length };
 
   withSpanSync(frontendSpanNames.messageProcess, spanAttributes, () => {
-    // The check guards a product type this bundle does not know.
-    if (!isProduct(entityType)) return console.error('Unknown entityType in app stream change:', entityType);
-
     // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
     for (const subjectId of subjectIds) publishChangeEvent({ action, entityType, organizationId, channelId: change.channelId, subjectId });
 

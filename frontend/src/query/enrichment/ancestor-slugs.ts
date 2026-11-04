@@ -7,7 +7,7 @@ import { getField } from '~/utils/get-field';
 import { objectKeys } from '~/utils/object-keys';
 
 /** entityType -> entityId -> slug */
-export type SlugIndex = Map<string, Map<string, string>>;
+export type SlugIndex = Map<ChannelEntityType, Map<string, string>>;
 
 function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | null): boolean {
   if (!a && !b) return false;

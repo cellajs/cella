@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { appConfig, type YjsDocKey } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { decodeLogNotice, encodeLogNotice, type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 
 describe('log notices', () => {
-  const key = { tenantId: 'tenant-1', entityType: 'attachment', entityId: randomUUID() };
+  const key = { tenantId: 'tenant-1', entityType: 'attachment', entityId: randomUUID() } satisfies YjsDocKey;
 
   it('round-trip appended rows and a retirement, as keys only', () => {
     const notices: LogNotice[] = [
@@ -18,7 +19,8 @@ describe('log notices', () => {
   });
 
   it('stays far below the 8,000-byte limit on a notification, at the longest keys', () => {
-    const longestKey = { tenantId: 'x'.repeat(tenantIdLength), entityType: 'x'.repeat(50), entityId: randomUUID() };
+    const entityType = appConfig.productEntityTypes.reduce((longest, type) => (type.length > longest.length ? type : longest));
+    const longestKey = { tenantId: 'x'.repeat(tenantIdLength), entityType, entityId: randomUUID() };
     expect(Buffer.byteLength(encodeLogNotice({ ...longestKey, logIds: [Number.MAX_SAFE_INTEGER] }))).toBeLessThan(250);
     const fullest = { ...longestKey, logIds: Array.from({ length: yjsLogNoticeMaxIds }, (_, n) => Number.MAX_SAFE_INTEGER - n) };
     expect(Buffer.byteLength(encodeLogNotice(fullest))).toBeLessThan(8000);

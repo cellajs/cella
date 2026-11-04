@@ -23,8 +23,4 @@ export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   });
 
 /** The result of a batch operation that returns no rows: the rejected ids, optionally by reason. */
-export interface BatchResponseEmpty {
-  data: [];
-  rejectedIds: string[];
-  rejectionReasons?: Record<string, string[]>;
-}
+export type BatchResponseEmpty = z.infer<ReturnType<typeof batchResponseSchema<z.ZodNever>>>;

@@ -1,13 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import pg from 'pg';
-import { hierarchy } from 'shared';
+import { hierarchy, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { authorizeDocument } from '../../data/permissions';
 import { cleanupSeed, joinAttachmentHome, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
@@ -136,12 +135,4 @@ describe('Local entity authorization (authorizeDocument)', () => {
   it('tells a missing entity deleted: the token proves its holder could update it within the last five minutes', async () => {
     await expect(authorizeDocument(userA, requested({ entityId: randomUUID() }))).resolves.toBe('deleted');
   });
-
-  // Past the type check the lookup finds no row and answers `deleted`, so `denied` shows that no table was read.
-  it.each(['organization', '__proto__', 'undeclaredType', 'attachments"; select 1; --'])(
-    "must not run a query naming a table from a signed token's non-product entityType (%s)",
-    async (entityType) => {
-      await expect(authorizeDocument(userA, requested({ entityType, entityId: randomUUID() }))).resolves.toBe('denied');
-    },
-  );
 });

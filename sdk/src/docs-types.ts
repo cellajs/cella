@@ -1,4 +1,5 @@
-import type { ConfigSwitch } from 'shared';
+import type { AccessScopedEntityType, ConfigSwitch } from 'shared';
+import type { OpenApiTagKind } from '../../backend/src/core/openapi-tag-registry.ts';
 
 /**
  * Types for the docs JSON that `src/openapi-parser` derives from the spec, which Vite serves at `/static/docs.gen/`
@@ -24,7 +25,7 @@ export interface GenExtensionValueMetadata {
 /** Custom OpenAPI extension, provided by the backend via info.x-extensions. */
 export interface GenExtensionDefinition {
   /** OpenAPI extension key, e.g., 'x-guard' */
-  key: string;
+  key: `x-${string}`;
   /** Identifier for frontend property names, e.g., 'xGuard' */
   id: string;
   description: string;
@@ -39,7 +40,7 @@ export interface GenOperationTool {
   /** Whether the tool is marked for the client to ask its user first; a hint, nothing enforces it */
   approvalRequired: boolean;
   /** The entity the tool acts on: with the method it names the scope a token needs */
-  entity: string;
+  entity: AccessScopedEntityType;
 }
 
 /** Minimal operation data for table and sidebar rendering. */
@@ -77,7 +78,7 @@ export interface GenTagSummary {
   name: string;
   description?: string;
   count: number;
-  kind?: string;
+  kind?: OpenApiTagKind;
 }
 
 export interface GenInfoSummary {

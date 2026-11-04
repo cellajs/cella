@@ -1,6 +1,7 @@
+import type { YjsDocKey, YjsDocScope } from 'shared';
+import { yjsMessageTypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket } from 'ws';
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
-import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsLiveStampMs, yjsMaxBufferedBytes, yjsMessageTypes } from '../constants';
+import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsLiveStampMs, yjsMaxBufferedBytes } from '../constants';
 import { deleteDocument, stampDocumentLive } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';

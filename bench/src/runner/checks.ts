@@ -1,6 +1,6 @@
 import type { Distribution } from './metrics';
 import { count, ms } from './report';
-import type { CheckResult, Checks, Stat } from './types';
+import { type CheckResult, type Checks, splitMetricKey } from './types';
 
 /** What the checks read of a finished run. */
 export interface CheckInput {
@@ -10,7 +10,6 @@ export interface CheckInput {
 }
 
 const DEFAULT_MAX_REJECTED_SHARE = 1;
-const STATS = new Set<string>(['p50', 'p95', 'p99', 'max', 'min', 'mean']);
 
 const pct = (n: number) => `${n.toFixed(1)}%`;
 
@@ -61,10 +60,8 @@ export function evaluateChecks(checks: Checks<string, string>, { counters, distr
   if (!short) {
     for (const [key, limit] of Object.entries(checks.thresholds ?? {})) {
       if (limit === undefined) continue;
-      const dot = key.lastIndexOf('.');
-      const name = key.slice(0, dot);
-      const stat = key.slice(dot + 1);
-      const value = STATS.has(stat) ? distributions[name]?.[stat as Stat] : undefined;
+      const { name, stat } = splitMetricKey(key);
+      const value = stat ? distributions[name]?.[stat] : undefined;
       if (value === undefined) {
         results.push({ id: 'threshold', ok: false, text: `${key}: nothing recorded` });
         continue;

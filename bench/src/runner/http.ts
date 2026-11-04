@@ -109,7 +109,7 @@ export function createHttpClient(target: string, metrics: Metrics, signal: Abort
             headers: res.headers,
             body: buffer,
             text: () => buffer.toString('utf8'),
-            json: <T>() => JSON.parse(buffer.toString('utf8')) as T,
+            json: () => JSON.parse(buffer.toString('utf8')),
           });
         });
       });

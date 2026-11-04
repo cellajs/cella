@@ -6,15 +6,16 @@ const { queryClient } = await import('~/query/query-client');
 const { mergeServerResponse } = await import('../update-success-utils');
 const { registerDescriptionColumns } = await import('~/modules/common/blocknote/yjs-owned-fields');
 
-// The server derives `keywords` from a task's description.
-registerDescriptionColumns('task' as ProductEntityType, ['keywords']);
+// The server derives `keywords` from a task's description; 'task' is synthetic, hence the cast.
+const task = 'task' as ProductEntityType;
+registerDescriptionColumns(task, ['keywords']);
 
 describe('mergeServerResponse', () => {
   const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '100:0001:aaaaa' } };
   const serverStx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { description: '200:0001:aaaaa' } };
   const cached = {
     id: 'e1',
-    entityType: 'task',
+    entityType: task,
     name: 'Typed meanwhile',
     status: 'open',
     description: 'old',
@@ -26,7 +27,7 @@ describe('mergeServerResponse', () => {
   };
   const serverEntity = {
     id: 'e1',
-    entityType: 'task',
+    entityType: task,
     name: 'Server name',
     status: 'done elsewhere',
     description: 'new',

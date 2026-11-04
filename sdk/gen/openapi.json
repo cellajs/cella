@@ -794,45 +794,6 @@
         },
         "x-tags": ["base", "entities", "cella"]
       },
-      "ProductBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["attachment"]
-          },
-          "keywords": {
-            "type": "string"
-          }
-        },
-        "required": ["id", "name", "createdAt", "updatedAt", "description", "entityType", "keywords"],
-        "description": "The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.",
-        "example": {
-          "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
-          "createdAt": "2024-07-02T14:28:38.152Z",
-          "updatedAt": "2024-07-03T04:17:25.780Z",
-          "name": "Capitulus vesco cursim alter.",
-          "description": "Veritas itaque basium a. Sufficio ter nostrum cilicium tersus ara. Earum ascit trans somniculosus.",
-          "keywords": "sint clementia corrigo",
-          "entityType": "attachment"
-        },
-        "x-tags": ["base", "entities", "cella"]
-      },
       "MembershipBase": {
         "type": "object",
         "properties": {
@@ -1083,6 +1044,25 @@
           "type": "membership.changed",
           "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
           "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
+        },
+        "x-tags": ["data", "entities", "cella"]
+      },
+      "StreamError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "description": "Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
+        "example": {
+          "code": "session_replaced",
+          "message": "Session replaced"
         },
         "x-tags": ["data", "entities", "cella"]
       },
@@ -1367,7 +1347,9 @@
             "type": "object",
             "properties": {
               "key": {
-                "type": "string"
+                "type": "string",
+                "description": "A federation key in appConfig.federations",
+                "enum": ["surfconext"]
               },
               "label": {
                 "type": "string"
@@ -1650,7 +1632,9 @@
                   "type": "object",
                   "properties": {
                     "key": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "A federation key in appConfig.federations",
+                      "enum": ["surfconext"]
                     },
                     "label": {
                       "type": "string"
@@ -2173,10 +2157,29 @@
             "properties": {
               "quotas": {
                 "type": "object",
-                "additionalProperties": {
-                  "type": "integer",
-                  "minimum": 0
+                "properties": {
+                  "user": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "organization": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "attachment": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "serviceAccount": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "apiKey": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
                 },
+                "required": ["user", "organization", "attachment", "serviceAccount", "apiKey"],
                 "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
               },
               "rateLimits": {
@@ -3308,8 +3311,9 @@
             "description": "MIME type of the server-converted variant; null when none."
           },
           "size": {
-            "type": "string",
-            "maxLength": 255
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "keys": {
             "type": "object",
@@ -3408,7 +3412,7 @@
           "filename": "ick_thoroughly_coincide.text",
           "contentType": "application/epub+zip",
           "convertedContentType": null,
-          "size": "7202058",
+          "size": 7202058,
           "keys": {
             "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
           },
@@ -3826,7 +3830,9 @@
                         "type": "object",
                         "properties": {
                           "key": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "A federation key in appConfig.federations",
+                            "enum": ["surfconext"]
                           },
                           "label": {
                             "type": "string"
@@ -7309,6 +7315,7 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 64,
               "format": "date-time",
               "description": "createdAt of the last row of the previous page"
             },
@@ -7332,10 +7339,15 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "createdAt": {
                             "type": "string"
+                          },
+                          "actorId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
                           },
                           "type": {
                             "type": "string",
@@ -7346,25 +7358,30 @@
                             "enum": ["attachment"]
                           },
                           "subjectId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "contextId": {
-                            "type": ["string", "null"]
+                            "type": ["string", "null"],
+                            "format": "uuid"
                           },
                           "channelId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "channelType": {
                             "type": "string",
                             "enum": ["organization"]
                           },
                           "organizationId": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                           },
                           "tenantId": {
-                            "type": "string"
+                            "type": "string",
+                            "maxLength": 24
                           },
-                          "actorId": {
+                          "readAt": {
                             "type": ["string", "null"]
                           },
                           "actor": {
@@ -7382,14 +7399,12 @@
                           },
                           "subjectTitle": {
                             "type": "string"
-                          },
-                          "readAt": {
-                            "type": ["string", "null"]
                           }
                         },
                         "required": [
                           "id",
                           "createdAt",
+                          "actorId",
                           "type",
                           "entityType",
                           "subjectId",
@@ -7398,11 +7413,10 @@
                           "channelType",
                           "organizationId",
                           "tenantId",
-                          "actorId",
+                          "readAt",
                           "actor",
                           "channelName",
-                          "subjectTitle",
-                          "readAt"
+                          "subjectTitle"
                         ]
                       }
                     },
@@ -11208,7 +11222,7 @@
                       "filename": "finally_wherever_nasalise.php",
                       "contentType": "image/gif",
                       "convertedContentType": null,
-                      "size": "3838237",
+                      "size": 3838237,
                       "keys": {
                         "original": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php"
                       },
@@ -11252,7 +11266,7 @@
                       "filename": "buzzing_brr_hm.rmi",
                       "contentType": "audio/3gpp2",
                       "convertedContentType": null,
-                      "size": "1155007",
+                      "size": 1155007,
                       "keys": {
                         "original": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi"
                       },
@@ -11374,7 +11388,7 @@
                   "name": "ick_thoroughly_coincide.text",
                   "filename": "ick_thoroughly_coincide.text",
                   "contentType": "application/epub+zip",
-                  "size": "7202058",
+                  "size": 7202058,
                   "keys": {
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
@@ -11408,8 +11422,8 @@
                       "description": "MIME type of the uploaded file (e.g. image/png)."
                     },
                     "size": {
-                      "type": "string",
-                      "maxLength": 255
+                      "type": "integer",
+                      "minimum": 0
                     },
                     "keys": {
                       "type": "object",
@@ -11431,7 +11445,8 @@
                           "maxLength": 2048
                         }
                       },
-                      "required": ["original"]
+                      "required": ["original"],
+                      "description": "Storage object keys per variant, keyed by variant name; only generated variants are present."
                     },
                     "groupId": {
                       "type": ["string", "null"],
@@ -11499,7 +11514,7 @@
                       "filename": "inasmuch.xhtml",
                       "contentType": "application/vnd.oasis.opendocument.spreadsheet",
                       "convertedContentType": null,
-                      "size": "9057832",
+                      "size": 9057832,
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
@@ -11543,7 +11558,7 @@
                       "filename": "victoriously.mp4",
                       "contentType": "image/jpeg",
                       "convertedContentType": null,
-                      "size": "4961674",
+                      "size": 4961674,
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },
@@ -11628,7 +11643,7 @@
                       "filename": "inasmuch.xhtml",
                       "contentType": "application/vnd.oasis.opendocument.spreadsheet",
                       "convertedContentType": null,
-                      "size": "9057832",
+                      "size": 9057832,
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
@@ -11672,7 +11687,7 @@
                       "filename": "victoriously.mp4",
                       "contentType": "image/jpeg",
                       "convertedContentType": null,
-                      "size": "4961674",
+                      "size": 4961674,
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },
@@ -11804,11 +11819,13 @@
                     "properties": {
                       "mutationId": {
                         "type": "string",
-                        "maxLength": 255
+                        "maxLength": 36,
+                        "description": "Unique mutation ID"
                       },
                       "sourceId": {
                         "type": "string",
-                        "maxLength": 255
+                        "maxLength": 64,
+                        "description": "Tab/instance identifier for echo prevention"
                       }
                     },
                     "required": ["mutationId", "sourceId"]
@@ -14217,6 +14234,7 @@
                       },
                       "expiresAt": {
                         "type": "string",
+                        "maxLength": 64,
                         "format": "date-time"
                       }
                     },
@@ -14783,6 +14801,7 @@
                   },
                   "expiresAt": {
                     "type": "string",
+                    "maxLength": 64,
                     "format": "date-time"
                   },
                   "rollFrom": {

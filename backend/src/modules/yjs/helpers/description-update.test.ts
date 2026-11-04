@@ -1,6 +1,7 @@
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, yjsFragmentName } from './description-update';
+import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson } from './description-update';
 
 const paragraph = (id: string, text: string) => ({
   id,

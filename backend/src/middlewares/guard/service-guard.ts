@@ -9,7 +9,6 @@ import { routeTarget } from '#/middlewares/guard/route-target';
 import { loadCachedTokenGrant, type TokenGrantEntry, type UserToken } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
-import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
@@ -49,8 +48,7 @@ export const setActorFromToken = async (ctx: Context<Env>, jwt: string, scope: {
       id: user.id,
       bindings: memberships,
       scopes: token.scopes,
-      // A string the enum does not know (an app renamed a method) reads as unknown, which a tenant policy refuses.
-      authStrategy: (token.authStrategy as AuthStrategy | null) ?? null,
+      authStrategy: token.authStrategy,
       connectionId: token.connectionId,
     });
     ctx.set('isSystemAdmin', false);

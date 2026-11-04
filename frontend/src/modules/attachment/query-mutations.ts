@@ -1,12 +1,12 @@
 import type { Attachment, CreateAttachmentsData, UpdateAttachmentData } from 'sdk';
 import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
 import { zCreateAttachmentsBody } from 'sdk/zod.gen';
-import { type AncestorChannelType, appConfig, type EntityIdColumnKey, hierarchy } from 'shared';
+import { appConfig, type EntityIdColumnKey, type HomeChannelType, hierarchy } from 'shared';
 import type { CreateVariables, DeleteVariables, UpdateVariables } from '~/query/offline/mutation-variables';
 
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 /** Id keys of the sub-organization ancestors an app homes attachments under (none in cella); null means org-homed. */
-type PlacementKey = EntityIdColumnKey<Exclude<AncestorChannelType<'attachment'>, 'organization'>>;
+type PlacementKey = EntityIdColumnKey<HomeChannelType<'attachment'>>;
 const placementKeys: readonly string[] = hierarchy
   .getOrderedAncestors('attachment')
   .filter((type) => type !== 'organization')
@@ -28,7 +28,7 @@ export async function createAttachmentsMutationFn({ tenantId, organizationId, da
   const body = data.map((item) => {
     const row: Record<string, unknown> = { ...item, stx };
     for (const key of placementKeys) if (row[key] == null) delete row[key];
-    return row as CreateAttachmentItem;
+    return zCreateAttachmentsBody.element.parse(row);
   });
   return createAttachments({ path: { tenantId, organizationId }, body });
 }

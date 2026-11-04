@@ -18,15 +18,6 @@ export const mockChannelBase = (key = 'context-entity:default') =>
     };
   });
 
-export const mockProductBase = (key = 'product-entity:default') =>
-  withFakerSeed(key, () => ({
-    ...mockEntityCore(),
-    name: faker.lorem.sentence({ min: 2, max: 5 }),
-    description: faker.lorem.paragraph(),
-    keywords: faker.lorem.words(3),
-    entityType: 'attachment' as const,
-  }));
-
 /** The reference of a user who wrote a row. */
 export const mockActorRef = (key = 'actor-ref:default', id?: string) =>
   withFakerSeed(key, () => {

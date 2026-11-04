@@ -2,7 +2,7 @@ import { advanceClock } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /** StxBase with the fields a write wrote, which the yjs module reads inside its transaction (stored in jsonb, not part of API schema). */
-type StxStored = StxBase & { changedFields?: string[] };
+export type StxStored = StxBase & { changedFields?: string[] };
 
 /**
  * The stx stored with a write: the incoming mutation and source ids, the stored field timestamps with the incoming ones

@@ -1,8 +1,9 @@
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import { recordFromKeys } from 'shared';
 import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
-import type { DmlMessage, ParseMessageResult } from '../pipeline/parse-message';
+import type { CdcActivity, DmlMessage, ParseMessageResult } from '../pipeline/parse-message';
 import type { ProductRow } from '../services/api-messages';
 import type { PendingEvent, TableMeta } from '../types';
+import { channelIdColumnKeys } from '../utils/channel-columns';
 
 /**
  * A DML message as the pgoutput plugin delivers it: snake_case columns, the old image on updates and deletes. The cast
@@ -25,35 +26,38 @@ export function dmlMessage(
 export const tableMetaOf = (kind: TableMeta['kind'], type: string): TableMeta =>
   ({ kind, type, table: { [Symbol.for('drizzle:Name')]: `${type}s` } }) as unknown as TableMeta;
 
-const defaultEntity: NonNullable<InsertActivityModel['entityType']> = 'attachment';
+const defaultEntity: NonNullable<CdcActivity['entityType']> = 'attachment';
 const defaultTable = 'attachments';
 
 /** The seeded mock is the same on every call, and reseeding faker for each one is slow in a test of many changes, so it is built once. */
-let cdcActivityDefaults: InsertActivityModel | undefined;
+let cdcActivityDefaults: CdcActivity | undefined;
 
-/** Activity with explicit test-friendly defaults, based on the backend mockActivity shape. */
-export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): InsertActivityModel {
-  cdcActivityDefaults ??= mockActivity('cdc:default', {
-    action: 'create',
-    entityType: defaultEntity,
-    resourceType: null,
-    tableName: defaultTable,
-    type: `${defaultEntity}.created` as InsertActivityModel['type'],
-    tenantId: 'tenant-1',
-    userId: 'user-1',
-    organizationId: 'org-1',
-    changedFields: null,
-    stx: null,
-  }) as InsertActivityModel;
+/** Activity with explicit test-friendly defaults, based on the backend mockActivity shape and named in every channel. */
+export function mockCdcActivity(overrides: Partial<CdcActivity> = {}): CdcActivity {
+  cdcActivityDefaults ??= {
+    ...recordFromKeys(channelIdColumnKeys, () => null),
+    ...mockActivity('cdc:default', {
+      action: 'create',
+      entityType: defaultEntity,
+      resourceType: null,
+      tableName: defaultTable,
+      type: `${defaultEntity}.created` as CdcActivity['type'],
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      organizationId: 'org-1',
+      changedFields: null,
+      stx: null,
+    }),
+  };
   return { ...cdcActivityDefaults, ...overrides };
 }
 
 /** ParseMessageResult fixture. */
 export function mockParseResult(
   overrides: {
-    action?: InsertActivityModel['action'];
-    entityType?: InsertActivityModel['entityType'];
-    resourceType?: InsertActivityModel['resourceType'];
+    action?: CdcActivity['action'];
+    entityType?: CdcActivity['entityType'];
+    resourceType?: CdcActivity['resourceType'];
     subjectId?: string;
     organizationId?: string | null;
     tableMeta?: 'entity' | 'resource';
@@ -64,12 +68,12 @@ export function mockParseResult(
 
   const activity = mockCdcActivity({
     action: overrides.action ?? 'create',
-    entityType: overrides.entityType ?? (kind === 'entity' ? (type as InsertActivityModel['entityType']) : null),
+    entityType: overrides.entityType ?? (kind === 'entity' ? (type as CdcActivity['entityType']) : null),
     resourceType: overrides.resourceType ?? null,
     subjectId: overrides.subjectId ?? `entity-${Math.random().toString(36).slice(2, 8)}`,
     organizationId: overrides.organizationId ?? null,
     tableName: type,
-    type: `${type}.${overrides.action === 'delete' ? 'deleted' : 'created'}` as InsertActivityModel['type'],
+    type: `${type}.${overrides.action === 'delete' ? 'deleted' : 'created'}` as CdcActivity['type'],
   });
 
   return { activity, rowData: { id: activity.subjectId ?? 'unknown' }, oldRowData: null, tableMeta: tableMetaOf(kind, type) };
@@ -97,7 +101,7 @@ export function changeEvent({
   lsn = `0/${rowData.id}`,
 }: {
   tableMeta: TableMeta;
-  action: InsertActivityModel['action'];
+  action: CdcActivity['action'];
   rowData: Row;
   oldRowData?: Row | null;
   organizationId?: string | null;
@@ -108,8 +112,8 @@ export function changeEvent({
     activity: mockCdcActivity({
       action,
       organizationId,
-      entityType: entity ? (tableMeta.type as InsertActivityModel['entityType']) : null,
-      resourceType: entity ? null : (tableMeta.type as InsertActivityModel['resourceType']),
+      entityType: entity ? (tableMeta.type as CdcActivity['entityType']) : null,
+      resourceType: entity ? null : (tableMeta.type as CdcActivity['resourceType']),
     }),
     rowData: rowData as ParseMessageResult['rowData'],
     oldRowData: oldRowData as ParseMessageResult['oldRowData'],
@@ -120,9 +124,9 @@ export function changeEvent({
 /** PendingEvent fixture. */
 export function mockPendingEvent(overrides: {
   lsn: string;
-  action?: InsertActivityModel['action'];
-  entityType?: InsertActivityModel['entityType'];
-  resourceType?: InsertActivityModel['resourceType'];
+  action?: CdcActivity['action'];
+  entityType?: CdcActivity['entityType'];
+  resourceType?: CdcActivity['resourceType'];
   subjectId?: string;
   organizationId?: string | null;
   tableMeta?: 'entity' | 'resource';
@@ -133,5 +137,5 @@ export function mockPendingEvent(overrides: {
 /** A recorded attachment row as its message is built from it; `extra` adds columns to the row. */
 export function mockProductRow(seq: number, extra: Record<string, unknown> = {}, subjectId = `entity-${seq}`): ProductRow {
   const activity = mockCdcActivity({ subjectId });
-  return { activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string }, rowData: { id: subjectId, seq, ...extra }, seq };
+  return { activity: { ...activity, id: `act-${seq}` }, rowData: { id: subjectId, seq, ...extra }, seq };
 }

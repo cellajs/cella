@@ -80,15 +80,15 @@ export const insertMemberships = async <T extends MembershipEntity>(
   const broughtAlongRows = prepared.flatMap(({ baseMembership, channelIdColumns, entity }) => {
     const { [appConfig.entityIdColumnKeys[entity.entityType]]: _, ...parentIdColumns } = channelIdColumns;
     return membershipsBroughtAlong(entity, baseMembership.role, findMenuParent(entity.entityType)).map(
-      ({ channelType, channelId, role }) =>
-        ({
-          ...baseMembership,
-          tenantId: entity.tenantId,
-          role,
-          ...(channelType === 'organization' ? { organizationId: channelId } : parentIdColumns),
-          channelType,
-          channelId,
-        }) as InsertMembershipModel,
+      ({ channelType, channelId, role }): InsertMembershipModel => ({
+        ...baseMembership,
+        ...(channelType === 'organization' ? {} : parentIdColumns),
+        organizationId: channelIdColumns.organizationId,
+        tenantId: entity.tenantId,
+        role,
+        channelType,
+        channelId,
+      }),
     );
   });
 

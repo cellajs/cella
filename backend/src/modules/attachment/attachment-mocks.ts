@@ -26,7 +26,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       filename,
       contentType: faker.system.mimeType(),
       convertedContentType: null,
-      size: String(faker.number.int({ min: 1000, max: 10_000_000 })),
+      size: faker.number.int({ min: 1000, max: 10_000_000 }),
       keys: { original: `uploads/${mockNanoid()}/${filename}` },
       ...channelIds,
     };
@@ -47,7 +47,7 @@ const mockPresignedUrlItem = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
   return {
     attachmentId: attachment.id,
-    variant: 'thumbnail',
+    variant: 'thumbnail' as const,
     url: `https://${attachment.bucketName}.${appConfig.s3.host}/${attachment.keys.original}?X-Amz-Signature=…`,
   };
 };
@@ -62,7 +62,7 @@ export const mockCreateAttachmentsBody = () =>
     const { id, name, filename, contentType, size, keys } = attachment;
     // Where the hierarchy homes attachments below the organization, the body names that channel (the deepest home).
     const home = hierarchy.possibleHomeChannels('attachment').find((type) => type !== 'organization');
-    const placement = home && { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] };
+    const placement = home ? { [entityIdColumnKey(home)]: attachment[entityIdColumnKey(home) as keyof AttachmentModel] } : {};
     return [{ id, name, filename, contentType, size, keys, ...placement, stx: mockStx() }];
   });
 

@@ -1,10 +1,21 @@
-import type { Block } from '@blocknote/core';
 import { isRecord } from './as-record.ts';
 
 /** Block types that hold one file: its reference in the `url` prop, its file name in `name`. */
 export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
-type InlineContentLike = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: unknown };
+/** One inline item of a stored block: styled text, a link with its words in `content`, or a custom node such as a mention. */
+export type DescriptionInline = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: Record<string, unknown> };
+
+/**
+ * A stored block, tolerant of custom block types. `content` is inline items, a table's rows of cells, or absent for a
+ * block without content; BlockNote's `Block` and the editor's blocks both fit it.
+ */
+export type DescriptionBlock = {
+  type: string;
+  props?: Record<string, unknown>;
+  content?: DescriptionInline[] | { type: 'tableContent'; rows: { cells: unknown[] }[] };
+  children?: DescriptionBlock[];
+};
 
 const commonHostSuffixes = new Set(['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'ai', 'nl']);
 
@@ -54,37 +65,32 @@ const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').t
  * Visible text of one inline item. Styled text carries `text`, a link keeps its words in nested
  * `content`, and a mention has only props: it reads as the editor renders it, `@name`.
  */
-const inlineText = (item: unknown): string => {
-  const inline = item as InlineContentLike;
-
+const inlineText = (inline: DescriptionInline): string => {
   if (typeof inline.text === 'string') return inline.text;
-  if (inline.type === 'mention') {
-    const props = inline.props as { name?: unknown } | undefined;
-    return typeof props?.name === 'string' ? `@${props.name}` : '';
-  }
+  if (inline.type === 'mention') return typeof inline.props?.name === 'string' ? `@${inline.props.name}` : '';
   if (Array.isArray(inline.content)) return inlineContentText(inline.content);
   return '';
 };
 
-const inlineContentText = (content: unknown[]): string => collapseWhitespace(content.map(inlineText).join(' '));
+const inlineContentText = (content: DescriptionInline[]): string => collapseWhitespace(content.map(inlineText).join(' '));
 
-/** The inline content of every cell of a table block, row by row; none for any other content. */
-const tableCellContents = (content: Exclude<Block['content'], unknown[]>): unknown[][] =>
+/** The inline content of every cell of a table block, row by row; none for any other content or a cell in the older array form. */
+const tableCellContents = (content: Exclude<DescriptionBlock['content'], unknown[]>): DescriptionInline[][] =>
   content?.type === 'tableContent' && Array.isArray(content.rows)
-    ? content.rows.flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? cell.content : [])))
+    ? content.rows.flatMap((row) => row.cells.map((cell) => (isRecord(cell) && Array.isArray(cell.content) ? cell.content : [])))
     : [];
 
 /** Text of inline content, or of every cell when the block holds a table. */
-const contentText = (content: Block['content']): string =>
+const contentText = (content: DescriptionBlock['content']): string =>
   Array.isArray(content) ? inlineContentText(content) : collapseWhitespace(tableCellContents(content).map(inlineContentText).join(' '));
 
 /** Covers inline content, table content, file-based blocks and children. */
-export const getTextFromBlock = (block: Block): string => {
+export const getTextFromBlock = (block: DescriptionBlock): string => {
   const { content, children } = block;
 
   // Media blocks carry no inline content; their file name stands in.
-  const props: unknown = block.props;
-  const mediaName = mediaBlockTypes.has(block.type) && isRecord(props) && typeof props.name === 'string' ? props.name : '';
+  const name = block.props?.name;
+  const mediaName = mediaBlockTypes.has(block.type) && typeof name === 'string' ? name : '';
   let text = contentText(content) || mediaName;
 
   if (Array.isArray(children)) {
@@ -96,27 +102,25 @@ export const getTextFromBlock = (block: Block): string => {
 };
 
 /** `inlineText` plus link URL metadata, so the domain and slug of a link are searchable too. */
-const getSearchableTextFromInlineContent = (content: unknown[]): string =>
+const getSearchableTextFromInlineContent = (content: DescriptionInline[]): string =>
   collapseWhitespace(
     content
-      .map((item) => {
-        const inline = item as InlineContentLike;
+      .map((inline) => {
         const href = typeof inline.href === 'string' ? getSearchableTextFromUrl(inline.href) : '';
-        return [inlineText(item), href].filter(Boolean).join(' ');
+        return [inlineText(inline), href].filter(Boolean).join(' ');
       })
       .join(' '),
   );
 
 /** For search indexing: adds URL metadata from link and media URLs to `getTextFromBlock`. */
-export const getSearchableTextFromBlock = (block: Block): string => {
-  const { content, children } = block;
+export const getSearchableTextFromBlock = (block: DescriptionBlock): string => {
+  const { content, children, props } = block;
   const parts: string[] = [];
 
   if (Array.isArray(content)) parts.push(getSearchableTextFromInlineContent(content));
   else parts.push(tableCellContents(content).map(getSearchableTextFromInlineContent).filter(Boolean).join(' '));
 
-  const props: unknown = block.props;
-  if (mediaBlockTypes.has(block.type) && isRecord(props)) {
+  if (mediaBlockTypes.has(block.type) && props) {
     if (typeof props.name === 'string') parts.push(props.name);
     if (typeof props.url === 'string') parts.push(getSearchableTextFromUrl(props.url));
   }
@@ -130,14 +134,15 @@ export const getSearchableTextFromBlock = (block: Block): string => {
 };
 
 /** {@link getSearchableTextFromBlock} of every block, joined by spaces. */
-export const getSearchableTextFromBlocks = (blocks: Block[]): string => blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
+export const getSearchableTextFromBlocks = (blocks: DescriptionBlock[]): string =>
+  blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
 
 /** Blocks of a stored document (`description` as composer output); null for an absent, HTML or malformed body. */
-export const parseBlocks = (description: string | null | undefined): Block[] | null => {
+export const parseBlocks = (description: string | null | undefined): DescriptionBlock[] | null => {
   if (!description) return null;
   try {
     const parsed: unknown = JSON.parse(description);
-    return Array.isArray(parsed) ? (parsed as Block[]) : null;
+    return Array.isArray(parsed) ? (parsed as DescriptionBlock[]) : null;
   } catch {
     return null;
   }

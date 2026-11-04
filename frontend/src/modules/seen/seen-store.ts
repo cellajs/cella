@@ -1,11 +1,11 @@
 // biome-ignore lint/style/noRestrictedImports: imperative call from Zustand action, batched seen-flush not eligible for a React Query hook.
-import { markSeen } from 'sdk';
-import { appConfig, type ProductEntityType } from 'shared';
+import { type MarkSeenData, markSeen } from 'sdk';
+import { appConfig, isSeenTracked, type ProductEntityType, type SeenTrackedProductType } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
-import { isSeenTracked } from '~/modules/seen/helpers';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
@@ -14,7 +14,7 @@ export type SeenMeta = { tenantId: string; organizationId: string; channelId: st
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
-  productType: ProductEntityType;
+  productType: SeenTrackedProductType;
   productIds: Set<string>;
 }
 
@@ -117,12 +117,20 @@ export const seenStore = createStore<SeenStoreState>()(
         },
       }),
       {
+        version: 1,
         name: 'seen',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('seen')),
         // Sets serialize as arrays; insertion order (oldest first) survives the round-trip.
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
-        merge: (persisted, current) => ({ ...current, flushedIds: new Set((persisted as { flushedIds?: string[] })?.flushedIds ?? []) }),
+        merge: (persisted, current) => ({
+          ...current,
+          flushedIds: new Set(
+            isRecord(persisted) && Array.isArray(persisted.flushedIds)
+              ? persisted.flushedIds.filter((id): id is string => typeof id === 'string')
+              : [],
+          ),
+        }),
       },
     ),
     { enabled: isDebugMode, name: 'seen store' },
@@ -140,7 +148,7 @@ export function isSeenLocally(entityId: string): boolean {
 export function setupSeenBeaconFlush() {
   const handler = () => {
     for (const batch of pending.values()) {
-      const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType });
+      const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType } satisfies MarkSeenData['body']);
       navigator.sendBeacon(`/api/${batch.tenantId}/${batch.organizationId}/seen`, new Blob([body], { type: 'application/json' }));
     }
   };

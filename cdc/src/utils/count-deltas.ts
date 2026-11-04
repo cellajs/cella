@@ -2,7 +2,7 @@ import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { hierarchy } from 'shared';
 import { entityCountHomePrefix, entityCountPrefix, signalVersionPrefix } from '#/modules/entities/counter-keys';
 import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
-import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { CdcActivity } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
 import { getStringValue } from './get-string-value';
@@ -22,7 +22,7 @@ export interface CountDelta {
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
-  activity: ActivityWithoutId,
+  activity: CdcActivity,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
   h: EntityHierarchy = hierarchy,
@@ -37,7 +37,7 @@ export function getCountDeltas(
 /** The counts and stamps one change of a table moves. */
 function getTableDeltas(
   tableMeta: TableMeta,
-  activity: ActivityWithoutId,
+  activity: CdcActivity,
   newRow: CdcRowData,
   oldRow: CdcRowData | null,
   h: EntityHierarchy,

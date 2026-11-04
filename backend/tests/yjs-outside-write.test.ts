@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { asc, eq, sql } from 'drizzle-orm';
 import pg from 'pg';
 import { deleteAttachments, updateAttachment } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { generateId } from 'shared/utils/entity-id';
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { ActorContext } from '#/core/context';
@@ -13,9 +14,9 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, yjsFragmentName } from '#/modules/yjs/helpers/description-update';
+import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
-import { decodeLogNotice, type YjsDocScope, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
@@ -315,7 +316,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
       // The materialization queues on the row first; the write reads the row, with the old description, and queues next.
       const holder = await holdAttachmentRow(attachment.id);
-      const materialized = materializeDescriptionOp({ ...scope, description: typed, editors: [tenant.user.id] });
+      const materialized = materializeDescriptionOp({ ...scope, description: typed, editors: [tenant.user.id], serverRowIds: [] });
       await lockWaiters(1);
       const write = putName(attachment.id, renamed ? `${name} renamed` : name);
       await lockWaiters(2);
@@ -351,7 +352,12 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
   it("records nothing for the relay's own write (10)", async () => {
     const { attachment, scope, generation } = await arrange(description(block('a', 'original')));
-    await materializeDescriptionOp({ ...scope, description: description(block('a', 'written by the relay')), editors: [tenant.user.id] });
+    await materializeDescriptionOp({
+      ...scope,
+      description: description(block('a', 'written by the relay')),
+      editors: [tenant.user.id],
+      serverRowIds: [],
+    });
     expect((await attachment.read())?.description).toContain('written by the relay');
     expect(await stored(attachment.id)).toMatchObject({ generation, rows: [] });
   });

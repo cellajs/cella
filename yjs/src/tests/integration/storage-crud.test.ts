@@ -1,11 +1,10 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { eq } from 'drizzle-orm';
 import pg from 'pg';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DbOrTx } from '#/db/create-connection';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { db, withRlsTx } from '../../data/db';

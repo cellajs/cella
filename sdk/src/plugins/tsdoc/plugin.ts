@@ -1,3 +1,4 @@
+import type { IR } from '@hey-api/openapi-ts';
 import { config } from 'shared/config/config.default';
 import { generateOperationHash } from '../../openapi-parser/operation-hash';
 import type { OpenApiSpec, OpenApiTag } from '../../openapi-parser/types';
@@ -29,7 +30,7 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
     const paramTags = [
       ...extractParamTags('path', parameters.path),
       ...extractParamTags('query', parameters.query),
-      ...extractParamTags('body', operation.body?.schema?.properties),
+      ...extractBodyTags(operation.body?.schema),
     ];
 
     const tsdocEnhancements = [`**${method} ${path}**${docsLink} ·· _${tags.join(' · ')}_`, '', `@param {${operation.id}Data} options`, ...paramTags];
@@ -43,12 +44,8 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
   });
 };
 
-/**
- * Formats the operation's status codes into a single `@returns` TSDoc line.
- *
- * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
- */
-function extractResponseCodes(responses: Record<string, any>): string | undefined {
+/** Formats the operation's status codes into a single `@returns` TSDoc line. */
+function extractResponseCodes(responses: IR.ResponsesObject): string | undefined {
   const codes = Object.keys(responses);
   if (codes.length === 0) {
     return;
@@ -57,41 +54,41 @@ function extractResponseCodes(responses: Record<string, any>): string | undefine
   return `@returns Possible status codes: ${codes.join(', ')}`;
 }
 
-/**
- * Generates TSDoc `@param` tags for one request section. Path and query parameters carry their schema under `schema`; body properties are schemas themselves.
- *
- * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
- */
-function extractParamTags(location: 'path' | 'query' | 'body', entries: Record<string, any> = {}): string[] {
-  return Object.entries(entries).map(([key, entry]) => {
-    // Path and query parameters are keyed in lower case; the parameter keeps its own name.
-    const name = location === 'body' ? key : (entry.name ?? key);
-    const required = entry.required ?? false;
-    const type = getSchemaType(location === 'body' ? entry : entry.schema);
-    const optional = required ? '' : '=';
-
-    return `@param {${type}${optional}} options.${location}.${name} - \`${type}\` ${required ? '' : '(optional)'}`.trim();
-  });
+/** Generates TSDoc `@param` tags for the path or query parameters, each carrying its schema and required flag. */
+function extractParamTags(location: 'path' | 'query', parameters: Record<string, IR.ParameterObject> = {}): string[] {
+  // Parameters are keyed in lower case; the parameter keeps its own name.
+  return Object.values(parameters).map((parameter) => paramTag(location, parameter.name, parameter.schema, parameter.required ?? false));
 }
 
-/**
- * Resolves a stringified type covering primitives, arrays, and logical `or` combinations.
- *
- * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
- */
-function getSchemaType(schema: any): string {
-  if (!schema) return 'any';
+/** Generates TSDoc `@param` tags for the body's properties: a property is required when the body's `required` list names it. */
+function extractBodyTags(schema?: IR.SchemaObject): string[] {
+  const required = new Set(schema?.required ?? []);
+  return Object.entries(schema?.properties ?? {}).map(([name, property]) => paramTag('body', name, property, required.has(name)));
+}
+
+function paramTag(location: 'path' | 'query' | 'body', name: string, schema: IR.SchemaObject, required: boolean): string {
+  const type = getSchemaType(schema);
+  const optional = required ? '' : '=';
+
+  return `@param {${type}${optional}} options.${location}.${name} - \`${type}\` ${required ? '' : '(optional)'}`.trim();
+}
+
+/** Resolves a stringified type covering primitives, arrays, logical `or` combinations and component references. */
+function getSchemaType(schema: IR.SchemaObject): string {
+  // A component reference prints the component's name, which is also its generated type's.
+  if (schema.$ref) return schema.$ref.slice(schema.$ref.lastIndexOf('/') + 1);
 
   if (schema.type) {
     if (schema.type === 'array' && schema.items) {
-      return `${getSchemaType(schema.items)}[]`;
+      // An array lists its item schemas; more than one is a union of them.
+      const item = schema.items.map(getSchemaType).join(' | ');
+      return item.includes(' | ') ? `(${item})[]` : `${item}[]`;
     }
     return schema.type;
   }
 
-  if (schema.items && Array.isArray(schema.items) && schema.logicalOperator === 'or') {
-    const types = schema.items.flat().map(getSchemaType);
-    return types.join(' | ');
+  if (schema.items && schema.logicalOperator === 'or') {
+    return schema.items.map(getSchemaType).join(' | ');
   }
 
   return 'any';

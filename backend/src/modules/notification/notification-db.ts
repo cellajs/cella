@@ -1,9 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import { boolean, foreignKey, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { isoTimestamp, isoTimestampWithoutZone, timestampColumns } from '#/db/utils/timestamp-columns';
+import type { preferencesSchema } from '#/modules/notification/notification-schema';
 import { notificationTypes } from '#/modules/notification/notification-types';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -12,11 +14,7 @@ export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
 export type DigestFrequency = (typeof digestFrequencies)[number];
 
 /** The preferences of a user without a row, and the column defaults: every reader answers a missing row with these. */
-export const defaultPreferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' } as const satisfies {
-  mentionEmail: boolean;
-  commentEmail: boolean;
-  digest: DigestFrequency;
-};
+export const defaultPreferences = { mentionEmail: true, commentEmail: false, digest: 'weekly' } as const satisfies z.infer<typeof preferencesSchema>;
 
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product

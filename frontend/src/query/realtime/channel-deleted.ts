@@ -1,8 +1,8 @@
 import type { GetMyMembershipsResponse, StreamSignal } from 'sdk';
-import { appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { appConfig, hierarchy, isSeenTracked, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { meKeys } from '~/modules/me/query';
-import { isSeenTracked, seenKeys } from '~/modules/seen/helpers';
+import { seenKeys } from '~/modules/seen/helpers';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';

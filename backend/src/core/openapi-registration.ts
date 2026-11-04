@@ -9,10 +9,10 @@ import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { actorRefSchema } from '#/schemas/actor-ref';
-import { channelBaseSchema, productBaseSchema } from '#/schemas/entity-base';
+import { channelBaseSchema } from '#/schemas/entity-base';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
-import { streamChangeSchema, streamSignalSchema } from '#/schemas/stream-schemas';
+import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
@@ -81,11 +81,11 @@ export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
   registry.register('ChannelBase', channelBaseSchema);
-  registry.register('ProductBase', productBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
   registry.register('StreamChange', streamChangeSchema);
   registry.register('StreamSignal', streamSignalSchema);
+  registry.register('StreamError', streamErrorSchema);
 
   registerAllErrorResponses(registry);
 

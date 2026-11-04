@@ -69,19 +69,6 @@ export type ChannelBase = {
 };
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
- */
-export type ProductBase = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string | null;
-  description: string | null;
-  entityType: 'attachment';
-  keywords: string;
-};
-
-/**
  * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export type MembershipBase = {
@@ -205,6 +192,14 @@ export type StreamSignal = {
 };
 
 /**
+ * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export type StreamError = {
+  code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
+  message: string;
+};
+
+/**
  * The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.
  */
 export type BadRequestError = ApiError & {
@@ -285,7 +280,10 @@ export type SsoEntry = {
    */
   status: 'pending' | 'active' | 'disabled';
   federation: {
-    key: string;
+    /**
+     * A federation key in appConfig.federations
+     */
+    key: 'surfconext';
     label: string;
   };
   institution: {
@@ -352,7 +350,10 @@ export type MeAuthData = {
     connectionId: string;
     displayName: string;
     federation: {
-      key: string;
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
       label: string;
     };
     /**
@@ -487,7 +488,11 @@ export type Tenant = {
      * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
      */
     quotas: {
-      [key: string]: number;
+      user: number;
+      organization: number;
+      attachment: number;
+      serviceAccount: number;
+      apiKey: number;
     };
     rateLimits: {
       /**
@@ -803,7 +808,7 @@ export type Attachment = {
    * MIME type of the server-converted variant; null when none.
    */
   convertedContentType: string | null;
-  size: string;
+  size: number;
   /**
    * Storage object keys per variant, keyed by variant name; only generated variants are present.
    */
@@ -951,7 +956,10 @@ export type GetAuthHealthResponses = {
      * Federations with a connected institution, for the "sign in with your institution" entrance
      */
     federations: Array<{
-      key: string;
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
       label: string;
     }>;
     /**
@@ -3187,6 +3195,7 @@ export type GetNotificationsResponses = {
     items: Array<{
       id: string;
       createdAt: string;
+      actorId: string | null;
       type: 'mention' | 'comment' | 'reply';
       entityType: 'attachment';
       subjectId: string;
@@ -3195,11 +3204,10 @@ export type GetNotificationsResponses = {
       channelType: 'organization';
       organizationId: string;
       tenantId: string;
-      actorId: string | null;
+      readAt: string | null;
       actor: UserMinimalBase | null;
       channelName: string;
       subjectTitle: string;
-      readAt: string | null;
     }>;
     unreadCount: number;
   };
@@ -4892,7 +4900,13 @@ export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
     stx?: {
+      /**
+       * Unique mutation ID
+       */
       mutationId: string;
+      /**
+       * Tab/instance identifier for echo prevention
+       */
       sourceId: string;
     };
   };
@@ -5037,7 +5051,10 @@ export type CreateAttachmentsData = {
      * MIME type of the uploaded file (e.g. image/png).
      */
     contentType: string;
-    size: string;
+    size: number;
+    /**
+     * Storage object keys per variant, keyed by variant name; only generated variants are present.
+     */
     keys: {
       original: string;
       preview?: string;

@@ -28,6 +28,7 @@ vi.mock('shared', async (importOriginal) => {
     hierarchy,
     isChannel: hierarchy.isChannel,
     isProduct: hierarchy.isProduct,
+    isSeenTracked: (type: string) => type === 'task',
   };
 });
 

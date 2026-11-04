@@ -1,3 +1,4 @@
+import type { AncestorChannelType, EntityIdColumns, EntityType, NullableAncestorType } from 'shared';
 import { benchTenantId, benchUuidPrefix } from 'shared/utils/bench-identity';
 
 /**
@@ -22,6 +23,15 @@ export const CORE_ID_VARIANTS = {
   task: 'b008',
   project: 'b009',
 } as const;
+
+type AttachmentHomeChannel = Exclude<AncestorChannelType<'attachment'>, 'organization'>;
+
+/**
+ * The channel ids of a bench attachment below the organization, by the hierarchy's id columns: required for a strict
+ * ancestor, optional for a nullable one. What `benchAttachmentHome` returns; empty in the template.
+ */
+export type BenchAttachmentHome = EntityIdColumns<Exclude<AttachmentHomeChannel, NullableAncestorType<'attachment'>> & EntityType, string> &
+  Partial<EntityIdColumns<Extract<AttachmentHomeChannel, NullableAncestorType<'attachment'>> & EntityType, string>>;
 
 export const TENANT_ID = benchTenantId;
 export const ORG_ID = benchUuid(CORE_ID_VARIANTS.org, 0);

@@ -1,10 +1,10 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
-import { MissingAncestorError } from 'shared';
+import { MissingAncestorError, type YjsDocScope } from 'shared';
+import { yjsCloseCodes, yjsMessageTypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket, WebSocketServer } from 'ws';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
-import { docKey, yjsMessageTypes, yjsPendingQueueCap } from '../constants';
+import { docKey, yjsPendingQueueCap } from '../constants';
 import { authorizeDocument } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
@@ -65,12 +65,12 @@ async function verifyEntityAccess(ws: WebSocket, ctx: SocketContext): Promise<vo
     if (ws.readyState !== ws.OPEN) return;
     if (verdict === 'deleted') {
       log.info(`Entity deleted for ${docKey(ctx.requested)}`);
-      ws.close(4410, 'Entity deleted');
+      ws.close(yjsCloseCodes.EntityDeleted, 'Entity deleted');
       return;
     }
     if (verdict === 'denied') {
       log.warn(`Entity access denied for ${docKey(ctx.requested)}`);
-      ws.close(4003, 'Access denied');
+      ws.close(yjsCloseCodes.AccessDenied, 'Access denied');
       return;
     }
     ctx.scope = verdict.scope;
@@ -79,11 +79,11 @@ async function verifyEntityAccess(ws: WebSocket, ctx: SocketContext): Promise<vo
     if (ws.readyState !== ws.OPEN) return;
     if (err instanceof MissingAncestorError) {
       log.warn(`Entity missing required ancestor for ${docKey(ctx.requested)}`, { missingChannel: err.missingChannel, missingKey: err.missingKey });
-      ws.close(4400, 'Missing entity ancestor');
+      ws.close(yjsCloseCodes.BadRequest, 'Missing entity ancestor');
       return;
     }
     log.error(`Entity verify failed for ${docKey(ctx.requested)}`, { err });
-    ws.close(4503, 'Authorization unavailable');
+    ws.close(yjsCloseCodes.Unavailable, 'Authorization unavailable');
   }
 }
 
@@ -119,7 +119,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
     admitUpgrade(server, req, socket, handOver).catch((err) => {
       log.error('WS upgrade failed', { err });
       if (handedOver) socket.destroy();
-      else rejectUpgrade(socket, 500, 4500, 'Upgrade failed');
+      else rejectUpgrade(socket, 500, yjsCloseCodes.InternalError, 'Upgrade failed');
     });
   };
 }
@@ -134,7 +134,7 @@ async function admitUpgrade(
   const url = parseTarget(req);
   if (!url) {
     log.warn('WS upgrade with a malformed request target');
-    rejectUpgrade(socket, 400, 4400, 'Malformed request');
+    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Malformed request');
     return;
   }
   const token = url.searchParams.get('token');
@@ -143,7 +143,7 @@ async function admitUpgrade(
 
   if (!token || !rawEntityType || !tenantId) {
     log.warn('WS upgrade missing params', { hasToken: !!token, entityType: rawEntityType, hasTenantId: !!tenantId });
-    rejectUpgrade(socket, 400, 4400, 'Missing params');
+    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Missing params');
     return;
   }
 
@@ -160,7 +160,7 @@ async function admitUpgrade(
     // every closed connection towards its backoff, so no tight loop.
     handOver((ws) => {
       ws.on('error', (err) => log.debug('WS error', { err }));
-      ws.close(4001, 'Invalid or expired token');
+      ws.close(yjsCloseCodes.TokenInvalid, 'Invalid or expired token');
     });
     return;
   }
@@ -168,33 +168,33 @@ async function admitUpgrade(
 
   if (payload.entityType !== rawEntityType) {
     log.warn('Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
-    rejectUpgrade(socket, 403, 4003, 'Token not valid for this entity type');
+    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this entity type');
     return;
   }
 
   if (payload.tenantId !== tenantId) {
     log.warn('Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
-    rejectUpgrade(socket, 403, 4003, 'Token not valid for this tenant');
+    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this tenant');
     return;
   }
 
   const entityId = url.pathname.replace(/^\/+/, '');
 
   if (!entityId) {
-    rejectUpgrade(socket, 400, 4400, 'Missing entityId');
+    rejectUpgrade(socket, 400, yjsCloseCodes.BadRequest, 'Missing entityId');
     return;
   }
 
   // A token names one document: it opens no other.
   if (payload.entityId !== entityId) {
     log.warn('Token entityId mismatch', { tokenEntity: payload.entityId, requestedEntity: entityId });
-    rejectUpgrade(socket, 403, 4003, 'Token not valid for this entity');
+    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Token not valid for this entity');
     return;
   }
 
   const allowed = await checkConnectionRate(payload.userId);
   if (!allowed) {
-    rejectUpgrade(socket, 429, 4429, 'Too many connections');
+    rejectUpgrade(socket, 429, yjsCloseCodes.TooManyConnections, 'Too many connections');
     return;
   }
 
@@ -219,7 +219,7 @@ async function admitUpgrade(
     // The socket lives no longer than its token: the client reconnects with a fresh one, which a user whose access was revoked cannot get.
     const deadline = setTimeout(
       () => {
-        if (ws.readyState === ws.OPEN) ws.close(4001, 'Token expired');
+        if (ws.readyState === ws.OPEN) ws.close(yjsCloseCodes.TokenInvalid, 'Token expired');
       },
       Math.max(0, payload.exp - Date.now()),
     );

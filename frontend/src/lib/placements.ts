@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
-import type { ChannelEntityType } from 'shared';
+import type { ChannelEntityType, EntityActionType } from 'shared';
 import { hierarchy } from 'shared';
 import { allSlots, type Slot, surfaceOrder } from 'shared/placements';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
@@ -22,7 +22,7 @@ export interface PlacementDescriptor {
   /** Sort position, lower first. Settings slots use 10/20 for built-ins, 90 for the danger zone, 50 by default. */
   order?: number;
   /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */
-  requires?: string;
+  requires?: EntityActionType;
   /** Context-role pairs (e.g. 'course.staff') that may see this placement. A UI condition, never data authorization. */
   visibleTo?: ContextRole[];
   /** Channel-stored config cannot hide a locked placement (reorder still works); leaving it out of the app's `surfaces` list still can. */
@@ -148,7 +148,7 @@ function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(it
 /** Resolution inputs a consumer passes for a slot (all optional; absent means unconditioned). */
 export interface ResolvePlacementOptions {
   /** Grants the actor holds; placements declaring `requires` hide without a match. */
-  grants?: readonly string[];
+  grants?: readonly EntityActionType[];
   /** Context-role pairs the actor holds; placements declaring `visibleTo` hide without a match. */
   pairs?: readonly ContextRole[];
   /** Channel-stored arrangement for this slot (order + hidden), reconciled fail-closed. */

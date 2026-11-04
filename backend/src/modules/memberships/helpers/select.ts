@@ -11,19 +11,13 @@ type TableColumns = (typeof membershipsTable)['_']['columns'];
 type MembershipBaseKeys = keyof typeof membershipBaseSchema.shape;
 type MembershipBaseSelect = Pick<TableColumns, MembershipBaseKeys>;
 
-const membershipBaseKeys = Object.keys(membershipBaseSchema.shape) as MembershipBaseKeys[];
+const membershipBaseKeys = membershipBaseSchema.keyof().options;
 
 /** The memberships table's `MembershipBase` columns, for a select or a returning. */
 export const membershipBaseSelect: MembershipBaseSelect = pick(getColumns(membershipsTable), membershipBaseKeys);
 
 /** The `MembershipBase` fields of a membership row, by the schema's keys, so an app's extra channel id columns come along. */
-export const toMembershipBase = (membership: Record<string, unknown>): MembershipBaseModel => {
-  const result = {} as Record<string, unknown>;
-  for (const key of membershipBaseKeys) {
-    if (key in membership) result[key] = membership[key];
-  }
-  return result as MembershipBaseModel;
-};
+export const toMembershipBase = (membership: MembershipBaseModel): MembershipBaseModel => pick(membership, membershipBaseKeys);
 
 /**
  * A membership as the user `viewerId` may see it. Archive, mute and menu order are each member's own view of a channel,

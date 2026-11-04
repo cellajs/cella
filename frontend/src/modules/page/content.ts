@@ -5,6 +5,9 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { spyPrefix } from '~/hooks/scroll-spy-store';
 import { docComponentModules } from '~/modules/page/doc-components';
+import type { DocHeading } from '../../../vite/docs-frontmatter';
+
+export type { DocHeading };
 
 const contentRoot = '/src/content/docs/';
 
@@ -62,9 +65,6 @@ const defaultDocsConfig: DocsConfig = {
     { id: 'links', label: 'Links', visible: true },
   ],
 };
-
-/** A content heading (h2/h3/...) with its `spy-`-prefixed DOM id stripped to the bare hash slug. */
-export type DocHeading = { id: string; text: string; depth: number };
 
 /** Field names (`id`, `parentId`, `name`, `displayOrder`) match the page entity shape the sidebar and tree helpers expect. */
 export type DocPage = {

@@ -4,7 +4,7 @@ import type { DocRenderMode } from '~/modules/page/content';
 /** Whether the Vite development server can persist page edits to MDX source files. */
 export const canEditDocs = import.meta.env.DEV;
 
-/** Edit ops accepted by the dev write-back endpoint; mirror `DocEditOps` server-side. */
+/** Editable frontmatter fields, as the pages table sends them to the dev write-back endpoint (vite/docs-editor.ts). */
 export interface DocEditOps {
   title?: string;
   renderMode?: DocRenderMode;

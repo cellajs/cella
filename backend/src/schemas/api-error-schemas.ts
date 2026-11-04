@@ -1,11 +1,8 @@
 import { z } from '@hono/zod-openapi';
-import type { Severity } from 'shared';
+import { severityLevels } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { mockApiError } from '#/schemas/api-error-mocks';
 import { entityTypeSchema } from '#/schemas/common-schemas';
-
-/** The severities of an error, most severe first. */
-export const severityLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const satisfies readonly Severity[];
 
 /** OpenAPI represents this as a number with min and max. */
 const errorStatusCodeSchema = z.number().int().min(400).max(599);

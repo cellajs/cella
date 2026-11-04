@@ -6,7 +6,7 @@ import { createExpiredToken, createSignedToken, signPayload } from './helpers';
 const relaySecret = 'test-yjs-relay-secret-for-unit-tests';
 const claims = () => ({
   userId: 'user-1',
-  entityType: 'task',
+  entityType: 'attachment',
   entityId: 'entity-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
@@ -74,4 +74,12 @@ describe('verifyToken', () => {
     const { exp: _exp, ...withoutExp } = claims();
     expect(verifyToken(signPayload(withoutExp))).toEqual({ ok: false, reason: 'malformed' });
   });
+
+  // A token that verifies names a product type, so authorization never queries a table named by anything else.
+  it.each(['organization', '__proto__', 'undeclaredType', 'attachments"; select 1; --'])(
+    "must not accept a signed token's non-product entityType (%s)",
+    (entityType) => {
+      expect(verifyToken(signPayload({ ...claims(), entityType }))).toEqual({ ok: false, reason: 'malformed' });
+    },
+  );
 });

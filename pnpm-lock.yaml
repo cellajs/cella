@@ -54,6 +54,9 @@ importers:
 
   a11y:
     dependencies:
+      sdk:
+        specifier: workspace:*
+        version: link:../sdk
       shared:
         specifier: workspace:*
         version: link:../shared
@@ -320,6 +323,9 @@ importers:
       uuidv7:
         specifier: ^1.2.1
         version: 1.2.1
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/node':
         specifier: ^26.6.6
@@ -436,9 +442,6 @@ importers:
       rolldown:
         specifier: ~1.2.16
         version: 1.2.16
-      sdk:
-        specifier: workspace:*
-        version: link:../sdk
       shared:
         specifier: workspace:*
         version: link:../shared

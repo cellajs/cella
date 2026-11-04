@@ -20,6 +20,9 @@ const roleBindingSchema = z.object({
   role: z.enum(roles.all),
 });
 
+/** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
+export type RoleBinding = z.infer<typeof roleBindingSchema>;
+
 /** The route addresses one key of one account. */
 export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
 
@@ -59,7 +62,7 @@ const apiKeyInputSchema = z.object({
   name: validNameSchema,
   /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
   scopes: z.array(scopeEnum).min(1).max(accessScopes.all.length).nullable().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.string().max(64).pipe(z.iso.datetime()).openapi({ format: 'date-time' }).optional(),
 });
 
 export const createApiKeyBodySchema = apiKeyInputSchema.extend({

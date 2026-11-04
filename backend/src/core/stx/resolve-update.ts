@@ -11,7 +11,7 @@ type ResolveDeltas<T> = {
   [K in keyof T]: T[K] extends ArrayDelta | undefined ? string[] | Exclude<T[K], ArrayDelta> : T[K];
 };
 
-interface ResolvedUpdate<T extends Record<string, unknown> = Record<string, unknown>> {
+interface ResolvedUpdate<T extends Record<string, unknown>> {
   changed: true;
   values: Partial<ResolveDeltas<T>>;
   acceptedFieldNames: (keyof T & string)[];

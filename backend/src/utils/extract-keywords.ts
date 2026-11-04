@@ -1,5 +1,4 @@
-import type { Block } from '@blocknote/core';
-import { getTextFromBlock } from 'shared/blocknote';
+import { getTextFromBlock, parseBlocks } from 'shared/blocknote';
 
 /** Lowercased, deduplicated words; internal hyphens and apostrophes are kept alongside the stripped form. */
 export const extractKeywords = (...inputs: (string | null | undefined)[]): string => {
@@ -20,9 +19,8 @@ export const extractKeywords = (...inputs: (string | null | undefined)[]): strin
   return Array.from(words).join(' ');
 };
 
-/** The keywords of a stored BlockNote document (blocks as a JSON string) and of `extras`. */
+/** The keywords of a stored BlockNote document (blocks as a JSON string) and of `extras`; a body that is no block document adds none. */
 export const extractKeywordsFromBlocks = (blocksJson: string, ...extras: (string | null | undefined)[]): string => {
-  const blocks = JSON.parse(blocksJson) as Block[];
-  const fullText = blocks.map(getTextFromBlock).join(' ').trim();
+  const fullText = (parseBlocks(blocksJson) ?? []).map(getTextFromBlock).join(' ').trim();
   return extractKeywords(fullText, ...extras);
 };

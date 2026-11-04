@@ -1,5 +1,5 @@
 import type { MembershipBase } from 'sdk';
-import { appConfig, type ChannelEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, menuSections } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
@@ -10,8 +10,8 @@ import { queryClient } from '~/query/query-client';
 
 /** Entity types referenced by the menu structure (entity + subentity) */
 export const menuEntityTypes = Array.from(
-  new Set(appConfig.menuStructure.flatMap((section) => [section.entityType, section.subentityType].filter(Boolean))),
-) as ChannelEntityType[];
+  new Set(menuSections.flatMap(({ entityType, subentityType }) => (subentityType ? [entityType, subentityType] : [entityType]))),
+);
 
 /** Menu items of one entity type from its list query data: the entities the user holds a membership of, joined with it. */
 export const menuItemsFromList = (data: unknown, memberships: MembershipBase[]): UserMenuItem[] =>

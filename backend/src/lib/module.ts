@@ -128,7 +128,7 @@ export interface BackendModule extends ModuleConfig {
   /** Yjs collab-session materializer for `productEntity` (indexed by yjs-materializers). */
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
-  onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
+  onMutation?: { [E in TrackedEventType]?: MutationHandler<E> };
   /** Columns this module sets on memberships as they are inserted (see {@link MembershipColumnsResolver}). */
   membershipColumns?: MembershipColumnsResolver;
   /** Cron jobs the jobs worker schedules and runs (see {@link BackendJob}). */

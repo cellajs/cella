@@ -6,15 +6,17 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import type { PlacementDescriptor } from '~/lib/placements';
 import type { IconComponent } from '~/modules/common/icons/types';
+import type { TabLabel } from '~/modules/common/page/tab-nav-shell';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { getHasNavigated } from '~/utils/nav-transition';
 
-interface PageAsideItem extends PlacementDescriptor {
-  icon?: IconComponent;
-  /** Classes for this tab's row, applied after the shared ones. */
-  className?: string;
-}
+type PageAsideItem = Omit<PlacementDescriptor, 'label'> &
+  TabLabel & {
+    icon?: IconComponent;
+    /** Classes for this tab's row, applied after the shared ones. */
+    className?: string;
+  };
 
 interface PageAsideProps<T> {
   tabs: readonly T[];
@@ -38,7 +40,8 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
 
   return (
     <div className={cn('flex w-full flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon: Icon, resource, className: tabClassName }, index) => {
+      {tabs.map((tab: PageAsideItem, index) => {
+        const { id, icon: Icon, resource, className: tabClassName } = tab;
         const destructive = id.includes('delete');
         return (
           <Button
@@ -75,7 +78,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             }
           >
             {Icon && <Icon className="size-5" />}
-            {t(label, { resource: resource ? t(resource) : '' })}
+            {'text' in tab ? tab.text : t(tab.label, { resource: resource ? t(resource) : '' })}
           </Button>
         );
       })}

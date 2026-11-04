@@ -1,13 +1,13 @@
+import type { z } from 'zod';
+import type { attachmentCreateResponseSchema } from '#/modules/attachment/attachment-schema';
 import { CHURN_BATCH_SIZE, churnBatch } from '../src/attachment-requests';
 import { benchUser, ORG_PATH } from '../src/bench-user';
 import { defineScenario } from '../src/runner';
 
-interface BatchResponse {
-  data?: unknown[];
-  rejectedIds?: string[];
-}
+/** What a create answers; a delete answers the same shape without rows. */
+type BatchResponse = z.output<typeof attachmentCreateResponseSchema>;
 
-const parseBatch = (text: string): BatchResponse => {
+const parseBatch = (text: string): Partial<BatchResponse> => {
   try {
     return JSON.parse(text) as BatchResponse;
   } catch {

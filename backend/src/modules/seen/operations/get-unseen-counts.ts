@@ -1,8 +1,7 @@
 import type { SQL } from 'drizzle-orm';
-import { appConfig, type SeenTrackedProductType } from 'shared';
+import { appConfig, type SeenTrackedProductType, seenGroupingChannelTypes } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantReadAs } from '#/db/tenant-context';
-import { groupingChannelTypes } from '#/modules/seen/helpers/tracked-products';
 import { findUnseenCountsByUser, seenWindowStart } from '#/modules/seen/seen-queries';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -27,7 +26,7 @@ export async function getUnseenCountsOp(ctx: UserContext) {
   const orgGroups = new Map<string, { tenantId: string; channelIds: Set<string> }>();
   for (const m of memberships) {
     const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channelIds: new Set<string>() };
-    if (groupingChannelTypes.has(m.channelType)) group.channelIds.add(m.channelId);
+    if (seenGroupingChannelTypes.has(m.channelType)) group.channelIds.add(m.channelId);
     orgGroups.set(m.organizationId, group);
   }
 

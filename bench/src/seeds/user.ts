@@ -1,4 +1,5 @@
-import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
+import type { InsertSessionModel } from '#/modules/auth/sessions/sessions-db';
+import type { InsertUserModel } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { emailId, sessionId, userEmail, userId } from './ids';
 
@@ -20,11 +21,11 @@ export function loadtestUser(index: number): InsertUserModel {
 }
 
 export function loadtestEmail(index: number) {
-  return { ...mockEmail({ id: userId(index), email: userEmail(index) } as UserModel), id: emailId(index) };
+  return { ...mockEmail({ id: userId(index), email: userEmail(index) }), id: emailId(index) };
 }
 
 /** The token is deterministic per index, so a scenario seals the cookie without a DB query. */
-export function loadtestSession(index: number, hashedToken: string, expiresAt: string) {
+export function loadtestSession(index: number, hashedToken: string, expiresAt: string): InsertSessionModel {
   return {
     id: sessionId(index),
     secret: hashedToken,

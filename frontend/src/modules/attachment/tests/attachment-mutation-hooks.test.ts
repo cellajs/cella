@@ -17,9 +17,20 @@ const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 // The rows here carry no channel id, so they splice into the organization's home list.
 const homeKey = attachmentQueryKeys.list.home(ctx.organizationId);
 
-/** A stored attachment of the organization; only the fields the mutation callbacks read. */
+/** A stored attachment of the organization; the fields the mutation callbacks read and those a create body requires, since the body is parsed before it is sent. */
 const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
-  ({ id, entityType: 'attachment', name: id, filename: `${id}.png`, ...ctx, ...overrides }) as Attachment;
+  ({
+    id,
+    entityType: 'attachment',
+    name: id,
+    filename: `${id}.png`,
+    contentType: 'image/png',
+    size: 1024,
+    keys: { original: `${id}.png` },
+    ...ctx,
+    ...overrides,
+  }) as Attachment;
+const [att0, att1] = ['01970000-0000-7000-8000-000000000000', '01970000-0000-7000-8000-000000000001'];
 
 const homeList = () => queryClient.getQueryData<{ items: Attachment[] }>(homeKey)?.items ?? [];
 const detail = (id: string) => queryClient.getQueryData<Attachment>(attachmentQueryKeys.detail.byId(id));
@@ -31,14 +42,13 @@ describe('attachment mutation hooks', () => {
     queryClient.setQueryData(homeKey, { items: [], total: 0 });
     goOffline(createAttachments);
     // The first create runs and parks; the second waits behind it in the scope, unsent, so an edit may fold into it.
-    for (const id of ['att-0', 'att-1'])
-      callHook(() => useAttachmentCreateMutation(ctx.tenantId, ctx.organizationId)).mutate([attachment(id)] as never);
+    for (const id of [att0, att1]) callHook(() => useAttachmentCreateMutation(ctx.tenantId, ctx.organizationId)).mutate([attachment(id)] as never);
     await vi.waitFor(() => expect(mutationsOf('attachment', 'create').filter(({ state }) => state.isPaused)).toHaveLength(2));
 
     // The edit folds into the queued create and writes the detail from the optimistic row.
-    callHook(() => useAttachmentUpdateMutation(ctx.tenantId, ctx.organizationId)).mutate({ id: 'att-1', ops: { name: 'Renamed' } });
+    callHook(() => useAttachmentUpdateMutation(ctx.tenantId, ctx.organizationId)).mutate({ id: att1, ops: { name: 'Renamed' } });
     expect(mutationsOf('attachment', 'update')).toHaveLength(0);
-    expect(detail('att-1')).toMatchObject({ name: 'Renamed', _optimistic: true });
+    expect(detail(att1)).toMatchObject({ name: 'Renamed', _optimistic: true });
 
     createAttachments.mockImplementation(async ({ body }) => ({
       data: (body as Attachment[]).map(({ id, name }) => attachment(id, { name, keywords: 'stored' })),
@@ -47,7 +57,7 @@ describe('attachment mutation hooks', () => {
     await goOnline();
     await vi.waitFor(() => expect(mutationsOf('attachment', 'create').every(({ state }) => state.status === 'success')).toBe(true));
 
-    expect(homeList()).toContainEqual(attachment('att-1', { name: 'Renamed', keywords: 'stored' }));
-    expect(detail('att-1')).toEqual(attachment('att-1', { name: 'Renamed', keywords: 'stored' }));
+    expect(homeList()).toContainEqual(attachment(att1, { name: 'Renamed', keywords: 'stored' }));
+    expect(detail(att1)).toEqual(attachment(att1, { name: 'Renamed', keywords: 'stored' }));
   });
 });

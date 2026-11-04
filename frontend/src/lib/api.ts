@@ -8,16 +8,16 @@ export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & { status: 
 /** The payload's fields are copied onto the error as they are; `declare` keeps them typed without emitting class fields. */
 export class ApiError extends Error implements ApiErrorInit {
   declare status: ApiErrorInit['status'];
-  declare type?: string;
+  declare type?: ApiErrorPayload['type'];
   declare entityType?: ApiErrorPayload['entityType'];
   declare severity?: ApiErrorPayload['severity'];
-  declare requestId?: string;
-  declare version?: string;
-  declare path?: string;
-  declare method?: string;
-  declare timestamp?: string;
-  declare userId?: string;
-  declare organizationId?: string;
+  declare requestId?: ApiErrorPayload['requestId'];
+  declare version?: ApiErrorPayload['version'];
+  declare path?: ApiErrorPayload['path'];
+  declare method?: ApiErrorPayload['method'];
+  declare timestamp?: ApiErrorPayload['timestamp'];
+  declare userId?: ApiErrorPayload['userId'];
+  declare organizationId?: ApiErrorPayload['organizationId'];
   declare meta?: ApiErrorPayload['meta'];
 
   constructor({ message, name, ...fields }: ApiErrorInit) {

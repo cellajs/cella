@@ -1,0 +1,1 @@
+ALTER TABLE "attachments" ALTER COLUMN "size" SET DATA TYPE bigint USING "size"::bigint;

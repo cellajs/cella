@@ -1,4 +1,5 @@
 import { onlineManager, type QueryClient } from '@tanstack/react-query';
+import type { ProductEntityType } from 'shared';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 
 /** Minimal shape of a mutation's observable state; avoids depending on the generic Mutation type. */
@@ -29,7 +30,7 @@ export function isPending(mutation: MutationLike): boolean {
  */
 export function rowIdsOfMutations(
   client: QueryClient,
-  entityType: string,
+  entityType: ProductEntityType,
   test: (mutation: MutationLike) => boolean,
   idsOf: (variables: unknown) => string[] = entityIdsOf,
 ): Set<string> {
@@ -38,7 +39,12 @@ export function rowIdsOfMutations(
 }
 
 /** Whether a mutation of the entity type, under any key it starts, holds this row and passes `test`. */
-export function hasMutationOfRow(client: QueryClient, entityType: string, entityId: string, test: (mutation: MutationLike) => boolean): boolean {
+export function hasMutationOfRow(
+  client: QueryClient,
+  entityType: ProductEntityType,
+  entityId: string,
+  test: (mutation: MutationLike) => boolean,
+): boolean {
   return rowIdsOfMutations(client, entityType, test).has(entityId);
 }
 

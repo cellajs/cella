@@ -1,8 +1,8 @@
 import { accessScopes, appConfig } from 'shared';
+import type { ResourceRef } from 'shared/oauth-consent';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
 
-/** The two audiences a token from this server can carry: the MCP server of an organization, or the REST API of a tenant. */
-export type ResourceRef = { face: 'mcp'; tenantId: string; organizationId: string } | { face: 'api'; tenantId: string };
+export type { ResourceRef };
 
 /**
  * RFC 8707 resource identifiers are tenant-qualified, so a token never crosses tenants. The ids are percent-encoded:

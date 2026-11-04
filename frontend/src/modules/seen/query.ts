@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getUnseenCounts } from 'sdk';
-import { isSeenTracked, seenKeys } from '~/modules/seen/helpers';
+import { isSeenTracked } from 'shared';
+import { seenKeys } from '~/modules/seen/helpers';
 import { noteUnseenReconciled } from '~/modules/seen/unseen-sync';
 import { queryClient } from '~/query/query-client';
 

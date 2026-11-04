@@ -1,5 +1,6 @@
 import type { hierarchy, roles } from './config/config.default.ts';
 import { appConfig } from './src/config-builder/app-config.ts';
+import type { MenuStructureItem } from './src/config-builder/types.ts';
 
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
@@ -13,12 +14,27 @@ export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
 export type SeenTrackedProductType = (typeof appConfig.seenTrackedProductTypes)[number];
 
+/** A collaborative document: its entity, and the tenant its rows are stored and read under. */
+export interface YjsDocKey {
+  entityType: ProductEntityType;
+  entityId: string;
+  tenantId: string;
+}
+
+/** A document key plus its organization: the one its rows carry, and its token and HTTP routes check. */
+export interface YjsDocScope extends YjsDocKey {
+  organizationId: string;
+}
+
 // App configuration types
 
-export type MenuSection = {
-  entityType: (typeof appConfig.menuStructure)[number]['entityType'];
-  subentityType: (typeof appConfig.menuStructure)[number]['subentityType'] | null;
-};
+type MenuStructureEntry = (typeof appConfig.menuStructure)[number];
+
+/** A section of the app's menu structure, typed by the channel types its config names at each level. */
+export type MenuSection = MenuStructureItem<MenuStructureEntry['entityType'], NonNullable<MenuStructureEntry['subentityType']>>;
+
+/** `appConfig.menuStructure` read as {@link MenuSection}s, whose optional fields a config literal may leave out. */
+export const menuSections: readonly MenuSection[] = appConfig.menuStructure;
 
 export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
 /** A federation in `appConfig.federations`: a session strategy, an identities issuer slug and an env prefix. */
@@ -37,7 +53,9 @@ export type OrganizationSetupConfig = typeof appConfig.defaultSetupConfig;
 
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 
-export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+/** Log and error severities, most severe first. */
+export const severityLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
+export type Severity = (typeof severityLevels)[number];
 
 /** Aligned with HTTP methods, minus 'read'. Shared between backend and CDC. */
 export const activityActions = ['create', 'update', 'delete'] as const;
@@ -78,8 +96,11 @@ export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 
 export type EntityRole = (typeof roles.all)[number];
 
+/** The roles the hierarchy declares for one channel, a subset of `EntityRole`. */
+export type ChannelRoleOf<C extends ChannelEntityType> = (typeof hierarchy._roleMap)[C];
+
 /** The organization's own roles, narrower than `EntityRole` in an app whose other channels declare more. */
-export type OrganizationRole = (typeof hierarchy._roleMap)['organization'];
+export type OrganizationRole = ChannelRoleOf<'organization'>;
 
 /** For example `{ organization: 'organizationId' }`. */
 export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
@@ -107,6 +128,9 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
     : never
   : never;
 
+/** The channels below the organization a product row may be homed at: `HomeChannelType<'task'>` gives `'project'`. */
+export type HomeChannelType<T extends ProductEntityType> = Exclude<AncestorChannelType<T>, 'organization'>;
+
 /** Non-ancestor channels declared via `relatedChannels`. */
 export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 
@@ -117,13 +141,8 @@ export type NullableAncestorType<E extends string> = E extends keyof HierarchyNu
 
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 
-type ProductEmbedding = (typeof appConfig.productEmbeddings)[number];
-
-/** Which host products need cache updates when an embedded product changes. */
-export type PropagationHint = {
-  embeddedProduct: ProductEmbedding['embeddedProduct'];
-  hostProduct: ProductEmbedding['hostProduct'];
-  hostColumn: ProductEmbedding['hostColumn'];
-  update: string[];
-  remove: string[];
-};
+/** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
+export interface SeqRange {
+  afterSeq: number;
+  untilSeq: number;
+}

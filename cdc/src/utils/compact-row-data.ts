@@ -41,5 +41,5 @@ export function compactRowData(tableMeta: TableMeta, rowData: CdcRowData): CdcRo
   for (const [key, value] of Object.entries(rowData)) {
     if (!excludedRowDataKeys.has(key) && !secret?.has(key)) slim[key] = value;
   }
-  return slim as CdcRowData;
+  return { ...slim, id: rowData.id };
 }

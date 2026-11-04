@@ -1,4 +1,5 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getYjsOwnedFields, guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { cacheUpdate, writeKeepingMark } from '~/query/basic/cache-mutations';
@@ -13,7 +14,7 @@ import { hasMutationOfRow, isQueued } from '~/query/offline/mutation-queue';
  * optimistic values survive until it settles in turn.
  * Returns the server entity when nothing is cached.
  */
-export function mergeServerResponse<T extends { id: string; entityType: string; stx?: unknown; updatedAt?: string | null }>(options: {
+export function mergeServerResponse<T extends { id: string; entityType: ProductEntityType; stx?: unknown; updatedAt?: string | null }>(options: {
   queryClient: QueryClient;
   cached?: T;
   serverEntity: T;

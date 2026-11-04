@@ -1,10 +1,8 @@
 import { type Block, BlockNoteEditor, type PartialBlock } from '@blocknote/core';
 import { blocksToYDoc, blocksToYXmlFragment, yDocToBlocks } from '@blocknote/core/yjs';
 import { serverBlockNoteSchema } from 'shared/utils/blocknote-server-schema';
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import * as Y from 'yjs';
-
-/** Fragment name the client editor binds to: must match `yDocFragment` in the frontend's `blocknote/ydoc-label.ts`. */
-export const yjsFragmentName = 'document-store';
 
 const createServerEditor = () => BlockNoteEditor.create({ schema: serverBlockNoteSchema });
 

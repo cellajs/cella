@@ -56,9 +56,11 @@ export {
   policyMatrix,
   publicReadGrants,
   type RoleGrant,
+  resolveHierarchy,
   validateAncestorScope,
 } from './src/permissions/index.ts';
 export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows.ts';
+export { isSeenTracked, seenGroupingChannelTypes } from './src/seen-tracked.ts';
 export { seenWindowMs } from './src/seen-window.ts';
 export { toColumnName, toTableName } from './src/utils/schema-naming.ts';
 export type {
@@ -73,6 +75,7 @@ export type {
   EntityRole,
   EntityType,
   FederationKey,
+  HomeChannelType,
   Language,
   MenuSection,
   NullableAncestorType,
@@ -80,10 +83,10 @@ export type {
   OrganizationRole,
   OrganizationSetupConfig,
   ProductEntityType,
-  PropagationHint,
   RelatedChannelType,
   ResourceType,
   SeenTrackedProductType,
+  SeqRange,
   Severity,
   SystemRole,
   Theme,
@@ -91,8 +94,10 @@ export type {
   TrackedEventType,
   UploadTemplateId,
   UserFlags,
+  YjsDocKey,
+  YjsDocScope,
 } from './types.ts';
-export { actionToVerb, activityActions, trackedEventTypes } from './types.ts';
+export { actionToVerb, activityActions, menuSections, severityLevels, trackedEventTypes } from './types.ts';
 
 // Side-effect import: the config checks that need the policy matrix run in every program that imports `shared`.
 import './src/config-builder/config-validation.ts';

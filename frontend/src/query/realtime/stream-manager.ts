@@ -1,7 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
-import { postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
+import { postAppCatchup, type StreamChange, type StreamError } from 'sdk';
+import { zStreamChange, zStreamError, zStreamSignal } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
+import type { z } from 'zod';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 import { isDebugMode } from '~/env';
@@ -45,6 +47,8 @@ const changeBufferCap = 500;
 const catchupTimeoutMs = 60_000;
 /** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
 const streamSilenceMs = 75_000;
+/** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
+const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
 
 interface StreamStoreState {
   state: StreamState;
@@ -113,6 +117,14 @@ async function fetchAndProcessCatchup(signal: AbortSignal): Promise<void> {
 function applySyncHealth(health: SyncHealth): void {
   setSyncStreamHealthy(health.streamHealthy);
   setSyncWorkerAway(health.workerAway);
+}
+
+/** A frame this bundle cannot read, such as one a newer server or leader tab sends with a product type this bundle lacks, is dropped. */
+function readFrame<T>(schema: z.ZodType<T>, value: unknown, kind: 'change' | 'signal'): T | null {
+  const result = schema.safeParse(value);
+  if (result.success) return result.data;
+  console.debug(`[${streamName}] Failed to parse ${kind}:`, result.error);
+  return null;
 }
 
 /** Owns the app's one SSE connection, held by the leader tab: catchup, reconnect, backoff and the circuit breaker. */
@@ -201,9 +213,15 @@ class StreamManager {
     }
     // A tab that left the app, or has not connected yet, takes no frames and no answers.
     if (this.store.getState().state === 'disconnected') return;
-    if (message.type === 'stream-change') handleStreamChange(message.change);
-    else if (message.type === 'stream-signal') handleStreamSignal(message.signal);
-    else processAppCatchup(message.response).catch((error) => console.warn(`[${streamName}] Could not process the leader's catchup answer:`, error));
+    if (message.type === 'catchup') {
+      processAppCatchup(message.response).catch((error) => console.warn(`[${streamName}] Could not process the leader's catchup answer:`, error));
+    } else if (message.type === 'stream-change') {
+      const change = readFrame(zStreamChange, message.change, 'change');
+      if (change) handleStreamChange(change);
+    } else {
+      const signal = readFrame(zStreamSignal, message.signal, 'signal');
+      if (signal) handleStreamSignal(signal);
+    }
   }
 
   /** Catch up while buffering, then drain in arrival order and go live. One buffer overflow runs catchup again; a second throws. */
@@ -319,7 +337,8 @@ class StreamManager {
     eventSource.addEventListener('change', (event) => {
       noteActivity();
       try {
-        const change = JSON.parse(event.data);
+        const change = readFrame(zStreamChange, JSON.parse(event.data), 'change');
+        if (!change) return;
 
         if (this.buffering) {
           if (this.bufferOverflowed) return;
@@ -342,7 +361,8 @@ class StreamManager {
     eventSource.addEventListener('signal', (event) => {
       noteActivity();
       try {
-        const signal: StreamSignal = JSON.parse(event.data);
+        const signal = readFrame(zStreamSignal, JSON.parse(event.data), 'signal');
+        if (!signal) return;
         postToFollowers({ type: 'stream-signal', signal });
         handleStreamSignal(signal);
       } catch (error) {
@@ -370,10 +390,11 @@ class StreamManager {
       if (!(event instanceof MessageEvent) || !event.data) return;
       noteActivity();
       try {
-        const payload: { code?: string; message?: string } = JSON.parse(event.data);
-        const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
+        const payload = zStreamError.safeParse(JSON.parse(event.data)).data;
         // Any other end fails the stream as a transport error does, so a server that keeps ending it before catchup opens the circuit.
-        if (!permanent) return this.handleStreamFailure(`Server stream error: ${payload.code}`);
+        if (!payload || !finalStreamErrorCodes.has(payload.code)) {
+          return this.handleStreamFailure(`Server stream error: ${payload?.code ?? event.data}`);
+        }
         console.debug(`[${streamName}] Server stream error:`, payload);
         this.closeEventSource();
         this.store.getState().setState('error');

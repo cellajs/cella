@@ -3,7 +3,10 @@ import path from 'node:path';
 import { type Criterion, criteria } from './criteria.ts';
 import { auditContrast, repoRoot } from './session.ts';
 
-type Status = 'supports' | 'partially-supports' | 'does-not-support' | 'not-applicable';
+/** What a reviewer may record: a row's status, or `open` for a finding that leaves the row undecided. */
+const decisionStatuses = ['supports', 'partially-supports', 'does-not-support', 'not-applicable', 'open'] as const;
+
+export type Status = Exclude<(typeof decisionStatuses)[number], 'open'>;
 
 /** Who may decide a row that the audit leaves open. An agent's decision stands until a person confirms or changes it. */
 type Reviewer = 'agent' | 'human';
@@ -135,6 +138,23 @@ export interface Decision {
   evidence: string;
   /** States (or files) the finding is about. */
   where?: string[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+const isStringList = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === 'string');
+
+/** Reads one decision from a decisions file or the command line; refuses one that lacks a field or carries one of the wrong type. */
+export function parseDecision(raw: unknown): Decision {
+  const { id, status, by, remarks, evidence, where }: Record<string, unknown> = isRecord(raw) ? raw : {};
+  const known = decisionStatuses.find((candidate) => candidate === status);
+  if (typeof id !== 'string' || !id || !known) {
+    throw new Error(`${typeof id === 'string' && id ? id : 'A decision'} needs --id and --status (${decisionStatuses.join(', ')}).`);
+  }
+  if (by !== 'agent' && by !== 'human') throw new Error(`${id} needs --by agent or --by human.`);
+  if (typeof evidence !== 'string' || !evidence) throw new Error(`${id} needs --evidence.`);
+  if (remarks !== undefined && typeof remarks !== 'string') throw new Error(`${id}: remarks must be text.`);
+  if (where !== undefined && !isStringList(where)) throw new Error(`${id}: where must be a list of states or files.`);
+  return { id, status: known, by, remarks, evidence, where };
 }
 
 /** Records reviewers' decisions in the ledger. Refuses what the evidence cannot carry; nothing is written unless all are valid. */

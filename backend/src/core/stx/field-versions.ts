@@ -5,24 +5,24 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
 }
 
 /** Drops primitive fields equal to the stored value; arrays and objects pass through without deep comparison. */
-export function filterNoOpFields<T extends Record<string, unknown>>(entityData: Record<string, unknown>, incomingFields: T): T {
+export function filterNoOpFields(entityData: Record<string, unknown>, incomingFields: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(incomingFields)) {
     if (isPrimitive(value) && entityData[key] === value) continue;
     result[key] = value;
   }
-  return result as T;
+  return result;
 }
 
 /**
  * Per-field LWW: accept a scalar when its incoming HLC is greater than the HLC stored in the entity's stx. A stored
  * stamp outside the HLC form, or beyond the clock skew bound, loses, so the write replaces it.
  */
-export function resolveFieldConflicts<T extends Record<string, unknown>>(
-  incomingFields: T,
+export function resolveFieldConflicts(
+  incomingFields: Record<string, unknown>,
   incomingTimestamps: Record<string, string>,
   storedTimestamps: Record<string, string>,
-): Partial<T> {
+): Record<string, unknown> {
   const acceptedFields: Record<string, unknown> = {};
 
   for (const field of Object.keys(incomingFields)) {
@@ -35,5 +35,5 @@ export function resolveFieldConflicts<T extends Record<string, unknown>>(
     }
   }
 
-  return acceptedFields as Partial<T>;
+  return acceptedFields;
 }

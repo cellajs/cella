@@ -1,9 +1,6 @@
 import { type Context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api';
 import type { EntityType } from '../../types.ts';
 
-/** Aligned with OTel conventions. */
-export type SpanStatus = 'ok' | 'error' | 'unset';
-
 /** No undefined values. */
 export type CleanSpanAttributes = Record<string, string | number | boolean | null>;
 
@@ -19,7 +16,8 @@ export interface SpanData {
   endTime: number | null;
   duration: number | null;
   attributes: CleanSpanAttributes;
-  status: SpanStatus;
+  /** Aligned with OTel conventions. */
+  status: 'ok' | 'error' | 'unset';
   events: SpanEvent[];
   parentSpanId?: string;
 }

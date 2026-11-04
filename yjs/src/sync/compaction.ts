@@ -1,4 +1,5 @@
-import { type LogRow, type YjsDocScope, yjsMaxServerRowIds } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocScope } from 'shared';
+import { type LogRow, yjsMaxServerRowIds } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { docKey } from '../constants';
 import { discardLogRows, findDocument, foldLog } from '../data/storage';

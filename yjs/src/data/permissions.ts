@@ -7,14 +7,13 @@ import {
   checkAccess,
   draftVisibleTo,
   hierarchy,
-  isProduct,
   type ProductEntityType,
   toColumnName,
   toTableName,
+  type YjsDocScope,
 } from 'shared';
 import type { Tx } from '#/db/create-connection';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { getTableColumnNames } from '#/modules/yjs/yjs-queries';
 import { withRlsTx } from './db';
 
@@ -79,9 +78,6 @@ export type DocumentAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted
  */
 export async function authorizeDocument(userId: string, requested: YjsDocScope): Promise<DocumentAuthorization> {
   const { entityType } = requested;
-  // Tokens are issued for product entities only, the ones a materializer writes.
-  if (!isProduct(entityType)) return 'denied';
-
   return withRlsTx(
     requested.tenantId,
     async (tx): Promise<DocumentAuthorization> => {

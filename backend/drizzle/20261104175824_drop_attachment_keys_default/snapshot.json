@@ -1,0 +1,38 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0c3315f9-49e0-4530-9681-c3d09cc33b65",
+  "prevIds": [
+    "83861fe1-f271-4ca2-85b2-e8c65dffcffd"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "attachments",
+        "keys"
+      ],
+      "writes": [
+        "s|colprop|public.attachments.keys.default"
+      ],
+      "reads": [
+        "n|tbl|public.attachments",
+        "n|sch|public",
+        "n|col|public.attachments.keys"
+      ],
+      "sqlHash": "18776909ba2eb667"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"attachments\",\"keys\"]",
+      "set": {
+        "default": null
+      }
+    }
+  ]
+}

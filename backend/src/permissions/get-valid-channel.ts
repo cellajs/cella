@@ -1,9 +1,9 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
 import { buildSubjectFromEntity, checkAccess } from 'shared';
-import type { ActorBinding, ActorContext, DbContext, Env } from '#/core/context';
+import type { ActorBinding, DbContext, ScopeContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { accessFrom, type BindingOf } from '#/permissions/access';
+import { type AccessContext, accessFrom } from '#/permissions/access';
 import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import type { EntityModel } from '#/tables';
 
@@ -12,9 +12,6 @@ export interface ValidChannelResult<T extends ChannelEntityType, G extends Actor
   entity: EntityModel<T>;
   membership: G | null;
 }
-
-/** The request scope the guard chain set; cross-tenant routes set none. */
-type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'organizationId'>> };
 
 /**
  * Whether a row matches every id of the request scope: the single and the batch reads (`splitByPermission`) refuse the
@@ -58,13 +55,13 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * (`permissions-config`) pass without one.
  * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
  */
-export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
-  ctx: C,
+export const getValidChannel = async <T extends ChannelEntityType>(
+  ctx: DbContext & ScopeContext & AccessContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidChannelResult<T, BindingOf<C>>> => {
+): Promise<ValidChannelResult<T>> => {
   const entity = await resolveChannelInScope(ctx, entityId, entityType, bySlug);
 
   const subject = buildSubjectFromEntity(entityType, entity);

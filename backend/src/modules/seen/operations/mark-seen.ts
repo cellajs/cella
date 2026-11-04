@@ -1,10 +1,9 @@
 import { eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
-import type { ProductEntityType } from 'shared';
+import type { SeenTrackedProductType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
 import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
-import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { findSeenCandidates, insertSeenBy, type OrgScopedEntityTable, seenRecencySql, seenWindowStart } from '#/modules/seen/seen-queries';
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -17,16 +16,11 @@ import { log } from '#/utils/logger';
  * read count, by the unseen counts' read scope, live rows only and drafts for their author, so the count never
  * confirms that a hidden row exists.
  */
-export async function markSeenOp(ctx: UserContext, entityIds: string[], productType: ProductEntityType) {
+export async function markSeenOp(ctx: UserContext, entityIds: string[], productType: SeenTrackedProductType) {
   const user = ctx.var.user;
   const organization = ctx.var.organization;
 
   log.debug(`markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`);
-
-  if (!isTrackedProductType(productType)) {
-    log.debug(`markSeen: skipping non-tracked type "${productType}"`);
-    return { newCount: 0 };
-  }
 
   const entityTable = getEntityTable(productType);
 

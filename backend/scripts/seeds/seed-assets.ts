@@ -12,8 +12,8 @@ export interface SeedAsset {
   contentType: string;
   /** MIME type of the `converted` variant, null when the asset folder has none. */
   convertedContentType: string | null;
-  /** Byte size of `original`, a string like the attachments column. */
-  size: string;
+  /** Byte size of `original`. */
+  size: number;
   keys: { original: string; thumbnail?: string; preview?: string; converted?: string };
 }
 

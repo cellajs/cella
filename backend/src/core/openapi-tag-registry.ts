@@ -1,5 +1,8 @@
 import { onModuleRegister } from 'shared/module-registry';
 
+/** Category (OpenAPI 3.2.0): `module`=sidebar group, `owner`/`entity`=annotation, `schema`=schema bucket, `hidden`=drop from docs. */
+export type OpenApiTagKind = 'module' | 'owner' | 'schema' | 'entity' | 'hidden';
+
 /** Tag definition for OpenAPI documentation (forward-compatible with OpenAPI 3.2.0). */
 interface OpenApiTag {
   tag: string;
@@ -8,8 +11,7 @@ interface OpenApiTag {
   summary?: string;
   /** Parent tag name for hierarchical grouping (OpenAPI 3.2.0). */
   parent?: string;
-  /** Category (OpenAPI 3.2.0): `module`=sidebar group, `owner`/`entity`=annotation, `schema`=schema bucket, `hidden`=drop from docs. */
-  kind?: 'module' | 'owner' | 'schema' | 'entity' | 'hidden';
+  kind?: OpenApiTagKind;
   externalDocs?: { url: string; description?: string };
   /** For schema-kind tags: marks the fallback bucket when a component schema has no `x-tags`. */
   default?: boolean;

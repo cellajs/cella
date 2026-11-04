@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, boolean, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
@@ -19,12 +19,9 @@ export const attachmentsTable = snakeCase.table(
     filename: varchar({ length: maxLength.field }).notNull(),
     contentType: varchar({ length: maxLength.field }).notNull(),
     convertedContentType: varchar({ length: maxLength.field }),
-    size: varchar({ length: maxLength.field }).notNull(),
+    size: bigint({ mode: 'number' }).notNull(),
     /** Storage object keys per variant. `original` is always present; other variants appear only once the upload pipeline generates them. */
-    keys: jsonb()
-      .$type<AttachmentKeys>()
-      .notNull()
-      .default({} as AttachmentKeys),
+    keys: jsonb().$type<AttachmentKeys>().notNull(),
     ...channelRelationColumns('attachment'),
   },
   (table) => [

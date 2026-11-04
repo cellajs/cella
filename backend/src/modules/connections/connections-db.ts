@@ -2,6 +2,7 @@ import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'dr
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { ConnectionConfig } from '#/modules/connections/connections-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** The party a connection trusts: an institution behind an SSO federation. */
@@ -9,14 +10,6 @@ export const connectionKinds = ['sso'] as const;
 
 /** `pending` until the institution activated the service at the federation; `disabled` keeps the row but refuses sign-ins. */
 export const connectionStatuses = ['pending', 'active', 'disabled'] as const;
-
-/** The protocol-specific part of a connection. */
-interface ConnectionConfig {
-  /** The institution's IdP entity ids, all passed as `login_hint`; one skips the federation's picker. */
-  idpEntityIds?: string[];
-  /** The institution's logo from the federation's metadata feed, for the entry page. */
-  logoUrl?: string;
-}
 
 /**
  * A tenant's trust in one external party that asserts user identities: an institution reached through an SSO

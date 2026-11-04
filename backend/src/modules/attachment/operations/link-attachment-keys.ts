@@ -49,7 +49,7 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
       id,
       values: {
         keys,
-        ...(storedSize === null ? {} : { size: storedSize.toString() }),
+        ...(storedSize === null ? {} : { size: storedSize }),
         convertedContentType: convertedContentType || null,
         ...updateStamps(actorId),
         stx: stripChangedFields(attachmentsTable.stx),

@@ -33,15 +33,6 @@ function productTypeOf({ result: { tableMeta } }: PendingEvent): ProductEntityTy
 }
 
 /**
- * The sequence value a product row holds once its flush is recorded: the stamp, or the value read back for a change
- * delivered again. A row image carries `seq` as text (pg leaves `int8` a string), so a delete, which gets neither, has
- * none.
- */
-function seqOf({ result: { rowData } }: PendingEvent): number | undefined {
-  return typeof rowData.seq === 'number' ? rowData.seq : undefined;
-}
-
-/**
  * Records a flush, in commit order and in one transaction: the activity rows, then the sequence values, counters and
  * row stamps of the changes whose activity this transaction inserted. An activity id comes from the commit position of
  * its source transaction and its index there, so a change delivered a second time inserts nothing and changes nothing:
@@ -74,11 +65,11 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<Map<PendingEvent,
 
     const again = prepared
       .filter((item) => !insertedIds.has(item.activity.id))
-      .map((item) => item.event.result)
-      .filter(({ tableMeta, activity }) => isStampable(tableMeta, activity.action));
-    for (const [tableName, results] of Map.groupBy(again, (result) => result.activity.tableName)) {
+      .map((item) => item.event)
+      .filter(({ result: { tableMeta, activity } }) => isStampable(tableMeta, activity.action));
+    for (const [tableName, events] of Map.groupBy(again, ({ result }) => result.activity.tableName)) {
       const seqById = new Map<string, number>();
-      const ids = [...new Set(results.map((result) => result.rowData.id))];
+      const ids = [...new Set(events.map(({ result }) => result.rowData.id))];
       for (let offset = 0; offset < ids.length; offset += readBackChunkSize) {
         const idList = sql.join(
           ids.slice(offset, offset + readBackChunkSize).map((id) => sql`${id}::uuid`),
@@ -87,7 +78,7 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<Map<PendingEvent,
         const stored = await tx.execute<{ id: string; seq: string }>(sql`SELECT id, seq FROM ${sql.identifier(tableName)} WHERE id IN (${idList})`);
         for (const row of stored.rows) seqById.set(row.id, Number(row.seq));
       }
-      for (const { rowData } of results) rowData.seq = seqById.get(rowData.id) ?? rowData.seq;
+      for (const event of events) event.seq = seqById.get(event.result.rowData.id);
     }
   });
   // Only what the transaction committed counts towards the comparison.
@@ -141,7 +132,7 @@ export async function processFlush(transactions: PendingEvent[][]): Promise<void
       const rows = group.map((item) => ({
         activity: item.activity,
         rowData: item.event.result.rowData,
-        seq: seqOf(item.event),
+        seq: item.event.seq,
         movedFrom: item.event.result.movedFrom,
       }));
       sendProductMessagesToApi(productType, rows, traceContext);

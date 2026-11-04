@@ -3,9 +3,9 @@ import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
-import type { StreamErrorPayload } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
+import type { StreamErrorPayload } from '#/schemas';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 

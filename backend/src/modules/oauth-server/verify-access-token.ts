@@ -1,8 +1,10 @@
+import { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { errors, jwtVerify } from 'jose';
 import { type AccessScope, accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { type AuthStrategy, authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { getPublicJwkSet } from '#/modules/oauth-server/keystore';
 import type { IssuedTokenClaims } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -17,8 +19,11 @@ interface VerifiedToken {
 
 /** A person's token names the grant it was issued under, a service account's the API key it was minted with. */
 export type VerifiedAccessToken =
-  | (VerifiedToken & { kind: 'user'; grantId: string; authStrategy: string | null; connectionId: string | null })
+  | (VerifiedToken & { kind: 'user'; grantId: string; authStrategy: AuthStrategy | null; connectionId: string | null })
   | (VerifiedToken & { kind: 'service'; keyId: string });
+
+/** A method the enum does not know (an app renamed one) reads as null, which a tenant sign-in policy refuses. */
+const authStrategyClaimSchema = z.enum(authStrategiesEnum).nullable().catch(null);
 
 /** A bearer value that is a JWT (three segments); this app's opaque keys carry no dots. */
 export function bearerJwtFrom(ctx: Context<Env>): string | null {
@@ -59,7 +64,7 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
           ...token,
           kind: 'user',
           grantId: claims.gid,
-          authStrategy: claims.auth_strategy ?? null,
+          authStrategy: authStrategyClaimSchema.parse(claims.auth_strategy),
           connectionId: claims.connection_id ?? null,
         };
       }

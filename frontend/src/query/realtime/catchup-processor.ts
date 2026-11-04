@@ -1,5 +1,5 @@
 import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
 import { type EntityQueryKeys, getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -39,7 +39,7 @@ function armPendingRefetch(): boolean {
 const opaqueScopes = new Set<string>();
 
 /** Whether the last catchup answered this scope `opaque`, so the sync service leaves its marked lists to be read when opened. */
-export const isOpaqueScope = (organizationId: string, entityType: string): boolean => opaqueScopes.has(`${organizationId}:${entityType}`);
+export const isOpaqueScope = (organizationId: string, entityType: ProductEntityType): boolean => opaqueScopes.has(`${organizationId}:${entityType}`);
 
 /**
  * Readable views fetch their gap when their frontier advances; other statuses expose no frontier.
@@ -124,7 +124,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse): Promi
         isCreate: false,
       });
 
-      if (getSyncTier(entityType, organizationId, null).min > 0) {
+      if (getSyncTier(organizationId, null).min > 0) {
         console.debug(`[CatchupProcessor] View ${viewKey}: gap=${frontier - clientCursor} → enqueued`);
         continue;
       }

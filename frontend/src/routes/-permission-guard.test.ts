@@ -17,7 +17,7 @@ const adminRole = hierarchy.getMostPrivilegedRole('organization');
 const membership = (role: string, channelId = 'org-1') => ({ channelType: 'organization', channelId, organizationId: channelId, role });
 
 // The row a slug fetch returns on a cold load, before the memberships are cached.
-const organization = { id: 'org-1', entityType: 'organization', slug: 'acme' };
+const organization = { id: 'org-1', entityType: 'organization' as const, slug: 'acme' };
 const settingsGate = () => requireEntityAction(organization, 'organization', 'update', '/organization');
 const redirected = { redirect: { to: '/organization', params: true, replace: true } };
 

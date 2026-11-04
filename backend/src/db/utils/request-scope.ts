@@ -1,14 +1,14 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { EntityType } from 'shared';
-import type { ActorContext } from '#/core/context';
+import type { ScopeContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
 /**
  * The tenant and organization ids the guard chain set for this request. Scoped code reached without both
  * `tenantGuard` and `orgGuard` means a route was defined without its guards: a server error, not a request error.
  */
-export const requestScope = (ctx: ActorContext, entityType?: EntityType): { tenantId: string; organizationId: string } => {
+export const requestScope = (ctx: ScopeContext, entityType?: EntityType): { tenantId: string; organizationId: string } => {
   const { tenantId, organizationId } = ctx.var;
   if (!tenantId || !organizationId) {
     throw new AppError(500, 'server_error', 'error', { entityType, meta: { reason: 'Scoped query without tenant and organization guards' } });
@@ -21,7 +21,7 @@ export const requestScope = (ctx: ActorContext, entityType?: EntityType): { tena
  * product query (lists, counts, updates, soft-deletes, bulk predicates). Redundant with RLS and
  * global UUID identity on purpose: removing RLS must broaden no application query.
  */
-export const requestScopeWhere = (ctx: ActorContext, table: { tenantId: PgColumn; organizationId: PgColumn }, entityType?: EntityType): SQL => {
+export const requestScopeWhere = (ctx: ScopeContext, table: { tenantId: PgColumn; organizationId: PgColumn }, entityType?: EntityType): SQL => {
   const { tenantId, organizationId } = requestScope(ctx, entityType);
   return and(eq(table.tenantId, tenantId), eq(table.organizationId, organizationId)) as SQL;
 };

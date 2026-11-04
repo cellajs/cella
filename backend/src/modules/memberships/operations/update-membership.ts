@@ -78,6 +78,10 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     ...updateStamps(actorId),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });
+  // Deleted after the read above (the member removed, the user deleted): the same 404 as a membership never found.
+  if (!updatedMembership) {
+    throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
+  }
   invalidateCache.user(updatedMembership.userId);
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
