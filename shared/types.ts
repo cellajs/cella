@@ -1,5 +1,6 @@
 import type { hierarchy, roles } from './config/config.default.ts';
 import { appConfig } from './src/config-builder/app-config.ts';
+import type { MenuStructureItem } from './src/config-builder/types.ts';
 
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
@@ -15,10 +16,13 @@ export type SeenTrackedProductType = (typeof appConfig.seenTrackedProductTypes)[
 
 // App configuration types
 
-export type MenuSection = {
-  entityType: (typeof appConfig.menuStructure)[number]['entityType'];
-  subentityType: (typeof appConfig.menuStructure)[number]['subentityType'] | null;
-};
+type MenuStructureEntry = (typeof appConfig.menuStructure)[number];
+
+/** A section of the app's menu structure, typed by the channel types its config names at each level. */
+export type MenuSection = MenuStructureItem<MenuStructureEntry['entityType'], NonNullable<MenuStructureEntry['subentityType']>>;
+
+/** `appConfig.menuStructure` read as {@link MenuSection}s, whose optional fields a config literal may leave out. */
+export const menuSections: readonly MenuSection[] = appConfig.menuStructure;
 
 export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
 /** A federation in `appConfig.federations`: a session strategy, an identities issuer slug and an env prefix. */

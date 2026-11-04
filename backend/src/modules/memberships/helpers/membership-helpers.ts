@@ -5,10 +5,10 @@ import {
   type ChannelIdColumns,
   type EntityHierarchy,
   type EntityRole,
+  menuSections,
   type OrganizationRole,
   resolveHierarchy,
 } from 'shared';
-import type { MenuStructureItem } from 'shared/config-builder/types';
 import type { MembershipEntity } from '#/lib/module';
 
 /**
@@ -54,10 +54,9 @@ interface MenuParent<C extends string = ChannelEntityType> {
 
 /** The menu parent of a channel listed as a subentity in `menuStructure`; null for any other channel. */
 export const findMenuParent = (channelType: string): MenuParent | null => {
-  const relation = appConfig.menuStructure.find((rel) => rel.subentityType === channelType);
+  const relation = menuSections.find((section) => section.subentityType === channelType);
   if (!relation) return null;
-  // Config literals only carry the property when an app sets it
-  return { channelType: relation.entityType, carryRole: 'carryRole' in relation && (relation as MenuStructureItem).carryRole === true };
+  return { channelType: relation.entityType, carryRole: relation.carryRole === true };
 };
 
 /** A membership above a channel that a membership in it brings along. */
