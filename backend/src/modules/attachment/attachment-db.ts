@@ -21,10 +21,7 @@ export const attachmentsTable = snakeCase.table(
     convertedContentType: varchar({ length: maxLength.field }),
     size: varchar({ length: maxLength.field }).notNull(),
     /** Storage object keys per variant. `original` is always present; other variants appear only once the upload pipeline generates them. */
-    keys: jsonb()
-      .$type<AttachmentKeys>()
-      .notNull()
-      .default({} as AttachmentKeys),
+    keys: jsonb().$type<AttachmentKeys>().notNull(),
     ...channelRelationColumns('attachment'),
   },
   (table) => [

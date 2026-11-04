@@ -4911,6 +4911,9 @@ export type CreateAttachmentsData = {
      */
     contentType: string;
     size: string;
+    /**
+     * Storage object keys per variant, keyed by variant name; only generated variants are present.
+     */
     keys: {
       original: string;
       preview?: string;

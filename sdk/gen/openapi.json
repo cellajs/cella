@@ -11249,7 +11249,8 @@
                           "maxLength": 2048
                         }
                       },
-                      "required": ["original"]
+                      "required": ["original"],
+                      "description": "Storage object keys per variant, keyed by variant name; only generated variants are present."
                     },
                     "groupId": {
                       "type": ["string", "null"],

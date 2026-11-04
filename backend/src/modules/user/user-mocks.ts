@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'shared';
+import { appConfig, type UserFlags } from 'shared';
 import slugify from 'slugify';
 import { mockPaginated, mockPastIsoDate, mockUniqueEnforcer, mockUuid, withFakerSeed } from '#/mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
@@ -12,7 +12,7 @@ type MockUserOptions = { email?: string; enforceUnique?: boolean };
 const userSlug = mockUniqueEnforcer();
 const userEmail = mockUniqueEnforcer();
 
-const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserOptions = {}): UserModel => {
+const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserOptions = {}): UserModel & { userFlags: UserFlags } => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
   const generateEmail = () => faker.internet.email(firstAndLastName).toLowerCase();
   const generateSlug = () => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true });

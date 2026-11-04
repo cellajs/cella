@@ -58,8 +58,6 @@ const attachmentCreateBodySchema = attachmentInsertSchema
   })
   .extend({
     id: validUuidSchema,
-    /** The column defaults to {}, making `keys` optional on the generated insert schema; a create must carry at least the original key. */
-    keys: attachmentKeysSchema,
     // The home id of a row that lives in a channel; none while attachments live in the organization.
     ...placementFieldsSchema('attachment'),
   });

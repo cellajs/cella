@@ -38,10 +38,8 @@ export const usersTable = snakeCase.table(
     contrast: varchar({ enum: ['system', 'more'] })
       .notNull()
       .default('system'),
-    userFlags: jsonb()
-      .$type<UserFlags>()
-      .notNull()
-      .default({} as UserFlags),
+    /** Stored sparse: `userSelect` merges it over `appConfig.defaultUserFlags`, so a flag added later needs no backfill. */
+    userFlags: jsonb().$type<Partial<UserFlags>>().notNull().default({}),
     updatedAt: timestampColumns.updatedAt,
     /** The user, a system admin or a service acting for them; no `createdBy`: a user is created by a sign-up. */
     updatedBy: writerColumn(),
