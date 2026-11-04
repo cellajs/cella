@@ -41,7 +41,9 @@ export type OrganizationSetupConfig = typeof appConfig.defaultSetupConfig;
 
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 
-export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+/** Log and error severities, most severe first. */
+export const severityLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
+export type Severity = (typeof severityLevels)[number];
 
 /** Aligned with HTTP methods, minus 'read'. Shared between backend and CDC. */
 export const activityActions = ['create', 'update', 'delete'] as const;
