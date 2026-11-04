@@ -24,7 +24,7 @@ export type ChannelTable = AnyPgTable & { id: PgColumn };
  * table and its products is harmless. The organization is not referenced here; organization-bound
  * tables declare `organizationForeignKey` (the composite `(tenant_id, organization_id)` key).
  */
-const referencedChannelId = (channelType: string): PgColumn => channelTables[channelType as keyof typeof channelTables]().id;
+const referencedChannelId = (channelType: ChannelEntityType): PgColumn => channelTables[channelType]().id;
 
 /** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
 type ChannelRelationColumns<E extends string> = EntityIdColumns<Exclude<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NotNullUuid> &
@@ -58,12 +58,11 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
  * One index per sub-organization ancestor and related-channel column, named `<table>_<column>_index`,
  * for a product table's index list. Empty for org-homed products, so cella's own tables are unchanged.
  */
-export const channelRelationIndexes = (tableName: string, table: Record<string, unknown>, entityType: ProductEntityType) =>
+export const channelRelationIndexes = (tableName: string, table: Record<string, PgColumn>, entityType: ProductEntityType) =>
   [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
     .filter((type) => type !== 'organization')
     .map((type) => {
-      const column = table[appConfig.entityIdColumnKeys[type]] as PgColumn;
-      return index(`${tableName}_${entityIdColumnName(type)}_index`).on(column);
+      return index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]);
     });
 
 /** One nullable id column per sub-organization channel type: the channels a membership can be held at below the organization. */
@@ -91,13 +90,12 @@ export const membershipChannelColumns = (): MembershipChannelColumns => {
  * `<table>_<channel>_user_archived_idx`, for member lookups scoped to a channel. Empty for an
  * organization-only hierarchy, so cella's own tables are unchanged.
  */
-export const membershipChannelIndexes = (tableName: string, table: Record<string, unknown>) =>
+export const membershipChannelIndexes = (tableName: string, table: Record<string, PgColumn>) =>
   appConfig.channelEntityTypes
     .filter((channelType) => channelType !== 'organization')
     .map((channelType) => {
-      const column = table[appConfig.entityIdColumnKeys[channelType]] as PgColumn;
       const channel = entityIdColumnName(channelType).replace(/_id$/, '');
-      return index(`${tableName}_${channel}_user_archived_idx`).on(column, table.userId as PgColumn, table.archived as PgColumn);
+      return index(`${tableName}_${channel}_user_archived_idx`).on(table[appConfig.entityIdColumnKeys[channelType]], table.userId, table.archived);
     });
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */
