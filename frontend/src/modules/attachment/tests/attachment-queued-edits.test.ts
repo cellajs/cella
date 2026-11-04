@@ -39,7 +39,7 @@ const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
     name: id,
     filename: `${id}.png`,
     contentType: 'image/png',
-    size: '1024',
+    size: 1024,
     keys: { original: `${id}.png` },
     ...ctx,
     ...overrides,
