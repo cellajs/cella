@@ -28,6 +28,7 @@ const FENCED_CODE_BLOCK = /^(```|~~~).*?^\1.*?$/gms;
 /** Relative md imports in .mdx wrappers (e.g. `import Content from '../../cella/TESTING.md'`). */
 const RELATIVE_MD_IMPORT = /^import\s[^\n]*?from\s+['"](\.[^'"]+\.md)['"]/gm;
 
+/** A content heading (h2/h3/...) by its DOM id, which keeps the `spy-` prefix until the page module strips it to the bare hash slug. */
 export type DocHeading = { id: string; text: string; depth: number };
 export type DocPageEntry = { frontmatter: unknown; headings: DocHeading[] };
 /** A plaintext body paragraph anchored to its nearest heading (null = intro before the first). */

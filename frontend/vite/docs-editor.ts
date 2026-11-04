@@ -3,20 +3,12 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Connect, Plugin } from 'vite';
 import { parse, stringify } from 'yaml';
+import type { DocEditOps } from '../src/modules/page/utils/edit-doc-page.ts';
 
 /** Same frontmatter delimiter the read-side index uses (vite/docs-frontmatter.ts). */
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
 
 const MD_EXTENSIONS = ['.md', '.mdx'] as const;
-
-/** Editable frontmatter fields, mapped from the table's edit ops. */
-export interface DocEditOps {
-  title?: string;
-  renderMode?: string;
-  draft?: boolean;
-  displayOrder?: number;
-  parentId?: string | null;
-}
 
 /**
  * Resolve a page slug to its source file. A slug maps to the first existing of
