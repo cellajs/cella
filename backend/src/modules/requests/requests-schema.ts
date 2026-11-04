@@ -7,7 +7,6 @@ import { paginationQuerySchema, validEmailSchema } from '#/schemas';
 
 export const requestSchema = createSelectSchema(requestsTable)
   .omit({ invitedAt: true })
-  // The enum column keeps its literal union only through an explicit schema.
   .extend({ type: z.enum(requestTypeEnum), wasInvited: z.boolean() })
   .openapi('Request', {
     description:
