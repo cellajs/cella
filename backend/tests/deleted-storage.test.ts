@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteStoredObjects, deleteStoredPrefix } from '#/lib/object-storage';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
 import { clearDeletedStorage } from '#/modules/entities/operations/clear-deleted-storage';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
@@ -57,7 +58,9 @@ describe('Deleted storage', async () => {
     return { tenant, keyOf, insert };
   };
 
-  beforeEach(() => {
+  // One run takes the queue's oldest batch, so rows other files in this worker queued would crowd out this file's.
+  beforeEach(async () => {
+    await db.delete(deletedStorageTable);
     vi.mocked(deleteStoredObjects).mockClear();
     vi.mocked(deleteStoredPrefix).mockClear();
   });
