@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
-import type { ApiError } from 'sdk';
+import type { ApiError } from '~/lib/api';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '~/modules/common/data-grid';
 
 /** Grid columns narrowed to keyed entries for table chrome; the grid filters hidden entries. */
