@@ -58,6 +58,7 @@ const attachmentCreateBodySchema = attachmentInsertSchema
   })
   .extend({
     id: validUuidSchema,
+    size: z.number().int().min(0),
     // The home id of a row that lives in a channel; none while attachments live in the organization.
     ...placementFieldsSchema('attachment'),
   });

@@ -746,7 +746,7 @@ export const zAttachment = z.object({
   filename: z.string().max(255),
   contentType: z.string().max(255),
   convertedContentType: z.string().max(255).nullable(),
-  size: z.string().max(255),
+  size: z.int().gte(-9007199254740991).lte(9007199254740991),
   keys: z.object({
     original: z.string().max(2048),
     preview: z.string().max(2048).optional(),
@@ -2221,7 +2221,7 @@ export const zCreateAttachmentsBody = z
       name: z.string().max(255).optional(),
       filename: z.string().max(255),
       contentType: z.string().max(255),
-      size: z.string().max(255),
+      size: z.int().gte(0),
       keys: z.object({
         original: z.string().max(2048),
         preview: z.string().max(2048).optional(),

@@ -40,7 +40,7 @@ export function churnBatch(): { create: unknown[]; remove: unknown } {
     name: `bench-churn-${first + i}`,
     filename: `bench-churn-${first + i}.pdf`,
     contentType: 'application/pdf',
-    size: '1024',
+    size: 1024,
     keys: { original: '' },
     ...createHomeField(first + i),
     stx,

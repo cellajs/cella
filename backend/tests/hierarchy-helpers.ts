@@ -121,7 +121,7 @@ export const attachmentBody = (
     id,
     filename: 'file.pdf',
     contentType: 'application/pdf',
-    size: '1024',
+    size: 1024,
     keys: { original: `blob:http://localhost:3000/${id}` },
     ...homeColumns(plan),
     stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },

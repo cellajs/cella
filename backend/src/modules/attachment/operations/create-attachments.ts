@@ -63,7 +63,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     const attachment = {
       ...att,
       ...storage,
-      size: storedSizes[index]?.toString() ?? att.size,
+      size: storedSizes[index] ?? att.size,
       // Public read is the home channel's decision, copied onto the row; a client cannot widen it.
       public: home ? home.entity.public : organization.public,
       convertedContentType: att.convertedContentType || null,

@@ -3218,8 +3218,9 @@
             "description": "MIME type of the server-converted variant; null when none."
           },
           "size": {
-            "type": "string",
-            "maxLength": 255
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "keys": {
             "type": "object",
@@ -3318,7 +3319,7 @@
           "filename": "ick_thoroughly_coincide.text",
           "contentType": "application/epub+zip",
           "convertedContentType": null,
-          "size": "7202058",
+          "size": 7202058,
           "keys": {
             "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
           },
@@ -11026,7 +11027,7 @@
                       "filename": "finally_wherever_nasalise.php",
                       "contentType": "image/gif",
                       "convertedContentType": null,
-                      "size": "3838237",
+                      "size": 3838237,
                       "keys": {
                         "original": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php"
                       },
@@ -11070,7 +11071,7 @@
                       "filename": "buzzing_brr_hm.rmi",
                       "contentType": "audio/3gpp2",
                       "convertedContentType": null,
-                      "size": "1155007",
+                      "size": 1155007,
                       "keys": {
                         "original": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi"
                       },
@@ -11192,7 +11193,7 @@
                   "name": "ick_thoroughly_coincide.text",
                   "filename": "ick_thoroughly_coincide.text",
                   "contentType": "application/epub+zip",
-                  "size": "7202058",
+                  "size": 7202058,
                   "keys": {
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
@@ -11226,8 +11227,8 @@
                       "description": "MIME type of the uploaded file (e.g. image/png)."
                     },
                     "size": {
-                      "type": "string",
-                      "maxLength": 255
+                      "type": "integer",
+                      "minimum": 0
                     },
                     "keys": {
                       "type": "object",
@@ -11318,7 +11319,7 @@
                       "filename": "inasmuch.xhtml",
                       "contentType": "application/vnd.oasis.opendocument.spreadsheet",
                       "convertedContentType": null,
-                      "size": "9057832",
+                      "size": 9057832,
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
@@ -11362,7 +11363,7 @@
                       "filename": "victoriously.mp4",
                       "contentType": "image/jpeg",
                       "convertedContentType": null,
-                      "size": "4961674",
+                      "size": 4961674,
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },
@@ -11447,7 +11448,7 @@
                       "filename": "inasmuch.xhtml",
                       "contentType": "application/vnd.oasis.opendocument.spreadsheet",
                       "convertedContentType": null,
-                      "size": "9057832",
+                      "size": 9057832,
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
@@ -11491,7 +11492,7 @@
                       "filename": "victoriously.mp4",
                       "contentType": "image/jpeg",
                       "convertedContentType": null,
-                      "size": "4961674",
+                      "size": 4961674,
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },

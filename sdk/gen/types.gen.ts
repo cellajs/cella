@@ -808,7 +808,7 @@ export type Attachment = {
    * MIME type of the server-converted variant; null when none.
    */
   convertedContentType: string | null;
-  size: string;
+  size: number;
   /**
    * Storage object keys per variant, keyed by variant name; only generated variants are present.
    */
@@ -4910,7 +4910,7 @@ export type CreateAttachmentsData = {
      * MIME type of the uploaded file (e.g. image/png).
      */
     contentType: string;
-    size: string;
+    size: number;
     /**
      * Storage object keys per variant, keyed by variant name; only generated variants are present.
      */

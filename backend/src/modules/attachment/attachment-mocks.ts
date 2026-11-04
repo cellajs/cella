@@ -26,7 +26,7 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       filename,
       contentType: faker.system.mimeType(),
       convertedContentType: null,
-      size: String(faker.number.int({ min: 1000, max: 10_000_000 })),
+      size: faker.number.int({ min: 1000, max: 10_000_000 }),
       keys: { original: `uploads/${mockNanoid()}/${filename}` },
       ...channelIds,
     };

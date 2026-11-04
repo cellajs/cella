@@ -35,6 +35,7 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
 import type { OrgRoutableItemData } from '~/query/basic/types';
+import { registerVariablesVersion } from '~/query/offline/mutation-variables';
 import { prepareProductDelete } from '~/query/offline/prepare-delete';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
 import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
@@ -332,6 +333,15 @@ queryClient.setQueryDefaults(keys.detail.base, {
 queryClient.setMutationDefaults(keys.create, attachmentCreateOptions(queryClient));
 queryClient.setMutationDefaults(keys.update, attachmentUpdateOptions(queryClient));
 queryClient.setMutationDefaults(keys.delete, attachmentDeleteOptions(queryClient));
+
+// Version 2 of a create sends each row's `size` as a byte count; a bundle of version 1 queued it as a string.
+registerVariablesVersion(keys.create, 2, (variables) => {
+  if (typeof variables !== 'object' || variables === null || !('data' in variables) || !Array.isArray(variables.data)) return null;
+  const data = variables.data.map((row: unknown) =>
+    typeof row === 'object' && row !== null && 'size' in row && typeof row.size === 'string' ? { ...row, size: Number(row.size) } : row,
+  );
+  return { ...variables, data };
+});
 
 // A placeholder turns into its file once a row with stored keys reaches the cache: from sync, a create or a key link.
 queryClient.getQueryCache().subscribe((event) => {

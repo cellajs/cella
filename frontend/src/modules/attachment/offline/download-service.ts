@@ -29,7 +29,7 @@ const matchesMimePattern = (mimeType: string, pattern: string): boolean =>
 /** Whether a device keeps the file itself by the size cap and content-type filters of `localBlobStorage`; previews are kept either way. */
 const keepsFile = ({ size, contentType }: Attachment): boolean => {
   const { maxFileSize, excludedContentTypes, allowedContentTypes } = appConfig.localBlobStorage;
-  if (maxFileSize && Number(size) > maxFileSize) return false;
+  if (maxFileSize && size > maxFileSize) return false;
   if (!contentType) return true;
   if (excludedContentTypes.some((pattern) => matchesMimePattern(contentType, pattern))) return false;
   return !allowedContentTypes.length || allowedContentTypes.some((pattern) => matchesMimePattern(contentType, pattern));
