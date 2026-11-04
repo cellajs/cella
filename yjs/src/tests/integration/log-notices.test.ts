@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { decodeLogNotice, type LogNotice, type YjsDocScope, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mapUpdate, until } from '../helpers';
 import { cleanupSeed, insertDocument, seedOrg } from './seed';
 

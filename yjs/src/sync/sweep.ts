@@ -1,4 +1,4 @@
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocScope } from 'shared';
 import { docKey, yjsCleanupDelayMs } from '../constants';
 import { findStaleDocuments } from '../data/storage';
 import { log } from '../lib/pino';

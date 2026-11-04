@@ -1,5 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import { buildSubject } from 'shared';
+import type { StreamSignalType } from 'shared/stream-signal-types';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -12,12 +13,15 @@ import { streamSubscriberManager } from './subscriber-manager';
 
 const org = 'org-signals';
 
+// A test-only type outside StreamSignalTypes: augmenting the interface here would admit it across the backend program.
+const testSignalType = 'signal-test.changed' as StreamSignalType;
+
 defineBackendModule({
   name: 'send-signal-test',
   owner: 'cella',
   description: 'Declares the signal type the tests send',
   scope: ['backend'],
-  signals: [{ type: 'signal-test.changed', audiences: ['user', 'readers'] }],
+  signals: [{ type: testSignalType, audiences: ['user', 'readers'] }],
 });
 
 /** A stream on the organization's topic and its user's topic, recording every frame written to it. */
@@ -52,7 +56,7 @@ describe('sendSignal: who hears it', () => {
     const own = [openStream('user-a'), openStream('user-a')];
     const bystander = openStream('user-b');
 
-    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, subjectId: 'row-1' });
+    await sendSignal(testSignalType, toUser('user-a'), { organizationId: org, subjectId: 'row-1' });
 
     for (const frames of own) {
       expect(frames).toEqual([{ event: 'signal', data: expect.any(String) }]);
@@ -69,7 +73,7 @@ describe('sendSignal: who hears it', () => {
       mockMembershipBase('mem-signals-other', { channelId: 'org-elsewhere', userId: 'other-user', role: memberRole }),
     ]);
 
-    await sendSignal('signal-test.changed', toReaders(buildSubject('organization', {}, { id: org })), { organizationId: org });
+    await sendSignal(testSignalType, toReaders(buildSubject('organization', {}, { id: org })), { organizationId: org });
 
     expect(member.map(({ data }) => JSON.parse(data))).toEqual([{ type: 'signal-test.changed', organizationId: org, subjectId: null }]);
     expect(removed).toEqual([]);
@@ -79,8 +83,8 @@ describe('sendSignal: who hears it', () => {
   it('carries the version a versioned signal was given, and no version field otherwise', async () => {
     const frames = openStream('user-a');
 
-    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, version: 5 });
-    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org });
+    await sendSignal(testSignalType, toUser('user-a'), { organizationId: org, version: 5 });
+    await sendSignal(testSignalType, toUser('user-a'), { organizationId: org });
 
     expect(frames.map(({ data }) => JSON.parse(data))).toEqual([
       { type: 'signal-test.changed', organizationId: org, subjectId: null, version: 5 },
@@ -92,7 +96,8 @@ describe('sendSignal: who hears it', () => {
   it('must not send a type no module declared for that audience', async () => {
     const frames = openStream('user-a');
 
-    await sendSignal('signal-test.undeclared', toUser('user-a'), { organizationId: org });
+    // No module declares this type: the cast sends what a misspelled type would, which only the registry stops.
+    await sendSignal('signal-test.undeclared' as StreamSignalType, toUser('user-a'), { organizationId: org });
 
     expect(frames).toEqual([]);
   });

@@ -1,4 +1,5 @@
-import { type LogNotice, type YjsDocKey, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocKey } from 'shared';
+import { type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { docKey, yjsLogNoticeDelayMs } from '../constants';
 import { log } from '../lib/pino';

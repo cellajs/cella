@@ -1,5 +1,6 @@
+import type { YjsDocScope } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { findEntityDescription, findYjsDocument, insertYjsDocument } from '#/modules/yjs/yjs-queries';
 
 interface SeedYjsDocumentOpts {

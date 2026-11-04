@@ -1,7 +1,6 @@
 import {
   type Access,
   accessScopes,
-  hierarchy as appHierarchy,
   type ChannelEntityType,
   publicReadGrants as configuredPublicReadGrants,
   type EntityHierarchy,
@@ -13,6 +12,7 @@ import {
   type PublicReadGrants,
   policyMatrix,
   type RowConditionName,
+  resolveHierarchy,
 } from 'shared';
 import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -110,9 +110,11 @@ export const resolveCollectionReadFilter = (
   entityType: ProductEntityType,
   organizationId: string,
   requested?: { homeChannelId?: string; homeChannelIds?: string[] },
-  { policies = policyMatrix, publicGrants = configuredPublicReadGrants, hierarchy = appHierarchy }: ReadRules = {},
+  rules: ReadRules = {},
 ): CollectionReadFilter => {
-  const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
+  const { policies = policyMatrix, publicGrants = configuredPublicReadGrants } = rules;
+  const { hierarchy } = resolveHierarchy(rules);
+  const ancestors = hierarchy.getOrderedAncestors(entityType);
   // The product's parent: where a requested home channel and the narrowed scopes compare.
   const homeLevel = ancestors[0] ?? 'organization';
   const atHome = (channelIds: string[], condition?: RowConditionName): ReadScope[] =>

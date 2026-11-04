@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import type { NotificationPushPayload } from 'shared/push-payload';
 import webpush, { type RequestOptions } from 'web-push';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
@@ -7,18 +8,7 @@ import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpo
 import { deleteSubscriptionsByEndpoints, findSubscriptionsByUserIds } from '#/modules/push/push-queries';
 import { log } from '#/utils/logger';
 
-/**
- * Wire payload for one push, `{ t: 'notif', ... }`. Ids only, never content: the service worker
- * recounts through the API (always current, and nothing sensitive rides the push service).
- */
-export interface NotificationPushPayload {
-  t: 'notif';
-  activityId: string;
-  channelId: string;
-  type: string;
-  /** Self-describing `/n` link to the subject (ids only); the click handler opens it. */
-  url?: string;
-}
+export type { NotificationPushPayload };
 
 /** Parallel sends per batch; push services rate-limit aggressively above small bursts. */
 const concurrency = 8;

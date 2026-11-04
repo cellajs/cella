@@ -9,15 +9,13 @@ import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from './is-soft-delete-transition';
 
-/** Columns the GC writes on an embedded row, beyond the scope and id columns. */
-const requiredEmbeddedColumns = ['id', 'deletedAt', 'deletedBy', 'updatedAt', 'updatedBy', 'stx'] as const;
-
 /** Pre-resolved owned embedding with Drizzle column references, keyed by host product. */
 interface ResolvedOwnedEmbedding {
   hostProduct: ProductEntityType;
   embeddedProduct: ProductEntityType;
   embeddedTable: AnyPgTable;
-  embeddedColumns: Record<string, AnyPgColumn>;
+  /** The columns the GC reads; it writes the tombstone and audit columns `productColumns` gives every product table. */
+  embeddedColumns: Record<'id' | 'stx' | 'deletedAt', AnyPgColumn>;
   embeddedScopeColumn: AnyPgColumn;
   hostTable: AnyPgTable;
   hostColumn: AnyPgColumn;
@@ -37,37 +35,29 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     const { embeddedProduct, hostProduct, hostColumn: hostColumnName } = embedding;
 
     const hostTable = getEntityTable(hostProduct);
-    // getColumns returns literal-keyed columns; widened for runtime string lookup.
-    const hostColumns = getColumns(hostTable) as Record<string, AnyPgColumn>;
-    const hostColumn = hostColumns[hostColumnName];
+    const hostColumns = getColumns(hostTable);
+    // Widened for the host column, which the config names.
+    const columns: Record<string, AnyPgColumn> = hostColumns;
+    const hostColumn = columns[hostColumnName];
     if (!hostColumn) throw new Error(`owned embedding: column "${hostColumnName}" not found on "${hostProduct}" table`);
-    const hostDeletedAtColumn = hostColumns.deletedAt;
-    if (!hostDeletedAtColumn) throw new Error(`owned embedding: column "deletedAt" not found on "${hostProduct}" table`);
 
     const embeddedTable = getEntityTable(embeddedProduct);
-    const embeddedColumns = getColumns(embeddedTable) as Record<string, AnyPgColumn>;
-    for (const required of requiredEmbeddedColumns) {
-      if (!embeddedColumns[required]) throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
-    }
+    const embeddedColumns = getColumns(embeddedTable);
 
     // Refcounting is scoped to the organization, so a host in a sibling subtree still spares the row.
     const scopeColumnName = appConfig.entityIdColumnKeys.organization;
-    const hostScopeColumn = hostColumns[scopeColumnName];
-    const embeddedScopeColumn = embeddedColumns[scopeColumnName];
-    if (!hostScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${hostProduct}" table`);
-    if (!embeddedScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${embeddedProduct}" table`);
 
     resolved.push({
       hostProduct,
       embeddedProduct,
       embeddedTable,
-      embeddedColumns,
-      embeddedScopeColumn,
+      embeddedColumns: { id: embeddedColumns.id, stx: embeddedColumns.stx, deletedAt: embeddedColumns.deletedAt },
+      embeddedScopeColumn: embeddedColumns[scopeColumnName],
       hostTable,
       hostColumn,
       hostColumnName,
-      hostScopeColumn,
-      hostDeletedAtColumn,
+      hostScopeColumn: hostColumns[scopeColumnName],
+      hostDeletedAtColumn: hostColumns.deletedAt,
       scopeColumnName,
     });
   }

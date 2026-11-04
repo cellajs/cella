@@ -1,5 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { markSeen } from 'sdk';
+import { isSeenTracked } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,7 +9,6 @@ import type { Tx } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
-import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { insertSeenBy } from '#/modules/seen/seen-queries';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -24,7 +24,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
  * markSeen answers how many of the posted ids it newly recorded as seen, and bumps their view counts. It counts only
  * rows the caller may read, like the reads do, so the answer never confirms that a hidden row exists.
  */
-describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the caller cannot read', async () => {
+describe.skipIf(!isSeenTracked('attachment'))('markSeen and rows the caller cannot read', async () => {
   assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
@@ -53,9 +53,12 @@ describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the call
   };
 
   const markAs = async (as: { sessionCookie: string }, entityIds: string[]) => {
+    const entityType = 'attachment';
+    // Only narrows the type: the suite is skipped where attachments are not tracked.
+    if (!isSeenTracked(entityType)) return 0;
     const { data, response } = await call(markSeen, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { entityIds, entityType: 'attachment' },
+      body: { entityIds, entityType },
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
     expect(response.status).toBe(200);
@@ -99,7 +102,7 @@ describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the call
   it('counts a view once when two marks of one user overlap', async () => {
     const productType = 'attachment';
     // Only narrows the type: the suite is skipped where attachments are not tracked.
-    if (!isTrackedProductType(productType)) return;
+    if (!isSeenTracked(productType)) return;
     const productId = await insertAttachment(admin.id);
     const mark = (tx: Tx) => insertSeenBy({ var: { db: tx } }, { userId: member.id, productType, productIds: [productId] });
 

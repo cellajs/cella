@@ -2,12 +2,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
 import { createEnv } from '@t3-oss/env-core';
-import { appConfig } from 'shared';
+import { appConfig, severityLevels } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
-import { envFlag } from 'shared/utils/worker-env';
+import { envFlag, nodeEnvs } from 'shared/utils/worker-env';
 import { z } from 'zod';
 import { missingServiceSecrets, type ProcessService, processServices, type ServiceSecret } from '#/env-service-secrets';
-import { severityLevels } from '#/schemas/api-error-schemas';
 
 // Resolved from this file (src/ or the dist/ bundle), so it works regardless of cwd (e.g. vitest workers).
 // Variables already in the environment win over the file.
@@ -97,7 +96,7 @@ export const env = createEnv({
     // The database pg_cron runs in, where migrations schedule the retention job: needed where the admin role is no superuser and so may not read `cron.database_name`.
     PG_CRON_DATABASE: z.string().optional(),
     // The build Node runs: a development or test stack, or a production build; `APP_MODE` names the config.
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    NODE_ENV: z.enum(nodeEnvs).default('development'),
     PORT: z.coerce.number().default(servicePort[service]),
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
     INTERNAL_PORT: z.coerce.number().default(appConfig.services.backend.internalPort),

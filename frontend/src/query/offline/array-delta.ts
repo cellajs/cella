@@ -1,9 +1,6 @@
-/** An AWSet (add-wins set) delta of a set-type field. The backend applies it (`backend/src/core/stx/array-delta.ts`); optimistic updates write the full array. */
-export type ArrayDelta = { add: string[]; remove: string[] };
+import type { ArrayDelta } from 'shared/utils/array-delta';
 
-export function isArrayDelta(value: unknown): value is ArrayDelta {
-  return value != null && typeof value === 'object' && 'add' in value;
-}
+export { type ArrayDelta, isArrayDelta } from 'shared/utils/array-delta';
 
 /**
  * Returns the minimal `{ add, remove }` diff.

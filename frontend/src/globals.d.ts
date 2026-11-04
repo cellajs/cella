@@ -10,7 +10,7 @@ declare const __DEV_TOOLS__: boolean;
 
 /** Build-time frontmatter + headings index of docs pages (vite/docs-frontmatter.ts). */
 declare module 'virtual:docs-frontmatter' {
-  export const docsIndex: Record<string, { frontmatter: unknown; headings: { id: string; text: string; depth: number }[] }>;
+  export const docsIndex: Record<string, import('../vite/docs-frontmatter').DocPageEntry>;
 }
 
 /**
@@ -18,10 +18,10 @@ declare module 'virtual:docs-frontmatter' {
  * (vite/docs-frontmatter.ts). Only the lazy docs search engine imports this.
  */
 declare module 'virtual:docs-search-sections' {
-  export const docsSectionsIndex: Record<string, { headingId: string | null; text: string }[]>;
+  export const docsSectionsIndex: Record<string, import('../vite/docs-frontmatter').DocSection[]>;
 }
 
 /** Build-time markdown characters and words per docs page (vite/docs-frontmatter.ts). Only the lazy pages table imports this. */
 declare module 'virtual:docs-sizes' {
-  export const docsSizes: Record<string, { chars: number; words: number }>;
+  export const docsSizes: Record<string, import('../vite/docs-frontmatter').DocSize>;
 }

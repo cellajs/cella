@@ -26,3 +26,6 @@ export const mockStreamSignal = (key = 'stream-signal:default') =>
     organizationId: mockUuid(),
     subjectId: mockUuid(),
   }));
+
+/** A session sign-in replaced: the client reconnects with the newer session. */
+export const mockStreamError = () => ({ code: 'session_replaced' as const, message: 'Session replaced' });

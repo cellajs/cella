@@ -1,8 +1,9 @@
-import { and, eq, getColumns } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { inUnarchivedTenant } from '#/modules/memberships/memberships-queries';
 import { coalesce } from '#/utils/request-coalescing';
@@ -40,7 +41,7 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
  */
 export async function readMemberships(userId: string): Promise<{ version?: string; memberships: Env['Variables']['memberships'] }> {
   const rows = await baseDb
-    .select({ version: actorsTable.bindingsVersion, membership: getColumns(membershipsTable) })
+    .select({ version: actorsTable.bindingsVersion, membership: { ...membershipBaseSelect, createdBy: membershipsTable.createdBy } })
     .from(actorsTable)
     .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
     .where(eq(actorsTable.id, userId));

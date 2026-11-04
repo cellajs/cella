@@ -30,7 +30,6 @@ const membershipSchema = z
   .object({
     ...createSelectSchema(membershipsTable).shape,
     ...auditShape,
-    // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
   })

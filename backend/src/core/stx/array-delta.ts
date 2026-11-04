@@ -1,4 +1,7 @@
 import { z } from '@hono/zod-openapi';
+import type { ArrayDelta } from 'shared/utils/array-delta';
+
+export { type ArrayDelta, isArrayDelta } from 'shared/utils/array-delta';
 
 /** Bounded AWSet delta schema for set-type update ops such as labels and assignedTo. */
 export const arrayDeltaSchema = <T extends z.ZodType<string>>(itemSchema: T, maxItems = 50) => {
@@ -14,13 +17,6 @@ export const arrayDeltaSchema = <T extends z.ZodType<string>>(itemSchema: T, max
     }
   });
 };
-
-export type ArrayDelta = { add: string[]; remove: string[] };
-
-/** Runtime check: is this value a set delta (`{ add, remove }`)? */
-export function isArrayDelta(value: unknown): value is ArrayDelta {
-  return value != null && typeof value === 'object' && 'add' in value;
-}
 
 /** Removes first, then appends. Order is preserved and repeated applications are idempotent. */
 export function applyArrayDelta(current: string[], delta: ArrayDelta): string[] {

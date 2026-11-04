@@ -1,7 +1,7 @@
 import process from 'node:process';
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { createHealthApp } from 'shared/health-app';
+import { createHealthApp, type FullHealth } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
@@ -65,7 +65,7 @@ async function readJobsComponent(): Promise<HealthComponent> {
  * itself, checks the database, reads the pushed CDC report, probes yjs/mcp/oauth and reads the job store; the mcp
  * worker grades the same two; the jobs worker grades itself, the database and the store.
  */
-async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
+async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: FullHealth['httpStatus'] }> {
   const components: Record<string, HealthComponent> = {};
 
   const dbCheck = await checkDatabase();

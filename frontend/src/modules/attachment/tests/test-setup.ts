@@ -27,7 +27,7 @@ export function makeAttachment(overrides: Record<string, unknown> = {}) {
     id: 'att-1',
     organizationId: 'org-1',
     contentType: 'image/png',
-    size: '1024',
+    size: 1024,
     keys: { original: 'files/original.png' },
     publicBucket: false,
     tenantId: 'tenant-1',

@@ -1,6 +1,6 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
 
 type DehydratedQuery = DehydratedState['queries'][number];
@@ -38,16 +38,7 @@ export interface PersistedMetaRecord {
 }
 
 /** A collaborative document's key in the Yjs tables: its entity. */
-export interface YDocKey {
-  entityType: ProductEntityType;
-  entityId: string;
-}
-
-/** One collaborative document: its entity, and the tenant and organization its token and HTTP routes check it in. */
-export interface YjsDocScope extends YDocKey {
-  tenantId: string;
-  organizationId: string;
-}
+export type YDocKey = Pick<YjsDocKey, 'entityType' | 'entityId'>;
 
 /** A stored document's metadata. Its state lives apart, so eviction, the byte budget and the sign-out list read no state. */
 export interface YDocRecord extends YjsDocScope {

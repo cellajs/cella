@@ -31,8 +31,9 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 
   for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
     const hostTable = getEntityTable(hostProduct);
-    // getColumns returns literal-keyed columns; widened for runtime string lookup.
-    const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
+    const hostColumns = getColumns(hostTable);
+    // Widened for the columns named at runtime: the host column from the config, the scope column from the hierarchy.
+    const columns: Record<string, AnyPgColumn> = hostColumns;
 
     const hostColumn = columns[hostColumnName];
     if (!hostColumn) {
@@ -60,8 +61,8 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
       hostColumnName,
       parentColumnName,
       parentColumn,
-      hostIdColumn: columns.id,
-      hostStxColumn: columns.stx,
+      hostIdColumn: hostColumns.id,
+      hostStxColumn: hostColumns.stx,
     });
   }
 

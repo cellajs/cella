@@ -197,8 +197,8 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     expect(recorded.sequence).toBe((before.sequence ?? 0) + 2);
     expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 1);
     expect(await seqOf(id)).toBe(recorded.sequence);
-    expect(created.result.rowData.seq).toBe(recorded.sequence - 1);
-    expect(edited.result.rowData.seq).toBe(recorded.sequence);
+    expect(created.seq).toBe(recorded.sequence - 1);
+    expect(edited.seq).toBe(recorded.sequence);
   });
 
   it('must not take an unchanged TOASTed value for a change of its column', async () => {

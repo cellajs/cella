@@ -1,6 +1,15 @@
-import { appConfig, hierarchy as appHierarchy, type ChannelEntityType, type EntityHierarchy, type EntityRole } from 'shared';
-import type { MenuStructureItem } from 'shared/config-builder/types';
-import type { EntityModel } from '#/tables';
+import {
+  appConfig,
+  hierarchy as appHierarchy,
+  type ChannelEntityType,
+  type ChannelIdColumns,
+  type EntityHierarchy,
+  type EntityRole,
+  menuSections,
+  type OrganizationRole,
+  resolveHierarchy,
+} from 'shared';
+import type { MembershipEntity } from '#/lib/module';
 
 /**
  * Role for an auto-created associated membership (menuStructure): the invited role carries over
@@ -11,9 +20,10 @@ export const resolveAssociatedMembershipRole = (
   invitedRole: string,
   carryRole = false,
   hierarchy: EntityHierarchy = appHierarchy,
-): string => {
-  if (carryRole && hierarchy.getRoles(channelType).includes(invitedRole)) return invitedRole;
-  return hierarchy.getLeastPrivilegedRole(channelType);
+): EntityRole => {
+  const { hierarchy: resolved } = resolveHierarchy({ hierarchy });
+  const carried = carryRole ? resolved.getRoles(channelType).find((role) => role === invitedRole) : undefined;
+  return carried ?? resolved.getLeastPrivilegedRole(channelType);
 };
 
 /**
@@ -25,8 +35,8 @@ export const resolveOrganizationMembershipRole = (
   sourceChannelType: string,
   invitedRole: string,
   hierarchy: EntityHierarchy = appHierarchy,
-): string => {
-  const explicit = hierarchy.getOrganizationRole(sourceChannelType, invitedRole);
+): OrganizationRole => {
+  const explicit = resolveHierarchy({ hierarchy }).hierarchy.getOrganizationRole(sourceChannelType, invitedRole);
   if (explicit === undefined) {
     throw new Error(
       `insertMemberships: channel "${sourceChannelType}" declares no organizationRoles mapping for role "${invitedRole}"; ` +
@@ -44,17 +54,16 @@ interface MenuParent<C extends string = ChannelEntityType> {
 
 /** The menu parent of a channel listed as a subentity in `menuStructure`; null for any other channel. */
 export const findMenuParent = (channelType: string): MenuParent | null => {
-  const relation = appConfig.menuStructure.find((rel) => rel.subentityType === channelType);
+  const relation = menuSections.find((section) => section.subentityType === channelType);
   if (!relation) return null;
-  // Config literals only carry the property when an app sets it
-  return { channelType: relation.entityType, carryRole: 'carryRole' in relation && (relation as MenuStructureItem).carryRole === true };
+  return { channelType: relation.entityType, carryRole: relation.carryRole === true };
 };
 
 /** A membership above a channel that a membership in it brings along. */
 interface BroughtAlong<C extends string> {
   channelType: C | 'organization';
   channelId: string;
-  role: string;
+  role: EntityRole;
 }
 
 /**
@@ -82,22 +91,21 @@ export const membershipsBroughtAlong = <C extends string = ChannelEntityType>(
   return along;
 };
 
-/** The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one the row holds. */
-export const channelIdColumnsOf = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
-  return appConfig.channelEntityTypes.reduce(
-    (acc, channelEntityType) => {
-      const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];
-      if (entity.entityType === channelEntityType) {
-        acc[entityFieldIdName] = entity.id;
-      }
-      if (entityFieldIdName in entity) {
-        acc[entityFieldIdName] = entity[entityFieldIdName as keyof typeof entity] as string;
-      }
-
-      return acc;
-    },
-    {} as Record<(typeof appConfig.entityIdColumnKeys)[ChannelEntityType], string>,
-  );
+/**
+ * The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one
+ * the row holds, null for an ancestor level the row leaves empty.
+ * @throws Error for a row below the organization without an `organizationId`: a partial row, since every channel table requires it.
+ */
+export const channelIdColumnsOf = (entity: MembershipEntity): { organizationId: string } & Partial<ChannelIdColumns> => {
+  const columns: Partial<ChannelIdColumns> = {};
+  for (const channelType of appConfig.channelEntityTypes) {
+    const key = appConfig.entityIdColumnKeys[channelType];
+    const value = entity.entityType === channelType ? entity.id : entity[key];
+    if (typeof value === 'string' || value === null) columns[key] = value;
+  }
+  const { organizationId } = columns;
+  if (!organizationId) throw new Error(`channelIdColumnsOf: ${entity.entityType} ${entity.id} carries no organizationId`);
+  return { ...columns, organizationId };
 };
 
 /**

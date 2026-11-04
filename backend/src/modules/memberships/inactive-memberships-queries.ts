@@ -1,9 +1,11 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, countDistinct, eq, getColumns, inArray, isNotNull, isNull, notExists, notInArray, or } from 'drizzle-orm';
 import { appConfig, type EntityRole, hierarchy } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
@@ -279,11 +281,9 @@ export const bindInactiveMembershipsByEmail = async (ctx: DbContext, { email, us
   return bound.map((row) => row.id);
 };
 
-interface FindPendingMembershipsPaginatedOpts {
+interface FindPendingMembershipsPaginatedOpts extends Pick<z.infer<typeof pendingMembershipListQuerySchema>, 'sort' | 'order'> {
   organizationId: string;
   entityId: string;
-  sort: 'createdAt';
-  order: 'asc' | 'desc';
   offset: number;
   limit: number;
 }

@@ -11,9 +11,9 @@ import {
   mockUuid,
   withFakerSeed,
 } from '#/mocks';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import type { InsertOrganizationModel, OrganizationModel } from '#/modules/organization/organization-db';
+import type { InsertOrganizationModel } from '#/modules/organization/organization-db';
+import { mockActorRefs } from '#/schemas/entity-base-mocks';
 
 const organizationName = mockUniqueEnforcer();
 
@@ -48,10 +48,8 @@ export const mockOrganization = (): InsertOrganizationModel => {
   return generateOrganizationBase(mockUuid(), mockTenantId(), name, mockPastIsoDate());
 };
 
-/** Adds API-only fields (included.membership, included.counts) to the base mock. */
-export const mockOrganizationResponse = (
-  key = 'organization:default',
-): OrganizationModel & { included: { membership: MembershipBaseModel; counts: ReturnType<typeof generateMockChannelCounts> } } =>
+/** Adds API-only fields (writer references, included.membership, included.counts) to the base mock. */
+export const mockOrganizationResponse = (key = 'organization:default') =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const organizationId = mockUuid();
@@ -66,7 +64,11 @@ export const mockOrganizationResponse = (
       tenantId,
     });
 
-    return { ...base, included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) } };
+    return {
+      ...base,
+      ...mockActorRefs(base, key),
+      included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) },
+    };
   });
 export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationsSent: 12 });
 

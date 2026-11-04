@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encodeLogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
+import { encodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { flushMicrotasks } from './helpers';
 
 /** A pg.Client stand-in: `connect` and `LISTEN` succeed unless a test says otherwise, and the test drives its events. */
@@ -38,7 +38,7 @@ const { logListenerStatus, startLogListener, stopLogListener } = await import('.
 
 const onNotice = vi.fn();
 const onListening = vi.fn();
-const notice = { tenantId: 'tenant-1', entityType: 'task', entityId: 'entity-1', logIds: [7] };
+const notice = { tenantId: 'tenant-1', entityType: 'attachment', entityId: 'entity-1', logIds: [7] } satisfies LogNotice;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -74,7 +74,7 @@ describe('log listener', () => {
 
     clients[0].notify('other_channel', encodeLogNotice(notice));
     clients[0].notify(yjsLogChannel, 'not json');
-    clients[0].notify(yjsLogChannel, JSON.stringify({ t: 'tenant-1', e: 'task', i: 'entity-1', ids: ['seven'] }));
+    clients[0].notify(yjsLogChannel, JSON.stringify({ t: 'tenant-1', e: 'attachment', i: 'entity-1', ids: ['seven'] }));
     expect(onNotice).not.toHaveBeenCalled();
   });
 

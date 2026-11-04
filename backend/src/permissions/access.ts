@@ -6,19 +6,16 @@ export interface AccessContext {
   var: { actor?: Pick<Actor, 'id' | 'bindings' | 'scopes'>; isSystemAdmin?: boolean };
 }
 
-/** The grant element type of a context's actor: membership rows for a `UserContext`, the union otherwise. */
-export type BindingOf<C extends AccessContext> = NonNullable<C['var']['actor']>['bindings'][number] & ActorBinding;
-
 /**
  * Actor AND grants in one object for every check and read scope. Hand-assembling one risks pairing one
  * actor's grants with another's identity.
  */
-export const accessFrom = <C extends AccessContext>(ctx: C): Access<BindingOf<C>> =>
+export const accessFrom = (ctx: AccessContext): Access<ActorBinding> =>
   ctx.var.actor
     ? {
         actorId: ctx.var.actor.id,
         isSystemAdmin: ctx.var.isSystemAdmin === true,
-        memberships: ctx.var.actor.bindings as BindingOf<C>[],
+        memberships: ctx.var.actor.bindings,
         scopes: ctx.var.actor.scopes,
       }
     : { anonymous: true };

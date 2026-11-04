@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { seenGroupingChannelTypes } from 'shared';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/organization-sections';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
-import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { sumUnseenCounts, useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUserStore } from '~/modules/user/user-store';

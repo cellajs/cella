@@ -1,8 +1,8 @@
 import type { ModuleConfig } from 'shared/module-registry';
+import type { StreamSignalType } from 'shared/stream-signal-types';
 import type { ChannelModuleConfig, ProductModuleConfig } from '~/lib/entity-modules';
 import type { Tool } from '~/lib/placements';
 import type { StreamSignalHandler } from '~/query/realtime/signal-handlers';
-import type { StreamSignalType } from '~/query/realtime/signal-types';
 
 /** A frontend module's registration: shared metadata plus frontend-only capabilities. */
 export interface FrontendModule extends ModuleConfig {

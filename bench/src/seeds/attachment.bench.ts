@@ -4,7 +4,7 @@ import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { registerBenchSeed } from '../registry';
 import { TOTAL_ATTACHMENTS } from './attachment-constants';
 import { attachmentSeedOrder, benchAttachmentHome } from './attachment-home';
-import { attachmentId, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids';
+import { attachmentId, type BenchAttachmentHome, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids';
 
 /**
  * Reference implementation for the app seed pattern.
@@ -18,13 +18,14 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   name: `Load Test Attachment ${index}`,
   filename: `xbench-file-${index}.pdf`,
   contentType: 'application/pdf',
-  size: '1024',
+  size: 1024,
   bucketName: 'attachments',
   keys: { original: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf` },
   organizationId: ORG_ID,
   // The mock invents ids for every ancestor, and those reference no seeded channel: a nullable one is null unless the app's home names it.
   ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
-  ...benchAttachmentHome(index),
+  // The app-owned home annotates its own return: checked here, a missing or misspelled id column fails the typecheck.
+  ...(benchAttachmentHome(index) satisfies BenchAttachmentHome),
   createdBy: userId(index % 100),
   updatedBy: userId(index % 100),
 });

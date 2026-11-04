@@ -1,23 +1,15 @@
-import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared';
-import { defineBackendModule } from '#/lib/module';
-import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
+import { appConfig, type ProductEntityType } from 'shared';
+import { type BackendModule, defineBackendModule } from '#/lib/module';
+import type { MutationHandler } from '#/lib/mutation-bus';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { assertMaterializeWindow } from '#/modules/yjs/operations/assert-materialize-window';
-import { recordYjsOutsideWrite, type YjsWrittenRow } from '#/modules/yjs/operations/record-outside-write';
+import { recordYjsOutsideWrite } from '#/modules/yjs/operations/record-outside-write';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { yjsHandlers } from '#/modules/yjs/yjs-handlers';
 import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
+import type { EntityModel } from '#/tables';
 
-type PayloadRow = NonNullable<MutationPayload['before']>[number];
-
-const idsOf = (rows: PayloadRow[] = []) => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
-
-/** The keys and description of a written entity row; null for a row that lacks them. */
-const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow): YjsWrittenRow | null => {
-  if (typeof id !== 'string' || typeof tenantId !== 'string' || typeof organizationId !== 'string') return null;
-  if (description !== null && typeof description !== 'string') return null;
-  return { id, tenantId, organizationId, description };
-};
+type ProductRow = EntityModel<ProductEntityType>;
 
 /**
  * True when the write itself wrote the row's description: the stx it stored names the fields it wrote (`buildStx`).
@@ -26,10 +18,8 @@ const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow)
  * earlier write left in the stx, from an op that keeps the stored stx on a write that changes nothing
  * (updateAttachmentOp strips the set then).
  */
-const wroteDescription = (row: PayloadRow, before: PayloadRow | undefined) => {
-  const changedFields = (row.stx as { changedFields?: unknown } | null | undefined)?.changedFields;
-  return Array.isArray(changedFields) && changedFields.includes('description') && row.description !== before?.description;
-};
+const wroteDescription = (row: ProductRow, before: ProductRow | undefined) =>
+  row.stx.changedFields?.includes('description') === true && row.description !== before?.description;
 
 /**
  * A description written by anything but the relay (a REST update, an MCP tool, an import) becomes an update of the
@@ -38,31 +28,30 @@ const wroteDescription = (row: PayloadRow, before: PayloadRow | undefined) => {
  * an outside write. Another row written inside the window (a sibling the materializer moves) is an outside write.
  * Only entity types with a materializer hold documents.
  */
-const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
+const recordOnUpdate = (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.updated`> => {
   return async (ctx, { before = [], after = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
     await assertMaterializeWindow(ctx, { entityType, rows: after });
     const relayEntityId = yjsMaterializeWindow.getStore()?.entityId;
     const written = after.filter((row, index) => row.id !== relayEntityId && wroteDescription(row, before[index]));
-    await recordYjsOutsideWrite(ctx, { entityType, rows: written.flatMap((row) => writtenRowOf(row) ?? []) });
+    await recordYjsOutsideWrite(ctx, { entityType, rows: written });
   };
 };
 
 /** A deleted entity's document goes with it, and relays end its sessions at once. */
-const retireOnDelete = (entityType: ProductEntityType): MutationHandler => {
+const retireOnDelete = (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.deleted`> => {
   return async (ctx, { before = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
-    await retireYjsDocuments(ctx, { entityType, entityIds: idsOf(before) });
+    await retireYjsDocuments(ctx, { entityType, entityIds: before.map(({ id }) => id) });
   };
 };
 
-const onMutation: Partial<Record<TrackedEventType, MutationHandler>> = Object.fromEntries(
-  appConfig.productEntityTypes.flatMap((entityType) => [
-    [`${entityType}.updated`, recordOnUpdate(entityType)],
-    [`${entityType}.deleted`, retireOnDelete(entityType)],
-  ]),
-);
+const onMutation: NonNullable<BackendModule['onMutation']> = {};
+for (const entityType of appConfig.productEntityTypes) {
+  onMutation[`${entityType}.updated` as const] = recordOnUpdate(entityType);
+  onMutation[`${entityType}.deleted` as const] = retireOnDelete(entityType);
+}
 
 defineBackendModule({
   name: 'yjs',

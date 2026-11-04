@@ -2,10 +2,12 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import type { TraceContext } from 'shared/tracing';
+import { isRecord } from 'shared/utils/as-record';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { serviceSecret } from '#/env';
-import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import { type ActivityEvent, activityBus, messageRowSchema, ownActivityColumns } from '#/lib/activity-bus';
 import type { CdcSocketSnapshot, HealthStatus } from '#/lib/health-helpers';
 import { activitySchema } from '#/modules/activities/activities-schema';
 import { resyncAppStreams } from '#/modules/entities/helpers/session-streams';
@@ -13,26 +15,13 @@ import { log } from '#/utils/logger';
 
 const rowDataSchema = z.record(z.string(), z.unknown());
 
-/** The activity columns that differ between the rows of one product message: a row carries its own, and no commit time. */
-const ownActivityColumns = { id: true, userId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
-
-/**
- * One product row: the activity it was recorded as, its permission fields, its org-sequence position, and for a moved
- * row the permission fields it had before.
- */
-const messageRowSchema = z.object({
-  activityId: activitySchema.shape.id,
-  userId: activitySchema.shape.userId,
-  changedFields: activitySchema.shape.changedFields,
-  stx: activitySchema.shape.stx,
-  rowData: rowDataSchema,
-  seq: z.number().optional(),
-  movedFrom: rowDataSchema.nullable().optional(),
-});
-
-const messageTraceSchema = z
-  .object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number().optional(), cdcTimestamp: z.number(), lsn: z.string().optional() })
-  .optional();
+const messageTraceSchema = z.object({
+  traceId: z.string(),
+  spanId: z.string(),
+  traceFlags: z.number().optional(),
+  cdcTimestamp: z.number(),
+  lsn: z.string().optional(),
+}) satisfies z.ZodType<TraceContext>;
 
 /**
  * Validates the CDC worker payload: the product rows of one audience as `rows` beside what they share, or the one
@@ -45,7 +34,7 @@ const cdcMessageSchema = z.union([
       .omit(ownActivityColumns)
       .extend({ entityType: z.enum(appConfig.productEntityTypes), organizationId: z.string(), tenantId: z.string() }),
     rows: z.array(messageRowSchema).min(1),
-    _trace: messageTraceSchema,
+    _trace: messageTraceSchema.optional(),
   }),
   z.object({
     activity: activitySchema.extend({ subjectId: z.string().nullable() }),
@@ -53,11 +42,14 @@ const cdcMessageSchema = z.union([
     movedFrom: rowDataSchema.nullable().optional(),
     // Optional: a worker of an earlier release sends none, and the live signal then goes without one.
     signalVersions: z.record(z.string(), z.number().int()).optional(),
-    _trace: messageTraceSchema,
+    _trace: messageTraceSchema.optional(),
   }),
 ]);
 
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;
+
+/** A message as the worker builds it, before the parse. */
+export type CdcMessageInput = z.input<typeof cdcMessageSchema>;
 
 /** The event a message becomes on the bus: a product message with its rows, any other with its whole row. */
 function eventOf(message: CdcMessage): ActivityEvent {
@@ -85,29 +77,32 @@ export function cdcSecretRefusal(presented: string | string[] | undefined): stri
   return typeof presented === 'string' && safeEqual(presented, expected) ? undefined : 'invalid secret';
 }
 
-/** What the CDC worker reports about itself, pushed every 15 seconds and at once after an incident. */
-export interface CdcWorkerHealth {
+/**
+ * What the CDC worker reports about itself, pushed every 15 seconds and at once after an incident. Only the grade and
+ * its reasons are required, and `details` keeps every key it holds, so the report of a worker a release apart parses.
+ */
+const cdcHealthReportSchema = z.object({
   /** The worker's own grade. */
-  status: HealthStatus;
+  status: z.enum(['healthy', 'degraded', 'unhealthy'] satisfies HealthStatus[]),
   /**
    * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`,
    * `setup_problems`, `slot_inactive`, `slot_lost`, `wal_lag_high`, `wal_lag_critical`, `event_loop_lag`.
    */
-  reasons: string[];
+  reasons: z.array(z.string()),
   /** Diagnosis for a person: replication status and positions, lag, the failure it reads again from, setup problems, the slot. */
-  details: Record<string, unknown>;
+  details: z.looseObject({ replication: z.string().optional(), failure: z.record(z.string(), z.unknown()).nullable().optional() }).optional(),
   /** Generation of the sync books: it moves when the worker rebuilt them. */
-  generation: number;
-}
+  generation: z.number().optional(),
+});
+
+/** The worker's health report as the API holds it once it parsed. */
+export type CdcWorkerHealth = z.infer<typeof cdcHealthReportSchema>;
 
 /**
  * How long no worker may read before clients are told. A restart, a deploy and a second read of a failed flush are
  * shorter than this.
  */
 const workerAwayAfterMs = 60_000;
-
-/** The grades a health report may carry; one with another grade is unreadable. */
-const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] satisfies HealthStatus[];
 
 /** The worker's latest health report and when it arrived; `health` is null when its shape could not be read. */
 type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
@@ -212,7 +207,7 @@ class CdcWebSocketServer {
    * The first generation the worker reports is where this process starts; a later, other one means the books were
    * corrected or rebuilt while clients were connected, so the cursors a client holds say nothing about them any more.
    */
-  private noteGeneration(generation: number | undefined): void {
+  private noteGeneration(generation: unknown): void {
     if (typeof generation !== 'number' || generation === this.generation) return;
     const moved = this.generation !== null;
     this.generation = generation;
@@ -232,12 +227,12 @@ class CdcWebSocketServer {
       return;
     }
 
-    const payload = (message.payload ?? {}) as Partial<CdcWorkerHealth>;
-    const readable = workerGrades.includes(payload.status) && Array.isArray(payload.reasons);
-    this.workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
+    const parsed = cdcHealthReportSchema.safeParse(message.payload);
+    const health = parsed.success ? parsed.data : null;
+    this.workerHealth = { health, receivedAt: new Date() };
     // A report this process cannot read says nothing of reading: it is taken as none, like the messages beside it.
-    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active' && !payload.details.failure);
-    this.noteGeneration(payload.generation);
+    this.noteReading(!!health && health.status !== 'unhealthy' && health.details?.replication === 'active' && !health.details.failure);
+    this.noteGeneration(isRecord(message.payload) ? message.payload.generation : undefined);
   }
 
   /** Keeps since when no worker reads: the moment reading stopped, until it starts again. */

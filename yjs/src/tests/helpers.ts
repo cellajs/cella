@@ -4,12 +4,12 @@ import type { AddressInfo } from 'node:net';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
 import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import type { SocketContext } from '../server/upgrade';
 
 interface TokenOptions {
@@ -35,7 +35,7 @@ export function createSignedToken(opts: string | TokenOptions, exp?: number): st
   const o: TokenOptions = typeof opts === 'string' ? { userId: opts, exp } : opts;
   const payload = {
     userId: o.userId,
-    entityType: o.entityType ?? 'task',
+    entityType: o.entityType ?? 'attachment',
     entityId: o.entityId ?? 'entity-1',
     tenantId: o.tenantId ?? 'tenant-1',
     organizationId: o.organizationId ?? 'org-1',
@@ -50,7 +50,7 @@ export function createExpiredToken(userId: string): string {
 
 /** A document scope with sensible defaults, as authorization reads it from the entity row. */
 export function mockScope(overrides?: Partial<YjsDocScope>): YjsDocScope {
-  return { entityType: 'task', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1', ...overrides };
+  return { entityType: 'attachment', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1', ...overrides };
 }
 
 /** A socket's context: authorized in `requested` unless `scope` says otherwise (null for a socket still pending). */

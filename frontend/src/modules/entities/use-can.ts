@@ -16,7 +16,7 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { useUserStore } from '~/modules/user/user-store';
 
 /** A cached channel or product row, read by its id, type, writer and ancestor id columns. */
-export type CanRow = { id: string; entityType: string; createdBy?: Pick<ActorRef, 'id'> | null };
+export type CanRow = { id: string; entityType: ChannelEntityType | ProductEntityType; createdBy?: Pick<ActorRef, 'id'> | null };
 
 // A row that does not exist yet matches no membership by its id, so a fixed one spares minting one per call.
 const newRowId = 'new';

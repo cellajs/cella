@@ -1,8 +1,7 @@
 import type { ProductEntityType } from 'shared';
-import { buildSubjectFromEntity, checkAccess } from 'shared';
+import { buildSubjectFromEntity, checkAccess, type YjsDocScope } from 'shared';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { accessFrom } from '#/permissions/access';
 import { getValidProduct } from '#/permissions/get-valid-product';
 

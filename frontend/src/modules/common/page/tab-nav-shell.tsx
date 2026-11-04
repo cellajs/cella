@@ -16,15 +16,15 @@ export const tabNavItemClass = tw(
   'focus-effect focus-inset group/tab relative select-none rounded-sm px-2 py-3 font-medium text-muted-foreground transition-colors standalone:[-webkit-touch-callout:none] last:mr-4 hover:text-foreground focus-visible:text-foreground data-[active=true]:text-foreground lg:px-4',
 );
 
-interface TabNavLabelProps {
-  label: TKey;
-  icon?: ReactNode;
-}
+/** A tab's caption: a translation key, or `text` shown as written, such as an entity's name. */
+export type TabLabel = { label: TKey } | { text: string };
+
+type TabNavLabelProps = TabLabel & { icon?: ReactNode };
 
 /** A tab's label, shortened in the middle past 20 characters. */
-export function TabNavLabel({ label, icon }: TabNavLabelProps) {
+export function TabNavLabel({ icon, ...caption }: TabNavLabelProps) {
   const { t } = useTranslation();
-  const text = t(label);
+  const text = 'text' in caption ? caption.text : t(caption.label);
   const shortText = truncateMiddle(text, 20);
   return (
     <span className={cn('group-active/tab:press block', icon && 'flex items-center gap-1.5')} title={shortText === text ? undefined : text}>

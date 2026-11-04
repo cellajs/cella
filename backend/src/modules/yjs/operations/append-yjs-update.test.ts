@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import pg from 'pg';
+import type { YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
@@ -8,7 +9,7 @@ import type { DbContext } from '#/core/context';
 import { baseDb, type Tx } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { decodeLogNotice, type YjsDocScope, yjsLogChannel, yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, yjsLogChannel, yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';

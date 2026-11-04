@@ -1,15 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, roles } from 'shared';
+import { federationRefSchema } from '#/modules/auth/sso/sso-schema';
 import { validEmailSchema } from '#/schemas';
 
 export const emailBodySchema = z.object({ email: validEmailSchema });
-/** A federation the generic entrance offers: configured here, with at least one institution connected. */
-const signInFederationSchema = z.object({ key: z.string(), label: z.string() });
 
 export const authHealthSchema = z.object({
   restrictedMode: z.boolean(),
   retryAfter: z.number().optional(),
-  federations: z.array(signInFederationSchema).describe('Federations with a connected institution, for the "sign in with your institution" entrance'),
+  // A federation the generic entrance offers: configured here, with at least one institution connected.
+  federations: z.array(federationRefSchema).describe('Federations with a connected institution, for the "sign in with your institution" entrance'),
   emailEnabled: z.boolean().describe('Whether the server has an email key: without one no email goes out'),
 });
 

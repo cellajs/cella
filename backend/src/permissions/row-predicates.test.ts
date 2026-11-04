@@ -16,6 +16,7 @@ import {
   type SubjectForPermission,
   toColumnName,
 } from 'shared';
+import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import {
   type DeepChannelType,
   deepChannelRoles,
@@ -586,11 +587,12 @@ const rowChannelColumns = (row: ParityRow): Record<string, unknown> => ({
 });
 
 /** The permission fields of a row, as a product event carries them. */
-const dispatchRow = (row: ParityRow): Record<string, unknown> => ({
+const dispatchRow = (row: ParityRow): PermissionRowData => ({
   id: row.id,
   createdBy: row.createdBy,
   public: row.public,
   ...rowChannelColumns(row),
+  organizationId: rootId,
 });
 
 const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>

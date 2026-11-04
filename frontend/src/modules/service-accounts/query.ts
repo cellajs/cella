@@ -4,8 +4,6 @@ import {
   type CreateServiceAccountData,
   type CreateServiceAccountResponse,
   createServiceAccount,
-  type GetApiKeysResponse,
-  type GetServiceAccountsResponse,
   getApiKeys,
   getServiceAccounts,
   type RevokeApiKeyData,
@@ -45,14 +43,14 @@ export const useCreateServiceAccountMutation = () => {
     mutationKey: serviceAccountKeys.create,
     mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body })),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
-      queryClient.setQueryData<GetServiceAccountsResponse>(serviceAccountKeys.list(path), (oldData) => {
+      queryClient.setQueryData(serviceAccountsQueryOptions(path).queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: [serviceAccount, ...oldData.items], total: oldData.total + 1 };
       });
       // The secret never enters the cache; the listed row is the safe shape.
       if (apiKey) {
         const { secret: _secret, ...listed } = apiKey;
-        queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, serviceAccount.id), { items: [listed] });
+        queryClient.setQueryData(apiKeysQueryOptions(path, serviceAccount.id).queryKey, { items: [listed] });
       }
       toaster.success(t('c:success.create_resource', { resource: t('c:api_key') }));
     },
@@ -68,7 +66,7 @@ export const useRevokeApiKeyMutation = () => {
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
-      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, path.id), (oldData) => {
+      queryClient.setQueryData(apiKeysQueryOptions(path, path.id).queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
       });

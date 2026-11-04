@@ -1,4 +1,4 @@
-import type { ParseKeys } from 'i18next';
+import i18n, { type ParseKeys } from 'i18next';
 import enAbout from '../../../locales/en/about.json';
 import enApp from '../../../locales/en/app.json';
 import enAppError from '../../../locales/en/appError.json';
@@ -9,6 +9,9 @@ const enCommonExtended = { ...enCommon, ...enApp };
 
 /** Any valid translation key: bare `c` keys plus `c:`/`about:`/`error:` prefixed ones, per i18next-resources.d.ts. */
 export type TKey = ParseKeys;
+
+/** A string with a translation in a loaded namespace, such as a key a server or a `setError` sends. */
+export const isTKey = (key: string): key is TKey => i18n.exists(key);
 
 export const locales = { en: { about: enAbout, appError: enAppError, c: enCommonExtended, error: enError } };
 
@@ -32,9 +35,8 @@ export const lazyLocaleBackend = {
 };
 
 if (import.meta.hot) {
-  import.meta.hot.accept(async (newModule) => {
+  import.meta.hot.accept((newModule) => {
     if (!newModule?.locales) return;
-    const { default: i18n } = await import('i18next');
     const updated = newModule.locales as typeof locales;
     for (const [language, namespaces] of Object.entries(updated)) {
       for (const [namespace, resources] of Object.entries(namespaces)) {

@@ -3,11 +3,12 @@ import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { findServerYjsUpdate } from '#/modules/yjs/yjs-queries';
+import type { EntityModel } from '#/tables';
 
 interface AssertMaterializeWindowOpts {
   entityType: ProductEntityType;
   /** The rows the write left; only the window's entity is checked. */
-  rows: readonly Record<string, unknown>[];
+  rows: readonly Pick<EntityModel<ProductEntityType>, 'id' | 'tenantId'>[];
 }
 
 /**
@@ -21,7 +22,7 @@ export async function assertMaterializeWindow(ctx: DbContext, { entityType, rows
   const window = yjsMaterializeWindow.getStore();
   if (!window) return;
   for (const { id, tenantId } of rows) {
-    if (id !== window.entityId || typeof tenantId !== 'string') continue;
+    if (id !== window.entityId) continue;
     const missing = await findServerYjsUpdate(ctx, { doc: { entityType, entityId: id, tenantId }, exceptIds: window.serverRowIds });
     if (missing) {
       throw new AppError(409, 'field_conflict', 'info', {

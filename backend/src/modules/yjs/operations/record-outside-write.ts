@@ -4,19 +4,12 @@ import { AppError } from '#/core/error';
 import { mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
-
-/** An entity row an outside write left: the keys its document is stored under, and the description it now holds. */
-export interface YjsWrittenRow {
-  id: string;
-  tenantId: string;
-  organizationId: string;
-  description: string | null;
-}
+import type { EntityModel } from '#/tables';
 
 interface RecordYjsOutsideWriteOpts {
   entityType: ProductEntityType;
-  /** The rows the write left, each with the description it wrote. */
-  rows: readonly YjsWrittenRow[];
+  /** The rows the write left: the keys each document is stored under, and the description the write wrote. */
+  rows: readonly Pick<EntityModel<ProductEntityType>, 'id' | 'tenantId' | 'organizationId' | 'description'>[];
 }
 
 /**

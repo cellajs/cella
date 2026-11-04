@@ -1,6 +1,10 @@
 import { existsSync } from 'node:fs';
 import process from 'node:process';
 import { z } from 'zod';
+import { severityLevels } from '../../types.ts';
+
+/** The values `NODE_ENV` takes in every service. */
+export const nodeEnvs = ['development', 'production', 'test'] as const;
 
 /** The one env file for the monorepo, `backend/.env`, resolved from this file. Variables already in the environment win. */
 export function loadBackendDotenv(): void {
@@ -28,7 +32,7 @@ export const workerEnvBase = z.object({
   // Build-time git SHA baked into the image, reported by `/health` and as `service.version` in telemetry.
   RELEASE_SHA: z.string().default('unknown'),
 
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
+  NODE_ENV: z.enum(nodeEnvs).default('development'),
+  PINO_LOG_LEVEL: z.enum([...severityLevels, 'silent']).optional(),
   DEBUG: envFlag('false'),
 });

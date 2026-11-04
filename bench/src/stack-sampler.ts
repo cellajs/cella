@@ -89,8 +89,20 @@ function megabytes(size: string): number {
   return Number(match[1]) * (factor[match[2].toLowerCase()] ?? 1);
 }
 
+/** pg returns int8 columns as strings; the per-table sums arrive as JSON numbers. */
+interface DbCountersRow {
+  xact_commit: string;
+  xact_rollback: string;
+  tup_inserted: string;
+  tup_updated: string;
+  tup_deleted: string;
+  tup_fetched: string;
+  lsn: string;
+  tables: DbCounters['tables'] | null;
+}
+
 async function readDbCounters(pool: pg.Pool): Promise<DbCounters> {
-  const { rows } = await pool.query(
+  const { rows } = await pool.query<DbCountersRow>(
     `SELECT d.xact_commit, d.xact_rollback, d.tup_inserted, d.tup_updated, d.tup_deleted, d.tup_fetched, pg_current_wal_lsn()::text AS lsn,
        (SELECT json_object_agg(rel, json_build_object('ins', ins, 'upd', upd, 'del', del, 'scans', scans)) FROM (
           SELECT CASE WHEN relname LIKE 'activities%' THEN 'activities' ELSE relname END AS rel,
@@ -109,17 +121,13 @@ async function readDbCounters(pool: pg.Pool): Promise<DbCounters> {
     deleted: Number(row.tup_deleted),
     fetched: Number(row.tup_fetched),
     walLsn: row.lsn,
-    tables: Object.fromEntries(
-      Object.entries((row.tables ?? {}) as Record<string, Record<string, number>>).map(([name, t]) => [
-        name,
-        { ins: Number(t.ins), upd: Number(t.upd), del: Number(t.del), scans: Number(t.scans) },
-      ]),
-    ),
+    tables: row.tables ?? {},
   };
 }
 
 export async function walBytesBetween(pool: pg.Pool, from: DbCounters, to: DbCounters): Promise<number> {
-  const { rows } = await pool.query('SELECT pg_wal_lsn_diff($1, $2) AS bytes', [to.walLsn, from.walLsn]);
+  // A numeric, which pg returns as a string.
+  const { rows } = await pool.query<{ bytes: string }>('SELECT pg_wal_lsn_diff($1, $2) AS bytes', [to.walLsn, from.walLsn]);
   return Number(rows[0].bytes);
 }
 
@@ -193,7 +201,12 @@ export async function startStackSampler(targets: ProcessTarget[], dbUrl: string)
   };
 
   const sampleSessions = async () => {
-    const { rows } = await pool.query(
+    const { rows } = await pool.query<{
+      state: string | null;
+      wait_event_type: string | null;
+      wait_event: string | null;
+      application_name: string | null;
+    }>(
       `SELECT state, wait_event_type, wait_event, application_name FROM pg_stat_activity
        WHERE datname = current_database() AND backend_type = 'client backend' AND pid <> pg_backend_pid()`,
     );

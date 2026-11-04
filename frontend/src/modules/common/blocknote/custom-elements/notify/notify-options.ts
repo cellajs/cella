@@ -1,8 +1,11 @@
 import { CircleAlertIcon, CircleCheckIcon, CircleXIcon, InfoIcon } from 'lucide-react';
+import type { NotifyType } from 'shared/utils/blocknote-schema-configs';
+import type { IconComponent } from '~/modules/common/icons/types';
 
-export const notifyOptions = [
-  { titleKey: 'c:warning', value: 'warning', icon: CircleAlertIcon },
-  { titleKey: 'c:error', value: 'error', icon: CircleXIcon },
-  { titleKey: 'c:info', value: 'info', icon: InfoIcon },
-  { titleKey: 'c:success', value: 'success', icon: CircleCheckIcon },
-] as const;
+/** In menu order. */
+export const notifyOptions = {
+  warning: { titleKey: 'c:warning', icon: CircleAlertIcon },
+  error: { titleKey: 'c:error', icon: CircleXIcon },
+  info: { titleKey: 'c:info', icon: InfoIcon },
+  success: { titleKey: 'c:success', icon: CircleCheckIcon },
+} as const satisfies Record<NotifyType, { titleKey: string; icon: IconComponent }>;

@@ -1,6 +1,6 @@
 import { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
-import type { EntityActionType, EntityType } from '../../types.ts';
-import type { AccessScope } from './access-scopes.ts';
+import type { EntityActionType } from '../../types.ts';
+import type { AccessScope, AccessScopedEntityType } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 import { mayGrantRole, type RoleGrant } from './engine/role-grant.ts';
@@ -23,7 +23,7 @@ export type Access<T extends AccessMembership = AccessMembership> = (ActorFields
  * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its actor's grants allow,
  * never more. Unscoped access (a session, or `scopes: null`) passes untouched.
  */
-const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean =>
+const scopeAllows = (access: Access, entityType: AccessScopedEntityType, action: EntityActionType): boolean =>
   'anonymous' in access || accessScopes.allows(access.scopes, entityType, action);
 
 /** System admins bypass every check; anonymous actors hold nothing. */

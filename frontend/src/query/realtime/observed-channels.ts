@@ -8,7 +8,7 @@ export function isObservedChannel(channelId: string): boolean {
     .findAll({ type: 'active' })
     .some((query) => {
       const [entityType, kind] = query.queryKey;
-      if (typeof entityType !== 'string' || kind !== 'list' || !hasEntityQueryKeys(entityType)) return false;
+      if (kind !== 'list' || !hasEntityQueryKeys(entityType)) return false;
       return keyCarriesChannelId(query.queryKey, channelId);
     });
 }

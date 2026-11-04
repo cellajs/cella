@@ -14,7 +14,7 @@ export type CustomUppy = Uppy<UppyMeta, UppyBody>;
 export type CustomUppyFile = UppyFile<UppyMeta, UppyBody>;
 export type CustomUppyOptions = UppyOptions<UppyMeta, UppyBody>;
 
-export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url' | string)[];
+export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url')[];
 
 export type UploadResults<T extends UploadTemplateId, K = UserMeta> = {
   [key in TemplateStepKeys<T>]: UploadedFile<K>[];

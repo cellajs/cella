@@ -1,8 +1,8 @@
 import process from 'node:process';
 import { stripVTControlCharacters, styleText } from 'node:util';
 import { type BaselineEntry, compareBaseline, RUNNER_EPOCH } from './baseline';
-import type { Distribution, EndpointSummary } from './metrics';
-import type { CheckResult } from './types';
+import type { Distribution } from './metrics';
+import type { RunSummary } from './run';
 
 type Color = 'green' | 'red' | 'yellow' | 'cyan' | 'dim' | 'bold';
 export const paint = (color: Color, text: string) => styleText(color, text);
@@ -109,19 +109,9 @@ export function liveLines(state: LiveState): string[] {
   return [head, `  ${parts.join(paint('dim', ' · '))}`];
 }
 
-export interface SummaryView {
-  scenario: string;
-  durationS: number;
-  short: boolean;
-  vus: { created: number; completed: number; failed: number };
-  requests: number;
-  requestRate: number;
-  http?: Distribution;
-  endpoints: Record<string, EndpointSummary>;
-  histograms: Record<string, Distribution>;
+/** The run's summary as the report prints it: the scenario's own counters, and the baseline it was compared with. */
+export interface SummaryView extends Omit<RunSummary, 'type' | 'runner' | 'startedAt' | 'counters' | 'generatorLagP99MaxMs' | 'attachments'> {
   counters: [string, number][];
-  errors: Record<string, { count: number; message: string }>;
-  checks: CheckResult[];
   /** False for a short or failed run: neither is compared. */
   compared: boolean;
   baseline: BaselineEntry | null;

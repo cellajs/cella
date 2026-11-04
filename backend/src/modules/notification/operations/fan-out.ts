@@ -48,9 +48,8 @@ export async function fanOutNotifications(event: ProductActivityEvent): Promise<
 
   // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
   const changes = event.rows.flatMap((row) => {
-    const subjectId = row.rowData.id;
     const readsMentions = mayAddMentions(event.action, row);
-    return typeof subjectId === 'string' && (readsMentions || source.declaration.resolveRecipients) ? [{ row, subjectId, readsMentions }] : [];
+    return readsMentions || source.declaration.resolveRecipients ? [{ row, subjectId: row.rowData.id, readsMentions }] : [];
   });
   if (changes.length === 0) return;
 

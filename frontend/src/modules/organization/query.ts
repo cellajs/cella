@@ -27,7 +27,7 @@ import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
-import type { MutationData } from '~/query/types';
+import type { MutationData, QueryData } from '~/query/types';
 
 type OrganizationFilters = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'>;
 
@@ -46,8 +46,8 @@ export const findOrganizationByIdOrSlug = (idOrSlug: string, tenantId: string) =
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => (await getOrganization({ path: { tenantId, id }, query: { include: 'counts' } })) as EnrichedOrganization,
-    placeholderData: () => findOrganizationByIdOrSlug(id, tenantId) as EnrichedOrganization | undefined,
+    queryFn: async (): Promise<EnrichedOrganization> => getOrganization({ path: { tenantId, id }, query: { include: 'counts' } }),
+    placeholderData: (): EnrichedOrganization | undefined => findOrganizationByIdOrSlug(id, tenantId),
     structuralSharing: preserveIncluded,
   });
 
@@ -63,11 +63,13 @@ const withDefaults = ({
   role,
 }: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeArchived, role });
 
-const fetchOrganizationsPage = async (query: OrganizationFilters, limit: number, offset: number, signal?: AbortSignal) => {
-  const result = await getOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
-  // Cache enrichment adds the ancestor slugs.
-  return result as { items: EnrichedOrganization[]; total: number };
-};
+// Cache enrichment adds the ancestor slugs.
+const fetchOrganizationsPage = async (
+  query: OrganizationFilters,
+  limit: number,
+  offset: number,
+  signal?: AbortSignal,
+): Promise<QueryData<EnrichedOrganization>> => getOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
 
 export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
   const filters = withDefaults(params);

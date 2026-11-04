@@ -1,21 +1,8 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import type { StreamChange, StreamSignal } from '#/schemas';
+import type { StreamChange, StreamErrorPayload, StreamSignal } from '#/schemas';
 import { log } from '#/utils/logger';
-
-/**
- * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized`,
- * `forbidden` and `tenant_revoked` as final; `session_replaced` means the browser holds a newer session to reconnect
- * with, and `access_changed` that the session holds but the stream's access must be computed again. `resync` means the
- * CDC worker corrected or rebuilt its books: the client reconnects, and its catch-up brings the new generation.
- */
-export type StreamErrorCode = 'unauthorized' | 'forbidden' | 'tenant_revoked' | 'session_replaced' | 'access_changed' | 'resync';
-
-export interface StreamErrorPayload {
-  code: StreamErrorCode;
-  message: string;
-}
 
 /** One frame of the app stream. */
 export type StreamFrame = { event: 'change'; data: StreamChange } | { event: 'signal'; data: StreamSignal };

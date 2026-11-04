@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
-import { isProduct, type ProductEntityType, toTableName } from 'shared';
+import { type ProductEntityType, toTableName, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { LogRow, YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -184,13 +184,10 @@ interface FindEntityDescriptionOpts {
  * The entity's stored description, read FOR SHARE in the caller's transaction: an outside write's UPDATE of the row
  * waits until the caller commits, and a write in flight commits first and is read. Null when no live row exists in the
  * document's tenant (deleted, or never there). By convention the Yjs-edited column is `description`: a table without
- * it locks its row and gives none, and a type that is not a product type holds no document and has no row to lock.
- * The app-owned table is queried by name, after access to the entity was verified; the tenant and live-row predicates
- * repeat what RLS applies, so the read is the same on a connection that bypasses it.
+ * it locks its row and gives none. The app-owned table is queried by name, after access to the entity was verified;
+ * the tenant and live-row predicates repeat what RLS applies, so the read is the same on a connection that bypasses it.
  */
 export const findEntityDescription = async (ctx: DbContext, { doc }: FindEntityDescriptionOpts) => {
-  if (!isProduct(doc.entityType)) return { description: null };
-
   const table = toTableName(doc.entityType);
   const existing = await getTableColumnNames(ctx, { table });
   if (!existing.has('id')) return { description: null };

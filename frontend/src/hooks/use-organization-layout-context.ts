@@ -1,14 +1,11 @@
-import { useRouterState } from '@tanstack/react-router';
-import type { Organization } from 'sdk';
-
-type OrganizationContext = { organization: Organization; tenantId: string };
+import { type RegisteredRouter, type RouterState, useRouterState } from '@tanstack/react-router';
 
 // Finds the match by its context shape: importing the layout route would make a route file and a component import each other (breaks Vite HMR).
-const findOrganizationContext = (matches: { context: unknown }[]) =>
-  matches.find((match) => {
-    const context = match.context as Record<string, unknown>;
-    return context?.organization && typeof context?.tenantId === 'string';
-  })?.context as OrganizationContext | undefined;
+const findOrganizationContext = (matches: RouterState<RegisteredRouter['routeTree']>['matches']) => {
+  for (const { context } of matches) {
+    if (context && 'organization' in context && context.organization) return context;
+  }
+};
 
 /**
  * Organization and tenant ids from the nearest route that provides them; throws when no match carries them.

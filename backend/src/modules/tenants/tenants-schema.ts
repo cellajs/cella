@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { recordFromKeys } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
@@ -25,7 +26,7 @@ const rateLimitsSchema = z.object({
 });
 
 const quotasSchema = z
-  .record(z.string(), z.number().int().min(0))
+  .object(recordFromKeys(quotaKeys, () => z.number().int().min(0)))
   .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)');
 
 const restrictionsSchema = z.object({
@@ -35,6 +36,9 @@ const restrictionsSchema = z.object({
     .boolean()
     .describe('Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)'),
 });
+
+/** What a tenant may hold and spend, stored on its row (`tenants.restrictions`). */
+export type Restrictions = z.infer<typeof restrictionsSchema>;
 
 export const tenantSchema = z
   .object({
@@ -64,6 +68,9 @@ const partialRestrictionsSchema = z
     rateLimits: rateLimitsSchema.partial().optional(),
   })
   .describe('Partial restrictions override');
+
+/** A partial restrictions update, or a stored row that predates a field: what `mergeRestrictions` lays over a base. */
+export type RestrictionsPatch = z.infer<typeof partialRestrictionsSchema>;
 
 export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,

@@ -7,7 +7,7 @@ import { EmojiPickerController, FilePanelController, useCreateBlockNote } from '
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type CSSProperties, type MouseEventHandler, type RefObject, useEffect, useEffectEvent, useImperativeHandle, useRef } from 'react';
 import { appConfig } from 'shared';
-import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
+import { findSummarySource } from 'shared/utils/derive-description-core';
 import type { Awareness } from 'y-protocols/awareness';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -35,7 +35,6 @@ import { syntaxHighlighter } from '~/modules/common/blocknote/syntax-highlighter
 import {
   type BaseUppyFilePanelProps,
   type CommonBlockNoteProps,
-  type CustomBlock,
   type CustomBlockNoteEditor,
   type CustomBlockTypes,
   isMediaBlockType,
@@ -196,8 +195,8 @@ export function BlockNote({
       focusSummaryEnd: () => {
         editor.focus();
         // The block the derived summary shows, so the cursor stops where the collapsed view ends.
-        const { source } = findSummarySource(editor.document as DescriptionBlock[]);
-        if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
+        const { source } = findSummarySource(editor.document);
+        if (source) editor.setTextCursorPosition(source, 'end');
       },
       placeCursorAtPoint: (clientX, clientY) => {
         editor.focus();

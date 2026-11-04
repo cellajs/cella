@@ -1,9 +1,9 @@
 import { setTimeout as sleep } from 'node:timers/promises';
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import {
   awarenessUpdate,
   buildAwarenessMessage,
@@ -42,9 +42,9 @@ vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () =
 
 const { getCollab } = await import('../sync/session-manager');
 
-const entityType = 'task';
+const entityType = 'attachment';
 /** A document of tenant-1, as the relay keys its session and rows. */
-const docOf = (entityId: string) => ({ entityType, entityId, tenantId: 'tenant-1' });
+const docOf = (entityId: string): YjsDocKey => ({ entityType, entityId, tenantId: 'tenant-1' });
 const relay = await startRelayServer();
 const usedDocs = new Set<string>();
 

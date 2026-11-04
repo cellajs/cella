@@ -1,5 +1,6 @@
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsMaterializeRequest } from '#/modules/yjs/yjs-schema';
 import { docKey } from '../constants';
 import { env } from '../env';
 import { log } from '../lib/pino';
@@ -40,7 +41,7 @@ export async function postMaterialize(
         editors,
         serverRowIds,
         description,
-      }),
+      } satisfies YjsMaterializeRequest),
       signal: AbortSignal.timeout(materializeTimeoutMs),
     });
     if (res.ok) return 'ok';

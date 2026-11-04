@@ -18,8 +18,8 @@ describe('sync-store adoptGeneration', () => {
 
   const withCursors = () => {
     const store = syncStore.getState();
-    store.setOrgSeq('org-1', 'item', 40);
-    store.setChannelSeq('org-1', 'c1', 'item', 38);
+    store.setOrgSeq('org-1', 'attachment', 40);
+    store.setChannelSeq('org-1', 'c1', 'attachment', 38);
     store.setSignalVersion('org-1', 'channel.deleted', 3);
   };
 
@@ -28,7 +28,7 @@ describe('sync-store adoptGeneration', () => {
 
     // Nothing to distrust: the first generation it hears, then the same one again.
     for (const generation of [3, 3]) syncStore.getState().adoptGeneration(generation);
-    expect(syncStore.getState().getOrgSeq('org-1', 'item')).toBe(40);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(40);
     expect(syncStore.getState().refetchDueAt).toBeNull();
 
     // Another generation: the books were rebuilt, and no cursor of before says anything about them.
@@ -36,8 +36,8 @@ describe('sync-store adoptGeneration', () => {
 
     const store = syncStore.getState();
     expect(store.generation).toBe(4);
-    expect(store.getOrgSeq('org-1', 'item')).toBe(0);
-    expect(store.getChannelSeq('org-1', 'c1', 'item')).toBe(0);
+    expect(store.getOrgSeq('org-1', 'attachment')).toBe(0);
+    expect(store.getChannelSeq('org-1', 'c1', 'attachment')).toBe(0);
     expect(store.refetchDueAt).not.toBeNull();
     // Signal versions go too: rebuilt books may count them again from 0, so the catchup after the reset runs each once.
     expect(store.getSignalVersion('org-1', 'channel.deleted')).toBe(0);

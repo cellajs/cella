@@ -30,7 +30,7 @@ Postgres → CDC → SSE → non-editing viewers
 
 Keystrokes merge at character level and reach peers as soon as they are durable. Now and then the backend writes the merged description, plus whatever the entity's registered materializer derives, through its normal update pipeline ([Save](#save)).
 
-The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`. Limits, timings, close codes and protocol details are documented there, at their declarations.
+The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`. Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
 
 ## Vocabulary
 
@@ -122,5 +122,5 @@ A sweep, at boot and periodically, saves the logs no collab session holds: those
 
 - **One relay per document is the normal case.** Two relays holding one document, as in a start-first rollout, stay correct: they share the log and pass on each other's appends, a little later than peers on one relay see them.
 - **No server-side edit history.** The base is one merged state. Undo, redo and per-edit history live in clients.
-- **Fragment and schema must stay aligned.** The `document-store` fragment and the React-free shared BlockNote schema must match the frontend binding; the round-trip tests of the custom blocks fail on a mismatch.
+- **Schema must stay aligned.** The React-free shared BlockNote schema must match the frontend binding; the round-trip tests of the custom blocks fail on a mismatch.
 - **Materialization is eventual.** The entity row lags the live document by at most ten seconds while someone types, plus any retry delay.

@@ -152,7 +152,7 @@ describe('sendMessageToApi', () => {
 
   it('sends a row that is no product whole, without a list of rows', () => {
     const membership = { id: 'mem-1', userId: 'user-9', organizationId: 'org-a', role: 'member', channelType: 'organization' };
-    const activity = mockCdcActivity({ entityType: null, resourceType: 'membership', subjectId: 'mem-1' });
+    const activity = { ...mockCdcActivity({ entityType: null, resourceType: 'membership', subjectId: 'mem-1' }), id: 'act-mem-1' };
 
     sendMessageToApi(activity, membership, { traceId: 'test', spanId: 'test' } as never);
 

@@ -5,7 +5,7 @@ import { appConfig, MissingAncestorError, type Severity } from 'shared';
 import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
-import { AppError, type ErrorKey } from '#/core/error';
+import { AppError, type AppErrorStatus, type ErrorKey } from '#/core/error';
 import { checksAuthoringRules, undocumentedErrorStatus } from '#/core/openapi-validation';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
@@ -17,7 +17,7 @@ const exposesServerMessages = () => appConfig.mode === 'development' || appConfi
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
 
 /** PostgreSQL error codes to user-friendly error mappings */
-const pgErrorMap: Record<string, { status: number; type: ErrorKey; message: string }> = {
+const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
   // Foreign key violations
   '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
   // Unique constraint violations
@@ -41,7 +41,7 @@ const pgErrorMap: Record<string, { status: number; type: ErrorKey; message: stri
 };
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
-const pgConstraintMap: Record<string, { status: number; type: ErrorKey; message: string }> = {
+const pgConstraintMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
   // Refused when an organization would be left without an admin.
   [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
 };
@@ -76,9 +76,9 @@ const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server
 interface ClientError {
   message: string;
   name: string;
-  status: number;
+  status: ContentfulStatusCode;
   /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
-  type: string;
+  type: ErrorKey;
   severity: Severity;
   entityType?: AppError['entityType'];
   meta?: AppError['meta'];
@@ -233,6 +233,6 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
       method: ctx.req.method,
       timestamp: getIsoDate(),
     },
-    clientError.status as ContentfulStatusCode,
+    clientError.status,
   );
 };

@@ -1,9 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { fromBase64UrlEncoded, toBase64UrlEncoded } from 'lib0/buffer';
 import { getYjsToken, pullYjsDocument, pushYjsUpdate } from 'sdk';
-import type { ProductEntityType } from 'shared';
+import type { ProductEntityType, YjsDocScope } from 'shared';
 import { ApiError } from '~/lib/api';
-import type { YjsDocScope } from '~/query/local-user-db';
 
 /** A token lives five minutes and the relay closes its socket then; refetching at four keeps a fresh one ready for the reconnect. */
 const yjsTokenRefetchMs = 4 * 60 * 1000;

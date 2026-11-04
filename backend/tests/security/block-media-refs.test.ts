@@ -178,6 +178,7 @@ describe('Block media references', async () => {
         tenantId: owner.tenantId,
         organizationId: owner.organization.id,
         editors: [owner.user.id],
+        serverRowIds: [],
         description: documentOf(...refused, ...valid),
       });
 

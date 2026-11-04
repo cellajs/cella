@@ -7,8 +7,12 @@ import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import WebSocket from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
+import type { z } from 'zod';
+import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
+import type { StreamChange } from '#/schemas/stream-schemas';
 import { benchCookie } from './bench-user';
 import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
+import type { Distribution } from './runner/metrics';
 import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
@@ -66,13 +70,7 @@ export interface YjsTypingSink {
   keystroke(): void;
 }
 
-interface Percentiles {
-  count: number;
-  p50: number;
-  p95: number;
-  p99: number;
-  max: number;
-}
+type Percentiles = Pick<Distribution, 'count' | 'p50' | 'p95' | 'p99' | 'max'>;
 
 function percentiles(values: number[]): Percentiles {
   const sorted = [...values].sort((a, b) => a - b);
@@ -114,7 +112,7 @@ async function mintToken(docIndex: number, userIndex: number): Promise<string> {
   const url = `${BASE_URL}/${TENANT_ID}/${ORG_ID}/yjs/token?entityType=attachment&entityId=${attachmentId(docIndex)}`;
   const res = await fetch(url, { headers: { cookie: benchCookie(userIndex) } });
   if (!res.ok) throw new Error(`token for attachment ${docIndex} answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return ((await res.json()) as { token: string }).token;
+  return ((await res.json()) as z.output<typeof yjsTokenResponseSchema>).token;
 }
 
 /** Runs `fn` over `items`, `limit` at a time. */
@@ -153,36 +151,37 @@ function syncSubtype(data: unknown): number | null {
 }
 
 /** A `ws` socket that stamps every Step2 and Update frame it sends, which the relay answers with `Saved` in order. */
-function ledgerSocket(client: Client): typeof globalThis.WebSocket {
-  const Base = WebSocket as unknown as new (address: string, protocols?: string | string[]) => { send(data: unknown): void };
-  class LedgerSocket extends Base {
-    constructor(address: string, protocols?: string | string[]) {
-      super(address, protocols);
-      client.unsaved = [];
-      client.sockets++;
+function ledgerSocket(ledger: Pick<Client, 'unsaved' | 'sockets'>) {
+  // ws implements the WHATWG socket y-websocket takes, which @types/ws does not declare; ws stays for its handshake errors, which carry the HTTP status.
+  const Base = WebSocket as unknown as typeof globalThis.WebSocket;
+  return class LedgerSocket extends Base {
+    constructor(url: string | URL, protocols?: string | string[]) {
+      super(url, protocols);
+      ledger.unsaved = [];
+      ledger.sockets++;
     }
 
-    send(data: unknown) {
+    send(data: Parameters<InstanceType<typeof Base>['send']>[0]) {
       const subtype = syncSubtype(data);
-      if (subtype === SYNC.step2 || subtype === SYNC.update) client.unsaved.push(performance.now());
+      if (subtype === SYNC.step2 || subtype === SYNC.update) ledger.unsaved.push(performance.now());
       super.send(data);
     }
-  }
-  return LedgerSocket as unknown as typeof globalThis.WebSocket;
+  };
 }
 
 function openClient(run: RunState, role: Client['role'], docIndex: number, token: string): Client {
   const doc = new Y.Doc();
-  const client = { role, docIndex, doc, unsaved: [], saved: 0, sockets: 0, generation: null } as unknown as Client;
+  // The socket class takes the ledger before the provider exists; the client is that same object, completed with the provider.
+  const ledger: Pick<Client, 'unsaved' | 'sockets'> = { unsaved: [], sockets: 0 };
   const provider = new WebsocketProvider(YJS_URL, attachmentId(docIndex), doc, {
     connect: false,
     // Node has BroadcastChannel: without this, clients in this process would sync past the relay.
     disableBc: true,
     params: { token, entityType: 'attachment', tenantId: TENANT_ID },
     maxBackoffTime: 30_000,
-    WebSocketPolyfill: ledgerSocket(client),
+    WebSocketPolyfill: ledgerSocket(ledger),
   });
-  client.provider = provider;
+  const client: Client = Object.assign(ledger, { role, docIndex, doc, provider, saved: 0, generation: null });
   provider.messageHandlers[MESSAGE.generation] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (client.generation !== null && client.generation !== generation) bump(run, 'yjs.generation_changes');
@@ -200,7 +199,7 @@ function openClient(run: RunState, role: Client['role'], docIndex: number, token
     if (event) bump(run, `yjs.close.${event.code}`);
   });
   provider.on('connection-error', (event) => {
-    const status = /\b(\d{3})\b/.exec(String((event as unknown as { message?: string }).message ?? ''))?.[1];
+    const status = /\b(\d{3})\b/.exec('message' in event ? String(event.message) : '')?.[1];
     bump(run, `yjs.connection_error${status ? `.${status}` : ''}`);
   });
   if (role === 'viewer') {
@@ -307,11 +306,6 @@ function typeOnce(run: RunState, typer: Typer): void {
   provider.awareness.setLocalStateField('cursor', { anchor: cursor, head: cursor });
   bump(run, 'yjs.keystrokes');
   run.sink.keystroke();
-}
-
-/** An SSE change: product rows of one `productType`. */
-interface StreamChange {
-  productType: string;
 }
 
 /**
@@ -508,9 +502,10 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   let pollingWrites = true;
   const writePoller = (async () => {
     while (pollingWrites) {
+      // `t` is a numeric, which pg returns as a string.
       const { rows } = await admin
-        .query<{ id: string; t: number }>('SELECT id, extract(epoch FROM updated_at) * 1000 AS t FROM attachments WHERE id = ANY($1)', [ids])
-        .catch(() => ({ rows: [] as { id: string; t: number }[] }));
+        .query<{ id: string; t: string }>('SELECT id, extract(epoch FROM updated_at) * 1000 AS t FROM attachments WHERE id = ANY($1)', [ids])
+        .catch(() => ({ rows: [] as { id: string; t: string }[] }));
       for (const { id, t } of rows) {
         const previous = writtenAt.get(id);
         if (previous !== undefined && Number(t) !== previous) writes.push({ id, at: performance.now(), phase: run.phase });
@@ -562,13 +557,16 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   const byDoc = new Map<number, Client[]>();
   for (const c of clients) byDoc.set(c.docIndex, [...(byDoc.get(c.docIndex) ?? []), c]);
   for (const docClients of byDoc.values()) prepareParagraph(docClients[0].doc);
-  await waitFor(() => clients.every((c) => paragraphOf(c.doc).text !== null), 15_000);
+  const paragraphWait = await waitFor(() => clients.every((c) => paragraphOf(c.doc).text !== null), 15_000);
+  if (paragraphWait === null) bump(run, 'yjs.setup_unsynced_paragraph', clients.filter((c) => paragraphOf(c.doc).text === null).length);
 
+  // A typer whose paragraph never arrived sits the run out, counted above, so the run still tears down.
   const typing: Typer[] = clients
     .filter((c) => c.role === 'typer')
-    .map((client) => {
-      const text = paragraphOf(client.doc).text as Y.XmlText;
-      return { client, text, cursor: Y.createRelativePositionFromTypeIndex(text, Math.floor(Math.random() * (text.length + 1))) };
+    .flatMap((client) => {
+      const { text } = paragraphOf(client.doc);
+      if (!text) return [];
+      return [{ client, text, cursor: Y.createRelativePositionFromTypeIndex(text, Math.floor(Math.random() * (text.length + 1))) }];
     });
   for (const typer of typing)
     typer.client.provider.awareness.setLocalStateField('user', { name: `bench ${typer.client.doc.clientID}`, color: '#888888' });

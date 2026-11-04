@@ -23,6 +23,6 @@ export function getMenuParentTypes(entityType: ChannelEntityType): ChannelEntity
 }
 
 /** A menu parent's cache update propagates ancestor-slug re-enrichment to its children. */
-export function isMenuParentOf(parentType: string, childType: string): boolean {
+export function isMenuParentOf(parentType: ChannelEntityType, childType: ChannelEntityType): boolean {
   return appConfig.menuStructure.some((menuItem) => menuItem.entityType === parentType && menuItem.subentityType === childType);
 }

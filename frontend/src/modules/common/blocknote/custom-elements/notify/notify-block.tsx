@@ -2,6 +2,7 @@ import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { createReactBlockSpec } from '@blocknote/react';
 import i18n from 'i18next';
 import { MessageCircleIcon } from 'lucide-react';
+import { typedEntries } from 'shared';
 import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
 import { notifyOptions } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -18,7 +19,8 @@ import { cn } from '~/utils/cn';
 
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
-    const { icon: Icon } = notifyOptions.find((option) => option.value === block.props.type) ?? notifyOptions[0];
+    // A stored value outside the four renders as a warning.
+    const { icon: Icon } = notifyOptions[block.props.type] ?? notifyOptions.warning;
     return (
       <div className="notify" data-notify-type={block.props.type}>
         <DropdownMenu modal={false}>
@@ -32,7 +34,7 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
             <DropdownMenuGroup>
               <DropdownMenuLabel>{i18n.t('c:notify_type')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifyOptions.map(({ icon: OptionIcon, titleKey, value }) => (
+              {typedEntries(notifyOptions).map(([value, { icon: OptionIcon, titleKey }]) => (
                 <DropdownMenuItem
                   key={value}
                   className="min-h-8 p-1"

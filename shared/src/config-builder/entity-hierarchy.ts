@@ -17,11 +17,11 @@ export type ChannelRole<TRoleMap, TRoles extends { all: readonly string[] }, T e
 export type EntityKind = 'user' | 'channel' | 'product';
 
 /** A row's non-null ancestor, as the row-location methods of {@link EntityHierarchy} resolve it. */
-export interface ResolvedAncestor {
+export interface ResolvedAncestor<C extends string = string> {
   /** Ancestor channel type (e.g. 'project'). */
-  type: string;
+  type: C;
   /** The row's id column for it (e.g. 'projectId'). */
-  idColumn: string;
+  idColumn: `${C}Id`;
   /** Non-null ancestor row id. */
   id: string;
 }
@@ -619,8 +619,8 @@ export class EntityHierarchy<
   // ancestor ids through `resolveNonNullAncestors`, so they agree by construction.
 
   /** All non-null ancestors of a row, most-specific → root. */
-  readonly resolveNonNullAncestors = (entityType: string, row: Record<string, unknown>): ResolvedAncestor[] => {
-    const ancestors: ResolvedAncestor[] = [];
+  readonly resolveNonNullAncestors = (entityType: string, row: Record<string, unknown>): ResolvedAncestor<TChannels>[] => {
+    const ancestors: ResolvedAncestor<TChannels>[] = [];
     for (const type of this.getOrderedAncestors(entityType)) {
       const idColumn = entityIdColumnKey(type);
       const id = row[idColumn];
@@ -637,9 +637,9 @@ export class EntityHierarchy<
    * Homes under the deepest-non-null rule: the declared parent, plus each further ancestor while
    * everything below it is nullable. A row never attaches above a non-nullable ancestor.
    */
-  readonly possibleHomeChannels = (entityType: string): string[] => {
+  readonly possibleHomeChannels = (entityType: string): TChannels[] => {
     const nullable = new Set(this.getNullableAncestors(entityType));
-    const homes: string[] = [];
+    const homes: TChannels[] = [];
     for (const ancestor of this.getOrderedAncestors(entityType)) {
       homes.push(ancestor);
       if (!nullable.has(ancestor)) break;

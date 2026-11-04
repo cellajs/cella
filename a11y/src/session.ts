@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { type Browser, type BrowserContext, type BrowserContextOptions, chromium, type Page } from 'playwright';
+import { createClient, createConfig } from 'sdk/client';
 import { appConfig } from 'shared';
 import { placeholders, prepare } from '../scope-config.ts';
-import type { AuditApi } from './scope.ts';
 
 export const repoRoot = path.resolve(import.meta.dirname, '../..');
 export const baseUrl = appConfig.frontendUrl;
@@ -39,15 +39,17 @@ export async function startSession(email: string | null): Promise<Session> {
   if (!email) return { browser, storage: null, values: {}, cookie: null };
 
   const cookie = mintCookie(email);
-  const api: AuditApi = async (apiPath, init) => {
-    const headers = { cookie: `${cookie.name}=${cookie.value}`, ...(init && { 'content-type': 'application/json' }) };
-    const response = await fetch(`${appConfig.backendUrl}${apiPath}`, { method: init?.method, headers, body: init && JSON.stringify(init.body) });
-    if (!response.ok) throw new Error(`${init?.method ?? 'GET'} ${apiPath} answered ${response.status}`);
-    return response.json();
-  };
-  await prepare(api);
+  // The SDK as the audit user: its functions check each response against the spec
+  const client = createClient(
+    createConfig({ baseUrl: appConfig.backendUrl, headers: { cookie: `${cookie.name}=${cookie.value}` }, throwOnError: true }),
+  );
+  // The SDK throws the error body; the audit names the request that failed
+  client.interceptors.error.use((error, response, _request, options) =>
+    response && !response.ok ? new Error(`${options.method} ${options.url} answered ${response.status}`) : error,
+  );
+  await prepare(client);
   const values: Session['values'] = {};
-  for (const [name, resolve] of Object.entries(placeholders)) values[name] = await resolve(api);
+  for (const [name, resolve] of Object.entries(placeholders)) values[name] = await resolve(client);
 
   // Route guards read the user store, which a real sign-in fills before any deep link is opened
   const context = await browser.newContext();

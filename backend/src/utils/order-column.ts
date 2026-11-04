@@ -1,6 +1,5 @@
 import { type AnyColumn, asc, desc, type SQL, type SQLWrapper } from 'drizzle-orm';
-
-type OrderDirection = 'asc' | 'desc';
+import type { OrderDirection } from '#/schemas/common-schemas';
 
 interface GetOrderColumnsOpts<T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T> {
   sort: U;

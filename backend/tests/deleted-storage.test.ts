@@ -1,5 +1,5 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,7 +80,7 @@ describe('Deleted storage', async () => {
     await insert({ original: keyOf('gone.pdf'), preview: keyOf('shared.pdf') }, { deletedAt: expiredAt, seq: 5 });
     await insert({ original: 'seed/v1/notes/original.txt' }, { deletedAt: expiredAt, seq: 6 });
     const dropped = await insert({ original: keyOf('dropped.pdf') });
-    const scope = { entityType: 'attachment', entityId: dropped, tenantId: tenant.tenantId, organizationId: tenant.organization.id };
+    const scope: YjsDocScope = { entityType: 'attachment', entityId: dropped, tenantId: tenant.tenantId, organizationId: tenant.organization.id };
     await db.insert(yjsDocumentsTable).values({ ...scope, state: Buffer.from(new Uint8Array()) });
 
     await db.execute(sql`CALL apply_retention()`);

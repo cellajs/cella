@@ -1,44 +1,22 @@
-import { appConfig, type EntityType } from 'shared';
+import { appConfig, type EntityType, recordFromKeys } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import type { Restrictions, RestrictionsPatch } from '#/modules/tenants/tenants-schema';
 
 /** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
 const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
 
 type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
 
-/** Hard caps per tenant on entities and on machine actors and their keys. 0 = unlimited. */
-type Quotas = Record<QuotaKey, number>;
-
 /** Every key a tenant quota can name: the entity types, then the machine keys. */
 export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
 
-type RateLimits = {
-  /** API points per hour per actor in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
-  apiPointsPerHour: number;
-  /** Invitation mails per day to addresses outside the tenant, new, reminded and reopened alike. 0 = no cap. */
-  invitationMailsPerDay: number;
-};
-
-/** What a tenant may hold and spend, stored on its row (`tenants.restrictions`). */
-export type Restrictions = {
-  quotas: Quotas;
-  rateLimits: RateLimits;
-  /** Whether users of this tenant may consent to OAuth clients that are not installed by an admin (MCP clients by CIMD). */
-  allowUnregisteredClients: boolean;
-};
-
 /** The restrictions a new tenant starts with: `appConfig.defaultRestrictions`, 0 for a quota it does not list. */
 export const defaultRestrictions = (): Restrictions => {
-  const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
-
-  const quotas = quotaKeys.reduce((acc, key) => {
-    acc[key] = defaultQuotas[key] ?? 0;
-    return acc;
-  }, {} as Quotas);
+  const defaultQuotas: Partial<Restrictions['quotas']> = appConfig.defaultRestrictions.quotas;
 
   return {
-    quotas,
+    quotas: recordFromKeys(quotaKeys, (key) => defaultQuotas[key] ?? 0),
     rateLimits: { ...appConfig.defaultRestrictions.rateLimits },
     allowUnregisteredClients: true,
   };
@@ -57,9 +35,6 @@ export const assertTenantQuota = (ctx: ActorContext, key: QuotaKey, existing: nu
   const entityType = appConfig.entityTypes.find((type) => type === key);
   throw new AppError(403, 'restrict_by_app', 'warn', { ...(entityType && { entityType }), meta: { resource: key, quota } });
 };
-
-/** A partial restrictions update, or a stored row that predates a field: what `mergeRestrictions` lays over a base. */
-type RestrictionsPatch = { quotas?: Partial<Quotas>; rateLimits?: Partial<RateLimits>; allowUnregisteredClients?: boolean };
 
 /** Lays `patch` over `base` field by field, so a key the patch leaves out keeps the base's value. */
 export const mergeRestrictions = (base: Restrictions, patch?: RestrictionsPatch | null): Restrictions => ({

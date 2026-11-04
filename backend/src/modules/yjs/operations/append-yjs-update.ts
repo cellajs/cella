@@ -1,5 +1,6 @@
+import type { YjsDocScope } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type YjsDocScope, yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
+import { yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate } from '#/modules/yjs/helpers/yjs-state';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocumentGeneration, insertYjsUpdate } from '#/modules/yjs/yjs-queries';

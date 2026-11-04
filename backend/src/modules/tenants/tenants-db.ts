@@ -4,7 +4,8 @@ import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
-import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
+import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
+import type { Restrictions } from '#/modules/tenants/tenants-schema';
 
 export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
 export const subscriptionStatusValues = ['none', 'trialing', 'active', 'past_due', 'paused', 'canceled'] as const;

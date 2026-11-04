@@ -1,7 +1,7 @@
 import type { ChannelEntityType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
-import { type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
+import { type AccessScopedEntityType, type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
 import type { PublicReadGrants } from './public-read.ts';
 import { isRowCondition } from './row-conditions.ts';
@@ -13,10 +13,11 @@ import type {
   PolicyConfiguration,
   PolicyEntry,
   PolicyMatrix,
+  PolicySetter,
 } from './types.ts';
 
-const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly string[], entries: PolicyEntry[]): ChannelPolicyBuilder => {
-  const builder: Record<string, ChannelPolicyBuilder[EntityRole]> = {};
+const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: readonly EntityRole[], entries: PolicyEntry[]) => {
+  const builder: Record<string, PolicySetter> = {};
 
   for (const role of roles) {
     builder[role] = (permissions) => {
@@ -37,7 +38,7 @@ const createChannelPolicyBuilder = (channelType: ChannelEntityType, roles: reado
     };
   }
 
-  return builder as ChannelPolicyBuilder;
+  return builder;
 };
 
 export interface PermissionsConfigResult {
@@ -65,7 +66,10 @@ export const configurePermissions = (
 
   for (const entityType of permissionableTypes) {
     const entries: PolicyEntry[] = [];
-    const channels = recordFromKeys(channelEntityTypes, (channelType) => createChannelPolicyBuilder(channelType, getRoles(channelType), entries));
+    // Cast: each channel's builder holds the roles the hierarchy declares for it, a pairing `recordFromKeys` cannot follow.
+    const channels = recordFromKeys(channelEntityTypes, (channelType) =>
+      createChannelPolicyBuilder(channelType, getRoles(channelType), entries),
+    ) as ChannelPolicyBuilder;
 
     const config: PolicyConfiguration = {
       entityType,
@@ -92,14 +96,8 @@ export const configurePermissions = (
 export const configurePolicyMatrix = (entityTypes: readonly EntityType[], callback: PolicyCallback, overrides?: HierarchyOverrides): PolicyMatrix =>
   configurePermissions(entityTypes, callback, overrides).policyMatrix;
 
-/**
- * Total lookup: an entity type the matrix does not cover yields no entries, which the engine
- * reads as denied. Callers hold runtime strings, so a miss is a normal result.
- */
-export const getEntityPolicies = (policies: PolicyMatrix, entityType: string): EntityPolicies => {
-  const byEntityType: Partial<Record<string, EntityPolicies>> = policies;
-  return byEntityType[entityType] ?? [];
-};
+/** Total lookup: an entity type the matrix does not cover yields no entries, which the engine reads as denied. */
+export const getEntityPolicies = (policies: PolicyMatrix, entityType: AccessScopedEntityType): EntityPolicies => policies[entityType] ?? [];
 
 /** A channel/role pair with no entry yields `undefined`, which callers read as denied. */
 export const getPolicyPermissions = (policies: EntityPolicies, channelType: string, role: string): EntityActionPermissions | undefined =>

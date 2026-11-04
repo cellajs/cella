@@ -4,11 +4,12 @@ import type { ParseMessageResult } from './pipeline/parse-message';
 /** Row data from a pgoutput message. */
 export type RowData = Record<string, unknown>;
 
-/** Entity or resource row data after camelCase conversion, open to entity-specific fields. */
+/**
+ * Entity or resource row data after camelCase conversion, open to entity-specific fields. A `seq` there is the row
+ * image's text: pg leaves `int8` a string.
+ */
 export interface CdcRowData extends RowData {
   id: string;
-  /** A number once a flush stamped the row or read its value back; the row image holds the column as text. */
-  seq?: number;
 }
 
 /** A tracked entity table: its Drizzle table, entity type and column names. */
@@ -47,5 +48,10 @@ export interface PendingEvent {
    * channel key. Their own deletes are no change the worker keeps, so this change carries their counts.
    */
   cascadeCounts?: Map<string, Record<string, number>>;
+  /**
+   * The sequence value the change's product row holds once its flush is recorded: the stamp, or the value read back for
+   * a change delivered again. A delete gets neither, and neither does a row that left its table since.
+   */
+  seq?: number;
   result: ParseMessageResult;
 }

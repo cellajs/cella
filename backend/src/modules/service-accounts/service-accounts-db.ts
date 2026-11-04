@@ -1,22 +1,14 @@
 import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
-import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
+import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 export const serviceAccountStatuses = ['active', 'disabled'] as const;
-
-/** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
-export interface RoleBinding {
-  channelType: ChannelEntityType;
-  channelId: string;
-  organizationId: string;
-  role: EntityRole;
-}
 
 /**
  * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`

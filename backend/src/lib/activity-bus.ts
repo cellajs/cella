@@ -1,31 +1,49 @@
 import { EventEmitter } from 'node:events';
+import { z } from '@hono/zod-openapi';
 import { SpanStatusCode } from '@opentelemetry/api';
 import type { ProductEntityType, TrackedEventType } from 'shared';
-import type { SyncTraceContext } from '#/lib/sync-metrics';
+import { permissionRowDataSchema } from 'shared/permissions/permission-row-data';
+import type { TraceContext } from 'shared/tracing';
 import { eventAttrs, recordMessageReceived, startSyncSpan, syncSpanNames } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
+import { activitySchema } from '#/modules/activities/activities-schema';
 import type { TrackedModel, TrackedType } from '#/tables';
 import { log } from '#/utils/logger';
+
+/**
+ * The activity columns that differ between the rows of one product event: a row carries its own, its subject as
+ * `rowData.id`, and no commit time.
+ */
+export const ownActivityColumns = { id: true, userId: true, subjectId: true, changedFields: true, stx: true, createdAt: true } as const;
+
+/** One of the `ownActivityColumns`. */
+export type OwnActivityColumns = keyof typeof ownActivityColumns;
+
+/**
+ * One product row: the activity it was recorded as, its permission fields, its org-sequence position, and for a moved
+ * row the permission fields it had before.
+ */
+export const messageRowSchema = z.object({
+  activityId: activitySchema.shape.id,
+  userId: activitySchema.shape.userId,
+  changedFields: activitySchema.shape.changedFields,
+  stx: activitySchema.shape.stx,
+  rowData: permissionRowDataSchema,
+  seq: z.number().optional(),
+  movedFrom: permissionRowDataSchema.nullable().optional(),
+});
 
 /**
  * One product row of an event: the activity it was recorded as (its id, writer, changed fields and stx), the fields
  * that decide who may read it, its org-sequence position, and for a row whose path changed the same fields of the row
  * before the move.
  */
-export interface ActivityRow extends Pick<ActivityModel, 'userId' | 'changedFields' | 'stx'> {
-  activityId: string;
-  rowData: Record<string, unknown>;
-  seq?: number;
-  movedFrom?: Record<string, unknown> | null;
-}
-
-/** The activity columns that differ between the rows of one product event: a row carries its own, its subject as `rowData.id`. */
-type OwnActivityColumns = 'id' | 'userId' | 'subjectId' | 'changedFields' | 'stx';
+export type ActivityRow = z.infer<typeof messageRowSchema>;
 
 /** What every event carries: its type, action and place. `trace` stays internal for OTel correlation. */
-interface ActivityEventBase extends Omit<ActivityModel, 'type' | 'createdAt' | OwnActivityColumns> {
+interface ActivityEventBase extends Omit<ActivityModel, 'type' | OwnActivityColumns> {
   type: TrackedEventType;
-  trace: SyncTraceContext | null;
+  trace: TraceContext | null;
 }
 
 /** In-memory CDC event of a row that is no product (a membership, a tenant, a channel): its activity and the whole row. */

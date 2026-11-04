@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
-import { type Decision, recordDecisions } from './ledger.ts';
+import { parseDecision, recordDecisions } from './ledger.ts';
 
 /**
  * Records a reviewer's decision on criteria the audit leaves open.
@@ -24,18 +24,10 @@ const { values } = parseArgs({
   },
 });
 
-const statuses = ['supports', 'partially-supports', 'does-not-support', 'not-applicable', 'open'];
-const decisions: Decision[] = values.file
-  ? (JSON.parse(readFileSync(values.file, 'utf8')) as Decision[])
-  : [{ ...values, where: values.where?.split(',') } as unknown as Decision];
-
 try {
-  for (const decision of decisions) {
-    if (!decision.id || !statuses.includes(decision.status))
-      throw new Error(`${decision.id ?? 'A decision'} needs --id and --status (${statuses.join(', ')}).`);
-    if (decision.by !== 'agent' && decision.by !== 'human') throw new Error(`${decision.id} needs --by agent or --by human.`);
-    if (!decision.evidence) throw new Error(`${decision.id} needs --evidence.`);
-  }
+  const input: unknown = values.file ? JSON.parse(readFileSync(values.file, 'utf8')) : [{ ...values, where: values.where?.split(',') }];
+  if (!Array.isArray(input)) throw new Error(`${values.file} holds no list of decisions.`);
+  const decisions = input.map(parseDecision);
   const ledger = recordDecisions(decisions);
   const count = (by: string) => ledger.criteria.filter((row) => row.decidedBy === by).length;
   console.info(

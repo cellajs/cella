@@ -3,11 +3,13 @@ import {
   type Access,
   appConfig,
   buildSubject,
+  type ChannelIdColumns,
   checkAccessFanout,
   type EntityActionType,
   isUnpublishedDraft,
   type SubjectForPermission,
 } from 'shared';
+import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import type { ActivityRow } from '#/lib/activity-bus';
 import { buildMoveOut, buildStreamChange } from '#/modules/entities/stream/build-change';
 import { sendToSubscribers } from '#/modules/entities/stream/helpers';
@@ -38,30 +40,29 @@ export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdm
 const channelColumns = appConfig.channelEntityTypes.map((channelType) => appConfig.entityIdColumnKeys[channelType]);
 
 /** The event as it reads for one row: every channel id column comes from that row, so a reparented row is judged where it is. */
-function rowScopedEvent(event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent {
-  const overrides: Record<string, unknown> = {};
+function rowScopedEvent(event: AppStreamProductEvent, rowData: PermissionRowData): AppStreamProductEvent {
+  const overrides: Partial<ChannelIdColumns> = {};
   for (const columnKey of channelColumns) {
     if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
   }
-  return { ...event, ...overrides } as AppStreamProductEvent;
+  return { ...event, ...overrides, organizationId: rowData.organizationId };
 }
 
 /** What a row's read decision takes besides its author: the channel columns it carries, its public flag and whether it is a draft. */
-function decisionKey(rowData: Record<string, unknown>): string {
+function decisionKey(rowData: PermissionRowData): string {
   const place = channelColumns.filter((columnKey) => columnKey in rowData).map((columnKey) => [columnKey, rowData[columnKey]]);
   return JSON.stringify([place, rowData.public === true, isUnpublishedDraft(rowData)]);
 }
 
 /** The subject a reader of one row needs access to. Returns `null`, fail-closed, on an unpublished draft or a malformed ancestor scope. */
-function rowReadSubject(event: AppStreamProductEvent, row: Record<string, unknown>): SubjectForPermission | null {
+function rowReadSubject(event: AppStreamProductEvent, row: PermissionRowData): SubjectForPermission | null {
   if (isUnpublishedDraft(row)) return null;
 
   const scoped = rowScopedEvent(event, row);
-  const id = typeof row.id === 'string' ? row.id : undefined;
   try {
-    return buildSubject(scoped.entityType, scoped, { id, createdBy: (row.createdBy as string | null | undefined) ?? undefined, row });
+    return buildSubject(scoped.entityType, scoped, { id: row.id, createdBy: row.createdBy ?? undefined, row });
   } catch {
-    log.error('Malformed stream event: missing ancestor scope', { entityType: scoped.entityType, subjectId: id });
+    log.error('Malformed stream event: missing ancestor scope', { entityType: scoped.entityType, subjectId: row.id });
     return null;
   }
 }
@@ -96,7 +97,7 @@ export function accessDecisions(subscribers: readonly SubscriberAccess[], action
  * @param row - The row's permission fields, or those it had before a move.
  * @returns One decision per access, in their order.
  */
-function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row: Record<string, unknown>): boolean[] {
+function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row: PermissionRowData): boolean[] {
   const subject = rowReadSubject(event, row);
   if (!subject) return accesses.map(() => false);
   return decide(accesses, 'read', subject);
@@ -109,7 +110,7 @@ function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row:
  * @param row - The row's permission fields.
  * @returns Whether the subscriber may read the row.
  */
-export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent, row: Record<string, unknown>): boolean {
+export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent, row: PermissionRowData): boolean {
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
 }
 
@@ -185,7 +186,7 @@ export async function dispatchChange(event: AppStreamProductEvent): Promise<void
  * @param event - A product update; each of its rows that moved carries `movedFrom`.
  */
 export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
-  const moved = event.rows.filter((row): row is ActivityRow & { movedFrom: Record<string, unknown> } => !!row.movedFrom);
+  const moved = event.rows.filter((row): row is ActivityRow & { movedFrom: PermissionRowData } => !!row.movedFrom);
   if (moved.length === 0) return;
 
   const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));

@@ -1,7 +1,7 @@
-import i18n, { t } from 'i18next';
+import { t } from 'i18next';
 import { type BaseSyntheticEvent, createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
-import type { TKey } from '~/lib/i18n-locales';
+import { isTKey, type TKey } from '~/lib/i18n-locales';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
@@ -69,5 +69,5 @@ const resolveFieldLabel = (fieldName: string): string => {
 /** The message as the field shows it: zod's are already plain words (`formErrorMessage`), a `setError` may pass a translation key. */
 const resolveErrorMessage = (message?: ValidateResult): string => {
   if (typeof message !== 'string' || !message) return t('error:form.not_accepted');
-  return i18n.exists(message) ? t(message as TKey) : message;
+  return isTKey(message) ? t(message) : message;
 };

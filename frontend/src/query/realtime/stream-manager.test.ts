@@ -112,6 +112,19 @@ const answer: PostAppCatchupResponse = { organizations: {}, views: [], generatio
 const answered = () => Promise.resolve(answer);
 
 /** What this tab posted to the follower tabs, of one kind. */
+/** A change frame the stream parses, told apart by its organization id. */
+const changeFrame = (organizationId: string): StreamChange => ({
+  action: 'update',
+  productType: 'attachment',
+  organizationId,
+  tenantId: 'tenant-1',
+  channelId: null,
+  rows: [],
+  overflow: null,
+  spreadWindow: null,
+  propagation: null,
+});
+
 const posted = (type: LeaderMessage['type']) => tabs.postToFollowers.mock.calls.flatMap(([message]) => (message.type === type ? [message] : []));
 
 let current: { disconnect: () => void } | undefined;
@@ -139,7 +152,7 @@ async function createHarness(catchup?: () => Promise<PostAppCatchupResponse>) {
           };
         })),
   );
-  sink.handleStreamChange.mockImplementation((change: { id?: string }) => order.push(`process:${change.id}`));
+  sink.handleStreamChange.mockImplementation((change: StreamChange) => order.push(`process:${change.organizationId}`));
 
   return {
     manager,
@@ -174,7 +187,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     h.es.emit('offset');
     // Committed between the catchup read and its response: must buffer, not process.
-    h.es.emit('change', JSON.stringify({ id: 'a1' }));
+    h.es.emit('change', JSON.stringify(changeFrame('a1')));
     expect(h.order).toEqual(['catchup-start']);
 
     h.resolveCatchup();
@@ -190,7 +203,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
       let reads = 0;
       const h = await createHarness(() => {
         reads++;
-        if (reads <= bursts) for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `r${reads}-${i}` }));
+        if (reads <= bursts) for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify(changeFrame(`r${reads}-${i}`)));
         return answered();
       });
       await h.manager.connect();
@@ -417,17 +430,7 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
 });
 
 describe('StreamManager changes and signals in follower tabs', () => {
-  const change: StreamChange = {
-    action: 'update',
-    productType: 'attachment',
-    organizationId: 'org-1',
-    tenantId: 'tenant-1',
-    channelId: null,
-    rows: [],
-    overflow: null,
-    spreadWindow: null,
-    propagation: null,
-  };
+  const change = changeFrame('org-1');
   const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
 
   it('passes a change on when the leader applies it: one that arrived during catchup follows the catchup answer', async () => {
@@ -435,15 +438,15 @@ describe('StreamManager changes and signals in follower tabs', () => {
     await h.manager.connect();
     h.es.emit('offset');
 
-    h.es.emit('change', JSON.stringify({ id: 'a1' }));
+    h.es.emit('change', JSON.stringify(changeFrame('a1')));
     expect(posted('stream-change')).toEqual([]);
 
     h.resolveCatchup();
     await tick();
-    expect(posted('stream-change')).toEqual([{ type: 'stream-change', change: { id: 'a1' } }]);
+    expect(posted('stream-change')).toEqual([{ type: 'stream-change', change: changeFrame('a1') }]);
 
-    h.es.emit('change', JSON.stringify({ id: 'b1' }));
-    expect(posted('stream-change').at(-1)).toEqual({ type: 'stream-change', change: { id: 'b1' } });
+    h.es.emit('change', JSON.stringify(changeFrame('b1')));
+    expect(posted('stream-change').at(-1)).toEqual({ type: 'stream-change', change: changeFrame('b1') });
     const frames = tabs.postToFollowers.mock.calls.flatMap(([message]) => (message.type === 'sync-health' ? [] : [message.type]));
     expect(frames).toEqual(['catchup', 'stream-change', 'stream-change']);
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);

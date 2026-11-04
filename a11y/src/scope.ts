@@ -23,7 +23,4 @@ export async function ensureOpen(page: Page, state: ScopeState) {
   await state.open(page);
 }
 
-/** Calls a backend path as the audit user and returns the parsed JSON; `init` turns the read into a write. */
-export type AuditApi = <T>(apiPath: string, init?: { method: 'PUT' | 'POST'; body: unknown }) => Promise<T>;
-
 export { scope } from '../scope-config.ts';

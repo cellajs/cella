@@ -67,7 +67,7 @@ export const parseUploadedAttachments = (
     const attachment = createOptimisticEntity(zAttachment, {
       // Reuse the id minted before upload (round-tripped as user_meta) so the row matches the local blob stored under it.
       id: user_meta?.attachmentId,
-      size: String(size ?? 0),
+      size: size ?? 0,
       contentType: mime ?? 'application/octet-stream',
       filename,
       name,

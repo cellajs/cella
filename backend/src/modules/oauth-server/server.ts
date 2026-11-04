@@ -6,7 +6,7 @@ import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { servicePaths } from 'shared';
-import { createHealthApp } from 'shared/health-app';
+import { createHealthApp, type FullHealth } from 'shared/health-app';
 import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
@@ -19,7 +19,7 @@ import { runWithLogContext } from '#/utils/logger';
 const oauthMount = servicePaths.oauth;
 
 /** The `?depth=full` diagnostics, in the API's component shape: the store answers and a signing key exists, else 503. */
-async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
+async function probeHealth(): Promise<FullHealth> {
   const components: Record<string, HealthComponent> = {};
   const startedAt = Date.now();
   let signingKey = false;

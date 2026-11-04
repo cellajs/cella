@@ -4,7 +4,7 @@ import * as React from 'react';
 import type { ControllerProps, FieldPath, FieldValues, FormProviderProps } from 'react-hook-form';
 import { Controller, FormProvider, useFormContext, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { TKey } from '~/lib/i18n-locales';
+import { isTKey } from '~/lib/i18n-locales';
 import { HelpCollapse, HelpToggle } from '~/modules/ui/help-toggle';
 import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
@@ -303,10 +303,10 @@ export function FormControl({ children }: { children: React.ReactElement }) {
 
 /** `messages` gives plain words per error type, for a rule whose own message is technical (a pattern, for instance). */
 export function FormMessage({ className, children, messages, ...props }: React.ComponentProps<'p'> & { messages?: Record<string, string> }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { error } = useFieldState();
   const message = (error?.type && messages?.[error.type]) || (error?.message ?? '');
-  const body = error ? (message && i18n?.exists?.(message) ? t(message as TKey) : message) : children;
+  const body = error ? (message && isTKey(message) ? t(message) : message) : children;
 
   if (!body) return null;
 

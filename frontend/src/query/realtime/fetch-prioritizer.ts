@@ -49,7 +49,7 @@ const dirty = new Map<string, DirtyEntry>();
 let timer: ReturnType<typeof setTimeout> | null = null;
 let listenersInstalled = false;
 
-const entryKey = (entityType: string, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
+const entryKey = (entityType: ProductEntityType, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
 
 /** FNV-1a 32-bit gives the same client and scope a stable spread slot. */
 function hashSpread(key: string): number {
@@ -69,12 +69,12 @@ function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: numbe
 
 /** Enqueue an announced seq range for lazy fetching; a muted or archived scope waits until it is opened. */
 export function enqueueRange(input: EnqueueInput): void {
-  enqueueWithTier(input, getSyncTier(input.entityType, input.organizationId, input.channelId));
+  enqueueWithTier(input, getSyncTier(input.organizationId, input.channelId));
 }
 
 /** Enqueue catchup gaps, including muted views in spread background work so persisted caches converge. */
 export function enqueueCatchupRange(input: EnqueueInput): void {
-  const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
+  const tier = getSyncTier(input.organizationId, input.channelId);
   enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? tierBackground : tier);
 }
 
@@ -204,7 +204,7 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
 
   const paths: string[][] = [];
   for (const id of ids) {
-    const path = resolveChannelPath(null, id);
+    const path = resolveChannelPath(id);
     if (!path) return undefined;
     paths.push(path.split('/'));
   }
@@ -243,7 +243,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
 
   // The org id is the fallback home for rows without ancestor ids.
-  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[] });
+  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items });
 
   // Overflow, unsupported, exhausted retries, or fewer rows than announced: a row changed again since, one this reader may not read, or one deleted with its channel.
   const undelivered = result.status !== 'ok' || result.reachedSeq < untilSeq;
@@ -309,7 +309,7 @@ function mergeRange(into: DirtyEntry, from: Pick<DirtyEntry, 'afterSeq' | 'until
 function promoteLiveChannels(): void {
   let changed = false;
   for (const entry of dirty.values()) {
-    if (entry.dueAt > Date.now() && getSyncTier(entry.entityType, entry.organizationId, entry.channelId).min === 0) {
+    if (entry.dueAt > Date.now() && getSyncTier(entry.organizationId, entry.channelId).min === 0) {
       entry.dueAt = 0;
       changed = true;
     }

@@ -6,8 +6,8 @@ import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 
-/** User with the activity times its `actors` row holds. */
-export type UserWithActivity = UserModel & { lastSeenAt: string | null; lastSignInAt: string | null };
+/** User with the activity times its `actors` row holds and its userFlags merged with the defaults. */
+export type UserWithActivity = UserModel & { userFlags: UserFlags; lastSeenAt: string | null; lastSignInAt: string | null };
 
 /**
  * Joins a user's `actors` row, which holds the activity times. Every query that selects {@link userSelect} or

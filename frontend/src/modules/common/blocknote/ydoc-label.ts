@@ -1,11 +1,9 @@
 import i18n from 'i18next';
 import type { ProductEntityType } from 'shared';
+import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import * as Y from 'yjs';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-
-/** The fragment a collaborative editor binds in its document. */
-export const yDocFragment = 'document-store';
 
 /** How much of a first line a label quotes. */
 const maxLineLength = 60;
@@ -33,7 +31,7 @@ export function firstLineOfUpdates(updates: Uint8Array[]): string | null {
   const doc = new Y.Doc();
   try {
     for (const update of updates) Y.applyUpdate(doc, update);
-    return firstLineOf(doc.getXmlFragment(yDocFragment));
+    return firstLineOf(doc.getXmlFragment(yjsFragmentName));
   } finally {
     doc.destroy();
   }

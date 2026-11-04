@@ -1,7 +1,9 @@
+import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { type RequestModel, requestsTable } from '#/modules/requests/requests-db';
+import type { requestListQuerySchema } from '#/modules/requests/requests-schema';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
@@ -23,11 +25,9 @@ export const insertRequest = async (ctx: DbContext, { email, type, message }: In
   return created;
 };
 
-interface FindRequestsPaginatedOpts {
+interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuerySchema>, 'sort' | 'order'> {
   /** Searches the address. */
   q?: string;
-  sort: 'type' | 'id' | 'createdAt' | 'email';
-  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }

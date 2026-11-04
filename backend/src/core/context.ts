@@ -5,7 +5,7 @@ import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { AuthStrategy, SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
-import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';
+import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 
@@ -41,6 +41,12 @@ export type ActorBinding = Actor['bindings'][number];
 
 /** Minimal context for query functions that only need a database connection. */
 export type DbContext = { var: Pick<Env['Variables'], 'db'> };
+
+/**
+ * The request scope the guard chain set, without an actor: `tenantGuard` sets the tenant, `orgGuard` the organization;
+ * cross-tenant routes set none.
+ */
+export type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'organizationId'>> };
 
 /**
  * Someone acting inside a tenant, whatever proved them: no user row, so it stays callable with an API key or an access token.

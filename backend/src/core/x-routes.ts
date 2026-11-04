@@ -7,7 +7,6 @@ import {
   createMetadataExtensions,
   createSpecificationExtensions,
   type ExtensionPropId,
-  extensionPropIds,
   type GuardContext,
   type SecurityRequirement,
   toolAction,
@@ -109,9 +108,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
   const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
 
-  const xMiddlewares = middleware.filter(
-    (mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',
-  );
+  const xMiddlewares = middleware.filter((mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof mw.__extensionType === 'string');
   assertGuardOrder(route, xMiddlewares);
   const specificationExtensions = createSpecificationExtensions((key) =>
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
@@ -149,17 +146,15 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   }
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
-  const cleanConfig = {
-    ...Object.fromEntries(Object.entries(config).filter(([key]) => !extensionPropIds.includes(key))),
-    ...createMetadataExtensions(config),
-  } as Omit<R, ExtensionPropId>;
+  const { xGuard: _guard, xRateLimiter: _rateLimiter, xTool: _tool, xEnabledBy: _enabledBy, xScope: _scope, ...routeConfig } = config;
+  const cleanConfig = { ...routeConfig, ...createMetadataExtensions(config) };
 
   return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };
 
 type JsonResponse<S extends z.ZodType> = {
   description: string;
-  content: { 'application/json': { schema: S; example?: unknown } };
+  content: { 'application/json': { schema: S; example?: z.output<S> } };
 };
 
 /**
@@ -167,7 +162,7 @@ type JsonResponse<S extends z.ZodType> = {
  * from the schema's own example or where the schema is inline and has none.
  * @param description A label of a few words, then optionally a blank line and a detail the docs show when the row opens.
  */
-export const json = <S extends z.ZodType>(description: string, schema: S, example?: unknown): JsonResponse<S> => ({
+export const json = <S extends z.ZodType>(description: string, schema: S, example?: z.output<S>): JsonResponse<S> => ({
   description,
   content: { 'application/json': example === undefined ? { schema } : { schema, example } },
 });
@@ -203,17 +198,7 @@ export const xRoute = <P extends string, R extends DraftOptions & { path: P }>(c
 
 /**
  * Finishes a module's routes with `createXRoute`: `operationId` defaults to the route's key and `tags` to the module's,
- * set before `summary` so the document keeps its key order.
+ * both ahead of the draft's own keys so the document keeps its key order.
  */
 export const createXRoutes = <T extends Record<string, Draft>>(tags: string[], drafts: T): XRoutes<T> =>
-  Object.fromEntries(
-    Object.entries(drafts).map(([key, draft]) => {
-      const entries: [string, unknown][] = Object.entries(draft);
-      if (!draft.tags) {
-        const summary = entries.findIndex(([name]) => name === 'summary');
-        entries.splice(summary === -1 ? entries.length : summary, 0, ['tags', tags]);
-      }
-      if (!draft.operationId) entries.unshift(['operationId', key]);
-      return [key, createXRoute(Object.fromEntries(entries) as Parameters<typeof createXRoute>[0])];
-    }),
-  ) as XRoutes<T>;
+  Object.fromEntries(Object.entries(drafts).map(([key, draft]) => [key, createXRoute({ operationId: key, tags, ...draft })])) as XRoutes<T>;
