@@ -8,11 +8,8 @@ import type {
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
-  GetConnectedAppsResponse,
-  GetMyInvitationsResponse,
   HandleMembershipInvitationData,
   HandleMembershipInvitationResponse,
-  MeAuthData,
   RevokeConnectedAppData,
   RevokeConnectedAppResponse,
   RevokeMySessionsResponse,
@@ -141,7 +138,7 @@ export const useCreatePasskeyMutation = () =>
       });
     },
     onSuccess: (newPasskey) => {
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, passkeys: [newPasskey, ...oldData.passkeys] };
       });
@@ -160,7 +157,7 @@ export const useDeletePasskeyMutation = () =>
     mutationKey: meKeys.delete.passkey,
     mutationFn: ({ path }) => withStepUp(() => deletePasskey({ path })),
     onSuccess: (_data, { path: { id } }) => {
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id) };
       });
@@ -175,7 +172,7 @@ export const useCreateTotpMutation = () =>
     mutationFn: (body) => withStepUp(() => createTotp({ body })),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: meKeys.totpKey });
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         // The setup confirmed the key with a code, which counts as its first use
         const now = new Date().toISOString();
@@ -191,7 +188,7 @@ export const useDeleteTotpMutation = () =>
     mutationFn: () => withStepUp(() => deleteTotp()),
     onSuccess: () => {
       toaster.success(t('c:success.delete_resource', { resource: t('c:totp') }));
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, totp: null };
       });
@@ -229,7 +226,7 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
   if (inactiveMembershipId) {
-    queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
+    queryClient.setQueryData(meInvitationsQueryOptions().queryKey, (oldData) => {
       if (!oldData) return oldData;
       return { ...oldData, items: oldData.items.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId) };
     });
@@ -275,7 +272,7 @@ export const useRevokeConnectedAppMutation = () =>
     mutationKey: meKeys.delete.connectedApp,
     mutationFn: ({ path }) => revokeConnectedApp({ path }),
     onSuccess: (_data, { path: { id } }) => {
-      queryClient.setQueryData<GetConnectedAppsResponse>(meKeys.connectedApps, (oldData) => {
+      queryClient.setQueryData(meConnectedAppsQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.filter((item) => item.id !== id) };
       });
@@ -299,7 +296,7 @@ export const useRevokeSessionsMutation = () =>
     },
     onSuccess: (revoked) => {
       const revokedById = new Map(revoked.map((session) => [session.id, session]));
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+      queryClient.setQueryData(meAuthQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
       });

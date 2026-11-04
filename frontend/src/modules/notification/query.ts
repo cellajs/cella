@@ -36,7 +36,7 @@ export const useMarkNotificationsReadMutation = () =>
     mutationFn: (body: { ids?: string[]; contextId?: string }) => markNotificationsRead({ body }),
     onMutate: async (body) => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.list });
-      const previous = queryClient.getQueryData<GetNotificationsResponse>(notificationKeys.list);
+      const previous = queryClient.getQueryData(notificationsQueryOptions().queryKey);
       if (!previous) return;
 
       const readAt = new Date().toISOString();
@@ -47,7 +47,11 @@ export const useMarkNotificationsReadMutation = () =>
       };
 
       const items = previous.items.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
-      queryClient.setQueryData(notificationKeys.list, { ...previous, items, ...(!body.contextId && !body.ids?.length && { unreadCount: 0 }) });
+      queryClient.setQueryData(notificationsQueryOptions().queryKey, {
+        ...previous,
+        items,
+        ...(!body.contextId && !body.ids?.length && { unreadCount: 0 }),
+      });
     },
     onSettled: () => invalidateNotifications(),
   });
@@ -59,7 +63,7 @@ export const notificationPreferencesQueryOptions = () =>
 export const useUpdateNotificationPreferencesMutation = () =>
   useMutation({
     mutationFn: (body: UpdateNotificationPreferencesData['body']) => updateNotificationPreferences({ body }),
-    onSuccess: (updated) => queryClient.setQueryData(notificationKeys.preferences, updated),
+    onSuccess: (updated) => queryClient.setQueryData(notificationPreferencesQueryOptions().queryKey, updated),
   });
 
 // Imperative push-subscription calls for use-push-subscription.ts; not queries, so no cache keys.
