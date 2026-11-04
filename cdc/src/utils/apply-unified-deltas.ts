@@ -58,7 +58,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: E
     for (let i = 0; i < count; i++) {
       const seq = baseSeq + i + 1;
       const { tableMeta, rowData } = group.events[i].result;
-      rowData.seq = seq;
+      group.events[i].seq = seq;
       const tableName = getTableName(tableMeta.table);
       const rows = lastSeqByTable.get(tableName) ?? new Map<string, number>();
       rows.set(rowData.id, seq);

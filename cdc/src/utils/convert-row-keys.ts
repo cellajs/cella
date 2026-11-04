@@ -13,5 +13,5 @@ export function convertRowKeys(row: RowData, columnNameMap: Map<string, string>)
     result[columnNameMap.get(key) ?? snakeToCamel(key)] = value;
   }
   if (typeof result.id !== 'string') throw new Error(`convertRowKeys: row missing "id" field`);
-  return result as CdcRowData;
+  return { ...result, id: result.id };
 }

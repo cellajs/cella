@@ -49,9 +49,9 @@ describe('applyBatchUnifiedDeltas', () => {
     await applyBatchUnifiedDeltas(plan, db);
 
     // Sequential seq values: 3, 4, 5.
-    expect(events[0].result.rowData.seq).toBe(3);
-    expect(events[1].result.rowData.seq).toBe(4);
-    expect(events[2].result.rowData.seq).toBe(5);
+    expect(events[0].seq).toBe(3);
+    expect(events[1].seq).toBe(4);
+    expect(events[2].seq).toBe(5);
   });
 
   it('phase 1 merges sequence + org counts; phase 2 writes the org frontier, the other counts and the stamp-back', async () => {
@@ -98,8 +98,8 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, db);
 
-    expect(events[0].result.rowData.seq).toBe(1);
-    expect(events[1].result.rowData.seq).toBe(2);
+    expect(events[0].seq).toBe(1);
+    expect(events[1].seq).toBe(2);
     // Phase-1 org reservation + one phase-2 frontier write on the org, which both events bump; no channel below it.
     expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(2);
     expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(2);
@@ -112,7 +112,7 @@ describe('applyBatchUnifiedDeltas', () => {
     await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', events }], countDeltasByChannelKey: new Map() }, db);
 
     // Each event keeps the position it was given, for its notification.
-    expect(events.map((event) => event.result.rowData.seq)).toEqual([1, 2, 3]);
+    expect(events.map((event) => event.seq)).toEqual([1, 2, 3]);
     const stamp = vi.mocked(db.execute).mock.calls.at(-1)?.[0] as unknown as { queryChunks: unknown[] };
     const params = JSON.stringify(stamp.queryChunks);
     expect(params.match(/"t1"/g)).toHaveLength(1);
