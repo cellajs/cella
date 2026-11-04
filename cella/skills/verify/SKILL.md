@@ -63,6 +63,6 @@ pnpm seed                                                                  # mig
 ## Gotchas
 
 - `use-scroll-visibility.ts` ignores single-frame scroll jumps > 150px (`maxGestureDelta`) and has a 500ms initial cooldown, so `window.scrollBy(0, 1000)` will NOT hide floating nav buttons. Simulate gestures: repeated `page.mouse.wheel(0, ~100)` ticks at ~60ms intervals, after waiting ~1s post-load.
-- Floating nav buttons: `#floating-nav` container, item ids like `marketing-menu` / `docs-menu`; hidden = `opacity-0` class on the button.
+- Floating nav buttons: `#floating-nav` container, item ids like `marketing-menu` / `docs-menu`; hidden = `opacity-0` class on the button. A list's main action floats outside it as `#floating-action`.
 - Auth routes (check-email, magic links, SSO) run `isNoBot` (`backend/src/middlewares/is-no-bot.ts`), which answers 400 `maybe_bot` to headless Chromium's `HeadlessChrome` user agent. A script that walks the auth flow sets `userAgent` on its context to the same string without `Headless`.
 - The dev-mode "Sign in as the seeded admin" banner, fixed to the bottom of public pages, can overlap bottom-anchored UI in screenshots.
