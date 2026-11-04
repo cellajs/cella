@@ -3,7 +3,7 @@ import { buildSubjectFromEntity, checkAccess } from 'shared';
 import type { ActorBinding, DbContext, ScopeContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { type AccessContext, accessFrom, type BindingOf } from '#/permissions/access';
+import { type AccessContext, accessFrom } from '#/permissions/access';
 import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import type { EntityModel } from '#/tables';
 
@@ -55,13 +55,13 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * (`permissions-config`) pass without one.
  * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
  */
-export const getValidChannel = async <T extends ChannelEntityType, C extends DbContext & ScopeContext & AccessContext>(
-  ctx: C,
+export const getValidChannel = async <T extends ChannelEntityType>(
+  ctx: DbContext & ScopeContext & AccessContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidChannelResult<T, BindingOf<C>>> => {
+): Promise<ValidChannelResult<T>> => {
   const entity = await resolveChannelInScope(ctx, entityId, entityType, bySlug);
 
   const subject = buildSubjectFromEntity(entityType, entity);
