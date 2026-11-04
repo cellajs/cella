@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type ChannelSlot, channelSlots } from 'shared/placements';
+import { channelSlots } from 'shared/placements';
 import type { ToolsConfig } from 'shared/tools-config';
 import { maxLength } from '#/db/utils/constraints';
 
@@ -14,6 +14,6 @@ const toolIdsSchema = z.array(z.string().max(maxLength.field)).max(100);
  * is refused at the wire and never reaches the column.
  */
 export const toolsConfigSchema: z.ZodType<ToolsConfig> = z.partialRecord(
-  z.enum(slots as [ChannelSlot, ...ChannelSlot[]]),
+  z.enum(slots),
   z.object({ order: toolIdsSchema.optional(), hidden: toolIdsSchema.optional() }),
 );
