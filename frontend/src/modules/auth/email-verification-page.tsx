@@ -1,6 +1,5 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import type { TKey } from '~/lib/i18n-locales';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 
@@ -13,7 +12,7 @@ export function EmailVerificationPage() {
   return (
     <>
       <AuthHeader title={t('c:almost_there')}>
-        <p>{t(`c:request_verification.${reason}.text` as TKey, { provider })}</p>
+        <p>{t(`c:request_verification.${reason}.text`, { provider })}</p>
       </AuthHeader>
 
       {reason === 'signup' && <LegalNotice mode="verify" />}
