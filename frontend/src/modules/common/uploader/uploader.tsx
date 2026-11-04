@@ -20,7 +20,7 @@ export function Uploader() {
         if (!open) uploader.getState().remove();
       }}
     >
-      <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
+      <DialogContent className="h-[40vh] min-h-fit max-w-xl sm:w-[80vw] md:max-w-2xl">
         <DialogHeader className="with-close-btn">
           <DialogTitle className={uploadData.title ? 'h-6 leading-6' : 'sr-only'}>{uploadData.title || t('c:upload')}</DialogTitle>
           {uploadData.onDeleteImage ? (
