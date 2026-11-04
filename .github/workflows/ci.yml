@@ -4,12 +4,13 @@ name: CI
 permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
-#   • Every PR: cheap checks (lint, schema-bust-gate, frontend-build, build-services) for fast feedback.
-#   • Release PR only: the heavy suites (test, storybook-test, all docker-images targets) run on the
-#     release-please PR, which every merge to main refreshes. That PR is what you merge to cut the
-#     release + deploy, so gating its merge gates production. On feature PRs these jobs are skipped.
+#   • Every PR: lint, frontend-build, build-services, schema-bust-gate, privileged-changes, and docker-images when the
+#     image inputs changed. Cheap, for fast feedback.
+#   • Release PR and an app's upgrade PR only: the heavy suites (every test suite, every docker-images target). Every
+#     merge to main refreshes the release-please PR, and merging it cuts the release + deploy, so gating its merge gates
+#     production. On feature PRs these jobs are skipped.
 # The required status check is `ci-passed`, the last job, which waits for all the others. The PR title has its
-# own workflow and check (pr-title.yml).
+# own workflow and check (pr-title.yml). Every job installs the workspace through .github/actions/install-workspace.
 on:
   pull_request:
     branches: [main]
@@ -20,7 +21,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Runs linting. Cheap: runs on both PR (fast feedback) and merge queue (gate).
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -32,26 +32,18 @@ jobs:
         with:
           # Full history: lens:check compares dated lens modules against their first commit (append-only guard)
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      # knip loads the vitest configs, and the backend env loader wants the secrets of backend/.env
+      - name: Install the workspace
+        uses: ./.github/actions/install-workspace
         with:
-          node-version-file: package.json
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Biome
-        run: pnpm biome check . --error-on-warnings
+          env-files: true
 
       # `pnpm check` ends with these fixes. One that is still open here gets applied in every app after
       # its next upgrade, as a change in a file the app never touched.
-      - name: Check Biome has no fix left to apply
-        run: pnpm biome check --write --unsafe && git diff --exit-code
+      - name: Run Biome and check it has no fix left to apply
+        run: pnpm biome check --write --unsafe --error-on-warnings && git diff --exit-code
 
       - name: Run style checks (terminology / docs / comments / frontend)
         run: pnpm style
@@ -59,16 +51,19 @@ jobs:
       - name: Run lens checks (append-only / collision / expand-before-contract / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
-      # knip loads the vitest configs, and the backend env loader wants the secrets of backend/.env
       - name: Check for unused files and dependencies
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          pnpm unused
+        run: pnpm unused
 
       # compose.gen.yml is a committed artifact read at deploy time
       # (the switch step of infra/tasks/deploy-run.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
+
+      # The pre-commit hook regenerates sdk/gen and stages it; a commit made with --no-verify records a stale SDK, which
+      # the build-services typecheck and the schema-bust-gate (it reads the committed spec) would then judge in place of
+      # the routes. Here and not in build-services: this job ends a minute earlier.
+      - name: Check the committed SDK matches the routes
+        run: pnpm sdk && git diff --exit-code -- sdk/gen
 
   # Production frontend build. Cheap (~1 min): runs on every PR. Some breakage only surfaces at
   # build time (a repo-doc import the MDX include regex refuses, a broken relative import in a
@@ -82,25 +77,18 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version-file: package.json
-          cache: "pnpm"
+          persist-credentials: false
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install the workspace
+        uses: ./.github/actions/install-workspace
 
       - name: Build frontend
         run: pnpm --filter frontend build
 
   # Typecheck plus the three service bundles (backend, cdc, yjs), each booted once. Nothing else in CI typechecks (the
   # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built and started by the
-  # release deploy, where a package missing from the keep-on-disk list fails (0.12.1). ~3 min, every PR.
+  # release deploy, where a package missing from the keep-on-disk list fails (0.12.1). ~2 min, every PR.
   build-services:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -109,27 +97,19 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version-file: package.json
-          cache: "pnpm"
+          persist-credentials: false
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install the workspace
+        uses: ./.github/actions/install-workspace
+        with:
+          env-files: true
 
       - name: Typecheck
         run: pnpm ts
 
       - name: Build service bundles
         run: pnpm --filter backend --filter cdc-worker --filter yjs-worker build
-
-      - name: Create .env file
-        run: cp ./backend/.env.example ./backend/.env
 
       # A bundle can build and still crash at start (a workspace import left as a bare import), which a deploy finds
       # only as a switch whose new machine never turns healthy. Migrates, boots and stops each service on the test database.
@@ -149,9 +129,8 @@ jobs:
   test:
     # Same-repo branch only: release-please and the upgrade push their branches into this
     # repo, so a PR from another repository (whose branch name its author fully controls)
-    # cannot spoof a prefix to trigger the heavy suites. head_ref is set only for
-    # pull_request events.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
+    # cannot spoof a prefix to trigger the heavy suites. The docker-images job repeats this condition.
+    if: github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -159,47 +138,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [full, runtime, app-shape]
+        include:
+          # `pnpm test:full` without its coverage: CI keeps no report, and coverage slows every test.
+          - suite: full
+            run: pnpm docker:test && pnpm exec cross-env TEST_MODE=full vitest run --silent=passed-only
+
+          # RLS parity: the backend core suite again as the RLS-subject runtime_role. Allow and deny
+          # results must match the superuser run of the full suite, proving authorization does not lean on RLS.
+          - suite: runtime
+            run: pnpm test:core:runtime
+
+          # The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter
+          # member policy. A template test that leans on the template's own values fails here and not in an app's sync.
+          - suite: app-shape
+            run: pnpm app-shape:check
+
+          # Storybook component tests (Vitest browser mode via Playwright). A story that breaks on a feature PR fails
+          # the release PR; run `pnpm test:storybook` before merging frontend work.
+          - suite: storybook
+            run: pnpm --filter frontend exec playwright install --with-deps chromium chromium-headless-shell && pnpm test:storybook
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version-file: package.json
-          cache: "pnpm"
+          persist-credentials: false
 
-      - name: Create .env files
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          cp ./frontend/.env.example ./frontend/.env
+      - name: Install the workspace
+        uses: ./.github/actions/install-workspace
+        with:
+          env-files: true
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate OpenAPI spec
-        run: pnpm sdk
-
-      # `pnpm test:full` without its coverage: CI keeps no report, and coverage slows every test.
-      - name: Run tests (full mode)
-        if: matrix.suite == 'full'
-        run: pnpm docker:test && pnpm exec cross-env TEST_MODE=full vitest run --silent=passed-only
-
-      # RLS parity: the backend core suite again as the RLS-subject runtime_role. Allow and deny
-      # results must match the superuser run of the full suite, proving authorization does not lean on RLS.
-      - name: Run backend tests as runtime_role
-        if: matrix.suite == 'runtime'
-        run: pnpm test:core:runtime
-
-      # The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter
-      # member policy. A template test that leans on the template's own values fails here and not in an app's sync.
-      - name: Run core tests with an app-shaped config
-        if: matrix.suite == 'app-shape'
-        run: pnpm app-shape:check
+      - name: Run the ${{ matrix.suite }} suite
+        run: ${{ matrix.run }}
 
   # The production images are otherwise built for the first time by the release deploy: 0.11.0 failed there on a
   # Node 26 base image without corepack, 0.12.1 on a worker env leak and an undeclared dependency that crashed every
@@ -215,37 +185,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
-          fetch-depth: 0 # need base-branch blobs to diff
+          # The checkout is the PR's merge commit, so its first parent is the base the PR merges into.
+          fetch-depth: 2
+          persist-credentials: false
 
-      # Every target on the same-repo branches the heavy suites run on (see the `test` job).
+      # Every target on the same-repo branches the heavy suites run on (the `test` job's condition).
       - name: Decide what to build
         id: scope
         env:
-          BASE_REF: ${{ github.base_ref || 'main' }}
           ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/')) }}
         run: |
           set -euo pipefail
           if [ "$ALL_TARGETS" = true ]; then
-            echo "base=true" >> "$GITHUB_OUTPUT"
-            echo "targets=backend cdc yjs" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git fetch --no-tags --depth=1 origin "$BASE_REF"
-          if git diff --quiet "origin/$BASE_REF"...HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml; then
+            echo "targets=manifests backend cdc yjs" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet HEAD^1 HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml; then
             echo "Image inputs unchanged; skipping the base-stage build."
           else
-            echo "base=true" >> "$GITHUB_OUTPUT"
+            echo "targets=manifests" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build the shared base stage
-        if: steps.scope.outputs.base == 'true'
-        run: docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target manifests -t base-check .
-
-      - name: pnpm resolves from the pin inside the image
-        if: steps.scope.outputs.base == 'true'
-        run: docker run --rm base-check pnpm --version
-
-      - name: Build the service images
+      - name: Build the images
         if: steps.scope.outputs.targets != ''
         env:
           TARGETS: ${{ steps.scope.outputs.targets }}
@@ -254,9 +213,13 @@ jobs:
             docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target "$target" -t "$target-check" .
           done
 
+      - name: pnpm resolves from the pin inside the image
+        if: steps.scope.outputs.targets != ''
+        run: docker run --rm manifests-check pnpm --version
+
   # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
   # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
-  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it.
+  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it, and `ci-passed` with it.
   privileged-changes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -265,24 +228,20 @@ jobs:
     steps:
       - name: Checkout the head
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
 
       - name: Checkout the base
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: .base
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: package.json
-          cache: "pnpm"
+          persist-credentials: false
 
       - name: Install the head
-        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+        uses: ./.github/actions/install-workspace
+        with:
+          filter: --filter infra... --filter shared...
 
       - name: Install the base
         working-directory: .base
@@ -291,48 +250,10 @@ jobs:
       - name: Say what the change owes
         run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
 
-  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's upgrade PR,
-  # so a story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
-  storybook-test:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/upgrade/'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version-file: package.json
-          cache: "pnpm"
-
-      - name: Create .env files
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          cp ./frontend/.env.example ./frontend/.env
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate SDK (types imported by stories)
-        run: pnpm sdk
-
-      - name: Install Playwright browser
-        run: pnpm --filter frontend exec playwright install --with-deps chromium chromium-headless-shell
-
-      - name: Run Storybook tests
-        run: pnpm --filter frontend exec vitest run --project=storybook
-
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
   # so offline clients wipe stale persisted query data. It compares the committed
-  # spec (sdk/gen/openapi.json, which the commit hook regenerates) of base and head.
+  # spec (sdk/gen/openapi.json, which build-services checks is fresh) of base and head.
   schema-bust-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -342,32 +263,31 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
-          fetch-depth: 0 # need base-branch blobs to diff
+          # The checkout is the PR's merge commit, so its first parent is the base the PR merges into.
+          fetch-depth: 2
+          persist-credentials: false
 
       - name: Breaking-change gate
-        # The checkout is the PR's merge commit: its first parent is the base the PR merges into, whatever the base
-        # branch did since.
         run: |
           set -euo pipefail
           BASE=HEAD^1
           SPEC=sdk/gen/openapi.json
           CFG=shared/config/config.default.ts
+          SPECS=$(mktemp -d)
 
           # No base spec (first introduction) → nothing to compare.
-          if ! git show "$BASE:$SPEC" > /tmp/base-openapi.json 2>/dev/null; then
+          if ! git show "$BASE:$SPEC" > "$SPECS/base.json" 2>/dev/null; then
             echo "No base OpenAPI spec; skipping gate."
             exit 0
           fi
-          cp "$SPEC" /tmp/head-openapi.json
+          cp "$SPEC" "$SPECS/head.json"
 
           # Classify breaking changes (oasdiff exits non-zero on breaking errors).
           # Pinned by digest (v1.20.0) so a repushed tag cannot swap the image that
-          # runs in CI with access to the mounted /tmp. Bump both tag comment and digest together.
-          set +e
-          docker run --rm -v /tmp:/specs tufin/oasdiff@sha256:d0a6de7b3389adc358dd34981f6091a907dbd788ce21b3d51f315a00928e3e01 \
-            breaking /specs/base-openapi.json /specs/head-openapi.json --fail-on ERR
-          BREAKING=$?
-          set -e
+          # runs in CI with access to the mounted specs. Bump both tag comment and digest together.
+          BREAKING=0
+          docker run --rm -v "$SPECS:/specs" tufin/oasdiff@sha256:d0a6de7b3389adc358dd34981f6091a907dbd788ce21b3d51f315a00928e3e01 \
+            breaking /specs/base.json /specs/head.json --fail-on ERR || BREAKING=$?
           if [ "$BREAKING" -eq 0 ]; then
             echo "✅ No breaking OpenAPI changes."
             exit 0
@@ -396,16 +316,10 @@ jobs:
   # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
   ci-passed:
     if: always()
-    needs: [lint, frontend-build, build-services, test, docker-images, storybook-test, schema-bust-gate]
+    needs: [lint, frontend-build, build-services, test, docker-images, privileged-changes, schema-bust-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Every job passed or skipped
-        env:
-          NEEDS: ${{ toJSON(needs) }}
-        run: |
-          echo "$NEEDS" | jq -r 'to_entries[] | "\(.value.result)\t\(.key)"'
-          if echo "$NEEDS" | jq -e 'any(.[]; .result == "failure" or .result == "cancelled")' > /dev/null; then
-            echo "::error::A job above failed or was cancelled."
-            exit 1
-          fi
+      - name: A job above failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

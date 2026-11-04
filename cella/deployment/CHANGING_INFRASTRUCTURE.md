@@ -38,7 +38,7 @@ A deploy runs the engine the last **Review & apply changes** built, and holds ev
 
 ## Pull request check
 
-Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes: **Update identities** for an application or a policy that is new, gone or changed, an apply for a resource of the program or a change of the applied description. It fails only when the head cannot render, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes: **Update identities** for an application or a policy that is new, gone or changed, an apply for a resource of the program or a change of the applied description. It fails only when the head cannot render, which blocks the merge, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
 
 ## Identities
 

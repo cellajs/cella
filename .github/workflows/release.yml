@@ -39,6 +39,9 @@ jobs:
         with:
           client-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # The two scopes the release PR, the tag and the GitHub Release need, out of all the App's installation holds.
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Run release-please
         id: release

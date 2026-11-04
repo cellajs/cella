@@ -2,9 +2,9 @@
 # =============================================================================
 # Production Dockerfile (multi-target: backend | cdc | yjs)
 # =============================================================================
-# One file builds all three Node.js service images; CI selects a service with
-# `--target <name>` (see `target` in infra/config/services.config.ts, threaded
-# through print-deploy-env into .github/workflows/deploy.yml). Shared stages:
+# One file builds all three Node.js service images; a build selects a service with
+# `--target <name>` (the `target` of infra/config/services.config.ts, which the
+# release build's bake reads in infra/tasks/build-images.ts). Shared stages:
 #
 #   base    : node:<NODE_VERSION>-alpine + pnpm from npm, at the version the
 #              root package.json `packageManager` field pins

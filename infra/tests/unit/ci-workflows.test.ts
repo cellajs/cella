@@ -43,8 +43,17 @@ function trustedJobs(jobs: Map<string, string>): Set<string> {
   return trusted;
 }
 
-/** A dependency cache a job restores and saves: setup-node's `cache:` or actions/cache. */
-const restoresCache = (body: string) => /^\s+cache:\s*\S/m.test(body) || body.includes('actions/cache');
+const actionsDir = path.join(repoRoot, '.github/actions');
+
+/** The definitions of the local actions a job uses (`uses: ./.github/actions/<name>`). */
+const localActionsOf = (body: string): string[] =>
+  [...body.matchAll(/^\s+uses:\s*\.\/\.github\/actions\/([\w-]+)\s*$/gm)].map((match) =>
+    readFileSync(path.join(actionsDir, match[1] ?? '', 'action.yml'), 'utf8'),
+  );
+
+/** A dependency cache a job restores and saves: setup-node's `cache:` or actions/cache, in the job or in a local action it uses. */
+const restoresCache = (body: string) =>
+  [body, ...localActionsOf(body)].some((text) => /^\s+cache:\s*\S/m.test(text) || text.includes('actions/cache'));
 
 const workflows = readdirSync(workflowsDir)
   .filter((file) => file.endsWith('.yml'))

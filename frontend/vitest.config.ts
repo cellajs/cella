@@ -4,7 +4,7 @@ import { playwright } from '@vitest/browser-playwright'
 import path from 'node:path'
 
 // The Storybook browser project needs Playwright browsers plus a Storybook server, so it only
-// joins runs started from this directory (`pnpm test:storybook`, the CI storybook-test job).
+// joins runs started from this directory (`pnpm test:storybook`, the storybook suite of the CI test job).
 // The root config loads this file as a nested project and runs the node and unit projects.
 const standaloneRun = path.resolve(process.cwd()) === import.meta.dirname
 
