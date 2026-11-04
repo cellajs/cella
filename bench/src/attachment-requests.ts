@@ -4,7 +4,7 @@ import { hashSourceId } from 'shared/utils/hash-source-id';
 import { uuidv7 } from 'uuidv7';
 import type { z } from 'zod';
 import type { attachmentCreateManyStxBodySchema, attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
-import type { idsWithStxBodySchema } from '#/schemas/common-schemas';
+import type { idsWithStxBodySchema } from '#/schemas/sync-transaction-schemas';
 import { ORG_PATH } from './bench-user';
 import { TOTAL_ATTACHMENTS } from './seeds/attachment-constants';
 import { benchAttachmentHome } from './seeds/attachment-home';
