@@ -25,7 +25,7 @@ No script: manual.
 
 1. Upgrade every operator machine first: an older checkout reads secrets in the folders this change empties.
 2. `pnpm infra identity --mode <env>` with an Owner API key that expires within hours: it rewrites `<slug>-<mode>-ci-deploy-policy`, makes `<slug>-<mode>-uploads` with its policy and writes its key to `/runtime/uploads-access-key` and `/runtime/uploads-secret-key`, and deletes `<slug>-<mode>-vm-<service>`, `<slug>-<mode>-builder` and `<slug>-<mode>-boot` with their keys, the `/deploy/machine-key-*` secrets and `/handoff/`.
-3. At once, `pnpm infra apply --mode <env>` on the operator key: before its `up` it moves each runtime secret's copies into one container in `/runtime/`, keeping the first consumer's copy and any value only another copy held, and the repository read key out of `/deploy/`; the `up` adopts those containers and gives the main job `RUNTIME_FOLDER`.
+3. At once, `pnpm infra apply --mode <env>` on the operator key: before its `up` it moves each runtime secret's copies into one container in `/runtime/`, keeping the first consumer's copy and any value only another copy held, and the repository read key out of `/deploy/`; the `up` adopts those containers and gives the main job `RUNTIME_FOLDER`. The `up` then finds the copies the move deleted still in the state and cannot delete them again: answer yes when the apply offers to prune them and retry, once for their versions and once for the containers.
 4. `pnpm infra start-deploy --mode <env>` when the apply started no deploy: the first deploy builds the release again, as archives, and replaces every machine.
 5. The registry namespace's images are read by nothing any more: delete them in the console (Container Registry → the namespace) to stop their storage.
 
