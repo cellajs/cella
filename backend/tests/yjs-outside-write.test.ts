@@ -316,7 +316,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
       // The materialization queues on the row first; the write reads the row, with the old description, and queues next.
       const holder = await holdAttachmentRow(attachment.id);
-      const materialized = materializeDescriptionOp({ ...scope, description: typed, editors: [tenant.user.id] });
+      const materialized = materializeDescriptionOp({ ...scope, description: typed, editors: [tenant.user.id], serverRowIds: [] });
       await lockWaiters(1);
       const write = putName(attachment.id, renamed ? `${name} renamed` : name);
       await lockWaiters(2);
@@ -352,7 +352,12 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
   it("records nothing for the relay's own write (10)", async () => {
     const { attachment, scope, generation } = await arrange(description(block('a', 'original')));
-    await materializeDescriptionOp({ ...scope, description: description(block('a', 'written by the relay')), editors: [tenant.user.id] });
+    await materializeDescriptionOp({
+      ...scope,
+      description: description(block('a', 'written by the relay')),
+      editors: [tenant.user.id],
+      serverRowIds: [],
+    });
     expect((await attachment.read())?.description).toContain('written by the relay');
     expect(await stored(attachment.id)).toMatchObject({ generation, rows: [] });
   });

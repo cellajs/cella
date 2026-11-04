@@ -224,6 +224,7 @@ describe('Attachment mentions (template notification source)', async () => {
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithText('signed contract')]),
       editors: [tenant.user.id],
+      serverRowIds: [],
     });
     const keywords = await storedKeywords();
     expect(keywords).toContain('signed contract');
@@ -242,6 +243,7 @@ describe('Attachment mentions (template notification source)', async () => {
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithText('con\u0000tract')]),
       editors: [tenant.user.id],
+      serverRowIds: [],
     });
     expect(await storedKeywords()).toBe('contract');
 
@@ -261,6 +263,7 @@ describe('Attachment mentions (template notification source)', async () => {
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithText('please sign the contract'), paragraphWithMentions([member.id])]),
       editors: [tenant.user.id],
+      serverRowIds: [],
     });
 
     await fanOutNotifications(updatedEvent(member.id));

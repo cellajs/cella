@@ -1,4 +1,3 @@
-import { isProduct } from 'shared';
 import { uuidv7 } from 'uuidv7';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -11,25 +10,11 @@ import { findUserModelsByIds } from '#/modules/user/user-queries';
 import { yjsMaterializeWindow } from '#/modules/yjs/helpers/materialize-window';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
 import { getYjsMaterializer, type YjsMaterializerContext } from '#/modules/yjs/yjs-materializers';
+import type { YjsMaterializeBody } from '#/modules/yjs/yjs-schema';
 import { log } from '#/utils/logger';
 
 /** The editors, the tenant and the organization are read on the base pool: the relay calls without a request context. */
 const dbCtx = { var: { db: baseDb } };
-
-interface MaterializeDescriptionInput {
-  entityType: string;
-  entityId: string;
-  tenantId: string;
-  organizationId: string;
-  description: string;
-  /** Senders of the compacted log, newest first: the first who may still update the entity is credited with the write. */
-  editors: string[];
-  /**
-   * The server-origin log rows (no sender) merged into `description`, none when absent; another server row of the
-   * document refuses the write (409).
-   */
-  serverRowIds?: readonly number[];
-}
 
 /** The description is stored; `sanitized` when media URLs were blanked. */
 interface MaterializeDescriptionResult {
@@ -45,12 +30,8 @@ interface MaterializeDescriptionResult {
  * outside `serverRowIds` is an outside write committed after the relay read its window: the write is refused (409), so
  * it never overwrites that write, and the relay retries with a window that holds it.
  */
-export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<MaterializeDescriptionResult> {
+export async function materializeDescriptionOp(input: YjsMaterializeBody): Promise<MaterializeDescriptionResult> {
   const { entityType } = input;
-  if (!isProduct(entityType)) {
-    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `Unknown entity type: ${entityType}` } });
-  }
-
   const materializer = getYjsMaterializer(entityType);
   if (!materializer) {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `No Yjs materializer registered for ${entityType}` } });
@@ -105,7 +86,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     try {
       // An stx without `replayed` takes a fresh server HLC. The window reaches the yjs module's `<type>.updated`
       // handler, which checks it under the entity row lock.
-      await yjsMaterializeWindow.run({ entityId: input.entityId, serverRowIds: input.serverRowIds ?? [] }, () =>
+      await yjsMaterializeWindow.run({ entityId: input.entityId, serverRowIds: input.serverRowIds }, () =>
         materializer(ctx, input.entityId, { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } }),
       );
       return { sanitized };

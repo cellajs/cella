@@ -42,11 +42,21 @@ export const yjsMaterializeBodySchema = z.object({
   tenantId: validIdSchema,
   organizationId: validUuidSchema,
   description: z.string(),
-  /** The log's senders, newest first; the relay sends at most 20. */
+  /**
+   * The log's senders, newest first; the relay sends at most 20. The first who may still update the entity is credited
+   * with the write.
+   */
   editors: z.array(validUuidSchema).min(1).max(50),
   /**
-   * The window's server-origin rows, ids only, so the body stays small at the cap; absent reads as none, so a relay
-   * that sends none gets 409 for a window that holds one.
+   * The window's server-origin rows (no sender) merged into `description`, ids only, so the body stays small at the cap.
+   * Another server row of the document refuses the write (409); absent reads as none, so a relay that sends none gets
+   * 409 for a window that holds one.
    */
   serverRowIds: z.array(z.number().int()).max(yjsMaxServerRowIds).default([]),
 });
+
+/** The materialize body as the route parses it: `serverRowIds` defaulted. */
+export type YjsMaterializeBody = z.infer<typeof yjsMaterializeBodySchema>;
+
+/** The materialize body as the relay sends it. */
+export type YjsMaterializeRequest = z.input<typeof yjsMaterializeBodySchema>;
