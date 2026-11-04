@@ -563,13 +563,16 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   const byDoc = new Map<number, Client[]>();
   for (const c of clients) byDoc.set(c.docIndex, [...(byDoc.get(c.docIndex) ?? []), c]);
   for (const docClients of byDoc.values()) prepareParagraph(docClients[0].doc);
-  await waitFor(() => clients.every((c) => paragraphOf(c.doc).text !== null), 15_000);
+  const paragraphWait = await waitFor(() => clients.every((c) => paragraphOf(c.doc).text !== null), 15_000);
+  if (paragraphWait === null) bump(run, 'yjs.setup_unsynced_paragraph', clients.filter((c) => paragraphOf(c.doc).text === null).length);
 
+  // A typer whose paragraph never arrived sits the run out, counted above, so the run still tears down.
   const typing: Typer[] = clients
     .filter((c) => c.role === 'typer')
-    .map((client) => {
-      const text = paragraphOf(client.doc).text as Y.XmlText;
-      return { client, text, cursor: Y.createRelativePositionFromTypeIndex(text, Math.floor(Math.random() * (text.length + 1))) };
+    .flatMap((client) => {
+      const { text } = paragraphOf(client.doc);
+      if (!text) return [];
+      return [{ client, text, cursor: Y.createRelativePositionFromTypeIndex(text, Math.floor(Math.random() * (text.length + 1))) }];
     });
   for (const typer of typing)
     typer.client.provider.awareness.setLocalStateField('user', { name: `bench ${typer.client.doc.clientID}`, color: '#888888' });
