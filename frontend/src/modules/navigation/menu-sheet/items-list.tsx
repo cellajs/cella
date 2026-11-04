@@ -24,7 +24,7 @@ function OpenChannelTabs({ channel }: { channel: UserMenuItem }) {
 }
 
 /** The archived sub-rows of a row behind a toggle, for a row that has any. Their unseen count stays on the toggle. */
-function ArchivedSubmenu({ submenu, itemId }: { submenu: UserMenuItem[]; itemId: string }) {
+function ArchivedSubmenu({ submenu, itemId, isResting }: { submenu: UserMenuItem[]; itemId: string; isResting: boolean }) {
   const [isOpen, setIsOpen] = useSubmenuArchivedOpen(itemId);
   const archivedItems = submenu.filter((sub) => sub.membership.archived);
   if (!archivedItems.length) return null;
@@ -37,7 +37,7 @@ function ArchivedSubmenu({ submenu, itemId }: { submenu: UserMenuItem[]; itemId:
       archivedCount={archivedItems.length}
       archivedChannelIds={archivedItems.flatMap((sub) => menuUnseenChannelIds(sub, false))}
     >
-      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} isArchived isSubmenu />
+      <MenuSheetItemsList entityType={submenu[0].entityType} items={submenu} isArchived isSubmenu isResting={isResting} />
     </MenuSheetArchivedGroup>
   );
 }
@@ -60,23 +60,41 @@ interface MenuSheetItemsListProps {
   options?: MenuSectionOptions;
   /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
+  /** The page of another row of the parent's list is open, so its sub-rows rest grey. */
+  isResting?: boolean;
 }
 
-export function MenuSheetItemsList({ items, entityType, isArchived, options, isSubmenu = false }: MenuSheetItemsListProps) {
+export function MenuSheetItemsList({ items, entityType, isArchived, options, isSubmenu = false, isResting = false }: MenuSheetItemsListProps) {
+  const matchRoute = useMatchRoute();
   if (items.length === 0) return <MenuSheetNoItems entityType={entityType} />;
+
+  // Searched in all rows, archived too, as the active and archived lists render apart
+  const openItem = isSubmenu
+    ? undefined
+    : items.find((item) => {
+        const { to, params } = getChannelRoute(item);
+        return matchRoute({ to, params, fuzzy: true, includeSearch: false });
+      });
 
   return sortAndFilterMenu(items, isArchived).map((item) => {
     const hasSubmenu = isSubmenuShown(item);
+    const isSubmenuResting = !!openItem && openItem.id !== item.id;
     return (
       <li key={item.id}>
-        <MenuSheetItem item={item} isSubitem={isSubmenu} icon={options?.icon} />
+        <MenuSheetItem item={item} isSubitem={isSubmenu} isResting={isResting} icon={options?.icon} />
         {channelTabsInMenu(item.entityType) && <OpenChannelTabs channel={item} />}
         {hasSubmenu && (
           <>
             <ul>
-              <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} isSubmenu />
+              <MenuSheetItemsList
+                entityType={item.submenu[0].entityType}
+                items={item.submenu}
+                isArchived={false}
+                isSubmenu
+                isResting={isSubmenuResting}
+              />
             </ul>
-            <ArchivedSubmenu submenu={item.submenu} itemId={item.id} />
+            <ArchivedSubmenu submenu={item.submenu} itemId={item.id} isResting={isSubmenuResting} />
           </>
         )}
       </li>

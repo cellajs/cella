@@ -108,6 +108,7 @@ export function DocsSearch() {
   return (
     <Combobox<SearchSelection>
       inline
+      open
       openOnInputClick={false}
       value={null}
       onValueChange={(selection) => {
@@ -120,11 +121,10 @@ export function DocsSearch() {
       autoHighlight={!isTouchInteraction()}
     >
       <div className="flex min-h-0 flex-col max-sm:flex-1 sm:rounded-lg sm:shadow-2xl">
-        <SearchDialogBar>
+        <SearchDialogBar hasSearch={!!searchValue} onClear={() => setSearchValue('')}>
           <ComboboxSearchInput
             ref={focusRef}
             value={searchValue}
-            onClear={() => setSearchValue('')}
             isSearching={isSearching}
             spinnerDelay={0}
             enterKeyHint="search"
@@ -170,7 +170,7 @@ export function DocsSearch() {
               tabIndex={-1}
               aria-pressed={scope === chip.value}
               onClick={() => setScope(chip.value)}
-              className="rounded-md border border-input px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
+              className="rounded-md border border-input px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-hover hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
             >
               {chip.label}
             </button>

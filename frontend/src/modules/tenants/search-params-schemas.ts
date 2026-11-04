@@ -1,10 +1,9 @@
 import { zGetTenantsQuery } from 'sdk/zod.gen';
+import { listSearchDefaults, listSearchSchema } from '~/modules/common/search-params-schemas';
 
-export const tenantsSearchDefaults = { q: '', sort: 'createdAt', order: 'desc' } as const;
+export const tenantsSearchDefaults = listSearchDefaults(zGetTenantsQuery);
 
 /** Limit and offset stay out of the URL: the list query options page the rows. */
-export const tenantsRouteSearchParamsSchema = zGetTenantsQuery.pick({ q: true }).extend({
-  sort: zGetTenantsQuery.shape.sort.catch(tenantsSearchDefaults.sort),
-  order: zGetTenantsQuery.shape.order.catch(tenantsSearchDefaults.order),
+export const tenantsRouteSearchParamsSchema = listSearchSchema(zGetTenantsQuery).extend({
   status: zGetTenantsQuery.shape.status.catch(undefined),
 });

@@ -1,22 +1,54 @@
+import { MoonIcon, SunIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
+import { PreferenceDescription, PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
+import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 const slot = 'account.preferences';
 
-/** The appearance switches, then a group per tool of the `account.preferences` slot. */
+/** Light and dark as one choice; the moon fills while dark is picked. */
+function ModeControl() {
+  const { t } = useTranslation();
+  const mode = useUIStore((state) => state.mode);
+  const setMode = useUIStore((state) => state.setMode);
+
+  return (
+    <div className="flex flex-col py-2">
+      <SegmentedControl
+        size="sm"
+        aria-label={t('c:appearance')}
+        aria-describedby="mode-description"
+        value={mode}
+        onValueChange={setMode}
+        className="grid grid-cols-2 self-center rounded-full [--segment-px:--spacing(3)] *:rounded-full"
+      >
+        <SegmentedControlItem value="light">
+          <SunIcon className="size-4" />
+          {t('c:light')}
+        </SegmentedControlItem>
+        <SegmentedControlItem value="dark" className="group/mode">
+          <MoonIcon className="size-4 group-data-checked/mode:fill-current" />
+          {t('c:dark')}
+        </SegmentedControlItem>
+      </SegmentedControl>
+      <div className="px-3">
+        <PreferenceDescription id="mode-description">{t('c:dark_mode.text')}</PreferenceDescription>
+      </div>
+    </div>
+  );
+}
+
+/** The appearance controls, then a group per tool of the `account.preferences` slot. */
 export function PreferencesContent() {
   const { t } = useTranslation();
 
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setKeepOpenPreference = useNavigationStore((state) => state.setKeepOpenPreference);
 
-  const mode = useUIStore((state) => state.mode);
-  const setMode = useUIStore((state) => state.setMode);
   const contrast = useUIStore((state) => state.contrast);
   const setContrast = useUIStore((state) => state.setContrast);
 
@@ -31,15 +63,9 @@ export function PreferencesContent() {
   };
 
   return (
-    <>
-      <PreferencesGroup title={t('c:appearance')} help className="mb-6 pt-3">
-        <PreferenceSwitch
-          id="darkMode"
-          label={t('c:dark_mode')}
-          description={t('c:dark_mode.text')}
-          checked={mode === 'dark'}
-          onCheckedChange={(checked) => setMode(checked ? 'dark' : 'light')}
-        />
+    <div className="flex flex-col gap-4 pt-3 pb-8">
+      <PreferencesGroup title={t('c:appearance')}>
+        <ModeControl />
         <PreferenceSwitch
           id="increaseContrast"
           label={t('c:increase_contrast')}
@@ -63,7 +89,7 @@ export function PreferencesContent() {
           {tool.render(undefined)}
         </Suspense>
       ))}
-    </>
+    </div>
   );
 }
 

@@ -1,7 +1,6 @@
-import { useRef } from 'react';
-import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { ComboboxPrimitive } from '~/modules/ui/combobox';
+import { skipPasswordManagers } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 
 interface ComboboxSearchInputProps extends Omit<ComboboxPrimitive.Input.Props, 'value'> {
@@ -11,8 +10,6 @@ interface ComboboxSearchInputProps extends Omit<ComboboxPrimitive.Input.Props, '
   wrapClassName?: string;
   isSearching?: boolean;
   spinnerDelay?: number;
-  /** Empties the search text; without it the field shows no clear X. */
-  onClear?: () => void;
 }
 
 /** Search-styled combobox input for the command palette and dropdowner. */
@@ -21,20 +18,13 @@ export function ComboboxSearchInput({
   wrapClassName,
   isSearching = false,
   spinnerDelay,
-  onClear,
   value,
   hasSearch,
   ref,
   ...props
 }: ComboboxSearchInputProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const showClear = !!onClear && value.length > 0;
-
   return (
-    <div
-      data-slot="combobox-search-input-wrapper"
-      className={cn('group/search-input relative flex h-10 items-center border-b px-3', showClear && 'pr-10', wrapClassName)}
-    >
+    <div data-slot="combobox-search-input-wrapper" className={cn('group/search-input relative flex h-10 items-center border-b px-3', wrapClassName)}>
       <SearchSpinner isSearching={isSearching} hasSearch={hasSearch ?? value.length > 0} appearDelay={spinnerDelay} />
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
@@ -47,27 +37,15 @@ export function ComboboxSearchInput({
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
-        data-1p-ignore
-        data-lpignore="true"
+        {...skipPasswordManagers}
         {...props}
         ref={(element) => {
           // type="search" is set imperatively (base-ui omits it from its types) so password managers skip the input.
           if (element) element.type = 'search';
-          inputRef.current = element;
           if (typeof ref === 'function') ref(element);
           else if (ref) ref.current = element;
         }}
       />
-      {/* Combobox.Clear shows only for a selected item, and in multiple mode it also empties the selection */}
-      {showClear && (
-        <SearchClearButton
-          className="absolute top-1/2 right-2 -translate-y-1/2"
-          onClick={() => {
-            onClear();
-            inputRef.current?.focus();
-          }}
-        />
-      )}
     </div>
   );
 }

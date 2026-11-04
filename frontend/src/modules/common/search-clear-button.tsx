@@ -5,7 +5,7 @@ import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const searchButtonClass = tw(
-  'focus-effect flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted hover:text-foreground',
+  'focus-effect flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-hover hover:text-foreground',
 );
 
 /** Plain X that clears a search field, round hover target as in Material search bars. */
@@ -44,7 +44,7 @@ export function SearchRecentRemoveButton({ onRemove, className }: SearchRecentRe
     <SearchClearButton
       aria-label={t('c:remove')}
       className={cn(
-        'size-6 rounded-sm opacity-0 pointer-coarse:opacity-100 hover:bg-foreground/10 focus-visible:opacity-100 active:bg-foreground/10 group-hover/recent:opacity-100 max-sm:opacity-100',
+        'size-6 rounded-sm opacity-0 pointer-coarse:opacity-100 hover:bg-hover focus-visible:opacity-100 active:bg-hover group-hover/recent:opacity-100 max-sm:opacity-100',
         className,
       )}
       onClick={(event) => {

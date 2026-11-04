@@ -93,8 +93,8 @@ interface FindOrganizationsPaginatedOpts {
   /** Limits the list, its total and its includes to these organizations; unset lists every one the target belongs to. */
   organizationIds?: string[];
   q?: string;
-  sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
-  order?: 'asc' | 'desc';
+  sort: 'id' | 'name' | 'createdAt' | 'displayOrder';
+  order: 'asc' | 'desc';
   offset: number;
   limit: number;
   excludeArchived?: boolean;
@@ -141,7 +141,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   const orderBy = getOrderColumns({
     sort,
     order,
-    fallback: ['displayOrder', 'asc'],
     columns: {
       id: organizationsTable.id,
       name: organizationsTable.name,

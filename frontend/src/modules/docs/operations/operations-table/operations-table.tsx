@@ -57,6 +57,7 @@ export function OperationsTable() {
               rowKeyGetter={(row) => row.hash}
               rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
               isFiltered={!!q || !!filter}
+              onResetFilters={() => setSearch({ q: '', filter: undefined })}
               rowHeight={42}
               enableVirtualization
               resetWidthsKey={focusView ? 'focus' : 'normal'}

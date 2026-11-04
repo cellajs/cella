@@ -20,10 +20,12 @@ interface MenuSheetItemProps {
   item: UserMenuItem;
   /** It is a row of a submenu: a smaller row that may link to its parent's page. */
   isSubitem: boolean;
+  /** Its avatar rests grey until hovered or focused. */
+  isResting?: boolean;
   icon?: IconComponent;
 }
 
-export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProps) {
+export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
   const isOnline = useOnlineManager();
@@ -54,7 +56,7 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
-      className="group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-ring active:bg-accent data-[subitem=true]:h-10 sm:hover:bg-accent sm:hover:text-foreground"
+      className="group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-ring active:bg-accent data-[subitem=true]:h-10 sm:hover:bg-hover sm:hover:text-foreground"
     >
       <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
@@ -64,6 +66,8 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
           className={cn(
             'size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
             Icon && 'bg-transparent shadow-none',
+            isResting &&
+              'pointer-fine:group-[:not(:hover,:focus-visible)]/menu-sheet-item:resting-avatar pointer-coarse:group-[:not(:focus-visible)]/menu-sheet-item:resting-avatar',
           )}
           type={item.entityType}
           id={item.id}

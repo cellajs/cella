@@ -31,7 +31,7 @@ export const parseInviteText = (text: string) => {
 };
 
 /** The field's text with a paste in place of its selection, on lines of its own: an address typed before it stays whole. */
-export const withPasted = (event: ClipboardEvent<HTMLInputElement>) => {
+export const withPasted = (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
   const { value, selectionStart, selectionEnd } = event.currentTarget;
   return `${value.slice(0, selectionStart ?? value.length)}\n${event.clipboardData.getData('text')}\n${value.slice(selectionEnd ?? value.length)}`;
 };

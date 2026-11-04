@@ -57,7 +57,7 @@ const SidebarWithRouter = () => (
         variant="ghost"
         size="lg"
         data-spy-link={id}
-        className={cn('w-full justify-start text-left hover:bg-accent/50', id.includes('delete') && 'text-red-600', 'data-spy-active:bg-secondary')}
+        className={cn('w-full justify-start text-left hover:bg-hover', id.includes('delete') && 'text-red-600', 'data-spy-active:bg-secondary')}
         render={
           <Link
             to="."
@@ -86,7 +86,7 @@ const SidebarWithoutRouter = () => (
         key={id}
         data-spy-link={id}
         className={cn(
-          'flex items-center gap-2 rounded-md px-4 py-2 text-left text-sm transition-colors hover:bg-accent/50',
+          'flex items-center gap-2 rounded-md px-4 py-2 text-left text-sm transition-colors hover:bg-hover',
           id.includes('delete') && 'text-red-600',
           'data-spy-active:bg-secondary data-spy-active:font-medium',
         )}
@@ -161,7 +161,7 @@ const TestPanel = () => {
           <button
             key={id}
             type="button"
-            className="rounded border px-2 py-1 text-xs hover:bg-accent/50"
+            className="rounded border px-2 py-1 text-xs hover:bg-hover"
             onClick={() => {
               addLog(`→ scrollTo(${id})`);
               scrollToSectionById(id);
@@ -174,13 +174,13 @@ const TestPanel = () => {
 
       {/* Action buttons */}
       <div className="flex gap-1">
-        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-accent/50" onClick={runCycleTest}>
+        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-hover" onClick={runCycleTest}>
           Cycle all
         </button>
-        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-accent/50" onClick={checkState}>
+        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-hover" onClick={checkState}>
           Check state
         </button>
-        <button type="button" className="ml-auto rounded border px-2 py-1 text-xs hover:bg-accent/50" onClick={() => setLog([])}>
+        <button type="button" className="ml-auto rounded border px-2 py-1 text-xs hover:bg-hover" onClick={() => setLog([])}>
           Clear
         </button>
       </div>

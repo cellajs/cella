@@ -1,11 +1,10 @@
 import { zGetUsersQuery } from 'sdk/zod.gen';
 import { z } from 'zod';
+import { listSearchDefaults, listSearchSchema } from '~/modules/common/search-params-schemas';
 
-export const usersSearchDefaults = { q: '', sort: 'createdAt', order: 'desc' } as const;
+export const usersSearchDefaults = listSearchDefaults(zGetUsersQuery);
 
-export const usersRouteSearchParamsSchema = zGetUsersQuery.pick({ q: true }).extend({
-  sort: zGetUsersQuery.shape.sort.catch(usersSearchDefaults.sort),
-  order: zGetUsersQuery.shape.order.catch(usersSearchDefaults.order),
+export const usersRouteSearchParamsSchema = listSearchSchema(zGetUsersQuery).extend({
   role: zGetUsersQuery.shape.role.catch(undefined),
   userSheetId: z.string().optional(),
 });

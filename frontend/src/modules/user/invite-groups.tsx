@@ -10,7 +10,8 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Chip } from '~/modules/ui/chip';
-import { Input } from '~/modules/ui/input';
+import { Input, skipPasswordManagers } from '~/modules/ui/input';
+import type { InviteRole } from '~/modules/user/invite-submit';
 import type { InviteCheck, InviteGroupKey } from '~/modules/user/use-invite-check';
 import type { InviteList, InvitePerson } from '~/modules/user/use-invite-list';
 import { cn } from '~/utils/cn';
@@ -44,7 +45,7 @@ interface InviteFieldLineProps {
 
 /**
  * The line under a field, shown only for text that is no address. What happened to an address is spoken only: its tile
- * rolls its count and glows. Stays mounted, so a change is announced.
+ * rolls its count and its dot pulses. Stays mounted, so a change is announced.
  */
 export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
   const { t } = useTranslation();
@@ -95,6 +96,7 @@ function EditableAddress({ value, onFix }: EditableAddressProps) {
       inputMode="email"
       autoCapitalize="none"
       spellCheck={false}
+      {...skipPasswordManagers}
       className="focus-inset h-8 px-2"
       onChange={({ target }) => setText(target.value)}
       onBlur={() => onFix(text)}
@@ -115,14 +117,36 @@ interface InviteChipProps {
   onRemove: () => void;
 }
 
-/** An address as a plain chip. A long one wraps its fact under it and is never cut. */
+/**
+ * An address as a plain chip. A long one wraps its fact under it and is never cut. A person's chip shows their address
+ * while the mouse is on it and after a press, at the width of the longer of the two, so the row never moves.
+ */
 function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
   const { t } = useTranslation();
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  // A press shows its own result until the pointer leaves, past the hover's preview
+  const [pressed, setPressed] = useState(false);
+  const showsAddress = pinned || (hovered && !pressed);
 
   return (
     <Chip
-      title={person ? address : undefined}
       className="h-auto min-h-6 rounded-xl"
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') setHovered(true);
+      }}
+      onPointerLeave={() => {
+        setHovered(false);
+        setPressed(false);
+      }}
+      onPress={
+        person &&
+        (() => {
+          setPinned(!pinned);
+          setPressed(true);
+        })
+      }
+      pressLabel={person && t('c:invite_chip_person', { name: person.name, address })}
       onRemove={onRemove}
       removeLabel={t('c:remove_resource', { resource: address })}
       start={
@@ -130,7 +154,14 @@ function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
       }
     >
       <span className="flex flex-wrap gap-x-1.5 whitespace-normal">
-        <span className="break-all">{person?.name ?? address}</span>
+        {person ? (
+          <span className="inline-grid break-all text-start *:[grid-area:1/1]">
+            <span className={cn(showsAddress && 'invisible')}>{person.name}</span>
+            <span className={cn(!showsAddress && 'invisible')}>{address}</span>
+          </span>
+        ) : (
+          <span className="break-all">{address}</span>
+        )}
         {fact && <span className="whitespace-nowrap text-muted-foreground">{fact}</span>}
       </span>
     </Chip>
@@ -142,10 +173,12 @@ interface InviteGroupsProps {
   list: InviteList;
   /** The invite waits for its draft channel's publish, which changes what a new address gets. */
   held: boolean;
+  /** The role a channel invite gives, which the new tile names. */
+  role?: InviteRole;
 }
 
 /** A tile per outcome, with only the biggest problem open. A tile holds plain chips, a few at first and more on request. */
-export function InviteGroups({ check, list, held }: InviteGroupsProps) {
+export function InviteGroups({ check, list, held, role }: InviteGroupsProps) {
   const { t } = useTranslation();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -183,15 +216,7 @@ export function InviteGroups({ check, list, held }: InviteGroupsProps) {
         const step = hidden > revealAllUpTo ? revealStep : hidden;
 
         return (
-          <div key={key} data-invite-tile={key} className="relative">
-            {/* Each addition is a new key, which plays the glow again */}
-            {landed === key && (
-              <span
-                key={list.revision}
-                aria-hidden="true"
-                className={cn('pointer-events-none absolute inset-0 animate-tile-landed rounded-lg', tileTones[tileTone[key]].text)}
-              />
-            )}
+          <div key={key} data-invite-tile={key}>
             <ExpandableTile
               value={key}
               className={key === 'fix' ? 'intent-destructive soft-border' : undefined}
@@ -209,12 +234,14 @@ export function InviteGroups({ check, list, held }: InviteGroupsProps) {
                       animate={{ y: 0, opacity: 1 }}
                       exit={{ y: '-100%', opacity: 0 }}
                     >
-                      {t(summary, { count: addresses.length })}
+                      {key === 'new' && role
+                        ? t('c:invite_summary_new_role', { count: addresses.length, role: t(`c:${role}`, { count: addresses.length }) })
+                        : t(summary, { count: addresses.length })}
                     </motion.span>
                   </AnimatePresence>
                 </span>
               }
-              status={{ tone: tileTone[key], label: t(word) }}
+              status={{ tone: tileTone[key], label: t(word), pulse: landed === key ? list.revision : undefined }}
               meta={key === 'new' && held ? lowercaseLabel(t('c:invite_state_on_publish')) : lowercaseLabel(t(note))}
               lead={
                 key === 'fix' ? (

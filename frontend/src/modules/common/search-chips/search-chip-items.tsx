@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { SearchChip } from '~/modules/common/search-chips/types';
+import { Button } from '~/modules/ui/button';
 import { Chip, type ChipSize } from '~/modules/ui/chip';
 import { cn } from '~/utils/cn';
 
@@ -20,7 +21,6 @@ export function FilterChip({ chip, isPicking = false, onPress, size, className }
 
   return (
     <Chip
-      data-search-chip={chip.key}
       size={size}
       onRemove={chip.onRemove}
       removeLabel={t('c:remove_resource', { resource: chip.label })}
@@ -51,7 +51,6 @@ export function WordChip({ text, onPress, onRemove, size, className }: WordChipP
 
   return (
     <Chip
-      data-search-chip={`word:${text}`}
       size={size}
       onRemove={onRemove}
       removeLabel={t('c:remove_resource', { resource: text })}
@@ -61,5 +60,31 @@ export function WordChip({ text, onPress, onRemove, size, className }: WordChipP
     >
       {text}
     </Chip>
+  );
+}
+
+interface MoreChipsButtonProps {
+  count: number;
+  size?: ChipSize;
+  onPress: () => void;
+  className?: string;
+}
+
+/** The "+N" of a one-line chips row, for the chips it hides. */
+export function MoreChipsButton({ count, size, onPress, className }: MoreChipsButtonProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      variant="secondary"
+      size="xs"
+      aria-label={t('c:counted_more', { count })}
+      // Focus comes with the click: a press that shows the hidden chips would land the click on the one in its place
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onPress}
+      className={cn('w-9 shrink-0 rounded-full px-0 tabular-nums', size === 'lg' ? 'h-7' : 'h-6', className)}
+    >
+      +{count}
+    </Button>
   );
 }

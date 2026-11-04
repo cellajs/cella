@@ -41,8 +41,9 @@ export function ComboboxInput({
   /** Muted text ahead of the trigger and clear buttons, such as the picked timezone's offset. */
   detail?: ReactNode;
 }) {
+  // Base UI's group part is the popup's anchor, so the popup takes the field's full width
   return (
-    <InputGroup className={cn('w-auto', className)}>
+    <ComboboxPrimitive.InputGroup render={<InputGroup className={cn('w-auto', className)} />}>
       <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
       <InputGroupAddon align="inline-end">
         {detail && <span className="font-normal text-faint-foreground tabular-nums">{detail}</span>}
@@ -59,7 +60,7 @@ export function ComboboxInput({
         {showClear && <ComboboxClear disabled={disabled} />}
       </InputGroupAddon>
       {children}
-    </InputGroup>
+    </ComboboxPrimitive.InputGroup>
   );
 }
 
@@ -127,16 +128,26 @@ export function ComboboxItem({ className, children, ...props }: ComboboxPrimitiv
   );
 }
 
+interface ComboboxItemIndicatorProps extends ComboboxPrimitive.ItemIndicator.Props {
+  /** An X in place of the check, on a selected row whose press would deselect it. */
+  asRemove?: boolean;
+}
+
 /** Selected-check for combobox rows: kept mounted so unselected rows reserve the space and trailing content stays column-aligned. */
-export function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
+export function ComboboxItemIndicator({ className, asRemove, ...props }: ComboboxItemIndicatorProps) {
+  const Icon = asRemove ? XIcon : CheckIcon;
   return (
     <ComboboxPrimitive.ItemIndicator
       keepMounted
       data-slot="combobox-item-indicator"
-      className={cn('pointer-events-none not-data-selected:invisible flex size-4 items-center justify-center text-success', className)}
+      className={cn(
+        'pointer-events-none not-data-selected:invisible flex size-4 items-center justify-center text-success',
+        asRemove && 'text-foreground',
+        className,
+      )}
       {...props}
     >
-      <CheckIcon className="pointer-events-none pointer-coarse:size-5 size-4" />
+      <Icon className="pointer-events-none pointer-coarse:size-5 size-4" />
     </ComboboxPrimitive.ItemIndicator>
   );
 }

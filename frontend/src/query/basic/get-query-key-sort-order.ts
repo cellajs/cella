@@ -8,8 +8,3 @@ export function getQueryKeySortOrder(queryKey: QueryKey): 'asc' | 'desc' {
   );
   return sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
 }
-
-/** The order a list takes when its search names none: a hand-arranged `displayOrder` reads ascending, every other column newest or highest first. */
-export function defaultOrderFor(sort: string | undefined): 'asc' | 'desc' {
-  return sort === 'displayOrder' ? 'asc' : 'desc';
-}

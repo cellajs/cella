@@ -9,6 +9,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
+import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { notificationsQueryOptions, useMarkNotificationsReadMutation } from '~/modules/notification/query';
@@ -32,16 +33,19 @@ export function NotificationsSheet() {
   return (
     <NavSheetFrame>
       {/* Sticky like the menu sheet's section buttons: opaque card layer inside the sheet's scroll container. */}
-      <div className="sticky top-0 z-10 flex min-h-16 items-center justify-between gap-2 bg-card px-5">
-        <h2 className="flex items-center gap-2 font-semibold text-base">
-          {t('c:notifications')}
-          <UnreadCountBadge />
-        </h2>
-        {hasUnread && (
-          <Button variant="ghost" size="sm" onClick={() => markRead({})}>
-            {t('c:mark_all_read')}
-          </Button>
-        )}
+      <div className="sticky top-0 z-10 bg-card">
+        <div className="flex min-h-16 items-center justify-between gap-2 px-5">
+          <h2 className="flex items-center gap-2 font-semibold text-base">
+            {t('c:notifications')}
+            <UnreadCountBadge />
+          </h2>
+          {hasUnread && (
+            <Button variant="ghost" size="sm" onClick={() => markRead({})}>
+              {t('c:mark_all_read')}
+            </Button>
+          )}
+        </div>
+        <div className={menuHairlineClass} />
       </div>
 
       <div className="flex flex-col gap-2 px-3 py-2">
@@ -101,7 +105,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   // navigable item does; an unread row's hover strengthens its fill as a secondary button's does.
   const className = cn(
     'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
-    notification.readAt ? 'hover:bg-accent' : 'bg-accent hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_5%)]',
+    notification.readAt ? 'hover:bg-hover' : 'bg-accent hover:bg-muted-hover',
   );
 
   return (

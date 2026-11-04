@@ -54,6 +54,8 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
+  /** Clears the search, offered under its empty state. */
+  onResetFilters?: () => void;
   /** The empty state while nothing is filtered, usually a ContentPlaceholder. */
   NoRowsComponent?: ReactNode;
   fetchMore?: () => Promise<unknown>;
@@ -92,6 +94,7 @@ export function DataTable<TData>({
   isLoading,
   isFetching,
   isFiltered,
+  onResetFilters,
   NoRowsComponent,
   fetchMore,
   resetWidthsKey,
@@ -175,7 +178,7 @@ export function DataTable<TData>({
             <p className="text-destructive text-sm">{error.message}</p>
           </ContentPlaceholder>
         ) : (
-          <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
+          <NoRows isFiltered={isFiltered} onResetFilters={onResetFilters} isFetching={isFetching} emptyContent={NoRowsComponent} />
         )}
       </div>
     );

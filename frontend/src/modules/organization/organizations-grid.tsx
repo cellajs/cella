@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { SearchScope } from '~/modules/common/match-highlight/match-scope';
-import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
+import { BaseEntityGrid, ChannelTile, EntityGridBar, gridSortDefaults, gridSortOptions } from '~/modules/entities/entity-grid';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
+type OrgGridSearch = { q?: string; sort: NonNullable<OrgSearch['sort']>; order: NonNullable<OrgSearch['order']> };
+
+const sortOptions = [gridSortOptions.name, gridSortOptions.createdAt] as const;
 
 interface OrganizationsGridProps {
   fixedQuery?: Partial<OrgSearch>;
@@ -20,11 +23,12 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
   const [expanded, setExpanded] = useState(false);
   const limitedView = initialLimitedView && !expanded;
 
-  const { search: baseSearch, setSearch } = useSearchParams({ saveDataInSearch });
+  const relatableUserId = fixedQuery?.relatableUserId;
+  const ofAnotherUser = useUserStore((state) => !!relatableUserId && relatableUserId !== state.user?.id);
+
+  const { search: baseSearch, setSearch } = useSearchParams<OrgGridSearch>({ saveDataInSearch, defaults: gridSortDefaults(sortOptions) });
 
   const search: OrgSearch = { ...baseSearch, ...fixedQuery };
-
-  const ofAnotherUser = useUserStore((state) => !!search.relatableUserId && search.relatableUserId !== state.user?.id);
 
   const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts,members' });
 
@@ -43,6 +47,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           roleFilter={false}
           alwaysShow
           setSearch={setSearch}
+          sortOptions={sortOptions}
           focusView={focusView}
         />
       )}
@@ -58,6 +63,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           hasNextPage={hasNextPage}
           fetchMore={fetchMore}
           isFiltered={isFiltered}
+          onResetFilters={() => setSearch({ q: '' })}
           limitedView={limitedView}
           onExpand={() => setExpanded(true)}
           queryKey={queryOptions.queryKey}

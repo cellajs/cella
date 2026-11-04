@@ -143,7 +143,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
             isExpandable
               ? cn(
                   labelRowClass,
-                  'group/node relative -mx-1 -my-px w-fit cursor-pointer gap-x-0.5 rounded py-px hover:bg-muted',
+                  'group/node relative -mx-1 -my-px w-fit cursor-pointer gap-x-0.5 rounded py-px hover:bg-hover',
                   enableClipboard ? 'pe-6' : 'pr-1',
                 )
               : labelRowClass

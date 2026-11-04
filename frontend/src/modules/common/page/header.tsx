@@ -34,9 +34,10 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents, paren
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div className="absolute bottom-0 flex min-h-18 w-full bg-background/50 p-1 backdrop-blur-xs dark:bg-background/75" id={pageTopHashNav.hash}>
+      {/* 64px, centered on 32px: scrolled to its top, it lines up with the nav rail and the nav sheet headers */}
+      <div className="absolute bottom-0 flex min-h-16 w-full bg-background/50 p-1 backdrop-blur-xs dark:bg-background/75" id={pageTopHashNav.hash}>
         {/* A user avatar rises by half its size to sit centered on the cover's edge */}
-        <div className={cn('relative shrink-0', isUser ? 'mx-3 -mt-10 size-20 sm:-mt-13 sm:size-26' : 'm-2 size-12')}>
+        <div className={cn('relative shrink-0', isUser ? 'mx-3 -mt-10 size-20 sm:-mt-13 sm:size-26' : 'mx-2 my-1 size-12')}>
           <EntityAvatar
             id={entity.id}
             name={entity.name}
@@ -47,7 +48,7 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents, paren
           {avatarBadge}
         </div>
 
-        <div className="flex flex-col truncate py-1.5 pl-1">
+        <div className="flex flex-col truncate py-1 pl-1">
           <h1 className="max-sm:wrap-break-word mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">
             {entity.name}
           </h1>

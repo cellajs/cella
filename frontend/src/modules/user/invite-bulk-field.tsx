@@ -1,71 +1,45 @@
-import { PlusIcon } from 'lucide-react';
+import { type ClipboardEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
 import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
-import { focusOnMount } from '~/modules/user/invite-result';
+import { InviteFieldLine } from '~/modules/user/invite-groups';
+import { afterFocusLeaves, focusOnMount } from '~/modules/user/invite-result';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
+import { withPasted } from '~/modules/user/invite-text';
 
-/** Any text, read only when asked. The box then closes to one row, and Add more opens it again. */
-export function InviteBulkField({ list, autoFocus }: InviteFieldProps) {
+/** Any text. A paste moves its addresses below at once, typed text when the box loses focus, and the box is ready for the next. */
+export function InviteBulkField({ check, list, autoFocus }: InviteFieldProps) {
   const { t } = useTranslation();
-  const { hasList, pasted, emails, unparsed } = list;
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  if (hasList && !list.pasteOpen) {
-    return (
-      <div className="flex items-center justify-between gap-3">
-        <span role="status" className="text-muted-foreground text-sm">
-          {t('c:invite_list_count', { count: emails.length + unparsed.length })}
-        </span>
-        <Button ref={focusOnMount} type="button" variant="secondary" size="sm" onClick={() => list.setPasteOpen(true)}>
-          <PlusIcon />
-          {t('c:add_more')}
-        </Button>
-      </div>
-    );
-  }
-
-  const close = () => {
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    list.add(withPasted(event));
     list.setPasted('');
-    list.setPasteOpen(false);
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <FormItem name="bulk-emails">
-        <FormLabel>{t('c:invite_mode_bulk')}</FormLabel>
-        <FormControl>
-          <Textarea
-            ref={autoFocus || hasList ? focusOnMount : undefined}
-            value={pasted}
-            onChange={({ target }) => list.setPasted(target.value)}
-            placeholder={t('c:placeholder.paste_emails')}
-            rows={4}
-            className="max-h-[40vh] min-h-26 resize-y"
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-          />
-        </FormControl>
-        <p className="text-muted-foreground text-sm">{t('c:invite_hint_bulk')}</p>
-      </FormItem>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          disabled={!pasted.trim()}
-          onClick={() => {
-            list.add(pasted);
-            close();
+    <FormItem name="bulk-emails">
+      <FormLabel help={t('c:invite_hint_bulk')}>{t('c:invite_who')}</FormLabel>
+      <FormControl>
+        <Textarea
+          ref={(node) => {
+            textareaRef.current = node;
+            if (autoFocus) focusOnMount(node);
           }}
-        >
-          {t('c:invite_check_list')}
-        </Button>
-        {hasList && (
-          <Button type="button" variant="secondary" onClick={close}>
-            {t('c:close')}
-          </Button>
-        )}
-      </div>
-    </div>
+          value={list.pasted}
+          onChange={({ target }) => list.setPasted(target.value)}
+          onPaste={handlePaste}
+          onBlur={() => afterFocusLeaves(textareaRef.current, list.commitPasted)}
+          placeholder={t('c:placeholder.paste_emails')}
+          rows={4}
+          className="max-h-[40vh] min-h-26 resize-y"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+        />
+      </FormControl>
+      <InviteFieldLine list={list} check={check} />
+    </FormItem>
   );
 }

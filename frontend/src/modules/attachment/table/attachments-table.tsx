@@ -21,10 +21,11 @@ import { channelOrganizationId } from '~/modules/entities/channel-organization-i
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
-/** Defined outside the component so the getter identity stays stable. */
-/** Default-view rows from the canonical query, ordered like the server's default list. */
+/** Default-view rows from the canonical query in the server's default order; outside the component, so the getter stays stable. */
 function selectDefaultViewRows({ items }: { items: Attachment[] }) {
-  return [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  const { sort, order } = attachmentsSearchDefaults;
+  const direction = order === 'asc' ? 1 : -1;
+  return [...items].sort((a, b) => (a[sort] < b[sort] ? -direction : a[sort] > b[sort] ? direction : 0));
 }
 
 export interface AttachmentsTableProps {
@@ -38,7 +39,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
   const uploadAllowed = useCanUploadAttachments(channel);
   const allowUpload = canUpload ?? uploadAllowed;
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
+  const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet, defaults: attachmentsSearchDefaults });
 
   const organizationId = channelOrganizationId(channel);
   const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
@@ -98,6 +99,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
             isLoading,
             isFetching,
             isFiltered: !!q,
+            onResetFilters: () => setSearch({ q: '' }),
             hasNextPage: !isDefaultView && filtered.hasNextPage,
             fetchMore: filtered.fetchMore,
             selectedRows: selectedRowIds,

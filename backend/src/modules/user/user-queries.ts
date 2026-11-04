@@ -32,8 +32,8 @@ interface FindUsersPaginatedOpts {
   role?: SystemRoleModel['role'];
   /** Limits the list to members of one of these organizations; unset lists every user. */
   memberOfAny?: string[];
-  sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
-  order?: 'asc' | 'desc';
+  sort: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
+  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
@@ -55,7 +55,6 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
   const orderBy = getOrderColumns({
     sort,
     order,
-    fallback: ['createdAt', 'desc'],
     columns: {
       id: usersTable.id,
       name: usersTable.name,

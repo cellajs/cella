@@ -282,8 +282,8 @@ export const bindInactiveMembershipsByEmail = async (ctx: DbContext, { email, us
 interface FindPendingMembershipsPaginatedOpts {
   organizationId: string;
   entityId: string;
-  sort?: 'createdAt';
-  order?: 'asc' | 'desc';
+  sort: 'createdAt';
+  order: 'asc' | 'desc';
   offset: number;
   limit: number;
 }
@@ -297,7 +297,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   const { organizationId, entityId, sort, order, offset, limit } = opts;
 
   const table = inactiveMembershipsTable;
-  const orderBy = getOrderColumns({ sort, order, fallback: ['createdAt', 'desc'], columns: { createdAt: table.createdAt }, tieBreaker: table.id });
+  const orderBy = getOrderColumns({ sort, order, columns: { createdAt: table.createdAt }, tieBreaker: table.id });
 
   const where = and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt));
 

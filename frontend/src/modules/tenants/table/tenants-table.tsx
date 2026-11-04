@@ -46,6 +46,7 @@ export function TenantsTable() {
             columns,
             enableVirtualization: true,
             isFiltered: !!q,
+            onResetFilters: () => setSearch({ q: '' }),
             sortColumns,
             onSortColumnsChange,
             NoRowsComponent: <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:tenant_other') }} />,

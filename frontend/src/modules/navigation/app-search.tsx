@@ -7,20 +7,19 @@ import type { UserBase } from 'sdk';
 import { appConfig, isChannel } from 'shared';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SearchScope } from '~/modules/common/match-highlight/match-scope';
 import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
+import { SearchResultsSkeleton } from '~/modules/common/search-results-skeleton';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import type { RecentSelection } from '~/modules/navigation/types';
 import { Combobox, ComboboxEmpty, ComboboxList, ComboboxSeparator } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
@@ -31,23 +30,6 @@ import { resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 type SearchableEntityType = (typeof searchableEntityTypes)[number];
-
-function SearchResultsSkeleton() {
-  // Stays hidden briefly, so a fast response never flashes the skeleton.
-  const { hasStarted } = useMountedState();
-
-  return (
-    <div data-started={hasStarted} className="flex flex-col p-1 transition-opacity duration-300 data-[started=false]:opacity-0">
-      {Array.from({ length: 3 }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
-        <div key={i} className="flex items-center gap-2 py-1.5 pl-3">
-          <Skeleton className="size-8 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 type SearchSelection = EnrichedChannel | UserBase | HistoryEntry;
 
@@ -124,6 +106,7 @@ export function AppSearch() {
   return (
     <Combobox<SearchSelection>
       inline
+      open
       openOnInputClick={false}
       value={null}
       onValueChange={(selection) => {
@@ -142,11 +125,10 @@ export function AppSearch() {
     >
       {/* The results lead with size-8 avatars. The field's size-5 icon takes their center, and its text the text after them */}
       <div className="flex min-h-0 flex-col [--search-icon-size:2rem] max-sm:flex-1 sm:rounded-lg sm:shadow-2xl">
-        <SearchDialogBar>
+        <SearchDialogBar hasSearch={!!searchValue} onClear={() => setSearchValue('')}>
           <ComboboxSearchInput
             ref={focusRef}
             value={searchValue}
-            onClear={() => setSearchValue('')}
             isSearching={isFetching}
             spinnerDelay={0}
             enterKeyHint="search"

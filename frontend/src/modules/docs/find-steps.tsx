@@ -3,7 +3,7 @@ import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tw } from '~/utils/tw';
 
-const stepButtonClass = tw('focus-effect flex size-7 items-center justify-center rounded-md hover:bg-muted disabled:opacity-50');
+const stepButtonClass = tw('focus-effect flex size-7 items-center justify-center rounded-md hover:bg-hover disabled:opacity-50');
 
 /**
  * Next/previous over a view's matching ids in view order, for a find that keeps the content around its matches; the ids

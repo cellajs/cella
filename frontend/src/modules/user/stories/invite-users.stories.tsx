@@ -49,12 +49,12 @@ const meta = {
     i18n.addResourceBundle('en', 'c', {
       already_member: 'Already a member',
       invite_already_listed: '{{address}} is already in the list.',
-      invite_check_list: 'Check list',
       invite_more: 'Invite more',
       invite_result_invited: '{{count}} invited',
       invite_state_not_address: 'Not an address',
       invite_summary_fix: '{{count}} to fix',
       invite_summary_new: '{{count}} new',
+      invite_summary_new_role: '{{count}} new {{role, lowercase}}',
       invite_summary_out: '{{count}} left out',
       join_as: 'Join as',
     });
@@ -272,27 +272,18 @@ export const ShouldAdvanceStepper: Story = {
 };
 
 export const ShouldSendBulkInvite: Story = {
-  name: 'when text with addresses is checked in the bulk form, should invite the addresses it holds',
+  name: 'when text with addresses is pasted in the bulk form, should move them below at once and invite them',
   tags: playTags,
   args: { mode: 'bulk', channel },
   parameters: { known: { 'b@x.com': 'member' } },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const textarea = canvas.getByRole('textbox');
-    const checkList = canvas.getByRole('button', { name: i18n.t('c:invite_check_list') });
-
-    await step('nothing happens to a paste until it is checked, and no invite is on offer', async () => {
-      await expect(checkList).toBeDisabled();
-      await expect(canvas.queryByRole('button', { name: /^invite/i })).not.toBeInTheDocument();
-      await userEvent.click(textarea);
-      await userEvent.paste('Team: a@x.com; B@X.com\nalso a@x.com, and not-an-address');
-      await expect(textarea).toHaveValue('Team: a@x.com; B@X.com\nalso a@x.com, and not-an-address');
-      await expect(canvas.queryByText(i18n.t('c:invite_summary_new', { count: 1 }))).not.toBeInTheDocument();
-    });
 
     await step('the addresses are extracted, lowercased and deduplicated, and what holds no address is counted', async () => {
-      await userEvent.click(checkList);
-      await expect(canvas.queryByRole('textbox')).not.toBeInTheDocument();
+      await userEvent.click(textarea);
+      await userEvent.paste('Team: a@x.com; B@X.com\nalso a@x.com, and not-an-address');
+      await expect(textarea).toHaveValue('');
       await expectSummaryShown(canvasElement, i18n.t('c:invite_summary_out', { count: 2 }));
     });
 
@@ -308,22 +299,25 @@ export const ShouldSendBulkInvite: Story = {
       ]);
       await userEvent.click(canvas.getByRole('button', { name: i18n.t('c:invite_more') }));
       await expect(canvas.getByRole('textbox')).toHaveValue('');
-      await expect(canvas.getByRole('button', { name: i18n.t('c:invite_check_list') })).toBeDisabled();
     });
   },
 };
 
-export const ShouldCancelBulkForm: Story = {
-  name: 'when a checked list is cancelled, should open an empty box again',
+export const ShouldCheckTypedBulkText: Story = {
+  name: 'when Invite is pressed with typed text in the bulk box, should move it below and send nothing yet',
   tags: playTags,
   args: { mode: 'bulk' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     await userEvent.type(canvas.getByRole('textbox'), 'a@x.com');
-    await userEvent.click(canvas.getByRole('button', { name: i18n.t('c:invite_check_list') }));
-    await userEvent.click(await canvas.findByRole('button', { name: /cancel/i }));
+    await userEvent.tab();
+    await expectSummaryShown(canvasElement, i18n.t('c:invite_summary_new', { count: 1 }));
+    await userEvent.type(canvas.getByRole('textbox'), 'b@x.com');
+    await userEvent.click(canvas.getByRole('button', { name: /^invite/i }));
 
+    await expectSummaryShown(canvasElement, i18n.t('c:invite_summary_new', { count: 2 }));
     await expect(canvas.getByRole('textbox')).toHaveValue('');
+    await expect(requests).toEqual([]);
   },
 };

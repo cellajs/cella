@@ -13,7 +13,13 @@ import { isPanelReorderDragData, PanelCollapseContext, PanelDragHandleContext, r
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
-import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
+import {
+  type PanelGroupApi,
+  panelGlideDuration,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizableSeparator,
+} from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -99,11 +105,11 @@ export function BoardLayout({
     expandAndScrollToPanel(panelId: string) {
       panelGroupApiRef.current?.expandPanel(panelId);
 
-      // Wait one frame for the expand to settle before scrolling
-      requestAnimationFrame(() => {
+      // Once the glide has the panel at its open width
+      window.setTimeout(() => {
         const el = document.querySelector(`[data-panel="${CSS.escape(panelId)}"]`);
         el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
-      });
+      }, panelGlideDuration);
     },
   }));
 

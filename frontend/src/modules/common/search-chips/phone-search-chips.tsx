@@ -3,8 +3,8 @@ import { type KeyboardEvent, type RefObject, useEffect, useRef, useState } from 
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
-import { FilterChip, WordChip } from '~/modules/common/search-chips/search-chip-items';
-import { flySearchDialog } from '~/modules/common/search-chips/search-dialog-flight';
+import { countText } from '~/modules/common/search-chips/count-text';
+import { FilterChip, MoreChipsButton, WordChip } from '~/modules/common/search-chips/search-chip-items';
 import { SearchOptionsList, searchComboboxProps } from '~/modules/common/search-chips/search-options';
 import type { SearchChip, SearchChipsFieldProps, SearchSelection } from '~/modules/common/search-chips/types';
 import { useChipPicking } from '~/modules/common/search-chips/use-chip-picking';
@@ -19,22 +19,21 @@ import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 
 interface ClosedSearchFieldProps {
-  fieldRef: RefObject<HTMLDivElement | null>;
   triggerRef: RefObject<HTMLButtonElement | null>;
   label: string;
   chips: SearchChip[];
   words: string[];
-  chipKeys: string;
+  chipKeys: string[];
   hasAlternatives: (chip: SearchChip) => boolean;
   onOpen: (pickedChipKey?: string) => void;
   onPressWord: (word: string) => void;
   onRemoveWord: (word: string) => void;
+  disabled?: boolean;
   className?: string;
 }
 
 /** The closed field: as many chips as fit on its line and a count of the others, over a trigger that opens the dialog. */
 function ClosedSearchField({
-  fieldRef,
   triggerRef,
   label,
   chips,
@@ -44,23 +43,22 @@ function ClosedSearchField({
   onOpen,
   onPressWord,
   onRemoveWord,
+  disabled,
   className,
 }: ClosedSearchFieldProps) {
-  const { t } = useTranslation();
   const rowRef = useRef<HTMLDivElement>(null);
 
   const chipCount = chips.length + words.length;
-  const fitting = useFittingChips(rowRef, chipKeys);
-  const moreCount = Math.max(chipCount - fitting, 0);
-  const hiddenClass = (index: number) => index >= fitting && 'invisible absolute';
+  const { moreCount, hiddenClass } = useFittingChips(rowRef, chipKeys);
 
   return (
-    <div ref={fieldRef} className={cn('relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border border-input pl-1.5', className)}>
+    <div className={cn('relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border border-input pl-1.5', className)}>
       <button
         ref={triggerRef}
         type="button"
         aria-label={label}
         aria-haspopup="dialog"
+        disabled={disabled}
         onClick={() => onOpen()}
         className="focus-effect absolute inset-0 rounded-md"
       />
@@ -88,17 +86,7 @@ function ClosedSearchField({
               className={cn('shrink-0', hiddenClass(chips.length + index))}
             />
           ))}
-          {moreCount > 0 && (
-            <Button
-              variant="secondary"
-              size="xs"
-              aria-label={t('c:counted_more', { count: moreCount })}
-              onClick={() => onOpen()}
-              className="pointer-events-auto h-7 w-9 shrink-0 rounded-full px-0 tabular-nums"
-            >
-              +{moreCount}
-            </Button>
-          )}
+          {moreCount > 0 && <MoreChipsButton count={moreCount} size="lg" onPress={() => onOpen()} className="pointer-events-auto" />}
         </div>
       )}
     </div>
@@ -109,18 +97,22 @@ function ClosedSearchField({
 export function PhoneSearchChips({
   value,
   onSearch,
+  onReset,
   label,
   name,
   id,
-  count = '',
+  resultCount,
+  isSearching = false,
+  disabled,
   groups,
   chips,
   recents = [],
   onSearchEnd,
   compactOnPhone,
+  edgeless,
   className,
 }: SearchChipsFieldProps) {
-  const fieldRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -133,7 +125,8 @@ export function PhoneSearchChips({
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed');
 
   const hasChips = chips.length > 0 || words.length > 0;
-  const chipKeys = [...chips.map(({ key }) => key), ...words].join();
+  const hasSearch = hasChips || !!typingWord;
+  const chipKeys = [...chips.map(({ key }) => key), ...words];
 
   const open = (pickedChipKey: string | null = null) => {
     // Rendered within the tap, so the input takes focus inside the gesture: iOS opens its keyboard for no later focus
@@ -142,33 +135,15 @@ export function PhoneSearchChips({
       setPhase('open');
     });
     if (!pickedChipKey) inputRef.current?.focus({ preventScroll: true });
-    if (popupRef.current && fieldRef.current) flySearchDialog(popupRef.current, fieldRef.current, 'normal');
   };
 
-  // Runs again when a pick's chip arrives, so the flight ends where that chip put the others. A frame later: the list's scroll reset can still move the field
+  // A render after the close, so the search it remembers holds what the pick or commit just changed
   useEffect(() => {
     if (phase !== 'closing') return;
-    let flight: ReturnType<typeof flySearchDialog> | undefined;
-    let hasLanded = false;
-    const frame = requestAnimationFrame(() => {
-      if (!popupRef.current || !fieldRef.current) return;
-      flight = flySearchDialog(popupRef.current, fieldRef.current, 'reverse');
-      flight.finished.then(
-        () => {
-          hasLanded = true;
-          setPhase('closed');
-          setPickingKey(null);
-          onSearchEnd?.(query);
-        },
-        () => {},
-      );
-    });
-    return () => {
-      cancelAnimationFrame(frame);
-      // A landed flight keeps the dialog clipped to the field: cancelled, the whole dialog shows again until it unmounts
-      if (!hasLanded) flight?.cancel();
-    };
-  }, [phase, chipKeys]);
+    setPhase('closed');
+    setPickingKey(null);
+    onSearchEnd?.(query);
+  }, [phase]);
 
   const pick = (selection: SearchSelection | null) => {
     if (!selection) return;
@@ -208,14 +183,20 @@ export function PhoneSearchChips({
   return (
     <>
       {compactOnPhone && !hasChips ? (
-        <div ref={fieldRef} className="shrink-0">
-          <Button ref={triggerRef} variant="outline" size="icon" aria-label={label} aria-haspopup="dialog" onClick={() => open()}>
-            <SearchIcon />
-          </Button>
-        </div>
+        <Button
+          ref={triggerRef}
+          variant="outline"
+          size="icon"
+          aria-label={label}
+          aria-haspopup="dialog"
+          disabled={disabled}
+          onClick={() => open()}
+          className="shrink-0"
+        >
+          <SearchIcon />
+        </Button>
       ) : (
         <ClosedSearchField
-          fieldRef={fieldRef}
           triggerRef={triggerRef}
           label={label}
           chips={chips}
@@ -228,12 +209,13 @@ export function PhoneSearchChips({
             open();
           }}
           onRemoveWord={search.removeWord}
-          className={className}
+          disabled={disabled}
+          className={cn(edgeless && 'edgeless', className)}
         />
       )}
 
       <Dialog
-        open={phase !== 'closed'}
+        open={phase === 'open'}
         onOpenChange={(next) => {
           if (next) return;
           search.abandonDraft();
@@ -252,7 +234,9 @@ export function PhoneSearchChips({
           <div className="flex min-h-0 flex-1 flex-col [--search-icon-size:1.25rem] [--search-icon-start:calc(0.875rem+1px)]">
             <Combobox<SearchSelection>
               {...searchComboboxProps}
+              // The list is in the dialog while it shows; `open` tells Base UI so, for Enter to pick a highlighted row
               inline
+              open={phase === 'open'}
               openOnInputClick={false}
               onValueChange={pick}
               inputValue={draft}
@@ -268,7 +252,15 @@ export function PhoneSearchChips({
               // On touch the keyboard's search key would pick a highlighted first row nobody chose
               autoHighlight={!isTouchInteraction()}
             >
-              <SearchDialogBar>
+              <SearchDialogBar
+                hasSearch={hasSearch}
+                onClear={() => {
+                  onSearchEnd?.(query);
+                  setPickingKey(null);
+                  search.clearWords();
+                  onReset();
+                }}
+              >
                 <ComboboxSearchInput
                   ref={inputRef}
                   id={id}
@@ -277,18 +269,16 @@ export function PhoneSearchChips({
                   placeholder={label}
                   enterKeyHint="search"
                   value={draft}
-                  hasSearch={hasChips || !!draft}
-                  onClear={search.dropDraft}
+                  hasSearch={hasSearch}
+                  isSearching={isSearching}
                   onKeyDown={handleKeyDown}
                   className="h-12 text-base"
                   // text-lg sizes the search icon
                   wrapClassName="h-12 min-w-0 flex-1 border-b-0 pl-(--search-icon-start) text-lg"
-                  // The closed field's own label stays put in this one; anything else it shows flies off, so the input fades in
-                  data-flight-fade={hasChips || compactOnPhone || undefined}
                 />
-                {/* Mounted while empty too: a status region announces changes only once it exists */}
-                <span role="status" className="mr-2 whitespace-nowrap text-muted-foreground text-sm tabular-nums">
-                  {count}
+                {/* Mounted while empty too: a status region announces changes only once it exists. The modal dialog hides the bar's own count */}
+                <span role="status" className="sr-only">
+                  {resultCount && countText(t, resultCount, { found: true })}
                 </span>
               </SearchDialogBar>
 
@@ -314,7 +304,6 @@ export function PhoneSearchChips({
                 viewportClassName="min-h-0 overscroll-contain pb-[env(safe-area-inset-bottom)]"
                 // Scrolling means reading what is below the keyboard
                 onTouchMove={() => inputRef.current?.blur()}
-                data-flight-fade
               >
                 <ComboboxList className="h-full max-h-none overflow-visible p-0">
                   <SearchOptionsList
@@ -324,7 +313,8 @@ export function PhoneSearchChips({
                     groups={groups}
                     recents={recents}
                     hasChips={hasChips}
-                    isWrapped
+                    resultCount={resultCount}
+                    isResultPending={isSearching || search.isPending}
                   />
                 </ComboboxList>
               </ScrollArea>

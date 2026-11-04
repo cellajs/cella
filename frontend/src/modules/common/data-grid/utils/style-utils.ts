@@ -53,7 +53,7 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
           : 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:py-0!';
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden border-t-[0.05rem] border-border ${textOverflow}`,
-    'sm:group-hover/row:bg-muted/50',
+    'sm:group-hover/row:bg-hover',
     'outline-ring -outline-offset-2',
     { 'rdg-cell-frozen sticky z-1': column.frozen },
     ...extraClasses,

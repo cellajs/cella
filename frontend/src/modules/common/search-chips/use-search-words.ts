@@ -64,14 +64,6 @@ export function useSearchWords({ value, onSearch, wordEdit }: SearchWordsOptions
     return next;
   };
 
-  /** Empties the input for good, also of a word taken back into it. */
-  const dropDraft = () => {
-    if (!draft) return;
-    setDraft('');
-    setTakenBack(null);
-    send(joinQuery(words, ''));
-  };
-
   /** Leaves the input without using it: a word taken back into it returns to its chip. */
   const abandonDraft = () => {
     if (!draft) return;
@@ -132,8 +124,9 @@ export function useSearchWords({ value, onSearch, wordEdit }: SearchWordsOptions
     draft,
     typingWord,
     query,
+    /** The typed words still wait to apply: a count of the applied search belongs to an earlier one. */
+    isPending: query !== value,
     commitDraft,
-    dropDraft,
     abandonDraft,
     typeInput,
     removeWord,

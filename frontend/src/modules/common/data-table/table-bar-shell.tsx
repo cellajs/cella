@@ -1,16 +1,16 @@
-import { type Dispatch, type ReactNode, type SetStateAction, useRef } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
+import { TableBarSearch } from '~/modules/common/data-table/table-bar-search';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ViewMenu, type ViewMenuExport, type ViewMenuSort } from '~/modules/common/data-table/view-menu';
 import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { SearchChipsField } from '~/modules/common/search-chips/search-chips-field';
+import { countText } from '~/modules/common/search-chips/count-text';
 import type { SearchFilters } from '~/modules/common/search-chips/types';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 import { FloatingAction } from '~/modules/navigation/floating-nav/floating-action';
@@ -68,22 +68,24 @@ export function TableBarActionButton({ action }: { action: TableBarAction }) {
 
 interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useTableBarFilters> {
   searchVars: { q?: string };
+  /** The list's count, of what the search finds while it filters; null while it loads. */
   total: number | null;
   /** Count label, pluralized by the total. */
   label: TKey;
   /** Name of the search input. */
   searchName: string;
+  /** Keeps the search open offline, for a list filtered in the client. */
   allowOfflineSearch?: boolean;
   /** Columns the view menu lists and an export writes; a grid has none. */
   columns?: ColumnOrColumnGroup<TRow>[];
   setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
-  /** The list's main action, such as create: before the count, hidden while filtered; on a phone a floating button. */
+  /** The list's main action, such as create: before the count; on a phone a floating button. */
   action?: TableBarAction;
   /** Floats the action on a phone. Defaults to true; a list in a sheet keeps it in the row. */
   floatAction?: boolean;
   /** Rendered after the count. */
   countExtra?: ReactNode;
-  /** What the list filters on beside its search words: its search then takes chips and offers them. */
+  /** What the list filters on beside its search words, offered in the search's popup. */
   searchFilters?: SearchFilters;
   sort?: ViewMenuSort;
   export?: ViewMenuExport<TRow>;
@@ -97,6 +99,8 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   /** Rendered below the bar. */
   after?: ReactNode;
 }
+
+const noFilters: SearchFilters = { groups: [], chips: [] };
 
 /** The bar above an entity table: action and count, search, view controls and focus view. */
 export function TableBarShell<TRow extends object>({
@@ -113,7 +117,7 @@ export function TableBarShell<TRow extends object>({
   action,
   floatAction = true,
   countExtra,
-  searchFilters,
+  searchFilters = noFilters,
   sort,
   export: exportOptions,
   controls,
@@ -125,40 +129,13 @@ export function TableBarShell<TRow extends object>({
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const isActionFloating = !!action && floatAction && isMobile;
-  const searchLabel = t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) });
-  const foundCount = isFiltered && total !== null ? t('c:resource_count', { count: total, resource: t(label, { count: total }) }) : '';
 
-  const searchProps = searchFilters
-    ? {
-        searchInRow: true as const,
-        foundCount,
-        search: (
-          <SearchChipsField
-            {...searchFilters}
-            name={searchName}
-            label={searchLabel}
-            value={searchVars.q ?? ''}
-            count={foundCount}
-            onSearch={onSearch}
-            onReset={onResetFilters}
-            compactOnPhone
-            className="edgeless"
-          />
-        ),
-      }
-    : {
-        searchLabel,
-        search: (
-          <TableSearch
-            name={searchName}
-            label={searchLabel}
-            value={searchVars.q}
-            count={foundCount}
-            onSearch={onSearch}
-            allowOfflineSearch={allowOfflineSearch}
-          />
-        ),
-      };
+  // The last count known: a search on its way shows the one before it, while the field's spinner says it is coming
+  const [shownTotal, setShownTotal] = useState(total);
+  if (total !== null && total !== shownTotal) setShownTotal(total);
+  const resultCount = shownTotal === null ? undefined : { count: shownTotal, resource: label };
+  // Empty for no results: the list's empty state says so and offers the clear
+  const foundCount = isFiltered && resultCount?.count ? countText(t, resultCount, { found: true }) : '';
 
   return (
     <>
@@ -167,10 +144,23 @@ export function TableBarShell<TRow extends object>({
         isFiltered={isFiltered}
         onResetFilters={onResetFilters}
         sticky={sticky}
-        {...searchProps}
-        actions={!isFiltered && action && !isActionFloating && <TableBarActionButton action={action} />}
+        foundCount={foundCount}
+        search={
+          <TableBarSearch
+            {...searchFilters}
+            isFiltered={isFiltered}
+            allowOfflineSearch={allowOfflineSearch}
+            name={searchName}
+            label={t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) })}
+            value={searchVars.q ?? ''}
+            resultCount={resultCount}
+            onSearch={onSearch}
+            onReset={onResetFilters}
+          />
+        }
+        actions={action && !isActionFloating && <TableBarActionButton action={action} />}
         count={
-          <TableCount count={isFiltered ? null : total} label={label}>
+          <TableCount count={shownTotal} found={isFiltered} label={label}>
             {countExtra}
           </TableCount>
         }

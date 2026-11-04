@@ -49,6 +49,7 @@ export function Chip({
   ...props
 }: ChipProps) {
   const value = <span className="truncate">{children}</span>;
+  const media = start && <span className="-my-px mr-1.5 -ml-px flex shrink-0">{start}</span>;
 
   return (
     <span
@@ -62,7 +63,7 @@ export function Chip({
       )}
       {...props}
     >
-      {start && <span className="-my-px mr-1.5 -ml-px flex shrink-0">{start}</span>}
+      {!onPress && media}
       {onPress ? (
         <button
           type="button"
@@ -72,10 +73,13 @@ export function Chip({
           onMouseDown={keepFocus}
           onClick={onPress}
           className={cn(
-            'focus-effect focus-inset pointer-events-auto flex h-full min-w-0 cursor-pointer items-center rounded-full pl-2.5 transition-colors hover:bg-foreground/8',
+            'focus-effect focus-inset pointer-events-auto flex h-full min-w-0 cursor-pointer items-center rounded-[inherit] transition-colors hover:bg-hover',
+            start ? 'pl-0' : 'pl-2.5',
             size === 'lg' ? 'pr-1.5' : 'pr-2.5',
           )}
         >
+          {/* Inside the button, so a press on the media acts on the value too */}
+          {media}
           {value}
         </button>
       ) : (

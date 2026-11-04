@@ -21,7 +21,7 @@ export function CopyNodeButton({ value }: CopyNodeButtonProps) {
     // Absolute, in the padding its row reserves: as a flex item, hidden until hover, it would wrap onto an empty line.
     <button
       type="button"
-      className="focus-effect absolute end-0.5 top-px inline-flex h-lh cursor-pointer items-center justify-center rounded px-0.5 opacity-0 transition-opacity hover:bg-muted hover:opacity-100 focus-visible:opacity-100 group-hover/node:opacity-60"
+      className="focus-effect absolute end-0.5 top-px inline-flex h-lh cursor-pointer items-center justify-center rounded px-0.5 opacity-0 transition-opacity hover:bg-hover hover:opacity-100 focus-visible:opacity-100 group-hover/node:opacity-60"
       onClick={handleCopy}
       aria-label={t('c:copy')}
       title={t('c:copy')}

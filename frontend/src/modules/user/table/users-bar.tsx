@@ -1,4 +1,4 @@
-import { MailIcon, TrashIcon } from 'lucide-react';
+import { TrashIcon, UserRoundPlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -61,7 +61,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       {...{ searchVars, total, columns, setColumns }}
       label="c:user"
       searchName="userSearch"
-      action={{ icon: MailIcon, label: t('c:invite'), onClick: openInvite }}
+      action={{ icon: UserRoundPlusIcon, label: t('c:invite'), onClick: openInvite }}
       searchFilters={searchFilters}
       selection={{
         count: selected.length,

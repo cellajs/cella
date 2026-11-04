@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { foldText, matchesTerms } from 'shared/utils/text-match';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MatchScope } from '~/modules/common/match-highlight/match-scope';
-import type { SearchChip, SearchOption, SearchOptionGroup, SearchRecent, SearchSelection } from '~/modules/common/search-chips/types';
+import { countText } from '~/modules/common/search-chips/count-text';
+import type { ResultCount, SearchChip, SearchOption, SearchOptionGroup, SearchRecent, SearchSelection } from '~/modules/common/search-chips/types';
 import { SearchRecentRemoveButton } from '~/modules/common/search-clear-button';
 import { SearchRowIcon } from '~/modules/common/search-row-icon';
+import { Spinner } from '~/modules/common/spinner';
 import { Chip } from '~/modules/ui/chip';
 import { ComboboxGroup, ComboboxGroupLabel, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
 import { Kbd } from '~/modules/ui/kbd';
@@ -18,15 +20,16 @@ export const searchComboboxProps = { value: null, filter: () => true, itemToStri
 // The field sets --search-icon-start, measured from the list's edge: its p-1 is already part of that
 const suggestionRowClass = 'pl-[calc(var(--search-icon-start)-0.25rem)]';
 
-const selectedFirst = (options: SearchOption[]) => [...options].sort((a, b) => Number(b.isSelected) - Number(a.isSelected));
-
-interface SearchOptionRowProps {
-  group: SearchOptionGroup;
-  /** The whole filter under its heading, for a screen with room for it. Otherwise one row that scrolls sideways. */
-  isWrapped: boolean;
+/** The count at a row's end, or a spinner while the search it counts is still on its way. */
+function RowCount({ text, isPending }: { text: string; isPending: boolean }) {
+  if (isPending) return <Spinner size="sm" className="size-3.5" />;
+  return <span className="text-muted-foreground text-xs tabular-nums">{text}</span>;
 }
 
-function SearchOptionRow({ group, isWrapped }: SearchOptionRowProps) {
+const selectedFirst = (options: SearchOption[]) => [...options].sort((a, b) => Number(b.isSelected) - Number(a.isSelected));
+
+/** A filter under its heading, its values wrapping onto as many lines as they need. */
+function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
   // A row with a limit puts its selected values first as it opens and keeps that order, as a pick also changes the counts it sorts by
   const [openOrder] = useState(() => new Map(selectedFirst(group.options).map(({ value }, index) => [value, index])));
   const rank = ({ value }: SearchOption) => openOrder.get(value) ?? openOrder.size;
@@ -36,13 +39,11 @@ function SearchOptionRow({ group, isWrapped }: SearchOptionRowProps) {
       : [...group.options].sort((a, b) => rank(a) - rank(b)).filter((option, index) => index < (group.rowLimit ?? 0) || option.isSelected);
 
   return (
-    <ComboboxGroup aria-label={isWrapped ? undefined : group.label} className={cn(!isWrapped && 'border-b last:border-b-0')}>
-      {isWrapped && (
-        <ComboboxGroupLabel className="pointer-coarse:px-(--search-icon-start) px-(--search-icon-start) pt-2 pb-0 pointer-coarse:pb-0">
-          {group.label}
-        </ComboboxGroupLabel>
-      )}
-      <div className={cn('flex gap-1 px-(--search-icon-start)', isWrapped ? 'flex-wrap py-1.5' : 'no-scrollbar overflow-x-auto py-2')}>
+    <ComboboxGroup>
+      <ComboboxGroupLabel className="pointer-coarse:px-(--search-icon-start) px-(--search-icon-start) pt-2 pb-0 pointer-coarse:pb-0">
+        {group.label}
+      </ComboboxGroupLabel>
+      <div className="flex flex-wrap gap-1 px-(--search-icon-start) py-1.5">
         {options.map((option) => (
           <ComboboxItem
             key={option.value}
@@ -100,7 +101,15 @@ function SearchRecentItem({ recent }: { recent: SearchRecent }) {
   );
 }
 
-function SearchSuggestions({ word, groups, recents }: { word: string; groups: SearchOptionGroup[]; recents: SearchRecent[] }) {
+interface SearchSuggestionsProps {
+  word: string;
+  groups: SearchOptionGroup[];
+  recents: SearchRecent[];
+  result?: string;
+  isResultPending: boolean;
+}
+
+function SearchSuggestions({ word, groups, recents, result, isResultPending }: SearchSuggestionsProps) {
   const { t } = useTranslation();
   const terms = [foldText(word)];
 
@@ -116,7 +125,10 @@ function SearchSuggestions({ word, groups, recents }: { word: string; groups: Se
           <SearchIcon className="text-muted-foreground" />
         </SearchRowIcon>
         <span className="truncate">{t('c:search_for', { query: word })}</span>
-        <Kbd className="ml-auto max-sm:hidden">Enter</Kbd>
+        <span className="ml-auto flex shrink-0 items-center gap-2">
+          {result !== undefined && <RowCount text={result} isPending={isResultPending} />}
+          <Kbd className="max-sm:hidden">Enter</Kbd>
+        </span>
       </ComboboxItem>
       <MatchScope terms={terms}>
         {optionMatches.length > 0 && <ComboboxSeparator />}
@@ -157,29 +169,33 @@ interface SearchOptionsListProps {
   recents: SearchRecent[];
   /** Once a search is under way the filters get the room of the latest recent search; typing still finds them all. */
   hasChips: boolean;
-  isWrapped?: boolean;
+  resultCount?: ResultCount;
+  /** The count is for an earlier search: the typed words still wait to apply, or their search fetches. */
+  isResultPending: boolean;
 }
 
 /** What a chips field offers: a pressed chip's alternatives, what a typed word suggests, or every filter and the recent searches. */
-export function SearchOptionsList({ pickingChip, pickingGroup, typingWord, groups, recents, hasChips, isWrapped = false }: SearchOptionsListProps) {
+export function SearchOptionsList({
+  pickingChip,
+  pickingGroup,
+  typingWord,
+  groups,
+  recents,
+  hasChips,
+  resultCount,
+  isResultPending,
+}: SearchOptionsListProps) {
   const { t } = useTranslation();
 
   if (pickingChip && pickingGroup) {
     const label = t('c:change_resource_to', { resource: pickingChip.label });
-    const alternatives = { ...pickingGroup, label, options: pickingGroup.options.filter((option) => !option.isSelected) };
-    return (
-      <>
-        {!isWrapped && (
-          <div aria-hidden className="px-(--search-icon-start) pt-2 text-muted-foreground text-xs">
-            {label}
-          </div>
-        )}
-        <SearchOptionRow group={alternatives} isWrapped={isWrapped} />
-      </>
-    );
+    return <SearchOptionRow group={{ ...pickingGroup, label, options: pickingGroup.options.filter((option) => !option.isSelected) }} />;
   }
 
-  if (typingWord) return <SearchSuggestions word={typingWord} groups={groups} recents={recents} />;
+  if (typingWord) {
+    const result = resultCount && countText(t, resultCount, { found: true });
+    return <SearchSuggestions word={typingWord} groups={groups} recents={recents} result={result} isResultPending={isResultPending} />;
+  }
 
   const latestRecent = recents.at(0);
 
@@ -191,7 +207,7 @@ export function SearchOptionsList({ pickingChip, pickingGroup, typingWord, group
         </ComboboxGroup>
       )}
       {groups.map((group) => (
-        <SearchOptionRow key={group.key} group={group} isWrapped={isWrapped} />
+        <SearchOptionRow key={group.key} group={group} />
       ))}
     </>
   );

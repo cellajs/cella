@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { GetUserResponse } from 'sdk';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { ProfilePictureButton } from '~/modules/user/profile-picture-button';
 import { useUpdateUser } from '~/modules/user/query';
 import { UserProfileSubline } from '~/modules/user/user-profile-subline';
 import { useUserStore } from '~/modules/user/user-store';
@@ -34,6 +35,7 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
         onCoverUpdate={updateCover}
         onCoverDelete={deleteCover}
         subline={<UserProfileSubline user={user} />}
+        avatarBadge={isSelf && <ProfilePictureButton user={user} className="sm:size-8" />}
       />
       <Suspense>
         {/* No wrapper: the slot's tools bring their own container and top padding, so one can run a full-width tab nav */}
