@@ -78,7 +78,7 @@ describe('verifyAfterApply', () => {
     ]);
     const result = await verifyAfterApply({ appConfig, secretKey: 's', fetchImpl, log: () => {} });
     expect(result.ok).toBe(false);
-    expect(result.problems).toEqual(["database privilege admin_role on rdb: live 'none', expected one of all"]);
+    expect(result.problems).toEqual(["database privilege admin_role on rdb: live 'none', expected one of all/custom"]);
   });
 
   it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {

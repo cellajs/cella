@@ -9,8 +9,10 @@ const runOperatorApply = vi.fn();
 const openDbEndpoints = vi.fn();
 const publishEngine = vi.fn();
 const discardEngine = vi.fn();
+const startBlockedTarget = vi.fn();
 
 vi.mock('./operator-unlock', () => ({ acquireOperatorKey: (...args: unknown[]) => acquireOperatorKey(...args) }));
+vi.mock('./start-deploy', () => ({ startBlockedTarget: (...args: unknown[]) => startBlockedTarget(...args) }));
 vi.mock('../shared', () => ({
   endAction: (code: number) => {
     throw Object.assign(new Error('ended'), { name: 'ActionEnded', exitCode: code });
@@ -46,6 +48,7 @@ beforeEach(() => {
   reviewPlan.mockResolvedValue(reviewed);
   runOperatorApply.mockResolvedValue({ completed: true, verified: true });
   publishEngine.mockResolvedValue(engine);
+  startBlockedTarget.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -98,10 +101,11 @@ describe('runApply', () => {
     expect(runOperatorApply).toHaveBeenCalledWith(context, expect.objectContaining({ operation: 'apply', confirmPlan: true, reviewed, engine }));
   });
 
-  it('ends with a failure when the up completed but the live grants still differ', async () => {
+  it('starts the blocked target and then ends with a failure when the up completed but the live grants still differ', async () => {
     askToApply.mockResolvedValue(true);
     runOperatorApply.mockResolvedValue({ completed: true, verified: false });
 
     await expect(runApply(context)).rejects.toMatchObject({ name: 'ActionEnded', exitCode: 1 });
+    expect(startBlockedTarget).toHaveBeenCalledWith(context, operator);
   });
 });
