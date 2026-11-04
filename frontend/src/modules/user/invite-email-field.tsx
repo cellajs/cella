@@ -1,14 +1,11 @@
 import { type ClipboardEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
-import { Input } from '~/modules/ui/input';
+import { Input, skipPasswordManagers } from '~/modules/ui/input';
 import { InviteFieldLine } from '~/modules/user/invite-groups';
-import { focusOnMount } from '~/modules/user/invite-result';
+import { afterFocusLeaves, focusOnMount } from '~/modules/user/invite-result';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
 import { isInviteEmail, withPasted } from '~/modules/user/invite-text';
-
-// Past the press that took focus: the list growing under the pointer would move what it is pressing.
-const blurDelay = 200;
 
 /** One address at a time. Enter, a separator or leaving the field moves it below, and the field is ready for the next. */
 export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
@@ -33,7 +30,7 @@ export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
 
   return (
     <FormItem name="invite-emails">
-      <FormLabel help={t('c:invite_hint_email')}>{t('c:paste_emails')}</FormLabel>
+      <FormLabel help={t('c:invite_hint_email')}>{t('c:invite_who')}</FormLabel>
       <FormControl>
         <Input
           ref={(node) => {
@@ -46,6 +43,7 @@ export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
           autoCapitalize="none"
           spellCheck={false}
           enterKeyHint="enter"
+          {...skipPasswordManagers}
           placeholder={t('c:placeholder.email')}
           aria-invalid={list.typedInvalid || undefined}
           value={list.typed}
@@ -57,11 +55,7 @@ export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {
             list.commitTyped();
           }}
           onPaste={handlePaste}
-          onBlur={() => {
-            setTimeout(() => {
-              if (document.activeElement !== inputRef.current) list.commitTyped();
-            }, blurDelay);
-          }}
+          onBlur={() => afterFocusLeaves(inputRef.current, () => list.commitTyped())}
         />
       </FormControl>
       <InviteFieldLine list={list} check={check} />

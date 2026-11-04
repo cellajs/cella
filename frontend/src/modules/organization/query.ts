@@ -24,7 +24,6 @@ import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesOnceUnobserve
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { defaultOrderFor } from '~/query/basic/get-query-key-sort-order';
 import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
@@ -54,11 +53,11 @@ export const organizationQueryOptions = (id: string, tenantId: string) =>
 
 type OrganizationsListParams = OrganizationFilters & { limit?: number };
 
-/** Search filters with the table defaults filled in; `include` is left out, so queries with and without counts share one list key. */
+/** Search filters with the API defaults filled in; `include` is left out, so queries with and without counts share one list key. */
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
   sort = organizationsSearchDefaults.sort,
-  order = defaultOrderFor(sort),
+  order = organizationsSearchDefaults.order,
   relatableUserId,
   excludeArchived,
   role,

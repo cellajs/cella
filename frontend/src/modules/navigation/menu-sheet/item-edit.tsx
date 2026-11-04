@@ -67,7 +67,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       // is muted/70 on the card made opaque, so a row travelling past covers the rows under it. Height, gap and avatar box
       // match the row outside edit mode (item.tsx), so entering edit mode moves no avatar or name.
       className={cn(
-        'group/options-item relative flex h-12 w-full items-center gap-1 pr-2 [--hover-fill:color-mix(in_oklab,var(--muted),var(--foreground)_8%)] before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-(--hover-fill) data-[subitem=true]:h-10',
+        'group/options-item relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors hover:text-accent-foreground hover:before:bg-muted-hover data-[subitem=true]:h-10',
         isMovable && 'cursor-grab',
         isTravelling && 'z-3',
       )}
@@ -101,7 +101,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
             avatarBoxClass,
             // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset
             // clear over the row's fill.
-            'group/drag relative cursor-grab rounded-md outline-hidden focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-(--hover-fill) active:cursor-grabbing group-hover/options-item:bg-(--hover-fill)',
+            'group/drag relative cursor-grab rounded-md outline-hidden focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-muted-hover active:cursor-grabbing group-hover/options-item:bg-muted-hover',
           )}
         >
           <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]">

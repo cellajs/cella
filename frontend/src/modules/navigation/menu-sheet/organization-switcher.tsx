@@ -143,9 +143,9 @@ export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps
     });
   };
 
+  // The menu sheet header above draws the line on top
   return (
     <>
-      <div className={menuHairlineClass} />
       <div className="px-3 py-1.5">
         <Button
           ref={triggerRef}

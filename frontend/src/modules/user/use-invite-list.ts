@@ -5,8 +5,8 @@ import type { InviteForm } from '~/modules/user/invite-submit';
 import { isInviteEmail, parseInviteText } from '~/modules/user/invite-text';
 
 /**
- * Someone picked by name, so their chip shows the person; one restored from a draft stays an address. The outcome is
- * what the search's check answered, which places them until the list's own check answers.
+ * Someone picked by name, so their chip shows the person, a restored draft too. The outcome is what the search's check
+ * answered, which places them until the list's own check answers.
  */
 export type InvitePerson = {
   id: string;
@@ -25,13 +25,13 @@ export function useInviteList(form: InviteForm) {
   const unparsed = useWatch({ control: form.control, name: 'unparsed' }) ?? [];
   const typed = useWatch({ control: form.control, name: 'typed' }) ?? '';
   const pasted = useWatch({ control: form.control, name: 'pasted' }) ?? '';
+  const picked = useWatch({ control: form.control, name: 'people' }) ?? [];
+  const people = new Map(picked.map((person) => [person.email.toLowerCase(), person]));
 
   const [last, setLast] = useState<{ address: string; repeat: boolean } | null>(null);
   const [typedInvalid, setTypedInvalid] = useState(false);
-  const [people, setPeople] = useState<Map<string, InvitePerson>>(new Map());
   // Moves with each addition, which is when the open tile is worked out again.
   const [revision, setRevision] = useState(0);
-  const [pasteOpen, setPasteOpen] = useState(true);
 
   const merge = (text: string, without?: string) => {
     const parsed = parseInviteText(text);
@@ -65,9 +65,19 @@ export function useInviteList(form: InviteForm) {
     return true;
   };
 
-  /** A switch of mode adds a whole address and drops a partial one. */
+  /** Moves the paste box's text into the list. Answers false when it held any, so the list is checked before a send. */
+  const commitPasted = () => {
+    const text = form.getValues('pasted') ?? '';
+    if (!text.trim()) return true;
+    add(text);
+    form.setValue('pasted', '', shouldDirty);
+    return false;
+  };
+
+  /** A switch of mode adds a whole address and drops a partial one. Text in the paste box joins the list. */
   const leaveField = () => {
     commitTyped();
+    commitPasted();
     form.setValue('typed', '', shouldDirty);
     setTypedInvalid(false);
     setLast(null);
@@ -82,13 +92,12 @@ export function useInviteList(form: InviteForm) {
     typedInvalid,
     people,
     revision,
-    pasteOpen,
-    setPasteOpen,
     hasList: emails.length + unparsed.length > 0,
     /** A whole address in the field goes out with the rest. */
     typedAddress: isInviteEmail(typed.trim()) && !emails.includes(typed.trim().toLowerCase()) ? typed.trim() : null,
     add,
     commitTyped,
+    commitPasted,
     leaveField,
     setTyped: (value: string) => {
       form.setValue('typed', value, shouldDirty);
@@ -96,7 +105,8 @@ export function useInviteList(form: InviteForm) {
     },
     setPasted: (value: string) => form.setValue('pasted', value, shouldDirty),
     addPerson: (person: InvitePerson) => {
-      setPeople(new Map(people).set(person.email.toLowerCase(), person));
+      const others = (form.getValues('people') ?? []).filter(({ email }) => email.toLowerCase() !== person.email.toLowerCase());
+      form.setValue('people', [...others, person], shouldDirty);
       add(person.email);
     },
     remove: (address: string) => {
@@ -108,6 +118,11 @@ export function useInviteList(form: InviteForm) {
       form.setValue(
         'unparsed',
         unparsed.filter((item) => item !== address),
+        shouldDirty,
+      );
+      form.setValue(
+        'people',
+        picked.filter(({ email }) => email.toLowerCase() !== address),
         shouldDirty,
       );
       setLast(null);

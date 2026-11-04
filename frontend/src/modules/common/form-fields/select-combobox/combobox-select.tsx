@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import { Fragment, type ReactNode, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
@@ -79,7 +79,6 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
   const triggerText = t(placeholders.trigger, { resource });
 
   const selectedOption = options.find((option) => option.value === value) ?? null;
-  const anchorRef = useRef<HTMLDivElement>(null);
 
   const suggestedOptions = [...new Set(suggested?.values)].flatMap(
     (suggestedValue) => options.find((option) => option.value === suggestedValue) ?? [],
@@ -122,18 +121,16 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
       disabled={disabled}
     >
       {searchableTrigger ? (
-        <div ref={anchorRef}>
-          <ComboboxInput
-            placeholder={triggerText}
-            showTrigger
-            showClear={clearable && !!selectedOption}
-            detail={showPicked && selectedOption.detail}
-            disabled={disabled}
-            className="w-full"
-          >
-            {showPicked && selectedOption.icon && <InputGroupAddon align="inline-start">{selectedOption.icon}</InputGroupAddon>}
-          </ComboboxInput>
-        </div>
+        <ComboboxInput
+          placeholder={triggerText}
+          showTrigger
+          showClear={clearable && !!selectedOption}
+          detail={showPicked && selectedOption.detail}
+          disabled={disabled}
+          className="w-full"
+        >
+          {showPicked && selectedOption.icon && <InputGroupAddon align="inline-start">{selectedOption.icon}</InputGroupAddon>}
+        </ComboboxInput>
       ) : (
         <ComboboxPrimitive.Trigger
           data-slot="combobox-trigger"
@@ -149,7 +146,7 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
           )}
         </ComboboxPrimitive.Trigger>
       )}
-      <ComboboxContent anchor={searchableTrigger ? anchorRef : undefined}>
+      <ComboboxContent>
         {!searchableTrigger && <ComboboxInput placeholder={t(placeholders.search)} showTrigger={false} />}
         <ComboboxList>
           {groups

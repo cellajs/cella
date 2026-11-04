@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { MailIcon, TrashIcon } from 'lucide-react';
+import { TrashIcon, UserRoundPlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -103,7 +103,7 @@ export function MembersTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:member"
       searchName="memberSearch"
-      action={canUpdate ? { icon: MailIcon, label: t('c:invite'), onClick: openInvite } : undefined}
+      action={canUpdate ? { icon: UserRoundPlusIcon, label: t('c:invite'), onClick: openInvite } : undefined}
       floatAction={!isSheet}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
       searchFilters={searchFilters}

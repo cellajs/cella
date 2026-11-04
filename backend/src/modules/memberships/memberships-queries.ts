@@ -137,8 +137,8 @@ interface FindMembersPaginatedOpts {
   entityId: string;
   entityType: ChannelEntityType;
   q?: string;
-  sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role' | 'lastPostedAt';
-  order?: 'asc' | 'desc';
+  sort: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role' | 'lastPostedAt';
+  order: 'asc' | 'desc';
   offset: number;
   limit: number;
   role?: EntityRole;
@@ -168,7 +168,6 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
   const orderBy = getOrderColumns({
     sort,
     order,
-    fallback: ['createdAt', 'desc'],
     columns: {
       id: usersTable.id,
       name: usersTable.name,

@@ -45,11 +45,11 @@ Paginated queries own their filters, ordering, limit, offset, and total strategy
 - `counter` only when an eligible precomputed counter exactly matches the requested scope.
 - `exact` for filtered or otherwise narrower collections.
 
-Every offset-paginated query uses `getOrderColumns` with a `[sort, direction]` fallback,
-allowlisted columns, and a unique tie-breaker. Use `pick(table, keys)` for direct table-column
-allowlists and an explicit map for aliases, joins, or SQL expressions; `append` adds fixed trailing
-order expressions. API schemas keep defaulted sort and order fields optional on input; the query
-helper applies the fallback.
+Every offset-paginated query uses `getOrderColumns` with allowlisted columns and a unique
+tie-breaker. Use `pick(table, keys)` for direct table-column allowlists and an explicit map for
+aliases, joins, or SQL expressions; `append` adds fixed trailing order expressions. A list's
+default sort and order live only in its request schema (`.default()`): the query takes them as
+given, and the frontend reads the same defaults from the generated SDK.
 
 A query defect that affects behavior gets a focused regression test beside the query or in
 `backend/tests`. Database uniqueness still needs a schema constraint and generated migration; an

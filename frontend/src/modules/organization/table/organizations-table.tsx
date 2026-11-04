@@ -61,6 +61,7 @@ export function OrganizationsTable() {
             columns,
             enableVirtualization: true,
             isFiltered: !!q,
+            onResetFilters: () => setSearch({ q: '' }),
             selectedRows: selectedRowIds,
             onSelectedRowsChange,
             sortColumns,

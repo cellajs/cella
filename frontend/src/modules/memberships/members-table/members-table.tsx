@@ -15,6 +15,7 @@ import { MembersTableBar } from '~/modules/memberships/members-table/members-bar
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
 export interface MembersTableProps {
@@ -24,7 +25,7 @@ export interface MembersTableProps {
 
 export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
+  const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet, defaults: membersSearchDefaults });
 
   const { mutate: updateMembership } = useMemberUpdateMutation();
 
@@ -82,6 +83,7 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
             columns,
             enableVirtualization: true,
             isFiltered: role !== undefined || !!q,
+            onResetFilters: () => setSearch({ q: '', role: undefined }),
             selectedRows: selectedRowIds,
             onSelectedRowsChange,
             sortColumns,

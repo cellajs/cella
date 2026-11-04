@@ -112,6 +112,7 @@ export function PagesTable() {
             columns={columns}
             enableVirtualization
             isFiltered={!!q}
+            onResetFilters={() => setSearch({ q: '' })}
             hasNextPage={false}
             {...(canEditDocs && {
               enableDragAutoScroll: true,

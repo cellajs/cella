@@ -58,10 +58,10 @@ function clearCursorOverride() {
 export const idealWidthFactor = 1.25;
 
 /** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
-export const hintFadeOut = tw('in-data-opening:fade-in in-data-opening:animate-in opacity-(--content-opacity,1)');
+export const hintFadeOut = tw('in-data-opening:fade-in in-data-opening:animate-in opacity-(--content-opacity,1) in-data-gliding:transition-opacity');
 
 /** Content only the collapsed state shows, previewed in the expanded panel: fades in with a collapse hint. */
-export const hintFadeIn = tw('opacity-[calc(1_-_var(--content-opacity,1))]');
+export const hintFadeIn = tw('opacity-[calc(1_-_var(--content-opacity,1))] in-data-gliding:transition-opacity');
 
 const curtainPleats = 'repeating-linear-gradient(90deg, transparent 0 9px, color-mix(in oklch, var(--foreground) 4%, transparent) 9px 14px)';
 
@@ -126,6 +126,24 @@ function markOpening(element: HTMLElement) {
   );
 }
 
+// The consumer swaps in its collapsed content on the report: until it has, the open content stays faded at its open width
+function releaseAfterSwap(element: HTMLElement) {
+  const release = () => {
+    observer.disconnect();
+    clearTimeout(timer);
+    element.style.removeProperty('--content-opacity');
+    element.style.removeProperty('--open-width');
+  };
+  const observer = new MutationObserver(release);
+  observer.observe(element, { childList: true, subtree: true });
+  const timer = window.setTimeout(release, 300);
+}
+
+/** How long a toggle glides the widths (T6), the `duration-200` on `ResizablePanel`. */
+export const panelGlideDuration = 200;
+
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 const resizeSaveDelay = 150;
 
 export interface PanelGroupApi {
@@ -180,6 +198,8 @@ export function ResizablePanelGroup({
   const recencyRef = useRef<string[]>([]);
   const fittedParentWidthRef = useRef(0);
   const resizeSaveRef = useRef(0);
+  // T6: panels whose collapse is reported when the glide ends
+  const glideRef = useRef<{ closing: Set<string>; timer: number } | null>(null);
   // Ahead of the prop: a switch applies at once, before the consumer renders it back
   const fitRef = useRef(fit);
   const separatorsRef = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -198,15 +218,65 @@ export function ResizablePanelGroup({
     updateSeparatorAria();
   };
 
+  // In a glide a closing panel reports at its end, so its open content stays mounted and fades while the edge covers it
+  const reportCollapse = (panel: PanelEntry, collapsed: boolean) => {
+    const closing = glideRef.current?.closing;
+    if (closing && collapsed) {
+      closing.add(panel.id);
+      panel.element.style.setProperty('--content-opacity', '0');
+      return;
+    }
+    // Reopened before its report: the consumer still shows it open
+    if (closing?.delete(panel.id)) return panel.element.style.removeProperty('--content-opacity');
+    onCollapseChangeRef.current?.(panel.id, collapsed);
+    if (!collapsed) markOpening(panel.element);
+  };
+
+  // T6: a toggle moves every width in one eased step, from what is on screen to the widths `change` sets
+  const glide = (change: () => void) => {
+    const container = containerRef.current;
+    if (!container || prefersReducedMotion()) return change();
+    const before = new Map(
+      panelsRef.current.map((panel) => [panel.id, { width: panel.element.getBoundingClientRect().width, collapsed: isCollapsed(panel) }]),
+    );
+    clearTimeout(glideRef.current?.timer);
+    if (!glideRef.current) glideRef.current = { closing: new Set(), timer: 0 };
+    const run = glideRef.current;
+    container.setAttribute('data-gliding', '');
+    change();
+    // A panel that opens or closes keeps its content at its open width, so its cards do not reflow while the edge moves
+    for (const panel of panelsRef.current) {
+      const start = before.get(panel.id);
+      if (start && start.collapsed !== isCollapsed(panel)) {
+        panel.element.style.setProperty('--open-width', `${Math.max(start.width, widthOf(panel))}px`);
+      }
+    }
+    // Past the transition's last frame: removing the attribute before it would cut the transition short
+    run.timer = window.setTimeout(endGlide, panelGlideDuration + 50);
+  };
+
+  const endGlide = () => {
+    const run = glideRef.current;
+    if (!run) return;
+    clearTimeout(run.timer);
+    glideRef.current = null;
+    containerRef.current?.removeAttribute('data-gliding');
+    for (const panel of panelsRef.current) {
+      if (!run.closing.has(panel.id)) {
+        panel.element.style.removeProperty('--open-width');
+        continue;
+      }
+      onCollapseChangeRef.current?.(panel.id, true);
+      releaseAfterSwap(panel.element);
+    }
+  };
+
   const setWidth = (panel: PanelEntry, width: number) => {
     const wasCollapsed = isCollapsed(panel);
     widthsRef.current[panel.id] = width;
 
     const collapsed = isCollapsed(panel, width);
-    if (wasCollapsed !== collapsed) {
-      onCollapseChangeRef.current?.(panel.id, collapsed);
-      if (!collapsed) markOpening(panel.element);
-    }
+    if (wasCollapsed !== collapsed) reportCollapse(panel, collapsed);
 
     if (width > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = width;
   };
@@ -244,11 +314,12 @@ export function ResizablePanelGroup({
     commitLayout();
   };
 
-  const setFit = (next: boolean) => {
-    fitRef.current = next;
-    onFitChangeRef.current?.(next);
-    applyFit();
-  };
+  const setFit = (next: boolean) =>
+    glide(() => {
+      fitRef.current = next;
+      onFitChangeRef.current?.(next);
+      applyFit();
+    });
 
   const isEndSeparator = (separatorIndex: number) => !mustFitRef.current && separatorIndex === panelsRef.current.length - 1;
 
@@ -258,11 +329,7 @@ export function ResizablePanelGroup({
     for (const panel of panelsRef.current) {
       if (widths[panel.id] !== undefined) widthsRef.current[panel.id] = widths[panel.id];
     }
-    for (const panel of flipped) {
-      const collapsed = isCollapsed(panel);
-      onCollapseChangeRef.current?.(panel.id, collapsed);
-      if (!collapsed) markOpening(panel.element);
-    }
+    for (const panel of flipped) reportCollapse(panel, isCollapsed(panel));
   };
 
   const touch = (panelIds: string[]) => {
@@ -380,12 +447,16 @@ export function ResizablePanelGroup({
     return getIdealPanelSum() + getSeparatorSpace() <= parentWidth;
   };
 
-  // `toLimit` is Home/End: as far as the victim goes, closed if it can. An arrow stops at its minWidth.
+  // `toLimit` is Home/End: as far as the victim goes, closed if it can, in a glide (T6). An arrow stops at its minWidth.
   const applyKeyboardStep = (separatorIndex: number, delta: number, toLimit = false) => {
     sortPanels();
     // E6
     if (isEndSeparator(separatorIndex)) return setFit(delta < 0);
+    if (toLimit) return glide(() => stepKeyboard(separatorIndex, delta, true));
+    stepKeyboard(separatorIndex, delta, false);
+  };
 
+  const stepKeyboard = (separatorIndex: number, delta: number, toLimit: boolean) => {
     const panels = panelsRef.current;
     const draggingLeft = delta < 0;
     const victim = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
@@ -417,10 +488,12 @@ export function ResizablePanelGroup({
   const togglePanel = (panelId: string) => {
     const panel = panelsRef.current.find((entry) => entry.id === panelId);
     if (!panel?.collapsible) return;
-    if (mustFitRef.current) return toggleFitted(panel);
 
-    setWidth(panel, isCollapsed(panel) ? (expandedWidthsRef.current[panelId] ?? panel.minWidth) : panel.collapsedWidth);
-    commitLayout();
+    glide(() => {
+      if (mustFitRef.current) return toggleFitted(panel);
+      setWidth(panel, isCollapsed(panel) ? (expandedWidthsRef.current[panelId] ?? panel.minWidth) : panel.collapsedWidth);
+      commitLayout();
+    });
   };
 
   const expandPanel = (panelId: string) => {
@@ -435,6 +508,8 @@ export function ResizablePanelGroup({
   };
 
   const startDrag = (separatorIndex: number, startX: number, pointerId: number) => {
+    // The pointer sets the widths from here: a glide still running lands on its target
+    endGlide();
     sortPanels();
     const collapsedAtStart = new Set<string>();
     const initialWidths: Record<string, number> = {};
@@ -730,6 +805,7 @@ export function ResizablePanelGroup({
       observer.disconnect();
       // Dropped: a remount refits the stored widths to the new width anyway
       clearTimeout(resizeSaveRef.current);
+      clearTimeout(glideRef.current?.timer);
     };
   }, []);
 
@@ -845,9 +921,11 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
       data-panel={id}
       aria-label={label}
       // clip, not hidden: hidden makes this a scroll container and captures the panel's sticky elements
-      className="relative shrink-0 overflow-clip"
+      className="relative shrink-0 overflow-clip in-data-gliding:transition-[width] in-data-gliding:duration-200 in-data-gliding:ease-in-out"
     >
-      <div className={cn('h-full', fade === 'all' && 'opacity-(--content-opacity,1)')}>{children}</div>
+      <div className={cn('h-full min-w-(--open-width)', fade === 'all' && 'opacity-(--content-opacity,1) in-data-gliding:transition-opacity')}>
+        {children}
+      </div>
       <ResizeHint />
     </section>
   );

@@ -35,8 +35,8 @@ interface TileHeadProps {
   title: ReactNode;
   /** After the title: badges or a small icon. */
   badges?: ReactNode;
-  /** Opens the line under the title, as a dot on the icon and a colored word. */
-  status?: { tone: TileTone; label: string };
+  /** Opens the line under the title, as a dot on the icon and a colored word. A new `pulse` ripples the dot, as when something lands in the tile. */
+  status?: { tone: TileTone; label: string; pulse?: number };
   /** The line under the title, after the status. */
   meta: ReactNode;
   /** The line under the title explains the tile, so it wraps and is never cut. */
@@ -49,7 +49,20 @@ function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: Ti
       {iconLabel && <span className="sr-only">{iconLabel}</span>}
       <span className="relative shrink-0 [&>img]:size-6 [&>svg]:size-6" aria-hidden="true">
         {icon}
-        {status && <span className={cn('absolute -right-0.5 bottom-0.5 size-2.5 rounded-full ring-2 ring-card', tileTones[status.tone].dot)} />}
+        {status && (
+          <span className={cn('absolute -right-0.5 bottom-0.5 size-2.5 rounded-full ring-2 ring-card', tileTones[status.tone].dot)}>
+            {/* Inside the dot, so the ripple leaves the dot's ring in place */}
+            {status.pulse !== undefined && (
+              <span
+                key={status.pulse}
+                className={cn(
+                  'absolute inset-0 animate-dot-landed rounded-full bg-current opacity-0 motion-reduce:animate-none',
+                  tileTones[status.tone].text,
+                )}
+              />
+            )}
+          </span>
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-2">

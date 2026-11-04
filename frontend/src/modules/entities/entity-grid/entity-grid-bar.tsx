@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
+import { ArrowDownAZIcon, CalendarIcon, MenuIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -13,21 +13,33 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type SortOrder = 'asc' | 'desc';
 
-type EntityGridBarSearch = { q?: string; sort?: string; order?: SortOrder; role?: string };
+type EntityGridBarSearch<TSort extends string> = { q?: string; sort: TSort; order?: SortOrder; role?: string };
 
-// A picked sort writes its order too: the list's own default order may suit neither option
-const sortOptions = [
-  { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name', order: 'asc' },
-  { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt', order: 'desc' },
-] satisfies { name: TKey; icon: IconComponent; value: string; order: SortOrder }[];
+/** One entry of a grid's sort menu; picking it writes its order too. */
+export type GridSortOption<TSort extends string = string> = { name: TKey; icon: IconComponent; value: TSort; order: SortOrder };
 
-interface EntityGridBarProps {
+/** The sorts a grid can offer; `displayOrder` is the caller's menu order, so only a grid of their own offers it. */
+export const gridSortOptions = {
+  displayOrder: { name: 'c:menu_order', icon: MenuIcon, value: 'displayOrder', order: 'asc' },
+  name: { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name', order: 'asc' },
+  createdAt: { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt', order: 'desc' },
+} as const satisfies Record<string, GridSortOption>;
+
+/** A grid opens on its first sort option, so its default is always one the menu shows. */
+export const gridSortDefaults = <TSort extends string>([first]: readonly [GridSortOption<TSort>, ...GridSortOption<TSort>[]]) => ({
+  sort: first.value,
+  order: first.order,
+});
+
+interface EntityGridBarProps<TSort extends string> {
   queryKey: QueryKey;
   label: TKey;
   /** Channel entity the grid lists; scopes the role filter to that entity's role vocabulary. */
   entityType: ChannelEntityType;
-  searchVars: EntityGridBarSearch;
-  setSearch: (search: EntityGridBarSearch) => void;
+  searchVars: EntityGridBarSearch<TSort>;
+  setSearch: (search: Partial<EntityGridBarSearch<TSort>>) => void;
+  /** The sort menu; the grid's search opens on the first (`gridSortDefaults`). */
+  sortOptions: readonly GridSortOption<TSort>[];
   /** Shows the focus view toggle (default false). */
   focusView?: boolean;
   /** The list's main action, such as create: on a phone a floating button, from `sm` up shown alone while the bar hides. */
@@ -40,18 +52,19 @@ interface EntityGridBarProps {
   alwaysShow?: boolean;
 }
 
-export function EntityGridBar({
+export function EntityGridBar<TSort extends string>({
   queryKey,
   label,
   entityType,
   searchVars,
   setSearch,
+  sortOptions,
   focusView = false,
   action,
   viewToggle,
   roleFilter = true,
   alwaysShow = false,
-}: EntityGridBarProps) {
+}: EntityGridBarProps<TSort>) {
   const { sort, role } = searchVars;
   const isMobile = useBreakpointBelow('sm');
 
@@ -80,8 +93,11 @@ export function EntityGridBar({
       searchFilters={roleFilter ? searchFilters : undefined}
       sort={{
         options: sortOptions,
-        value: sort ?? sortOptions[0].value,
-        onChange: (sort) => setSearch({ sort, order: sortOptions.find((option) => option.value === sort)?.order }),
+        value: sort,
+        onChange: (value) => {
+          const option = sortOptions.find((option) => option.value === value);
+          if (option) setSearch({ sort: option.value, order: option.order });
+        },
       }}
       controls={viewToggle}
       focusView={focusView}

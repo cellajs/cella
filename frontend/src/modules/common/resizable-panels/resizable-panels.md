@@ -217,12 +217,13 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 - **T3, no room to open:** the row goes to overflow (G6). A panel never closes to make room for another.
 - **T4, all closed:** allowed. The row shows its strips and empty space, with no min-width. Opening one fills the row.
 - **T5, non-collapsible:** toggling does nothing.
+- **T6, glide:** a toggle, `expandPanel`, Home/End (G5) and a fit switch (E4 to E6) move every width in one 200ms eased step. A panel that opens or closes keeps its content at its open width, so the moving edge uncovers or covers it. A closing panel's content fades as a collapse hint fades it (G4), and its collapse is reported when the step ends (P3), so its open content stays mounted until then. A drag never glides: starting one lands a running glide on its target. With reduced motion the widths change at once.
 
 ## Saving
 
 - **P1, `onLayoutChanged`** fires with the widths of all mounted panels after: a drag ends, a keyboard action (also one that moved nothing), a toggle, a refit that changed a width. A refit from a resize fires once no resize followed for 150ms, because a resize refits on every frame, and one still pending at unmount is dropped. It does not fire on an aborted drag.
 - **P2, what is saved:** rendered widths. A stored width at or below `collapsedWidth` means collapsed; the consumer keeps entries of unmounted panels.
-- **P3, `onCollapseChange`** fires when a collapsible panel registers and on each change. Collapsed is `width <= collapsedWidth`.
+- **P3, `onCollapseChange`** fires when a collapsible panel registers and on each change, for a panel a glide closes once the glide ends (T6). Collapsed is `width <= collapsedWidth`.
 
 ## Contract with the parent and panels
 

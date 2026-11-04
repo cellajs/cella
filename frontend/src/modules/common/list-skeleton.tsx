@@ -1,4 +1,3 @@
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { cn } from '~/utils/cn';
 
@@ -12,10 +11,8 @@ interface ListSkeletonProps {
 
 /** Stacked card placeholders for card lists while their query is pending, so an empty state never flashes first. */
 export function ListSkeleton({ count = 3, cardHeight = 160, className }: ListSkeletonProps) {
-  const { hasStarted } = useMountedState();
-
   return (
-    <div data-started={hasStarted} className={cn('flex flex-col gap-4 transition-opacity duration-300 data-[started=false]:opacity-0', className)}>
+    <div className={cn('fade-in flex animate-in flex-col gap-4 duration-300', className)}>
       {Array.from({ length: count }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${cardHeight}px` }} />

@@ -4,10 +4,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 /** Link class of a row with a chevron: the hover fill follows the whole `group/expand-row`, so pointing at the chevron keeps it, and being expanded adds no fill. */
-export const expandRowLinkClass = cn(
-  buttonVariants({ variant: null }),
-  'group-hover/expand-row:bg-muted group-hover/expand-row:text-foreground dark:group-hover/expand-row:bg-muted/50',
-);
+export const expandRowLinkClass = cn(buttonVariants({ variant: null }), 'group-hover/expand-row:bg-hover group-hover/expand-row:text-foreground');
 
 /** ArrowRight opens and ArrowLeft closes the row from its focused link, without navigating. */
 export function handleExpandKeys(event: KeyboardEvent, isExpanded: boolean, onToggle: () => void) {
@@ -37,7 +34,7 @@ export function RowExpandToggle({ isExpanded, onToggle }: RowExpandToggleProps) 
       onMouseDown={(event) => event.preventDefault()}
       onClick={onToggle}
     >
-      <span className="flex size-6 items-center justify-center rounded-sm group-hover/expand-toggle:bg-foreground/10 group-active/expand-toggle:bg-foreground/10">
+      <span className="flex size-6 items-center justify-center rounded-sm group-hover/expand-toggle:bg-hover group-active/expand-toggle:bg-hover">
         <ChevronDownIcon className={cn('opacity-40 transition duration-200 group-hover/expand-toggle:opacity-100', isExpanded && 'rotate-180')} />
       </span>
     </button>

@@ -1,8 +1,6 @@
 import { zGetRequestsQuery } from 'sdk/zod.gen';
+import { listSearchDefaults, listSearchSchema } from '~/modules/common/search-params-schemas';
 
-export const requestsSearchDefaults = { q: '', sort: 'createdAt', order: 'desc' } as const;
+export const requestsSearchDefaults = listSearchDefaults(zGetRequestsQuery);
 
-export const requestsRouteSearchParamsSchema = zGetRequestsQuery.pick({ q: true }).extend({
-  sort: zGetRequestsQuery.shape.sort.catch(requestsSearchDefaults.sort),
-  order: zGetRequestsQuery.shape.order.catch(requestsSearchDefaults.order),
-});
+export const requestsRouteSearchParamsSchema = listSearchSchema(zGetRequestsQuery);

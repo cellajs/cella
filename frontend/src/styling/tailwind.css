@@ -41,20 +41,22 @@
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
   --animate-status-pulse: status-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-ring-cut: ring-cut 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* A ring and halo in the text color that fade out; oklab keeps the halo's hue where oklch would turn it */
-  --animate-tile-landed: tile-landed 1.6s cubic-bezier(0.3, 0, 0.2, 1);
+  /* Something landing in a tile: a disc in its status dot's color spreads 12px past the dot and fades, twice */
+  --animate-dot-landed: dot-landed 1.2s cubic-bezier(0, 0, 0.2, 1) 2;
 
   @keyframes ring-cut {
     from {
       stroke-dasharray: var(--ring-segment) 0;
     }
   }
-  @keyframes tile-landed {
+  @keyframes dot-landed {
     from {
-      box-shadow:
-        0 0 0 1px currentColor,
-        0 0 0 4px color-mix(in oklab, currentColor 24%, transparent),
-        0 0 24px 2px color-mix(in oklab, currentColor 38%, transparent);
+      opacity: 0.45;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(3.4);
     }
   }
   @keyframes accordion-down {
@@ -131,6 +133,9 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-hover: var(--hover);
+  --color-background-hover: var(--background-hover);
+  --color-muted-hover: var(--muted-hover);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-popover: var(--popover);
@@ -510,7 +515,7 @@
 
   /* A rendered body's mention, which opens the user's sheet (useMentionLinks). */
   [data-mention-id][role="link"] {
-    @apply cursor-pointer hover:bg-foreground/10;
+    @apply cursor-pointer hover:bg-muted-hover;
   }
 }
 
@@ -616,8 +621,14 @@
     /* Lower-emphasis filled actions, such as Cancel. */
     --secondary: oklch(0.9575 0.0044 285.76);
     --secondary-foreground: var(--foreground);
-    /* Subtle surfaces, and the hover and open fill of what a person presses (ghost, outline, toggle). */
+    /* Subtle surfaces, and the open fill of what a person presses (ghost, outline, toggle). */
     --muted: oklch(0.9575 0.0044 285.76);
+    /* The one hover fill: a tint of the foreground, so it is the same step on any surface or fill. An opaque fill under
+       the pointer takes its own -hover color, the fill with the tint mixed in sRGB, as the browser lays a tint over a
+       fill; --muted-hover serves secondary and accent too. */
+    --hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --background-hover: color-mix(in srgb, var(--background), var(--foreground) 5%);
+    --muted-hover: color-mix(in srgb, var(--muted), var(--foreground) 5%);
     /* The highlighted item among navigable items (menu, select and search options) and the current item of a nav list. */
     --accent: oklch(0.9575 0.0044 285.76);
     --accent-foreground: var(--foreground);
@@ -697,6 +708,9 @@
     --secondary: oklch(0.3138 0.0102 285.63);
     --secondary-foreground: var(--foreground);
     --muted: oklch(0.3138 0.0102 285.63);
+    --hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --background-hover: color-mix(in srgb, var(--background), var(--foreground) 5%);
+    --muted-hover: color-mix(in srgb, var(--muted), var(--foreground) 5%);
     --accent: oklch(0.3138 0.0102 285.63);
     --accent-foreground: var(--foreground);
     --destructive: oklch(0.72 0.17 29.23);

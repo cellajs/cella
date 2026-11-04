@@ -85,7 +85,13 @@ const meta = {
   decorators: [withApp],
   beforeEach: () => {
     // Story tests run without the app's translations; the counts read through these two
-    i18n.addResourceBundle('en', 'c', { resource_count: '{{count}} {{resource, lowercase}}' }, true, true);
+    i18n.addResourceBundle(
+      'en',
+      'c',
+      { resource_count: '{{count}} {{resource, lowercase}}', resource_count_found: '{{count}} {{resource, lowercase}} found' },
+      true,
+      true,
+    );
     userStore.setState({ user: { id: 'me' } as never });
     return () => {
       i18n.removeResourceBundle('en', 'c');
@@ -121,7 +127,8 @@ export const UsersFiltered: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(searchInput(canvasElement, 'userSearch')).not.toBeNull();
-    await expect(canvas.queryByRole('button', { name: 'invite' })).toBeNull();
+    // The action stays while a search filters
+    await expect(canvas.getByRole('button', { name: 'invite' })).toBeInTheDocument();
     await expect(hasIcon(canvasElement, 'sliders-horizontal')).toBe(false);
     await expect(hasIcon(canvasElement, 'expand')).toBe(true);
     await expect(await body().findByRole('button', { name: 'delete' })).toBeInTheDocument();
@@ -168,7 +175,7 @@ export const OrganizationsExport: Story = {
 export const OrganizationsFiltered: Story = {
   args: { bar: 'organizations', q: 'x' },
   play: async ({ canvasElement, args }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'create' })).toBeNull();
+    await expect(within(canvasElement).getByRole('button', { name: 'create' })).toBeInTheDocument();
     await expectReset(canvasElement, args, { q: '' });
     await expect(args.clearSelection).toHaveBeenCalled();
   },
@@ -236,7 +243,7 @@ export const AttachmentsSheet: Story = {
 export const AttachmentsFiltered: Story = {
   args: { bar: 'attachments', q: 'x' },
   play: async ({ canvasElement, args }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'upload' })).toBeNull();
+    await expect(within(canvasElement).getByRole('button', { name: 'upload' })).toBeInTheDocument();
     await expect(hasIcon(canvasElement, 'expand')).toBe(true);
     await expectReset(canvasElement, args, { q: '' });
   },
@@ -255,7 +262,7 @@ export const Pages: Story = {
   args: { bar: 'pages', q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(searchInput(canvasElement, 'pageSearch')).not.toBeNull();
-    await expect(within(canvasElement).getByText('2 page')).toBeVisible();
+    await expect(within(canvasElement).getByText('2 page found')).toBeVisible();
     await expectReset(canvasElement, args, { q: '' });
   },
 };

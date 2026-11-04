@@ -7,10 +7,12 @@ import { objectKeys } from '~/utils/object-keys';
 
 type RoutesById = keyof typeof router.routesById;
 
-interface UseSearchParamsOptions {
+interface UseSearchParamsOptions<T> {
   from?: RoutesById;
   /** Reads and writes the state in the URL; default true. Without it the state stays local. */
   saveDataInSearch?: boolean;
+  /** What an absent key reads as, so a list shows the sort its query sends in local state too; a route's schema fills its own. */
+  defaults?: Partial<T>;
 }
 
 /**
@@ -30,11 +32,12 @@ const serializeSearch = (search: Record<string, unknown>) => {
   return JSON.stringify(withoutOverlays);
 };
 
-/** Query param state of a table or list. Routes own defaults and stripping. */
+/** Query param state of a table or list. Routes own stripping. */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>({
   from,
   saveDataInSearch = true,
-}: UseSearchParamsOptions = {}) {
+  defaults = {},
+}: UseSearchParamsOptions<T> = {}) {
   const navigate = useNavigate();
   const params = useParams(from ? { from, strict: true } : { strict: false });
 
@@ -78,5 +81,11 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     setCurrentSearch(readSearch());
   }, [searchKey]);
 
-  return { search: currentSearch, setSearch };
+  const search = { ...currentSearch };
+  for (const key of objectKeys(defaults)) {
+    const fallback = defaults[key];
+    if (search[key] === undefined && fallback !== undefined) search[key] = fallback;
+  }
+
+  return { search, setSearch };
 }

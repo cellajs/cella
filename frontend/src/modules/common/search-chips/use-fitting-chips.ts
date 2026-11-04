@@ -1,11 +1,15 @@
 import { type RefObject, useLayoutEffect, useState } from 'react';
 
-/** The "+N" button's width: its `w-9`. */
+/** The "+N" button's width: the `w-9` of `MoreChipsButton`. */
 const moreWidth = 36;
 
-/** How many of the chips in `rowRef` fit on its one line, at least one. `chipKeys` is what changes with the chips. */
-export function useFittingChips(rowRef: RefObject<HTMLElement | null>, chipKeys: string) {
+/**
+ * How many of the chips in `rowRef` fit on its one line, at least one, and how to hide the rest behind "+N". `chipKeys`
+ * names the chips in order; with `isCollapsed` false every chip shows.
+ */
+export function useFittingChips(rowRef: RefObject<HTMLElement | null>, chipKeys: string[], isCollapsed = true) {
   const [fitting, setFitting] = useState(Number.POSITIVE_INFINITY);
+  const keys = chipKeys.join();
 
   useLayoutEffect(() => {
     const row = rowRef.current;
@@ -29,7 +33,10 @@ export function useFittingChips(rowRef: RefObject<HTMLElement | null>, chipKeys:
     const observer = new ResizeObserver(measure);
     observer.observe(row);
     return () => observer.disconnect();
-  }, [chipKeys]);
+  }, [keys]);
 
-  return fitting;
+  return {
+    moreCount: isCollapsed ? Math.max(chipKeys.length - fitting, 0) : 0,
+    hiddenClass: (index: number) => isCollapsed && index >= fitting && 'invisible absolute',
+  };
 }

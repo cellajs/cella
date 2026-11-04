@@ -21,7 +21,7 @@ const trackVariants = cva(
 
 /** One weight in both states: a heavier active label would resize its segment and shift the others. */
 export const segmentClassName =
-  'focus-effect active:press relative inline-flex min-w-0 cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-(--segment-px) font-medium text-muted-foreground transition-colors hover:text-foreground not-data-checked:not-aria-[current=page]:hover:bg-input/40 data-disabled:pointer-events-none data-disabled:opacity-50 data-checked:text-foreground aria-[current=page]:text-foreground';
+  'focus-effect active:press relative inline-flex min-w-0 cursor-pointer select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-(--segment-px) font-medium text-muted-foreground transition-colors hover:text-foreground not-data-checked:not-aria-[current=page]:hover:bg-hover data-disabled:pointer-events-none data-disabled:opacity-50 data-checked:text-foreground aria-[current=page]:text-foreground';
 
 /** Follows the active segment through attribute changes, so a caller's selection state never has to reach it. */
 function SegmentedPill() {
@@ -98,7 +98,7 @@ export function SegmentedMenuItem({ className, ...props }: MenuPrimitive.RadioIt
   return (
     <MenuPrimitive.RadioItem
       data-slot="segmented-menu-item"
-      className={cn(segmentClassName, 'outline-hidden focus:bg-input/40', className)}
+      className={cn(segmentClassName, 'outline-hidden focus:bg-hover', className)}
       {...props}
     />
   );

@@ -17,11 +17,11 @@ import { cn } from '~/utils/cn';
 import { formatBytes } from '~/utils/format-bytes';
 
 export const offlineFilesTierText = {
-  off: { label: 'c:offline_files.off', text: 'c:offline_files.off.text' },
-  previews: { label: 'c:offline_files.previews', text: 'c:offline_files.previews.text' },
-  recent: { label: 'c:offline_files.recent', text: 'c:offline_files.recent.text' },
-  all: { label: 'c:offline_files.all', text: 'c:offline_files.all.text' },
-} as const satisfies Record<OfflineFilesTier, { label: string; text: string }>;
+  off: { label: 'c:offline_files.off', text: 'c:offline_files.off.text', store: 'c:offline_files.store_none' },
+  previews: { label: 'c:offline_files.previews', text: 'c:offline_files.previews.text', store: 'c:offline_files.store_previews' },
+  recent: { label: 'c:offline_files.recent', text: 'c:offline_files.recent.text', store: 'c:offline_files.store_recent' },
+  all: { label: 'c:offline_files.all', text: 'c:offline_files.all.text', store: 'c:offline_files.store_all' },
+} as const satisfies Record<OfflineFilesTier, { label: string; text: string; store: string }>;
 
 const lastIndex = offlineFilesTiers.length - 1;
 const budgets = offlineFilesTiers.map((tier) => offlineFilesRules(tier).budget);

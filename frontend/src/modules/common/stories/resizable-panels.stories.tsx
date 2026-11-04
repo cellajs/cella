@@ -23,7 +23,12 @@ interface BoardState {
 }
 
 const specId = (spec: PanelSpec) => (typeof spec === 'string' ? spec : spec.id);
-const settle = () => new Promise((resolve) => setTimeout(resolve, 100));
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// A toggle glides (T6): its widths and its collapse report land once the group drops `data-gliding`
+const settle = async () => {
+  await wait(100);
+  while (document.querySelector('[data-gliding]')) await wait(50);
+};
 
 class Board {
   saves: Layout[] = [];

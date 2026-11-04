@@ -8,9 +8,10 @@ export const buttonVariants = cva(
   'focus-effect inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent bg-clip-padding font-medium text-sm transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
-      // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega. Outline keeps the input edge, rests
-      // flat and keeps its opaque page fill in dark mode, so an edgeless scope, an open state and media behind it leave it
-      // intact; link stays underlined. The intents, `soft`, outline-ghost (over media), cell, input and row are additions.
+      // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega; the neutral hovers take the one
+      // hover tint, which an opaque fill takes premixed. Outline keeps the input edge, rests flat and keeps its opaque page
+      // fill in dark mode, so an edgeless scope, an open state and media behind it leave it intact; link stays underlined.
+      // The intents, `soft`, outline-ghost (over media), cell, input and row are additions.
       variant: {
         default: 'intent-primary',
         brand: 'intent-brand',
@@ -18,10 +19,9 @@ export const buttonVariants = cva(
         success: 'intent-success',
         info: 'intent-info',
         warning: 'intent-warning',
-        secondary:
-          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
-        outline: 'border-input bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
-        ghost: 'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-muted-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        outline: 'border-input bg-background hover:bg-background-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
+        ghost: 'hover:bg-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
         cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',

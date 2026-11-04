@@ -26,8 +26,8 @@ export const insertRequest = async (ctx: DbContext, { email, type, message }: In
 interface FindRequestsPaginatedOpts {
   /** Searches the address. */
   q?: string;
-  sort?: 'type' | 'id' | 'createdAt' | 'email';
-  order?: 'asc' | 'desc';
+  sort: 'type' | 'id' | 'createdAt' | 'email';
+  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
@@ -42,7 +42,6 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   const orderBy = getOrderColumns({
     sort,
     order,
-    fallback: ['createdAt', 'desc'],
     columns: pick(requestsTable, ['id', 'email', 'createdAt', 'type']),
     tieBreaker: requestsTable.id,
   });

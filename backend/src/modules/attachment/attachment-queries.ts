@@ -86,8 +86,8 @@ interface FindAttachmentsPaginatedOpts {
   /** The read scope is the whole organization, so an unfiltered total can come from the counter. */
   orgWide: boolean;
   q?: string;
-  sort?: 'name' | 'createdAt' | 'contentType';
-  order?: 'asc' | 'desc';
+  sort: 'name' | 'createdAt' | 'contentType';
+  order: 'asc' | 'desc';
   limit: number;
   offset: number;
   /** A range read for sync (`seqRangeRead`). */
@@ -117,7 +117,6 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     getOrderColumns({
       sort,
       order,
-      fallback: ['createdAt', 'desc'],
       columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
       tieBreaker: attachmentsTable.id,
     });

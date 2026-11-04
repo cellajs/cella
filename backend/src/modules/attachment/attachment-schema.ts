@@ -99,7 +99,7 @@ export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSche
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 
 export const attachmentListQuerySchema = productListQuerySchema({
-  sort: attachmentSortKeys.default('createdAt').optional(),
+  sort: attachmentSortKeys.default('createdAt'),
   /** Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide. */
   channelId: validUuidSchema.optional(),
 });

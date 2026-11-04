@@ -2,7 +2,6 @@ import type { QueryKey } from '@tanstack/react-query';
 import { BirdIcon, SearchIcon } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
@@ -32,6 +31,8 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   fetchMore: () => Promise<unknown>;
   /** A search or filter is active: an empty list shows "No … found" (else "No … yet"). */
   isFiltered: boolean;
+  /** Clears the search, offered under its empty state. */
+  onResetFilters?: () => void;
   /** Shows at most {@link gridPreviewLimit} tiles and a "Show N more" button. */
   limitedView?: boolean;
   onExpand?: () => void;
@@ -43,10 +44,8 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
 const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
 function EntityGridSkeleton({ tileHeight = 215 }: { tileHeight?: number }) {
-  const { hasStarted } = useMountedState();
-
   return (
-    <div data-started={hasStarted} className={cn(entityGridClass, 'mb-12 transition-opacity duration-300 data-[started=false]:opacity-0')}>
+    <div className={cn(entityGridClass, 'fade-in mb-12 animate-in duration-300')}>
       {Array.from({ length: 6 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${tileHeight}px` }} />
@@ -66,6 +65,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   hasNextPage,
   fetchMore,
   isFiltered,
+  onResetFilters,
   limitedView,
   onExpand,
   queryKey,
@@ -78,7 +78,13 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   if (!isFetching && !error && entities.length === 0) {
     const resource = t(label, { count: 0 });
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }} />
+      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }}>
+        {onResetFilters && (
+          <Button variant="secondary" onClick={onResetFilters}>
+            {t('c:clear_all')}
+          </Button>
+        )}
+      </ContentPlaceholder>
     ) : (
       <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource }} />
     );

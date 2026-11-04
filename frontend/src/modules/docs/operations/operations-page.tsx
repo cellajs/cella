@@ -67,8 +67,8 @@ export function OperationsPage() {
 
           <SearchScope q={q}>
             {sections.length > 0 ? (
-              // A section a link scrolls to rests below a phone's open search, which pins over the page
-              <div className="mt-2 flex flex-col gap-12 lg:gap-20 [&_[id^=spy-]]:scroll-mt-[calc(var(--sticky-stack-nav,0px)+1rem)]">
+              // A section a link scrolls to rests below the page tabs and a phone's filtered bar, which pins under them
+              <div className="mt-2 flex flex-col gap-12 lg:gap-20 [&_[id^=spy-]]:scroll-mt-[calc(var(--sticky-stack-nav,0px)+var(--sticky-stack-pin,0px)+1rem)]">
                 {sections.map(({ tag, operations }) => (
                   <OperationTagSection
                     key={tag.name}

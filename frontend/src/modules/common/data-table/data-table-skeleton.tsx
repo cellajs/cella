@@ -1,5 +1,4 @@
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
@@ -18,12 +17,11 @@ const rowKeys = Array.from({ length: 20 }, (_, i) => i);
 
 export function DataTableSkeleton({ columnCount = 4, cellHeight = 40, cellWidths = emptyCellWidths }: DataTableSkeletonProps) {
   const skeletonHeight = cellHeight - 18;
-  const { hasStarted } = useMountedState();
   const isMobile = useBreakpointBelow('sm', false);
   const columns = Array.from({ length: isMobile ? Math.min(columnCount, 3) : columnCount }, (_, i) => ({ key: i, style: { width: cellWidths[i] } }));
 
   return (
-    <div data-started={hasStarted} className="w-full overflow-auto transition-opacity duration-500 data-[started=false]:opacity-0">
+    <div className="fade-in w-full animate-in overflow-auto duration-300">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">

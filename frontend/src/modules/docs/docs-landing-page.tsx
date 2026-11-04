@@ -2,6 +2,8 @@ import { MDXProvider } from '@mdx-js/react';
 import { Link } from '@tanstack/react-router';
 import { ChevronRightIcon, ExternalLinkIcon } from 'lucide-react';
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { type DocsTile, docsConfig, getDocPageComponent } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
@@ -9,7 +11,9 @@ import { tw } from '~/utils/tw';
 
 /** The /docs landing page, driven by the global docs config (content root index.mdx frontmatter). */
 export function DocsLandingPage() {
+  const { t } = useTranslation();
   const Content = getDocPageComponent('');
+  const sourceUrl = appConfig.company.githubUrl;
 
   return (
     <div className="container">
@@ -23,7 +27,15 @@ export function DocsLandingPage() {
               </MDXProvider>
             </Suspense>
           )}
-          <p className="not-prose text-muted-foreground text-sm">v{__PKG_VERSION__}</p>
+          <p className="not-prose text-muted-foreground text-sm">
+            {sourceUrl ? (
+              <a href={sourceUrl} target="_blank" rel="noreferrer" title={t('c:source_code')} className="link-inline">
+                v{__PKG_VERSION__}
+              </a>
+            ) : (
+              `v${__PKG_VERSION__}`
+            )}
+          </p>
           {docsConfig.tiles.length > 0 && (
             <div className="not-prose mt-8 grid gap-3 sm:grid-cols-2">
               {docsConfig.tiles.map((tile) => (
@@ -37,7 +49,7 @@ export function DocsLandingPage() {
   );
 }
 
-const cardClass = tw('group/docs-tile flex items-start gap-3 rounded-lg border border-input p-4 transition-colors hover:bg-muted');
+const cardClass = tw('group/docs-tile flex items-start gap-3 rounded-lg border border-input p-4 transition-colors hover:bg-hover');
 
 /** A docs tile: the landing tiles and a page's child pages; internal targets go through the router. */
 export function DocsTileCard({ tile }: { tile: DocsTile }) {

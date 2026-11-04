@@ -40,6 +40,7 @@ export function UsersTable() {
             columns,
             enableVirtualization: true,
             isFiltered: role !== undefined || !!q,
+            onResetFilters: () => setSearch({ q: '', role: undefined }),
             selectedRows: selectedRowIds,
             onSelectedRowsChange,
             sortColumns,

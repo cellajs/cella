@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { TKey } from '~/lib/i18n-locales';
 
 export interface SearchChip {
   key: string;
@@ -22,11 +23,14 @@ export interface SearchOption {
 /** One filter of a list. Its values widen each other; different filters and the search words narrow. */
 export interface SearchOptionGroup {
   key: string;
-  /** Names the row for assistive technology; only a phone's search dialog shows it. */
+  /** The heading over the filter's values. */
   label: string;
   options: SearchOption[];
   onToggle: (value: string) => void;
-  /** Swaps a selected value for another. A filter of one value can leave this out: its toggle already does that. */
+  /**
+   * Swaps a selected value for another, for a filter that holds several. A filter of one value leaves this out: its toggle
+   * already swaps. It also marks how many values the filter takes, which decides whether the options stay open after a pick.
+   */
   onReplace?: (from: string, to: string) => void;
   /** Smaller chips, for a row of many values such as labels. */
   isCompact?: boolean;
@@ -56,6 +60,12 @@ export interface SearchFilters {
   onSearchEnd?: (q: string) => void;
 }
 
+export interface ResultCount {
+  count: number;
+  /** The counted noun's label, pluralized by the count. */
+  resource: TKey;
+}
+
 export interface SearchChipsFieldProps extends SearchFilters {
   /** The applied search words, such as the URL's `q`. */
   value: string;
@@ -67,10 +77,21 @@ export interface SearchChipsFieldProps extends SearchFilters {
   label: string;
   name?: string;
   id?: string;
-  /** What the search finds, as "4 tasks"; empty while nothing narrows the list. */
-  count?: string;
+  /** What the search finds, or the whole list while nothing narrows it, for the typed word's row; left out where the bar shows it. */
+  resultCount?: ResultCount;
+  /** Also shows the count at the field's end, for a search that fills its bar. */
+  isCountInField?: boolean;
+  /** A search on its way: the spinner takes the search icon's place. */
+  isSearching?: boolean;
+  /** Locks the field, such as offline for a list the server searches. */
+  disabled?: boolean;
+  /** Leaves out the X at rest, for a field whose bar clears the search; in use it shows, since the options cover that bar. */
+  hideClear?: boolean;
   /** On a phone, a search button while no chip is active: the row has other content to keep. */
   compactOnPhone?: boolean;
+  /** Draws no edge at rest, for a field its bar frames; its options keep their own edges. */
+  edgeless?: boolean;
+  /** For the field's root: its width in the bar. */
   className?: string;
 }
 

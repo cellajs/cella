@@ -113,7 +113,7 @@ function CollapsedSections({ sections, position, windowScroll }: CollapsedSectio
         className={cn(
           'flex h-9 items-center justify-center p-2 font-medium text-sm',
           windowScroll && 'sticky z-10',
-          windowScroll && (position === 'top' ? 'top-(--sticky-stack-nav)' : 'bottom-0'),
+          windowScroll && (position === 'top' ? 'top-[calc(var(--sticky-stack-nav,0px)+var(--sticky-stack-pin,0px))]' : 'bottom-0'),
           section.colorClass,
           section.borderClass,
         )}

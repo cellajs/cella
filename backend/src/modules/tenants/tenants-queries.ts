@@ -60,8 +60,8 @@ interface FindTenantsPaginatedOpts {
   /** Searches the name. */
   q?: string;
   status?: TenantModel['status'];
-  sort?: 'name' | 'createdAt';
-  order?: 'asc' | 'desc';
+  sort: 'name' | 'createdAt';
+  order: 'asc' | 'desc';
   limit: number;
   offset: number;
 }
@@ -76,7 +76,6 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
   const orderBy = getOrderColumns({
     sort,
     order,
-    fallback: ['createdAt', 'desc'],
     columns: pick(tenantsTable, ['name', 'createdAt']),
     tieBreaker: tenantsTable.id,
   });

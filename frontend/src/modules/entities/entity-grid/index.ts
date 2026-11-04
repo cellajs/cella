@@ -13,4 +13,4 @@ export {
   ChannelTileRow,
   ChannelTileStats,
 } from '~/modules/entities/entity-grid/channel-tile';
-export { EntityGridBar } from '~/modules/entities/entity-grid/entity-grid-bar';
+export { EntityGridBar, type GridSortOption, gridSortDefaults, gridSortOptions } from '~/modules/entities/entity-grid/entity-grid-bar';
