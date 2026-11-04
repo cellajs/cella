@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { z } from '@hono/zod-openapi';
 import { SpanStatusCode } from '@opentelemetry/api';
 import type { ProductEntityType, TrackedEventType } from 'shared';
+import { permissionRowDataSchema } from 'shared/permissions/permission-row-data';
 import type { TraceContext } from 'shared/tracing';
 import { eventAttrs, recordMessageReceived, startSyncSpan, syncSpanNames } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
@@ -27,9 +28,9 @@ export const messageRowSchema = z.object({
   userId: activitySchema.shape.userId,
   changedFields: activitySchema.shape.changedFields,
   stx: activitySchema.shape.stx,
-  rowData: z.record(z.string(), z.unknown()),
+  rowData: permissionRowDataSchema,
   seq: z.number().optional(),
-  movedFrom: z.record(z.string(), z.unknown()).nullable().optional(),
+  movedFrom: permissionRowDataSchema.nullable().optional(),
 });
 
 /**

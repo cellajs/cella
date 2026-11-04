@@ -1,4 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
+import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { createActivity } from '../services/create-activity';
 import { tableRegistry } from '../table-registry';
@@ -19,7 +20,7 @@ export interface ParseMessageResult {
   rowData: CdcRowData;
   oldRowData: CdcRowData | null;
   /** For a row that moved: the permission fields of the place it left, so dispatch can drop subscribers who lost access. */
-  movedFrom?: CdcRowData | null;
+  movedFrom?: PermissionRowData | null;
   tableMeta: TableMeta;
 }
 

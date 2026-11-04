@@ -120,7 +120,7 @@ describe('Attachment mentions (template notification source)', async () => {
     userId: writer,
     changedFields,
     stx: null,
-    rowData: { id: subjectId },
+    rowData: { id: subjectId, organizationId: tenant.organization.id },
   });
 
   /** A product event of attachment rows as the bus delivers it; `action` defaults to an update. */

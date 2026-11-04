@@ -1,4 +1,5 @@
 import { hierarchy, type ProductEntityType } from 'shared';
+import type { PermissionRowData } from 'shared/permissions/permission-row-data';
 import type { TraceContext } from 'shared/tracing';
 import type { OwnActivityColumns } from '#/lib/activity-bus';
 import type { CdcMessageInput } from '#/lib/cdc-websocket';
@@ -70,7 +71,7 @@ export function sendMessageToApi(
   activity: InsertActivityModel,
   rowData: CdcRowData,
   traceContext: TraceContext,
-  movedFrom?: CdcRowData | null,
+  movedFrom?: PermissionRowData | null,
   signalVersions?: Record<string, number>,
 ): void {
   const message: CdcRowMessage = { activity, rowData, _trace: traceContext };
@@ -84,7 +85,7 @@ export interface ProductRow {
   activity: InsertActivityModel & { id: string };
   rowData: CdcRowData;
   seq?: number;
-  movedFrom?: CdcRowData | null;
+  movedFrom?: PermissionRowData | null;
 }
 
 /** The message of one audience: what its rows share, and each row with its own activity and permission fields. */

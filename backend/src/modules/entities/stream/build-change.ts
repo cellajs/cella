@@ -54,9 +54,7 @@ export function buildStreamChange(event: AppStreamProductEvent, rows: ActivityRo
   // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   const channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
 
-  const named = rows.flatMap(({ rowData, seq, stx, userId }) =>
-    typeof rowData.id === 'string' ? [{ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId: userId } }] : [],
-  );
+  const named = rows.map(({ rowData, seq, stx, userId }) => ({ rowData, entry: { subjectId: rowData.id, seq: seq ?? null, stx, actorId: userId } }));
   const entries = named.map(({ entry }) => entry);
   const overflowed = entries.length > maxStreamChangeRows;
 

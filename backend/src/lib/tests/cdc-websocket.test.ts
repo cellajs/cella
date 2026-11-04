@@ -55,7 +55,7 @@ const messageRow = (id: string, extra: { seq?: number; rowData?: Record<string, 
   userId: null,
   changedFields: null,
   stx: null,
-  rowData: { id },
+  rowData: { id, organizationId: 'org-1' },
   ...extra,
 });
 
