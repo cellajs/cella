@@ -62,7 +62,7 @@ const apiKeyInputSchema = z.object({
   name: validNameSchema,
   /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
   scopes: z.array(scopeEnum).min(1).max(accessScopes.all.length).nullable().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.string().max(64).pipe(z.iso.datetime()).openapi({ format: 'date-time' }).optional(),
 });
 
 export const createApiKeyBodySchema = apiKeyInputSchema.extend({

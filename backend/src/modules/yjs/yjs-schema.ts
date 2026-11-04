@@ -1,12 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { yjsHttpChunkBytes, yjsMaxServerRowIds } from '#/modules/yjs/helpers/yjs-log';
-import { productEntityTypeSchema, validIdSchema, validUuidSchema } from '#/schemas';
+import { maxLength, productEntityTypeSchema, validIdSchema, validUuidSchema } from '#/schemas';
 
 /** The length of `bytes` bytes as unpadded base64url. */
 const base64urlLength = (bytes: number) => Math.ceil((bytes * 4) / 3);
 
 /** A Yjs binary, an update or a state vector, in a JSON body: unpadded base64url. */
 const yjsBytesSchema = z.base64url();
+
+/** `yjsBytesSchema` in a request: at most `max` characters, bounded before the format check. */
+const yjsBytesBodySchema = (max: number) => z.string().max(max).pipe(yjsBytesSchema).openapi({ format: 'base64url' });
 
 /** The collaborative document of one product entity. */
 const yjsDocumentSchema = z.object({ entityType: productEntityTypeSchema, entityId: validIdSchema });
@@ -17,7 +20,7 @@ export const yjsTokenResponseSchema = z.object({ token: z.string() });
 
 export const yjsPullBodySchema = yjsDocumentSchema.extend({
   /** About 8 bytes per client that ever edited the document; 256K characters hold some 24,000 of them. */
-  stateVector: yjsBytesSchema.max(262_144).describe("The caller's state vector: the answer carries what it lacks"),
+  stateVector: yjsBytesBodySchema(262_144).describe("The caller's state vector: the answer carries what it lacks"),
 });
 
 export const yjsPullResponseSchema = z.object({
@@ -28,7 +31,7 @@ export const yjsPullResponseSchema = z.object({
 
 export const yjsPushBodySchema = yjsDocumentSchema.extend({
   generation: z.uuid().describe('The generation the update was made in'),
-  update: yjsBytesSchema.max(base64urlLength(yjsHttpChunkBytes)).describe('One Yjs update of at most 512 KB'),
+  update: yjsBytesBodySchema(base64urlLength(yjsHttpChunkBytes)).describe('One Yjs update of at most 512 KB'),
 });
 
 export const yjsPushResponseSchema = z.object({
@@ -41,7 +44,7 @@ export const yjsMaterializeBodySchema = z.object({
   entityId: validUuidSchema,
   tenantId: validIdSchema,
   organizationId: validUuidSchema,
-  description: z.string(),
+  description: z.string().max(maxLength.html),
   /**
    * The log's senders, newest first; the relay sends at most 20. The first who may still update the entity is credited
    * with the write.

@@ -1467,7 +1467,7 @@ export const zGetNotificationsQuery = z.object({
     .optional()
     .default('false'),
   limit: z.int().gte(1).lte(100).optional().default(30),
-  before: z.iso.datetime().optional(),
+  before: z.iso.datetime().max(64).optional(),
 });
 
 /**
@@ -2680,7 +2680,7 @@ export const zCreateServiceAccountBody = z.object({
         .min(1)
         .max(4)
         .nullish(),
-      expiresAt: z.iso.datetime().optional(),
+      expiresAt: z.iso.datetime().max(64).optional(),
     })
     .optional(),
 });
@@ -2749,7 +2749,7 @@ export const zCreateApiKeyBody = z.object({
     .min(1)
     .max(4)
     .nullish(),
-  expiresAt: z.iso.datetime().optional(),
+  expiresAt: z.iso.datetime().max(64).optional(),
   rollFrom: z.string().max(50).optional(),
   rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
 });

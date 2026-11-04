@@ -253,9 +253,10 @@ export const validNameSchema = z
   .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
   .regex(namePattern, translatedError('error:invalid_name'));
 
-/** An email address, trimmed and lowercased before it is checked. */
+/** An email address, trimmed and lowercased before it is checked; the raw input is bounded first. */
 export const validEmailSchema = z
   .string()
+  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
   .trim()
   .toLowerCase()
   .pipe(

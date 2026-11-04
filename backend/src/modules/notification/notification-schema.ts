@@ -18,7 +18,13 @@ export const notificationSchema = createSelectSchema(notificationsTable).omit({ 
 export const notificationListQuerySchema = z.object({
   unread: booleanTransformSchema.describe('Return only unread notifications'),
   limit: integerQuerySchema({ min: 1, max: 100, error: translatedError('error:invalid_limit', { max: 100 }) }).default(30),
-  before: z.iso.datetime().optional().describe('createdAt of the last row of the previous page'),
+  before: z
+    .string()
+    .max(64)
+    .pipe(z.iso.datetime())
+    .openapi({ format: 'date-time' })
+    .optional()
+    .describe('createdAt of the last row of the previous page'),
 });
 
 export const notificationListResponseSchema = z.object({ items: notificationSchema.array(), unreadCount: z.number().int().min(0) });

@@ -3,7 +3,7 @@ import { isPushServiceEndpoint } from '#/modules/push/helpers/push-service-endpo
 import { refineWithType } from '#/schemas/common-schemas';
 
 /** A subscription's push service URL. */
-const endpointSchema = z.url().max(2048);
+const endpointSchema = z.string().max(2048).pipe(z.url()).openapi({ format: 'uri' });
 
 /**
  * Body of `PushManager.subscribe()`'s `toJSON()`, verbatim, so the client needs no mapping. The server POSTs each push
