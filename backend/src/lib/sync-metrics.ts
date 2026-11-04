@@ -1,6 +1,6 @@
 import { type Span, trace } from '@opentelemetry/api';
 import type { EntityType } from 'shared';
-import { backendSpanNames, eventAttrs, remoteParentContext, type TraceContext } from 'shared/tracing';
+import { backendSpanNames, type CleanSpanAttributes, eventAttrs, remoteParentContext, type TraceContext } from 'shared/tracing';
 import { otel } from '#/lib/tracing';
 
 export { backendSpanNames as syncSpanNames, eventAttrs };
@@ -22,11 +22,11 @@ const tracer = trace.getTracer('app-sync');
  * @param parent - The CDC span that sent the message. The span then joins that span's trace as its child.
  * @returns The started span.
  */
-export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>, parent?: SyncTraceContext | null): Span {
+export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, parent?: SyncTraceContext | null): Span {
   const span = tracer.startSpan(name, {}, parent ? remoteParentContext(parent) : undefined);
   if (attributes) {
     for (const [key, value] of Object.entries(attributes)) {
-      if (value !== null && value !== undefined) {
+      if (value !== null) {
         span.setAttribute(key, value);
       }
     }
