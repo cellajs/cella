@@ -1,17 +1,14 @@
-import type { ChannelEntityType } from 'shared';
+import type { z } from '@hono/zod-openapi';
 import { buildSubjectFromEntity } from 'shared';
 import type { UserContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
+import type { entityWithTypeQuerySchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
-interface DeleteMembershipsInput {
-  userIds: string[];
-  entityId: string;
-  entityType: ChannelEntityType;
-}
+type DeleteMembershipsInput = z.infer<typeof entityWithTypeQuerySchema> & { userIds: string[] };
 
 /**
  * Deletes the channel's memberships of these users, which needs `delete` on it; a user id without one comes back rejected.

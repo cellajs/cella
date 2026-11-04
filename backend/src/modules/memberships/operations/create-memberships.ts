@@ -1,4 +1,5 @@
-import { buildSubject, buildSubjectFromEntity, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
+import type { z } from '@hono/zod-openapi';
+import { buildSubject, buildSubjectFromEntity, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -11,6 +12,7 @@ import {
   updateInactiveMemberships,
 } from '#/modules/memberships/inactive-memberships-queries';
 import { countMembershipsByChannel } from '#/modules/memberships/memberships-queries';
+import type { membershipCreateBodySchema } from '#/modules/memberships/memberships-schema';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
@@ -18,14 +20,10 @@ import { sendInvitationMails } from '#/modules/memberships/operations/send-invit
 import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
+import type { entityWithTypeQuerySchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
-interface CreateMembershipsInput {
-  emails: string[];
-  role: EntityRole;
-  entityId: string;
-  entityType: ChannelEntityType;
-}
+type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.infer<typeof entityWithTypeQuerySchema>;
 
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 
