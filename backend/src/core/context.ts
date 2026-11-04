@@ -5,7 +5,7 @@ import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { AuthStrategy, SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
-import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';
+import type { RoleBinding } from '#/modules/service-accounts/service-accounts-schema';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 

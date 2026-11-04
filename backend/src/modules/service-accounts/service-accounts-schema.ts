@@ -20,6 +20,9 @@ const roleBindingSchema = z.object({
   role: z.enum(roles.all),
 });
 
+/** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
+export type RoleBinding = z.infer<typeof roleBindingSchema>;
+
 /** The route addresses one key of one account. */
 export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
 

@@ -443,7 +443,13 @@ export const zTenant = z.object({
   status: z.enum(['active', 'suspended', 'archived']),
   statusChangedAt: z.string(),
   restrictions: z.object({
-    quotas: z.record(z.string(), z.int().gte(0)),
+    quotas: z.object({
+      user: z.int().gte(0),
+      organization: z.int().gte(0),
+      attachment: z.int().gte(0),
+      serviceAccount: z.int().gte(0),
+      apiKey: z.int().gte(0),
+    }),
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
       invitationMailsPerDay: z.int().gte(0),

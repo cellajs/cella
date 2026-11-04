@@ -17,10 +17,13 @@ const federationKeySchema = z
 
 const idpEntityIdSchema = z.string().min(1).max(maxLength.field);
 
+/** The protocol-specific part of a connection. One IdP entity id skips the federation's picker; the logo comes from its metadata feed. */
 const connectionConfigSchema = z.object({
   idpEntityIds: z.array(idpEntityIdSchema).optional().describe("The institution's IdP entity ids, passed as login_hint"),
   logoUrl: z.string().url().max(maxLength.field).optional().describe("The institution's logo, for the entry page"),
 });
+
+export type ConnectionConfig = z.infer<typeof connectionConfigSchema>;
 
 export const connectionSchema = z
   .object({

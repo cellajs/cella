@@ -495,7 +495,11 @@ export type Tenant = {
      * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
      */
     quotas: {
-      [key: string]: number;
+      user: number;
+      organization: number;
+      attachment: number;
+      serviceAccount: number;
+      apiKey: number;
     };
     rateLimits: {
       /**
