@@ -40,7 +40,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
 
   log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
   // A new account has authenticated nothing yet.
-  const created = { ...(await withActorRef(ctx, serviceAccount)), lastSeenAt: null };
+  const created = { ...(await withActorRef(ctx, serviceAccount)), role: input.role, lastSeenAt: null };
   if (!issued) return { serviceAccount: created };
   return { serviceAccount: created, apiKey: { ...(await withActorRef(ctx, issued.apiKey)), secret: issued.secret } };
 }

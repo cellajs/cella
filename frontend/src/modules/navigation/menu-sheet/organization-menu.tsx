@@ -41,7 +41,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             {badge}
           </div>
         ) : (
-          <div className="px-3 pt-3 pb-2">
+          <div className="px-3 py-2">
             <Link
               to={to}
               params={params}

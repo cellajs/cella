@@ -29,6 +29,8 @@ export const serviceAccountSchema = z
     ...auditShape,
     status: z.enum(serviceAccountStatuses),
     bindings: z.array(roleBindingSchema),
+    /** The role of the account's one organization binding. */
+    role: z.enum(hierarchy.getRoles('organization')),
     /** The last request one of the account's API keys or tokens authenticated, to five minutes; null until the first. */
     lastSeenAt: z.string().nullable(),
   })

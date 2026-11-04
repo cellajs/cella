@@ -710,6 +710,7 @@ export type ServiceAccount = {
   createdBy: ActorRef | null;
   updatedAt: string | null;
   updatedBy: ActorRef | null;
+  role: 'admin' | 'member';
   lastSeenAt: string | null;
 };
 

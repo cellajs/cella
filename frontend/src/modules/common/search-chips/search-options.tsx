@@ -48,19 +48,24 @@ function SearchOptionRow({ group, isWrapped }: SearchOptionRowProps) {
             key={option.value}
             value={{ kind: 'option', group, option } satisfies SearchSelection}
             aria-selected={option.isSelected}
+            title={group.isIconOnly ? option.label : undefined}
             className={cn(
               'w-auto shrink-0 rounded-full border border-input px-2.5 py-0',
-              group.isCompact
-                ? 'h-6.5 pointer-coarse:h-8.5'
-                : 'h-7.5 pointer-coarse:h-8.5 max-sm:h-6.5 max-sm:pointer-coarse:h-8.5 max-sm:gap-1.5 max-sm:px-2',
-              group.isCompact && !option.isSelected && 'border-transparent hover:border-input active:border-input data-highlighted:border-input',
+              group.isIconOnly
+                ? 'h-7.5 pointer-coarse:h-8.5 gap-1.5 pl-0 pointer-coarse:pl-0.75 *:first:size-7'
+                : group.isCompact
+                  ? 'h-6.5 pointer-coarse:h-8.5'
+                  : 'h-7.5 pointer-coarse:h-8.5 max-sm:h-6.5 max-sm:pointer-coarse:h-8.5 max-sm:gap-1.5 max-sm:px-2',
+              (group.isCompact || group.isIconOnly) &&
+                !option.isSelected &&
+                'border-transparent hover:border-input active:border-input data-highlighted:border-input',
               option.count === 0 && !option.isSelected && 'border-dashed text-muted-foreground',
               option.isSelected &&
                 'border-transparent more-contrast:border-foreground bg-foreground/12 font-medium active:bg-foreground/18 data-highlighted:bg-foreground/18',
             )}
           >
             {option.icon}
-            {option.label}
+            {group.isIconOnly ? <span className="sr-only">{option.label}</span> : option.label}
             {option.count !== undefined && <span className="text-muted-foreground text-xs tabular-nums">{option.count}</span>}
           </ComboboxItem>
         ))}

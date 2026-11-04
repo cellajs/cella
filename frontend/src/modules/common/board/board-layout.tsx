@@ -7,6 +7,7 @@ import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { isPanelReorderDragData, PanelCollapseContext, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
@@ -64,8 +65,15 @@ export function BoardLayout({
 }: BoardLayoutProps) {
   // Compiler gap: an optional-chain comparison in the drop indicator's state updater.
   'use no memo';
+  const { t } = useTranslation();
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
+  const fit = useBoardStore((state) => state.boardFits[boardId] ?? false);
+  const setBoardFit = useBoardStore((state) => state.setBoardFit);
   const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
+  // The end handle pulls an overflowing row into fit; a clipping parent or a must-fit row never overflows
+  const endHandle = !mustFit && !autoHeight;
+
+  const handleFitChange = useCallback((next: boolean) => setBoardFit(boardId, next), [boardId, setBoardFit]);
 
   const handleReady = useCallback((api: PanelGroupApi) => {
     panelGroupApiRef.current = api;
@@ -145,14 +153,16 @@ export function BoardLayout({
       onCollapseChange={setPanelCollapsed}
       onReady={handleReady}
       mustFit={mustFit}
+      fit={fit}
+      onFitChange={handleFitChange}
       className={cn('group/board', !autoHeight && 'h-[inherit]')}
     >
       {panels.map(({ panelId, label }, i) => (
         <motion.div
           key={panelId}
-          // With nothing to reorder, this would only slide panels while a fit snaps their widths
+          // With nothing to reorder, this would only slide panels while a fit snaps their widths. No layoutId: keys are stable, and
+          // with one, motion snapshots a panel on unmount, which StrictMode's simulated remount turns into a slide from its pre-fit place.
           layout={reorderable ? 'position' : false}
-          layoutId={reorderable ? `${boardId}-${panelId}` : undefined}
           className="relative flex shrink-0"
         >
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
@@ -179,9 +189,10 @@ export function BoardLayout({
           </ResizablePanel>
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
 
-          {i < panels.length - 1 && (
+          {(i < panels.length - 1 || endHandle) && (
             <ResizableSeparator
               index={i}
+              aria-label={i === panels.length - 1 ? t('c:fit_panels') : undefined}
               className="mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary"
             />
           )}

@@ -171,13 +171,20 @@ li:has(.is-focused) {
   height: 2rem;
 }
 
-.bn-link-toolbar > button:hover {
-  background-color: var(--muted);
+@media (hover: hover) {
+  .bn-link-toolbar > button:hover {
+    background-color: var(--muted);
+  }
 }
 
-.bn-container.bn-shadcn a:hover,
 .bn-container.bn-shadcn a:focus-visible {
   text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+}
+
+@media (hover: hover) {
+  .bn-container.bn-shadcn a:hover {
+    text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+  }
 }
 
 .bn-container.bn-shadcn a:active {
@@ -198,9 +205,14 @@ li:has(.is-focused) {
   transition: opacity 0.15s ease;
 }
 
-.bn-shadcn .bn-side-menu:hover,
 .bn-shadcn .bn-side-menu:focus-within {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .bn-shadcn .bn-side-menu:hover {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 639px) {
@@ -268,8 +280,10 @@ li:has(.is-focused) {
   padding-right: 0.5rem;
 }
 
-.bn-toolbar.bn-formatting-toolbar button:hover {
-  background-color: var(--muted);
+@media (hover: hover) {
+  .bn-toolbar.bn-formatting-toolbar button:hover {
+    background-color: var(--muted);
+  }
 }
 
 /* Unlayered, so it outranks the gap-1 that @blocknote/shadcn appends to a checkable menu item. */

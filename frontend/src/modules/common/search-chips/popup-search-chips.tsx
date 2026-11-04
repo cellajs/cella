@@ -208,6 +208,7 @@ export function PopupSearchChips({
       >
         <ComboboxPrimitive.InputGroup
           ref={groupRef}
+          // The input and the clear addon fit inside the border, so a row of one line stands as tall as the h-10 buttons beside it
           render={
             <InputGroup
               className={cn(
@@ -267,7 +268,7 @@ export function PopupSearchChips({
 
           <ComboboxPrimitive.Input
             ref={inputRef}
-            render={<InputGroupInput className="min-w-24 pl-0!" />}
+            render={<InputGroupInput className="h-9.5 min-w-24 pl-0!" />}
             id={id}
             name={name}
             placeholder={hasChips ? undefined : label}
@@ -283,7 +284,7 @@ export function PopupSearchChips({
             onKeyDown={handleKeyDown}
           />
 
-          <InputGroupAddon className="gap-0.5 pr-1.5 has-[>button]:mr-0" align="inline-end">
+          <InputGroupAddon className="gap-0.5 py-0 pr-1.5 has-[>button]:mr-0" align="inline-end">
             {/* Mounted while empty too: a status region announces changes only once it exists */}
             <span role="status" className="mr-1 whitespace-nowrap font-normal text-muted-foreground text-sm tabular-nums">
               {count}

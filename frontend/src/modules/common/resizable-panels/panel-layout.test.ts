@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { type DragState, distributeWidths, fitPanels, type PanelConfig, resolveLayout } from '~/modules/common/resizable-panels/panel-layout';
+import {
+  type DragState,
+  distributeWidths,
+  fitPanels,
+  type PanelConfig,
+  resolveEndDrag,
+  resolveLayout,
+} from '~/modules/common/resizable-panels/panel-layout';
 
 const panel = (id: string, overrides: Partial<PanelConfig> = {}): PanelConfig => ({
   id,
@@ -27,7 +34,7 @@ const resolve = (widths: Record<string, number>, separatorIndex: number, dx: num
 describe('distributeWidths', () => {
   it('R1: shares in proportion and fills exactly', () => {
     expect(distributeWidths([panel('a'), panel('b')], { a: 1000, b: 500 }, 1200)).toEqual({ a: 800, b: 400 });
-    expect(distributeWidths([panel('a'), panel('b')], { a: 500, b: 500 }, 1001)).toEqual({ a: 500, b: 501 });
+    expect(distributeWidths([panel('a'), panel('b')], { a: 500, b: 500 }, 1001)).toEqual({ a: 500.5, b: 500.5 });
   });
 
   it('R1: a panel a share would take below min holds it, and the others pay', () => {
@@ -41,9 +48,19 @@ describe('distributeWidths', () => {
   it('R1: a row refitted to its own widths stays as it is', () => {
     const row = [panel('a'), panel('b')];
     const once = distributeWidths(row, { a: 600, b: 593.36 }, 1193.36);
-    expect(once.a).toBe(600);
+    expect(once.a).toBeCloseTo(600);
     expect(once.b).toBeCloseTo(593.36);
     expect(distributeWidths(row, once, 1193.36)).toEqual(once);
+  });
+
+  it('R1: refitting again and again keeps the proportions', () => {
+    const row = [panel('a'), panel('b'), panel('c')];
+    let widths: Record<string, number> = { a: 400, b: 500, c: 386.72 };
+    for (let available = 1280; available >= 1100; available -= 1) widths = distributeWidths(row, widths, available);
+    widths = distributeWidths(row, widths, 1286.72);
+    expect(widths.a).toBeCloseTo(400);
+    expect(widths.b).toBeCloseTo(500);
+    expect(widths.c).toBeCloseTo(386.72);
   });
 
   it('ends at min when the room is too small, which overflow then scrolls', () => {
@@ -195,6 +212,50 @@ describe('resolveLayout in must-fit', () => {
   });
 });
 
+describe('resolveEndDrag', () => {
+  const endDrag = (widths: Record<string, number>, fit: boolean, room: number, dx: number) => {
+    const ids = Object.keys(widths);
+    return resolveEndDrag(
+      ids.map((id) => panel(id)),
+      { ...dragOf(widths, ids.length - 1), end: { fit, room, reach: 75 } },
+      dx,
+    );
+  };
+
+  it('E3: the last panel pays first, then the one before it, none below min', () => {
+    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -40)).toEqual({ widths: { a: 375, b: 375, c: 335 }, hints: [], snapped: false });
+    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -100).widths).toEqual({ a: 375, b: 350, c: 300 });
+  });
+
+  it('E3: snaps once the row fits its room', () => {
+    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -124).snapped).toBe(false);
+    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 1000, -125).snapped).toBe(true);
+  });
+
+  it('E3: snaps once every panel is at min, when the room is too short for that', () => {
+    expect(endDrag({ a: 375, b: 375, c: 375 }, false, 800, -225).snapped).toBe(false);
+    const result = endDrag({ a: 375, b: 375, c: 375 }, false, 800, -400);
+    expect(result).toEqual({ widths: { a: 300, b: 300, c: 300 }, hints: [], snapped: true });
+  });
+
+  it('E3: closes no panel and skips closed ones', () => {
+    expect(endDrag({ a: 400, b: 50, c: 300 }, false, 500, -200).widths).toEqual({ a: 300, b: 50, c: 300 });
+  });
+
+  it('E5: with fit, a drag right pulls through the gate without moving anything', () => {
+    const halfway = endDrag({ a: 400, b: 400 }, true, 800, 20);
+    expect(halfway.widths).toEqual({ a: 400, b: 400 });
+    expect(halfway.hints).toEqual([{ panelId: 'b', side: 'right', mode: 'cover', progress: 0.5, reach: 75 }]);
+    expect(halfway.snapped).toBe(false);
+    expect(endDrag({ a: 400, b: 400 }, true, 800, 40).snapped).toBe(true);
+  });
+
+  it('E7: the other direction does nothing', () => {
+    expect(endDrag({ a: 400, b: 400 }, false, 700, 50)).toEqual({ widths: { a: 400, b: 400 }, hints: [], snapped: false });
+    expect(endDrag({ a: 400, b: 400 }, true, 800, -50)).toEqual({ widths: { a: 400, b: 400 }, hints: [], snapped: false });
+  });
+});
+
 describe('fitPanels', () => {
   const panels = (...ids: string[]) => ids.map((id) => panel(id));
   const fitWith = (input: Partial<Parameters<typeof fitPanels>[0]> & { available: number; panels: PanelConfig[] }) =>
@@ -202,7 +263,7 @@ describe('fitPanels', () => {
 
   it('F1: fills exactly, in proportion to what was chosen', () => {
     expect(fitWith({ panels: panels('a', 'b'), chosen: { a: 900, b: 300 }, available: 1200 }).widths).toEqual({ a: 900, b: 300 });
-    expect(fitWith({ panels: panels('a', 'b'), available: 1001 }).widths).toEqual({ a: 500, b: 501 });
+    expect(fitWith({ panels: panels('a', 'b'), available: 1001 }).widths).toEqual({ a: 500.5, b: 500.5 });
   });
 
   it('F1: holds a panel at min and the others pay', () => {

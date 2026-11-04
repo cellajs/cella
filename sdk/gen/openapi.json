@@ -3042,6 +3042,10 @@
               }
             ]
           },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "member"]
+          },
           "lastSeenAt": {
             "type": ["string", "null"]
           }
@@ -3057,6 +3061,7 @@
           "createdBy",
           "updatedAt",
           "updatedBy",
+          "role",
           "lastSeenAt"
         ],
         "description": "An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.",
@@ -3077,6 +3082,7 @@
           "createdAt": "2024-09-01T22:49:17.262Z",
           "updatedAt": "2024-09-01T22:49:17.262Z",
           "lastSeenAt": "2024-09-01T22:49:17.262Z",
+          "role": "member",
           "createdBy": {
             "id": "b49a55f9-fa14-4193-ae0b-e26a7862c0b1",
             "kind": "user",
@@ -13450,6 +13456,7 @@
                     "createdAt": "2024-09-01T22:49:17.262Z",
                     "updatedAt": "2024-09-01T22:49:17.262Z",
                     "lastSeenAt": "2024-09-01T22:49:17.262Z",
+                    "role": "member",
                     "createdBy": {
                       "id": "b49a55f9-fa14-4193-ae0b-e26a7862c0b1",
                       "kind": "user",
@@ -13641,6 +13648,7 @@
                       "createdAt": "2024-03-18T03:56:02.722Z",
                       "updatedAt": "2024-03-18T03:56:02.722Z",
                       "lastSeenAt": "2024-03-18T03:56:02.722Z",
+                      "role": "member",
                       "createdBy": {
                         "id": "99a36819-e0f2-470b-88d0-2f92a164c4d7",
                         "kind": "user",
@@ -13667,6 +13675,7 @@
                       "createdAt": "2024-04-20T08:15:05.883Z",
                       "updatedAt": "2024-04-20T08:15:05.883Z",
                       "lastSeenAt": "2024-04-20T08:15:05.883Z",
+                      "role": "member",
                       "createdBy": {
                         "id": "d296abdd-ef82-40aa-a7f0-4fba2ed8a6dc",
                         "kind": "user",

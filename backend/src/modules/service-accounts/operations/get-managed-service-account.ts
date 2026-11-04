@@ -1,6 +1,7 @@
 import { buildSubjectFromEntity } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { organizationRole } from '#/modules/service-accounts/helpers/organization-role';
 import { findServiceAccountInTenant } from '#/modules/service-accounts/service-accounts-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
@@ -16,7 +17,6 @@ export async function getManagedServiceAccount(ctx: UserContext, serviceAccountI
   const { entity } = await getValidChannel(ctx, ctx.var.organizationId, 'organization', 'update');
   const account = await findServiceAccountInTenant(ctx, { id: serviceAccountId, tenantId: ctx.var.tenantId });
   if (!account) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });
-  const binding = account.bindings.find(({ channelType }) => channelType === 'organization');
-  if (binding) assertRoleGrant(ctx, { subject: buildSubjectFromEntity('organization', entity), role: binding.role, action: 'update' });
+  assertRoleGrant(ctx, { subject: buildSubjectFromEntity('organization', entity), role: organizationRole(account), action: 'update' });
   return account;
 }

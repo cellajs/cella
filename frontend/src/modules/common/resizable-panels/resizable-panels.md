@@ -84,17 +84,17 @@ No cascade: a key only touches the two panels beside the separator. A collapsed 
 - **Arrow keys** move the separator by 20px. The victim stops at `minWidth`: an arrow never collapses a panel. The grower takes what the victim gave, uncapped.
 - **A collapsed grower** opens to `minWidth` when an arrow or Home/End pulls it open, also when the victim is already at `minWidth`. Then L2's refit rules apply, because the total grew.
 - **Home/End** take the separator to its limit in one press: Home collapses the left panel, End the right one, and the other takes the freed width. If the other was collapsed, that swaps them. A non-collapsible panel stops at `minWidth`.
-- **Enter** toggles collapse on the left panel of the separator. The last panel has no separator of its own: only its handle reaches it.
+- **Enter** toggles collapse on the left panel of the separator. Without an end handle (E1) the last panel has no separator of its own: only its handle reaches it.
 
 ## G6: Mode detection
 
-Ideal sum: collapsed panels contribute `collapsedWidth`, others `minWidth * 1.25`. Ideal sum + separator space <= parentWidth -> autoFill, else overflow. So panels that would fit at `minWidth` but not at their ideal width go to overflow, on purpose: it keeps cards at a comfortable width and lets the row scroll.
+Ideal sum: collapsed panels contribute `collapsedWidth`, others `minWidth * 1.25`, or `minWidth` with fit (E2). Ideal sum + separator space <= parentWidth -> autoFill, else overflow. So panels that would fit at `minWidth` but not at their ideal width go to overflow, on purpose: it keeps cards at a comfortable width and lets the row scroll. The user can ask for the fit with the end handle.
 
 Computed at drag start and fixed for the drag; between drags it is computed again on every refit, so a resize can cross it. In overflow mode the container min-width is the larger of the ideal sum and the actual sum, plus separators, so panels grow without collapsing others.
 
 ## G8: Zero-sum resize (no max-width cap)
 
-During a drag every pixel freed by victims goes to the grower, uncapped in both modes, so the total panel sum stays constant: no mid-drag container width adjustment, no scroll compensation. A collapsed grower opening is the one exception: see G10 and O2.
+During a drag every pixel freed by victims goes to the grower, uncapped in both modes, so the total panel sum stays constant: no mid-drag container width adjustment, no scroll compensation. A collapsed grower opening is the one exception: see G10 and O2. The end handle's drag (E3) has no grower: the row narrows, and the container keeps its width until the drop.
 
 ## G9: Two-phase cascade
 
@@ -197,17 +197,17 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 
 ## Refit (redistributePanels)
 
-- **R1, scaling:** collapsed panels keep `collapsedWidth`. Open panels scale in proportion to their widths to fill the container exactly. A panel a share would take below `minWidth` holds it, and the others share what is left.
-- **R2, tolerance:** within 0.5% of the available width nothing scales, so that much gap or overflow can stay.
+- **R1, scaling:** collapsed panels keep `collapsedWidth`. Open panels scale in proportion to their widths to fill the container exactly. A panel a share would take below `minWidth` holds it, and the others share what is left. Shares are not rounded, so a row refitted on every pixel of a resize keeps its proportions.
+- **R2, no overflow:** a row over its container by any amount refits. Panels do not shrink, so even a pixel over would let the board scroll sideways. A gap under 1px stays: overflow mode rounds the container's min-width up.
 - **R3, viewport clamp:** after a drag and on resize, a pre-pass clamps any panel wider than the scroll parent's visible width. It runs before R1, so it fires even when the total already matches (ratio ≈ 1).
 - **R4, during a drag:** no refit. A resize during a drag is applied at the drop.
 - **R5, no memory:** rendered widths are what is stored (P2), so narrowing and widening again does not bring back the earlier widths. A panel can even grow while the page narrows, when R3 clamps a wide panel and R1 hands the rest to its neighbour.
 
 ```
-  Parent 1600, A=300, B=1294. Narrow to 700, then widen to 1600:
+  Parent 1600, A=300, B=1293.36. Narrow to 700, then widen to 1600:
 
   700:   A=481, B=693, container min-width 1182 (overflow)
-  1600:  A=652, B=941
+  1600:  A=653, B=941
 ```
 
 ## Toggle and expand
@@ -216,12 +216,11 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 - **T2, `expandPanel`:** a no-op on an open panel, nothing saved. `BoardLayout` calls it when the store marks a panel open from outside.
 - **T3, no room to open:** the row goes to overflow (G6). A panel never closes to make room for another.
 - **T4, all closed:** allowed. The row shows its strips and empty space, with no min-width. Opening one fills the row.
-- **T5, double press:** two presses on a separator within 300ms toggle its left panel, as Enter does (G5). The first press is a drag of zero length, and saves.
-- **T6, non-collapsible:** toggling does nothing.
+- **T5, non-collapsible:** toggling does nothing.
 
 ## Saving
 
-- **P1, `onLayoutChanged`** fires with the widths of all mounted panels after: a drag ends, a keyboard action (also one that moved nothing), a toggle, a refit that changed a width. It does not fire on an aborted drag.
+- **P1, `onLayoutChanged`** fires with the widths of all mounted panels after: a drag ends, a keyboard action (also one that moved nothing), a toggle, a refit that changed a width. A refit from a resize fires once no resize followed for 150ms, because a resize refits on every frame, and one still pending at unmount is dropped. It does not fire on an aborted drag.
 - **P2, what is saved:** rendered widths. A stored width at or below `collapsedWidth` means collapsed; the consumer keeps entries of unmounted panels.
 - **P3, `onCollapseChange`** fires when a collapsible panel registers and on each change. Collapsed is `width <= collapsedWidth`.
 
@@ -230,7 +229,29 @@ The expand cost (`minWidth - collapsedWidth`) is subtracted from the remaining d
 - **C1, parent:** the group measures its parent and fills it. Overflow mode only works if the parent can scroll, as `ScrollArea` does. A clipping parent, such as `BoardLayout`'s `autoHeight` wrapper, cuts off what overflows, with no way to reach it. Use that wrapper with a set of panels that fits.
 - **C2, sizes:** `minWidth` and `collapsedWidth` are per panel, and `collapsible` can be off. The API supports mixing them, and they follow the same rules, but every consumer today uses one size and collapsible panels.
 - **C3, direction:** left to right only.
-- **C4, separators:** separator `i` sits between panels `i` and `i + 1`, so `index` has no gaps.
+- **C4, separators:** separator `i` sits between panels `i` and `i + 1`, so `index` has no gaps. An end handle is separator `n - 1`, after the last of `n` panels.
+
+## End handle
+
+A separator after the last panel switches the row between its ideal width and the fit. It is for a parent that scrolls: a row that cannot overflow has no use for it.
+
+- **E1, the handle:** the consumer renders separator `n - 1` after the last panel (C4). A must-fit group treats it as an ordinary separator, so `BoardLayout` leaves it out there and in its clipping wrapper.
+- **E2, fit:** a flag the consumer stores, passed as `fit` and reported through `onFitChange`. With fit, G6 counts each open panel at `minWidth`, so the row fits whenever every panel fits at its minimum and scrolls at `minWidth` when not even that fits.
+- **E3, drag left without fit:** the row narrows, the last panel first, then the one before it, none below `minWidth` (T3: no panel closes for room). A dashed line marks where the row's end has to land, the parent's width. The line turns solid once the row reaches it, or once every open panel is at its minimum. Released then, fit turns on; released before, the row goes back and nothing switches.
+- **E4, turning fit on:** the panels go back to their widths at drag start and share the room in proportion (R1), each at least `minWidth`. A refit alone would not shrink a row that still overflows at `minWidth`, because overflow keeps the actual sum (G6).
+- **E5, drag right with fit:** a 40px gate, shown as a curtain over the last panel. Released past it, fit turns off and the row refits to the ideal width, usually overflow. Released before, nothing switches.
+- **E6, keys:** Home and ArrowLeft turn fit on, End and ArrowRight turn it off. Enter toggles the last panel (G5).
+- **E7, the other direction:** a drag right without fit, or left with fit, moves nothing.
+- **E8, saving:** `onFitChange` fires on each switch, and the widths save as after any drag or key (P1). A `fit` prop that changes from outside, as when the consumer's store loads after mount, applies as a switch without `onFitChange`.
+
+```
+  Parent 1000, A=B=C=375, end handle: overflow, container min-width 1145.
+  Drag the end handle left 150: C=300, B=300, the row ends at 995, inside the line. Release:
+
+  +---- A ----++---- B ----++---- C ----+||
+  |   327      ||   327      ||   327      |||  fit, autoFill
+  +------------++------------++------------+||
+```
 
 ## Must-fit (`mustFit`)
 

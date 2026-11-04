@@ -50,7 +50,7 @@ export function UserCombobox({ chosen, onPick, channel, autoFocus, onToEmail }: 
   };
 
   const pick = (person?: (typeof items)[number]) => {
-    if (person) onPick(person);
+    if (person) onPick({ ...person, outcome: outcomeByEmail.get(person.email.toLowerCase()) });
     setSearchQuery('');
   };
 

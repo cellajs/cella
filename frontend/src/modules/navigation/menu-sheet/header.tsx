@@ -7,7 +7,6 @@ import { LogoMark, LogoText } from '~/modules/common/logo-art';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { menuColumnsClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
-import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { openNavSheet } from '~/modules/navigation/nav-sheet';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
@@ -52,7 +51,7 @@ export function MenuSheetHeader() {
               onClick={() => openNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef, { stacked: true })}
               className="relative"
             >
-              <BellIcon className="size-5" strokeWidth={navIconStrokeWidth} />
+              <BellIcon className="size-5" />
               <UnreadCountBadge className="absolute top-1 right-1" />
             </Button>
             <Button

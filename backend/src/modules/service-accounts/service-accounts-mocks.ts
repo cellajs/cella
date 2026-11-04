@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, type OrganizationRole } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
 import type { WithActorRefs } from '#/modules/actors/actor-refs';
 import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
@@ -7,7 +7,10 @@ import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountWithActivity } from '#/modules/service-accounts/service-accounts-queries';
 import { mockActorRef } from '#/schemas/entity-base-mocks';
 
-export const mockServiceAccountResponse = (key = 'serviceAccount:default'): WithActorRefs<ServiceAccountWithActivity> => {
+export const mockServiceAccountResponse = (
+  key = 'serviceAccount:default',
+): WithActorRefs<ServiceAccountWithActivity> & { role: OrganizationRole } => {
+  const role = hierarchy.getLeastPrivilegedRole('organization');
   const account = withFakerSeed<Omit<ServiceAccountWithActivity, 'createdBy' | 'updatedBy'>>(key, () => {
     const organizationId = mockUuid();
     const createdAt = mockPastIsoDate();
@@ -16,21 +19,14 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): With
       tenantId: mockTenantId(),
       name: `${faker.hacker.noun()} bot`,
       status: 'active',
-      bindings: [
-        {
-          channelType: 'organization',
-          channelId: organizationId,
-          organizationId,
-          role: hierarchy.getLeastPrivilegedRole('organization'),
-        },
-      ],
+      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role }],
       oauthClientId: null,
       createdAt,
       updatedAt: createdAt,
       lastSeenAt: createdAt,
     };
   });
-  return { ...account, createdBy: mockActorRef(`${key}:created-by`), updatedBy: null };
+  return { ...account, role, createdBy: mockActorRef(`${key}:created-by`), updatedBy: null };
 };
 
 /** A fixed key whose checksum is computed, so the example round-trips through `parseApiKey`; never issued. */

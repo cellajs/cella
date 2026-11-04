@@ -1,4 +1,5 @@
 import { BanIcon, CircleAlertIcon, MailIcon, RotateCcwIcon, XIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
@@ -41,7 +42,10 @@ interface InviteFieldLineProps {
   check: InviteCheck;
 }
 
-/** One line under a field, saying what just happened to what was in it. Stays mounted, so a change is announced. */
+/**
+ * The line under a field, shown only for text that is no address. What happened to an address is spoken only: its tile
+ * rolls its count and glows. Stays mounted, so a change is announced.
+ */
 export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
   const { t } = useTranslation();
   const { last, typedInvalid, people } = list;
@@ -61,23 +65,14 @@ export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
     }
     if (last?.repeat) return t('c:invite_already_listed', { address: last.address });
     if (listed) {
-      const { tone, word, note, checking } = check.viewOf(listed);
-      return (
-        <>
-          <StatusDot tone={tone} checking={checking} />
-          <span className="min-w-0 break-all">
-            <span className={cn('font-medium', tileTones[tone].text)}>{word}</span>
-            {` · ${people.get(listed)?.name ?? listed}`}
-            {note && ` · ${note}`}
-          </span>
-        </>
-      );
+      const { word, note } = check.viewOf(listed);
+      return [word, people.get(listed)?.name ?? listed, note].filter(Boolean).join(' · ');
     }
     return null;
   };
 
   return (
-    <div role="status" className="flex items-baseline gap-1.5 text-muted-foreground text-sm">
+    <div role="status" className={cn('flex items-baseline gap-1.5 text-muted-foreground text-sm', !typedInvalid && 'sr-only')}>
       {content()}
     </div>
   );
@@ -158,6 +153,9 @@ export function InviteGroups({ check, list, held }: InviteGroupsProps) {
   const [limits, setLimits] = useState<Partial<Record<InviteGroupKey, number>>>({});
 
   const present = inviteTiles.filter(({ key }) => check.groups[key].length);
+  // The tile a single addition lands in, once checked: a paste, a restored draft or a mode switch leaves no last one
+  const lastView = list.last && check.viewOf(list.last.address);
+  const landed = lastView && !lastView.checking ? lastView.group : null;
   const biggest = present.find(({ key }) => key !== 'new')?.key ?? null;
   const open = picked?.revision === list.revision ? picked.key : biggest;
 
@@ -185,14 +183,37 @@ export function InviteGroups({ check, list, held }: InviteGroupsProps) {
         const step = hidden > revealAllUpTo ? revealStep : hidden;
 
         return (
-          <div key={key} data-invite-tile={key}>
+          <div key={key} data-invite-tile={key} className="relative">
+            {/* Each addition is a new key, which plays the glow again */}
+            {landed === key && (
+              <span
+                key={list.revision}
+                aria-hidden="true"
+                className={cn('pointer-events-none absolute inset-0 animate-tile-landed rounded-lg', tileTones[tileTone[key]].text)}
+              />
+            )}
             <ExpandableTile
               value={key}
               className={key === 'fix' ? 'intent-destructive soft-border' : undefined}
               panelClassName="max-sm:pl-3"
               wrapMeta
               icon={<Icon className="text-muted-foreground" />}
-              title={t(summary, { count: addresses.length })}
+              // The whole sentence rolls, since where the number sits depends on the language
+              title={
+                <span className="inline-grid">
+                  <AnimatePresence initial={false}>
+                    <motion.span
+                      key={addresses.length}
+                      className="[grid-area:1/1]"
+                      initial={{ y: '100%', opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: '-100%', opacity: 0 }}
+                    >
+                      {t(summary, { count: addresses.length })}
+                    </motion.span>
+                  </AnimatePresence>
+                </span>
+              }
               status={{ tone: tileTone[key], label: t(word) }}
               meta={key === 'new' && held ? lowercaseLabel(t('c:invite_state_on_publish')) : lowercaseLabel(t(note))}
               lead={

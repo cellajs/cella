@@ -4,6 +4,7 @@ import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
+import { organizationRole } from '#/modules/service-accounts/helpers/organization-role';
 import { getManagedServiceAccount } from '#/modules/service-accounts/operations/get-managed-service-account';
 import { updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { UpdateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
@@ -25,5 +26,5 @@ export async function updateServiceAccountOp(ctx: UserContext, serviceAccountId:
   if (!updated) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });
   invalidateCache.serviceAccount(updated);
   log.info('Service account updated', { serviceAccountId, status: updated.status });
-  return { ...(await withActorRef(ctx, updated)), lastSeenAt: account.lastSeenAt };
+  return { ...(await withActorRef(ctx, updated)), role: organizationRole(updated), lastSeenAt: account.lastSeenAt };
 }

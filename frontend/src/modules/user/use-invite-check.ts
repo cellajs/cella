@@ -11,6 +11,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import type { TileTone } from '~/modules/common/expandable-tile';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
+import type { InvitePerson } from '~/modules/user/use-invite-list';
 
 /** What an invite does with an address: asks to be fixed, goes unchecked, sends a first invitation, sends the email again, or leaves it out. */
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
@@ -69,9 +70,15 @@ export const unparsedView = (text: string, t: TFunction): InviteView => {
 
 /**
  * What an invite would do with each address, checked a moment after the list stops changing. Without a channel (a
- * system invite) every address is new.
+ * system invite) every address is new. A person picked by name is placed by their search's answer until then.
  */
-export function useInviteCheck(channel: EnrichedChannel | undefined, emails: string[], unparsed: string[], held: boolean) {
+export function useInviteCheck(
+  channel: EnrichedChannel | undefined,
+  emails: string[],
+  unparsed: string[],
+  held: boolean,
+  people: Map<string, InvitePerson>,
+) {
   const { t } = useTranslation();
   const settled = useDebounce(emails, 300);
   const sorted = useMemo(() => [...new Set(settled.map((email) => email.toLowerCase()))].sort(), [settled]);
@@ -88,7 +95,7 @@ export function useInviteCheck(channel: EnrichedChannel | undefined, emails: str
 
   for (const text of unparsed) add(text, unparsedView(text, t));
   for (const email of emails) {
-    const outcome = byEmail.get(email.toLowerCase());
+    const outcome = byEmail.get(email.toLowerCase()) ?? people.get(email.toLowerCase())?.outcome;
     if (outcome || !channel) {
       add(email, outcomeView(outcome, t, held));
     } else if (isFetching || settled !== emails) {

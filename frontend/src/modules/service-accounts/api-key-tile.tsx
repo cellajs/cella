@@ -54,7 +54,6 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
 
   const status = keyStatus(apiKey, account, !!secret);
   const isLive = status === 'new' || status === 'active' || status === 'disabled';
-  const role = account.bindings[0]?.role;
   const maskedKey = `${apiKey.prefix}…${apiKey.last4}`;
 
   // An ended key shows when it ended, the account's newest key its last use, any other key itself
@@ -85,14 +84,12 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
           </ExpandableTileDetail>
           {/* One-step create names the account after its key; an account named otherwise shows here */}
           {account.name !== apiKey.name && <ExpandableTileDetail label={t('c:service_account')}>{account.name}</ExpandableTileDetail>}
-          {role && <ExpandableTileDetail label={t('c:role')}>{t(`c:${role}`)}</ExpandableTileDetail>}
+          <ExpandableTileDetail label={t('c:role')}>{t(`c:${account.role}`)}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:access')}>
+            {apiKey.scopes ? <ScopeBadges scopes={apiKey.scopes} /> : t('c:full_access')}
+          </ExpandableTileDetail>
           {!isLive && <ExpandableTileDetail label={t(`c:${status}`)}>{dateShort(keyEndedAt(apiKey))}</ExpandableTileDetail>}
           {isLive && apiKey.expiresAt && <ExpandableTileDetail label={t('c:expires_at')}>{dateShort(apiKey.expiresAt)}</ExpandableTileDetail>}
-          {showActivity && (
-            <ExpandableTileDetail label={t('c:last_used')}>
-              <LastUsed date={account.lastSeenAt} />
-            </ExpandableTileDetail>
-          )}
           {apiKey.createdBy && (
             <ExpandableTileDetail label={t('c:created_by')}>
               <CreatedBy actor={apiKey.createdBy} />
@@ -102,9 +99,6 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
             <DateTooltip date={apiKey.createdAt}>
               <span>{dateShort(apiKey.createdAt)}</span>
             </DateTooltip>
-          </ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:access')} wide>
-            {apiKey.scopes ? <ScopeBadges scopes={apiKey.scopes} /> : t('c:full_access')}
           </ExpandableTileDetail>
         </>
       }
@@ -141,7 +135,6 @@ interface KeylessAccountTileProps {
 /** A service account without a live key: it stays listed, so an account nothing uses does not dangle unseen. */
 export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
   const { t } = useTranslation();
-  const role = account.bindings[0]?.role;
 
   return (
     <ExpandableTile
@@ -152,7 +145,7 @@ export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
       meta={t('c:no_resource_yet', { resource: t('c:api_key_other') })}
       details={
         <>
-          {role && <ExpandableTileDetail label={t('c:role')}>{t(`c:${role}`)}</ExpandableTileDetail>}
+          <ExpandableTileDetail label={t('c:role')}>{t(`c:${account.role}`)}</ExpandableTileDetail>
           <ExpandableTileDetail label={t('c:last_used')}>
             <LastUsed date={account.lastSeenAt} />
           </ExpandableTileDetail>

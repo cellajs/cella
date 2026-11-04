@@ -39,7 +39,7 @@ interface OpenInviteDialogOptions {
 
 /** Opens the invite form in a dialog under a table bar, from the bar's invite button. */
 export function openInviteDialog({ channel, description, triggerRef, containerRef }: OpenInviteDialogOptions) {
-  dialoger.getState().create(<InviteUsers channel={channel} dialog />, {
+  dialoger.getState().create(<InviteUsers channel={channel} dialog description={description} />, {
     id: inviteDialogId,
     triggerRef,
     drawerOnMobile: false,
@@ -72,6 +72,8 @@ interface InviteUsersProps {
   channel?: EnrichedChannel;
   /** Rendered in the `invite-users` dialog, which a sent invite closes. */
   dialog?: boolean;
+  /** The dialog's line under its title, shown with the chooser only. */
+  description?: ReactNode;
   /** Skips the chooser. Without the dialog's title there is no way back to it. */
   mode?: InviteMode;
   /** Takes the place of the cancel button, as the onboarding footer does. */
@@ -79,7 +81,7 @@ interface InviteUsersProps {
 }
 
 /** The invite form. The mode only swaps its field, so the form, its draft and a running send outlive a switch. */
-export function InviteUsers({ channel, dialog, mode: initialMode, children }: InviteUsersProps) {
+export function InviteUsers({ channel, dialog, description, mode: initialMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
   const formRef = useRef<HTMLFormElement>(null);
@@ -92,7 +94,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
   const role = useWatch({ control: form.control, name: 'role' });
 
   const held = !!channel && isUnpublishedDraft(channel) && !hierarchy.getPrepareRoles(channel.entityType).includes(role);
-  const check = useInviteCheck(channel, list.emails, list.unparsed, held);
+  const check = useInviteCheck(channel, list.emails, list.unparsed, held, list.people);
 
   const close = () => {
     if (dialog) dialoger.getState().remove(inviteDialogId);
@@ -109,6 +111,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
     setInviteMode(mode);
     if (!dialog) return;
     dialoger.getState().update(inviteDialogId, {
+      description: mode ? undefined : description,
       titleContent: mode ? (
         <span className="flex items-center gap-2">
           <button type="button" className="text-muted-foreground hover:text-foreground hover:underline" onClick={() => chooseMode(null)}>
@@ -153,7 +156,7 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
   };
 
   return (
-    <MotionConfig transition={modeTransition}>
+    <MotionConfig transition={modeTransition} reducedMotion="user">
       <Form {...form}>
         <form ref={formRef} noValidate onSubmit={submit} className="flex flex-col gap-6">
           {inviteMode && Field ? (
@@ -184,8 +187,9 @@ export function InviteUsers({ channel, dialog, mode: initialMode, children }: In
               </div>
             </motion.div>
           )}
-          {list.hasList && <InviteGroups check={check} list={list} held={held} />}
-          {(inviteMode ? !boxOpen : list.hasList) && (
+          {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
+          {inviteMode && list.hasList && <InviteGroups check={check} list={list} held={held} />}
+          {inviteMode && !boxOpen && (
             <InviteFormFooter form={form} channel={channel} check={check} list={list} held={held} loading={isPending} onCancel={cancel}>
               {children}
             </InviteFormFooter>

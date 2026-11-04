@@ -1,12 +1,11 @@
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { useUserStore } from '~/modules/user/user-store';
 
 export function AccountNavIcon({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
   const user = useUserStore((state) => state.user);
 
-  if (!user) return <Icon className={className} strokeWidth={navIconStrokeWidth} />;
+  if (!user) return <Icon className={className} />;
 
   return (
     <EntityAvatar
