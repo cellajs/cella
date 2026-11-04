@@ -10,7 +10,7 @@ import { type Distribution, type EndpointSummary, Metrics } from './metrics';
 import { compactLine, LiveDisplay, liveLines, paint, type SummaryView, summaryLines } from './report';
 import { play, roleSequencer, type ScheduleEvent, schedule } from './scheduler';
 import { readSse } from './sse';
-import type { CheckResult, Phase, Scenario, Vu, VuFn } from './types';
+import { type CheckResult, type Phase, type Scenario, splitMetricKey, type Vu, type VuFn } from './types';
 
 const DEFAULT_INTERVAL_MS = 5000;
 const LAG_WARN_MS = 50;
@@ -154,7 +154,7 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
   const { events, phases, plannedS, pick } = plan(scenario, short);
   const declared = new Set<string>(scenario.counters ?? []);
   const primaryKey = scenario.primary ?? 'http.response_time.p95';
-  const primaryName = primaryKey.slice(0, primaryKey.lastIndexOf('.'));
+  const { name: primaryName, stat: primaryStat } = splitMetricKey(primaryKey);
   const attachments: Record<string, unknown> = {};
   /** The first message of each error that failed a VU. */
   const errors: Record<string, { message: string }> = {};
@@ -315,7 +315,6 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
   const requests = metrics.get('http.requests');
   const http = distributions['http.response_time'] ?? null;
   const endpoints = metrics.endpointSummaries();
-  const primaryStat = primaryKey.slice(primaryKey.lastIndexOf('.') + 1) as keyof Distribution;
   const current: BaselineEntry = {
     runner: RUNNER_EPOCH,
     timestamp: startedAt.toISOString(),
@@ -329,7 +328,7 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
     errors: Object.entries(counters).reduce((sum, [counter, n]) => (counter.startsWith('errors.') ? sum + n : sum), 0),
     vusersCreated: metrics.get('vusers.created'),
     vusersFailed: metrics.get('vusers.failed'),
-    primary: { metric: primaryKey, value: distributions[primaryName]?.[primaryStat] ?? 0 },
+    primary: { metric: primaryKey, value: primaryStat ? (distributions[primaryName]?.[primaryStat] ?? 0) : 0 },
     endpoints: Object.fromEntries(
       Object.entries(endpoints).map(([label, e]) => [
         label,

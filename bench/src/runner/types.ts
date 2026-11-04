@@ -9,10 +9,19 @@ export interface Phase {
   arrivalCount?: number;
 }
 
-export type Stat = 'p50' | 'p95' | 'p99' | 'max' | 'min' | 'mean';
+/** The statistics a threshold or a primary latency names after a histogram's name. */
+const stats = ['p50', 'p95', 'p99', 'max', 'min', 'mean'] as const;
+export type Stat = (typeof stats)[number];
 export type BuiltinHistogram = 'http.response_time' | 'http.total_time';
 /** A histogram statistic by name, such as `http.response_time.p95`. */
 export type MetricKey<H extends string> = `${BuiltinHistogram | H}.${Stat}`;
+
+/** Splits a metric key at its last dot into the histogram name and the statistic; `stat` is null when the tail names none. */
+export function splitMetricKey(key: string): { name: string; stat: Stat | null } {
+  const dot = key.lastIndexOf('.');
+  const tail = key.slice(dot + 1);
+  return { name: key.slice(0, dot), stat: stats.find((stat) => stat === tail) ?? null };
+}
 
 /** What a run must meet. Percentages are 0-100; latencies are milliseconds. */
 export interface Checks<C extends string, H extends string> {
