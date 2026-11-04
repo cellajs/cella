@@ -2,7 +2,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import { activityBus, type ProductActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -123,8 +123,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       },
       'cdc-rows-test-attachment',
     );
-    const created: ActivityEvent[] = [];
-    const listener = (event: ActivityEvent) => void (event.subjectId === attachmentId && created.push(event));
+    const created: ProductActivityEvent[] = [];
+    const listener = (event: ProductActivityEvent) => void (event.rows.some(({ rowData }) => rowData.id === attachmentId) && created.push(event));
     activityBus.on('attachment.created', listener);
 
     await db.insert(attachmentsTable).values(attachment as never);
@@ -133,28 +133,17 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
 
     const [stored] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     const [event] = created;
-    // One row, with the seq the worker stamped on it: the API gives its notification that seq and no range.
+    // One row, with the seq the worker stamped on it and the activity it was recorded as, its writer the inserter.
     expect(event.rows).toHaveLength(1);
-    expect(event.rows?.[0].seq).toBe(stored.seq);
+    expect(event.rows[0].seq).toBe(stored.seq);
     expect(stored.seq).toBeGreaterThan(0);
+    expect(event.rows[0].userId).toBe(testUser.id);
     // What decides who may read the row travels; its name and its file do not, and no whole row comes beside the list.
-    expect(event.rows?.[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
-    expect(event.rows?.[0].rowData).not.toHaveProperty('name');
+    expect(event.rows[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
+    expect(event.rows[0].rowData).not.toHaveProperty('name');
     expect(JSON.stringify(event)).not.toContain('cdc-rows-test-name');
     expect(event.rowData).toBeNull();
     expect(event.organizationId).toBe(testOrg.id);
-  });
-
-  it("must not leave a runtime-created organization's counters row without its path", async () => {
-    // The generated `path` column never reaches the row image, so the worker computes it: catchup verifies prefixes with it.
-    const readPath = async () => {
-      const [row] = await db
-        .select({ path: channelCountersTable.path })
-        .from(channelCountersTable)
-        .where(eq(channelCountersTable.channelKey, testOrg.id));
-      return row?.path ?? null;
-    };
-    await waitFor(async () => (await readPath()) === testOrg.id, 15_000, 'organization path on channel_counters');
   });
 
   it('should stamp attachments.seq and bump channel_counters.f:attachment on UPDATE', async () => {
@@ -176,10 +165,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       return row?.s ?? 0;
     };
     const readAttachment = async () => {
-      const [row] = await db
-        .select({ seq: attachmentsTable.seq, stx: attachmentsTable.stx })
-        .from(attachmentsTable)
-        .where(eq(attachmentsTable.id, attachmentId));
+      const [row] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
       return row;
     };
 
@@ -197,13 +183,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const beforeCounter = await readCounter();
     const beforeSeq = inserted!.seq;
 
-    // CDC only processes an update that sets stx.changedFields.
-    await db.execute(sql`
-      UPDATE attachments
-      SET name = 'cdc-seq-test-updated',
-          stx = jsonb_set(stx, '{changedFields}', '["summary","updatedAt"]'::jsonb)
-      WHERE id = ${attachmentId}
-    `);
+    await db.execute(sql`UPDATE attachments SET name = 'cdc-seq-test-updated' WHERE id = ${attachmentId}`);
 
     let stamped: Awaited<ReturnType<typeof readAttachment>> | undefined;
     await waitFor(
@@ -221,8 +201,5 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const afterCounter = await readCounter();
     expect(afterCounter, 'organization f:attachment frontier should advance').toBe(beforeCounter + 1);
     expect(stamped!.seq, 'attachment.seq should equal new f:attachment frontier').toBe(afterCounter);
-
-    const stx = stamped!.stx as { changedFields?: unknown } | null;
-    expect(stx?.changedFields, 'stx.changedFields should be removed').toBeUndefined();
   });
 });

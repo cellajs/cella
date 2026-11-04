@@ -37,10 +37,7 @@ async function sweepOnce(): Promise<void> {
   log.info(`Sweep: found ${stale.length} document(s) with an unwritten log`);
 
   for (const doc of stale) {
-    const outcome = await finishOrphan(doc);
-    if (outcome === 'retry' || outcome === 'kept') {
-      log.warn(`Sweep: log not written for ${docKey(doc)} (${outcome}), keeping it`);
-    }
+    if ((await finishOrphan(doc)) === 'retry') log.error(`Sweep: log not written for ${docKey(doc)}, keeping it`);
   }
 }
 

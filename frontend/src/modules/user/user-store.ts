@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import type { Me, User } from 'sdk';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -9,8 +9,6 @@ import type { MeUser } from '~/modules/me/types';
 import { uiStore } from '~/modules/ui/ui-store';
 
 type LastUser = Pick<MeUser, 'id' | 'email'>;
-
-export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => `${entityType}:${entityId}`;
 
 /** The `localStorage` key the store persists to, which every tab of the browser shares. */
 export const userStorageKey = `${appConfig.slug}-user`;
@@ -32,21 +30,17 @@ interface UserStoreState {
   isSystemAdmin: boolean;
   /** The last user signed in on this browser, kept after sign-out. */
   lastUser: LastUser | null;
-  /** Signed Yjs tokens by `yjsTokenKey`; not persisted. */
-  yjsTokens: Record<string, string>;
   /** Stores what `/me` answered in one write; also sets lastUser. */
   setMe: (me: Me) => void;
-  setYjsToken: (key: string, token: string | null) => void;
   /** Merges into the user; also sets lastUser. */
   updateUser: (user: User) => void;
   reset: () => void;
 }
 
-const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'yjsTokens'> = {
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser'> = {
   user: null,
   isSystemAdmin: false,
   lastUser: null,
-  yjsTokens: {},
 };
 
 export const useUserStore = create<UserStoreState>()(
@@ -72,15 +66,6 @@ export const useUserStore = create<UserStoreState>()(
 
           mirrorLanguage(user.language);
           mirrorContrast(user.contrast);
-        },
-        setYjsToken: (key, token) => {
-          set((state) => {
-            if (token) {
-              state.yjsTokens[key] = token;
-            } else {
-              delete state.yjsTokens[key];
-            }
-          });
         },
         reset: () => set(initStore),
       })),

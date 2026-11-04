@@ -8,7 +8,7 @@ import { withActorRefs } from '#/modules/actors/actor-refs';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { findAttachmentsPaginated } from '#/modules/attachment/attachment-queries';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { actorFrom } from '#/permissions/access';
+import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { projectTombstones, seqRangeOf } from '#/utils/seq-range';
@@ -24,9 +24,9 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const { q, sort, order, limit, offset, channelId } = input;
   const range = seqRangeOf(input);
 
-  const actor = actorFrom(ctx);
-  const readFilter = resolveCollectionReadFilter(ctx.var.actor.bindings, 'attachment', organizationId, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, 'attachment', actor);
+  const access = accessFrom(ctx);
+  const readFilter = resolveCollectionReadFilter(access, 'attachment', organizationId);
+  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, access);
 
   if (scopeWhere.kind === 'none') {
     return { items: [], total: 0 };

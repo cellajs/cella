@@ -115,6 +115,24 @@ export const findPendingInactiveMembership = async (ctx: DbContext, { id, forUpd
   return invitation;
 };
 
+interface LockPendingInactiveMembershipsOpts {
+  ids: string[];
+}
+
+/**
+ * The pending (not rejected) invitations among `ids`, locked for the caller's transaction in id order: a concurrent
+ * answer, rejection or resend waits for it, and two batches over the same rows never deadlock.
+ */
+export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: LockPendingInactiveMembershipsOpts) => {
+  if (!ids.length) return [];
+  return ctx.var.db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(and(inArray(inactiveMembershipsTable.id, ids), isNull(inactiveMembershipsTable.rejectedAt)))
+    .orderBy(inactiveMembershipsTable.id)
+    .for('update');
+};
+
 interface FindPendingInactiveMembershipByEmailOpts {
   email: string;
 }
@@ -161,6 +179,7 @@ interface InsertInactiveMembershipsOpts {
 /** Inserts inactive memberships and returns the ones inserted; a row whose address the channel invited already is skipped. */
 export const insertInactiveMemberships = async (ctx: DbContext, { memberships }: InsertInactiveMembershipsOpts) => {
   const { db } = ctx.var;
+  if (!memberships.length) return [];
   return db
     .insert(inactiveMembershipsTable)
     .values(memberships)
@@ -195,11 +214,11 @@ interface FindInactiveMembershipForUserOpts {
 
 /** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
 export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, userId } = ctx.var;
+  const { db, user } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, user.id), isNull(inactiveMembershipsTable.rejectedAt)))
     .limit(1);
   return membership;
 };
@@ -214,11 +233,11 @@ const claimableBy = (userId: string) =>
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, userId } = ctx.var;
+  const { db, user } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(userId)))
+    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(user.id)))
     .limit(1);
   return membership;
 };
@@ -310,7 +329,7 @@ interface InactiveMembershipIdOpts {
   id: string;
 }
 
-/** Deletes an inactive membership by id. */
+/** Deletes an inactive membership by id; its tokens go with it. */
 export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
 };

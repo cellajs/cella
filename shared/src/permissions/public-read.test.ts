@@ -19,9 +19,8 @@ const noPolicies = {};
 
 describe('public read grants: anonymous actor', () => {
   it('grants read when the row is public', () => {
-    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(true), { publicGrants: grants, ...wideOverrides });
+    const { can } = getAllDecisions(noPolicies, [], projectSubject(true), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
-    expect(actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
 
   it('denies when the row is not public or row data is absent', () => {

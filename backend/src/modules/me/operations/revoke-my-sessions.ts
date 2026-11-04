@@ -10,7 +10,8 @@ import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
  * @throws AppError 403 `step_up_required` when other ids are named and this session is not stepped up.
  */
 export async function revokeMySessionsOp(ctx: UserContext, ids: string[]) {
-  const { user, sessionId: currentSessionId } = ctx.var;
+  const { user, session } = ctx.var;
+  const currentSessionId = session.id;
 
   const otherIds = ids.filter((id) => id !== currentSessionId);
   const ownIds = ids.filter((id) => id === currentSessionId);

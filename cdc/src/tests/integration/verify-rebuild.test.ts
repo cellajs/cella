@@ -12,11 +12,12 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { cdcPublicationName, cdcSlotName, resourceLimits } from '../../constants';
 import { cdcDb } from '../../lib/db';
+import { gradeWorker } from '../../network/health';
 import { ensureReplicationSlot, settleLostCases } from '../../pipeline/replication';
 import { answerBooksRequests, rebuildBooks, restoreBooksState, startBooksSchedule, stopBooksSchedule, verifyBooks } from '../../pipeline/verify';
+import { metrics } from '../../services/cdc-metrics';
 import { fence } from '../../services/fence';
 import { replicationState } from '../../services/replication-state';
-import { lsnToBigInt } from '../../utils/lsn';
 import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const wsPort = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
@@ -447,23 +448,21 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
 
   describe('the lost cases, between two subscriptions', () => {
     const refused = Object.assign(new Error('null value in column "organization_id"'), { code: '23502' });
-    /** Five failed reads of one change: the worker is stuck there. */
-    const stick = () => {
-      for (let attempt = 0; attempt < resourceLimits.reread.stuckAfter; attempt++) replicationState.recordFailure('0/AB', refused);
-    };
 
-    let intervalsPassed = 0;
-    /** Runs `fn` with the clock past the rebuild interval, counted from the last rebuild a test ran that way. */
-    const pastTheInterval = async (fn: () => Promise<void>) => {
-      intervalsPassed += 1;
+    /** Runs `fn` while the worker has failed at one change for longer than health allows: it reports unhealthy. */
+    const whileStalled = async (fn: () => Promise<void>) => {
+      replicationState.recordFailure('0/AB', refused);
       vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Date.now() + intervalsPassed * (resourceLimits.books.rebuildIntervalMs + 1000));
+      vi.setSystemTime(Date.now() + resourceLimits.health.rereadUnhealthyMs + 1000);
       try {
         await fn();
       } finally {
         vi.useRealTimers();
       }
     };
+    const confirmedPosition = async () =>
+      (await cdcDb.execute<{ lsn: string }>(sql`SELECT confirmed_flush_lsn::text AS lsn FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}`))
+        .rows[0]?.lsn;
 
     it('rebuilds when a slot had to be made on a database with a history', async () => {
       await readingWithNoFence();
@@ -495,72 +494,59 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
       expect(await rebuildsSince(since)).toEqual([]);
     }, 60_000);
 
-    it('gives up the backlog of a worker stuck on a change, and has the books right after', async () => {
+    it('must not give up the backlog of a worker stuck on a change: it keeps its position, reports unhealthy and reads the backlog once the change passes', async () => {
       await readingWithNoFence();
       await stopReading();
       const backlog = await insertAttachments(2);
       const since = await dbNow();
-      stick();
+      const position = await confirmedPosition();
 
-      await pastTheInterval(() => settleLostCases(false));
+      await whileStalled(async () => {
+        expect(await ensureReplicationSlot()).toBe('present');
+        await settleLostCases(false);
+        expect(gradeWorker().status).toBe('unhealthy');
+        expect(gradeWorker().reasons).toContain('reading_again');
+      });
 
+      expect(await rebuildsSince(since)).toEqual([]);
+      expect(await confirmedPosition()).toBe(position);
+      expect(replicationState.failure).toMatchObject({ position: '0/AB', error: refused.message });
+
+      // The change passes: the slot still holds the backlog, and the first acknowledgement ends the failure.
+      await readAgain();
+      await recorded(backlog);
+      await waitFor(() => replicationState.failure === null, 10_000, 'the failure behind the worker');
+    }, 90_000);
+
+    it('drops the slot of a worker stuck on a change once the WAL reaches its bound, and rebuilds the books as for a lost slot', async () => {
+      await readingWithNoFence();
+      await stopReading();
+      const backlog = await insertAttachments(2);
+      const since = await dbNow();
+
+      await whileStalled(async () => {
+        metrics.lagBytes = resourceLimits.health.walLagUnhealthyBytes;
+        expect(await ensureReplicationSlot()).toBe('created');
+        await settleLostCases(true);
+      });
+
+      // The incident keeps the failure: where the worker stood, and why.
       const [incident, ...others] = await incidentsSince(since);
       expect(others).toEqual([]);
-      expect(incident).toMatchObject({ reason: 'stuck', positionFrom: '0/AB', error: refused.message });
-      expect(incident.positionTo).toMatch(/^[0-9A-F]+\/[0-9A-F]+$/);
+      expect(incident).toMatchObject({ reason: 'lost_slot', positionFrom: '0/AB', error: refused.message });
       expect(replicationState.failure).toBeNull();
-      // The status timer of the next subscription repeats what was acknowledged last: that must be where the slot is
-      // now, not a position behind it.
-      expect(lsnToBigInt(replicationState.lastAckedLsn ?? '0/0')).toBe(lsnToBigInt(incident.positionTo ?? '0/0'));
+      expect(metrics.lagBytes).toBeLessThan(resourceLimits.health.walLagUnhealthyBytes);
 
       await readAgain();
       const later = await insertAttachment();
       await recorded([later]);
       await fencePassed();
 
-      // The backlog was given up: no activity for it. The tables still hold its rows, so the count does too.
+      // The backlog was in the old slot: no activity for it. The tables still hold its rows, so the count does too.
       expect(await recordedFor(backlog)).toBe(0);
       expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
       expect(await verifyBooks()).toEqual([]);
     }, 90_000);
-
-    it('must not rebuild for a stuck worker again within the interval', async () => {
-      await readingWithNoFence();
-      await stopReading();
-      const since = await dbNow();
-
-      // The rebuild above was moments ago: a fault that repeats costs one rebuild per interval.
-      stick();
-      await settleLostCases(false);
-      expect(await rebuildsSince(since)).toEqual([]);
-      expect(replicationState.stuck).toBe(true);
-
-      // Positive control: past the interval it does.
-      await pastTheInterval(() => settleLostCases(false));
-      expect(await rebuildsSince(since)).toEqual(['stuck']);
-      expect(replicationState.failure).toBeNull();
-    }, 60_000);
-
-    it('rebuilds at its next start when the worker died after giving up a backlog', async () => {
-      await readingWithNoFence();
-      await stopReading();
-      const backlog = await insertAttachments(2);
-      stick();
-
-      // The slot moves, and the rebuild that should follow does not commit.
-      await withoutIncidents(() => pastTheInterval(() => expect(settleLostCases(false)).rejects.toThrow()));
-      expect(await findBooksRequest(cdcDb)).toBe('rebuild');
-
-      // The next start knows nothing of the failure: only the request says a rebuild is owed.
-      replicationState.clearFailure();
-      const since = await dbNow();
-      await settleLostCases(false);
-
-      expect(await rebuildsSince(since)).toEqual(['requested']);
-      expect(await findBooksRequest(cdcDb)).toBeNull();
-      expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
-      expect(await recordedFor(backlog)).toBe(0);
-    }, 60_000);
 
     it('rebuilds at its next start when the rebuild for a slot it had to make did not commit', async () => {
       await readingWithNoFence();
@@ -719,7 +705,7 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
       expect(((await syncState()).verifiedAt ?? '') > since).toBe(false);
 
       vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Date.now() + resourceLimits.books.rebuildIntervalMs + 1000);
+      vi.setSystemTime(Date.now() + resourceLimits.books.verifyRetryMs + 1000);
       try {
         await answerBooksRequests();
       } finally {

@@ -28,7 +28,7 @@ const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   await next();
 };
 
-/** Names the operation on the request before anything can refuse it, for the error handler's documented-status check. */
+/** Names the operation on the request before anything can refuse it, for the error handler's documented-status check where authoring rules are checked. */
 const operationMiddleware =
   (operationId: string): MiddlewareHandler<Env> =>
   async (ctx, next) => {
@@ -89,7 +89,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
- * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, `xCache`, the
+ * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
  * The route documents the error statuses its chain answers with (`chainErrors`) beside its own responses, where
@@ -104,9 +104,10 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const existing = [config.middleware ?? []].flat();
 
   // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
+  const operation = checksAuthoringRules ? [operationMiddleware(config.operationId)] : [];
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
-  const middleware = [operationMiddleware(config.operationId), ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
+  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
 
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',
@@ -163,7 +164,7 @@ type JsonResponse<S extends z.ZodType> = {
 
 /**
  * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs
- * from the schema's own example (development and tests refuse a copy of it) or where the schema is inline and has none.
+ * from the schema's own example or where the schema is inline and has none.
  * @param description A label of a few words, then optionally a blank line and a detail the docs show when the row opens.
  */
 export const json = <S extends z.ZodType>(description: string, schema: S, example?: unknown): JsonResponse<S> => ({

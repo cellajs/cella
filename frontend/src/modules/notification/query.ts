@@ -30,7 +30,7 @@ export const notificationsQueryOptions = () =>
 
 export const invalidateNotifications = () => queryClient.invalidateQueries({ queryKey: notificationKeys.list });
 
-/** Patches the cache so the badge reacts immediately; the `onSettled` refetch is the rollback. */
+/** Marks the cached rows read at once and sets the unread count only on mark-all (0), since the server counts rows past the page; the `onSettled` refetch brings its count and rolls back a failure. */
 export const useMarkNotificationsReadMutation = () =>
   useMutation({
     mutationFn: (body: { ids?: string[]; contextId?: string }) => markNotificationsRead({ body }),
@@ -47,8 +47,7 @@ export const useMarkNotificationsReadMutation = () =>
       };
 
       const items = previous.items.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
-      const unreadCount = items.filter((item) => !item.readAt).length;
-      queryClient.setQueryData(notificationKeys.list, { ...previous, items, unreadCount });
+      queryClient.setQueryData(notificationKeys.list, { ...previous, items, ...(!body.contextId && !body.ids?.length && { unreadCount: 0 }) });
     },
     onSettled: () => invalidateNotifications(),
   });

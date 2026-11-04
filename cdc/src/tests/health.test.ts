@@ -46,7 +46,6 @@ import { getHealthResponse, gradeWorker } from '../network/health';
 import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
 
-const { stuckAfter } = resourceLimits.reread;
 const limits = resourceLimits.health;
 const mb = 1024 * 1024;
 const gb = 1024 * mb;
@@ -104,12 +103,6 @@ describe('gradeWorker', () => {
   });
 
   describe('unhealthy: it needs a person, and fails a deploy', () => {
-    it('reports a stuck worker, and stuck wins over reading again', () => {
-      for (let read = 0; read < stuckAfter; read++) replicationState.recordFailure('0/50', refused);
-
-      expect(grade()).toEqual({ status: 'unhealthy', reasons: ['worker_stuck'] });
-    });
-
     it('reports what the setup check found, and not that replication stopped: the cause is the setup', () => {
       replicationState.subscribed = false;
       replicationState.setupProblems = ['role runtime_role lacks REPLICATION'];
@@ -124,24 +117,22 @@ describe('gradeWorker', () => {
       expect(grade()).toEqual({ status: 'unhealthy', reasons: ['api_away'] });
     });
 
-    it('must not stay degraded while one position fails for more than ten minutes, also when every failure passes: nothing else shows that stall', () => {
+    it('must not stay degraded while one position fails for more than ten minutes, whatever fails there: nothing else shows that stall', () => {
       vi.useFakeTimers();
       try {
-        // A statement that times out is a failure that passes, so the worker is never stuck on it.
         const timedOut = Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
-        replicationState.recordFailure('0/50', timedOut);
+        replicationState.recordFailure('0/50', refused);
 
         vi.advanceTimersByTime(limits.rereadUnhealthyMs - 1000);
         replicationState.recordFailure('0/50', timedOut);
         expect(grade()).toEqual({ status: 'degraded', reasons: ['reading_again'] });
 
         vi.advanceTimersByTime(2000);
-        replicationState.recordFailure('0/50', timedOut);
-        expect(replicationState.stuck).toBe(false);
+        replicationState.recordFailure('0/50', refused);
         expect(grade()).toEqual({ status: 'unhealthy', reasons: ['reading_again'] });
 
         // Progress ends it: the next position starts its own clock.
-        replicationState.recordFailure('0/60', timedOut);
+        replicationState.recordFailure('0/60', refused);
         expect(grade()).toEqual({ status: 'degraded', reasons: ['reading_again'] });
       } finally {
         vi.useRealTimers();
@@ -193,15 +184,25 @@ describe('gradeWorker', () => {
       }
     });
 
-    it('reports replication stopped when not subscribed with the API reachable: never unhealthy, however long', () => {
+    it('reports replication stopped when not subscribed with the API reachable, and a subscription that keeps failing as unhealthy after ten minutes', () => {
       vi.useFakeTimers();
       try {
-        // Another worker still holds the slot during a deploy, or the worker waits between two reads.
+        // The worker waits between two reads: no attempt failed.
         replicationState.subscribed = false;
-        expect(grade()).toEqual({ status: 'degraded', reasons: ['replication_stopped'] });
-
         vi.advanceTimersByTime(60 * 60_000);
         expect(grade()).toEqual({ status: 'degraded', reasons: ['replication_stopped'] });
+
+        // Another worker still holds the slot: a deploy hands it over within seconds.
+        const held = Object.assign(new Error('replication slot "cdc_slot" is active for PID 4242'), { code: '55006' });
+        replicationState.recordFailure(null, held);
+        expect(grade()).toEqual({ status: 'degraded', reasons: ['replication_stopped', 'reading_again'] });
+
+        // It never does: the worker reads nothing, as when it cannot make its slot or Postgres refuses the stream.
+        vi.advanceTimersByTime(limits.rereadUnhealthyMs - 1000);
+        replicationState.recordFailure(null, held);
+        expect(grade().status).toBe('degraded');
+        vi.advanceTimersByTime(2000);
+        expect(grade()).toEqual({ status: 'unhealthy', reasons: ['reading_again', 'replication_stopped'] });
       } finally {
         vi.useRealTimers();
       }
@@ -213,13 +214,7 @@ describe('gradeWorker', () => {
 
       replicationState.subscribed = false;
       expect(grade()).toEqual({ status: 'degraded', reasons: ['replication_stopped', 'reading_again'] });
-      expect(gradeWorker().details.failure).toEqual({
-        position: '0/50',
-        count: 1,
-        since: expect.any(String),
-        error: refused.message,
-        passing: false,
-      });
+      expect(gradeWorker().details.failure).toEqual({ position: '0/50', since: expect.any(String), error: refused.message });
     });
 
     it('reports a slot Postgres shows as inactive while the worker is subscribed', () => {

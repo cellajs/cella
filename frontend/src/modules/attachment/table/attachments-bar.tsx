@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
-import { useCanDeleteAttachment } from '~/modules/attachment/table/attachments-columns';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
@@ -14,6 +13,7 @@ import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/t
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
+import { useCan } from '~/modules/entities/use-can';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
@@ -38,7 +38,7 @@ export function AttachmentsTableBar({
   const isPublic = 'public' in channel && channel.public === true;
   const placement = { ...(!isOrganization && { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), public: isPublic };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
-  const canDelete = useCanDeleteAttachment(channel);
+  const can = useCan();
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -47,7 +47,7 @@ export function AttachmentsTableBar({
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
   // Bulk delete acts only on rows this user may delete; the badge shows that count when it differs from the selection.
-  const deletable = selected.filter(canDelete);
+  const deletable = selected.filter((row) => can('delete', 'attachment', row));
 
   const confirmDelete = () =>
     openDeleteDialog({

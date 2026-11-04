@@ -65,7 +65,7 @@ const withDefaults = ({
 
 const fetchOrganizationsPage = async (query: OrganizationFilters, limit: number, offset: number, signal?: AbortSignal) => {
   const result = await getOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
-  // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
+  // Cache enrichment adds the ancestor slugs.
   return result as { items: EnrichedOrganization[]; total: number };
 };
 

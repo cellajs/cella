@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { type AnyColumn, and, count, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type ChannelEntityType, type EntityType, hierarchy, isProduct, type ProductEntityType, roles } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -7,7 +7,6 @@ import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt, publishedRowsPredicate } from '#/db/utils/published-predicate';
-import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { zeroChannelCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -28,11 +27,7 @@ interface FindChannelCountersByKeysOpts {
 export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
   const { db } = ctx.var;
   return db
-    .select({
-      channelKey: channelCountersTable.channelKey,
-      counts: channelCountersTable.counts,
-      path: channelCountersTable.path,
-    })
+    .select({ channelKey: channelCountersTable.channelKey, counts: channelCountersTable.counts })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));
 };
@@ -164,30 +159,7 @@ export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: C
   return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
 };
 
-// Activity queries
-
-interface FindLatestActivityIdOpts {
-  organizationIds: string[];
-  entityTypes: EntityType[];
-}
-
-/** The newest activity id of the organizations' membership changes and of the given entity types; null when there is none. */
-export const findLatestActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestActivityIdOpts) => {
-  const { db } = ctx.var;
-  const result = await db
-    .select({ id: activitiesTable.id })
-    .from(activitiesTable)
-    .where(
-      and(
-        inArray(activitiesTable.organizationId, organizationIds),
-        or(eq(activitiesTable.resourceType, 'membership'), inArray(activitiesTable.entityType, entityTypes)),
-      ),
-    )
-    .orderBy(desc(activitiesTable.id))
-    .limit(1);
-
-  return result[0]?.id ?? null;
-};
+// Sync state queries
 
 /**
  * The generation of the sync books. The CDC worker moves it on whenever it rebuilt them, and a client that holds
@@ -265,15 +237,17 @@ interface FindChangedEntityDeltaIdsOpts {
   afterSeq: number;
   /** The rows the caller may read (`buildCollectionReadWhere`); unset reads every row of the organization. */
   readWhere?: SQL;
+  /** The most rows read, in no order. */
+  limit: number;
 }
 
 /**
- * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones. A
- * tombstone is read only in a transaction that includes deleted rows.
+ * The ids of an organization's rows stamped after `afterSeq`, split into live rows and soft-delete tombstones, and the
+ * highest seq among them (null when none). A tombstone is read only in a transaction that includes deleted rows.
  */
 export const findChangedEntityDeltaIds = async (
   ctx: DbContext,
-  { entityType, organizationId, afterSeq, readWhere }: FindChangedEntityDeltaIdsOpts,
+  { entityType, organizationId, afterSeq, readWhere, limit }: FindChangedEntityDeltaIdsOpts,
 ) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
@@ -281,14 +255,17 @@ export const findChangedEntityDeltaIds = async (
   // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
   const published = publishedRowsPredicate(table);
 
-  const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
-    SELECT id, ${deletedAtSelect} AS "deletedAt"
+  // pg returns an int8 `seq` as text.
+  const result = await db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
+    SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
+    LIMIT ${limit}
   `);
 
   const updatedIds: string[] = [];
   const deletedIds: string[] = [];
+  let untilSeq: number | null = null;
 
   for (const row of result.rows) {
     if (row.deletedAt) {
@@ -296,7 +273,8 @@ export const findChangedEntityDeltaIds = async (
     } else {
       updatedIds.push(row.id);
     }
+    untilSeq = Math.max(untilSeq ?? 0, Number(row.seq));
   }
 
-  return { updatedIds, deletedIds };
+  return { updatedIds, deletedIds, untilSeq };
 };

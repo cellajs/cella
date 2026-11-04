@@ -3,7 +3,6 @@ import { deleteOrganizations, getAttachments, getMyMemberships, getOrganization,
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb } from '#/db/db';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from '../fixtures';
@@ -78,7 +77,7 @@ describe('Archived organizations', async () => {
     // The close is how an open app learns the organization went away; its reconnect registers without it.
     await expectClosedWith(memberStream, 'access_changed');
     await openStream(member.id, session);
-    const [reconnected] = streamSubscriberManager.getByTopic<AppStreamSubscriber>(userTopic(member.id));
+    const [reconnected] = streamSubscriberManager.getByTopic(userTopic(member.id));
     expect([...reconnected.organizationIds]).toEqual([]);
     expectStillOpen(other.user.id, otherStream);
   });

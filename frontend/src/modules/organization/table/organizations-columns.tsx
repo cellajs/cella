@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { PencilIcon, ShieldUserIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,14 +15,19 @@ import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { DeleteQuestion } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
-import type { EnrichedOrganization } from '~/modules/organization/types';
+import type { OrganizationRow } from '~/modules/organization/types';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { ActorCell } from '~/modules/user/actor-cell';
+import { findMembership } from '~/query/enrichment/helpers';
 import { cn } from '~/utils/cn';
 
 const descendants = hierarchy.getOrderedDescendants('organization');
+const organizationRoles = hierarchy.getRoles('organization');
+// A membership types its role as any channel's; matched against this list, it types as an organization role.
+const asOrganizationRole = (role: string | undefined) => organizationRoles.find((organizationRole) => organizationRole === role);
 const lastChannel = descendants.filter(isChannel).at(-1);
 const firstProduct = descendants.find(isProduct);
 
@@ -35,8 +41,11 @@ export const openUpdateOrganizationSheet = (organization: Organization, triggerR
 
 export const useColumns = () => {
   const { t } = useTranslation();
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  // A role picked in the table shows until the save settles, then the caller's membership.
+  const roleOf = (row: OrganizationRow) => row.role ?? asOrganizationRole(findMembership(myMemberships?.items ?? [], row.id)?.role);
 
-  const columns: ColumnOrColumnGroup<EnrichedOrganization>[] = [
+  const columns: ColumnOrColumnGroup<OrganizationRow>[] = [
     CheckboxColumn,
     {
       key: 'name',
@@ -63,7 +72,7 @@ export const useColumns = () => {
         </Button>
       ),
     },
-    ellipsisColumn<EnrichedOrganization>(() => [
+    ellipsisColumn<OrganizationRow>(() => [
       {
         label: t('c:edit'),
         icon: PencilIcon,
@@ -91,25 +100,25 @@ export const useColumns = () => {
       placeholderValue: '-',
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row, column }) => (
-        <RenderEditStatus row={row} column={column}>
-          {row.membership?.role && t(row.membership.role)}
-        </RenderEditStatus>
-      ),
-      // Table rows carry the role from the cache; export rows fetched from the API carry it under `included`.
+      renderCell: ({ row, column }) => {
+        const role = roleOf(row);
+        return (
+          <RenderEditStatus row={row} column={column}>
+            {role && t(role)}
+          </RenderEditStatus>
+        );
+      },
+      // Export rows fetched from the API carry the role under `included`.
       exportValue: (row) => {
-        const role = row.membership?.role ?? row.included?.membership?.role;
+        const role = roleOf(row) ?? row.included?.membership?.role;
         return role && t(role);
       },
       renderEditCell: (props) => (
         <RenderEnumSelect
           {...props}
-          options={hierarchy.getRoles('organization')}
-          currentValue={props.row.membership?.role}
-          setValue={(row, role) => ({
-            ...row,
-            membership: { ...(row.membership ?? {}), role } as EnrichedOrganization['membership'],
-          })}
+          options={organizationRoles}
+          currentValue={roleOf(props.row)}
+          setValue={(row, role) => ({ ...row, role })}
           renderOption={(role) => t(role)}
         />
       ),
@@ -124,16 +133,16 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
       exportValue: (row) => row.createdBy?.name,
     },
-    ...hierarchy.getRoles('organization').map((role) => ({
-      ...countColumn<EnrichedOrganization>(`${role}Count`, {
+    ...organizationRoles.map((role) => ({
+      ...countColumn<OrganizationRow>(`${role}Count`, {
         name: t(`c:${role}`, { count: 2 }),
-        icon: role === 'admin' ? ShieldUserIcon : UserRoundIcon,
+        icon: role === hierarchy.getMostPrivilegedRole('organization') ? ShieldUserIcon : UserRoundIcon,
         get: (row) => row.included.counts?.membership[role],
       }),
       maxWidth: 140,
     })),
     ...descendants.map((type) =>
-      countColumn<EnrichedOrganization>(`${type}Count`, {
+      countColumn<OrganizationRow>(`${type}Count`, {
         name: t(`c:${type}`, { count: 2 }),
         hidden: type !== lastChannel && type !== firstProduct,
         get: (row) => (row.included.counts?.entities as Record<string, number>)?.[type],

@@ -6,9 +6,6 @@ const syncFallbackStaleTime = 5 * 60 * 1000;
 /** Mirrors stream health below realtime to avoid a circular import: catchup reconciles every connection, so only a hard stream error enables time-based freshness. */
 let syncStreamHealthy = true;
 
-/** Cleared on a delivery shortfall and restored on a clean catchup. */
-let syncDeliveryTrusted = true;
-
 /** True while the server says no CDC worker reads: the stream is open and brings nothing, so changes of others arrive only when the worker reads on. */
 let syncWorkerAway = false;
 
@@ -17,23 +14,15 @@ export function setSyncStreamHealthy(healthy: boolean): void {
   syncStreamHealthy = healthy;
 }
 
-export function setSyncDeliveryTrusted(trusted: boolean): void {
-  syncDeliveryTrusted = trusted;
-}
-
-export function isSyncDeliveryTrusted(): boolean {
-  return syncDeliveryTrusted;
-}
-
 /** Called with what the stream's keepalive says of the server's CDC worker. */
 export function setSyncWorkerAway(away: boolean): void {
   syncWorkerAway = away;
 }
 
 /**
- * StaleTime of the product queries the catchup pipeline covers, from the three flags the realtime stream sets: Infinity
- * while the stream is healthy, deliveries reconcile and the server's worker reads, otherwise the 5 minute fallback.
+ * StaleTime of the product queries the catchup pipeline covers, from the two flags the realtime stream sets: Infinity
+ * while the stream is healthy and the server's worker reads, otherwise the 5 minute fallback.
  */
 export function syncStaleTime(): number {
-  return syncStreamHealthy && syncDeliveryTrusted && !syncWorkerAway ? syncTrustedStaleTime : syncFallbackStaleTime;
+  return syncStreamHealthy && !syncWorkerAway ? syncTrustedStaleTime : syncFallbackStaleTime;
 }

@@ -1299,12 +1299,11 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
 /**
  * App stream catchup
  *
- * Fetch what a client missed since its last sync: frontiers and counts per declared view (prefix sets + org-sequence cursors in the body), and per organization the versions of its versioned signals.
+ * Fetch what a client missed since its last sync: a frontier per declared view (an organization, a product type and its org-sequence cursor in the body), and per organization the versions of its versioned signals.
  *
  * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· _entities · cella_
  *
  * @param {postAppCatchupData} options
- * @param {string=} options.body.cursor - `string` (optional)
  * @param {any[]=} options.body.views - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 413, 429
  */
@@ -2596,7 +2595,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
 /**
  * Get attachment
  *
- * Returns a single attachment by ID, from the entity detail cache. A write drops the row from it; a server process the drop does not reach answers from its cached row for up to 10 seconds.
+ * Returns a single attachment by ID.
  *
  * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
  *
@@ -2648,7 +2647,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Link attachment keys
  *
- * Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
+ * Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
  *
  * **PUT /{tenantId}/{organizationId}/attachments/{id}/keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· _attachments · cella · product_
  *

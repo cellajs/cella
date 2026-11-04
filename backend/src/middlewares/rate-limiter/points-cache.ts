@@ -44,7 +44,7 @@ export function tryFastConsume(key: string, cost: number, budget: number, window
   return 'allow';
 }
 
-/** Claims the unflushed consumes and marks them flushed; on a DB failure other than a 429 call {@link restoreDebt}. */
+/** Claims the unflushed consumes and marks them flushed: the caller counts them in the database with its own request. */
 export function takeDebt(key: string): number {
   const entry = pointsCache.get(key);
   if (!entry) return 0;
@@ -52,15 +52,6 @@ export function takeDebt(key: string): number {
   entry.flushed = entry.consumed;
   pointsCache.set(key, entry);
   return debt;
-}
-
-/** Returns debt that {@link takeDebt} claimed for a database consume that failed, so a later request settles it. */
-export function restoreDebt(key: string, debt: number): void {
-  if (debt <= 0) return;
-  const entry = pointsCache.get(key);
-  if (!entry) return;
-  entry.flushed = Math.max(0, entry.flushed - debt);
-  pointsCache.set(key, entry);
 }
 
 /**
@@ -75,8 +66,8 @@ export function windowSecondsLeft(key: string, windowMs: number): number {
 }
 
 /**
- * Adopts the database count after a consume, accepted or rejected. The count is shared by all processes, and so is the
- * time `msBeforeNext` its row or the block on it has left: the in-process window ends with it.
+ * Adopts the database count after a request reached it, accepted or refused. The count is shared by all processes, and
+ * so is the time `msBeforeNext` its row has left: the in-process window ends with it.
  */
 export function adoptDbCount(key: string, consumedPoints: number, msBeforeNext: number, windowMs: number): void {
   const now = Date.now();
@@ -84,8 +75,7 @@ export function adoptDbCount(key: string, consumedPoints: number, msBeforeNext: 
   // A store that reports no time left leaves the entry its own window
   const ownEnd = entry && now < entry.windowEnd ? entry.windowEnd : now + windowMs;
   const windowEnd = msBeforeNext > 0 ? now + msBeforeNext : ownEnd;
-  // A block longer than an hour keeps its entry until it ends
-  pointsCache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(maxWindowMs, Math.ceil(windowEnd - now)));
+  pointsCache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd });
 }
 
 /** Drops every in-process count: what a test does to start from an empty window. */

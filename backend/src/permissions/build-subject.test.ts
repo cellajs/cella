@@ -1,47 +1,26 @@
-import { appConfig, hierarchy } from 'shared';
+import { buildSubject, buildSubjectFromEntity, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { AppError } from '#/core/error';
-import { buildSubject, buildSubjectFromEntity, validateAncestorScope } from '#/permissions/build-subject';
+import { toClientError } from '#/lib/error';
 
-/** Backend delta only (the shared twin covers engine behavior): MissingAncestorError becomes AppError(400, 'missing_ancestor'). */
-describe('buildSubject (backend error translation)', () => {
-  const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
+/** The shared builders refuse an omitted ancestor id; the client reads that refusal as a 400 naming the level. */
+describe('a subject built without a required ancestor id', () => {
+  const product = hierarchy.productTypes.find((type) => hierarchy.getOrderedAncestors(type).length > 0);
   if (!product) throw new Error('No product entity types with ancestors found');
-  const ancestors = hierarchy.getOrderedAncestors(product);
+  const [missingChannel] = hierarchy.getOrderedAncestors(product);
 
-  const expectMissingScope = (fn: () => void) => {
+  const clientErrorOf = (build: () => unknown) => {
     try {
-      fn();
-      expect.unreachable('Expected AppError to be thrown');
-    } catch (e) {
-      expect(e).toBeInstanceOf(AppError);
-      expect((e as AppError).status).toBe(400);
-      expect((e as AppError).type).toBe('missing_ancestor');
-      expect((e as AppError).meta?.missingChannel).toBe(ancestors[0]);
+      build();
+    } catch (error) {
+      return toClientError(error);
     }
+    throw new Error('expected the subject build to throw');
   };
 
-  it('translates a missing ancestor id into AppError(400, missing_ancestor)', () => {
-    expectMissingScope(() => buildSubject(product, {}));
-  });
-
-  it('buildSubjectFromEntity translates through the same path', () => {
-    expectMissingScope(() => buildSubjectFromEntity(product, { id: 'e1' }));
-  });
-
-  it('passes valid input through to the shared engine unchanged', () => {
-    const channelIds = Object.fromEntries(ancestors.map((a) => [appConfig.entityIdColumnKeys[a], `test-${a}-id`]));
-    const subject = buildSubject(product, channelIds);
-    expect(subject.entityType).toBe(product);
-    for (const a of ancestors) expect(subject.channelIds[a]).toBe(`test-${a}-id`);
-  });
-
-  it('validateAncestorScope translates through the same path', () => {
-    expectMissingScope(() => validateAncestorScope({ entityType: product, channelIds: {} }));
-  });
-
-  it('validateAncestorScope passes a fully scoped subject through unchanged', () => {
-    const channelIds = Object.fromEntries(ancestors.map((a) => [a, `test-${a}-id`]));
-    expect(() => validateAncestorScope({ entityType: product, channelIds })).not.toThrow();
+  it.each([
+    ['buildSubject', () => buildSubject(product, {})],
+    ['buildSubjectFromEntity', () => buildSubjectFromEntity(product, { id: 'e1' })],
+  ])('answers 400 missing_ancestor from %s', (_builder, build) => {
+    expect(clientErrorOf(build)).toMatchObject({ status: 400, type: 'missing_ancestor', entityType: product, meta: { missingChannel } });
   });
 });

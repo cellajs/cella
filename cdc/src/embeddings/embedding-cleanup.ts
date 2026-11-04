@@ -7,7 +7,6 @@ import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 import { isSoftDeleteTransition } from './is-soft-delete-transition';
-import { isEmbeddingColumn } from './reference-columns';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
@@ -134,12 +133,18 @@ export async function cleanupEmbeddingReferences(
   }
 }
 
+/** Per host product: the embedding columns it declares. */
+const embeddingColumnsByHost = new Map<string, Set<string>>();
+for (const { hostProduct, hostColumn } of appConfig.productEmbeddings) {
+  embeddingColumnsByHost.set(hostProduct, (embeddingColumnsByHost.get(hostProduct) ?? new Set<string>()).add(hostColumn));
+}
+
 /**
  * Whether an update of a `hostProduct` row is the one `cleanupEmbeddingReferences` writes: its embedding columns only,
- * and no `updatedAt`, which an edit through the API always lists. The same column name on another table is no such
- * column.
+ * and no `updatedAt`, which every other write moves. The same column name on another table is no such column.
  */
-export function isReferenceCleanupWrite(hostProduct: string, changedFields: string[] | null): boolean {
-  if (!changedFields || changedFields.length === 0 || changedFields.includes('updatedAt')) return false;
-  return changedFields.every((field) => isEmbeddingColumn(hostProduct, field));
+export function isReferenceCleanupWrite(hostProduct: string, changedFields: string[]): boolean {
+  const columns = embeddingColumnsByHost.get(hostProduct);
+  if (!columns || changedFields.length === 0 || changedFields.includes('updatedAt')) return false;
+  return changedFields.every((field) => columns.has(field));
 }

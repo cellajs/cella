@@ -1,19 +1,23 @@
-import { type ChannelEntityType, draftVisibleTo, type EntityActionType, isChannel, type ProductEntityType } from 'shared';
+import {
+  buildSubjectFromEntity,
+  type ChannelEntityType,
+  checkAccessBatch,
+  draftVisibleTo,
+  type EntityActionType,
+  isChannel,
+  type ProductEntityType,
+} from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
-import { checkAccessBatch } from '#/permissions';
-import { accessFrom, actorFrom } from '#/permissions/access';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { accessFrom } from '#/permissions/access';
 import { type DraftChannelRow, draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import { inRequestScope } from '#/permissions/get-valid-channel';
 
 /** The draft rule of the single reads: a product draft shows to its author, a channel draft to whom its list shows it. */
 const draftShowsTo = (ctx: ActorContext, entityType: ChannelEntityType | ProductEntityType, row: Record<string, unknown>): boolean =>
-  isChannel(entityType)
-    ? draftChannelVisibleTo(entityType, row as DraftChannelRow, ctx.var.actor.bindings, actorFrom(ctx))
-    : draftVisibleTo(row, ctx.var.actor.id);
+  isChannel(entityType) ? draftChannelVisibleTo(entityType, row as DraftChannelRow, accessFrom(ctx)) : draftVisibleTo(row, ctx.var.actor.id);
 
 /**
  * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may `action`: the batch twin of
@@ -50,7 +54,7 @@ export const partitionByPermission = async (
   const subjects = entities.map((entity) => buildSubjectFromEntity(entityType, entity));
   const access = accessFrom(ctx);
   const actions = action === 'read' ? [action] : (['read', action] as const);
-  const decisions = actions.map((asked) => checkAccessBatch(access, asked, subjects).results);
+  const decisions = actions.map((asked) => checkAccessBatch(access, asked, subjects));
 
   // A uuid column matches an id in any letter case, so a requested id is compared in the case the row stores.
   const allowed = new Set(entities.map((entity) => entity.id).filter((id) => decisions.every((results) => results.get(id)?.allowed)));

@@ -14,7 +14,7 @@ const healthPollMs = 30_000;
 async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse | null> {
   try {
     const response = await fetch(healthUrl, { cache: 'no-store', signal });
-    // A 503 still carries the diagnostics: it names which critical component is down.
+    // A 503 still carries the diagnostics: it names which component is down.
     if (!response.ok && response.status !== 503) return null;
     return (await response.json()) as HealthResponse;
   } catch (error) {

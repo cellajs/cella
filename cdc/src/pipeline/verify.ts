@@ -16,7 +16,7 @@ import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
 import { runBetweenFlushes } from './handle-message';
 
-const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
+const { countTimeoutMs, verifyTimeoutMs, verifyRetryMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
 
 type Counters = Map<string, Record<string, number>>;
 type Incident = typeof syncIncidentsTable.$inferInsert;
@@ -24,8 +24,8 @@ type Incident = typeof syncIncidentsTable.$inferInsert;
 /** Why the books were rebuilt, as the incident says it. */
 type IncidentReason = Incident['reason'];
 
-/** What an incident says besides its reason: the positions of a backlog that was given up with its error, or what a verify found different. */
-type IncidentDetails = Pick<Incident, 'positionFrom' | 'positionTo' | 'error' | 'corrections'>;
+/** What an incident says besides its reason: the failure the worker read again from when its slot was lost, or what a verify found different. */
+type IncidentDetails = Pick<Incident, 'positionFrom' | 'error' | 'corrections'>;
 
 /**
  * Compares the stored counters with a count from the tables taken at one snapshot. A plain count must equal what was
@@ -116,9 +116,6 @@ function announceIncident(reason: IncidentReason, generation: number, details: I
  */
 let operations = 0;
 
-/** When the last rebuild was, in epoch ms: read from `sync_state` at the start, so the interval holds across a restart. */
-let lastRebuildAt = 0;
-
 /** True when the worker found a rebuild's fence in `sync_state` at its start: it ended before the stream had passed that rebuild. */
 let fenceLeftOpen = false;
 
@@ -170,7 +167,7 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
           const kept: SyncFence = { marker };
           await tx.update(syncStateTable).set({ fence: kept }).where(eq(syncStateTable.id, syncStateId));
           // A rebuild answers a request for one, whatever started it. A verify asked for during another rebuild still gets its
-          // own answer; one waiting when a stuck or lost slot writes its rebuild request is replaced by that rebuild.
+          // own answer; one waiting when a lost slot writes its rebuild request is replaced by that rebuild.
           await clearBooksRequest(tx, 'rebuild');
           return next;
         },
@@ -184,11 +181,10 @@ export async function rebuildBooks(reason: IncidentReason, details: IncidentDeta
     });
 
     announceIncident(reason, generation, details);
-    lastRebuildAt = Date.now();
     fenceLeftOpen = false;
-    // Only these two move past the failing position: the slot moved, or it is new. After any other rebuild the same
-    // change is read again, and its failure goes on counting.
-    if (reason === 'stuck' || reason === 'lost_slot') replicationState.clearFailure();
+    // Only a new slot starts past the failing position. After any other rebuild the same change is read again, and its
+    // failure goes on counting.
+    if (reason === 'lost_slot') replicationState.clearFailure();
   } finally {
     operations -= 1;
   }
@@ -260,19 +256,10 @@ export async function verifyBooks(): Promise<SyncCorrection[] | null> {
   }
 }
 
-/** A fault that repeats costs one rebuild and one refetch per interval, not one per failing change. */
-export function rebuildAllowed(): boolean {
-  return Date.now() - lastRebuildAt >= rebuildIntervalMs;
-}
-
-/**
- * Reads the sync state when the worker starts: the generation health reports, when the last rebuild was, and whether
- * a rebuild's fence was left open.
- */
+/** Reads the sync state when the worker starts: the generation health reports, and whether a rebuild's fence was left open. */
 export async function restoreBooksState(): Promise<void> {
   const [state] = await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, syncStateId));
   replicationState.generation = state?.generation ?? 1;
-  if (state?.rebuiltAt) lastRebuildAt = new Date(state.rebuiltAt).getTime();
   fenceLeftOpen = Boolean(state?.fence);
   booksStateRestored = true;
 }
@@ -335,7 +322,7 @@ export async function answerBooksRequests(): Promise<void> {
   if (requested === 'rebuild') return rebuildBooks('requested');
   // A verify that started and gave no answer stays asked for, and waits: a recount that cannot finish must not run
   // back to back.
-  if (Date.now() - verifyGaveUpAt < rebuildIntervalMs) return;
+  if (Date.now() - verifyGaveUpAt < verifyRetryMs) return;
   if ((await verifyBooks()) !== null) await clearBooksRequest(cdcDb, 'verify');
 }
 

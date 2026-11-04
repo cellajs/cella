@@ -3,9 +3,7 @@ import type { MembershipBase } from 'sdk';
 import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
-import { getCachedInvitedIds, getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
-import { enrichWithInvitation, enrichWithMembership } from '~/query/enrichment/membership';
-import { enrichWithPermissions } from '~/query/enrichment/permissions';
+import { getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
 import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
@@ -24,25 +22,12 @@ function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEn
   return ancestors;
 }
 
-/** The viewer's own state the enrichers read: memberships, and the invited channel ids once the invites list is cached. */
-type ViewerState = { memberships: MembershipBase[]; invitedIds: ReadonlySet<string> | null };
-
-/** Order matters: membership runs first, since permissions and ancestor-slugs read item.membership. Each enricher returns the same reference when unchanged. */
-function enrichItem(
-  item: EnrichableChannel,
-  { memberships, invitedIds }: ViewerState,
+function enrichListData(
+  data: EnrichableListData,
+  memberships: MembershipBase[],
   entityType: ChannelEntityType,
-  ancestors: readonly ChannelEntityType[],
   slugIndex: SlugIndex,
-): EnrichableChannel {
-  let result = enrichWithMembership(item, memberships);
-  result = enrichWithInvitation(result, invitedIds);
-  result = enrichWithPermissions(result, entityType, memberships);
-  result = enrichWithAncestorSlugs(result, ancestors, slugIndex);
-  return result;
-}
-
-function enrichListData(data: EnrichableListData, viewer: ViewerState, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableListData {
+): EnrichableListData {
   const ancestors = getExtendedAncestors(entityType);
   let dataChanged = false;
 
@@ -52,7 +37,7 @@ function enrichListData(data: EnrichableListData, viewer: ViewerState, entityTyp
     let pageChanged = false;
     const newItems = page.items.map((item) => {
       if (!item.id) return item;
-      const enriched = enrichItem(item, viewer, entityType, ancestors, slugIndex);
+      const enriched = enrichWithAncestorSlugs(item, memberships, ancestors, slugIndex);
       if (enriched !== item) pageChanged = true;
       return enriched;
     });
@@ -90,13 +75,13 @@ function setCacheData(queryKey: Query['queryKey'], data: unknown) {
   }
 }
 
-function enrichEntityType(entityType: ChannelEntityType, viewer: ViewerState, slugIndex: SlugIndex) {
+function enrichEntityType(entityType: ChannelEntityType, memberships: MembershipBase[], slugIndex: SlugIndex) {
   const cache = queryClient.getQueryCache();
 
   for (const query of cache.findAll({ queryKey: [entityType, 'list'] })) {
     const data = query.state.data as EnrichableListData | undefined;
     if (!data?.pages) continue;
-    const enriched = enrichListData(data, viewer, entityType, slugIndex);
+    const enriched = enrichListData(data, memberships, entityType, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 
@@ -104,7 +89,7 @@ function enrichEntityType(entityType: ChannelEntityType, viewer: ViewerState, sl
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
     const data = query.state.data as EnrichableChannel | undefined;
     if (!data?.id) continue;
-    const enriched = enrichItem(data, viewer, entityType, ancestors, slugIndex);
+    const enriched = enrichWithAncestorSlugs(data, memberships, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
 }
@@ -118,15 +103,14 @@ function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex
 
 /** Enriches each type once; one slug index serves them all, since enrichment never changes the ids and slugs it indexes. */
 function enrichTypes(types: readonly ChannelEntityType[]) {
-  // Loaded and empty still enriches: a system admin holds every action without a membership, and URLs need the slugs.
+  // Loaded and empty still enriches: URLs need the slugs.
   const memberships = getCachedMemberships();
   if (!memberships) return;
-  const viewer: ViewerState = { memberships, invitedIds: getCachedInvitedIds() };
 
   const slugIndex: SlugIndex = new Map();
   for (const type of types) {
     ensureAncestorSlugs(type, slugIndex);
-    enrichEntityType(type, viewer, slugIndex);
+    enrichEntityType(type, memberships, slugIndex);
   }
 }
 
@@ -147,8 +131,8 @@ export function initChannelEnrichment(): () => void {
     const { queryKey } = event.query;
     const entityType = queryKey[0];
 
-    // A membership or invitation change affects every channel entity.
-    if (entityType === 'me' && (queryKey[1] === 'memberships' || queryKey[1] === 'invites')) {
+    // A membership carries ancestor ids a row may lack (a menu parent), so a change reaches every channel entity.
+    if (entityType === 'me' && queryKey[1] === 'memberships') {
       enrichTypes(getRegisteredChannelTypes());
     } else if (typeof entityType === 'string' && isChannel(entityType) && (queryKey[1] === 'list' || queryKey[1] === 'detail')) {
       enrichTypeAndChildren(entityType);

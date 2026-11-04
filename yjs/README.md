@@ -100,17 +100,17 @@ A client that reaches the API but not the relay keeps working through the API's 
 
 After its last editor disconnects, a collab session stays warm for a while, so a reconnect reuses it. Then it saves and compacts once more and is forgotten. The document stays.
 
-A sweep, at boot and periodically, saves the logs no collab session holds: those a crash left behind and those posted over HTTP. Since every update was logged before it was broadcast, a crash loses nothing a client had sent.
+A sweep, at boot and periodically, saves the logs no collab session holds: those a crash left behind, those a session's last save could not write, and those posted over HTTP. Since every update was logged before it was broadcast, a crash loses nothing a client had sent.
 
 ## Durability and failure
 
 | What happens | Outcome |
 | --- | --- |
-| A client loses its connection | It keeps editing and reconnects with backoff. A document with unconfirmed edits is never thrown away, and the tab asks before it unloads. |
+| A client loses its connection | It keeps editing and reconnects with backoff. A document with unconfirmed edits is never thrown away, and the tab asks before it unloads while no per-user database keeps them. |
 | The client is offline | A document the user opened for editing is stored per user and stays editable, its unconfirmed edits included. One never opened is read-only. |
 | The relay is out of reach, the API is not | The editor continues [over HTTP](#over-http) and switches back once the socket works again. |
 | The relay ends a session for good | The client stops reconnecting and the editor turns read-only with a notice. Edits that can no longer be saved are offered to copy before they are discarded. |
-| The backend is unavailable, or refuses for a reason that can change | The log stays, and materialization is retried at the next window, when the collab session ends or by the sweep. |
+| The backend is unavailable, or refuses the write | The log stays, and materialization is retried at the next window, when the collab session ends and then by every sweep. |
 | The relay restarts | Clients reconnect into the same history, and the sweep at boot saves what the crash left. |
 | Access revoked | The socket closes when its token expires and cannot reconnect. When no editor of a pending save may still update the entity, the log stays until a write succeeds. |
 | Entity deleted | Its document is retired: collab sessions end at once and each client stops, offering the edits it never saved to copy. |

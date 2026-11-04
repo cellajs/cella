@@ -197,7 +197,7 @@ export function outsideUpdate(read: YjsDocumentRead, description: string): Uint8
 
 /** Appends an outside write's update as the backend does: a server-origin row, notified unless `notify` is false. */
 export function appendOutsideWrite(scope: YjsDocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
-  return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
+  return withRlsTx(scope.tenantId, (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
 }
 
 /**
@@ -211,7 +211,7 @@ export async function pushOverHttp(
   userId: string,
   { notice = true }: { notice?: boolean } = {},
 ): Promise<AppendResult> {
-  const result = await withRlsTx(scope.tenantId, userId, (tx) =>
+  const result = await withRlsTx(scope.tenantId, (tx) =>
     appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId, generation, notify: false }),
   );
   if (notice && result.status === 'appended') {
@@ -231,7 +231,7 @@ export function recordOutsideWrite(
   description: string,
   { notify = true, updateEntity = false }: { notify?: boolean; updateEntity?: boolean } = {},
 ): Promise<AppendResult | null> {
-  return withRlsTx(scope.tenantId, '', async (tx) => {
+  return withRlsTx(scope.tenantId, async (tx) => {
     if (updateEntity) {
       await tx.execute(
         sql`UPDATE ${sql.raw(`"${toTableName(scope.entityType)}"`)} SET "description" = ${description} WHERE "id" = ${scope.entityId}`,

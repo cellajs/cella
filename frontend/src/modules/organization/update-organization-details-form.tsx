@@ -6,8 +6,8 @@ import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
+import { useCanUploadAttachments } from '~/modules/attachment/helpers/use-can-upload-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -35,6 +35,7 @@ interface UpdateOrganizationDetailsFormProps {
 export function UpdateOrganizationDetailsForm({ organization, callback }: UpdateOrganizationDetailsFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
+  const canUpload = useCanUploadAttachments(organization);
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -102,7 +103,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
               trailingBlock: false,
               excludeBlockTypes: ['checklistItem', 'notify'],
               className: cn(blockNoteFieldClass, 'max-h-[50vh] overflow-auto bg-background'),
-              baseFilePanelProps: canUploadAttachments(organization)
+              baseFilePanelProps: canUpload
                 ? {
                     mediaMode: 'private-attachment',
                     tenantId: organization.tenantId,

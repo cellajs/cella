@@ -1,7 +1,7 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { hierarchy } from 'shared';
 import { entityCountHomePrefix, entityCountPrefix, signalVersionPrefix } from '#/modules/entities/counter-keys';
-import { versionedSignals } from '#/modules/entities/stream/versioned-signals';
+import { versionedSignalsOf } from '#/modules/entities/stream/versioned-signals';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
 import { isCountableRow } from './countability';
@@ -17,8 +17,8 @@ export interface CountDelta {
 
 /**
  * Entity deltas apply to the organization and every populated ancestor; product activity stamps
- * apply only at the home channel. Only live, published rows participate. Every change of a table
- * with versioned signals also moves their versions on its organization's row.
+ * apply only at the home channel. Only live, published rows participate. A change that moves versioned signals
+ * moves their versions on its organization's row.
  */
 export function getCountDeltas(
   tableMeta: TableMeta,
@@ -28,9 +28,9 @@ export function getCountDeltas(
   h: EntityHierarchy = hierarchy,
 ): CountDelta[] {
   const deltas = getTableDeltas(tableMeta, activity, newRow, oldRow, h);
-  const signalTypes = versionedSignals[tableMeta.type] ?? [];
-  if (!activity.organizationId || signalTypes.length === 0) return deltas;
-  const versions = Object.fromEntries(signalTypes.map((type) => [`${signalVersionPrefix}${type}`, 1]));
+  const signals = versionedSignalsOf(tableMeta.type, activity.action, h);
+  if (!activity.organizationId || signals.length === 0) return deltas;
+  const versions = Object.fromEntries(signals.map(({ type }) => [`${signalVersionPrefix}${type}`, 1]));
   return [...deltas, { channelKey: activity.organizationId, deltas: versions }];
 }
 
@@ -84,10 +84,8 @@ function getTableDeltas(
  * = null (invisible to counters and stamps).
  */
 function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
-  if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
-  if (action === 'delete') return isCountableRow(newRow) ? 'delete' : null;
-  // REPLICA IDENTITY FULL always carries the old row on updates; fallback only.
-  if (!oldRow) return isCountableRow(newRow) ? 'update' : null;
+  // A create or a delete carries one row image; the parser refuses an update without its old one.
+  if (action !== 'update' || !oldRow) return isCountableRow(newRow) ? action : null;
   const wasCountable = isCountableRow(oldRow);
   const nowCountable = isCountableRow(newRow);
   if (wasCountable && !nowCountable) return 'delete';

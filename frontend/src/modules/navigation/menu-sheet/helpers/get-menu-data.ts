@@ -18,12 +18,11 @@ const menuListPages = 50;
 export async function getMenuData() {
   const userId = getCurrentUser().id;
 
-  // Memberships come first: the cache subscriber (initChannelEnrichment) reads from this cache.
+  // The menu joins each list row with the user's membership of it.
   const membershipsOptions = myMembershipsQueryOptions();
   await queryClient.query({ ...membershipsOptions, staleTime: 'static' });
   void queryClient.query(membershipsOptions).catch(() => {});
 
-  // Fetch entity lists; the subscriber enriches them with memberships on cache write.
   await Promise.all(
     appConfig.channelEntityTypes.map(async (entityType) => {
       const listQuery = getChannelListQuery(entityType);

@@ -14,19 +14,9 @@ import { log } from '#/utils/logger';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
-/**
- * Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it with `materialized` for a collaborative
- * description the relay posts. `serverOrigin` stamps the fields with the server clock, for a transaction the server
- * built (the Yjs relay).
- */
-export async function updateAttachmentOp(
-  ctx: ActorContext,
-  id: string,
-  input: UpdateAttachmentInput,
-  opts: { serverOrigin?: boolean; materialized?: boolean } = {},
-) {
+/** Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it for a collaborative description the relay posts. */
+export async function updateAttachmentOp(ctx: ActorContext, id: string, input: UpdateAttachmentInput) {
   const { ops: rawOps, stx } = input;
-  const { serverOrigin, materialized } = opts;
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
@@ -35,23 +25,20 @@ export async function updateAttachmentOp(
 
     attachmentContract.assertBlockFields(rawOps, entity.organizationId);
 
-    // Server-origin writes carry no client field timestamps, so every changed scalar gets a fresh server HLC.
-    const resolved = serverOrigin
-      ? attachmentContract.resolveServerUpdateOps(entity, rawOps)
-      : attachmentContract.resolveUpdateOps(entity, rawOps, stx);
+    const resolved = attachmentContract.resolveUpdateOps(entity, rawOps, stx);
 
     const values = {
       ...(resolved.changed ? resolved.values : {}),
       // A changed document re-derives the search column, on client edits and Yjs materializations alike.
       ...(resolved.changed && resolved.values.description !== undefined ? { keywords: deriveDocument(resolved.values.description).keywords } : {}),
       ...updateStamps(actorId),
-      // The stx names the fields this write wrote, for CDC and the yjs module's handler: a write that changes none keeps
-      // the stored stx without the earlier write's set.
+      // The stx names the fields this write wrote, for the yjs module's handler: a write that changes none keeps the
+      // stored stx without the earlier write's set.
       stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
     };
     const updated = await updateAttachment(txCtx, { id, values });
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
-    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated], materialized });
+    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;
   });
 

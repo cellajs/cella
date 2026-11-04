@@ -1,14 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
-import {
-  docKey,
-  yjsAwarenessMaxClients,
-  yjsCleanupDelayMs,
-  yjsCleanupMaxAttempts,
-  yjsLiveStampMs,
-  yjsMaxBufferedBytes,
-  yjsMessageTypes,
-} from '../constants';
+import { docKey, yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsLiveStampMs, yjsMaxBufferedBytes, yjsMessageTypes } from '../constants';
 import { deleteDocument, stampDocumentLive } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
@@ -178,8 +170,8 @@ export function endCollab(collab: CollabSession): void {
   for (const ws of collab.clients) ws.close(1013, 'Document retired');
 }
 
-/** How finishing a session ended: a socket joined it, the backend did not take its log yet or refused it, or its log is written or gone. */
-type FinishOutcome = 'joined' | 'retry' | 'kept' | 'done';
+/** How finishing a session ended: a socket joined it, its log is not written, or its log is written or gone. */
+type FinishOutcome = 'joined' | 'retry' | 'done';
 
 /** A socket joined since the finish started: it is still in the session, or its leave armed a newer cleanup. */
 function joinedSince(collab: CollabSession): boolean {
@@ -207,7 +199,6 @@ async function finishCollab(collab: CollabSession): Promise<FinishOutcome> {
     // A socket joined while the compaction wrote: its session goes on with the rows.
     if (joinedSince(collab)) return 'joined';
     if (result === 'retry') return 'retry';
-    if (result === 'permanent') return 'kept';
     if (result === 'gone') {
       try {
         await deleteDocument(collab.scope);
@@ -243,9 +234,8 @@ export interface ReleasedClient {
 /**
  * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
  * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
- * A retryable failure keeps the log and retries, up to yjsCleanupMaxAttempts, and a permanent refusal or the last
- * failed attempt keeps it for the next session or the sweep. A socket that joins while cleanup runs keeps the
- * session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
+ * A log the backend did not write stays for the next session or the sweep. A socket that joins while cleanup runs keeps
+ * the session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.
  */
@@ -262,7 +252,6 @@ export function leaveCollab(doc: YjsDocKey, ws: WebSocket): ReleasedClient[] {
   }
   if (collab.clients.size > 0) return released;
 
-  let attempts = 0;
   const cleanup = async () => {
     collab.cleanupTimer = undefined;
     if (collabSessions.get(key) !== collab || collab.clients.size > 0) return;
@@ -271,19 +260,10 @@ export function leaveCollab(doc: YjsDocKey, ws: WebSocket): ReleasedClient[] {
       collab.compactTimer = undefined;
     }
     collab.compactDueAt = undefined;
-    attempts++;
 
     const outcome = await finishCollab(collab);
     if (outcome === 'joined') return;
-    if (outcome === 'retry') {
-      if (attempts < yjsCleanupMaxAttempts) {
-        log.warn(`Materialize unavailable for ${key}: keeping the log, retrying cleanup`);
-        collab.cleanupTimer = setTimeout(cleanup, yjsCleanupDelayMs);
-        return;
-      }
-      log.error(`Materialize failed ${attempts} times for ${key}: keeping the log for the next session or sweep`);
-    }
-    if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping the log for the next session`);
+    if (outcome === 'retry') log.warn(`Log of ${key} not written at cleanup: keeping it for the next session or the sweep`);
     dropCollab(collab);
   };
 

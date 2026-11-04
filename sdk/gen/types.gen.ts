@@ -114,42 +114,46 @@ export type StxBase = {
 };
 
 /**
- * A live change of product rows, naming the rows, their path and sequence range but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
  */
 export type StreamChange = {
   /**
-   * Change kind; moveOut = the row left this path (reparent) and is no longer readable there
+   * Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment';
-  subjectId: string;
   organizationId: string;
   tenantId: string | null;
-  /**
-   * Id path of the affected rows (root-first ancestor ids); moveOut carries the OLD path
-   */
-  path: string | null;
-  /**
-   * Org-sequence position (one order per organization, shared across product entity types)
-   */
-  seq: number | null;
   /**
    * Deepest channel entity ID above the rows, which groups unseen counts
    */
   channelId: string | null;
-  stx: StxBase | null;
   /**
-   * Actor whose write the activity records; a tab takes the change as its own echo only when this is its signed-in user
+   * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
    */
-  actorId: string | null;
+  rows: Array<{
+    subjectId: string;
+    /**
+     * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
+     */
+    seq: number | null;
+    stx: StxBase | null;
+    /**
+     * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
+     */
+    actorId: string | null;
+  }>;
   /**
-   * Last sequence position for a batched change: client should fetch range
+   * Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out
    */
-  batchUntilSeq: number | null;
-  /**
-   * Exact row count for batches: sequence ranges of different paths may interleave
-   */
-  count: number | null;
+  overflow: {
+    afterSeq: number | null;
+    untilSeq: number | null;
+    /**
+     * The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type
+     */
+    subjectIds: Array<string> | null;
+  } | null;
   /**
    * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
    */
@@ -162,14 +166,6 @@ export type StreamChange = {
      * Embedded product type whose change triggered the propagation
      */
     embeddedProduct: 'attachment';
-    /**
-     * Host product type whose cache should be patched
-     */
-    hostProduct: 'attachment';
-    /**
-     * Column on the host product that embeds the changed product
-     */
-    hostColumn: string;
     /**
      * Embedded row IDs whose cached copies in host rows need a refresh
      */
@@ -195,9 +191,9 @@ export type StreamSignal = {
    */
   subjectId: string | null;
   /**
-   * Counter value of a versioned signal, when the sender knows it; catchup returns the stored one
+   * A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again
    */
-  version: number | null;
+  version?: number;
 };
 
 /**
@@ -2250,27 +2246,11 @@ export type GetAppStreamResponses = {
 export type PostAppCatchupData = {
   body: {
     /**
-     * Id of the last activity the client received (its commit position and index). Omit on first sync.
-     */
-    cursor?: string;
-    /**
-     * Client-declared views: prefix set + entity types + org-sequence cursor per view
+     * Client-declared views: an organization, a product type and its org-sequence cursor per view
      */
     views?: Array<{
-      /**
-       * Client-chosen stable view key, echoed back verbatim to correlate responses
-       */
-      key: string;
       organizationId: string;
-      /**
-       * Id path prefixes this view covers (root-first ids, slash-joined)
-       */
-      prefixes: Array<string>;
-      entityTypes: Array<'attachment'>;
-      /**
-       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.
-       */
-      depth?: 'self' | 'subtree';
+      entityType: 'attachment';
       /**
        * Org-sequence position this view has fully ingested (0 = baseline not yet established)
        */
@@ -2325,14 +2305,6 @@ export type PostAppCatchupResponses = {
            */
           embeddedProduct: 'attachment';
           /**
-           * Host product type whose cache should be patched
-           */
-          hostProduct: 'attachment';
-          /**
-           * Column on the host product that embeds the changed product
-           */
-          hostColumn: string;
-          /**
            * Embedded row IDs whose cached copies in host rows need a refresh
            */
           update: Array<string>;
@@ -2340,6 +2312,14 @@ export type PostAppCatchupResponses = {
            * Embedded row IDs (deleted or soft deleted) that host rows drop
            */
           remove: Array<string>;
+          /**
+           * Set when more embedded rows changed than one hint names: `update` and `remove` are then empty, and the host lists of the organization refetch
+           */
+          overflow?: boolean;
+          /**
+           * Highest sequence position among the rows the hint read, which the caller may all read: a client whose view of the embedded product is opaque takes it as that view's cursor
+           */
+          untilSeq?: number;
         }>;
       };
     };
@@ -2347,28 +2327,14 @@ export type PostAppCatchupResponses = {
      * Per-view answers for client-declared views (same order as the request)
      */
     views?: Array<{
-      /**
-       * The client-supplied view key, echoed verbatim
-       */
-      key: string;
+      organizationId: string;
+      entityType: 'attachment';
       status: 'ok' | 'opaque' | 'forbidden';
       /**
-       * Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})
+       * Newest sequence position of the type in the organization
        */
-      frontiers?: {
-        [key: string]: number;
-      };
-      /**
-       * Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})
-       */
-      counts?: {
-        [key: string]: number;
-      };
+      frontier?: number;
     }>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
     /**
      * Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines
      */

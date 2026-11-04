@@ -14,47 +14,39 @@ export const isBenchTraffic = (userId?: string, tenantId?: string): boolean => {
   return tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix) === true;
 };
 
-/** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
-type LogContext =
-  | Context<Env>
-  | { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId' | 'sessionId'>> }
-  | null;
-
-const logContextStorage = new AsyncLocalStorage<LogContext>();
+const requestStorage = new AsyncLocalStorage<Context<Env>>();
 
 /**
- * Ambient ids for the log facade, installed per request by contextMiddleware. It follows await chains,
- * not event emitters or timers, so code invoked from detached callbacks logs without ids.
+ * Binds the request to everything its handler runs, installed per request by the global middleware chain: the log
+ * facade reads its ids, `ambientRequest` the request itself. It follows await chains, not event emitters or timers, so
+ * code invoked from detached callbacks runs outside it.
  */
-export const runWithLogContext = <T>(ctx: LogContext, fn: () => T): T => logContextStorage.run(ctx, fn);
+export const runWithLogContext = <T>(ctx: Context<Env>, fn: () => T): T => requestStorage.run(ctx, fn);
 
-/** The request this code runs in, from the same store; null in a job, a CDC listener or a detached callback. */
-export const ambientRequest = (): Context<Env> | null => {
-  const store = logContextStorage.getStore();
-  return store && 'req' in store ? store : null;
-};
+/** The request this code runs in; null in a job, a CDC listener or a detached callback. */
+export const ambientRequest = (): Context<Env> | null => requestStorage.getStore() ?? null;
 
-const extractBase = (ctx: LogContext) => {
-  if (!ctx?.var) return {};
+const extractBase = (ctx: Context<Env> | null) => {
+  if (!ctx) return {};
   // Pino leaves undefined values out of the line, so unset ids need no guard.
-  const { tenantId, userId, organizationId, requestId, sessionId } = ctx.var;
-  return { tenantId, userId, organizationId, requestId, sessionId };
+  const { tenantId, user, organizationId, requestId, session } = ctx.var;
+  return { tenantId, userId: user?.id, organizationId, requestId, sessionId: session?.id };
 };
 
 const logAt =
   (severity: Severity) =>
   (msg: string, meta?: LogMeta): void => {
     // Read at log time, so ids set by guards after the context middleware are picked up.
-    const ctx = logContextStorage.getStore() ?? null;
+    const ctx = ambientRequest();
 
     // Always log errors; for everything else, suppress bench traffic.
     const isError = severity === 'error' || severity === 'fatal';
-    if (!isError && ctx?.var && isBenchTraffic(ctx.var.userId, ctx.var.tenantId)) return;
+    if (!isError && ctx && isBenchTraffic(ctx.var.user?.id, ctx.var.tenantId)) return;
 
     baseLog[severity](msg, { ...extractBase(ctx), ...meta });
   };
 
-/** Log facade: `log.warn('msg', { err, ...meta })`, binding ids from the ambient request/job context. */
+/** Log facade: `log.warn('msg', { err, ...meta })`, binding ids from the ambient request. */
 export const log = {
   trace: logAt('trace'),
   debug: logAt('debug'),

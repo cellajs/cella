@@ -56,7 +56,7 @@ export async function runSyncService(signal: AbortSignal): Promise<void> {
 async function syncMenuItem(item: UserMenuItem): Promise<void> {
   if (item.membership.archived) return;
 
-  // For an organization the entity is the org itself; a channel below it gets organizationId from enrichment.
+  // For an organization the entity is the org itself; a channel below it carries organizationId on its row.
   const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
   const queries = buildEntitySyncQueries({
     targetEntityId: item.id,

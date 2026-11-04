@@ -11,7 +11,7 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
 
 /**
- * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates
+ * Only subscribers losing read access receive `moveOut`, under the old home channel. The draft veto creates
  * a configuration-independent visibility difference through the same permission path.
  */
 const org = 'org-moveout-a';
@@ -62,23 +62,26 @@ const row = (id: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-/** A product update as the bus delivers it: the activity of its first row, and its rows, each moved one with where it was. */
-const updateEvent = (rows: ActivityRow[]): AppStreamProductEvent =>
+/** A product update as the bus delivers it: its rows, each with the activity of its write, a moved one with where it was. */
+const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): AppStreamProductEvent =>
   ({
-    id: 'activity-mo-1',
     type: 'attachment.updated',
     action: 'update',
     entityType: 'attachment',
     resourceType: null,
     tableName: 'attachments',
-    subjectId: rows[0].rowData.id,
     tenantId: 'tenant-1',
     organizationId: org,
     ...nullAncestorScopes,
     rowData: null,
-    rows,
+    rows: rows.map((row) => ({
+      activityId: `act-${row.rowData.id}`,
+      userId: 'writer-user',
+      changedFields: null,
+      stx: { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} },
+      ...row,
+    })),
     trace: null,
-    stx: { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} },
   }) as unknown as AppStreamProductEvent;
 
 afterEach(() => {
@@ -88,7 +91,7 @@ afterEach(() => {
 });
 
 describe('dispatchMoveOuts', () => {
-  it('sends moveOut with the OLD path to subscribers who lost readability', async () => {
+  it('sends moveOut to subscribers who lost readability', async () => {
     const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
@@ -108,14 +111,10 @@ describe('dispatchMoveOuts', () => {
     expect(member.received[0]).toMatchObject({
       action: 'moveOut',
       productType: 'attachment',
-      subjectId: 'att-1',
       // Computed from movedFrom's ancestor ids; org-homed attachments resolve to the org id.
-      path: org,
-      seq: 7,
-      // The removal is the payload: no range to fetch, and no stx although the event has one.
-      batchUntilSeq: null,
-      count: 1,
-      stx: null,
+      channelId: org,
+      // The removal is the payload: no stx or writer although the row has them, so no tab takes it for its echo.
+      rows: [{ subjectId: 'att-1', seq: 7, stx: null, actorId: null }],
     });
   });
 
@@ -141,7 +140,7 @@ describe('dispatchMoveOuts', () => {
     expect(member.received).toHaveLength(0);
   });
 
-  it('sends one moveOut per moved row of an event of several rows, to those who lost that row', async () => {
+  it('sends each reader one moveOut of the moved rows it lost, and none of the others', async () => {
     const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
@@ -163,7 +162,32 @@ describe('dispatchMoveOuts', () => {
     );
 
     expect(member.received).toHaveLength(1);
-    // It names the moved row, with the lowest seq of the event.
-    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: org, seq: 7, batchUntilSeq: null, count: 1 });
+    // It names the moved row alone, with its own seq.
+    expect(member.received[0]).toMatchObject({ action: 'moveOut', rows: [{ subjectId: 'att-2', seq: 8 }] });
+  });
+
+  it('sends each reader one frame for a reparent of 30 rows, naming them by id past the row cap', async () => {
+    const admins = ['admin-a', 'admin-b'].map((userId) => fakeSubscriber([membership(org, 'admin', userId)], userId));
+    const author = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
+    for (const { subscriber } of [...admins, author]) streamSubscriberManager.register(subscriber);
+
+    // The rows become drafts, which nobody reads; the member authored the first 15, so it read them under read:'own' too.
+    const ids = Array.from({ length: 30 }, (_, index) => `att-${index}`);
+    const rows = ids.map((id, index) => ({
+      seq: index + 1,
+      rowData: row(id, { publishedAt: null }),
+      movedFrom: row(id, { publishedAt: '2026-07-01T00:00:00Z', createdBy: index < 15 ? 'member-user' : 'author-user' }),
+    }));
+    await dispatchMoveOuts(updateEvent(rows));
+
+    for (const { received } of admins) {
+      expect(received).toEqual([
+        expect.objectContaining({ action: 'moveOut', channelId: org, rows: [], overflow: { afterSeq: null, untilSeq: null, subjectIds: ids } }),
+      ]);
+    }
+    // 15 rows or all 30, by the member policy: one frame either way.
+    expect(author.received).toHaveLength(1);
+    const named = [...author.received[0].rows.map(({ subjectId }) => subjectId), ...(author.received[0].overflow?.subjectIds ?? [])];
+    expect(named).toEqual(expect.arrayContaining(ids.slice(0, 15)));
   });
 });

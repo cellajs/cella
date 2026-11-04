@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,10 +9,12 @@ import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DraftBanner } from '~/modules/entities/draft-banner';
+import { useCan } from '~/modules/entities/use-can';
 import { useChannelTabOptions } from '~/modules/entities/use-channel-tab-options';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { PublishOrganizationForm } from '~/modules/organization/publish-organization-form';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
+import { findMembership } from '~/query/enrichment/helpers';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
@@ -25,11 +27,12 @@ interface OrganizationPageProps {
 export function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
   const { t } = useTranslation();
 
-  // Organization is enriched with membership via cache subscription
   const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
+  const membership = findMembership(myMemberships?.items ?? [], organization.id);
 
-  const resolveCan = useResolveCan();
-  const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
+  const can = useCan();
+  const canUpdate = can('update', 'organization', organization);
   const tabOptions = useChannelTabOptions(organization);
 
   const { mutate } = useOrganizationUpdateMutation();
@@ -57,10 +60,10 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
         onCoverUpdate={updateCover}
         onCoverDelete={deleteCover}
         panel={
-          organization.membership && (
+          membership && (
             <Suspense>
               <div className="flex items-center p-2">
-                <JoinedButton channel={organization} role={organization.membership.role} iconOnlyOnPhone />
+                <JoinedButton channel={organization} role={membership.role} iconOnlyOnPhone />
               </div>
             </Suspense>
           )

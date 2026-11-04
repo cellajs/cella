@@ -58,7 +58,7 @@ describe('a keepalive from Postgres', () => {
     const service = subscribe();
     replicationState.lastAckedLsn = '0/AB';
     // A source transaction is open: the keepalive position lies past what the worker has recorded.
-    await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+    await handleDataMessage('0/100', { tag: 'begin', xid: 7, commitLsn: '0/1E0', commitTime: BigInt(0) });
     service.emit('heartbeat', '0/1F0', Date.now(), asked);
     await settle();
 
@@ -94,13 +94,13 @@ describe('a keepalive from Postgres', () => {
     it('holds the position while a transaction is open, then acknowledges it at the commit', async () => {
       const service = subscribe();
       replicationState.lastAckedLsn = '0/AB';
-      await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+      await handleDataMessage('0/100', { tag: 'begin', xid: 7, commitLsn: '0/1E0', commitTime: BigInt(0) });
       service.emit('heartbeat', '0/1F0', Date.now(), true);
       await settle();
 
       expect(acknowledge).not.toHaveBeenCalled();
 
-      await handleDataMessage('0/1E0', { tag: 'commit' } as never);
+      await handleDataMessage('0/1E0', { tag: 'commit', commitEndLsn: '0/1E0' } as never);
       await settle();
 
       expect(acknowledge.mock.calls).toEqual([['0/1F0']]);
@@ -110,10 +110,10 @@ describe('a keepalive from Postgres', () => {
       const service = subscribe();
       replicationState.lastAckedLsn = '0/AB';
       // Two rows of a table outside the registry: the parser drops both, and nothing reaches a flush.
-      await handleDataMessage('0/B0', { tag: 'begin', xid: 9 } as never);
+      await handleDataMessage('0/B0', { tag: 'begin', xid: 9, commitLsn: '0/E0', commitTime: BigInt(0) });
       await handleDataMessage('0/C0', dmlMessage('update', 'not_tracked', { id: 'row-1' }));
       await handleDataMessage('0/D0', dmlMessage('update', 'not_tracked', { id: 'row-2' }));
-      await handleDataMessage('0/E0', { tag: 'commit' } as never);
+      await handleDataMessage('0/E0', { tag: 'commit', commitEndLsn: '0/E0' } as never);
       await settle();
       expect(acknowledge).not.toHaveBeenCalled();
 
@@ -131,10 +131,10 @@ describe('a keepalive from Postgres', () => {
       // The keepalive is announced at once; the data messages reach their handlers one after another, with no turn
       // of the event loop between them.
       service.emit('heartbeat', '0/1F0', Date.now(), false);
-      await handleDataMessage('0/B0', { tag: 'commit' } as never);
-      await handleDataMessage('0/C0', { tag: 'begin', xid: 9 } as never);
+      await handleDataMessage('0/B0', { tag: 'commit', commitEndLsn: '0/B0' } as never);
+      await handleDataMessage('0/C0', { tag: 'begin', xid: 9, commitLsn: '0/E0', commitTime: BigInt(0) });
       await handleDataMessage('0/D0', dmlMessage('insert', 'attachments', { id: 'att-1' }));
-      await handleDataMessage('0/E0', { tag: 'commit' } as never);
+      await handleDataMessage('0/E0', { tag: 'commit', commitEndLsn: '0/E0' } as never);
       await settle();
 
       // The transaction waits for its flush: 0/1F0 would acknowledge past it, and a crash now would lose it.
@@ -148,7 +148,7 @@ describe('a keepalive from Postgres', () => {
 
       // A new subscription reads again from the acknowledged position: the first thing it delivers has nothing to record.
       await resetBuffers();
-      await handleDataMessage('0/B0', { tag: 'commit' } as never);
+      await handleDataMessage('0/B0', { tag: 'commit', commitEndLsn: '0/B0' } as never);
       await settle();
 
       expect(acknowledge).not.toHaveBeenCalled();
@@ -162,6 +162,38 @@ describe('a keepalive from Postgres', () => {
       await settle();
 
       expect(acknowledge).toHaveBeenCalledWith('0/1F0');
+    });
+
+    it('ends the failure of a deploy on the keepalive that opens its first stream, also on a quiet database', async () => {
+      // A new process: the slot was still held when it first subscribed, and nothing is written afterwards.
+      const service = subscribe();
+      replicationState.recordFailure(null, new Error('replication slot "cdc_slot" is active for PID 4242'));
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+
+      expect(acknowledge.mock.calls).toEqual([['0/1F0']]);
+      expect(replicationState.failure).toBeNull();
+    });
+
+    it("must not end a failure on the keepalive that opens a stream at the slot's position, ahead of the change it delivers again", async () => {
+      const service = subscribe();
+      replicationState.lastAckedLsn = '0/1F0';
+      replicationState.recordFailure('0/200', new Error('null value in column "organization_id"'));
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+
+      expect(acknowledge).not.toHaveBeenCalled();
+      expect(replicationState.failure).toMatchObject({ position: '0/200' });
+    });
+
+    it('must not end a failure while a transaction is open', async () => {
+      const service = subscribe();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.recordFailure('0/100', new Error('null value in column "organization_id"'));
+      await handleDataMessage('0/100', { tag: 'begin', xid: 7, commitLsn: '0/1E0', commitTime: BigInt(0) });
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+      expect(replicationState.failure).toMatchObject({ position: '0/100' });
     });
 
     it('keeps no position a stopped service did not send', async () => {
@@ -193,7 +225,7 @@ describe('replication status timer', () => {
     subscribe();
     replicationState.lastAckedLsn = '0/AB';
     // A transaction is open and nothing is read: without the timer Postgres would hear nothing for as long as that lasts.
-    await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+    await handleDataMessage('0/100', { tag: 'begin', xid: 7, commitLsn: '0/1E0', commitTime: BigInt(0) });
 
     await vi.advanceTimersByTimeAsync(35_000);
 

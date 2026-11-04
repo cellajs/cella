@@ -1,23 +1,28 @@
 import { sql } from 'drizzle-orm';
 import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
+  type Access,
   appConfig,
   type ChannelEntityType,
-  computeCan,
+  checkAccess,
+  type EntityHierarchy,
   type EntityRole,
   getAllDecisions,
   hierarchy,
   type PolicyCellInput,
   type PolicyMatrix,
-  type PredicateActor,
   type ProductEntityType,
   type PublicReadGrants,
-  resolveCan,
   type SubjectForPermission,
   toColumnName,
 } from 'shared';
-import { type DeepChannelType, deepChannelRoles, deepHierarchy, deepOverrides, deepReadPolicies as deepPolicies } from 'shared/testing/deep-fixture';
-import { elevateAcross } from 'shared/testing/elevate';
+import {
+  type DeepChannelType,
+  deepChannelRoles,
+  deepElevatedHierarchy,
+  deepReadPolicies as deepPolicies,
+  deepSubtreeHierarchy,
+} from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getSeedDb } from '#/db/db';
@@ -25,8 +30,7 @@ import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-s
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import { checkAccess } from './check-access';
-import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
+import { resolveCollectionReadFilter } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
 
 const seedDb = getSeedDb();
@@ -42,7 +46,7 @@ const homeInstances = homeType ? ['s1', 's2', 's3'] : []; // home-channel instan
 const homeIdKey = homeType ? appConfig.entityIdColumnKeys[homeType] : null; // 'projectId' | null
 const homeColumnName = homeIdKey ? toColumnName(homeIdKey) : null; // 'project_id' | null
 
-// Root id column: `elevatedGrants` configs compile home-scoped grants against it, so the scratch table carries it.
+// Root id column: home-scoped grants compile against it, so the scratch table carries it.
 const rootIdKey = appConfig.entityIdColumnKeys[root];
 const rootColumnName = toColumnName(rootIdKey);
 
@@ -133,8 +137,10 @@ interface Scenario {
   publicGrants: PublicReadGrants;
 }
 
-const scenarioActor = (scenario: Scenario): PredicateActor =>
-  scenario.userId === undefined ? { anonymous: true } : { actorId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin, scopes: null };
+const scenarioAccess = (scenario: Scenario): Access<MembershipBaseModel> =>
+  scenario.userId === undefined
+    ? { anonymous: true }
+    : { actorId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin, memberships: scenario.memberships, scopes: null };
 
 const membership = (channelType: ChannelEntityType, channelId: string, role: EntityRole): MembershipBaseModel =>
   mockMembershipBase(`mem-${channelType}-${channelId}-${role}`, {
@@ -203,15 +209,12 @@ const engineReadableIds = (scenario: Scenario): Set<string> => {
 
 /** Path 2: the compiled SQL predicate executed against Postgres. */
 const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies({
+  const access = scenarioAccess(scenario);
+  const filter = resolveCollectionReadFilter(access, 'attachment', rootId, undefined, {
     policies: scenario.policies,
-    memberships: scenario.memberships,
-    entityType: 'attachment',
-    organizationId: rootId,
-    actor: scenarioActor(scenario),
     publicGrants: scenario.publicGrants,
   });
-  const where = buildCollectionReadWhere(filter, parityTable, 'attachment', scenarioActor(scenario));
+  const where = buildCollectionReadWhere(filter, parityTable, access);
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: parityTable.id }).from(parityTable);
@@ -250,7 +253,7 @@ afterAll(async () => {
   await seedDb.execute(sql`drop table if exists test_permission_parity_rows`);
 });
 
-describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-can', () => {
+describe('row-condition parity: engine check ⊆⊇ compiled SQL', () => {
   it('agrees on every row across random policies, memberships and actors', async () => {
     const random = mulberry32(0xa11ce);
 
@@ -266,24 +269,6 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       const fromEngine = engineReadableIds(scenario);
       const fromSql = await sqlReadableIds(scenario);
       expect(fromSql, label).toEqual(fromEngine);
-
-      // Frontend vs engine per membership and in-scope row; both omit system-admin and public grants, as `computeCan` models one membership.
-      // The map reads the app's `elevatedGrants`, so the engine gets the same set here.
-      for (const m of scenario.memberships) {
-        const canMap = computeCan(scenario.policies, m.channelType as ChannelEntityType, m);
-        const state = canMap.attachment?.read ?? false;
-        const rowsInScope = m.channelType === root ? parityRows : parityRows.filter((r) => r.homeChannelId === m.channelId);
-
-        for (const row of rowsInScope) {
-          const home = { row: row.homeChannelId ?? rootId, channel: m.channelId };
-          const resolved = resolveCan(state, row.createdBy, scenario.userId, home);
-          const { can } = getAllDecisions(scenario.policies, [m], rowSubject(row), {
-            actorId: scenario.userId,
-            elevatedGrants: hierarchy.elevatedGrants,
-          });
-          expect(resolved, `${label}; membership ${m.channelType}:${m.channelId}:${m.role}; row ${row.id}`).toBe(can.read);
-        }
-      }
     }
   });
 
@@ -296,17 +281,16 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
         const scenario = randomScenario(random);
         const requestedHomeChannel = pick(random, homeInstances);
 
-        let filter: ReturnType<typeof resolveCollectionReadFilterForPolicies>;
+        const access = scenarioAccess(scenario);
+        let filter: ReturnType<typeof resolveCollectionReadFilter>;
         try {
-          filter = resolveCollectionReadFilterForPolicies({
-            policies: scenario.policies,
-            memberships: scenario.memberships,
-            entityType: 'attachment',
-            organizationId: rootId,
-            actor: scenarioActor(scenario),
-            publicGrants: scenario.publicGrants,
-            requested: { homeChannelId: requestedHomeChannel },
-          });
+          filter = resolveCollectionReadFilter(
+            access,
+            'attachment',
+            rootId,
+            { homeChannelId: requestedHomeChannel },
+            { policies: scenario.policies, publicGrants: scenario.publicGrants },
+          );
         } catch {
           // 404: no scope at all for the requested home-channel, so the engine must read no row of it.
           const fromEngine = engineReadableIds(scenario);
@@ -316,7 +300,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
           continue;
         }
 
-        const where = buildCollectionReadWhere(filter, parityTable, 'attachment', scenarioActor(scenario));
+        const where = buildCollectionReadWhere(filter, parityTable, access);
         const fromSqlAll =
           where.kind === 'none'
             ? new Set<string>()
@@ -336,7 +320,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 });
 
-// The shared deep fixture exercises intermediate ancestor grants; engine and scope compiler both take its hierarchy override.
+// The shared deep fixture exercises intermediate ancestor grants; engine and scope compiler both take its hierarchy.
 const deepItem = 'item' as unknown as ProductEntityType;
 
 // Column keys follow the `${channelType}Id` fallback `buildCollectionReadWhere` uses for levels absent from `appConfig.entityIdColumnKeys`.
@@ -396,6 +380,7 @@ interface DeepScenario {
   userId: string | undefined;
 }
 
+/** An anonymous scenario holds no memberships, as the `Access` union has it. */
 const randomDeepScenario = (random: () => number): DeepScenario => {
   const memberships: MembershipBaseModel[] = [];
   if (random() < 0.5) memberships.push(deepMembership('organization', rootId, pick(random, deepChannelRoles.organization)));
@@ -404,7 +389,9 @@ const randomDeepScenario = (random: () => number): DeepScenario => {
   if (random() < 0.5) memberships.push(deepMembership('courseSection', 's1', pick(random, deepChannelRoles.courseSection)));
   if (random() < 0.5) memberships.push(deepMembership('project', 'p1', pick(random, deepChannelRoles.project)));
   if (random() < 0.3) memberships.push(deepMembership('project', 'p3', pick(random, deepChannelRoles.project)));
-  return { policies: deepPolicies(() => randomReadValue(random)), memberships, userId: random() < 0.9 ? pick(random, users) : undefined };
+  const policies = deepPolicies(() => randomReadValue(random));
+  const userId = random() < 0.9 ? pick(random, users) : undefined;
+  return { policies, memberships: userId === undefined ? [] : memberships, userId };
 };
 
 const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
@@ -415,34 +402,32 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
     channelIds: { organization: rootId, course: row.courseId, courseSection: row.courseSectionId, project: row.projectId },
   }) as unknown as SubjectForPermission;
 
-const deepEngineReadableIds = (scenario: DeepScenario, elevatedGrants?: ReadonlySet<string>): Set<string> => {
+const deepEngineReadableIds = (scenario: DeepScenario, deepHierarchy: EntityHierarchy): Set<string> => {
   const readable = new Set<string>();
   for (const row of deepRows) {
     const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row), {
       actorId: scenario.userId,
-      ...deepOverrides,
-      ...(elevatedGrants && { elevatedGrants }),
+      hierarchy: deepHierarchy,
     });
     if (can.read) readable.add(row.id);
   }
   return readable;
 };
 
-/** The deep scenario's actor. Deep chains exercise scope, not the admin bypass. */
-const deepActor = (scenario: DeepScenario): PredicateActor =>
-  scenario.userId === undefined ? { anonymous: true } : { actorId: scenario.userId, isSystemAdmin: false, scopes: null };
+/** The deep scenario's access. Deep chains exercise scope, not the admin bypass. */
+const deepAccess = (scenario: DeepScenario): Access<MembershipBaseModel> =>
+  scenario.userId === undefined
+    ? { anonymous: true }
+    : { actorId: scenario.userId, isSystemAdmin: false, memberships: scenario.memberships, scopes: null };
 
-const deepSqlReadableIds = async (scenario: DeepScenario, elevatedGrants?: ReadonlySet<string>): Promise<Set<string>> => {
-  const filter = resolveCollectionReadFilterForPolicies({
+const deepSqlReadableIds = async (scenario: DeepScenario, deepHierarchy: EntityHierarchy): Promise<Set<string>> => {
+  const access = deepAccess(scenario);
+  const filter = resolveCollectionReadFilter(access, deepItem, rootId, undefined, {
     policies: scenario.policies,
-    memberships: scenario.memberships,
-    entityType: deepItem,
-    organizationId: rootId,
-    actor: deepActor(scenario),
-    elevatedGrants,
-    ...deepOverrides,
+    publicGrants: {},
+    hierarchy: deepHierarchy,
   });
-  const where = buildCollectionReadWhere(filter, deepParityTable, deepItem, deepActor(scenario), deepHierarchy);
+  const where = buildCollectionReadWhere(filter, deepParityTable, access);
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
@@ -474,6 +459,7 @@ afterAll(async () => {
   await seedDb.execute(sql`drop table if exists test_permission_parity_deep_rows`);
 });
 
+// Every role elevated: each grant reaches its channel's whole subtree, so intermediate grants cover deeper rows.
 describe('deep-chain parity: intermediate ancestor grants agree between engine and SQL', () => {
   it('agrees on every row across random policies, multi-level memberships and actors', async () => {
     const random = mulberry32(0xdeec);
@@ -482,26 +468,19 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
       const scenario = randomDeepScenario(random);
       const label = deepScenarioLabel('0xdeec', i, scenario);
 
-      const fromEngine = deepEngineReadableIds(scenario);
-      const fromSql = await deepSqlReadableIds(scenario);
+      const fromEngine = deepEngineReadableIds(scenario, deepSubtreeHierarchy);
+      const fromSql = await deepSqlReadableIds(scenario, deepSubtreeHierarchy);
       expect(fromSql, label).toEqual(fromEngine);
     }
   });
 
   // Sysadmin widens who can read, never what a placement-filtered list returns: the bypass keeps `requested` narrowing.
   it('an explicitly requested home-channel narrows a sysadmin read like any other', async () => {
-    const sysadmin: PredicateActor = { actorId: 'u1', isSystemAdmin: true, scopes: null };
+    const sysadmin: Access<MembershipBaseModel> = { actorId: 'u1', isSystemAdmin: true, memberships: [], scopes: null };
     const sqlIdsFor = async (requested: { homeChannelId?: string; homeChannelIds?: string[] }) => {
-      const filter = resolveCollectionReadFilterForPolicies({
-        policies: deepPolicies(() => 0),
-        memberships: [],
-        entityType: deepItem,
-        organizationId: rootId,
-        actor: sysadmin,
-        ...deepOverrides,
-        requested,
-      });
-      const where = buildCollectionReadWhere(filter, deepParityTable, deepItem, sysadmin, deepHierarchy);
+      const rules = { policies: deepPolicies(() => 0), publicGrants: {}, hierarchy: deepSubtreeHierarchy };
+      const filter = resolveCollectionReadFilter(sysadmin, deepItem, rootId, requested, rules);
+      const where = buildCollectionReadWhere(filter, deepParityTable, sysadmin);
       if (where.kind === 'none') return new Set<string>();
       const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
       const rows = where.kind === 'all' ? await query : await query.where(where.where);
@@ -515,19 +494,17 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
   });
 });
 
-const subtreeRoles = elevateAcross(deepHierarchy, ['admin', 'staff']);
-
 // Non-elevated product roles see rows homed at their grant level; elevated roles keep subtree scope.
-describe('elevatedGrants parity: home-scoped grants agree between engine and SQL', () => {
-  it('agrees on every row across random policies and memberships with elevatedGrants configured', async () => {
+describe('elevated-role parity: home-scoped grants agree between engine and SQL', () => {
+  it('agrees on every row across random policies and memberships with admins and staff elevated', async () => {
     const random = mulberry32(0x50b7);
 
     for (let i = 0; i < 100; i++) {
       const scenario = randomDeepScenario(random);
       const label = deepScenarioLabel('0x50b7', i, scenario);
 
-      const fromEngine = deepEngineReadableIds(scenario, subtreeRoles);
-      const fromSql = await deepSqlReadableIds(scenario, subtreeRoles);
+      const fromEngine = deepEngineReadableIds(scenario, deepElevatedHierarchy);
+      const fromSql = await deepSqlReadableIds(scenario, deepElevatedHierarchy);
       expect(fromSql, label).toEqual(fromEngine);
     }
   });
@@ -540,8 +517,8 @@ describe('elevatedGrants parity: home-scoped grants agree between engine and SQL
     };
     // Rows homed at c1 itself, excluding section/project rows physically below it.
     const expected = new Set(deepRows.filter((r) => r.courseId === 'c1' && r.courseSectionId === null && r.projectId === null).map((r) => r.id));
-    expect(deepEngineReadableIds(scenario, subtreeRoles)).toEqual(expected);
-    expect(await deepSqlReadableIds(scenario, subtreeRoles)).toEqual(expected);
+    expect(deepEngineReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
   });
 
   it('keeps subtree scope for a listed (staff) course grant', async () => {
@@ -552,8 +529,8 @@ describe('elevatedGrants parity: home-scoped grants agree between engine and SQL
     };
     // Everything physically below c1: the course row plus its section and project rows.
     const expected = new Set(deepRows.filter((r) => r.courseId === 'c1').map((r) => r.id));
-    expect(deepEngineReadableIds(scenario, subtreeRoles)).toEqual(expected);
-    expect(await deepSqlReadableIds(scenario, subtreeRoles)).toEqual(expected);
+    expect(deepEngineReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
   });
 
   it("matches a home-scoped 'own' grant only on the author's home-level rows", async () => {
@@ -565,8 +542,8 @@ describe('elevatedGrants parity: home-scoped grants agree between engine and SQL
     const expected = new Set(
       deepRows.filter((r) => r.courseId === 'c1' && r.courseSectionId === null && r.projectId === null && r.createdBy === 'u1').map((r) => r.id),
     );
-    expect(deepEngineReadableIds(scenario, subtreeRoles)).toEqual(expected);
-    expect(await deepSqlReadableIds(scenario, subtreeRoles)).toEqual(expected);
+    expect(deepEngineReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
+    expect(await deepSqlReadableIds(scenario, deepElevatedHierarchy)).toEqual(expected);
   });
 });
 
@@ -617,7 +594,7 @@ const dispatchRow = (row: ParityRow): Record<string, unknown> => ({
 });
 
 const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
-  ({ entityType: 'attachment', subjectId: row.id, ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
+  ({ entityType: 'attachment', ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
   it('agrees on every row for random membership sets and actors', async () => {
@@ -629,17 +606,17 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
         .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
-      const actor: PredicateActor = { actorId: userId, isSystemAdmin, scopes: null };
+      const access: Access<MembershipBaseModel> = { actorId: userId, isSystemAdmin, memberships, scopes: null };
 
-      const filter = resolveCollectionReadFilter(memberships, 'attachment', rootId, actor);
-      const where = buildCollectionReadWhere(filter, parityTable, 'attachment', actor);
+      const filter = resolveCollectionReadFilter(access, 'attachment', rootId);
+      const where = buildCollectionReadWhere(filter, parityTable, access);
       const query = seedDb.select({ id: parityTable.id }).from(parityTable);
       const fromSql = new Set(where.kind === 'none' ? [] : (where.kind === 'all' ? await query : await query.where(where.where)).map((r) => r.id));
 
       for (const row of parityRows) {
         // Same subject shape dispatch builds: ancestor scope + the row itself
         const subject = rowSubject(row);
-        const engineAllowed = checkAccess({ actorId: userId, isSystemAdmin, memberships, scopes: null }, 'read', subject).allowed;
+        const engineAllowed = checkAccess(access, 'read', subject).allowed;
         const dispatchAllowed = canReceiveProductEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row), dispatchRow(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);

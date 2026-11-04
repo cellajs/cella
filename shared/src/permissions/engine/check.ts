@@ -1,17 +1,11 @@
-import type { ChannelEntityType, ProductEntityType } from '../../../types.ts';
+import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types.ts';
 import { appConfig } from '../../config-builder/app-config.ts';
-import { allActionsAllowed, createActionRecord } from '../action-helpers.ts';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
+import { allActionsAllowed, allActionsDenied } from '../action-helpers.ts';
 import { type ConditionActor, conditionRowOf, isRowCondition, matchesRowCondition } from '../row-conditions.ts';
 import type { EntityActionPermissions, PolicyMatrix } from '../types.ts';
 import { resolveHierarchy } from './resolve-hierarchy.ts';
-import type {
-  AccessMembership,
-  ActionAttribution,
-  PermissionCheckOptions,
-  PermissionDecision,
-  ResolvedChannelIds,
-  SubjectForPermission,
-} from './types.ts';
+import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types.ts';
 import { validateMembership, validateSubject } from './validation.ts';
 
 /** Memberships keyed by `${channelType}:${channelId}`. */
@@ -64,110 +58,60 @@ export const getSubjectChannelId = (subject: SubjectForPermission, channelType: 
 
 /**
  * One subject's decision from prebuilt membership and policy indexes, reading memberships on `orderedChannels` (most
- * specific first). Named row conditions are matched against the subject's row fields.
+ * specific first). Named row conditions are matched against the subject's row fields. A product grant reaches only
+ * rows homed at its channel unless `hierarchy.elevatedGrants` holds its `${channelType}:${role}`; a channel subject
+ * counts every grant above it.
  */
 export const checkWithIndices = <T extends AccessMembership>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
   subject: SubjectForPermission,
   orderedChannels: ChannelEntityType[],
-  getRoles: (channelType: ChannelEntityType) => readonly string[],
+  hierarchy: EntityHierarchy,
   options: PermissionCheckOptions,
 ): PermissionDecision<T> => {
-  const { actorId, publicGrants, elevatedGrants } = options;
+  const { actorId, publicGrants } = options;
   const primaryChannel = orderedChannels[0];
   if (primaryChannel === undefined) throw new Error(`[Permission] ${subject.entityType} has no channel to check`);
 
   const primaryChannelId = getSubjectChannelId(subject, primaryChannel);
   const primaryMemberships = primaryChannelId ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`) ?? []) : [];
-  const resolvedMembership = primaryMemberships[0] ?? null;
+  const membership = primaryMemberships[0] ?? null;
 
-  if (options.isSystemAdmin === true) {
-    const allGranted = createActionRecord(
-      (): ActionAttribution => ({
-        allowed: true,
-        grantedBy: [{ type: 'systemAdmin' }],
-      }),
-    );
+  if (options.isSystemAdmin === true) return { can: { ...allActionsAllowed }, membership };
 
-    const can = { ...allActionsAllowed };
-    const channelIds: ResolvedChannelIds = primaryChannelId ? { [primaryChannel]: primaryChannelId } : {};
-
-    return {
-      subject: { entityType: subject.entityType, id: subject.id, channelIds },
-      actions: allGranted,
-      can,
-      membership: resolvedMembership,
-    };
-  }
-
-  const actions = createActionRecord((): ActionAttribution => ({ allowed: false, grantedBy: [] }));
-
-  const channelIds: ResolvedChannelIds = {};
-
+  const can: Record<EntityActionType, boolean> = { ...allActionsDenied };
   const conditionRow = conditionRowOf(subject);
   const conditionActor: ConditionActor = { actorId };
 
-  // Non-elevated grants apply only at the row's home channel; channel subjects keep ancestor
-  // elevation. Elevation is per (channelType, role): `${channelType}:${role}` ∈ elevatedGrants.
   const isProductSubject = subject.entityType !== primaryChannel;
-  const homeChannel =
-    elevatedGrants && isProductSubject ? orderedChannels.find((channelType) => getSubjectChannelId(subject, channelType)) : undefined;
+  const homeChannel = isProductSubject ? orderedChannels.find((channelType) => getSubjectChannelId(subject, channelType)) : undefined;
 
   for (const channelType of orderedChannels) {
-    const channelRoles = getRoles(channelType);
-    if (channelRoles.length === 0) {
+    if (hierarchy.getRoles(channelType).length === 0) {
       throw new Error(`[Permission] Channel "${channelType}" has no roles defined but is in hierarchy for ${subject.entityType}`);
     }
 
     const subjectChannelId = getSubjectChannelId(subject, channelType);
     if (!subjectChannelId) continue;
 
-    channelIds[channelType] = subjectChannelId;
-
-    const matchingMemberships = membershipIndex.get(`${channelType}:${subjectChannelId}`) ?? [];
-
-    for (const membership of matchingMemberships) {
-      const permissions = policyIndex.get(`${channelType}:${membership.role}`);
+    for (const held of membershipIndex.get(`${channelType}:${subjectChannelId}`) ?? []) {
+      const permissions = policyIndex.get(`${channelType}:${held.role}`);
       // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
-
-      const outsideElevation =
-        elevatedGrants && isProductSubject && !elevatedGrants.has(`${channelType}:${membership.role}`) && channelType !== homeChannel;
-      if (outsideElevation) continue;
+      if (isProductSubject && channelType !== homeChannel && !hierarchy.elevatedGrants.has(`${channelType}:${held.role}`)) continue;
 
       for (const action of appConfig.entityActions) {
         const policyValue = permissions[action];
-
-        if (policyValue === 1) {
-          actions[action].allowed = true;
-          actions[action].grantedBy.push({ type: 'membership', channelType, channelId: subjectChannelId, role: membership.role });
-          continue;
-        }
-
-        // Attribute satisfied conditional grants by condition name.
-        if (isRowCondition(policyValue) && matchesRowCondition(policyValue, conditionRow, conditionActor)) {
-          actions[action].allowed = true;
-          actions[action].grantedBy.push({ type: 'relation', relation: policyValue });
-        }
+        if (policyValue === 1 || (isRowCondition(policyValue) && matchesRowCondition(policyValue, conditionRow, conditionActor))) can[action] = true;
       }
     }
   }
 
   // Public reads are membership-independent but use the same row condition as the SQL compiler.
-  if (publicGrants?.[subject.entityType] && matchesRowCondition('public', conditionRow, conditionActor)) {
-    actions.read.allowed = true;
-    actions.read.grantedBy.push({ type: 'public' });
-  }
+  if (publicGrants?.[subject.entityType] && matchesRowCondition('public', conditionRow, conditionActor)) can.read = true;
 
-  const can = createActionRecord((action) => actions[action].allowed);
-
-  return {
-    subject: { entityType: subject.entityType, id: subject.id, channelIds },
-    actions,
-    can,
-    membership: resolvedMembership,
-  };
+  return { can, membership };
 };
 
 /** One subject returns a `PermissionDecision`; an array returns a `Map` keyed by subject id, or `_idx:<position>` without one. */
@@ -194,7 +138,7 @@ export function getAllDecisions<T extends AccessMembership>(
   // An empty batch decides nothing, so it validates no membership either.
   if (subjectArray.length === 0) return results;
 
-  const { hierarchy, getRoles, orderedChannels } = resolveHierarchy(options);
+  const { hierarchy, orderedChannels } = resolveHierarchy(options);
   subjectArray.forEach((subject, i) => {
     validateSubject(subject, i, hierarchy);
   });
@@ -210,7 +154,7 @@ export function getAllDecisions<T extends AccessMembership>(
       indexes = { policyIndex: buildPolicyIndex(policies, subject.entityType), channels: orderedChannels(subject.entityType) };
       perEntityType.set(subject.entityType, indexes);
     }
-    return checkWithIndices(membershipIndex, indexes.policyIndex, subject, indexes.channels, getRoles, engineOptions);
+    return checkWithIndices(membershipIndex, indexes.policyIndex, subject, indexes.channels, hierarchy, engineOptions);
   };
 
   if (!Array.isArray(subjects)) return decide(subjects);

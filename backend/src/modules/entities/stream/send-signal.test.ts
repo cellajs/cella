@@ -1,10 +1,10 @@
 import type { SSEStreamingApi } from 'hono/streaming';
+import { buildSubject } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
-import { buildSubject } from '#/permissions/build-subject';
 import { memberRole } from '../../../../tests/fixtures';
 import { toReaders, toUser } from './audiences';
 import { sendSignal } from './send-signal';
@@ -22,9 +22,9 @@ defineBackendModule({
 
 /** A stream on the organization's topic and its user's topic, recording every frame written to it. */
 const openStream = (userId: string, memberships: MembershipBaseModel[] = []) => {
-  const frames: { event?: string; id?: string; data: string }[] = [];
+  const frames: { event?: string; data: string }[] = [];
   const stream = {
-    writeSSE: async (frame: { event?: string; id?: string; data: string }) => {
+    writeSSE: async (frame: { event?: string; data: string }) => {
       frames.push(frame);
     },
   } as unknown as SSEStreamingApi;
@@ -55,9 +55,8 @@ describe('sendSignal: who hears it', () => {
     await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, subjectId: 'row-1' });
 
     for (const frames of own) {
-      // A signal carries no id: the client's stream cursor is an activity id, and a signal must not move it.
-      expect(frames).toEqual([{ event: 'signal', id: undefined, data: expect.any(String) }]);
-      expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1', version: null });
+      expect(frames).toEqual([{ event: 'signal', data: expect.any(String) }]);
+      expect(JSON.parse(frames[0].data)).toEqual({ type: 'signal-test.changed', organizationId: org, subjectId: 'row-1' });
     }
     expect(bystander).toEqual([]);
   });
@@ -72,11 +71,22 @@ describe('sendSignal: who hears it', () => {
 
     await sendSignal('signal-test.changed', toReaders(buildSubject('organization', {}, { id: org })), { organizationId: org });
 
-    expect(member.map(({ data }) => JSON.parse(data))).toEqual([
-      { type: 'signal-test.changed', organizationId: org, subjectId: null, version: null },
-    ]);
+    expect(member.map(({ data }) => JSON.parse(data))).toEqual([{ type: 'signal-test.changed', organizationId: org, subjectId: null }]);
     expect(removed).toEqual([]);
     expect(otherOrg).toEqual([]);
+  });
+
+  it('carries the version a versioned signal was given, and no version field otherwise', async () => {
+    const frames = openStream('user-a');
+
+    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org, version: 5 });
+    await sendSignal('signal-test.changed', toUser('user-a'), { organizationId: org });
+
+    expect(frames.map(({ data }) => JSON.parse(data))).toEqual([
+      { type: 'signal-test.changed', organizationId: org, subjectId: null, version: 5 },
+      { type: 'signal-test.changed', organizationId: org, subjectId: null },
+    ]);
+    expect(frames[1].data).not.toContain('version');
   });
 
   it('must not send a type no module declared for that audience', async () => {

@@ -2,9 +2,10 @@ import { matchMutation, matchQuery, onlineManager } from '@tanstack/react-query'
 import { liveQuery, type Subscription } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
+import { hasCloudFile } from 'shared/utils/storage-key';
 import { type CloudFileVariant, getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
-import { downloadQueue, skipReasonNoOriginalKey } from '~/modules/attachment/offline/download-queue';
+import { downloadQueue } from '~/modules/attachment/offline/download-queue';
 import {
   currentOfflineFilesTier,
   defaultOfflineFilesTier,
@@ -22,10 +23,22 @@ import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 import { onChangeEvent, onSyncedRows } from '~/query/realtime/sync-events';
 
+const matchesMimePattern = (mimeType: string, pattern: string): boolean =>
+  pattern === '*' || pattern === '*/*' || (pattern.endsWith('/*') ? mimeType.startsWith(pattern.slice(0, -1)) : mimeType === pattern);
+
+/** Whether a device keeps the file itself by the size cap and content-type filters of `localBlobStorage`; previews are kept either way. */
+const keepsFile = ({ size, contentType }: Attachment): boolean => {
+  const { maxFileSize, excludedContentTypes, allowedContentTypes } = appConfig.localBlobStorage;
+  if (maxFileSize && Number(size) > maxFileSize) return false;
+  if (!contentType) return true;
+  if (excludedContentTypes.some((pattern) => matchesMimePattern(contentType, pattern))) return false;
+  return !allowedContentTypes.length || allowedContentTypes.some((pattern) => matchesMimePattern(contentType, pattern));
+};
+
 /** The variants a tier fetches, previews first: the file once, as the viewer shows it (converted, else original). */
 const wantedVariants = (attachment: Attachment, { previews, files }: OfflineFilesRules): CloudFileVariant[] => [
   ...(previews ? (['thumbnail', 'preview'] as const) : []),
-  ...(files ? [getVariantKey(attachment, 'converted') ? ('converted' as const) : ('original' as const)] : []),
+  ...(files && keepsFile(attachment) ? [getVariantKey(attachment, 'converted') ? ('converted' as const) : ('original' as const)] : []),
 ];
 
 const variantFetchTimeoutMs = 30_000;
@@ -76,13 +89,14 @@ class AttachmentDownloadService {
       this.purge(entityIdsOf(event.mutation.state.variables));
     });
 
-    // A delete by anyone else arrives through sync: a tombstone row in a fetched range, or a hard delete's announcement.
+    // A delete by anyone else arrives through sync: a tombstone row in a fetched range, or the announcement of a hard
+    // delete or of a move that took the row out of this reader's reach.
     this.syncUnsubscribes = [
       onSyncedRows(({ entityType, rows }) => {
         if (entityType === 'attachment') this.purge(rows.filter((row) => row.deletedAt).map((row) => row.id));
       }),
       onChangeEvent(({ entityType, action, subjectId }) => {
-        if (entityType === 'attachment' && action === 'delete' && subjectId) this.purge([subjectId]);
+        if (entityType === 'attachment' && (action === 'delete' || action === 'moveOut') && subjectId) this.purge([subjectId]);
       }),
     ];
 
@@ -165,8 +179,8 @@ class AttachmentDownloadService {
   async queueForDownload(attachments: Attachment[]): Promise<void> {
     if (!appConfig.localBlobStorage.enabled) return;
 
-    // Optimistic rows are not on the server yet.
-    const queueable = attachments.filter(isPersisted);
+    // Optimistic rows are not on the server yet, and an offline upload's file is in storage only once its keys link.
+    const queueable = attachments.filter((attachment) => isPersisted(attachment) && hasCloudFile(attachment.keys));
     if (!queueable.length) return;
 
     await downloadQueue.enqueue(queueable, queueable[0].organizationId);
@@ -195,42 +209,32 @@ class AttachmentDownloadService {
 
       // A full budget still takes attachments newer than the oldest one stored: the trim below drops that one.
       const { bytes, oldestRank } = await attachmentStorage.offlineUsage();
-      const batch = pending
-        .filter((entry) => bytes < rules.budget || -entry.priority > oldestRank)
-        .sort((a, b) => a.priority - b.priority)
-        .slice(0, appConfig.localBlobStorage.downloadConcurrency);
+      const candidates = pending.filter((entry) => bytes < rules.budget || -entry.priority > oldestRank).sort((a, b) => a.priority - b.priority);
+
+      // A row whose attachment this tab's cache lacks stays pending, unclaimed, for whichever of the user's tabs holds it.
+      const batch: { attachment: Attachment; organizationId: string }[] = [];
+      for (const { id, organizationId } of candidates) {
+        if (batch.length >= appConfig.localBlobStorage.downloadConcurrency) break;
+        const attachment = findAttachmentInCache(id);
+        if (attachment) batch.push({ attachment, organizationId });
+      }
       if (batch.length === 0) return;
 
-      const claimed = await Promise.all(batch.map((entry) => this.downloadAttachment(entry.id, entry.organizationId, rules)));
-      claimedAny = claimed.includes(true);
+      await Promise.all(batch.map(({ attachment, organizationId }) => this.downloadAttachment(attachment, organizationId, rules)));
+      claimedAny = true;
       await attachmentStorage.trimToTier(rules);
     } catch (error) {
       console.error('[DownloadService] Queue processing failed:', error);
     } finally {
       this.processing = false;
-      // The next batch; a row left pending for metadata not yet synced waits for the next wake.
+      // The next batch; a row whose attachment this tab's cache lacks waits for the next wake.
       if (claimedAny) this.processQueueSoon();
     }
   }
 
-  /**
-   * Downloads the variants the tier wants, then evicts the raw upload blob once the file is stored.
-   * @returns Whether the entry left `pending`.
-   */
-  private async downloadAttachment(attachmentId: string, organizationId: string, rules: OfflineFilesRules): Promise<boolean> {
-    // Read the cache before claiming the row, so a row whose metadata has not synced does not burn an attempt.
-    const attachment = findAttachmentInCache(attachmentId);
-    if (!attachment) {
-      console.debug(`[DownloadService] Attachment ${attachmentId} not in cache yet, leaving pending`);
-      return false;
-    }
-
-    if (!attachment.keys.original) {
-      await downloadQueue.transition(attachmentId, 'skipped', skipReasonNoOriginalKey);
-      return true;
-    }
-
-    // Claim the row.
+  /** Claims the row, downloads the variants the tier wants, then evicts the raw upload blob once the file is stored. */
+  private async downloadAttachment(attachment: Attachment, organizationId: string, rules: OfflineFilesRules): Promise<void> {
+    const attachmentId = attachment.id;
     await downloadQueue.transition(attachmentId, 'downloading');
 
     try {
@@ -252,7 +256,6 @@ class AttachmentDownloadService {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
       await downloadQueue.transition(attachmentId, 'failed');
     }
-    return true;
   }
 
   private async downloadVariant(attachment: Attachment, variant: CloudFileVariant, organizationId: string): Promise<VariantResult> {

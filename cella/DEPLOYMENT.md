@@ -169,7 +169,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp, oauth (load balancer routes) | The new machine boots on the idle slot beside the old one; once the pools see it healthy, the old one drains and goes. A new machine that never serves is deleted, and the old one keeps the traffic. | None: the pools hold both until the old one's check turns red. |
 | **stop-first** | cdc (the one replication slot), jobs (the one cron scheduler) | The old machine drains and goes first, then the new one boots. The new CDC worker resumes the slot where the old one stopped reading, so no change is lost. | Worker gap during replacement. |
-| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. One session holds the replication slot and one process claims each cron period, so the new process's cdc and jobs wait until the old machine drained. | None for HTTP. Realtime events pause from the switch until the slot moves (the drain plus up to a minute); activities are still written. |
+| **singleton host** (`singleVM`) | the backend machine when it runs a stop-first worker in-process | start-first. One session holds the replication slot, so the new process's cdc waits until the old machine drained. Both processes run a jobs worker until then, and one of them claims each cron period. | None for HTTP. Realtime events pause from the switch until the slot moves (the drain plus up to a minute); activities are still written. |
 
 ## Runtime secret delivery
 

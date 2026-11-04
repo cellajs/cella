@@ -11,8 +11,6 @@ import { baseLog } from '#/lib/pino';
  */
 type JobsRole = 'producer' | 'consumer' | 'maintainer';
 
-const roleRank: Record<JobsRole, number> = { producer: 0, consumer: 1, maintainer: 2 };
-
 /** pg-boss schema; tests use their own so the shared test database never touches a development store. */
 export const jobsSchema = appConfig.mode === 'test' ? 'pgboss_test' : 'pgboss';
 
@@ -45,26 +43,15 @@ export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOption
 }
 
 let boss: PgBoss | undefined;
-let bossRole: JobsRole | undefined;
 
-/**
- * The process-wide pg-boss instance, started on first use. The first caller fixes the role; a later
- * caller may ask for the same or a lesser role (a maintainer also produces), never a greater one,
- * so a process that must maintain starts the jobs worker before anything enqueues.
- */
+/** The process-wide pg-boss instance, started on first use in the first caller's role; the jobs worker is its one caller. */
 export async function getPgBoss(role: JobsRole): Promise<PgBoss> {
-  if (boss && bossRole) {
-    if (roleRank[role] > roleRank[bossRole]) {
-      throw new Error(`pg-boss already runs as ${bossRole} in this process; a ${role} needs its own start`);
-    }
-    return boss;
-  }
+  if (boss) return boss;
   const instance = new PgBoss(jobsOptions(role));
   instance.on('error', (err) => baseLog.error('pg-boss error', { err }));
   instance.on('warning', (warning) => baseLog.warn(`pg-boss warning: ${warning.message}`, { data: warning.data }));
   await instance.start();
   boss = instance;
-  bossRole = role;
   return instance;
 }
 
@@ -73,6 +60,5 @@ export async function stopPgBoss(): Promise<void> {
   if (!boss) return;
   const instance = boss;
   boss = undefined;
-  bossRole = undefined;
   await instance.stop({ graceful: true, timeout: 8_000 });
 }

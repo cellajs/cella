@@ -1,6 +1,6 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import { asRecord } from 'shared/utils/as-record';
-import { guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
+import { getYjsOwnedFields, guardYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { cacheUpdate, writeKeepingMark } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 import { hasMutationOfRow, isQueued } from '~/query/offline/mutation-queue';
@@ -18,8 +18,12 @@ export function mergeServerResponse<T extends { id: string; entityType: string; 
   cached?: T;
   serverEntity: T;
   mutatedKeys: string[];
-  /** Per mutated key, the columns the server stamps when it stores the change (a body's keywords, a flag's actor): taken from the response with it. */
-  derivedKeys?: Record<string, readonly string[]>;
+  /**
+   * Per mutated key, the columns the server stamps when it stores the change (a flag's actor): taken from the response
+   * with it. A description brings its registered columns (`registerDescriptionColumns`).
+   */
+  // A description entry is never read: the registered description columns decide what a description write derives.
+  derivedKeys?: Record<string, readonly string[]> & { description?: never };
   /** Keys left as cached: fields the response does not carry, such as the stubbed relations of a lite response. A remote change of one arrives with the next read of the list. */
   skipKeys?: string[];
 }): T {
@@ -35,7 +39,8 @@ export function mergeServerResponse<T extends { id: string; entityType: string; 
   }
 
   const serverUpdates: Record<string, unknown> = {};
-  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap((mutated) => derivedKeys[mutated] ?? [])]) {
+  const derivedFrom = (mutated: string) => (mutated === 'description' ? getYjsOwnedFields(serverEntity.entityType) : (derivedKeys[mutated] ?? []));
+  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap(derivedFrom)]) {
     if (!skipKeys.includes(key)) serverUpdates[key] = serverRow[key];
   }
 

@@ -1,0 +1,40 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "df161b53-1b9a-4465-ab51-bd6e339ead41",
+  "prevIds": [
+    "ef06ad85-20b7-47a1-9978-db8bef2b193a"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "notifications",
+        "notifications_user_activity_index"
+      ],
+      "writes": [
+        "s|idx|public.notifications_user_activity_index",
+        "n|idx|public.notifications_user_activity_index",
+        "e|idx|public.notifications_user_activity_index",
+        "n|rel|public.notifications_user_activity_index"
+      ],
+      "reads": [
+        "e|tbl|public.notifications",
+        "n|sch|public",
+        "e|col|public.notifications.user_id",
+        "e|col|public.notifications.activity_id",
+        "e|col|public.notifications.type"
+      ],
+      "sharedWrites": []
+    }
+  ],
+  "deltas": [
+    {
+      "op": "drop",
+      "key": "indexes\u0000[\"public\",\"notifications_user_activity_index\"]"
+    }
+  ]
+}

@@ -3,9 +3,14 @@ import { FlushBuffer } from '../services/flush-buffer';
 import type { PendingEvent } from '../types';
 import { mockPendingEvent } from './factories';
 
-/** A source transaction of `count` changes whose positions start at `first`; `commitEndLsn` is where its commit record ends. */
-const transaction = (first: number, count = 1, commitEndLsn?: string): PendingEvent[] =>
-  Array.from({ length: count }, (_, i) => ({ ...mockPendingEvent({ lsn: `0/${(first + i).toString(16).toUpperCase()}` }), commitEndLsn }));
+const position = (offset: number) => `0/${offset.toString(16).toUpperCase()}`;
+
+/**
+ * A source transaction of `count` changes whose positions start at `first`; its commit record ends at `commitEndLsn`,
+ * by default the position of its last change.
+ */
+const transaction = (first: number, count = 1, commitEndLsn = position(first + count - 1)): PendingEvent[] =>
+  Array.from({ length: count }, (_, i) => ({ ...mockPendingEvent({ lsn: position(first + i) }), commitEndLsn }));
 
 const lsnsOf = (transactions: PendingEvent[][]) => transactions.map((events) => events.map((event) => event.lsn));
 

@@ -25,7 +25,6 @@ app.openapi(attachmentRoutes.getPresignedUrls, async (ctx) => {
 app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
   const result = await getAttachmentOp(ctx, id);
-  ctx.set('productCacheData', result);
   return ctx.json(result, 200);
 });
 

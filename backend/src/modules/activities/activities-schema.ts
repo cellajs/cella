@@ -5,7 +5,7 @@ import { activitiesTable } from '#/modules/activities/activities-db';
 import { entityTypeSchema } from '#/schemas';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
-export const activityActionSchema = z.enum(activityActions);
+const activityActionSchema = z.enum(activityActions);
 
 const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 

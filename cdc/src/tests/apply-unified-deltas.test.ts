@@ -1,4 +1,3 @@
-import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Executor } from '../lib/db';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
@@ -23,16 +22,7 @@ const db = {
 } as unknown as Executor;
 
 const { applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
-const { frontierNodeKeys, mergeDelta } = await import('../utils/compute-unified-deltas');
-
-// Synthetic two-level hierarchy: org > project > task (cella's own config has no sub-org product)
-const roles = createRoleRegistry(['admin', 'member'] as const);
-const syntheticH = createEntityHierarchy(roles)
-  .user()
-  .organization({ roles: roles.all })
-  .channel('project', { parent: 'organization', roles: roles.all })
-  .product('task', { parent: 'project' })
-  .build();
+const { mergeDelta } = await import('../utils/compute-unified-deltas');
 
 beforeEach(() => {
   dbOps.length = 0;
@@ -56,7 +46,7 @@ describe('applyBatchUnifiedDeltas', () => {
       ]),
     };
 
-    await applyBatchUnifiedDeltas(plan, db, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db);
 
     // Sequential seq values: 3, 4, 5.
     expect(events[0].result.rowData.seq).toBe(3);
@@ -64,7 +54,7 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(events[2].result.rowData.seq).toBe(5);
   });
 
-  it('phase 1 merges sequence + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
+  it('phase 1 merges sequence + org counts; phase 2 writes the org frontier, the other counts and the stamp-back', async () => {
     upsertReturnValue = { sequence: 2, 'e:c:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
@@ -77,9 +67,9 @@ describe('applyBatchUnifiedDeltas', () => {
       ]),
     };
 
-    await applyBatchUnifiedDeltas(plan, db, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db);
 
-    // Phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 counts + frontier.
+    // Phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 counts.
     const upserts = dbOps.filter((op) => op.type === 'upsert');
     expect(upserts).toHaveLength(3);
     // Per table: the rows are locked in id order, then stamped by one bulk UPDATE.
@@ -89,7 +79,7 @@ describe('applyBatchUnifiedDeltas', () => {
     expect(executes[1].sql).toContain('UPDATE');
   });
 
-  it('every stamped event bumps frontiers: tombstones of published rows included', async () => {
+  it('every stamped event bumps the frontier: tombstones of published rows included', async () => {
     // Drafts never reach apply: the publication row filter and the parse-message guard remove them,
     // so whatever is stamped here is delta-fetchable and bumps the frontier.
     upsertReturnValue = { sequence: 2 };
@@ -106,12 +96,12 @@ describe('applyBatchUnifiedDeltas', () => {
       countDeltasByChannelKey: new Map(),
     };
 
-    await applyBatchUnifiedDeltas(plan, db, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db);
 
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
-    // Phase-1 org reservation + phase-2 frontier writes (org + proj-1); both events bump.
-    expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(3);
+    // Phase-1 org reservation + one phase-2 frontier write on the org, which both events bump; no channel below it.
+    expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(2);
     expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(2);
   });
 
@@ -119,7 +109,7 @@ describe('applyBatchUnifiedDeltas', () => {
     upsertReturnValue = { sequence: 3 };
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t1')];
 
-    await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', events }], countDeltasByChannelKey: new Map() }, db, syntheticH);
+    await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', events }], countDeltasByChannelKey: new Map() }, db);
 
     // Each event keeps the position it was given, for its notification.
     expect(events.map((event) => event.result.rowData.seq)).toEqual([1, 2, 3]);
@@ -132,18 +122,8 @@ describe('applyBatchUnifiedDeltas', () => {
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = { orgSequenceGroups: [], countDeltasByChannelKey: new Map() };
 
-    await applyBatchUnifiedDeltas(plan, db, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db);
     expect(dbOps).toHaveLength(0);
-  });
-});
-
-describe('frontierNodeKeys', () => {
-  it('org first, then every non-null ancestor, deduplicated', () => {
-    expect(frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1', 'proj-1']);
-  });
-
-  it('org-homed row rolls up to the org node only', () => {
-    expect(frontierNodeKeys('task', { id: 't1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1']);
   });
 });
 

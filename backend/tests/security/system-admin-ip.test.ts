@@ -1,4 +1,4 @@
-import { getOrganization } from 'sdk';
+import { getOrganization, getTenants } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { env } from '#/env';
 import { defaultHeaders, overrideConfig } from '../fixtures';
@@ -25,12 +25,11 @@ describe('System-admin rights follow the request address', async () => {
     const foreign = await createTestTenant(call, 'foreign');
     const admin = await createSystemAdminUser('sysadmin@example.com');
     const cookie = await createTestSession(admin);
+    const headersFrom = (ip: string) => ({ ...defaultHeaders, 'x-forwarded-for': ip, Cookie: cookie });
     const readForeignOrg = (ip: string) =>
-      call(getOrganization, {
-        path: { tenantId: foreign.tenantId, id: foreign.organization.id },
-        headers: { ...defaultHeaders, 'x-forwarded-for': ip, Cookie: cookie },
-      });
-    return { readForeignOrg };
+      call(getOrganization, { path: { tenantId: foreign.tenantId, id: foreign.organization.id }, headers: headersFrom(ip) });
+    const listTenants = (ip: string) => call(getTenants, { query: {}, headers: headersFrom(ip) });
+    return { readForeignOrg, listTenants };
   };
 
   it('must not grant system-admin scope via a session cached from the allowlisted address', async () => {
@@ -56,5 +55,13 @@ describe('System-admin rights follow the request address', async () => {
 
     const allowlisted = await readForeignOrg(allowlistedIp);
     expect(allowlisted.response.status).toBe(200);
+  });
+
+  // sysAdminGuard reads the isSystemAdmin userGuard derives from the address: the system routes hold the same line.
+  it('must not open a system route to a system admin calling from another address', async () => {
+    const { listTenants } = await setup();
+
+    await expectRefusal(await listTenants(otherIp), 403, 'no_sysadmin');
+    expect((await listTenants(allowlistedIp)).response.status).toBe(200);
   });
 });

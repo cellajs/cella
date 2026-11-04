@@ -63,7 +63,9 @@ let subscriptionCount = 0;
  * acknowledges the commit of its last source transaction, so an idle worker would hold the slot there while WAL
  * without changes of tracked tables grows behind it: a marker, a transaction whose rows the worker drops. Source
  * transactions committed before a keepalive were streamed ahead of it, so its position is safe whenever nothing is
- * in flight.
+ * in flight, and once it passes the position the worker acknowledged last, the failure it read again from is behind
+ * it. A stream opens with a keepalive at the slot's position, ahead of the changes it delivers again, so that one ends
+ * a failure only where the worker has acknowledged nothing on the slot yet: a new process after a deploy, a new slot.
  * @returns true when the keepalive position was acknowledged.
  */
 async function acknowledgeIdlePosition(): Promise<boolean> {
@@ -74,7 +76,9 @@ async function acknowledgeIdlePosition(): Promise<boolean> {
   // The keepalive position is the end of what Postgres has sent, acknowledged as it is: never a byte of the next commit record.
   if (lsnToBigInt(lastKeepaliveLsn) <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
 
-  return acknowledgeLsn(lastKeepaliveLsn);
+  if (!(await acknowledgeLsn(lastKeepaliveLsn))) return false;
+  replicationState.clearFailure();
+  return true;
 }
 
 /**

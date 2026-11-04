@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
@@ -21,7 +21,8 @@ type Answer = 200 | 204 | 302 | 400 | 401;
 
 /**
  * A route behind a fresh limiter whose handler counts its runs and answers with `status`, or 401 at once for a request
- * sent with `failFast`. While held, a request stays in the handler until `release`.
+ * sent with `failFast`. A request costs the points its `cost` says, 1 by default. While held, a request stays in the
+ * handler until `release`.
  */
 function guardedRoute(
   mode: RateLimitMode,
@@ -29,7 +30,8 @@ function guardedRoute(
   limits: typeof budget = budget,
   opts: Pick<RateLimiterOpts, 'getPointsBudget' | 'countsInProcess'> = {},
 ) {
-  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, ...opts });
+  const getConsumePoints = (ctx: Context<Env>) => Number(ctx.req.header('x-cost') ?? 1);
+  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, getConsumePoints, ...opts });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   let reached = 0;
@@ -44,10 +46,10 @@ function guardedRoute(
     if (status === 204) return ctx.body(null, 204);
     return ctx.json({}, status);
   });
-  const attempt = async (ip: string, { failFast = false } = {}) =>
+  const attempt = async (ip: string, { failFast = false, cost = 1 } = {}) =>
     app.request('http://localhost/attempt', {
       method: 'POST',
-      headers: { 'x-forwarded-for': ip, ...(failFast && { 'x-fail-fast': '1' }) },
+      headers: { 'x-forwarded-for': ip, 'x-cost': String(cost), ...(failFast && { 'x-fail-fast': '1' }) },
     });
   const hold = () => {
     held = new Promise((resolve) => {
@@ -210,6 +212,20 @@ describe('a points budget at the static ceiling', () => {
 
     expect(statuses).toEqual([...Array(10).fill(200), ...Array(15).fill(429)]);
     expect(route.reached()).toBe(10);
+  });
+
+  it('must not reopen a tenant budget via a bulk request refused after requests counted in process', async () => {
+    // A tenant budget of 10 below the ceiling: 7 requests pass in process, then a 4-row bulk create is refused.
+    const route = guardedRoute('limit', 200, { points: 5000, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 10 });
+    const ip = randomIp();
+    for (let attempt = 0; attempt < 7; attempt++) expect((await route.attempt(ip)).status).toBe(200);
+
+    expect((await route.attempt(ip, { cost: 4 })).status).toBe(429);
+    // The seven reach the row with the refusal; the refused four do not.
+    expect((await bucketOf(route.limiter, ip))?.points).toBe(7);
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 5; attempt++) statuses.push((await route.attempt(ip)).status);
+    expect(statuses).toEqual([200, 200, 200, 429, 429]);
   });
 
   describe('across windows', () => {

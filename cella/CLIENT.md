@@ -36,7 +36,7 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
         ▼                  ▼                  ▼
    enrichment         localUserDb        download queue
    unseen deltas      (queries, meta,    + blob storage
-   blob cleanup       kv, failed sync)   (blobs table)
+   blob cleanup       kv)                (blobs table)
 ```
 
 ## Inside the cache
@@ -64,7 +64,7 @@ A cache write keeps a mark: one that changes nothing writes nothing, and a real 
 Cache subscribers, not extra stores:
 
 - **Signal handlers** invalidate the queries a signal names, such as memberships or the inbox.
-- **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map with a permission per action, and `ancestorSlugs` for URLs. It never replaces backend permission checks.
+- **Enrichment** adds `ancestorSlugs` for URLs to every cached channel row. A row carries no membership or permission: a reader looks the membership up in `meKeys.memberships` and asks the engine through `useCan` ([Permissions](./PERMISSIONS.md#in-the-interface)).
 - **Unseen counts**: sync-delivered rows bump badge counts.
 
 ## Mutations
@@ -77,7 +77,7 @@ An attachment row is an ordinary product in the query cache, while its bytes liv
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten, and every stored query keeps its refetch mark. A query whose refetch got no response or a server error keeps its last data on disk, restored marked. Paused mutations are persisted too, and a replay until it settles: one cut off by a closed tab is sent again. A mutation without `stx` is never a replay: it is neither stored while it runs nor quarantined. Opt out with `meta: { persist: false }`.
+The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten, and every stored query keeps its refetch mark. A query whose refetch got no response or a server error keeps its last data on disk, restored marked. Paused mutations are persisted too, and a replay until it settles: one cut off by a closed tab is sent again. A mutation without `stx` is never a replay, so it is not stored while it runs. Opt out with `meta: { persist: false }`.
 
 Every user works offline: all tabs share one cache that survives tab and browser restarts, and sign-out deletes it with the rest of the per-user database. Two version stamps guard every restore. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
 
@@ -91,7 +91,6 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `queries` and `meta` | Persisted query records, paused mutations, version stamps |
 | `blobs` | Attachment bytes: uploads pending sync and cached downloads |
 | `downloadQueue` | Background download work |
-| `failedSync` | Queued mutations that can never replay, kept for export and manual repair |
 | `yDocs`, `yDocStates`, `yDocUpdates` | Collaborative documents the user opened for editing, so they open from storage and stay editable offline: a trimmed state plus the updates no server has confirmed yet. Old documents are evicted, never one with unsaved edits |
 | `unsaveableYDocs` | Edits that can no longer be saved (access lost, entity deleted), kept until the user copies or discards them |
 
@@ -102,7 +101,7 @@ The database follows authentication, not routes: signing in binds it, sign-out d
 Boot order, cached data first:
 
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
-2. The app route waits until the per-user database is bound and its stores hydrated, sync cursor included.
+2. The app route waits until the per-user database is bound and its stores hydrated, sync cursors included.
 3. The persister restores the cache scope.
 4. Once the restore is done, the app reads the memberships, from the restored cache or on a fresh profile from the server, so the first catchup declares every organization. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after it, and at once whenever the app comes back online or regains focus.
 5. Route loaders fill the current view. A background fill then loads each list not cached yet and each synced product list marked for a refetch, the current organization's first, then the other organizations'. From then on catchup keeps them fresh.

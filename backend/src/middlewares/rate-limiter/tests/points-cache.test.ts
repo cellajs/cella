@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { adoptDbCount, clearPointsCache, restoreDebt, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+import { adoptDbCount, clearPointsCache, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 
 const hourMs = 60 * 60 * 1000;
 const fiveMinutesMs = 5 * 60 * 1000;
@@ -72,7 +72,7 @@ describe('points-cache', () => {
     });
   });
 
-  describe('takeDebt / restoreDebt', () => {
+  describe('takeDebt', () => {
     it('should return every fast-path consume as unflushed debt, exactly once', () => {
       for (let i = 0; i < 10; i++) {
         tryFastConsume('tenant:user1', 1, 1000, hourMs);
@@ -93,16 +93,6 @@ describe('points-cache', () => {
 
       tryFastConsume('tenant:user1', 3, 1000, hourMs);
       expect(takeDebt('tenant:user1')).toBe(3);
-    });
-
-    it('should restore claimed debt after a failed DB write', () => {
-      tryFastConsume('tenant:user1', 7, 1000, hourMs);
-      const debt = takeDebt('tenant:user1');
-      expect(debt).toBe(7);
-
-      // DB write failed: the debt must not be lost.
-      restoreDebt('tenant:user1', debt);
-      expect(takeDebt('tenant:user1')).toBe(7);
     });
   });
 
@@ -128,7 +118,7 @@ describe('points-cache', () => {
       const debt = takeDebt('tenant:user1');
       expect(debt).toBe(799);
 
-      // The DB trip consumes cost + debt, so the count it reports includes everything.
+      // The DB trip counts the debt with its own cost, so the count it reports includes everything.
       adoptDbCount('tenant:user1', debt + 1, hourMs, hourMs);
 
       expect(tryFastConsume('tenant:user1', 1, 1000, hourMs)).toBe('check-db');
@@ -185,10 +175,10 @@ describe('points-cache', () => {
       expect(tryFastConsume('tenant:user1', 1, 1000, hourMs)).toBe('allow');
     });
 
-    it('should restart the count when the block on a row ends, before the hour does', () => {
+    it('should restart the count when a row another process opened ends, before the hour does', () => {
       tryFastConsume('tenant:user1', 1, 1000, hourMs);
-      // The budget is spent and the store blocks the key for five minutes.
-      adoptDbCount('tenant:user1', 1001, 5 * 60 * 1000, hourMs);
+      // The budget is spent on a row with five minutes left.
+      adoptDbCount('tenant:user1', 1000, 5 * 60 * 1000, hourMs);
       expect(tryFastConsume('tenant:user1', 1, 1000, hourMs)).toBe('check-db');
 
       vi.advanceTimersByTime(5 * 60 * 1000);

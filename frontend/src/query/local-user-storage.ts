@@ -15,7 +15,7 @@ import {
   type LocalUserDatabase,
   notifyLocalUserChange,
 } from '~/query/local-user-db';
-import { persister, persistOptions, resetPersisters } from '~/query/persister';
+import { persister, persistOptions, resetPersister } from '~/query/persister';
 import { cacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -69,14 +69,14 @@ function bindLocalUser(userId: string): void {
   const db = bindLocalUserDb(userId);
   // A second evaluation of this module, as on an HMR update, finds the database bound and its cache in memory.
   if (db === previous) return;
-  resetPersisters();
+  resetPersister();
   readyPromise = Promise.all([hydrateAll(), restoreQueryCache(db)]).then(() => {});
 }
 
 function unbind(): void {
   boundUserId = null;
   closeLocalUserDb();
-  resetPersisters();
+  resetPersister();
   // The DB is already closed, so these resets no-op on persist.
   for (const store of localUserStores) store.getState().reset();
   readyPromise = Promise.resolve();

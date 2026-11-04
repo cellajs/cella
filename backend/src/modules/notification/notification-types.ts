@@ -19,5 +19,5 @@ export const notificationTypes = [...templateNotificationTypes, ...appNotificati
 
 export type NotificationType = (typeof notificationTypes)[number];
 
-/** Types the instant email pass mails: mentions, plus comments and replies when the app sets `has.commentEmail`. */
+/** Types the fan-out mails at once: mentions, plus comments and replies when the app sets `has.commentEmail`. */
 export const instantEmailTypes = (): NotificationType[] => (appConfig.has.commentEmail ? ['mention', 'comment', 'reply'] : ['mention']);

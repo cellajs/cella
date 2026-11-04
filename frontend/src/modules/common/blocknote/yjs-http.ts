@@ -44,8 +44,6 @@ export interface HttpLink {
   leave(): void;
   /** Queues a local edit for the next post; while the link is out, it is kept for the next handshake's batches. */
   queue(update: Uint8Array): void;
-  /** Pulls what the document lacks and applies it. */
-  pull(): Promise<void>;
   /** True once the handshake is proven, nothing is queued and no post is in flight. */
   readonly clean: boolean;
 }
@@ -359,9 +357,6 @@ export function createHttpLink(conn: YjsConnection, handlers: HttpLinkHandlers):
     queue(update) {
       queued.push(update);
       if (active && handshake === 'proven') schedule(currentSession);
-    },
-    async pull() {
-      if (active) await pullOnce(currentSession);
     },
     get clean() {
       return handshake === 'proven' && !oversized && !posting && inFlight === 0 && queued.length === 0;

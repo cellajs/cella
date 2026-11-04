@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { ArchiveIcon, ArchiveRestoreIcon, CircleAlertIcon, TrashIcon } from 'lucide-react';
 import { type ReactNode, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +9,11 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { NamedText } from '~/modules/common/named-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { buildMembershipUpdate } from '~/modules/memberships/build-membership-update';
 import { canRestoreNow, useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { Button } from '~/modules/ui/button';
+import { findMembership } from '~/query/enrichment/helpers';
 
 /** Bases a module spreads into its `tools` with a `slot` and a `render`. Orders: general 10, details 20, tabs 80, danger 90; module tools default to 50. */
 export const generalToolBase = {
@@ -46,8 +49,9 @@ export function dangerToolBase(channelType: ChannelEntityType, resource: TKey): 
 function ArchiveForMe({ channel, name }: { channel: EnrichedChannel; name: string }) {
   const { t } = useTranslation();
   const { mutate: updateMembership } = useMemberUpdateMutation();
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
-  const { membership } = channel;
+  const membership = findMembership(myMemberships?.items ?? [], channel.id);
   if (!membership || !isChannelArchivable(channel.entityType)) return null;
   const { archived } = membership;
 

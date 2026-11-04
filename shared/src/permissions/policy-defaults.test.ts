@@ -47,8 +47,7 @@ describe('missing policy rows', () => {
       { ...wideOverrides, publicGrants: publicReadGrants },
     );
 
-    expect(decision.can.read).toBe(true);
-    expect(decision.actions.read.grantedBy).toEqual([{ type: 'public' }]);
+    expect(decision.can).toEqual({ create: false, read: true, update: false, delete: false });
   });
 });
 

@@ -103,15 +103,10 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     };
 
     try {
-      // Empty fieldTimestamps lets the pipeline stamp a fresh server HLC. The window reaches the yjs module's
-      // `<type>.updated` handler, which checks it under the entity row lock.
+      // An stx without `replayed` takes a fresh server HLC. The window reaches the yjs module's `<type>.updated`
+      // handler, which checks it under the entity row lock.
       await yjsMaterializeWindow.run({ entityId: input.entityId, serverRowIds: input.serverRowIds ?? [] }, () =>
-        materializer(
-          ctx,
-          input.entityId,
-          { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
-          { serverOrigin: true, materialized: true },
-        ),
+        materializer(ctx, input.entityId, { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } }),
       );
       return { sanitized };
     } catch (err) {

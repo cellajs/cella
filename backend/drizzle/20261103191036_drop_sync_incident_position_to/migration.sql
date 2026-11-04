@@ -1,0 +1,1 @@
+ALTER TABLE "sync_incidents" DROP COLUMN "position_to";

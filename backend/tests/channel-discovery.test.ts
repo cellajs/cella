@@ -1,6 +1,6 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
-import type { ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix, PredicateActor } from 'shared';
+import type { Access, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix } from 'shared';
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -10,7 +10,7 @@ import {
   buildChannelListReadWhere,
   type ChannelListReadColumns,
   excludeArchivedWhere,
-  resolveChannelCollectionReadScopeForPolicies,
+  resolveChannelCollectionReadScope,
 } from '#/permissions/channel-collection-scope';
 
 const seedDb = getSeedDb();
@@ -101,8 +101,8 @@ interface ListedRow {
 
 /** The list query as a consumer wires it: a LEFT join keyed on the caller's own membership, so discovery rows carry none. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
-  const actor: PredicateActor = { actorId: userId, isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null };
   const memberships = (await seedDb.select().from(membershipsTable).where(eq(membershipsTable.userId, userId))) as unknown as MembershipBaseModel[]; // scratch rows carry the base shape
+  const access: Access<MembershipBaseModel> = { actorId: userId, isSystemAdmin: opts.isSystemAdmin ?? false, memberships, scopes: null };
 
   const membershipKeyOn = and(
     eq(membershipsTable.channelId, channelsTable.id),
@@ -118,12 +118,8 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     ...(opts.excludeArchived && { membershipArchived: membershipsTable.archived }),
   };
 
-  const discoveryScope = resolveChannelCollectionReadScopeForPolicies({
+  const discoveryScope = resolveChannelCollectionReadScope(access, CHANNEL_TYPE, ORG_ID, {
     policies,
-    memberships,
-    channelType: CHANNEL_TYPE,
-    organizationId: ORG_ID,
-    actor,
     // The deep fixture's hierarchy has channel types the app's `EntityHierarchy` type does not name.
     hierarchy: deepHierarchy as unknown as EntityHierarchy,
   });

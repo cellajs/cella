@@ -70,12 +70,6 @@ export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEven
   return [first, ...rest];
 })();
 
-const validEventTypes = new Set<string>(trackedEventTypes);
-
-export function isValidEventType(type: string): type is TrackedEventType {
-  return validEventTypes.has(type);
-}
-
 export type TokenType = (typeof appConfig.tokenTypes)[number];
 
 export type SystemRole = (typeof appConfig.systemRoles)[number] | null;

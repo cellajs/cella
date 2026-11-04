@@ -6,7 +6,7 @@ import { hasDeletedAt } from '#/db/utils/audit-columns';
 import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
 import { isTrackedProductType } from '#/modules/seen/helpers/tracked-products';
 import { findSeenCandidates, insertSeenBy, type OrgScopedEntityTable, seenRecencySql, seenWindowStart } from '#/modules/seen/seen-queries';
-import { actorFrom } from '#/permissions/access';
+import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
@@ -32,9 +32,9 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const orgTable = entityTable as OrgScopedEntityTable;
 
-  const actor = actorFrom(ctx);
-  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, productType, organization.id, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
+  const access = accessFrom(ctx);
+  const readFilter = resolveCollectionReadFilter(access, productType, organization.id);
+  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, access);
   if (scopeWhere.kind === 'none') return { newCount: 0 };
 
   const filters: SQL[] = [

@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organiza
   },
   beforeLoad: async ({ context }) => {
     // Same grant the tab's `requires: 'update'` hides on; direct URLs get the same gate.
-    await requireEntityAction(context.organization, 'organization', 'organization', 'update', '/$tenantId/$organizationSlug/organization');
+    await requireEntityAction(context.organization, 'organization', 'update', '/$tenantId/$organizationSlug/organization');
   },
   head: ({ match }) => pageHead(`${i18n.t('c:settings')} · ${match.context.organization?.name}`),
   component: OrganizationSettingsComponent,

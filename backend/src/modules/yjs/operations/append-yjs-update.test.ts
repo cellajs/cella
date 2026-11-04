@@ -55,7 +55,7 @@ describe('the Yjs log', () => {
   /** A transaction under the document's tenant with no user, as the relay's storage opens one. */
   const asSystem = <T>(fn: (tx: Tx) => Promise<T>) =>
     baseDb.transaction(async (tx) => {
-      await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', '', true)`);
+      await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
       return fn(tx);
     });
 

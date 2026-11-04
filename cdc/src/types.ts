@@ -34,17 +34,14 @@ export type TableMeta = EntityTableMeta | ResourceTableMeta;
 export interface PendingEvent {
   /** Position of the change itself. A failure is reported at the position of the first change of its flush. */
   lsn: string;
-  /** Commit position of the change's source transaction, from its BEGIN; absent for a change outside one. */
-  commitLsn?: string | null;
-  /**
-   * End of the commit record of the change's source transaction, from its COMMIT; absent for a change outside one. A
-   * flush acknowledges the one of its last change.
-   */
-  commitEndLsn?: string | null;
+  /** Commit position of the change's source transaction, from its BEGIN. */
+  commitLsn: string;
+  /** End of the commit record of the change's source transaction, from its COMMIT. A flush acknowledges the one of its last change. */
+  commitEndLsn: string;
   /** Index of the change in its transaction, counted over every change received, kept or not. */
-  index?: number;
+  index: number;
   /** Id of the change's source transaction, from its BEGIN: it tells whether a recount already saw the change. */
-  xid?: number;
+  xid: number;
   /**
    * On the delete of a channel: what the rows that went with it take off the counts of the channels that remain, per
    * channel key. Their own deletes are no change the worker keeps, so this change carries their counts.

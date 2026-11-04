@@ -22,7 +22,7 @@ function editorsNewestFirst(rows: readonly LogRow[]): string[] {
  * `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone,
  * or of another generation than the session's. The other values are the materialize outcome.
  */
-export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' | 'retired';
+export type CompactionResult = 'empty' | 'ok' | 'gone' | 'retry' | 'retired';
 
 /** What a live session learns from its compaction: the window read, before any of it folds, and the rows that left the log. */
 export interface CompactionObserver {
@@ -49,7 +49,7 @@ export interface CompactionObserver {
  * untouched, so the base only ever holds written state and the log every edit the entity has not received; cleanup and
  * sweep rely on this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists). A fold
  * another compaction overlapped (a second relay during a rollout) is rolled back as a retry. Unparseable state is
- * never posted and counts as `permanent`. A row no merge accepts (logged before the relay refused undecodable updates,
+ * never posted and counts as a retry. A row no merge accepts (logged before the relay refused undecodable updates,
  * or one that decodes but will not merge) is discarded first, with its sender logged: it carries no edit anyone can
  * apply, and kept it would fail every window. A document gone, or of another `generation` than the session's, was
  * retired or reseeded: nothing is touched.
@@ -94,7 +94,7 @@ export async function compactDocument(scope: YjsDocScope, generation: string | n
       return compactDocument(scope, document.generation, observer);
     }
     const json = stateToBlocksJsonOrNull(state, scope);
-    if (json === null) return 'permanent';
+    if (json === null) return 'retry';
     // The backend credits the newest of the window's editors who may still update the entity.
     const serverRowIds = serverRows.map((row) => row.id);
     const result = await postMaterialize(scope, editorsNewestFirst(rows), json, serverRowIds);

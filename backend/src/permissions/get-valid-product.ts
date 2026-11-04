@@ -1,13 +1,11 @@
-import { draftVisibleTo, type EntityActionType, type ProductEntityType } from 'shared';
+import { buildSubjectFromEntity, checkAccess, draftVisibleTo, type EntityActionType, type ProductEntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { requestScope } from '#/db/utils/request-scope';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
 export interface ValidProductResult<K extends ProductEntityType> {

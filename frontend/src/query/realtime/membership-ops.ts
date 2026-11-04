@@ -35,7 +35,7 @@ export function invalidateMemberQueries(organizationId: string | null): void {
   }
 }
 
-/** The enrichment subscriber re-enriches entity lists from this, and useMenu rebuilds. */
+/** The channel enrichment subscriber reruns on this, and useMenu rebuilds. */
 export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }

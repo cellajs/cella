@@ -11,7 +11,6 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { cdcPublicationName, cdcSlotName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
-import { ApiUnreachableError } from '../../services/failure';
 import { replicationState } from '../../services/replication-state';
 import { replicationStatus } from '../../services/replication-status';
 import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
@@ -53,9 +52,9 @@ async function slotReached(target: string): Promise<boolean> {
 const recordedOf = async (ids: string[]) =>
   (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
 
-/** A message for a row as the stub API received it: its activity id, and the rows it speaks for. */
+/** A message as the stub API received it: the activity id and the id of each row it holds. */
 interface ReceivedMessage {
-  activityId: string;
+  activityIds: string[];
   rowIds: string[];
 }
 
@@ -89,8 +88,10 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
         socket.on('message', (data: any) => {
           try {
             const { activity, rows } = JSON.parse(data.toString());
-            // A message for rows carries an `activity`; a product message names each of its rows, any other is its one row.
-            if (activity) received.push({ activityId: activity.id, rowIds: rows?.map((row: any) => row.rowData.id) ?? [activity.subjectId] });
+            // A message for rows carries an `activity`; a product message names each of its rows with its activity, any other is its one row.
+            if (!activity) return;
+            if (rows) received.push({ activityIds: rows.map((row: any) => row.activityId), rowIds: rows.map((row: any) => row.rowData.id) });
+            else received.push({ activityIds: [activity.id], rowIds: [activity.subjectId] });
           } catch {
             // ignore non-JSON / control frames
           }
@@ -259,7 +260,7 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
     const realSend = wsClient.send.bind(wsClient);
     const send = vi.spyOn(wsClient, 'send').mockImplementation((data: unknown) => {
       sends += 1;
-      if (sends === 2) throw new ApiUnreachableError();
+      if (sends === 2) throw new Error('The API is not reachable');
       realSend(data);
     });
 
@@ -292,7 +293,7 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
     // Delivery is at least once: the tenant's message went out on both reads, with the same activity id.
     const tenantMessages = received.filter((message) => message.rowIds.includes(tenant.id));
     expect(tenantMessages).toHaveLength(2);
-    expect(tenantMessages[0].activityId).toBe(tenantMessages[1].activityId);
+    expect(tenantMessages[0].activityIds).toEqual(tenantMessages[1].activityIds);
     expect(received.filter((message) => message.rowIds.includes(ids[0]))).toHaveLength(1);
   }, 60_000);
 });

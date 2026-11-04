@@ -1,6 +1,7 @@
 import { SSEStreamingApi } from 'hono/streaming';
+import { workerAwayPing } from 'shared/stream-ping';
 import { describe, expect, it } from 'vitest';
-import { keepAlive, workerAwayPing } from './helpers';
+import { keepAlive } from './helpers';
 
 /** A real SSE stream and what a client reads from it, frame by frame. */
 const openStream = () => {

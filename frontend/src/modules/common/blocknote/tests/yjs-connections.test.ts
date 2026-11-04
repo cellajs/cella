@@ -112,8 +112,18 @@ const invalidateQueries = vi.fn();
 const tokenQuery = vi.fn();
 /** Observers of the token query: an open editor holds one. */
 let tokenObservers = 1;
-/** The error the token query last failed with: the token route's answer, which says why a token was withdrawn. */
-let tokenError: { status: number } | null = null;
+/** Each entity's token query as the cache holds it: its token, and the error its last fetch failed with, the token route's answer. */
+const tokenStates = new Map<string, { data?: string; error: unknown }>();
+/** What the query cache tells its watchers, as far as a connection reads it. */
+type CacheEvent = { type: string; query: { queryHash: string; state: unknown } };
+/** The connections' watches of the query cache. */
+const cacheWatches = new Set<(event: CacheEvent) => void>();
+/** A fetch of the entity's token query settles, as react-query writes it: a token clears the error, a failure keeps the token. */
+const settleToken = (entityId: string, answer: { token: string } | { error: unknown }) => {
+  const state = 'token' in answer ? { data: answer.token, error: null } : { ...tokenStates.get(entityId), error: answer.error };
+  tokenStates.set(entityId, state);
+  for (const watch of cacheWatches) watch({ type: 'updated', query: { queryHash: JSON.stringify(['attachment', entityId]), state } });
+};
 
 /** A document that records its `update` listener, so a test can make a local edit. */
 class MockDoc {
@@ -137,6 +147,7 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (...arg
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
 vi.mock('shared', () => ({ appConfig: { yjsUrl: 'http://localhost:1234' } }));
 vi.mock('@tanstack/react-query', () => ({
+  hashKey: (key: unknown) => JSON.stringify(key),
   onlineManager: {
     isOnline: () => online,
     subscribe: (listener: (online: boolean) => void) => {
@@ -148,9 +159,24 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: (...args: unknown[]) => invalidateQueries(...args),
-    query: (...args: unknown[]) => tokenQuery(...args),
-    getQueryCache: () => ({ find: () => ({ getObserversCount: () => tokenObservers }) }),
-    getQueryState: () => ({ error: tokenError }),
+    query: async (options: { params: { entityId: string } }) => {
+      try {
+        const token = await tokenQuery(options);
+        settleToken(options.params.entityId, { token });
+        return token;
+      } catch (error) {
+        settleToken(options.params.entityId, { error });
+        throw error;
+      }
+    },
+    getQueryCache: () => ({
+      find: () => ({ getObserversCount: () => tokenObservers }),
+      subscribe: (watch: (event: CacheEvent) => void) => {
+        cacheWatches.add(watch);
+        return () => cacheWatches.delete(watch);
+      },
+    }),
+    getQueryState: ([, entityId]: string[]) => tokenStates.get(entityId),
   },
 }));
 vi.mock('~/modules/common/blocknote/query', () => ({
@@ -159,7 +185,6 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   // As the token route answers: 404 for a deleted entity, 403 for one the caller may not edit.
   yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
-vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 /** What each end for good handed to parking: its reason and scope, the document, and whether it held unsynced edits then. */
 const parked: { reason: string; scope: unknown; doc: unknown; unsynced: boolean }[] = [];
 vi.mock('~/modules/common/blocknote/unsaveable-notices', () => ({
@@ -174,11 +199,11 @@ vi.mock('~/modules/common/blocknote/yjs-http', () => ({
   wsSyncDeadlineMs: 5_000,
   createHttpLink: (_conn: unknown, handlers: { onEnd: (reason: string) => void }) => {
     httpHandlers.push(handlers);
-    return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
+    return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, clean: false };
   },
 }));
 
-const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore } = await import('~/modules/user/user-store');
 const { useYjsConnection, watchUnstoredYDocs } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -191,8 +216,7 @@ let counter = 0;
 /** Mounts one editor's connection and returns a reader for its latest hook state and its provider. */
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
-  const tokenKey = yjsTokenKey('attachment', entityId);
-  userStore.getState().setYjsToken(tokenKey, 'token-v1');
+  settleToken(entityId, { token: 'token-v1' });
   let latest: Connection = null;
   const Harness = () => {
     latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
@@ -203,7 +227,7 @@ async function mountConnection() {
   await act(async () => root?.render(createElement(Harness)));
   const provider = providers.at(-1);
   if (!provider) throw new Error('no provider created');
-  return { provider, tokenKey, entityId, state: () => latest };
+  return { provider, entityId, state: () => latest };
 }
 
 /** The scope parking stores with the edits: the entity, and the tenant and organization the connection opened in. */
@@ -246,7 +270,6 @@ beforeEach(() => {
   warning.mockClear();
   invalidateQueries.mockClear();
   tokenQuery.mockReset();
-  tokenError = null;
 });
 
 afterEach(async () => {
@@ -267,7 +290,7 @@ describe('yjs connection: opening', () => {
 
   it('connects once the browser is back online, but never a connection whose token was withdrawn meanwhile', async () => {
     online = false;
-    const { provider, tokenKey, state } = await mountConnection();
+    const { provider, entityId, state } = await mountConnection();
     expect(provider.connect).not.toHaveBeenCalled();
 
     await act(async () => onlineListener?.(true));
@@ -275,7 +298,7 @@ describe('yjs connection: opening', () => {
 
     // Withdrawn while offline, the token ends the connection there and then, and coming back online leaves it ended.
     await act(async () => onlineListener?.(false));
-    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => settleToken(entityId, { error: { status: 403 } }));
     expect(state()?.stopped).toBe(true);
     await act(async () => onlineListener?.(true));
     expect(provider.connect).toHaveBeenCalledOnce();
@@ -323,20 +346,20 @@ describe('yjs connection: sync frames before the generation', () => {
 
 describe('yjs connection: transient closes', () => {
   it('must not stop syncing via a server restart, a dropped connection or an authorization outage', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
+    const { provider, state } = await mountConnection();
 
     for (const code of [1001, 1006, 4503]) await close(provider, code);
 
     // y-websocket backs off and resyncs with the same token.
     expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
+    expect(provider.params.token).toBe('token-v1');
     expect(state()?.stopped).toBe(false);
     expect(warning).not.toHaveBeenCalled();
   });
 
   it('keeps the provider on the latest token, so a reconnect uses it', async () => {
-    const { provider, tokenKey } = await mountConnection();
-    await act(async () => userStore.getState().setYjsToken(tokenKey, 'token-v2'));
+    const { provider, entityId } = await mountConnection();
+    await act(async () => settleToken(entityId, { token: 'token-v2' }));
     expect(provider.params.token).toBe('token-v2');
   });
 });
@@ -391,10 +414,11 @@ describe('yjs connection: token refusals', () => {
     await close(provider, 4001);
   };
   /** The refetch a refusal starts stores a new token before the next attempt. */
-  const fetchToken = (tokenKey: string, token: string) => act(async () => userStore.getState().setYjsToken(tokenKey, token));
+  const fetchToken = (entityId: string, token: string) => act(async () => settleToken(entityId, { token }));
 
   it('must not stop syncing via an API outage at token refresh, nor retry forever: five distinct tokens refused with no sync between stop it, and the edits stay', async () => {
-    const { provider, tokenKey, state } = await mountConnection();
+    userStore.setState({ user: { id: 'user-1' } as never });
+    const { provider, entityId, state } = await mountConnection();
     await handshake(provider);
     await relaySaved(provider);
     await act(async () => provider.dropSocket());
@@ -409,7 +433,7 @@ describe('yjs connection: token refusals', () => {
     // A synced connection resets the count, so routine expiry closes never add up.
     for (let i = 2; i < 10; i++) {
       await refuseToken(provider);
-      await fetchToken(tokenKey, `token-v${i}`);
+      await fetchToken(entityId, `token-v${i}`);
       await act(async () => provider.emit('sync', true));
     }
     expect(provider.disconnect).not.toHaveBeenCalled();
@@ -417,7 +441,7 @@ describe('yjs connection: token refusals', () => {
     // Five fresh tokens refused in a row, the last one included, stop it for good.
     for (let i = 10; i < 14; i++) {
       await refuseToken(provider);
-      await fetchToken(tokenKey, `token-v${i}`);
+      await fetchToken(entityId, `token-v${i}`);
     }
     expect(provider.disconnect).not.toHaveBeenCalled();
     await refuseToken(provider);
@@ -432,14 +456,14 @@ describe('yjs connection: token refusals', () => {
     root = undefined;
     expect(provider.destroy).not.toHaveBeenCalled();
 
-    // Signed out: the token goes with the user, and the connection with it, still without parking.
-    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
+    // Signed out: the connection goes with the user, still without parking.
+    await act(async () => userStore.setState({ user: null }));
     expect(provider.destroy).toHaveBeenCalledTimes(1);
     expect(parked).toEqual([]);
   });
 
   it('fetches its own token after a refusal while no editor observes the token query', async () => {
-    const { provider, tokenKey } = await mountConnection();
+    const { provider } = await mountConnection();
     tokenObservers = 0;
     tokenQuery.mockResolvedValueOnce('token-fresh');
     try {
@@ -447,7 +471,7 @@ describe('yjs connection: token refusals', () => {
       await act(async () => {});
 
       expect(tokenQuery).toHaveBeenCalledOnce();
-      expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
+      expect(provider.params.token).toBe('token-fresh');
     } finally {
       tokenObservers = 1;
     }
@@ -531,14 +555,11 @@ describe('yjs connection: edits the relay has not saved', () => {
 
 describe('yjs connection: ending for good', () => {
   type Mounted = Awaited<ReturnType<typeof mountConnection>>;
-  /** A token the token route withdrew: the error it failed with says why. */
+  /** A token the token route withdrew: the error its refetch failed with says why. */
   const withdrawToken =
     (status: number) =>
-    ({ tokenKey }: Mounted) => {
-      userStore.setState({ user: { id: 'user-1' } as never });
-      tokenError = { status };
-      userStore.getState().setYjsToken(tokenKey, null);
-    };
+    ({ entityId }: Mounted) =>
+      settleToken(entityId, { error: { status } });
   const closeWith =
     (code: number) =>
     ({ provider }: Mounted) =>
@@ -557,10 +578,6 @@ describe('yjs connection: ending for good', () => {
     ['the token route answers 403', withdrawToken(403), 'denied'],
     ['the token route answers 404', withdrawToken(404), 'deleted'],
   ];
-
-  afterEach(() => {
-    userStore.setState({ user: null });
-  });
 
   it.each(finalAnswers)(
     'must not keep edits once %s: they are parked once under its reason, and the connection ends for good',

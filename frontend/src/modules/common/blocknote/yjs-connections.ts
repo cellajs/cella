@@ -1,4 +1,4 @@
-import { onlineManager } from '@tanstack/react-query';
+import { hashKey, onlineManager, type QueryState } from '@tanstack/react-query';
 import i18n from 'i18next';
 import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
@@ -13,7 +13,6 @@ import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/c
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
 import { yDocFragment } from '~/modules/common/blocknote/ydoc-label';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
-import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import {
   type AppliedRows,
   createYDocWriter,
@@ -26,14 +25,12 @@ import {
 } from '~/modules/common/blocknote/yjs-store';
 import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { userStore, yjsTokenKey } from '~/modules/user/user-store';
-import { getLocalUserDb, type UnsaveableReason, type YDocRecord, type YjsDocScope } from '~/query/local-user-db';
+import { userStore } from '~/modules/user/user-store';
+import { getLocalUserDb, type UnsaveableReason, type YDocKey, type YDocRecord, type YjsDocScope } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const gracePeriodMs = 30_000;
 const maxBackoffMs = 30_000;
-/** How long a socket waits for its first `Saved` after its handshake Step2, before it takes the relay for one that sends none. */
-const savedFallbackMs = 10_000;
 /** Distinct tokens the relay refused, with no synced connection between them, before the connection stops for good. */
 const maxTokenFailures = 5;
 
@@ -88,13 +85,10 @@ interface SocketLedger {
   saved: number;
   /** The `sent` count that includes the handshake's Step2; 0 until it went out. */
   handshakeAt: number;
-  /** No `Saved` came within savedFallbackMs of the handshake Step2: a relay that sends none, so y-websocket's `synced` stands in. */
-  legacy: boolean;
   /** The socket's `Generation` frame arrived and matched; sync frames before it are dropped. */
   generationSeen: boolean;
   /** The relay saved the handshake's Step2, so it holds every edit the document held when the Step2 went out. */
   handshakeProven: boolean;
-  fallbackTimer?: ReturnType<typeof setTimeout>;
   /** Re-evaluates the connection once the ledger changed; bound with the provider. */
   onChange: () => void;
   /** Runs as the handshake's Step2 goes out, before the relay can answer it. */
@@ -105,10 +99,8 @@ const freshLedger: Omit<SocketLedger, 'onChange' | 'onHandshakeSent'> = {
   sent: 0,
   saved: 0,
   handshakeAt: 0,
-  legacy: false,
   generationSeen: false,
   handshakeProven: false,
-  fallbackTimer: undefined,
 };
 
 /** The transport syncing a connection's document: the relay's socket, the API's HTTP routes, or none yet. */
@@ -148,9 +140,8 @@ export interface YjsConnection {
   unsynced: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
   unsubscribeOnline?: () => void;
+  /** Stops the watches of the token query and of the signed-in user. */
   unsubscribeToken?: () => void;
-  /** Stops the parked-structs watch that resyncs a document stuck on a lost update. */
-  stopResyncWatch?: () => void;
 }
 
 /** Each entity's connection, by its id; changed outside React render only. */
@@ -249,14 +240,6 @@ function pauseTransports(conn: YjsConnection) {
   setTransport(conn, 'none');
 }
 
-function armSavedFallback(ledger: SocketLedger) {
-  if (ledger.saved > 0) return;
-  ledger.fallbackTimer = setTimeout(() => {
-    ledger.legacy = true;
-    ledger.onChange();
-  }, savedFallbackMs);
-}
-
 /** The sync subtype of a frame y-websocket sends; null for any other message. */
 function syncSubtype(data: unknown): number | null {
   if (!(data instanceof Uint8Array) || data.length < 2) return null;
@@ -273,7 +256,6 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
   return class LedgerSocket extends WebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
-      clearTimeout(ledger.fallbackTimer);
       Object.assign(ledger, freshLedger);
     }
 
@@ -284,7 +266,6 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
       ledger.sent++;
       if (subtype === yjsSyncSubtypes.STEP2 && ledger.handshakeAt === 0) {
         ledger.handshakeAt = ledger.sent;
-        armSavedFallback(ledger);
         ledger.onHandshakeSent();
       }
     }
@@ -293,12 +274,10 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
 
 /**
  * True once the relay holds every edit of the document: the socket is open, its handshake Step2 was saved, and so was
- * every frame after it. Against a relay that sends no `Saved`, the best proof there is: synced, with the handshake
- * Step2 sent.
+ * every frame after it.
  */
 function isSocketClean(provider: WebsocketProvider, ledger: SocketLedger) {
   if (!provider.wsconnected || provider.ws?.readyState !== WebSocket.OPEN || ledger.handshakeAt === 0) return false;
-  if (ledger.legacy) return provider.synced;
   return ledger.saved === ledger.sent;
 }
 
@@ -308,11 +287,10 @@ function isClean(conn: YjsConnection) {
   return isSocketClean(conn.provider, conn.ledger);
 }
 
-/** What a handshake proves once the server holds it: every stored row the document holds now, and its state. */
+/** What a handshake proves once the server holds it: every stored row the document holds now. */
 export const handshakeProof = (conn: YjsConnection): StoreProof => ({
   kind: 'handshake',
   applied: { upTo: conn.applied.upTo, ids: new Set(conn.applied.ids) },
-  vector: Y.encodeStateVector(conn.yDoc),
 });
 
 /** Where an update applied with the provider as origin came from: the relay, unless {@link applyRemoteUpdate} says otherwise. */
@@ -372,13 +350,19 @@ type DocParts = Pick<
   'yDoc' | 'awareness' | 'provider' | 'fragment' | 'ledger' | 'transport' | 'loaded' | 'ready' | 'stored' | 'writer' | 'http' | 'applied'
 >;
 
+/** The token a query state holds; null before one arrived, and once the token route refused it, whatever it cached before. */
+const tokenOf = (state: QueryState<string> | undefined) => (!state || yjsTokenRefusal(state.error) ? null : (state.data ?? null));
+
+/** The entity's token as its query holds it. */
+const heldToken = ({ entityType, entityId }: YDocKey) => tokenOf(queryClient.getQueryState<string>(yjsTokenKeys.entity(entityType, entityId)));
+
 /**
  * A fresh document, its Awareness and its provider, with the entity's token if one is held. The provider connects only
  * through startConnection, and without a token waits for one: a stored document is editable meanwhile.
  */
 function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
-  const token = userStore.getState().yjsTokens[yjsTokenKey(entityType, entityId)] ?? '';
+  const token = heldToken({ entityType, entityId }) ?? '';
 
   const yDoc = new Y.Doc();
   const awareness = new Awareness(yDoc);
@@ -534,8 +518,10 @@ onTabMessage(receiveTabMessage);
 /** Listens on the connection's document and provider: the token, the first sync, final closes, reseeds, saves, local edits and HTTP. */
 function bindProvider(conn: YjsConnection) {
   const { provider, yDoc, ledger, scope } = conn;
-  const tokenKey = yjsTokenKey(scope.entityType, scope.entityId);
   const tokenQueryKey = yjsTokenKeys.entity(scope.entityType, scope.entityId);
+  const tokenQueryHash = hashKey(tokenQueryKey);
+  // The token the provider holds, null while none is; a refusal withdraws it.
+  let token = provider.params.token || null;
 
   // Once the server holds every edit, `unsynced` clears, the stored rows are proven, and a connection past its grace period goes.
   const settle = () => {
@@ -557,30 +543,41 @@ function bindProvider(conn: YjsConnection) {
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(conn);
-    } else if (conn.loaded && !conn.stopped && userStore.getState().yjsTokens[tokenKey]) provider.connect();
+    } else if (conn.loaded && !conn.stopped && token) provider.connect();
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
-  conn.unsubscribeToken = userStore.subscribe((state, prev) => {
-    const newToken = state.yjsTokens[tokenKey];
-    if (newToken) {
-      provider.params.token = newToken;
+  // The cache's removals are its clear at sign-out, which the user watch below handles.
+  const stopTokenWatch = queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== 'updated' || event.query.queryHash !== tokenQueryHash) return;
+    const state: QueryState<string> = event.query.state;
+    const next = tokenOf(state);
+    if (next) {
       // A document opened without a token, from storage, connects once one arrives.
-      if (!prev.yjsTokens[tokenKey] && conn.loaded && !conn.stopped && onlineManager.isOnline()) provider.connect();
+      const connect = !token && conn.loaded && !conn.stopped && onlineManager.isOnline();
+      token = next;
+      provider.params.token = next;
+      if (connect) provider.connect();
       return;
     }
-    // Withdrawn (access revoked, the entity gone, or signed out), also while offline: the token cannot come back.
-    if (!prev.yjsTokens[tokenKey]) return;
-    // Signed out: storage stays; a hard sign-out lists these edits before it deletes the database, and a lost session keeps them.
-    if (!state.user) {
-      setUnsynced(conn, false);
-      stopConnection(conn, null);
-      return reapConnection(conn);
-    }
-    // The token route refused it: 404 for a deleted entity, as the relay's 4410 says, else 403 for lost edit rights.
-    const refusal = yjsTokenRefusal(queryClient.getQueryState(tokenQueryKey)?.error);
-    endUnsaveable(conn, refusal ?? 'denied');
+    // Withdrawn, also while offline: the token route refused it, 404 for a deleted entity as the relay's 4410 says, 403
+    // for lost edit rights. The token cannot come back.
+    const refusal = yjsTokenRefusal(state.error);
+    if (!refusal || !token) return;
+    token = null;
+    endUnsaveable(conn, refusal);
   });
+  // Signed out: storage stays; a hard sign-out lists these edits before it deletes the database, and a lost session keeps them.
+  const stopUserWatch = userStore.subscribe((state, prev) => {
+    if (state.user || !prev.user) return;
+    setUnsynced(conn, false);
+    stopConnection(conn, null);
+    reapConnection(conn);
+  });
+  conn.unsubscribeToken = () => {
+    stopTokenWatch();
+    stopUserWatch();
+  };
 
   // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
   let attemptToken = provider.params.token;
@@ -606,14 +603,10 @@ function bindProvider(conn: YjsConnection) {
     if (event.code === yjsCloseCodes.TOKEN_INVALID) {
       refusedTokens.add(attemptToken);
       void queryClient.invalidateQueries({ queryKey: tokenQueryKey });
-      // A connection kept only for unsaved edits has no query observing the key: it fetches its own, and a refusal withdraws it.
+      // A connection kept only for unsaved edits has no query observing the key: it fetches its own, whose answer the
+      // token watch takes, a refusal included.
       if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
-        queryClient
-          .query(yjsTokenQueryOptions(scope))
-          .then((token) => userStore.getState().setYjsToken(tokenKey, token))
-          .catch((error) => {
-            if (yjsTokenRefusal(error)) userStore.getState().setYjsToken(tokenKey, null);
-          });
+        queryClient.query(yjsTokenQueryOptions(scope)).catch(() => {});
       }
       if (refusedTokens.size < maxTokenFailures) return;
       console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${scope.entityId}`);
@@ -642,7 +635,7 @@ function bindProvider(conn: YjsConnection) {
     if (ledger.generationSeen) readSync(...args);
   };
 
-  // One per Step2 or Update this socket sent, in order. Any `Saved` proves the relay sends them.
+  // One per Step2 or Update this socket sent, in order.
   provider.messageHandlers[yjsMessageTypes.SAVED] = () => {
     ledger.saved++;
     if (ledger.handshakeAt > 0 && ledger.saved >= ledger.handshakeAt && !ledger.handshakeProven) {
@@ -650,8 +643,6 @@ function bindProvider(conn: YjsConnection) {
       if (handshake) void conn.writer?.prove(handshake);
       handshake = null;
     }
-    ledger.legacy = false;
-    clearTimeout(ledger.fallbackTimer);
     settle();
   };
 
@@ -671,8 +662,6 @@ function bindProvider(conn: YjsConnection) {
     setUnsynced(conn, true);
     queueMicrotask(settle);
   });
-
-  conn.stopResyncWatch = watchPendingStructs(yDoc, provider);
 
   // HTTP takes over when a socket attempt has not synced within wsSyncDeadlineMs while the API answers. y-websocket
   // keeps reconnecting with backoff meanwhile, and the first sync hands the document back. No switch disconnects it.
@@ -708,8 +697,6 @@ function bindProvider(conn: YjsConnection) {
 function unbindProvider(conn: YjsConnection) {
   conn.unsubscribeOnline?.();
   conn.unsubscribeToken?.();
-  conn.stopResyncWatch?.();
-  clearTimeout(conn.ledger.fallbackTimer);
   clearTimeout(conn.wsDeadline);
   conn.http?.leave();
   conn.provider.destroy();
@@ -812,11 +799,9 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
   const { entityType, entityId, tenantId, organizationId } = record;
   if (connections.has(entityId)) return;
   const scope: YjsDocScope = { entityType, entityId, tenantId, organizationId };
-  const tokenKey = yjsTokenKey(entityType, entityId);
-  if (!userStore.getState().yjsTokens[tokenKey]) {
+  if (!heldToken(scope)) {
     try {
-      const token = await queryClient.query(yjsTokenQueryOptions(scope));
-      userStore.getState().setYjsToken(tokenKey, token);
+      await queryClient.query(yjsTokenQueryOptions(scope));
     } catch (error) {
       // Deleted, or edit rights lost while the edits waited: they are parked; a network failure retries once back online.
       const refusal = yjsTokenRefusal(error);

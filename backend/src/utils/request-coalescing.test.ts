@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { coalesce, isInFlight } from '#/utils/request-coalescing';
+import { coalesce } from '#/utils/request-coalescing';
 
 describe('request-coalescing', () => {
   describe('coalesce', () => {
@@ -25,8 +25,6 @@ describe('request-coalescing', () => {
 
       expect(fetcher).toHaveBeenCalledTimes(1);
 
-      expect(isInFlight('key1')).toBe(true);
-
       resolvePromise!('shared-result');
 
       const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3]);
@@ -50,7 +48,9 @@ describe('request-coalescing', () => {
     it('should clean up after completion', async () => {
       await coalesce('key1', async () => 'result');
 
-      expect(isInFlight('key1')).toBe(false);
+      const next = vi.fn().mockResolvedValue('next');
+      expect(await coalesce('key1', next)).toBe('next');
+      expect(next).toHaveBeenCalledTimes(1);
     });
 
     it('should clean up after error', async () => {
@@ -58,7 +58,9 @@ describe('request-coalescing', () => {
 
       await expect(coalesce('key1', failingFetcher)).rejects.toThrow('fail');
 
-      expect(isInFlight('key1')).toBe(false);
+      const next = vi.fn().mockResolvedValue('next');
+      expect(await coalesce('key1', next)).toBe('next');
+      expect(next).toHaveBeenCalledTimes(1);
     });
 
     it('should propagate errors to all waiting callers', async () => {

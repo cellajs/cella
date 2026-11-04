@@ -110,4 +110,4 @@ Every HTTP service answers `GET /health` with a shallow 204 for the agent behind
 | CDC | Its grade and reasons, replication and slot state, the socket to the API |
 | Yjs | Connection, document and client counts |
 
-A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on, so a deploy that ends on a stuck CDC worker fails. The jobs component only ever degrades.
+A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on. A CDC worker that reads a failing change again is degraded at first, so a deploy that brings such a change warns and stays deployed; the worker turns unhealthy once it has not got past the change for a while. The jobs component only ever degrades.

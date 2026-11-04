@@ -1,77 +1,67 @@
-import type { PostAppCatchupResponse } from 'sdk';
+import type { PostAppCatchupResponse, StreamChange, StreamSignal } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LeaderMessage } from '~/query/realtime/tab-coordinator';
 
 vi.mock('shared', () => ({ appConfig: { backendUrl: 'http://api.test', slug: 'test' } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn(), setSyncWorkerAway: vi.fn() }));
-// The stream cursor of this tab's sync store: settable, and its writes observed.
-const syncControl = vi.hoisted(() => ({ cursor: null as string | null, setCursor: vi.fn() }));
-vi.mock('~/query/realtime/sync-store', () => ({
-  syncStore: {
-    getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, getCatchupViews: () => [] }),
-  },
-}));
-vi.mock('~/query/realtime/app-stream-handler', () => ({ handleStreamChange: vi.fn() }));
+vi.mock('~/query/realtime/sync-store', () => ({ syncStore: { getState: () => ({ getCatchupViews: () => [] }) } }));
 vi.mock('~/query/realtime/view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
-vi.mock('~/query/realtime/catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
 vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEntityTypes: () => [] }));
-// Controllable leader state so tests can drive the follower -> leader promotion transition, and hand a tab what the leader posted.
-const leaderControl = vi.hoisted(() => {
+
+// Each case imports a fresh page, so the modules it mocks hand out these same functions every time.
+const sink = vi.hoisted(() => ({
+  postAppCatchup: vi.fn(),
+  processAppCatchup: vi.fn((_response: PostAppCatchupResponse) => Promise.resolve()),
+  handleStreamChange: vi.fn(),
+  handleStreamSignal: vi.fn(),
+  setSyncStreamHealthy: vi.fn(),
+  setSyncWorkerAway: vi.fn(),
+}));
+vi.mock('sdk', () => ({ postAppCatchup: sink.postAppCatchup }));
+vi.mock('~/query/realtime/catchup-processor', () => ({ processAppCatchup: sink.processAppCatchup }));
+vi.mock('~/query/realtime/app-stream-handler', () => ({ handleStreamChange: sink.handleStreamChange }));
+vi.mock('~/query/realtime/signal-handlers', () => ({ handleStreamSignal: sink.handleStreamSignal }));
+vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: sink.setSyncStreamHealthy, setSyncWorkerAway: sink.setSyncWorkerAway }));
+
+// The tab coordinator: a leadership the cases flip, what this tab posts, and what the leader tab posted to this one.
+const tabs = vi.hoisted(() => {
   const state = { isLeader: true };
-  const subscribers = new Set<(state: { isLeader: boolean }, previous: { isLeader: boolean }) => void>();
-  const catchupHandlers = new Set<(catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void>();
-  const healthHandlers = new Set<(health: { streamHealthy: boolean; workerAway: boolean }) => void>();
+  const subscribers = new Set<(state: { isLeader: boolean }) => void>();
+  let handler: ((message: LeaderMessage) => void) | null = null;
   return {
-    onSyncHealth: (fn: (health: { streamHealthy: boolean; workerAway: boolean }) => void) => {
-      healthHandlers.add(fn);
-      return () => healthHandlers.delete(fn);
+    initTabCoordinator: vi.fn(() => Promise.resolve()),
+    postToFollowers: vi.fn<(message: LeaderMessage) => void>(),
+    onLeaderMessage: (fn: (message: LeaderMessage) => void) => {
+      handler = fn;
     },
-    /** The health of the leader's stream, as the coordinator hands it to this tab. */
-    receiveSyncHealth: (health: { streamHealthy: boolean; workerAway: boolean }) => {
-      for (const fn of healthHandlers) fn(health);
-    },
+    /** What the leader tab posted, as the coordinator hands it to a follower. */
+    receive: (message: LeaderMessage) => handler?.(message),
     isLeader: () => state.isLeader,
-    getState: () => ({ isLeader: state.isLeader }),
-    subscribe: (fn: (state: { isLeader: boolean }, previous: { isLeader: boolean }) => void) => {
-      subscribers.add(fn);
-      return () => subscribers.delete(fn);
+    store: {
+      getState: () => ({ isLeader: state.isLeader }),
+      subscribe: (fn: (state: { isLeader: boolean }) => void) => {
+        subscribers.add(fn);
+        return () => subscribers.delete(fn);
+      },
     },
     setLeader: (next: boolean) => {
-      const previous = state.isLeader;
       state.isLeader = next;
-      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: previous });
-    },
-    onCatchup: (fn: (catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void) => {
-      catchupHandlers.add(fn);
-      return () => catchupHandlers.delete(fn);
-    },
-    /** A catchup answer the leader tab posted, as the coordinator hands it to this tab. */
-    receiveCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => {
-      for (const fn of catchupHandlers) fn({ response, baselineOnly });
+      for (const fn of subscribers) fn({ isLeader: next });
     },
     reset: () => {
       state.isLeader = true;
       subscribers.clear();
-      catchupHandlers.clear();
     },
   };
 });
-
 vi.mock('~/query/realtime/tab-coordinator', () => ({
-  broadcastCatchup: vi.fn(),
-  broadcastStreamChange: vi.fn(),
-  broadcastStreamSignal: vi.fn(),
-  broadcastSyncHealth: vi.fn(),
-  onSyncHealth: leaderControl.onSyncHealth,
-  initTabCoordinator: vi.fn(() => Promise.resolve()),
-  isLeader: () => leaderControl.isLeader(),
-  onCatchup: leaderControl.onCatchup,
-  onStreamChange: vi.fn(() => () => {}),
-  onStreamSignal: vi.fn(() => () => {}),
-  tabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
+  initTabCoordinator: tabs.initTabCoordinator,
+  isLeader: tabs.isLeader,
+  onLeaderMessage: tabs.onLeaderMessage,
+  postToFollowers: tabs.postToFollowers,
+  tabCoordinatorStore: tabs.store,
 }));
-vi.mock('sdk', () => ({ postAppCatchup: vi.fn() }));
 
 /** Test double for the browser EventSource: records instances, lets tests emit named events. */
 class FakeEventSource {
@@ -97,8 +87,8 @@ class FakeEventSource {
     this.listeners.set(type, list);
   }
 
-  emit(type: string, data: string, lastEventId = '') {
-    for (const fn of this.listeners.get(type) ?? []) fn({ data, lastEventId } as MessageEvent);
+  emit(type: string, data = '') {
+    for (const fn of this.listeners.get(type) ?? []) fn({ data } as MessageEvent);
   }
 
   /** The server's typed `error` event, which the browser delivers as a MessageEvent (a transport failure is a bare Event). */
@@ -115,49 +105,47 @@ class FakeEventSource {
 vi.stubGlobal('EventSource', FakeEventSource);
 vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.fn(), visibilityState: 'visible' });
 
-const { postAppCatchup } = await import('sdk');
-const { processAppCatchup } = await import('~/query/realtime/catchup-processor');
-const { broadcastCatchup, broadcastStreamChange, broadcastSyncHealth } = await import('~/query/realtime/tab-coordinator');
-const { setSyncStreamHealthy, setSyncWorkerAway } = await import('~/query/basic/sync-stale-state');
-const { StreamManager, appStreamManager } = await import('~/query/realtime/stream-manager');
-
 /** Flush pending microtasks so awaited catchup continuations run. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-let managerCount = 0;
+const answer: PostAppCatchupResponse = { organizations: {}, generation: 3 };
+const answered = () => Promise.resolve(answer);
 
-function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | null) => Promise<string | null>; useTabCoordination?: boolean }) {
+/** What this tab posted to the follower tabs, of one kind. */
+const posted = (type: LeaderMessage['type']) => tabs.postToFollowers.mock.calls.flatMap(([message]) => (message.type === type ? [message] : []));
+
+let current: { disconnect: () => void } | undefined;
+
+/**
+ * The stream manager of a fresh page, whose module holds the one manager and the gate paused writes wait on. It records
+ * the start and the end of each catchup request and each change it applies; a request waits for `resolveCatchup`
+ * unless `catchup` answers it.
+ */
+async function createHarness(catchup?: () => Promise<PostAppCatchupResponse>) {
+  vi.resetModules();
+  const { appStreamManager: manager, waitForActiveCatchup } = await import('~/query/realtime/stream-manager');
+  current = manager;
   const order: string[] = [];
-  const processed: unknown[] = [];
-  let resolveCatchup: ((cursor: string | null) => void) | undefined;
+  let resolveCatchup: (() => void) | undefined;
 
-  const manager = new StreamManager(`TestStream-${managerCount++}`, {
-    endpoint: 'http://api.test/stream',
-    withCredentials: false,
-    useTabCoordination: overrides?.useTabCoordination ?? false,
-    fetchAndProcessCatchup:
-      overrides?.fetchAndProcessCatchup ??
+  sink.postAppCatchup.mockImplementation(
+    catchup ??
       (() =>
-        new Promise<string | null>((resolve) => {
+        new Promise<PostAppCatchupResponse>((resolve) => {
           order.push('catchup-start');
-          resolveCatchup = (cursor) => {
+          resolveCatchup = () => {
             order.push('catchup-done');
-            resolve(cursor);
+            resolve(answer);
           };
         })),
-    processLeaderCatchup: () => Promise.resolve(),
-    processChange: (n: unknown) => {
-      order.push(`process:${(n as { id: string }).id}`);
-      processed.push(n);
-    },
-    processSignal: () => {},
-  });
+  );
+  sink.handleStreamChange.mockImplementation((change: { id?: string }) => order.push(`process:${change.id}`));
 
   return {
     manager,
     order,
-    processed,
-    resolveCatchup: (cursor: string | null = 'c1') => resolveCatchup?.(cursor),
+    waitForActiveCatchup,
+    resolveCatchup: () => resolveCatchup?.(),
     get es() {
       return FakeEventSource.instances.at(-1) as FakeEventSource;
     },
@@ -166,49 +154,47 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
 
 beforeEach(() => {
   FakeEventSource.instances = [];
-  leaderControl.reset();
-  syncControl.cursor = null;
+  tabs.reset();
 });
 
 afterEach(() => {
-  vi.clearAllMocks();
+  current?.disconnect();
+  current = undefined;
+  vi.useRealTimers();
+  vi.resetAllMocks();
 });
 
 describe('StreamManager subscribe-then-snapshot', () => {
   it('applies a change committed while catchup reads once, after the catchup: the stream opens first and catchup starts at its offset', async () => {
-    const h = createHarness();
+    const h = await createHarness();
     await h.manager.connect();
 
     expect(FakeEventSource.instances).toHaveLength(1);
     expect(h.order).toEqual([]); // catchup waits for the server offset
 
-    h.es.emit('offset', '100');
+    h.es.emit('offset');
     // Committed between the catchup read and its response: must buffer, not process.
-    h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
+    h.es.emit('change', JSON.stringify({ id: 'a1' }));
     expect(h.order).toEqual(['catchup-start']);
 
-    h.resolveCatchup('c1');
+    h.resolveCatchup();
     await tick();
 
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1']);
     expect(h.manager.store.getState().state).toBe('live');
-    // Cursor advanced by the drained change (its eventId is newer than the catchup cursor).
-    expect(h.manager.store.getState().cursor).toBe('101');
   });
 
   it('covers a burst that overflows the buffer with one more catchup read, and ends the cycle when that read overflows as well', async () => {
     /** Connects through a catchup whose first `bursts` reads each see more changes arrive than the buffer holds. */
     const connectThroughBursts = async (bursts: number) => {
       let reads = 0;
-      const h = createHarness({
-        fetchAndProcessCatchup: () => {
-          reads++;
-          if (reads <= bursts) for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `r${reads}-${i}` }), String(i));
-          return Promise.resolve(`c${reads}`);
-        },
+      const h = await createHarness(() => {
+        reads++;
+        if (reads <= bursts) for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `r${reads}-${i}` }));
+        return answered();
       });
       await h.manager.connect();
-      h.es.emit('offset', '100');
+      h.es.emit('offset');
       await tick();
       return { h, reads };
     };
@@ -216,8 +202,9 @@ describe('StreamManager subscribe-then-snapshot', () => {
     // The dropped batch is covered by the second catchup read.
     const once = await connectThroughBursts(1);
     expect(once.reads).toBe(2);
-    expect(once.h.processed).toHaveLength(0);
+    expect(sink.handleStreamChange).not.toHaveBeenCalled();
     expect(once.h.manager.store.getState().state).toBe('live');
+    once.h.manager.disconnect();
 
     // A burst that outlasts the second read ends the cycle, and no third read follows.
     const twice = await connectThroughBursts(2);
@@ -229,8 +216,8 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
 describe('StreamManager leader promotion', () => {
   it('opens an SSE when a broadcast-only follower is promoted to leader', async () => {
-    leaderControl.setLeader(false); // start as a follower
-    const h = createHarness({ useTabCoordination: true });
+    tabs.setLeader(false); // start as a follower
+    const h = await createHarness();
 
     await h.manager.connect();
 
@@ -239,7 +226,7 @@ describe('StreamManager leader promotion', () => {
     expect(h.manager.store.getState().state).toBe('live');
 
     // Leader tab closes: the Web Lock transfers and this tab is promoted.
-    leaderControl.setLeader(true);
+    tabs.setLeader(true);
     await tick();
 
     // Regression: the promoted tab must open a real SSE, not early-return on the stale 'live' state.
@@ -247,8 +234,8 @@ describe('StreamManager leader promotion', () => {
     expect(h.manager.isConnected()).toBe(true);
 
     // And it drives through catchup to a genuine SSE-backed live state.
-    h.es.emit('offset', '100');
-    h.resolveCatchup('c1');
+    h.es.emit('offset');
+    h.resolveCatchup();
     await tick();
 
     expect(h.manager.store.getState().state).toBe('live');
@@ -259,32 +246,20 @@ describe('StreamManager leader promotion', () => {
 const firstReconnectMs = 7_000;
 
 describe('the gate that paused writes wait on', () => {
-  afterEach(() => vi.useRealTimers());
+  /** Whether the gate of the page opened by now. */
+  const releasedBy = (waitForActiveCatchup: () => Promise<void>) => Promise.race([waitForActiveCatchup().then(() => true), tick().then(() => false)]);
 
   it('must not stay closed in a follower tab, which runs no catchup of its own', async () => {
-    // The gate lives for the page: a fresh module is a fresh page.
-    vi.resetModules();
-    const fresh = await import('~/query/realtime/stream-manager');
-    leaderControl.setLeader(false);
-    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
-      endpoint: 'http://api.test/stream',
-      withCredentials: false,
-      useTabCoordination: true,
-      fetchAndProcessCatchup: () => Promise.resolve(null),
-      processLeaderCatchup: () => Promise.resolve(),
-      processChange: () => {},
-      processSignal: () => {},
-    });
-    const released = () => Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)]);
+    tabs.setLeader(false);
+    const { manager, waitForActiveCatchup } = await createHarness();
 
     // Positive control: before any tab connected, the gate is closed.
-    expect(await released()).toBe(false);
+    expect(await releasedBy(waitForActiveCatchup)).toBe(false);
 
     await manager.connect();
 
     expect(FakeEventSource.instances).toHaveLength(0);
-    expect(await released()).toBe(true);
-    manager.disconnect();
+    expect(await releasedBy(waitForActiveCatchup)).toBe(true);
   });
 
   // A server error frame reconnected without counting a failure, so a server that kept ending the stream that way held the gate for good.
@@ -293,19 +268,9 @@ describe('the gate that paused writes wait on', () => {
     ['by a server error frame', (stream?: FakeEventSource) => stream?.emitServerError('access_changed')],
   ])('opens once a stream that keeps failing %s gives up, and stays closed while it reconnects', async (_how, fail) => {
     vi.useFakeTimers();
-    vi.resetModules();
-    const fresh = await import('~/query/realtime/stream-manager');
-    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
-      endpoint: 'http://api.test/stream',
-      withCredentials: false,
-      useTabCoordination: false,
-      fetchAndProcessCatchup: () => Promise.resolve('c1'),
-      processLeaderCatchup: () => Promise.resolve(),
-      processChange: () => {},
-      processSignal: () => {},
-    });
+    const { manager, waitForActiveCatchup } = await createHarness(answered);
     let released = false;
-    void fresh.waitForActiveCatchup().then(() => {
+    void waitForActiveCatchup().then(() => {
       released = true;
     });
     // The stream opens and fails before its offset event, so no catchup runs.
@@ -323,53 +288,33 @@ describe('the gate that paused writes wait on', () => {
     failStream();
     await vi.advanceTimersByTimeAsync(0);
     expect(released).toBe(true);
-    manager.disconnect();
   });
 
   it('must not open before catchup when the tab wins leadership while it connects, which reconnects it', async () => {
-    vi.resetModules();
-    const fresh = await import('~/query/realtime/stream-manager');
-    const coordinator = await import('~/query/realtime/tab-coordinator');
     // The election this tab waits on in connect() makes it the leader.
-    leaderControl.setLeader(false);
-    vi.mocked(coordinator.initTabCoordinator).mockImplementationOnce(async () => leaderControl.setLeader(true));
-    let finishCatchup = () => {};
-    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
-      endpoint: 'http://api.test/stream',
-      withCredentials: false,
-      useTabCoordination: true,
-      fetchAndProcessCatchup: () =>
-        new Promise((resolve) => {
-          finishCatchup = () => resolve('c1');
-        }),
-      processLeaderCatchup: () => Promise.resolve(),
-      processChange: () => {},
-      processSignal: () => {},
-    });
-    const released = () => Promise.race([fresh.waitForActiveCatchup().then(() => true), tick().then(() => false)]);
+    tabs.setLeader(false);
+    tabs.initTabCoordinator.mockImplementationOnce(async () => tabs.setLeader(true));
+    const h = await createHarness();
 
-    await manager.connect();
+    await h.manager.connect();
     await tick();
     expect(FakeEventSource.instances).toHaveLength(1);
-    expect(await released()).toBe(false);
+    expect(await releasedBy(h.waitForActiveCatchup)).toBe(false);
 
-    FakeEventSource.instances[0].emit('offset', '100');
+    h.es.emit('offset');
     await tick();
-    expect(await released()).toBe(false);
+    expect(await releasedBy(h.waitForActiveCatchup)).toBe(false);
 
-    finishCatchup();
+    h.resolveCatchup();
     await tick();
-    expect(await released()).toBe(true);
-    manager.disconnect();
+    expect(await releasedBy(h.waitForActiveCatchup)).toBe(true);
   });
 });
 
 describe('StreamManager server-sent errors', () => {
-  afterEach(() => vi.useRealTimers());
-
   const closedByServer = async (code: string) => {
     vi.useFakeTimers();
-    const h = createHarness();
+    const h = await createHarness();
     await h.manager.connect();
     const closed = h.es;
     closed.emitServerError(code);
@@ -384,7 +329,6 @@ describe('StreamManager server-sent errors', () => {
 
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    h.manager.disconnect();
   });
 
   it('stays closed after unauthorized: the session is gone, and the next request signs the user out', async () => {
@@ -399,7 +343,6 @@ describe('StreamManager server-sent errors', () => {
 
 describe('StreamManager silence watchdog', () => {
   beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
 
   /** The server writes a `ping` event this often. */
   const keepaliveMs = 30_000;
@@ -407,9 +350,9 @@ describe('StreamManager silence watchdog', () => {
   const silenceMs = 75_000;
 
   const liveStream = async () => {
-    const h = createHarness({ fetchAndProcessCatchup: () => Promise.resolve('c1') });
+    const h = await createHarness(answered);
     await h.manager.connect();
-    h.es.emit('offset', '100');
+    h.es.emit('offset');
     await vi.advanceTimersByTimeAsync(0);
     expect(h.manager.store.getState().state).toBe('live');
     return h;
@@ -426,7 +369,7 @@ describe('StreamManager silence watchdog', () => {
     }
     // A change counts as well: the 75 seconds run from it, not from the last ping.
     await vi.advanceTimersByTimeAsync(60_000);
-    stream.emit('change', JSON.stringify({ id: 'a1' }), '101');
+    stream.emit('change', JSON.stringify({ id: 'a1' }));
 
     await vi.advanceTimersByTimeAsync(silenceMs - 1);
     expect(stream.readyState).toBe(FakeEventSource.OPEN);
@@ -439,111 +382,117 @@ describe('StreamManager silence watchdog', () => {
     await vi.advanceTimersByTimeAsync(firstReconnectMs);
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    h.manager.disconnect();
   });
 });
 
 describe('a catchup answer, from the leader to its follower tabs', () => {
-  const answer: PostAppCatchupResponse = { cursor: 'c9', organizations: {}, generation: 3 };
-
-  afterEach(() => appStreamManager.disconnect());
-
   it('is passed on by the leader before it processes the answer itself', async () => {
-    syncControl.cursor = 'c1';
-    vi.mocked(postAppCatchup).mockResolvedValueOnce(answer);
+    const h = await createHarness(answered);
 
-    await appStreamManager.connect();
-    FakeEventSource.instances.at(-1)?.emit('offset', '100');
+    await h.manager.connect();
+    h.es.emit('offset');
     await tick();
 
-    expect(broadcastCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
-    expect(processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
-    expect(vi.mocked(broadcastCatchup).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(processAppCatchup).mock.invocationCallOrder[0]);
-    expect(appStreamManager.store.getState().state).toBe('live');
+    expect(posted('catchup')).toEqual([{ type: 'catchup', response: answer }]);
+    expect(sink.processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer);
+    const postedAt = tabs.postToFollowers.mock.calls.findIndex(([message]) => message.type === 'catchup');
+    expect(tabs.postToFollowers.mock.invocationCallOrder[postedAt]).toBeLessThan(sink.processAppCatchup.mock.invocationCallOrder[0]);
+    expect(h.manager.store.getState().state).toBe('live');
   });
 
-  it('is processed by a follower, which stores its cursor and sends no request of its own', async () => {
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
+  it('is processed by a follower, which sends no request of its own', async () => {
+    tabs.setLeader(false);
+    const h = await createHarness();
+    await h.manager.connect();
 
-    leaderControl.receiveCatchup(answer, false);
+    tabs.receive({ type: 'catchup', response: answer });
     await tick();
 
-    expect(processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
-    expect(syncControl.setCursor).toHaveBeenCalledExactlyOnceWith('c9');
-    expect(postAppCatchup).not.toHaveBeenCalled();
+    expect(sink.processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer);
+    expect(sink.postAppCatchup).not.toHaveBeenCalled();
     expect(FakeEventSource.instances).toHaveLength(0);
     // A follower passes nothing on: the leader told every tab.
-    expect(broadcastCatchup).not.toHaveBeenCalled();
-  });
-
-  it('moves the cursor of a follower only once it processed the answer, and only while it still follows', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
-
-    // Processing failed: the cursor stays with the data this tab holds.
-    vi.mocked(processAppCatchup).mockRejectedValueOnce(new Error('memberships unreachable'));
-    leaderControl.receiveCatchup(answer, false);
-    await tick();
-    expect(syncControl.setCursor).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledOnce();
-    warn.mockRestore();
-
-    // The leader tab closed while this one processed: it now sends its own request, from the cursor it holds.
-    let finish: () => void = () => {};
-    vi.mocked(processAppCatchup).mockReturnValueOnce(new Promise<void>((resolve) => (finish = resolve)));
-    leaderControl.receiveCatchup(answer, false);
-    leaderControl.setLeader(true);
-    finish();
-    await tick();
-    expect(syncControl.setCursor).not.toHaveBeenCalledWith('c9');
+    expect(posted('catchup')).toEqual([]);
   });
 });
 
-describe('StreamManager changes to follower tabs', () => {
+describe('StreamManager changes and signals in follower tabs', () => {
+  const change: StreamChange = {
+    action: 'update',
+    productType: 'attachment',
+    organizationId: 'org-1',
+    tenantId: null,
+    channelId: null,
+    rows: [],
+    overflow: null,
+    spreadWindow: null,
+    propagation: null,
+  };
+  const signal: StreamSignal = { type: 'notification.read', organizationId: null, subjectId: null };
+
   it('passes a change on when the leader applies it: one that arrived during catchup follows the catchup answer', async () => {
-    const h = createHarness({ useTabCoordination: true });
+    const h = await createHarness();
     await h.manager.connect();
-    h.es.emit('offset', '100');
+    h.es.emit('offset');
 
-    h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
-    expect(broadcastStreamChange).not.toHaveBeenCalled();
+    h.es.emit('change', JSON.stringify({ id: 'a1' }));
+    expect(posted('stream-change')).toEqual([]);
 
-    h.resolveCatchup('c1');
+    h.resolveCatchup();
     await tick();
-    expect(broadcastStreamChange).toHaveBeenCalledExactlyOnceWith({ id: 'a1' });
+    expect(posted('stream-change')).toEqual([{ type: 'stream-change', change: { id: 'a1' } }]);
 
-    h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
-    expect(broadcastStreamChange).toHaveBeenLastCalledWith({ id: 'b1' });
+    h.es.emit('change', JSON.stringify({ id: 'b1' }));
+    expect(posted('stream-change').at(-1)).toEqual({ type: 'stream-change', change: { id: 'b1' } });
+    const frames = tabs.postToFollowers.mock.calls.flatMap(([message]) => (message.type === 'sync-health' ? [] : [message.type]));
+    expect(frames).toEqual(['catchup', 'stream-change', 'stream-change']);
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);
+  });
+
+  it('applies what the leader posted while it follows, and nothing once the tab left the app', async () => {
+    tabs.setLeader(false);
+    const h = await createHarness();
+    await h.manager.connect();
+
+    tabs.receive({ type: 'stream-change', change });
+    tabs.receive({ type: 'stream-signal', signal });
+    expect(sink.handleStreamChange).toHaveBeenCalledExactlyOnceWith(change);
+    expect(sink.handleStreamSignal).toHaveBeenCalledExactlyOnceWith(signal);
+
+    // A public page disconnects the stream: the tab keeps its channel, and takes no frame or answer from it.
     h.manager.disconnect();
+    tabs.receive({ type: 'stream-change', change });
+    tabs.receive({ type: 'stream-signal', signal });
+    tabs.receive({ type: 'catchup', response: answer });
+    await tick();
+
+    expect(sink.handleStreamChange).toHaveBeenCalledOnce();
+    expect(sink.handleStreamSignal).toHaveBeenCalledOnce();
+    expect(sink.processAppCatchup).not.toHaveBeenCalled();
   });
 });
 
 describe('the health of live delivery', () => {
-  afterEach(() => appStreamManager.disconnect());
-
   /** The app stream of a leader tab, open and past its catchup. */
   const connectLive = async () => {
-    vi.mocked(postAppCatchup).mockResolvedValueOnce({ cursor: 'c1', organizations: {}, generation: 1 });
-    await appStreamManager.connect();
-    const stream = FakeEventSource.instances.at(-1) as FakeEventSource;
-    stream.emit('offset', '1');
+    const h = await createHarness(answered);
+    await h.manager.connect();
+    h.es.emit('offset');
     await tick();
-    return stream;
+    return h.es;
   };
+  const lastHealthPosted = () => posted('sync-health').at(-1);
 
   it("takes from a ping that the server's worker is away, and from a later one that it is back", async () => {
     const stream = await connectLive();
 
     stream.emit('ping', 'worker_away');
-    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(true);
-    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: true });
+    expect(sink.setSyncWorkerAway).toHaveBeenLastCalledWith(true);
+    expect(lastHealthPosted()).toEqual({ type: 'sync-health', health: { streamHealthy: true, workerAway: true } });
 
     stream.emit('ping', '');
-    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(false);
-    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: false });
+    expect(sink.setSyncWorkerAway).toHaveBeenLastCalledWith(false);
+    expect(lastHealthPosted()).toEqual({ type: 'sync-health', health: { streamHealthy: true, workerAway: false } });
   });
 
   it('tells the follower tabs that the stream failed', async () => {
@@ -551,34 +500,39 @@ describe('the health of live delivery', () => {
 
     stream.emitServerError('internal');
 
-    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(false);
-    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: false, workerAway: false });
+    expect(sink.setSyncStreamHealthy).toHaveBeenLastCalledWith(false);
+    expect(lastHealthPosted()).toEqual({ type: 'sync-health', health: { streamHealthy: false, workerAway: false } });
   });
 
-  it("must not take a follower's own store for the health of a stream: it has none, and takes the leader's word", async () => {
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
-    expect(appStreamManager.store.getState().state).toBe('live');
-    expect(setSyncStreamHealthy).not.toHaveBeenCalled();
+  it("must not take a follower's own store for the health of a stream: it has none, and takes the leader's word, before it connects and after", async () => {
+    tabs.setLeader(false);
+    const h = await createHarness();
 
-    leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });
+    tabs.receive({ type: 'sync-health', health: { streamHealthy: false, workerAway: true } });
+    await h.manager.connect();
+    expect(h.manager.store.getState().state).toBe('live');
 
-    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(false);
-    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(true);
-    expect(broadcastSyncHealth).not.toHaveBeenCalled();
+    expect(sink.setSyncStreamHealthy).toHaveBeenCalledExactlyOnceWith(false);
+    expect(sink.setSyncWorkerAway).toHaveBeenCalledExactlyOnceWith(true);
+
+    tabs.receive({ type: 'sync-health', health: { streamHealthy: true, workerAway: false } });
+    expect(sink.setSyncStreamHealthy).toHaveBeenLastCalledWith(true);
+    expect(sink.setSyncWorkerAway).toHaveBeenLastCalledWith(false);
+    expect(posted('sync-health')).toEqual([]);
   });
 
   it('says what its own stream shows once a follower leads, whatever it last heard', async () => {
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
-    leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });
+    tabs.setLeader(false);
+    const h = await createHarness(answered);
+    await h.manager.connect();
+    tabs.receive({ type: 'sync-health', health: { streamHealthy: false, workerAway: true } });
 
-    leaderControl.setLeader(true);
+    tabs.setLeader(true);
     await tick();
-    FakeEventSource.instances.at(-1)?.emit('ping', '');
+    h.es.emit('ping', '');
 
-    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(true);
-    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(false);
-    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: false });
+    expect(sink.setSyncStreamHealthy).toHaveBeenLastCalledWith(true);
+    expect(sink.setSyncWorkerAway).toHaveBeenLastCalledWith(false);
+    expect(lastHealthPosted()).toEqual({ type: 'sync-health', health: { streamHealthy: true, workerAway: false } });
   });
 });

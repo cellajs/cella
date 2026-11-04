@@ -21,8 +21,8 @@ const sameKeys = (a: AttachmentKeys, b: AttachmentKeys) =>
   attachmentVariantSchema.options.every((variant) => (a[variant] ?? null) === (b[variant] ?? null));
 
 /**
- * Stores the keys of a file uploaded after its row was created: offline, or before cloud storage was configured. Only
- * the uploader links them, and only once; a row whose file is already stored keeps its keys.
+ * Stores the keys of a file uploaded after its row was created, as a file added offline is. Only the uploader links
+ * them, and only once; a row whose file is already stored keeps its keys.
  */
 export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys, convertedContentType }: LinkAttachmentKeysInput) {
   const actorId = ctx.var.actor.id;

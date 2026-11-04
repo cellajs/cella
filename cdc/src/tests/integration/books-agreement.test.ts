@@ -191,7 +191,7 @@ function workloadOn(tx: Tx, seed: number) {
   const edit = (values: Record<string, unknown>) => ({
     ...values,
     updatedAt: now(),
-    stx: { mutationId: newId(), sourceId: 'tab-1', changedFields: [...Object.keys(values), 'updatedAt'] },
+    stx: { mutationId: newId(), sourceId: 'tab-1', changedFields: Object.keys(values) },
   });
 
   /**
@@ -215,7 +215,7 @@ function workloadOn(tx: Tx, seed: number) {
       const result = parseMessage(message);
       if (result) await buffer.onEvent(`0/${xid.toString(16)}`, result, index);
     }
-    await buffer.onCommit();
+    await buffer.onCommit(`0/${xid.toString(16).toUpperCase()}`);
     if (survivors.length === 0) return survivors;
 
     await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(survivors), tx);

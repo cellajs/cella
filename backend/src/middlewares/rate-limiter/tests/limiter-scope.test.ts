@@ -11,11 +11,11 @@ const workLimiter = () => rateLimiter('limit', `scope_${nanoid(8)}`, ['ip'], { l
 
 /**
  * A limiter charged where the work it bounds starts, from code that has no request context of its own. The charge
- * inside a bound request is proven on its one caller, the authorization server's metadata fetch budget
- * (tests/security/oauth-metadata-fetch-limit.test.ts); no route reaches the unbound case.
+ * inside a request is proven on its one caller, the authorization server's metadata fetch budget
+ * (tests/security/oauth-metadata-fetch-limit.test.ts); no route reaches the case outside one.
  */
-describe('limiter scope', () => {
-  it('refuses to charge outside a bound request, so the caller can refuse the work', async () => {
+describe('chargeLimiter', () => {
+  it('refuses to charge outside a request, so the caller can refuse the work', async () => {
     expect(await chargeLimiter(workLimiter())).toBe(false);
   });
 });

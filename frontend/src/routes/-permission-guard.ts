@@ -1,15 +1,12 @@
 import { redirect } from '@tanstack/react-router';
-import type { ActorRef } from 'sdk';
-import type { ChannelEntityType, EntityActionType, EntityType } from 'shared';
-import { appConfig, resolveCan } from 'shared';
+import type { ChannelEntityType, EntityActionType, ProductEntityType } from 'shared';
+import { appConfig, checkAccess } from 'shared';
+import { type CanRow, canSubject, userAccess } from '~/modules/entities/use-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { userStore } from '~/modules/user/user-store';
-import { enrichWithMembership } from '~/query/enrichment/membership';
-import { enrichWithPermissions } from '~/query/enrichment/permissions';
-import type { EnrichableChannel } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
-// Nav gating only hides links; these guards apply the same `can` answer in `beforeLoad`, and the backend enforces.
+// Nav gating only hides links; these guards ask the engine the same question in `beforeLoad`, and the backend enforces.
 
 export function requireSystemAdmin(): void {
   if (userStore.getState().isSystemAdmin) return;
@@ -17,15 +14,13 @@ export function requireSystemAdmin(): void {
 }
 
 /**
- * Redirect unless the actor's grants on the channel and above it allow the action, including own-row grants. The guard
- * reads the actor's memberships itself: on a cold load the row is the API's own, and the memberships that enrich it load
- * after every `beforeLoad`. Where they cannot be read (offline with none cached) the caller passes: the page shows what
- * its `can` map allows once they load, and the server decides.
+ * Redirect unless the actor's grants on the channel and above it allow the action on the channel itself, or on a new
+ * `entityType` row homed at it. The guard reads the actor's memberships itself: on a cold load they may not be cached
+ * yet. Where they cannot be read (offline with none cached) the caller passes: the server decides.
  */
 export async function requireEntityAction(
-  entity: EnrichableChannel & { createdBy?: ActorRef | null },
-  channelType: ChannelEntityType,
-  entityType: EntityType,
+  channel: CanRow,
+  entityType: ChannelEntityType | ProductEntityType,
   action: EntityActionType,
   redirectTo: string = appConfig.defaultRedirectPath,
 ): Promise<void> {
@@ -35,11 +30,8 @@ export async function requireEntityAction(
   );
   if (!memberships) return;
 
-  // The row's own membership comes from the same list: the row may not carry it yet.
-  const enriched = enrichWithPermissions(enrichWithMembership(entity, memberships), channelType, memberships);
-  // The guard asks about the channel itself or rows placed at it, so the row's home is the channel.
-  const home = { row: entity.id, channel: entity.id };
-  const allowed = resolveCan(enriched.can?.[entityType]?.[action], entity.createdBy?.id ?? null, userStore.getState().user?.id, home);
-  if (allowed) return;
+  const { user, isSystemAdmin } = userStore.getState();
+  const subject = canSubject(entityType, channel);
+  if (subject && checkAccess(userAccess(user, isSystemAdmin, memberships), action, subject).allowed) return;
   throw redirect({ to: redirectTo, params: true, replace: true });
 }

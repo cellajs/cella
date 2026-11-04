@@ -57,7 +57,7 @@ jobs:
           answers=0
           deadline=$((SECONDS + 1200))
           while [ "$SECONDS" -lt "$deadline" ]; do
-            live=$(curl -fsSL --max-time 10 "$PRODUCTION_URL/api/health?depth=full" | jq -r '.version // empty') || live=''
+            live=$(curl -fsS -o /dev/null -w '%header{x-app-version}' --max-time 10 "$PRODUCTION_URL/api/health") || live=''
             if [ "$live" = "$sha" ]; then answers=$((answers + 1)); else answers=0; fi
             if [ "$answers" -ge 5 ]; then
               report success "$TAG answers in production"

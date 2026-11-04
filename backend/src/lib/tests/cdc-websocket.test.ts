@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WebSocket } from 'ws';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { type CdcWorkerHealth, cdcWebSocketServer } from '#/lib/cdc-websocket';
-import { productCacheStore } from '#/middlewares/product-cache/product-cache-store';
 import { mockActivity } from '#/modules/activities/activities-mocks';
 import { log } from '#/utils/logger';
+
+// A generation move ends every app stream: the case counts the calls.
+const { resyncAppStreams } = vi.hoisted(() => ({ resyncAppStreams: vi.fn(() => Promise.resolve()) }));
+vi.mock('#/modules/entities/helpers/session-streams', () => ({ resyncAppStreams }));
 
 /** A worker socket as the socket server uses one: it registers handlers and may be closed. The test fires the handlers. */
 const fakeSocket = () => {
@@ -46,8 +49,18 @@ const attachmentActivity = (id: string, action: 'update' | 'delete' = 'delete') 
     subjectId: id,
   });
 
-/** A delete of attachments of one audience as the worker sends it: the first row's activity, and every row. */
-const deleteMessage = (...ids: string[]) => ({ activity: attachmentActivity(ids[0]), rows: ids.map((id) => ({ rowData: { id } })) });
+/** A product row as the worker sends it: the activity it was recorded as, and its permission fields. */
+const messageRow = (id: string, extra: { seq?: number; rowData?: Record<string, unknown>; movedFrom?: Record<string, unknown> } = {}) => ({
+  activityId: `act-${id}`,
+  userId: null,
+  changedFields: null,
+  stx: null,
+  rowData: { id },
+  ...extra,
+});
+
+/** A delete of attachments of one audience as the worker sends it: what the rows share, and every row. */
+const deleteMessage = (...ids: string[]) => ({ activity: attachmentActivity(ids[0]), rows: ids.map((id) => messageRow(id)) });
 
 /** The events of one type that reached the bus while `act` ran. */
 const onBus = (type: Parameters<typeof activityBus.on>[0], act: () => void): ActivityEvent[] => {
@@ -79,7 +92,9 @@ describe('CDC socket: a connection that was replaced', () => {
 
     expect(cdcWebSocketServer.getHealthStatus().cdcConnected).toBe(true);
     expect(cdcWebSocketServer.getWorkerHealth()?.health).toMatchObject({ status: 'healthy' });
-    expect(deletesOnBus(() => second.send(deleteMessage('att-live'))).map((event) => event.subjectId)).toEqual(['att-live']);
+    expect(deletesOnBus(() => second.send(deleteMessage('att-live'))).flatMap((event) => event.rows?.map(({ rowData }) => rowData.id))).toEqual([
+      'att-live',
+    ]);
   });
 
   it('ignores an error and a message of the replaced connection', () => {
@@ -97,7 +112,7 @@ describe('CDC socket: a connection that was replaced', () => {
 
   it('starts the replacement without the report of the replaced connection', () => {
     const first = connect();
-    first.send(healthReport({ status: 'unhealthy', reasons: ['worker_stuck'] }));
+    first.send(healthReport({ status: 'unhealthy', reasons: ['reading_again'] }));
 
     connect();
 
@@ -115,34 +130,6 @@ describe('CDC socket: a connection that was replaced', () => {
   });
 });
 
-describe('CDC socket: a change drops the detail cache entry of its row', () => {
-  const cached = (id: string) => productCacheStore.get('attachment', id);
-
-  beforeEach(() => {
-    productCacheStore.clear();
-    for (const id of ['att-1', 'att-2', 'att-3', 'att-other']) productCacheStore.set('attachment', { id }, performance.now());
-  });
-
-  it('drops the entry of a deleted row, with no listener on the bus', () => {
-    const worker = connect();
-    expect(cached('att-1')).toEqual({ id: 'att-1' });
-
-    worker.send(deleteMessage('att-1'));
-
-    expect(cached('att-1')).toBeUndefined();
-    expect(cached('att-other')).toEqual({ id: 'att-other' });
-  });
-
-  it('drops the entry of every row of a delete of several rows', () => {
-    const worker = connect();
-
-    worker.send(deleteMessage('att-1', 'att-2', 'att-3'));
-
-    for (const id of ['att-1', 'att-2', 'att-3']) expect(cached(id), id).toBeUndefined();
-    expect(cached('att-other')).toEqual({ id: 'att-other' });
-  });
-});
-
 describe('CDC socket: a message as the bus receives it', () => {
   const permissionFields = (id: string, organizationId = 'org-1') => ({
     id,
@@ -152,18 +139,20 @@ describe('CDC socket: a message as the bus receives it', () => {
   });
   const updatesOnBus = (act: () => void) => onBus('attachment.updated', act);
 
-  it('hands the rows of a product message to the bus as its list, with no whole row', () => {
+  it('hands the rows of a product message to the bus as its list, each with its own activity, with no whole row', () => {
     const worker = connect();
     const rows = [
-      { seq: 12, rowData: permissionFields('att-1') },
-      { seq: 14, rowData: permissionFields('att-2'), movedFrom: permissionFields('att-2', 'org-0') },
+      messageRow('att-1', { seq: 12, rowData: permissionFields('att-1') }),
+      messageRow('att-2', { seq: 14, rowData: permissionFields('att-2'), movedFrom: permissionFields('att-2', 'org-0') }),
     ];
 
     const [event] = updatesOnBus(() => worker.send({ activity: attachmentActivity('att-1', 'update'), rows }));
 
     expect(event.rows).toEqual(rows);
     expect(event.rowData).toBeNull();
-    expect(event.subjectId).toBe('att-1');
+    // The first row's activity must not speak for the message.
+    expect(event).not.toHaveProperty('subjectId');
+    expect(event).not.toHaveProperty('userId');
   });
 
   it('hands a row that is no product to the bus whole, without a list of rows', () => {
@@ -179,9 +168,15 @@ describe('CDC socket: a message as the bus receives it', () => {
     });
 
     const [event] = onBus('membership.created', () => worker.send({ activity, rowData: membership }));
+    const [versioned] = onBus('membership.created', () =>
+      worker.send({ activity, rowData: membership, signalVersions: { 'membership.changed': 4 } }),
+    );
 
     expect(event.rowData).toEqual(membership);
     expect(event.rows).toBeNull();
+    // A worker of an earlier release sends no versions, and its message still reaches the bus.
+    expect(event).toMatchObject({ signalVersions: undefined });
+    expect(versioned).toMatchObject({ rowData: membership, signalVersions: { 'membership.changed': 4 } });
   });
 
   it('must not hand a product message without a row to the bus', () => {
@@ -196,28 +191,27 @@ describe('CDC socket: a message as the bus receives it', () => {
 });
 
 describe('CDC socket: control messages', () => {
-  it('holds the report of a worker of another release as unreadable, and still follows its generation', () => {
+  it('holds the report of a worker of another release as unreadable, and still follows its generation: a move ends every app stream once', () => {
     const worker = connect();
     const olderReport = (generation: number) => ({ _control: 'health', payload: { replicationStatus: 'active', lastLsn: null, generation } });
 
     worker.send(olderReport(41));
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    const generations: number[] = [];
-    cdcWebSocketServer.onGenerationChange((generation) => generations.push(generation));
+    resyncAppStreams.mockClear();
     worker.send(olderReport(42));
     worker.send({ _control: 'health' });
     worker.send({ _control: 'health', payload: { status: 'fine', reasons: [], details: {}, generation: 42 } });
 
     expect(cdcWebSocketServer.getWorkerHealth()).toMatchObject({ health: null });
-    expect(generations).toEqual([42]);
+    expect(resyncAppStreams).toHaveBeenCalledOnce();
   });
 
   it('ignores a control message it does not know, without a warning or an error in the log', () => {
-    const warn = vi.spyOn(log, 'warn');
-    const error = vi.spyOn(log, 'error');
     const worker = connect();
     worker.send(healthReport({ status: 'degraded', reasons: ['wal_lag_high'] }));
     const before = cdcWebSocketServer.getHealthStatus();
+    const warn = vi.spyOn(log, 'warn');
+    const error = vi.spyOn(log, 'error');
 
     worker.send({ _control: 'wal_lag_alert', severity: 'wal_lag_warn', lagBytes: 2 ** 30 });
 
@@ -268,7 +262,17 @@ describe('CDC socket: whether a worker reads, for the app stream to tell its cli
   it.each([
     ['is connected and does not read', healthReport({ status: 'degraded', reasons: ['replication_stopped'], details: { replication: 'stopped' } })],
     ['reads and is unhealthy, as with a slot two gigabytes behind', healthReport({ status: 'unhealthy', reasons: ['wal_lag_critical'] })],
-    ['is stuck', healthReport({ status: 'unhealthy', reasons: ['worker_stuck'], details: { replication: 'stopped' } })],
+    [
+      'cannot get past a failure, while it reads and is degraded',
+      healthReport({
+        status: 'degraded',
+        reasons: ['reading_again'],
+        details: {
+          replication: 'active',
+          failure: { position: '0/AB', since: '2026-11-03T08:00:00.000Z', error: 'null value in column "organization_id"' },
+        },
+      }),
+    ],
     ['sends a report of another release', { _control: 'health', payload: { replicationStatus: 'active' } }],
   ])('calls a worker away that %s for a minute', (_case, report) => {
     const worker = connect();

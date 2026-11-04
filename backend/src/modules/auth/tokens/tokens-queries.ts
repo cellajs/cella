@@ -1,7 +1,7 @@
-import { and, desc, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type CodeTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
@@ -14,38 +14,45 @@ export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
 /** The columns of a {@link TokenRecord}, for the queries of this module. */
 const { secret: _secret, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
 
-/** By the token's own id, or by its membership invitation (the newest token). */
-type FindInvitationTokenOpts = ({ id: string } | { inactiveMembershipId: string }) & {
-  /** Lock the row for the caller's transaction, so a concurrent resend or answer waits for it. */
+interface FindInvitationTokenOpts {
+  id: string;
+  /** Lock the row for the caller's transaction, so a concurrent resend waits for it. */
   forUpdate?: boolean;
-};
+}
 
 /**
- * An invitation token by its own id, or the newest token of a membership invitation. Resolve an invitation by one of
- * these, never by its address: an address can hold newer tokens from other invitations.
+ * An invitation token by its own id. Resolve an invitation by it, never by its address: an address can hold newer
+ * tokens from other invitations.
  */
-export const findInvitationToken = async (ctx: DbContext, opts: FindInvitationTokenOpts): Promise<TokenRecord | undefined> => {
-  const byKey = 'id' in opts ? eq(tokensTable.id, opts.id) : eq(tokensTable.inactiveMembershipId, opts.inactiveMembershipId);
+export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: FindInvitationTokenOpts): Promise<TokenRecord | undefined> => {
   const query = ctx.var.db
     .select(tokenColumns)
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), byKey))
-    .orderBy(desc(tokensTable.createdAt))
-    .limit(1);
-  const [token] = opts.forUpdate ? await query.for('update') : await query;
+    .where(and(eq(tokensTable.type, 'invitation'), eq(tokensTable.id, id)));
+  const [token] = forUpdate ? await query.for('update') : await query;
   return token;
 };
 
-interface HasLiveInvitationTokenOpts {
+interface HasLiveSystemInvitationTokenOpts {
   email: string;
 }
 
-/** Whether an unexpired invitation token is addressed to `email`: the trace a system invitation leaves. */
-export const hasLiveInvitationToken = async (ctx: DbContext, { email }: HasLiveInvitationTokenOpts) => {
+/**
+ * Whether an unexpired system invitation (no membership row) is addressed to `email`. A membership invitation's token
+ * counts for nothing here: its row decides, and its tokens go with the row.
+ */
+export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: HasLiveSystemInvitationTokenOpts) => {
   const [liveToken] = await ctx.var.db
     .select({ id: tokensTable.id })
     .from(tokensTable)
-    .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())))
+    .where(
+      and(
+        eq(tokensTable.email, email),
+        eq(tokensTable.type, 'invitation'),
+        isNull(tokensTable.inactiveMembershipId),
+        gt(tokensTable.expiresAt, getIsoDate()),
+      ),
+    )
     .limit(1);
   return !!liveToken;
 };
@@ -84,10 +91,7 @@ interface UpdateTokenUserOpts {
   userId: string;
 }
 
-/**
- * Binds a token issued without an account to the account settled for it: the one holding its address by now, or the
- * one a sign-up link's redemption created. Undefined when the token is bound already.
- */
+/** Binds a token issued without an account to the account its sign-up link's redemption created; undefined when the token is bound already. */
 export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateTokenUserOpts) => {
   const [bound] = await ctx.var.db
     .update(tokensTable)
@@ -101,11 +105,16 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateToke
 type ReplacingToken = Pick<InsertTokenModel, 'type' | 'email'> &
   Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'inactiveMembershipId' | 'pendingSignUp' | 'sessionId'>>;
 
-/** The subject each replacement rule names; undefined replaces nothing. See `tokenReplacements`. */
+/**
+ * Per token type, the subject whose earlier tokens of that type a new one deletes, so only the newest one for it works;
+ * undefined deletes nothing.
+ */
 const replacementSubjects = {
-  'address-or-account': (token) =>
+  // Its address, and its account when it names one.
+  magic: (token) =>
     token.userId ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId)) : eq(tokensTable.email, token.email),
-  identity: ({ identityId, pendingSignUp }) => {
+  // Its identity, or the provider account signing up.
+  'oauth-verification': ({ identityId, pendingSignUp }) => {
     if (identityId) return eq(tokensTable.identityId, identityId);
     if (!pendingSignUp) return undefined;
     return and(
@@ -113,18 +122,22 @@ const replacementSubjects = {
       sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
     );
   },
+  // Its membership invitation, or its address for a system invitation.
   invitation: (token) =>
     token.inactiveMembershipId
       ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
       : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
-  account: (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
-  session: (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
-  none: () => undefined,
-} satisfies Record<TokenReplacement, (token: ReplacingToken) => SQL | undefined>;
+  // One connect pin per account at a time.
+  'oauth-connect': (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
+  // One code per session at a time.
+  'step-up': (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
+  // Every sign-in holds its own second-factor challenge.
+  'confirm-mfa': () => undefined,
+} satisfies Record<TokenType, (token: ReplacingToken) => SQL | undefined>;
 
-/** The earlier tokens a new one replaces, by its type's `replaces` rule. */
+/** The earlier tokens a new one replaces, by its type's subject. */
 const replacedBy = (token: ReplacingToken): SQL | undefined => {
-  const subject = replacementSubjects[tokenPolicies[token.type].replaces](token);
+  const subject = replacementSubjects[token.type](token);
   return subject && and(eq(tokensTable.type, token.type), subject);
 };
 

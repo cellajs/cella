@@ -1,0 +1,1 @@
+DROP INDEX "notifications_user_activity_index";

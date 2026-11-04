@@ -13,11 +13,12 @@ const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 const { getRetryAfter } = await import('#/middlewares/rate-limiter/helpers');
 const { clearPointsCache } = await import('#/middlewares/rate-limiter/points-cache');
 
-/** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget. */
+/** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget, a cost from the `x-cost` header (default 1). */
 function buildApp(key: string, tenantId: string, ceiling: number, budget: () => number) {
   const limiter = rateLimiter('limit', key, ['tenantId'], {
-    limits: { points: ceiling, duration: 60 * 60, blockDuration: 0 },
+    limits: { points: ceiling, duration: 60 * 60 },
     getPointsBudget: budget,
+    getConsumePoints: (ctx) => Number(ctx.req.header('x-cost') ?? 1),
   });
   const app = new Hono<Env>();
   app.onError((err, c) => {
@@ -68,11 +69,22 @@ describe('points budget enforcement (end to end)', () => {
     expect(state?.consumedPoints).toBe(90);
   });
 
+  it('must not reopen a tenant budget via a bulk request refused after fast-path requests', async () => {
+    const app = buildApp('bulk', 't1', 5000, () => 100);
+    await hammer(app, 79);
+
+    const bulk = await app.request('http://localhost/t', { method: 'POST', headers: { 'x-cost': '25' } });
+    expect(bulk.status).toBe(429);
+    // The 79 the fast path let through reach the store with the refusal; the refused 25 do not.
+    expect((await memoryStores.get('bulk_limit')!.get('tenantId:t1'))?.consumedPoints).toBe(79);
+    expect((await hammer(app, 30)).allowed).toBe(21);
+  });
+
   describe('a pace counted in process, without a tenant budget', () => {
     /** The sync-read limiter's shape, scaled down: a five-minute window, no block, counted in process. */
     function buildPacedApp(key: string) {
       const limiter = rateLimiter('limit', key, ['tenantId'], {
-        limits: { points: 100, duration: 60 * 5, blockDuration: 0 },
+        limits: { points: 100, duration: 60 * 5 },
         countsInProcess: true,
       });
       const app = new Hono<Env>();
@@ -125,7 +137,7 @@ describe('points budget enforcement (end to end)', () => {
     });
 
     it('refuses in-process counting for a window longer than an hour, which the counter would drop an idle key inside', () => {
-      const daily = { points: 10, duration: 60 * 60 * 24, blockDuration: 0 };
+      const daily = { points: 10, duration: 60 * 60 * 24 };
       expect(() => rateLimiter('limit', 'daily', ['tenantId'], { limits: daily, countsInProcess: true })).toThrow('at most an hour');
       expect(() => rateLimiter('limit', 'dailyBudget', ['tenantId'], { limits: daily, getPointsBudget: () => 5 })).toThrow('at most an hour');
     });
@@ -170,32 +182,15 @@ describe('points budget enforcement (end to end)', () => {
     const res = await small.request('http://localhost/t', { method: 'POST' });
     expect(res.status).toBe(429);
 
-    // 11 points are already consumed (the 11th consumed before being rejected), so 9 remain of the new budget of 20
+    // 10 points are consumed (a refused request takes none), so 10 remain of the new budget of 20
     budget = 20;
     const { allowed: smallAllowedAfterRaise } = await hammer(small, 20);
-    expect(smallAllowedAfterRaise).toBe(9);
+    expect(smallAllowedAfterRaise).toBe(10);
   });
 
   it('floors Retry-After at one second, so a sub-second wait never reads as "retry now"', () => {
     expect(getRetryAfter(0)).toBe(1);
     expect(getRetryAfter(400)).toBe(1);
     expect(getRetryAfter(1500)).toBe(2);
-  });
-});
-
-/**
- * The store replaces what is left of a `limit` window with its block. A block shorter than the window therefore ends
- * inside it and hands out a whole budget again: 100 an hour with a five-minute block accepts 400 in that hour.
- */
-describe('the windows of the limit limiters', () => {
-  it('must not hand out a second budget inside a window via a block shorter than it', async () => {
-    const limiters = await import('#/middlewares/rate-limiter/limiters');
-    const limits = Object.entries(limiters).flatMap(([name, limiter]) =>
-      'keyPrefix' in limiter && limiter.keyPrefix.endsWith('_limit') ? [{ name, ...limiter.buckets[0].limits }] : [],
-    );
-
-    // Every route limiter that counts each request is read (positive control).
-    expect(limits.map(({ name }) => name)).toEqual(expect.arrayContaining(['emailEnumLimiter', 'syncReadLimiter', 'yjsHttpLimiter']));
-    expect(limits.filter(({ duration, blockDuration }) => blockDuration > 0 && blockDuration < duration)).toEqual([]);
   });
 });

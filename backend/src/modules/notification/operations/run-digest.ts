@@ -3,12 +3,15 @@ import { mailer } from '#/lib/mailer';
 import { digestEmail } from '#/modules/notification/emails/digest-email';
 import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
 import { renderSectionsHtml } from '#/modules/notification/helpers/render-digest-html';
-import { findDueDigestRecipients, stampDigested, stampDigestRun } from '#/modules/notification/notification-queries';
+import { findDueDigestRecipients, stampDigestRun } from '#/modules/notification/notification-queries';
 import { buildDigestForUser } from '#/modules/notification/operations/build-digest';
 import { log } from '#/utils/logger';
 
 /** Recipients handled per run; a backlog simply continues on the next hourly tick. */
 const maxRecipientsPerRun = 500;
+
+/** Time after which a run takes no further recipient and leaves them unstamped: one recipient's Brevo retries can take about 5 minutes, and the job expires at 15. */
+const runBudgetMs = 8 * 60 * 1000;
 
 /** Hour (UTC) at which digests go out, the same for every user. */
 const sendHourUtc = 7;
@@ -16,84 +19,66 @@ const sendHourUtc = 7;
 /** Weekday for weekly digests (1 = Monday … 5 = Friday). */
 const weeklyIsoWeekday = 5;
 
-const dayMs = 24 * 60 * 60 * 1000;
-
 /** Runs from the digest job, outside any request. */
 const dbCtx = { var: { db: baseDb } };
 
-/** How far back a digest window reaches at most: the cadence plus a day. */
-const maxWindowDays = { daily: 2, weekly: 8 };
-
-function earliestStart(cadence: keyof typeof maxWindowDays, now: Date): Date {
-  return new Date(now.getTime() - maxWindowDays[cadence] * dayMs);
-}
-
-/**
- * Where a recipient's digest window starts: at the stored `lastDigestAt`, so a late or skipped run resumes where the
- * previous one stopped, but never further back than the cadence plus a day. A first digest, and the first after the
- * digest was off, cover recent rows only, never the whole inbox. `findDueDigestRecipients` mirrors this in SQL.
- */
-export function windowStart(recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date {
-  const earliest = earliestStart(recipient.digest === 'weekly' ? 'weekly' : 'daily', now).getTime();
-  const last = recipient.lastDigestAt ? new Date(recipient.lastDigestAt).getTime() : earliest;
-  return new Date(Math.max(last, earliest));
-}
-
 /**
  * One digest pass. Called hourly; each tick decides per user whether their digest is due. That makes it idempotent
- * and restart-proof: a missed hour is picked up by the next tick, and `lastDigestAt` guarantees a user is never mailed
- * twice for the same window.
+ * and restart-proof: a missed hour is picked up by the next tick. A recipient's window ends at the run's start and is
+ * settled by `lastDigestAt` right after their mail went out, so a failed send leaves it open for the next tick, and only
+ * a crash between a send and its stamp mails one window twice.
  */
 export async function runDigest(now: Date = new Date()): Promise<{ sent: number; skipped: number }> {
+  // The wall clock, since a test passes a `now` of its own.
+  const deadline = Date.now() + runBudgetMs;
   if (now.getUTCHours() < sendHourUtc) return { sent: 0, skipped: 0 };
 
+  const runAt = now.toISOString();
   const dayStart = new Date(now);
   dayStart.setUTCHours(0, 0, 0, 0);
 
   const due = await findDueDigestRecipients(dbCtx, {
+    runAt,
     dayStart: dayStart.toISOString(),
     includeWeekly: isoWeekday(now) === weeklyIsoWeekday,
-    earliest: { daily: earliestStart('daily', now).toISOString(), weekly: earliestStart('weekly', now).toISOString() },
     limit: maxRecipientsPerRun,
   });
   if (due.length === 0) return { sent: 0, skipped: 0 };
 
   let sent = 0;
   let skipped = 0;
-  const processed: string[] = [];
 
-  for (const recipient of due) {
+  for (const [index, recipient] of due.entries()) {
+    if (Date.now() > deadline) {
+      log.warn('Digest run out of time, the rest wait for the next tick', { left: due.length - index });
+      break;
+    }
     try {
-      const content = await buildDigestForUser(dbCtx, recipient.userId, windowStart(recipient, now), recipient.language);
+      const { userId, language } = recipient;
+      const sections = await buildDigestForUser(dbCtx, { userId, since: recipient.windowStart, before: runAt, lng: language });
 
-      // An empty window sends nothing: weekly is on by default.
-      if (content.sections.length === 0) {
+      // An empty window sends nothing (weekly is on by default) and is settled all the same, so it is not re-evaluated all day.
+      if (sections.length === 0) {
         skipped++;
-        processed.push(recipient.userId);
-        continue;
+      } else {
+        await mailer.sendEmails(digestEmail, { daily: recipient.digest === 'daily' }, [
+          {
+            email: recipient.email,
+            lng: language,
+            name: recipient.name,
+            sectionsHtml: renderSectionsHtml(sections, language),
+            unsubscribeLink: buildUnsubscribeLink(userId, 'digest'),
+          },
+        ]);
+        sent++;
       }
 
-      await mailer.sendEmails(digestEmail, { daily: recipient.digest === 'daily' }, [
-        {
-          email: recipient.email,
-          lng: recipient.language,
-          name: recipient.name,
-          sectionsHtml: renderSectionsHtml(content.sections, recipient.language),
-          unsubscribeLink: buildUnsubscribeLink(recipient.userId, 'digest'),
-        },
-      ]);
-
-      await stampDigested(dbCtx, { ids: content.notificationIds });
-      processed.push(recipient.userId);
-      sent++;
+      await stampDigestRun(dbCtx, { userId, ranAt: runAt });
     } catch (error) {
       // One bad recipient must not stop the run; the window stays open and retries next tick.
       log.error('Digest failed for recipient', { error, userId: recipient.userId });
     }
   }
-
-  // Stamped even when nothing was sent, so an empty window is not re-evaluated all day.
-  await stampDigestRun(dbCtx, { userIds: processed, ranAt: now.toISOString() });
 
   log.info('Digest run complete', { sent, skipped, considered: due.length });
   return { sent, skipped };

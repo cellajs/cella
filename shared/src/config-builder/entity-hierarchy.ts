@@ -647,6 +647,26 @@ export class EntityHierarchy<
     return homes;
   };
 
+  /**
+   * The ancestor id columns of a new `entityType` row homed at a channel row: the channel's own id at its level, the
+   * ids above it copied from the channel row (a null one too), null below it. A column the channel row lacks stays
+   * absent. Null when `channelType` is not an ancestor of `entityType`.
+   */
+  readonly ancestorIdsHomedAt = (entityType: string, channelType: string, channel: Record<string, unknown>): Record<string, string | null> | null => {
+    const ancestors = this.getOrderedAncestors(entityType);
+    const depth = this.isChannel(channelType) ? ancestors.indexOf(channelType) : -1;
+    if (depth === -1) return null;
+
+    const ids: Record<string, string | null> = {};
+    for (const [i, type] of ancestors.entries()) {
+      const key = entityIdColumnKey(type);
+      const id = i === depth ? channel.id : channel[key];
+      if (i < depth) ids[key] = null;
+      else if (id === null || typeof id === 'string') ids[key] = id;
+    }
+    return ids;
+  };
+
   /** A product row's path: its non-null ancestor ids, organization first. Null when the organization id is missing. */
   readonly computeProductPath = (entityType: string, row: Record<string, unknown>): string | null => {
     const ancestors = this.resolveNonNullAncestors(entityType, row);

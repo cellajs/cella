@@ -8,7 +8,7 @@ import { wsClient } from '../network/websocket-client';
 import { generateActivityId, sendMessageToApi, sendProductMessagesToApi } from '../services/api-messages';
 
 describe('generateActivityId', () => {
-  const idOf = (commitLsn: string, index = 0) => generateActivityId({ lsn: '0/1', commitLsn, index });
+  const idOf = (commitLsn: string, index = 0) => generateActivityId({ commitLsn, index });
 
   it('joins the padded commit position and the padded index into a fixed 26-char id', () => {
     expect(idOf('0/16B3748')).toBe('00000000-016B3748-00000000');
@@ -21,7 +21,7 @@ describe('generateActivityId', () => {
   });
 
   it('tells the changes of one transaction apart, also the rows of one WAL record, which share an LSN', () => {
-    const rows = [0, 1, 2, 11].map((index) => generateActivityId({ lsn: '0/50', commitLsn: '0/90', index }));
+    const rows = [0, 1, 2, 11].map((index) => idOf('0/90', index));
 
     expect(new Set(rows).size).toBe(4);
     expect([...rows].sort()).toEqual(rows);
@@ -29,8 +29,8 @@ describe('generateActivityId', () => {
 
   it('sorts in commit order, whatever the positions of the changes themselves', () => {
     // A long transaction wrote first (0/10) and committed last (0/200); a short one wrote later and committed first.
-    const long = generateActivityId({ lsn: '0/10', commitLsn: '0/200', index: 0 });
-    const short = generateActivityId({ lsn: '0/50', commitLsn: '0/9F', index: 7 });
+    const long = idOf('0/200');
+    const short = idOf('0/9F', 7);
 
     expect(short < long).toBe(true);
   });
@@ -39,14 +39,10 @@ describe('generateActivityId', () => {
     expect(idOf('0/9F') < idOf('0/100')).toBe(true);
     expect(idOf('0/FFFFFFFF', 99) < idOf('1/00000000')).toBe(true);
   });
-
-  it('takes the position of the change itself for an event outside a transaction', () => {
-    expect(generateActivityId({ lsn: '0/16B3748' })).toBe('00000000-016B3748-00000000');
-  });
 });
 
 describe('sendProductMessagesToApi', () => {
-  type SentRow = { seq?: number; rowData: Record<string, unknown>; movedFrom?: Record<string, unknown> };
+  type SentRow = { activityId: string; userId: string | null; seq?: number; rowData: Record<string, unknown>; movedFrom?: Record<string, unknown> };
   type Sent = { activity: Record<string, unknown>; rows: SentRow[] };
 
   const trace = { traceId: 'test', spanId: 'test' } as never;
@@ -90,21 +86,27 @@ describe('sendProductMessagesToApi', () => {
     expect(orgB?.rows.map((row) => row.seq)).toEqual([5, 6, 7]);
   });
 
-  it("sends an audience of one row with that row's activity, so the tab that wrote it knows its own write", () => {
-    const stx = { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} };
-    const alone = inOrg('org-a', 10);
-    alone.activity = { ...alone.activity, stx };
-    // One flush, two organizations: org-a has one edit, org-b two.
-    sendProductMessagesToApi('attachment', [alone, inOrg('org-b', 5), inOrg('org-b', 6)], trace);
+  it('gives each row of an audience its own activity, writer and stx, also when two writers share the message', () => {
+    // One flush groups the transactions of several writers: their rows share an audience and a message.
+    const first = inOrg('org-a', 10);
+    first.activity = {
+      ...first.activity,
+      userId: 'writer-1',
+      changedFields: ['name'],
+      stx: { mutationId: 'mut-1', sourceId: 'tab-1', fieldTimestamps: {} },
+    };
+    const second = inOrg('org-a', 11);
+    second.activity = { ...second.activity, userId: 'writer-2', changedFields: ['description'], stx: null };
+    sendProductMessagesToApi('attachment', [first, second], trace);
 
-    const single = sent().find((message) => message.rows[0].rowData.organizationId === 'org-a');
-    const together = sent().find((message) => message.rows[0].rowData.organizationId === 'org-b');
-    // The same shape as any other message, with one row: the API gives its notification that row's seq and this stx.
-    expect(single?.rows).toEqual([{ seq: 10, rowData: { id: 'entity-10', organizationId: 'org-a' } }]);
-    expect(single?.activity).toMatchObject({ id: 'act-10', subjectId: 'entity-10', stx });
-    // Positive control: two rows for one audience share a message, under the first row's activity.
-    expect(together?.rows.map((row) => row.seq)).toEqual([5, 6]);
-    expect(together?.activity).toMatchObject({ id: 'act-5', subjectId: 'entity-5' });
+    const [message] = sent();
+    expect(message.rows).toEqual([
+      expect.objectContaining({ activityId: 'act-10', userId: 'writer-1', changedFields: ['name'], stx: first.activity.stx, seq: 10 }),
+      expect.objectContaining({ activityId: 'act-11', userId: 'writer-2', changedFields: ['description'], stx: null, seq: 11 }),
+    ]);
+    // What the rows share speaks for the message; no row's identity does.
+    expect(message.activity).toMatchObject({ type: 'attachment.created', action: 'create' });
+    for (const key of ['id', 'userId', 'subjectId', 'changedFields', 'stx']) expect(message.activity).not.toHaveProperty(key);
   });
 
   it('must not send the content of a row, of one row or of several', () => {
@@ -121,10 +123,9 @@ describe('sendProductMessagesToApi', () => {
     const moved = { ...inOrg('org-b', 11), movedFrom: { id: 'entity-11', organizationId: 'org-a' } };
     sendProductMessagesToApi('attachment', [inOrg('org-b', 10), moved], trace);
 
-    expect(sent()[0].rows).toEqual([
-      { seq: 10, rowData: { id: 'entity-10', organizationId: 'org-b' } },
-      { seq: 11, rowData: { id: 'entity-11', organizationId: 'org-b' }, movedFrom: { id: 'entity-11', organizationId: 'org-a' } },
-    ]);
+    const [unmoved, movedRow] = sent()[0].rows;
+    expect(unmoved).not.toHaveProperty('movedFrom');
+    expect(movedRow.movedFrom).toEqual({ id: 'entity-11', organizationId: 'org-a' });
   });
 
   it('sends deleted rows, which hold no seq', () => {

@@ -14,7 +14,7 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
-const { createIDBPersister, shouldPersistQuery } = await import('~/query/persister');
+const { persister, shouldPersistQuery } = await import('~/query/persister');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
 const { pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
 const { totpKeyQueryOptions } = await import('~/modules/me/query');
@@ -61,8 +61,6 @@ const clientWith = (mutations: PersistedClient['clientState']['mutations']): Per
 });
 
 describe('persister per-tab mutation records', () => {
-  const persister = createIDBPersister('rq');
-
   beforeEach(async () => {
     const db = getLocalUserDb();
     await db?.queries.clear();
@@ -105,7 +103,7 @@ describe('persister per-tab mutation records', () => {
   // The restore deleted a dead tab's record and stored its queue only at this tab's first write, up to a second later.
   it("keeps a dead tab's queue when this tab reloads before its first write", async () => {
     const db = getLocalUserDb();
-    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], bundledQueries: [] });
+    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', bundledQueries: [] });
     await db?.meta.put({
       key: 'rq:mut:dead-tab',
       timestamp: Date.now() - 3 * 60 * 60 * 1000,

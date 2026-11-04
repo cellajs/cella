@@ -93,9 +93,9 @@ describe('Local entity authorization (authorizeDocument)', () => {
     // own tenant check is what refuses: the same authorization, over a superuser pool.
     const unbound = createPgConnection(testDatabaseUrl, { max: 1 });
     vi.doMock('../../data/db', () => ({
-      withRlsTx: <T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>) =>
+      withRlsTx: <T>(tenantId: string, fn: (tx: Tx) => Promise<T>) =>
         unbound.transaction(async (tx) => {
-          await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`);
+          await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
           return fn(tx);
         }),
     }));

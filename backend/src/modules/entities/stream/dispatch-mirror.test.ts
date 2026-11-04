@@ -59,23 +59,24 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
   ...extra,
 });
 
-/** A product event as the bus delivers it: the activity of its first row, and its rows with their permission fields. */
-const attachmentEvent = (organizationId: string, rows: ActivityRow[], overrides: Record<string, unknown> = {}): AppStreamProductEvent =>
+/** A product event as the bus delivers it: its rows, each with the activity of its write and its permission fields. */
+const attachmentEvent = (
+  organizationId: string,
+  rows: (Partial<ActivityRow> & Pick<ActivityRow, 'rowData'>)[],
+  overrides: Record<string, unknown> = {},
+): AppStreamProductEvent =>
   ({
-    id: 'activity-1',
     type: 'attachment.created',
     action: 'create',
     entityType: 'attachment',
     resourceType: null,
     tableName: 'attachments',
-    subjectId: rows[0].rowData.id,
     tenantId: 'tenant-1',
     organizationId,
     ...nullAncestorScopes,
     rowData: null,
-    rows,
+    rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
     trace: null,
-    stx: null,
     ...overrides,
   }) as unknown as AppStreamProductEvent;
 
@@ -109,13 +110,15 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     expect(otherOrg.received).toHaveLength(0); // different org topic entirely
   });
 
-  it('pings a subscriber who can read only a row that is not the first', async () => {
+  it('names to each reader the rows it may read, also when that is not the first', async () => {
     // A stale topic registration after membership removal: dispatch must still evaluate each row.
-    const { subscriber, received } = fakeSubscriber([membership(orgA, memberRole, 'moved-user')], 'moved-user', [orgA, orgB], orgB);
-    streamSubscriberManager.register(subscriber);
+    const moved = fakeSubscriber([membership(orgA, memberRole, 'moved-user')], 'moved-user', [orgA, orgB], orgB);
+    const adminB = fakeSubscriber([membership(orgB, 'admin', 'admin-b')], 'admin-b', [orgB], orgB);
+    for (const { subscriber } of [moved, adminB]) streamSubscriberManager.register(subscriber);
 
-    // The first row is in unreadable org B, the second in org A: a dispatch that judged the first row alone would
-    // have skipped this subscriber.
+    // The first row is in org B, which the moved user cannot read, the second in org A, which the admin of B cannot:
+    // a dispatch that judged the first row alone would have skipped the moved user, one that named every row would
+    // tell each of them a row it may not read.
     await dispatchChange(
       attachmentEvent(orgB, [
         { seq: 20, rowData: attachmentRow('attachment-a', orgB) },
@@ -124,34 +127,36 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
       ]),
     );
 
-    expect(received).toHaveLength(1);
+    expect(moved.received.map((change) => change.rows.map(({ subjectId }) => subjectId))).toEqual([['attachment-b']]);
+    expect(adminB.received.map((change) => change.rows.map(({ subjectId }) => subjectId))).toEqual([['attachment-a']]);
   });
 
-  it("tells a reader of a one-row event that row's seq and the stx of its write, with no range to fetch", async () => {
+  it("tells a reader of a one-row event that row's seq and the stx and writer of its write", async () => {
     const member = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
     streamSubscriberManager.register(member.subscriber);
     const stx = { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} };
 
-    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, rowData: attachmentRow('attachment-1', orgA) }], { stx }));
+    await dispatchChange(attachmentEvent(orgA, [{ seq: 7, stx, userId: 'writer-user', rowData: attachmentRow('attachment-1', orgA) }]));
 
     // The tab that wrote the row recognises its own write by the stx and fetches nothing.
-    expect(member.received).toEqual([
-      expect.objectContaining({ subjectId: 'attachment-1', path: orgA, seq: 7, stx, batchUntilSeq: null, count: null }),
-    ]);
+    expect(member.received).toEqual([expect.objectContaining({ rows: [{ subjectId: 'attachment-1', seq: 7, stx, actorId: 'writer-user' }] })]);
   });
 
-  it('tells a reader of an event of several rows the range of their sequence values and how many rows it holds', async () => {
+  it('tells a reader of an event of several rows each row with its own seq and write, in event order', async () => {
     const member = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
     streamSubscriberManager.register(member.subscriber);
 
     // Sequence values of one audience need not be contiguous or in order: 21 belongs to another audience.
-    const rows = [22, 20, 23].map((seq) => ({ seq, rowData: attachmentRow(`attachment-${seq}`, orgA) }));
+    const rows = [22, 20, 23].map((seq) => ({ seq, userId: `writer-${seq}`, rowData: attachmentRow(`attachment-${seq}`, orgA) }));
     await dispatchChange(attachmentEvent(orgA, rows));
 
-    expect(member.received).toEqual([expect.objectContaining({ subjectId: 'attachment-22', path: orgA, seq: 20, batchUntilSeq: 23, count: 3 })]);
+    expect(member.received).toHaveLength(1);
+    expect(member.received[0].rows).toEqual(
+      [22, 20, 23].map((seq) => ({ subjectId: `attachment-${seq}`, seq, stx: null, actorId: `writer-${seq}` })),
+    );
   });
 
-  it('gives deleted rows, which hold no seq, a notification without one', async () => {
+  it('gives deleted rows, which hold no seq, a notification without one, every row named', async () => {
     const member = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
     streamSubscriberManager.register(member.subscriber);
     const deleted = { type: 'attachment.deleted', action: 'delete' };
@@ -160,9 +165,31 @@ describe('dispatch mirror: org membership, live snapshots, events of several row
     const rows = ['attachment-2', 'attachment-3'].map((id) => ({ rowData: attachmentRow(id, orgA) }));
     await dispatchChange(attachmentEvent(orgA, rows, deleted));
 
-    expect(member.received).toEqual([
-      expect.objectContaining({ action: 'delete', subjectId: 'attachment-1', seq: null, batchUntilSeq: null, count: null }),
-      expect.objectContaining({ action: 'delete', subjectId: 'attachment-2', seq: null, batchUntilSeq: null, count: 2 }),
+    expect(member.received.map(({ action, rows }) => [action, rows.map(({ subjectId, seq }) => [subjectId, seq])])).toEqual([
+      ['delete', [['attachment-1', null]]],
+      [
+        'delete',
+        [
+          ['attachment-2', null],
+          ['attachment-3', null],
+        ],
+      ],
+    ]);
+  });
+
+  it('names a created or updated row only with its seq, which the client fetches it by, and a deleted row without one', async () => {
+    const member = fakeSubscriber([membership(orgA, 'admin', 'admin-user')], 'admin-user', [orgA], orgA);
+    streamSubscriberManager.register(member.subscriber);
+    // A change delivered again after its row left the table: the worker finds no seq to read back.
+    const gone = { rowData: attachmentRow('attachment-gone', orgA) };
+
+    await dispatchChange(attachmentEvent(orgA, [gone, { seq: 9, rowData: attachmentRow('attachment-1', orgA) }]));
+    await dispatchChange(attachmentEvent(orgA, [gone], { type: 'attachment.updated', action: 'update' }));
+    await dispatchChange(attachmentEvent(orgA, [gone], { type: 'attachment.deleted', action: 'delete' }));
+
+    expect(member.received.map(({ action, rows }) => [action, rows.map(({ subjectId, seq }) => [subjectId, seq])])).toEqual([
+      ['create', [['attachment-1', 9]]],
+      ['delete', [['attachment-gone', null]]],
     ]);
   });
 

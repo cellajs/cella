@@ -6,9 +6,6 @@ export type QueryMeta = {
   persist?: boolean;
   /** Skips the global error toast; a predicate suppresses only the errors it matches. */
   suppressGlobalErrorToast?: boolean | ((error: ApiError) => boolean);
-  /** Org/tenant context used by SSE handlers + setQueryDefaults to resolve fetch params. */
-  organizationId?: string;
-  tenantId?: string;
   /** On a queued mutation in the persisted cache: the version of its variables' shape. The persister sets it. */
   variablesVersion?: number;
 };

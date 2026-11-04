@@ -59,21 +59,21 @@ const queuedMutation = (variables: Record<string, unknown>) => ({
   },
 });
 
-/** Seed an old-shape attachment cache at a given persisted schema ordinal. */
-async function seedScope(scope: string, schemaVersion: number) {
+/** Seed an old-shape attachment cache at a given persisted schema ordinal, with the queue a closed tab left. */
+async function seedCache(schemaVersion: number) {
   const db = getLocalUserDb()!;
+  await db.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', clientCacheVersion: 'v1', schemaVersion, bundledQueries: [] });
+  // Without the locks API, a record this old belongs to a closed tab, whose queue the restore takes over.
+  const closedAt = Date.now() - 3 * 60 * 60 * 1000;
   await db.meta.put({
-    key: scope,
-    timestamp: Date.now(),
+    key: 'rq:mut:closed-tab',
+    timestamp: closedAt,
     buster: '',
-    clientCacheVersion: 'v1',
-    schemaVersion,
-    mutations: [queuedMutation({ name: 'offline edit' })] as never,
+    mutations: [queuedMutation({ name: 'offline edit' })],
     bundledQueries: [],
   });
   await db.queries.put({
-    id: `${scope}:["attachment","list"]`,
-    scope,
+    id: 'rq:["attachment","list"]',
     queryHash: '["attachment","list"]',
     queryKey: ['attachment', 'list'],
     state: { data: [{ id: 'a1', name: 'pic' }], dataUpdatedAt: 100, status: 'success' } as never,
@@ -94,7 +94,7 @@ describe('persister lens boot migration', () => {
   });
 
   it('migrates cached rows + queued mutations and advances the pointer', async () => {
-    await seedScope('rq', 0);
+    await seedCache(0);
 
     const restored = await persister.restoreClient();
     expect(restored).toBeDefined();
@@ -124,15 +124,15 @@ describe('persister lens boot migration', () => {
     };
 
     // The store is ahead at boot: a rollback deploy, or a newer tab migrated first.
-    await seedScope('rq', 5);
+    await seedCache(5);
     expect(await persister.restoreClient()).toBeUndefined();
     await writeAttempt();
     expect(await onDisk()).toEqual({ schemaVersion: 5, written: false });
-    expect(await db.queries.where('scope').equals('rq').count()).toBe(1);
+    expect(await db.queries.count()).toBe(1);
 
     // A newer tab migrates the store forward after this bundle booted on it, and the broadcast is lost: the write checks the disk.
     resetBundleStale();
-    await seedScope('rq', 1);
+    await seedCache(1);
     await persister.restoreClient();
     await db.meta.put({ ...(await db.meta.get('rq'))!, schemaVersion: 2 });
     await writeAttempt();

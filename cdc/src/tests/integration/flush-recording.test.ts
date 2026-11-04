@@ -1,4 +1,6 @@
+import { randomBytes } from 'node:crypto';
 import { eq, inArray, sql } from 'drizzle-orm';
+import { PgoutputPlugin } from 'pg-logical-replication';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,13 +9,13 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { cdcPublicationName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { parseMessage } from '../../pipeline/parse-message';
 import { processFlush } from '../../pipeline/process-flush';
-import { ApiUnreachableError } from '../../services/failure';
 import type { PendingEvent } from '../../types';
-import { dmlMessage } from '../factories';
+import { dmlMessage, pendingEvent } from '../factories';
 import { type AttachmentHome, seedAttachmentHome } from './pipeline-harness';
 
 /** Whether the configured database holds the migrated schema these tests write to. */
@@ -40,8 +42,8 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   let home: AttachmentHome;
   let lsnCounter = 0x1000;
   const committedAt = new Map<string, string>();
-  /** What the worker sent to the API: the subject of each message, and the sequence value of each of its rows. */
-  let dispatched: { subjectId: string | null; seqs: (number | undefined)[] }[] = [];
+  /** What the worker sent to the API: per product message, the subject, activity and sequence value of each of its rows. */
+  let dispatched: { subjectIds: unknown[]; activityIds: string[]; seqs: (number | undefined)[] }[] = [];
 
   beforeAll(async () => {
     await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${tenantId}, ${`flush-${tenantId}`})`);
@@ -57,8 +59,13 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   beforeEach(() => {
     dispatched = [];
     vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
-      const { activity, rows = [] } = payload as { activity?: { subjectId: string | null }; rows?: { seq?: number }[] };
-      if (activity) dispatched.push({ subjectId: activity.subjectId, seqs: rows.map((row) => row.seq) });
+      const { rows } = payload as { rows?: { activityId: string; seq?: number; rowData: { id?: unknown } }[] };
+      if (!rows) return;
+      dispatched.push({
+        subjectIds: rows.map((row) => row.rowData.id),
+        activityIds: rows.map((row) => row.activityId),
+        seqs: rows.map((row) => row.seq),
+      });
     });
   });
 
@@ -104,15 +111,18 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const committed = committedAt.get(lsn) ?? new Date().toISOString();
     committedAt.set(lsn, committed);
     result.activity.createdAt = committed;
-    return { lsn, result };
+    return pendingEvent(lsn, result);
   };
 
   const counts = async () =>
     ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]
       ?.counts ?? {}) as Record<string, number>;
 
-  const activitiesOf = async (ids: string[]) =>
-    (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
+  const activityIdsOf = async (ids: string[]) =>
+    (
+      await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids)).orderBy(activitiesTable.id)
+    ).map((row) => row.id);
+  const activitiesOf = async (ids: string[]) => (await activityIdsOf(ids)).length;
 
   const seqOf = async (id: string) => Number((await storedRow(id)).seq);
 
@@ -132,6 +142,9 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     expect(await seqOf(second)).toBe((await seqOf(first)) + 1);
     const notified = dispatched.flatMap((message) => message.seqs);
     expect(notified).toEqual([recorded.sequence - 1, recorded.sequence]);
+    // Two source transactions in one message: each row carries the activity it was recorded as.
+    expect(dispatched).toHaveLength(1);
+    expect(dispatched[0].activityIds).toEqual(await activityIdsOf([first, second]));
 
     // The same events again, as after a restart that read from an unacknowledged position.
     dispatched = [];
@@ -172,8 +185,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const created = await eventFor('insert', id, nextLsn());
     const oldRow = await storedRow(id);
     await cdcDb.execute(sql`
-      UPDATE attachments SET name = 'renamed', updated_at = now(), stx = jsonb_set(stx, '{changedFields}', '["name", "updatedAt"]')
-      WHERE id = ${id}
+      UPDATE attachments SET name = 'renamed', updated_at = now() WHERE id = ${id}
     `);
     const edited = await eventFor('update', id, nextLsn(), oldRow);
     const before = await counts();
@@ -187,6 +199,35 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     expect(await seqOf(id)).toBe(recorded.sequence);
     expect(created.result.rowData.seq).toBe(recorded.sequence - 1);
     expect(edited.result.rowData.seq).toBe(recorded.sequence);
+  });
+
+  it('must not take an unchanged TOASTed value for a change of its column', async () => {
+    const id = await insertAttachment();
+    // Random text does not compress, so Postgres stores it out of line.
+    const description = randomBytes(12_000).toString('base64');
+    await cdcDb.execute(sql`UPDATE attachments SET description = ${description} WHERE id = ${id}`);
+    // A slot of its own, made after that write, reads only the update below. Slot names are one namespace per server.
+    const slot = `cdc_toast_${Date.now()}`;
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${slot}, 'pgoutput')`);
+    try {
+      await cdcDb.execute(sql`UPDATE attachments SET name = 'toasted', updated_at = now() WHERE id = ${id}`);
+      const changes = await cdcDb.execute<{ data: Buffer }>(
+        sql`SELECT data FROM pg_logical_slot_peek_binary_changes(${slot}, NULL, NULL, 'proto_version', '1', 'publication_names', ${cdcPublicationName})`,
+      );
+      const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [cdcPublicationName] });
+      const [update] = changes.rows.flatMap(({ data }) => {
+        const message = plugin.parse(data);
+        return message.tag === 'update' && message.new.id === id ? [{ message, size: data.length }] : [];
+      });
+
+      // Postgres sends the value once, in the old row, and an unchanged-TOAST marker in the new one, which the
+      // replication client fills from the old row.
+      expect(update.size).toBeLessThan(description.length * 1.5);
+      expect(update.message.new.description).toBe(description);
+      expect(parseMessage(update.message)?.activity.changedFields?.toSorted()).toEqual(['name', 'updatedAt']);
+    } finally {
+      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${slot})`);
+    }
   });
 
   it('records nothing of a flush that fails, and nothing twice when it is read again', async () => {
@@ -223,7 +264,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const event = await eventFor('insert', id, nextLsn());
     const before = await counts();
     vi.mocked(wsClient.send).mockImplementationOnce(() => {
-      throw new ApiUnreachableError();
+      throw new Error('The API is not reachable');
     });
 
     await expect(processFlush([[event]])).rejects.toThrow('The API is not reachable');
@@ -236,7 +277,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
 
     expect(await counts()).toEqual(recorded);
     expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 1);
-    expect(dispatched.map((message) => message.subjectId)).toEqual([id]);
+    expect(dispatched.flatMap((message) => message.subjectIds)).toEqual([id]);
   });
 
   it('hands rows that are no product to the API one at a time, in commit order', async () => {
@@ -247,7 +288,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
       // An update without a changed column is no event: the old row carries another name.
       const result = parseMessage(dmlMessage(tag, 'tenants', row, tag === 'update' ? { ...row, name: 'before' } : undefined));
       if (!result) throw new Error(`The parser dropped the ${tag} of tenant ${id}`);
-      return { lsn: nextLsn(), result };
+      return pendingEvent(nextLsn(), result);
     };
 
     try {
@@ -278,10 +319,9 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const id = await insertAttachment();
     const template = await eventFor('insert', id, nextLsn());
     // 2,500 events of one row: more than one chunk of activity rows, one row to stamp.
-    const events: PendingEvent[] = Array.from({ length: 2500 }, () => ({
-      lsn: nextLsn(),
-      result: { ...template.result, activity: { ...template.result.activity }, rowData: { ...template.result.rowData } },
-    }));
+    const events: PendingEvent[] = Array.from({ length: 2500 }, () =>
+      pendingEvent(nextLsn(), { ...template.result, activity: { ...template.result.activity }, rowData: { ...template.result.rowData } }),
+    );
     const before = await counts();
 
     await processFlush([events]);

@@ -159,8 +159,4 @@ describe('tenantGuard', () => {
 
     expect((await runExpectingError(mockCtx({ actor: user([]), tenantId: undefined }))).status).toBe(400);
   });
-
-  it('answers a server error without an actor: only a guard order createXRoute refuses gets there', async () => {
-    expect((await runExpectingError(mockCtx({ tenantId: testTenantId }))).status).toBe(500);
-  });
 });

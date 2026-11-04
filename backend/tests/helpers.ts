@@ -3,7 +3,7 @@ import { and, eq, like } from 'drizzle-orm';
 import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { expect, vi } from 'vitest';
+import { expect, onTestFinished, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
@@ -67,6 +67,16 @@ export const sentMails = () =>
   );
 
 export const mailsTo = (email: string) => sentMails().filter(({ recipient }) => recipient.email === email);
+
+/** Sends this test's mail through the real Brevo path, whose next request fails as an unreachable Brevo does. */
+export const failNextMailSend = () => {
+  vi.stubEnv('BREVO_API_KEY', 'test-brevo-key');
+  vi.stubEnv('TEST_SEND_EMAILS', 'true');
+  onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
+  vi.mocked(fetch).mockRejectedValueOnce(new TypeError('fetch failed'));
+};
 
 /**
  * Ends the window of every bucket under `keyPrefix`, as the time running out would. A mail cap keeps its buckets in the

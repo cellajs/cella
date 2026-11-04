@@ -42,18 +42,17 @@ function ingestSyncedRows(productType: ProductEntityType, fallbackChannelId: str
   }
 }
 
-/** Feeds every delivered sequence range into {@link ingestSyncedRows}; a degraded range carries no rows and the exact recount owns it. */
+/** Feeds every delivered sequence range into {@link ingestSyncedRows}; the exact recount owns a range that was not delivered. */
 export function subscribeUnseenSync(): () => void {
-  return onSyncedRows(({ entityType, organizationId, rows, degraded }) => {
-    if (!degraded) ingestSyncedRows(entityType, organizationId, rows);
-  });
+  return onSyncedRows(({ entityType, organizationId, rows }) => ingestSyncedRows(entityType, organizationId, rows));
 }
 
-/** Removal without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */
-export function applyUnfetchableRemovalUnseen(productType: ProductEntityType, entityId: string, channelId: string | null): void {
+/** Removals without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1), an unseen one decrements; without a channel the counts are recounted once. */
+export function applyUnfetchableRemovalUnseen(productType: ProductEntityType, entityIds: string[], channelId: string | null): void {
   if (!isSeenTracked(productType)) return;
-  countedIds.delete(entityId);
-  if (isSeenLocally(entityId)) return;
-  if (channelId) applyUnseenDelta(channelId, productType, -1);
+  for (const entityId of entityIds) countedIds.delete(entityId);
+  const unseen = entityIds.filter((entityId) => !isSeenLocally(entityId)).length;
+  if (unseen === 0) return;
+  if (channelId) applyUnseenDelta(channelId, productType, -unseen);
   else queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
 }

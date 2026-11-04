@@ -95,10 +95,10 @@ describe('entities listeners: a membership change on open streams', () => {
     expect(staying.subscriber.memberships).toHaveLength(1);
     // The user hears of their own membership; the organization's remaining readers hear that its member lists changed.
     expect(removed.sent.map(({ event, data }) => [event, JSON.parse(data)])).toEqual([
-      ['signal', { type: 'membership.changed', organizationId: org, subjectId: `mem-${org}-removed-user`, version: null }],
+      ['signal', { type: 'membership.changed', organizationId: org, subjectId: `mem-${org}-removed-user` }],
     ]);
     expect(staying.sent.map(({ event, data }) => [event, JSON.parse(data)])).toEqual([
-      ['signal', { type: 'membership.changed', organizationId: org, subjectId: null, version: null }],
+      ['signal', { type: 'membership.changed', organizationId: org, subjectId: null }],
     ]);
   });
 
@@ -126,22 +126,19 @@ describe('entities listeners: a product change on open streams', () => {
     ...extra,
   });
 
-  /** A product update as the socket hands it to the bus: the activity of its first row, and its rows. */
-  const updateEvent = (rows: ActivityRow[]): ActivityEvent =>
+  /** A product update as the socket hands it to the bus: its rows, each with the activity of its write. */
+  const updateEvent = (rows: Pick<ActivityRow, 'seq' | 'rowData' | 'movedFrom'>[]): ActivityEvent =>
     ({
-      id: 'activity-update',
       type: 'attachment.updated',
       action: 'update',
       entityType: 'attachment',
       resourceType: null,
       tableName: 'attachments',
-      subjectId: rows[0].rowData.id,
       tenantId: 'tenant-1',
       organizationId: org,
       rowData: null,
-      rows,
+      rows: rows.map((row) => ({ activityId: `act-${row.rowData.id}`, userId: null, changedFields: null, stx: null, ...row })),
       trace: null,
-      stx: null,
     }) as unknown as ActivityEvent;
 
   it('tells a reader the update, and the loss of each row a move took out of its reach', async () => {
@@ -158,9 +155,10 @@ describe('entities listeners: a product change on open streams', () => {
     );
     await settle();
 
+    // The update names the row the reader still reads; the lost one arrives as its own removal.
     expect(reader.sent.map((message) => JSON.parse(message.data))).toEqual([
-      expect.objectContaining({ action: 'update', subjectId: 'att-kept', seq: 4, batchUntilSeq: 6, count: 2 }),
-      expect.objectContaining({ action: 'moveOut', subjectId: 'att-lost', path: org, batchUntilSeq: null, count: 1 }),
+      expect.objectContaining({ action: 'update', rows: [expect.objectContaining({ subjectId: 'att-kept', seq: 4 })] }),
+      expect.objectContaining({ action: 'moveOut', rows: [expect.objectContaining({ subjectId: 'att-lost', seq: 6 })] }),
     ]);
   });
 });

@@ -117,10 +117,13 @@ export interface UppyRestrictionsConfig {
 /** Which attachments a device keeps in IndexedDB for offline use, and how it downloads and uploads them. */
 export interface LocalBlobStorageConfig {
   enabled: boolean;
+  /** Bytes of the largest file a device keeps for offline use; a larger one keeps only its previews. */
   maxFileSize: number;
   /** Bytes downloaded files may take on one device, across organizations: the budget of the largest offline files tier. */
   maxTotalSize: number;
+  /** Content-type patterns (`image/*`) a kept file must match, empty for any; previews are kept whatever the type. */
   allowedContentTypes: string[];
+  /** Content-type patterns whose file no device keeps offline; their previews are kept. */
   excludedContentTypes: string[];
   downloadConcurrency: number;
   downloadRetryAttempts: number;
