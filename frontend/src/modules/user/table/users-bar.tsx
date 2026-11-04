@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
@@ -19,7 +20,6 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
 
   const total = useListQueryTotal(queryKey);
 
-  const inviteButtonRef = useRef<HTMLButtonElement>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const inviteContainerRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +34,8 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
     },
   });
 
-  const openInvite = () => openInviteDialog({ description: t('c:invite_users.text'), triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
+  const openInvite = (triggerRef: TriggerRef) =>
+    openInviteDialog({ description: t('c:invite_users.text'), triggerRef, containerRef: inviteContainerRef });
 
   const confirmDelete = () =>
     openDeleteDialog({
@@ -60,7 +61,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       {...{ searchVars, total, columns, setColumns }}
       label="c:user"
       searchName="userSearch"
-      actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInvite} />}
+      action={{ icon: MailIcon, label: t('c:invite'), onClick: openInvite }}
       searchFilters={searchFilters}
       selection={{
         count: selected.length,

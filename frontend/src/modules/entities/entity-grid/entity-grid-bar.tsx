@@ -2,11 +2,13 @@ import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ChannelEntityType } from 'shared';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
-import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
+import { type TableBarAction, TableBarActionButton, TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-grid';
+import { FloatingAction } from '~/modules/navigation/floating-nav/floating-action';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type SortOrder = 'asc' | 'desc';
@@ -28,8 +30,8 @@ interface EntityGridBarProps {
   setSearch: (search: EntityGridBarSearch) => void;
   /** Shows the focus view toggle (default false). */
   focusView?: boolean;
-  /** Buttons before the count, such as a create button: hidden while filtered, shown alone while the bar hides. */
-  actions?: ReactNode;
+  /** The list's main action, such as create: on a phone a floating button, from `sm` up shown alone while the bar hides. */
+  action?: TableBarAction;
   /** A grid/table view toggle after the filters; it hides with the bar. */
   viewToggle?: ReactNode;
   /** Shows the role filter (default true); a discovery grid passes false, since a role narrows the backend scope to member rows. */
@@ -45,19 +47,26 @@ export function EntityGridBar({
   searchVars,
   setSearch,
   focusView = false,
-  actions,
+  action,
   viewToggle,
   roleFilter = true,
   alwaysShow = false,
 }: EntityGridBarProps) {
   const { sort, role } = searchVars;
+  const isMobile = useBreakpointBelow('sm');
 
   const total = useListQueryTotal(queryKey);
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', role: undefined } });
   const searchFilters = useRoleSearchFilter({ entityType, value: role, onChange: (role) => setSearch({ role }) });
 
   if (!alwaysShow && !barFilters.isFiltered && (total ?? 0) <= gridPreviewLimit) {
-    return actions ? <div className="flex items-center">{actions}</div> : null;
+    if (!action) return null;
+    if (isMobile) return <FloatingAction {...action} />;
+    return (
+      <div className="flex items-center">
+        <TableBarActionButton action={action} />
+      </div>
+    );
   }
 
   return (
@@ -67,7 +76,7 @@ export function EntityGridBar({
       total={total}
       label={label}
       searchName="entitySearch"
-      actions={actions}
+      action={action}
       searchFilters={roleFilter ? searchFilters : undefined}
       sort={{
         options: sortOptions,

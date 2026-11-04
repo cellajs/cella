@@ -65,7 +65,8 @@ export function AttachmentsTableBar({
       label="c:attachment"
       searchName="attachmentSearch"
       allowOfflineSearch
-      actions={canUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={open} />}
+      action={canUpload ? { icon: UploadIcon, label: t('c:upload'), onClick: () => open() } : undefined}
+      floatAction={!isSheet}
       focusView={!isSheet}
       selection={{
         count: selected.length,

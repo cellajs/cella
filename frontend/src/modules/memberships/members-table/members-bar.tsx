@@ -6,6 +6,7 @@ import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { useRoleSearchFilter } from '~/modules/common/form-fields/use-role-search-filter';
 import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
@@ -40,7 +41,6 @@ export function MembersTableBar({
   const total = useListQueryTotal(queryKey);
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const inviteButtonRef = useRef<HTMLButtonElement>(null);
   const inviteContainerRef = useRef<HTMLDivElement>(null);
 
   const { q, role, order, sort } = searchVars;
@@ -77,10 +77,10 @@ export function MembersTableBar({
       description: <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email) }} />,
     });
 
-  const openInvite = () => {
+  const openInvite = (triggerRef: TriggerRef) => {
     if (!onlineManager.isOnline()) return toastOffline();
     const description = <NamedText i18nKey="c:invite_members.text" name={channel.name} />;
-    openInviteDialog({ channel, description, triggerRef: inviteButtonRef, containerRef: inviteContainerRef });
+    openInviteDialog({ channel, description, triggerRef, containerRef: inviteContainerRef });
   };
 
   const fetchExport = (limit: number, offset: number) =>
@@ -103,7 +103,8 @@ export function MembersTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:member"
       searchName="memberSearch"
-      actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInvite} />}
+      action={canUpdate ? { icon: MailIcon, label: t('c:invite'), onClick: openInvite } : undefined}
+      floatAction={!isSheet}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
       searchFilters={searchFilters}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant

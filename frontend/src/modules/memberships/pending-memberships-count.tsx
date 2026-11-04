@@ -44,16 +44,22 @@ export function PendingMembershipsCount({ channel }: PendingMembershipsCountProp
 
   if (!hasIncluded(channel) || !channel.included.counts) return null;
   const { pending } = channel.included.counts.membership;
+  if (pending < 1) return null;
 
   return (
-    <Button
-      ref={buttonRef}
-      disabled={pending < 1}
-      variant="ghost"
-      size="xs"
-      onClick={() => (onlineManager.isOnline() ? openPendingMembershipsSheet(channel, buttonRef) : toastOffline())}
-    >
-      {t('c:resource_count', { count: pending, resource: t('c:pending') })}
-    </Button>
+    <>
+      <span aria-hidden className="text-faint-foreground">
+        ·
+      </span>
+      <Button
+        ref={buttonRef}
+        variant="link"
+        size="auto"
+        className="shrink-0"
+        onClick={() => (onlineManager.isOnline() ? openPendingMembershipsSheet(channel, buttonRef) : toastOffline())}
+      >
+        {t('c:resource_count', { count: pending, resource: t('c:pending') })}
+      </Button>
+    </>
   );
 }

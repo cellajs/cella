@@ -33,8 +33,7 @@ export function TableBarButton({ icon: Icon, label, badge, className, ref, ...pr
       }
     >
       <Icon />
-      {/* A phone bar that also holds a view toggle marks its actions `data-compact`, leaving them their icon */}
-      <span className="max-sm:in-data-compact:sr-only">{t(label)}</span>
+      {t(label)}
 
       {!!badge && <Badge context="button">{formatCount(badge)}</Badge>}
     </Button>
