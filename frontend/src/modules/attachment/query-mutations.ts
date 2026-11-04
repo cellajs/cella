@@ -28,7 +28,7 @@ export async function createAttachmentsMutationFn({ tenantId, organizationId, da
   const body = data.map((item) => {
     const row: Record<string, unknown> = { ...item, stx };
     for (const key of placementKeys) if (row[key] == null) delete row[key];
-    return row as CreateAttachmentItem;
+    return zCreateAttachmentsBody.element.parse(row);
   });
   return createAttachments({ path: { tenantId, organizationId }, body });
 }
