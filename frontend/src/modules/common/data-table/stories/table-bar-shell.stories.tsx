@@ -22,8 +22,9 @@ const rows = [
   { id: 'r1', name: 'One', email: 'one@example.com', type: 'waitlist', wasInvited: false, createdBy: null },
   { id: 'r2', name: 'Two', email: 'two@example.com', type: 'waitlist', wasInvited: true, createdBy: null },
 ];
-// The attachment bar asks the engine per row, as the signed-in user over `memberships`.
-const attachmentRows = rows.map((row) => ({ ...row, entityType: 'attachment', organizationId: 'org-1' }));
+// The attachment bar asks the engine per row, as the signed-in user over `memberships`; each row carries every id column of an org-homed attachment.
+const attachmentIds = hierarchy.ancestorIdsHomedAt('attachment', 'organization', { id: 'org-1' });
+const attachmentRows = rows.map((row) => ({ ...row, entityType: 'attachment', ...attachmentIds }));
 const memberships = {
   items: [{ channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: hierarchy.getMostPrivilegedRole('organization') }],
 };
