@@ -48,7 +48,11 @@ export function classifyDuplicateSecretError(output: string): { name?: string } 
   return { name: m[0].match(/['"]([A-Za-z0-9][\w./-]*)['"]/)?.[1] };
 }
 
-/** Delete URNs whose provider returned not-found, so pruning them from state is safe. Update and read failures are excluded: those resources still exist. */
+/**
+ * Delete URNs whose live object is gone, so pruning them from state is safe: the provider returned not-found, or Secret Manager refused to act
+ * on a secret deleted outside the state (a copy the secret move removed before the `up`). Update and read failures are excluded: those
+ * resources still exist.
+ */
 export function parseOrphanedDeletes(output: string): string[] {
   const urns = new Set<string>();
   const lines = output.split('\n');
@@ -57,8 +61,8 @@ export function parseOrphanedDeletes(output: string): string[] {
     const next = lines[i + 1] ?? '';
     const m = line.match(/error: deleting (urn:pulumi:\S+): /);
     if (!m?.[1]) continue;
-    const notFound404 = /\b404\b[^\n]*not found/i;
-    if (notFound404.test(line) || (/^\s*\* /.test(next) && notFound404.test(next))) urns.add(m[1]);
+    const gone = /\b404\b[^\n]*not found|cannot act on deleted resource/i;
+    if (gone.test(line) || (/^\s*\* /.test(next) && gone.test(next))) urns.add(m[1]);
   }
   return [...urns];
 }

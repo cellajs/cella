@@ -29,6 +29,20 @@ describe('parseOrphanedDeletes', () => {
     expect(parseOrphanedDeletes(output)).toEqual([urn]);
   });
 
+  it('collects delete URNs of secrets the secret move deleted before the up, which Secret Manager refuses to act on', () => {
+    // The up of the first apply after 20261103T1222-infra-no-machine-keys, in production on 2026-11-04.
+    const version = 'urn:pulumi:production::infra::scaleway:secrets/version:Version::secret-version-database-ssl-ca@yjs';
+    const secret = 'urn:pulumi:production::infra::scaleway:secrets/secret:Secret::secret-database-ssl-ca@yjs';
+    const output = [
+      `    error: deleting ${version}: 1 error occurred:`,
+      '        * scaleway-sdk-go: precondition failed: , cannot act on deleted resource',
+      '',
+      `    error: deleting ${secret}: 1 error occurred:`,
+      '        * scaleway-sdk-go: precondition failed: , cannot act on deleted resource',
+    ].join('\n');
+    expect(parseOrphanedDeletes(output)).toEqual([version, secret]);
+  });
+
   it('excludes deletes that failed for other reasons', () => {
     const urn = 'urn:pulumi:production::infra::scaleway:secrets/secret:Secret::secret-admin-email';
     expect(parseOrphanedDeletes(`error: deleting ${urn}: \n  * 403 forbidden`)).toEqual([]);
