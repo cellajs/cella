@@ -38,7 +38,7 @@ export const useColumns = () => {
       name: t('c:role'),
       width: 100,
       placeholderValue: '-',
-      renderCell: ({ row }) => (row.inactiveMembership.role ? t(`c:${row.inactiveMembership.role}`) : null),
+      renderCell: ({ row }) => t(`c:${row.inactiveMembership.role}`),
     },
     dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),
     {
@@ -47,8 +47,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) =>
-        row.inactiveMembership.createdBy && <ActorCell compactable actor={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <ActorCell compactable actor={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
     },
     {
       key: 'actions',

@@ -19,7 +19,7 @@ export const isStrategyEnabled = (strategy: BaseAuthStrategies): boolean => appC
 
 /** Whether a switch is on in this app's config, read per call: tests change the config at runtime. */
 export const isSwitchOn = (on: ConfigSwitch): boolean => {
-  if ('service' in on) return appConfig.services[on.service]?.enabled !== false;
+  if ('service' in on) return appConfig.services[on.service].enabled;
   if (!isStrategyEnabled(on.strategy)) return false;
   const { provider } = on;
   return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);

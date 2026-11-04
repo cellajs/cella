@@ -32,7 +32,7 @@ interface SyncStoreState {
    * refetch is due at this client's share of the spread. The signal versions go too: books rebuilt from lost counters
    * count them again from 0, and a stored version the new count reaches would hide its runs, so each runs once now.
    */
-  adoptGeneration: (generation: number | undefined) => void;
+  adoptGeneration: (generation: number) => void;
   /**
    * Starts over when this device last caught up longer than `awayMs` ago: the server may have removed tombstones it
    * never read, so every cursor goes back to 0, as for a new generation, and the refetch is due at once.
@@ -102,7 +102,7 @@ export const syncStore = createStore<SyncStoreState>()(
 
         adoptGeneration: (generation) => {
           const held = get().generation;
-          if (generation === undefined || generation === held) return;
+          if (generation === held) return;
           set((state) => {
             state.generation = generation;
             if (held === null) return;

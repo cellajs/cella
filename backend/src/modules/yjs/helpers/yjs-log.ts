@@ -36,7 +36,7 @@ export interface YjsDocKey {
 
 /** A document key plus the organization its rows carry. */
 export interface YjsDocScope extends YjsDocKey {
-  organizationId: string | null;
+  organizationId: string;
 }
 
 /** One logged update, in arrival order: a client's, under its sender, or a server-origin one with no user. */

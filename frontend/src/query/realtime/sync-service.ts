@@ -29,8 +29,8 @@ export async function runSyncService(signal: AbortSignal): Promise<void> {
 
   const routeOrganizationId = getRouteOrganizationId();
 
-  const highPriority = allItems.filter((item) => item.organizationId === routeOrganizationId || item.id === routeOrganizationId);
-  const lowPriority = allItems.filter((item) => item.organizationId !== routeOrganizationId && item.id !== routeOrganizationId);
+  const highPriority = allItems.filter((item) => item.membership.organizationId === routeOrganizationId);
+  const lowPriority = allItems.filter((item) => item.membership.organizationId !== routeOrganizationId);
 
   for (const item of highPriority) {
     if (signal.aborted) return;
@@ -56,8 +56,7 @@ export async function runSyncService(signal: AbortSignal): Promise<void> {
 async function syncMenuItem(item: UserMenuItem): Promise<void> {
   if (item.membership.archived) return;
 
-  // For an organization the entity is the org itself; a channel below it carries organizationId on its row.
-  const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
+  const { organizationId } = item.membership;
   const queries = buildEntitySyncQueries({
     targetEntityId: item.id,
     targetEntityType: item.entityType,

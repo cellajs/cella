@@ -7,13 +7,21 @@ export type ClientOptions = {
 /**
  * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
  */
-export type ActorRef = {
-  id: string;
-  kind: 'user' | 'service';
-  name: string;
-  slug: string | null;
-  thumbnailUrl: string | null;
-};
+export type ActorRef =
+  | {
+      id: string;
+      name: string;
+      thumbnailUrl: string | null;
+      kind: 'user';
+      slug: string;
+    }
+  | {
+      id: string;
+      name: string;
+      thumbnailUrl: string | null;
+      kind: 'service';
+      slug: null;
+    };
 
 /**
  * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
@@ -123,7 +131,7 @@ export type StreamChange = {
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment';
   organizationId: string;
-  tenantId: string | null;
+  tenantId: string;
   /**
    * Deepest channel entity ID above the rows, which groups unseen counts
    */
@@ -417,7 +425,7 @@ export type InactiveMembership = {
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;
-  createdBy: ActorRef | null;
+  createdBy: ActorRef;
   organizationId: string;
 };
 
@@ -501,9 +509,39 @@ export type Tenant = {
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
   createdAt: string;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   updatedAt: string | null;
-  updatedBy: ActorRef | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   /**
    * The organization this tenant holds, or null if none
    */
@@ -539,9 +577,39 @@ export type Connection = {
     logoUrl?: string;
   };
   createdAt: string;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   updatedAt: string | null;
-  updatedBy: ActorRef | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
 };
 
 /**
@@ -564,9 +632,39 @@ export type Organization = {
   tenantId: string;
   name: string;
   createdAt: string;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   updatedAt: string | null;
-  updatedBy: ActorRef | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
@@ -635,14 +733,59 @@ export type Attachment = {
   tenantId: string;
   name: string;
   createdAt: string;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   updatedAt: string | null;
-  updatedBy: ActorRef | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   stx: StxBase;
   description: string | null;
   keywords: string;
   deletedAt: string | null;
-  deletedBy: ActorRef | null;
+  deletedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   public: boolean;
   seq: number;
   /**
@@ -707,9 +850,39 @@ export type ServiceAccount = {
   }>;
   oauthClientId: string | null;
   createdAt: string;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   updatedAt: string | null;
-  updatedBy: ActorRef | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   role: 'admin' | 'member';
   lastSeenAt: string | null;
 };
@@ -728,7 +901,22 @@ export type ApiKey = {
   expiresAt: string | null;
   revokedAt: string | null;
   revokedBy: string | null;
-  createdBy: ActorRef | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
   createdAt: string;
 };
 
@@ -2327,7 +2515,7 @@ export type PostAppCatchupResponses = {
     /**
      * Per-view answers for client-declared views (same order as the request)
      */
-    views?: Array<{
+    views: Array<{
       organizationId: string;
       entityType: 'attachment';
       status: 'ok' | 'opaque' | 'forbidden';
@@ -2339,7 +2527,7 @@ export type PostAppCatchupResponses = {
     /**
      * Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines
      */
-    generation?: number;
+    generation: number;
   };
 };
 
@@ -5372,9 +5560,39 @@ export type UpdateMembershipResponses = {
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
-    createdBy: ActorRef | null;
+    createdBy:
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'user';
+          slug: string;
+        }
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'service';
+          slug: null;
+        }
+      | null;
     updatedAt: string | null;
-    updatedBy: ActorRef | null;
+    updatedBy:
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'user';
+          slug: string;
+        }
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'service';
+          slug: null;
+        }
+      | null;
     organizationId: string;
     archived?: boolean;
     muted?: boolean;
@@ -5573,7 +5791,7 @@ export type GetPendingMembershipsResponses = {
       createdAt: string;
       remindedAt: string | null;
       linkExpiresAt: string | null;
-      createdBy: ActorRef | null;
+      createdBy: ActorRef;
     }>;
     total: number;
   };

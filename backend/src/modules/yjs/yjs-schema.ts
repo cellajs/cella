@@ -40,7 +40,7 @@ export const yjsMaterializeBodySchema = z.object({
   entityType: productEntityTypeSchema,
   entityId: validUuidSchema,
   tenantId: validIdSchema,
-  organizationId: z.union([validUuidSchema, z.null()]),
+  organizationId: validUuidSchema,
   description: z.string(),
   /** The log's senders, newest first; the relay sends at most 20. */
   editors: z.array(validUuidSchema).min(1).max(50),

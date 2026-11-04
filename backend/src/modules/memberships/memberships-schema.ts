@@ -20,7 +20,7 @@ import {
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
-import { nullableActorRefSchema } from '#/schemas/actor-ref';
+import { actorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
@@ -45,7 +45,7 @@ export const inactiveMembershipSchema = z
     ...createSelectSchema(inactiveMembershipsTable).shape,
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
-    createdBy: nullableActorRefSchema,
+    createdBy: actorRefSchema,
   })
   .openapi('InactiveMembership', {
     description:
@@ -153,5 +153,5 @@ export const pendingMembershipSchema = z.object({
   remindedAt: z.string().nullable(),
   /** When a link in the last email stops working, derived for every row alike; null while no email went out. */
   linkExpiresAt: z.string().nullable(),
-  createdBy: nullableActorRefSchema,
+  createdBy: actorRefSchema,
 });

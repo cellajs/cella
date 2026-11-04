@@ -26,8 +26,8 @@ describe('sync-store adoptGeneration', () => {
   it('puts every cursor back at 0 when the server names another generation than the one held, and only then', () => {
     withCursors();
 
-    // Nothing to distrust: the first generation it hears, the same one again, or none named.
-    for (const generation of [3, 3, undefined]) syncStore.getState().adoptGeneration(generation);
+    // Nothing to distrust: the first generation it hears, then the same one again.
+    for (const generation of [3, 3]) syncStore.getState().adoptGeneration(generation);
     expect(syncStore.getState().getOrgSeq('org-1', 'item')).toBe(40);
     expect(syncStore.getState().refetchDueAt).toBeNull();
 

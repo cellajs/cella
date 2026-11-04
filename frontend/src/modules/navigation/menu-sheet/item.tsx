@@ -88,9 +88,9 @@ export function MenuSheetItem({ item, isSubitem, icon: Icon }: MenuSheetItemProp
         </div>
         <div className="pointer-events-none text-muted-foreground text-xs">
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 sm:group-hover/menu-sheet-item:opacity-100">
-            {item.membership.role ? t(item.membership.role) : ''}
+            {t(item.membership.role)}
             {!hasSubmenu && item.submenu?.length
-              ? `${item.membership.role ? ' · ' : ''}${t('c:resource_count', { count: item.submenu.length, resource: t(item.submenu[0].entityType, { count: item.submenu.length }) })}`
+              ? ` · ${t('c:resource_count', { count: item.submenu.length, resource: t(item.submenu[0].entityType, { count: item.submenu.length }) })}`
               : ''}
           </span>
         </div>

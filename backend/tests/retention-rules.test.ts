@@ -226,7 +226,7 @@ describe('apply_retention() row rules', () => {
       removed: [limits.gone],
     });
 
-    const subscription = async (lastSeenAt: Date | null, createdAt: Date) => {
+    const subscription = async (lastSeenAt: Date, createdAt: Date) => {
       const id = generateId();
       await db.insert(pushSubscriptionsTable).values({
         id,
@@ -234,7 +234,7 @@ describe('apply_retention() row rules', () => {
         endpoint: `https://push.retention.test/${id}`,
         p256dh: 'key',
         auth: 'secret',
-        lastSeenAt: lastSeenAt?.toISOString() ?? null,
+        lastSeenAt: lastSeenAt.toISOString(),
         createdAt: createdAt.toISOString(),
       });
       return id;
@@ -242,7 +242,6 @@ describe('apply_retention() row rules', () => {
     const period = retention.pushSubscriptionDaysUnseen;
     const subscriptions = {
       unseen: await subscription(outside(period), ago(period * 2)),
-      neverSeen: await subscription(null, outside(period)),
       seen: await subscription(inside(period), ago(period * 2)),
     };
     cases.push({
@@ -252,7 +251,7 @@ describe('apply_retention() row rules', () => {
           (row) => row.id,
         ),
       kept: [subscriptions.seen],
-      removed: [subscriptions.unseen, subscriptions.neverSeen],
+      removed: [subscriptions.unseen],
     });
 
     await db.execute(sql`CALL apply_retention()`);

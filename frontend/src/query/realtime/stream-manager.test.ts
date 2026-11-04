@@ -108,7 +108,7 @@ vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.f
 /** Flush pending microtasks so awaited catchup continuations run. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-const answer: PostAppCatchupResponse = { organizations: {}, generation: 3 };
+const answer: PostAppCatchupResponse = { organizations: {}, views: [], generation: 3 };
 const answered = () => Promise.resolve(answer);
 
 /** What this tab posted to the follower tabs, of one kind. */
@@ -421,7 +421,7 @@ describe('StreamManager changes and signals in follower tabs', () => {
     action: 'update',
     productType: 'attachment',
     organizationId: 'org-1',
-    tenantId: null,
+    tenantId: 'tenant-1',
     channelId: null,
     rows: [],
     overflow: null,

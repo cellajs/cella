@@ -3,4 +3,6 @@ export const mockCatchupResponse = () => ({
   organizations: {
     'org-example-id': { signals: { 'membership.changed': 1 } },
   },
+  views: [],
+  generation: 1,
 });

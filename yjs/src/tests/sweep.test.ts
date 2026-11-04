@@ -24,14 +24,14 @@ beforeEach(() => {
 
 describe('runSweep', () => {
   it('must not delete the document rows it writes: every unwritten log goes through the shared routine, and the rows stay', async () => {
-    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2', organizationId: null })]);
+    vi.mocked(findStaleDocuments).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2', organizationId: 'org-2' })]);
 
     await runSweep();
 
     expect(compactDocument).toHaveBeenCalledTimes(2);
     // As the system, in the scope the row stored: no user context.
     expect(compactDocument).toHaveBeenCalledWith(staleRow(), null);
-    expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }), null);
+    expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: 'org-2' }), null);
     expect(deleteDocument).not.toHaveBeenCalled();
     expect(getCollab(staleRow())).toBeUndefined();
   });

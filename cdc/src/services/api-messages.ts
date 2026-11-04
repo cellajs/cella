@@ -40,7 +40,11 @@ interface CdcRowMessage {
  * `activity`, and each row with its own activity. The API derives the change frames from the rows.
  */
 interface CdcProductMessage {
-  activity: Omit<InsertActivityModel, OwnActivityColumns> & { entityType: ProductEntityType };
+  activity: Omit<InsertActivityModel, OwnActivityColumns | 'organizationId' | 'tenantId'> & {
+    entityType: ProductEntityType;
+    organizationId: string;
+    tenantId: string;
+  };
   rows: CdcMessageRow[];
   _trace: TraceContext;
 }
@@ -94,9 +98,11 @@ export interface ProductRow {
 
 /** The message of one audience: what its rows share, and each row with its own activity and permission fields. */
 function buildProductMessage(productType: ProductEntityType, rows: ProductRow[], traceContext: TraceContext): CdcProductMessage {
-  const { id, userId, subjectId, changedFields, stx, createdAt, ...shared } = rows[0].activity;
+  const { id, userId, subjectId, changedFields, stx, createdAt, organizationId, tenantId, ...shared } = rows[0].activity;
+  // Product tables hold both NOT NULL, and a row without its organization already failed the flush's count deltas.
+  if (!organizationId || !tenantId) throw new Error(`A ${productType} activity without its tenant or organization`);
   return {
-    activity: { ...shared, entityType: productType },
+    activity: { ...shared, entityType: productType, organizationId, tenantId },
     rows: rows.map(({ activity, rowData, seq, movedFrom }) => ({
       activityId: activity.id,
       userId: activity.userId ?? null,

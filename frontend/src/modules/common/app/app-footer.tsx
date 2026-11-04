@@ -46,7 +46,7 @@ interface AppFooterLinksProps {
 export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: AppFooterLinksProps) {
   const { t } = useTranslation();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
-  const statusUrl = appConfig.statusUrl?.trim();
+  const statusUrl = appConfig.statusUrl.trim();
   const footerLinks: FooterLinkProps[] = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
 
   return (

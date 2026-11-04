@@ -32,8 +32,8 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       sortable: true,
       resizable: true,
       placeholderValue: '-',
-      renderCell: ({ row }) => row.membership && t(row.membership.role),
-      exportValue: (row) => row.membership && t(row.membership.role),
+      renderCell: ({ row }) => t(row.membership.role),
+      exportValue: (row) => t(row.membership.role),
       width: 100,
       ...(canUpdate && {
         editable: true,
@@ -42,7 +42,7 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
           <RenderEnumSelect
             {...props}
             options={hierarchy.getRoles(entityType)}
-            currentValue={props.row.membership?.role}
+            currentValue={props.row.membership.role}
             setValue={(row, role) => ({ ...row, membership: { ...row.membership, role } })}
             renderOption={(role) => t(role)}
           />

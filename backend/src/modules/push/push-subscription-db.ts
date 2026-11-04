@@ -31,7 +31,7 @@ export const pushSubscriptionsTable = snakeCase.table(
     userAgent: varchar({ length: maxLength.field }),
     createdAt: timestampColumns.createdAt,
     /** Bumped on every re-subscribe; the retention sweep removes rows unseen for `retention.pushSubscriptionDaysUnseen`. */
-    lastSeenAt: isoTimestamp(),
+    lastSeenAt: isoTimestamp().notNull(),
   },
   (table) => [index('push_subscriptions_user_index').on(table.userId)],
 );

@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -19,12 +20,18 @@ const actorRefSelect = {
  */
 async function findActorRefsByIds(ctx: DbContext, ids: string[]): Promise<ActorRef[]> {
   if (ids.length === 0) return [];
-  return ctx.var.db
+  const rows = await ctx.var.db
     .select(actorRefSelect)
     .from(actorsTable)
     .leftJoin(usersTable, eq(usersTable.id, actorsTable.id))
     .leftJoin(serviceAccountsTable, eq(serviceAccountsTable.id, actorsTable.id))
     .where(and(inArray(actorsTable.id, ids), or(isNotNull(usersTable.id), isNotNull(serviceAccountsTable.id))));
+  return rows.map(({ kind, slug, ...ref }) => {
+    if (kind === 'service') return { ...ref, kind, slug: null };
+    // The where clause keeps a user actor only with its users row, whose slug is NOT NULL.
+    if (slug === null) throw new AppError(500, 'server_error', 'error', { meta: { reason: 'user_actor_without_slug' } });
+    return { ...ref, kind, slug };
+  });
 }
 
 const actorKeys = ['createdBy', 'updatedBy', 'deletedBy'] as const;
@@ -64,6 +71,19 @@ export async function withActorRefs<T extends Partial<Record<ActorKey, string | 
     }
     return resolved as WithActorRefs<T>;
   });
+}
+
+/**
+ * {@link withActorRefs} for rows whose `createdBy` is NOT NULL and cascades with its user, so it always resolves.
+ * @returns The rows with their creator; a row whose creator is gone was deleted with that user after the read, and is
+ *   left out.
+ */
+export async function withCreatorRefs<T extends { createdBy: string }>(
+  ctx: DbContext,
+  rows: T[],
+): Promise<(WithActorRefs<T> & { createdBy: ActorRef })[]> {
+  const resolved = await withActorRefs(ctx, rows);
+  return resolved.flatMap((row) => (row.createdBy ? [{ ...row, createdBy: row.createdBy }] : []));
 }
 
 /** Single-row wrapper around {@link withActorRefs}. */

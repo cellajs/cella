@@ -67,7 +67,7 @@ function FooterLinks() {
 export function MarketingFooter() {
   const { t } = useTranslation();
   const isAboutPage = useIsAboutPage();
-  const statusUrl = appConfig.statusUrl?.trim();
+  const statusUrl = appConfig.statusUrl.trim();
   const legalFooterLinks: FooterLinkProps[] = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (

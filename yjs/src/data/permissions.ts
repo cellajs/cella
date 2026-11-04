@@ -29,8 +29,9 @@ async function findMemberships(tx: Tx, userId: string): Promise<AccessMembership
 /** Entity row carrying just the ancestor scope and ownership columns the permission engine needs. */
 type EntityScopeRow = Partial<ChannelIdColumns> & {
   id: string;
+  tenantId: string;
+  organizationId: string;
   createdBy?: string | null;
-  tenantId?: string | null;
   /** Set on a soft-deleted row, which a read that includes deleted rows returns. */
   deletedAt?: string | null;
 };
@@ -44,13 +45,13 @@ async function findEntityScope(tx: Tx, entityType: ProductEntityType, entityId: 
   const existing = await getTableColumnNames({ var: { db: tx } }, { table });
   if (!existing.has('id')) return null;
 
-  // Logical keys the permission engine may read; an absent `publishedAt` column counts as published. `deletedAt` tells a
-  // soft-deleted row, under a read that includes them.
-  const candidateKeys = ['id', 'createdBy', 'tenantId', 'publishedAt', 'deletedAt'];
+  // Every product table holds its tenant and organization NOT NULL. Of the other keys the permission engine may read, an
+  // absent `publishedAt` column counts as published, and `deletedAt` tells a soft-deleted row under a read that includes them.
+  const candidateKeys = ['createdBy', 'publishedAt', 'deletedAt'];
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     candidateKeys.push(appConfig.entityIdColumnKeys[ancestor]);
   }
-  const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
+  const selectKeys = [...new Set(['id', 'tenantId', 'organizationId', ...candidateKeys.filter((key) => existing.has(toColumnName(key)))])];
 
   const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
   const { rows } = await tx.execute<EntityScopeRow>(
@@ -87,11 +88,9 @@ export async function authorizeDocument(userId: string, requested: YjsDocScope):
       const [entity, memberships] = await Promise.all([findEntityScope(tx, entityType, requested.entityId), findMemberships(tx, userId)]);
 
       if (!entity) return 'deleted';
-      if (typeof entity.tenantId !== 'string') return 'denied';
       // Defense in depth: RLS limits the read to the token's tenant, which a superuser connection would not.
       if (entity.tenantId !== requested.tenantId) return 'denied';
-      const organizationId = typeof entity.organizationId === 'string' ? entity.organizationId : null;
-      if (organizationId !== requested.organizationId) return 'denied';
+      if (entity.organizationId !== requested.organizationId) return 'denied';
 
       // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
       if (!draftVisibleTo(entity, userId)) return 'denied';
@@ -104,7 +103,7 @@ export async function authorizeDocument(userId: string, requested: YjsDocScope):
       if (!allowed) return 'denied';
       if (entity.deletedAt) return 'deleted';
 
-      return { scope: { entityType, entityId: entity.id, tenantId: entity.tenantId, organizationId } };
+      return { scope: { entityType, entityId: entity.id, tenantId: entity.tenantId, organizationId: entity.organizationId } };
     },
     { includeDeleted: true },
   );

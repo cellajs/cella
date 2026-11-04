@@ -42,6 +42,8 @@ export interface RowActivityEvent extends ActivityEventBase, Pick<ActivityModel,
  */
 export interface ProductActivityEvent extends ActivityEventBase {
   entityType: ProductEntityType;
+  organizationId: string;
+  tenantId: string;
   rowData: null;
   rows: ActivityRow[];
 }

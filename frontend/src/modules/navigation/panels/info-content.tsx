@@ -64,7 +64,7 @@ export function InfoContent() {
   const statusEntries = gradeStatusEntries(health);
   const allHealthy = statusEntries.length > 0 && statusEntries.every(({ status }) => status === 'healthy');
 
-  const hasStatusPage = !!appConfig.statusUrl?.trim();
+  const hasStatusPage = !!appConfig.statusUrl.trim();
 
   return (
     <div className="flex flex-col gap-6 pt-3 pb-8">

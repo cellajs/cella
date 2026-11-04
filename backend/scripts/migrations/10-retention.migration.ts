@@ -47,7 +47,7 @@ const sweepRules: { table: string; aged: string }[] = [
     aged: `rejected_at < now() - ${days(retention.invitationDays)} OR (rejected_at IS NULL AND reminded_at < now() - ${days(retention.invitationDays)})`,
   },
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
-  { table: 'push_subscriptions', aged: `coalesce(last_seen_at, created_at) < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
+  { table: 'push_subscriptions', aged: `last_seen_at < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
 ];
 
 /** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
