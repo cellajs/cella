@@ -339,7 +339,7 @@ describe('yjs connection with the store: the unload guard', () => {
     await relaySaved(provider);
     expect(unloadAsks()).toBe(false);
 
-    // No database (impersonating): every unsynced edit lives in memory only.
+    // No database bound: every unsynced edit lives in memory only.
     await act(async () => root?.unmount());
     closeLocalUserDb();
     const bare = await mountConnection();

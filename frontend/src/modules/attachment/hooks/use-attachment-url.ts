@@ -16,6 +16,8 @@ export function useAttachmentUrl(
   attachment: (AttachmentMeta & Pick<Attachment, 'id'>) | null | undefined,
   { preferredVariant }: ResolveOptions = {},
 ): UseAttachmentUrlResult {
+  // Compiler gap: optional chains inside a try/catch (resolved?.url).
+  'use no memo';
   const [result, setResult] = useState<UseAttachmentUrlResult>({
     url: null,
     isLocal: false,

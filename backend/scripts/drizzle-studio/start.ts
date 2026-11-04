@@ -3,8 +3,10 @@ import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STUDIO_PORT } from './port';
+import { drizzleStudioPort } from 'shared/utils/tool-ports';
 import { checkMark } from '../../src/utils/console';
+
+const STUDIO_PORT = drizzleStudioPort();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '../..');

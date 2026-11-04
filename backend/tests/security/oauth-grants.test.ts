@@ -8,7 +8,6 @@ import {
   deleteUsers,
   getAttachments,
   getConnectedApps,
-  getMe,
   revokeApiKey,
   revokeConnectedApp,
   signOut,
@@ -605,26 +604,6 @@ describe('OAuth grants', async () => {
       expect((await refresh(String(memberTokens.refresh_token))).status).toBe(200);
     });
 
-    it('must not issue a code for a person via an impersonation of them', async () => {
-      const ctx = await tenantWithApp();
-      const browser = new CookieJar([ctx.member.sessionCookie]);
-      await consentIn(ctx, browser);
-
-      // A system admin takes this browser over and impersonates the member, whose provider session is still here.
-      const admin = await createSystemAdminUser(`impersonator-${nanoid(8)}@security-test.com`);
-      const adminSession = await insertTestSession(admin);
-      const impersonation = await insertTestSession({ id: ctx.member.id }, { type: 'impersonation', impersonatorSessionId: adminSession.id });
-      browser.add(adminSession.cookie);
-      browser.add(impersonation.cookie);
-      // Positive control: in the app, this browser now acts as the member.
-      const me = await call(getMe, { headers: { ...defaultHeaders, Cookie: browser.header() } });
-      expect((me.data as { user: { id: string } }).user.id).toBe(ctx.member.id);
-
-      const next = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser });
-      expect(next.code).toBeNull();
-      expect(next.uid).toBeTruthy();
-    });
-
     it('answers a request that may ask nobody with login_required once the app session is someone else', async () => {
       const ctx = await tenantWithApp();
       const browser = new CookieJar([ctx.member.sessionCookie]);
@@ -976,23 +955,14 @@ describe('OAuth grants', async () => {
       expect((await rename({ ...defaultHeaders, Cookie: admin.sessionCookie })).response.status).toBe(200);
     });
 
-    it('must not grant consent via a session that has not stepped up or an impersonation', async () => {
+    it('must not grant consent via a session that has not stepped up', async () => {
       const ctx = await tenantWithApp();
       const stale = await insertStaleSession(ctx.member);
-      // A system admin's impersonation of the member, layered on the admin's own session.
-      const admin = await createSystemAdminUser(`consent-admin-${nanoid(8)}@security-test.com`);
-      const adminSession = await insertTestSession(admin);
-      const impersonating = await insertTestSession(ctx.member, { type: 'impersonation', impersonatorSessionId: adminSession.id });
 
       const refused = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
       expect(refused.code).toBeNull();
       expect(refused.failure).toMatchObject({ status: 403, body: { type: 'step_up_required' } });
 
-      const asAdmin = await authorizationCode(oauth.issuer, {
-        ...authorization(ctx),
-        sessionCookie: `${adminSession.cookie}; ${impersonating.cookie}`,
-      });
-      expect(asAdmin.failure).toMatchObject({ status: 403, body: { type: 'impersonation_forbidden' } });
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
 
       // An emailed code proves presence, not the second factor a grant needs.

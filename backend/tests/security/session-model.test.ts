@@ -1,15 +1,13 @@
-import { and, eq } from 'drizzle-orm';
-import { getMe, startImpersonation, stopImpersonation } from 'sdk';
+import { getMe } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, cookieChange, cookiesAfter, createSystemAdminUser, createTestUser, sessionRow } from '../helpers';
+import { authCookie, cookieChange, createTestUser, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { expectSignedOut, insertImpersonation, insertSession, warmSession } from './session-helpers';
+import { expectSignedOut, insertSession, warmSession } from './session-helpers';
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -91,57 +89,5 @@ describe('session model', async () => {
 
     // Once the database answers again, the same cookie signs in (positive control).
     expect((await me(session.cookie)).response.status).toBe(200);
-  });
-
-  it('must not end an impersonation via a failed lookup of its admin session', async () => {
-    const admin = await createSystemAdminUser('outage-admin@security-test.com');
-    const target = await createTestUser('outage-target@security-test.com');
-    const impersonation = await insertImpersonation(await insertSession(admin), target);
-
-    // The impersonation's own lookup passes; the lookup of the admin session behind it fails.
-    const lookup = failSessionLookup({ skip: 1 });
-    const { response } = await me(impersonation.cookie);
-    lookup.mockRestore();
-    expect(response.status).toBe(500);
-    expect(cookieChange(response, 'impersonation')).toBeUndefined();
-
-    const control = await me(impersonation.cookie);
-    expect(control.response.status).toBe(200);
-    expect((control.data as { user: { id: string } }).user.id).toBe(target.id);
-  });
-
-  it("must not hand out another admin's session via a forged adminUserId at stop-impersonation", async () => {
-    const victimAdmin = await createSystemAdminUser('victim-admin@security-test.com');
-    const victimSession = await insertSession(victimAdmin);
-    const admin = await createSystemAdminUser('impersonating-admin@security-test.com');
-    const adminSession = await insertSession(admin);
-    const target = await createTestUser('impersonated@security-test.com');
-
-    const started = await call(startImpersonation, { body: { targetUserId: target.id }, headers: adminSession.headers });
-    expect(started.response.status).toBe(204);
-    const [impersonation] = await db
-      .select()
-      .from(sessionsTable)
-      .where(and(eq(sessionsTable.userId, target.id), eq(sessionsTable.type, 'impersonation')));
-
-    // A cookie signed with the app's secret, naming the victim as the admin to return to.
-    const forged = authCookie('session', `${impersonation.secret}.${impersonation.id}.${victimAdmin.id}`);
-    const stopped = await call(stopImpersonation, { headers: { ...defaultHeaders, Cookie: forged } });
-    expect(stopped.response.status).toBe(401);
-
-    // Nothing the response set signs anyone in as the victim admin.
-    const handedOut = await me(cookiesAfter(forged, stopped.response));
-    expect(handedOut.response.status).toBe(401);
-    expect((await sessionRow(victimSession.id)).revokedAt).toBeNull();
-
-    // The impersonating admin stops with the cookies the start set, and is back on their own session.
-    const browser = cookiesAfter(adminSession.cookie, started.response);
-    expect(((await me(browser)).data as { user: { id: string } }).user.id).toBe(target.id);
-    const genuine = await call(stopImpersonation, { headers: { ...defaultHeaders, Cookie: browser } });
-    expect(genuine.response.status).toBe(204);
-    expect(await sessionRow(impersonation.id)).toMatchObject({ revocationReason: 'impersonation_stopped', revokedBy: admin.id });
-    const back = await me(cookiesAfter(browser, genuine.response));
-    expect((back.data as { user: { id: string } }).user.id).toBe(admin.id);
-    await warmSession(victimSession);
   });
 });

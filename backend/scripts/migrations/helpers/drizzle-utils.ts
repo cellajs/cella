@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { checkMark, tildeMark } from '#/utils/console';
 
 const drizzleDir = join(process.cwd(), 'drizzle');
@@ -80,18 +80,6 @@ function findMigrationByTag(tagSuffix: string): string | undefined {
 }
 
 /**
- * Resolve SQL content from either a file path or inline SQL string.
- * @param sqlOrPath - SQL content or path to a .sql file
- */
-export function resolveSqlContent(sqlOrPath: string): string {
-  const possiblePath = resolve(sqlOrPath);
-  if (existsSync(possiblePath) && possiblePath.endsWith('.sql')) {
-    return readFileSync(possiblePath, 'utf-8');
-  }
-  return sqlOrPath;
-}
-
-/**
  * Add or update a SQL migration in the Drizzle migrations folder (v1 format).
  *
  * When a migration with the tag already exists: identical SQL → action 'unchanged'; changed
@@ -101,7 +89,7 @@ export function resolveSqlContent(sqlOrPath: string): string {
  * The folder holds no `snapshot.json`: drizzle-kit skips it and diffs against the last schema
  * snapshot, and a copy would repeat that snapshot's id, which `drizzle-kit up` refuses.
  *
- * @param sql - SQL content, not a file path (use resolveSqlContent first if needed)
+ * @param sql - SQL content, not a file path
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
   // Normalize tag by removing leading timestamps/underscores if present.

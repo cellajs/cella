@@ -39,6 +39,8 @@ export function Calendar({
   components,
   ...props
 }: React.ComponentProps<typeof DayPicker> & { buttonVariant?: React.ComponentProps<typeof Button>['variant'] }) {
+  // Compiler gap: String.raw class names whose cooked value differs from the raw one.
+  'use no memo';
   const defaultClassNames = getDefaultClassNames();
 
   return (

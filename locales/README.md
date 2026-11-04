@@ -70,5 +70,5 @@ A key names the concept, so its text can change without a rename. Texts are shor
 | Path | Mechanism |
 | --- | --- |
 | Frontend, bundled | `frontend/src/lib/i18n-locales.ts` statically imports `en` and merges `c` in code, so English renders without a network roundtrip. |
-| Frontend, lazy | Other languages and HTTP-loaded namespaces are fetched from `/locales/{lng}/{ns}.json`. `frontend/vite/locales-plugin.ts` builds them (`common.json` + `app.json` into `c.json`), serves them in dev, emits them as build assets, and writes the same output to `.vscode/.locales-cache` for i18n Ally. |
+| Frontend, lazy | Other languages and the non-preloaded namespaces load as lazy modules through the bundler (`frontend/src/lib/i18n-locales.ts`, `common` + `app` merged into `c` at load), hashed and precached offline with the rest of the build. `frontend/vite/locales-plugin.ts` writes the merged `.vscode/.locales-cache` for i18n Ally in dev. |
 | Backend | `backend/src/lib/i18n-locales.ts` statically imports all languages at server start (no lazy loading). Apps extend it when adding languages or namespaces. |

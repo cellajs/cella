@@ -1,6 +1,6 @@
 import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
 import { CodeCopyButton } from '~/modules/common/code-copy-button';
@@ -8,11 +8,14 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { hasDescriptionKeyword } from '~/modules/common/json-viewer/utils';
 import { CodeViewer } from '~/modules/docs/code-viewer';
+import { SpecText } from '~/modules/docs/spec-text';
 import { CodeBlock } from '~/modules/ui/code-block';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
+
+const renderSpecText = (text: string) => <SpecText text={text} />;
 
 interface ViewerGroupProps {
   schema: GenSchema | GenRequest;
@@ -26,6 +29,7 @@ interface ViewerGroupProps {
   defaultViewMode?: SchemaViewMode;
   /** Hides the schema's descriptions behind a help toggle, which shows only when the schema has any. */
   descriptionToggle?: boolean;
+  renderRef?: (ref: string) => ReactNode;
 }
 
 export function ViewerGroup({
@@ -36,6 +40,7 @@ export function ViewerGroup({
   defaultInspectDepth = 5,
   defaultViewMode = 'format',
   descriptionToggle,
+  renderRef,
 }: ViewerGroupProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
@@ -88,6 +93,8 @@ export function ViewerGroup({
                 defaultInspectDepth={defaultInspectDepth}
                 indentWidth={3}
                 hideDescriptions={descriptionToggle && !descriptionsOpen}
+                renderRef={renderRef}
+                renderDescription={renderSpecText}
               />
             )}
             {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}

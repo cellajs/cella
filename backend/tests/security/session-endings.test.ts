@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { deleteMe, deleteUsers, revokeMySessions, signOut, startImpersonation, stopImpersonation, toggleMfa } from 'sdk';
+import { deleteMe, deleteUsers, revokeMySessions, signOut, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -28,7 +28,6 @@ import {
   expectReleased,
   expectSignedOut,
   expectStillOpen,
-  impersonationSetBy,
   insertSession,
   insertSteppedUpSession,
   openStream,
@@ -145,7 +144,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     });
     afterAll(() => restoreCap());
 
-    const browser = (deviceId: string | null): SignInContext => ({
+    const browser = (deviceId: string): SignInContext => ({
       rawIp: null,
       country: null,
       asn: null,
@@ -154,7 +153,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     });
 
     /** Signs the user in from a browser, as every sign-in route does once its proof checked out. */
-    const signIn = async (user: { id: string }, deviceId: string | null) => {
+    const signIn = async (user: { id: string }, deviceId: string) => {
       const { sessionId, sessionToken } = await createSession(user, browser(deviceId), 'passkey');
       return asSession(sessionId, authCookie('session', sessionToken, 7 * 24 * 60 * 60));
     };
@@ -167,7 +166,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       await warmSession(newer);
       const [oldestStream, newerStream] = [await openStream(user.id, oldest), await openStream(user.id, newer)];
 
-      const newest = await signIn(user, null);
+      const newest = await signIn(user, nanoid(24));
 
       await expectClosedWith(oldestStream, 'unauthorized');
       await expectSignedOut(oldest.cookie, 'session_revoked');
@@ -198,37 +197,6 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       await warmSession(elsewhere);
       await warmSession(later);
     });
-  });
-
-  it('must not keep an impersonation session live via its open stream or the auth cache after it stops', async () => {
-    const admin = await createSystemAdminUser('impersonator@security-test.com');
-    const target = await createTestUser('impersonated@security-test.com');
-    const adminSession = await insertSession(admin);
-    const targetOwn = await insertSession(target);
-
-    const started = await call(startImpersonation, { body: { targetUserId: target.id }, headers: adminSession.headers });
-    expect(started.response.status).toBe(204);
-    const impersonation = await impersonationSetBy(started.response, adminSession);
-    await warmSession(impersonation);
-    await warmSession(targetOwn);
-    const impersonationStream = await openStream(target.id, impersonation);
-    const targetOwnStream = await openStream(target.id, targetOwn);
-
-    const stopped = await call(stopImpersonation, { headers: impersonation.headers });
-    expect(stopped.response.status).toBe(204);
-
-    // The browser returns to the admin's own session, so the client reconnects with it.
-    await expectClosedWith(impersonationStream, 'session_replaced');
-    await expectSignedOut(impersonation.cookie, 'session_revoked');
-    expect(await sessionRow(impersonation.id)).toMatchObject({
-      type: 'impersonation',
-      revocationReason: 'impersonation_stopped',
-      revokedBy: admin.id,
-    });
-
-    await warmSession(adminSession);
-    expectStillOpen(target.id, targetOwnStream);
-    await warmSession(targetOwn);
   });
 
   it('must not keep a deleted account live via its open streams or the auth cache', async () => {

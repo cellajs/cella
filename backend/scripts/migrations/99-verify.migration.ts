@@ -1,14 +1,9 @@
 import { getTableName } from 'drizzle-orm';
-import {
-  adminOnlyWriteTriggerName,
-  allAdminOnlyWriteTables,
-  allImmutabilityTables,
-  immutableKeysTriggerName,
-} from '#/db/immutability-triggers';
+import { adminOnlyWriteTriggerName, allAdminOnlyWriteTables, allImmutabilityTables, immutableKeysTriggerName } from '#/db/immutability-triggers';
 import { membershipRuleTriggers } from '#/db/membership-rules';
 import { rlsPolicyContract } from '#/db/rls-helpers';
-import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
+import { entityTables, resourceTables } from '#/tables';
 import { cdcPublicationName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 import { deletionQueueTriggers } from './10-deletion-queue.migration';
@@ -51,9 +46,7 @@ async function run(): Promise<SideEffectBlock> {
   ];
   const publicationTableCount = [...Object.values(entityTables), ...Object.values(resourceTables)].map(getTableName).length;
   // Draft-lifecycle product tables carry a publication row filter (the draft boundary).
-  const rowFilteredCount = Object.entries(entityTables).filter(([entityType, table]) =>
-    publicationRowFilter(entityType, table),
-  ).length;
+  const rowFilteredCount = Object.entries(entityTables).filter(([entityType, table]) => publicationRowFilter(entityType, table)).length;
 
   const policyCount = Object.keys(rlsPolicyContract('x')).length;
   const policies = rlsTables.flatMap((table) => Object.values(rlsPolicyContract(table)).map((policy) => ({ table, ...policy })));

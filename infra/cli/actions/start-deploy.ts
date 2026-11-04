@@ -1,15 +1,20 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { listRemoteRefs } from '../../lib/deploy/git-remote';
-import { findJobDefinition, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
+import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
+import type { KeyPair } from '../../lib/scaleway/operator-identity';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
+import { deployedServices } from '../../lib/services';
+import { controlKey, makeControlClient, readControlState, stateBucket } from '../../lib/stack/control-store';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { confirmOrDefault, endAction, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { acquirePrivilegedKey } from './operator-unlock';
 
 const POLL_MS = 10_000;
@@ -46,25 +51,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
     );
     return endAction(1);
   }
-  let run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
-  console.info(`  ${checkMark} Run ${run.id} started.`);
-  let shown = '';
-  while (!runEnded(run)) {
-    if (run.state !== shown) console.info(`  ${pc.dim(new Date().toISOString().slice(11, 19))} ${run.state}`);
-    shown = run.state;
-    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
-    run = await readJobRun(auth, { region, runId: run.id });
-  }
-  const outcome = mainJobOutcome(run);
-  if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
-  else if (outcome === 'blocked')
-    console.warn(
-      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either starts this target again. Identities are written with \`${actionCommand('identity')}\`, and this action starts the target after it.`,
-    );
-  else
-    console.error(
-      `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
-    );
+  const outcome = await deployAndFollow(context, auth, definitionId, target, 'started');
   if (outcome !== 'deployed') endAction(1);
 }
 
@@ -78,11 +65,68 @@ async function environmentTarget(context: InfraContext): Promise<Target | undefi
   return resolveTarget({ environment: context.environment, line, listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY) });
 }
 
+/** Follow a run until it ends, printing each state it passes. */
+async function followRun(auth: { secretKey: string }, region: string, started: JobRun): Promise<JobRun> {
+  let run = started;
+  let shown = '';
+  while (!runEnded(run)) {
+    if (run.state !== shown) console.info(`  ${pc.dim(new Date().toISOString().slice(11, 19))} ${run.state}`);
+    shown = run.state;
+    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+    run = await readJobRun(auth, { region, runId: run.id });
+  }
+  return run;
+}
+
 /**
- * Start the environment's target after a rotation, on the operator key. The running machines hold keys or values the rotation replaced, and the
- * runner starts a run only when the target moves, so the rotation starts the run whose new generations replace every machine.
+ * Start a run of the main job for one commit and follow it to its end, reporting how it ended: a blocked run names what the operator owes
+ * and which action deploys the commit again, a failed one where its log is.
+ * @param started what the run does, after "Run <id>".
  */
-export async function startTargetAfterRotation(context: InfraContext, key: { secretKey: string }): Promise<void> {
+async function deployAndFollow(
+  context: InfraContext,
+  auth: { secretKey: string },
+  definitionId: string,
+  commit: { sha: string; retry: number },
+  started: string,
+): Promise<ReturnType<typeof mainJobOutcome>> {
+  const { region } = deriveInfra(context.appConfig);
+  const first = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: commit.sha, RETRY: String(commit.retry) } });
+  console.info(`  ${checkMark} Run ${first.id} ${started}.`);
+  const run = await followRun(auth, region, first);
+  const outcome = mainJobOutcome(run);
+  if (outcome === 'deployed') console.info(`${checkMark} ${context.environment} runs ${commit.sha.slice(0, 10)}.`);
+  else if (outcome === 'blocked')
+    console.warn(
+      `${warningMark} Blocked: \`${actionCommand('runs')}\` names what is owed. A privileged change is applied with \`${actionCommand('apply')}\`, a missing secret stored with \`${actionCommand('secrets')}\`: either deploys this commit again. Identities are written with \`${actionCommand('identity')}\`; \`${actionCommand('start-deploy')}\` deploys the target after it.`,
+    );
+  else
+    console.error(
+      `${crossMark} The run ended ${run.state}${run.error_message ? `: ${run.error_message}` : ''}. Its log is in Cockpit, under Serverless Jobs.`,
+    );
+  return outcome;
+}
+
+/** The commit the environment runs: the primary service's active generation in the control object, none before the first deploy. */
+async function liveCommit(context: InfraContext, key: KeyPair): Promise<string | undefined> {
+  const { appConfig, projectId } = context;
+  const primary = deployedServices(appConfig.services, appConfig.singleVM).find((service) => service.primaryRollout);
+  if (!primary) return undefined;
+  const state = stateKeyOf(key, projectId);
+  const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
+  const { state: control } = await readControlState(s3, stateBucket(appConfig.slug), controlKey(stackNameFor(context)));
+  return control.rollout[primary.slug]?.active?.sha;
+}
+
+/**
+ * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, then start
+ * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and the runner starts
+ * a run only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
+ * becomes of the target. The live run is followed to its end, as the target's run would wait on the stack lock behind it, and when it does
+ * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
+ * and when the control object cannot be read there is none known: the target alone is started.
+ */
+export async function redeployAfterRotation(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
@@ -92,16 +136,35 @@ export async function startTargetAfterRotation(context: InfraContext, key: { sec
     );
     return;
   }
+  const live = await liveCommit(context, key).catch((error) => {
+    console.warn(`${warningMark} The live commit could not be read (${errorMessage(error)}): the target alone is started.`);
+    return undefined;
+  });
   const target = await environmentTarget(context);
-  if (!target) {
+  if (!live && !target) {
     console.warn(
       `${warningMark} ${context.environment} has no line in ${ENVIRONMENTS_FILE}, so no deploy replaces its machines: they hold what the rotation replaced.`,
     );
     return;
   }
+  if (live) {
+    const outcome = await deployAndFollow(
+      context,
+      auth,
+      definitionId,
+      { sha: live, retry: 0 },
+      `deploys the live ${live.slice(0, 10)} again, replacing every machine with the rotated keys and values`,
+    );
+    if (outcome !== 'deployed') {
+      console.warn(`${warningMark} The machines keep what the rotation replaced until a deploy succeeds; the target is not started.`);
+      return;
+    }
+    if (!target || target.sha === live) return;
+  }
+  if (!target) return;
   const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: target.sha, RETRY: String(target.retry) } });
   console.info(
-    `${checkMark} Run ${run.id} deploys ${target.sha.slice(0, 10)} with the rotated keys and values, replacing every machine (\`${actionCommand('runs')}\` shows how it ends).`,
+    `${checkMark} Run ${run.id} deploys the target ${target.sha.slice(0, 10)}${live ? '' : ' with the rotated keys and values, replacing every machine'} (\`${actionCommand('runs')}\` shows how it ends).`,
   );
 }
 

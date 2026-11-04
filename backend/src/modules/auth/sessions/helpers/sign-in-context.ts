@@ -4,7 +4,6 @@ import type { Env } from '#/core/context';
 import { lookupIp } from '#/lib/geoip';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type DeviceInfo, deviceInfo } from '#/modules/auth/sessions/helpers/device-info';
-import type { SessionType } from '#/modules/auth/sessions/sessions-db';
 import { getIp } from '#/utils/get-ip';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -25,15 +24,13 @@ export type SignInContext = {
   country: string | null;
   asn: number | null;
   device: DeviceInfo;
-  /** Null for impersonation: the browser belongs to the admin. */
-  deviceId: string | null;
+  deviceId: string;
 };
 
 /** The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect. */
-export const collectSignInContext = async (ctx: Context<Env>, type: SessionType): Promise<SignInContext> => {
+export const collectSignInContext = async (ctx: Context<Env>): Promise<SignInContext> => {
   const rawIp = getIp(ctx);
   const { country, asn } = await lookupIp(rawIp);
-  const deviceId = type === 'impersonation' ? null : ensureDeviceId(ctx);
 
-  return { rawIp, country, asn, device: deviceInfo(ctx), deviceId };
+  return { rawIp, country, asn, device: deviceInfo(ctx), deviceId: ensureDeviceId(ctx) };
 };

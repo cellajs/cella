@@ -9,7 +9,7 @@ const securityEmailType = { create: 'system-role-granted', update: 'system-role-
 
 /**
  * Every CDC-observed system-role change notifies the security contact. The session listeners drop the user's cached
- * sessions on the same event, so the role (and the impersonations it backs) holds only while granted.
+ * sessions on the same event, so the role holds only while granted.
  */
 const notifySystemRoleChange = async (event: RowActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');

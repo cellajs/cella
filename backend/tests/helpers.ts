@@ -229,8 +229,6 @@ interface TestSessionOpts {
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;
   expiresInMs?: number;
-  /** For an impersonation: the admin session it is layered on. */
-  impersonatorSessionId?: string;
   /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
   steppedUpVia?: StepUpProof;
   /** The SSO connection a federation sign-in came through. */
@@ -243,15 +241,7 @@ interface TestSessionOpts {
  */
 export async function insertTestSession(
   user: { id: string },
-  {
-    type = 'regular',
-    authStrategy = 'passkey',
-    ageMs = 0,
-    expiresInMs = 7 * 24 * 60 * 60 * 1000,
-    impersonatorSessionId,
-    steppedUpVia,
-    connectionId,
-  }: TestSessionOpts = {},
+  { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
   const id = generateId();
@@ -265,14 +255,12 @@ export async function insertTestSession(
     authStrategy,
     createdAt,
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
-    impersonatorSessionId,
     connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
   });
 
-  const cookieName = type === 'impersonation' ? 'impersonation' : 'session';
-  return { id, token, cookie: authCookie(cookieName, token, 7 * 24 * 60 * 60) };
+  return { id, token, cookie: authCookie('session', token, 7 * 24 * 60 * 60) };
 }
 
 /** Inserts a session row and returns the cookie string for test requests. */

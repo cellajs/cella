@@ -14,6 +14,7 @@ Base config: [shared/config/config.default.ts](../shared/config/config.default.t
 
 - **Backend** (Hono + OpenAPI): a module's routes are `createXRoutes` in `<module>-routes.ts`, never `createRoute`; `XRouteProps` documents each prop. A route's `operationId` is its key: set it only when the SDK name differs. Handlers use `.openapi()` in `<module>-handlers.ts`.
 - **Error responses**: a route documents the error statuses its guards, limiters, switch and request answer with (`chainErrors` in `x-routes.ts`), and spreads `errors(404, 409)` into `responses` for what its handler throws, nothing more: `errors()` of a status the chain answers is refused at load, and in tests an undocumented status answers a 500 naming the fix. A 5xx and the database's 409 `write_conflict` are never declared: the error table documents them once. A route that answers an error status with a body of its own declares it with `json()`. A response header a client must act on takes a `description`, which shows it in the docs; any other header takes none.
+- **Response labels**: a response `description` is a label of a few words; a longer explanation follows after a blank line, and the docs show it when the response row opens.
 - **Frontend** (TanStack Router, file-based): never edit the generated `routeTree.gen.ts`. Route files are thin shims (path, `staticData`, glue); components and `beforeLoad` logic live in modules (`route-logic.ts`, `route-components.tsx`, `search-params-schemas.ts`) via `getRouteApi`. Layouts: [frontend/README](../frontend/README.md#routes).
 
 ## Middleware & guards
@@ -81,6 +82,7 @@ Relationships between products are data, never permission indirection: permissio
 - **Retention**: every period lives in `appConfig.retention`. A rule that only deletes aged rows is an entry of `sweepRules`; a pg-boss job does only what reaches outside the database. A table with stored files names its columns in `backend/src/db/storage-columns.ts` ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
 - **Alignments**: every breaking change ships a `cella/alignments/<id>/` folder in the same PR ([alignments](./alignments/README.md)).
 - **Dependencies**: a library for encryption, signatures, an auth protocol or a parser at a security boundary stays even when own code would save packages; fix how it is called. Own code replaces a package only for plumbing a reviewer reads in one pass.
+- **Temporary scripts**: a script that serves one run (a measurement, an intake, a migration aid, a driver experiment) lives in the gitignored `.scratch/` at the repo root; `.todos/` holds plans and findings, no scripts. The finding outlives the script, recorded in the plan, PR or alignment README. A committed script needs a caller (a package script, CI, a hook or a skill step) that has run it end to end; one nothing calls is deleted.
 - **Reorder**: every reorderable list, table or board moves its items through `ReorderHandle` (in a table, `reorderColumn`), with no separate move buttons.
 - **Accessibility**: `pnpm a11y` audits against WCAG 2.2 AA ([a11y](../a11y/README.md)); an agent's decision on a criterion stays provisional until a person confirms it.
 - **Skills**: `cella/skills/` is the single home for agent skills, merged into apps on upgrade: `add-entity`, `verify`, `two-tab-sync-test`, `android-emulator`, `cella-upgrade`, `align`, `a11y-review`, `consistency-sweep`, `css-review`, `security-review`, `screenshots`. `verify` owns stack setup and scratch Playwright scripts for the others. A change to a command, file or log line a skill names updates that skill in the same PR.
@@ -116,6 +118,13 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - Use `git` and `gh`. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks, scoped changes.
 - **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section: the table `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew saying what those lines are for (for source, how much is comments; for tests, which of the four reasons in [Testing](#testing) each new test file serves). Lines without a reason are the first to cut.
+
+## Worktrees
+
+- A worktree installs its own `node_modules` (`pnpm install`) and never links another checkout's: pnpm links workspace packages by relative path, so a borrowed folder runs the other checkout's code. pnpm clones packages from its store, so an install takes tens of megabytes of disk, whatever `du` reports.
+- At most two worktrees run a stack at once, on the shared database or a throwaway one; a third checks without a stack or waits. Count them first, and stop a stack and its container once the check is done ([Worktree stacks](./skills/verify/SKILL.md#worktree-stacks)).
+- Remove a worktree once its PR merges.
+- An unattended command never waits on a prompt: pass the answers as flags or environment. A background or long-running command that writes to a file pipes through `head -c <bytes>`, since a prompt that asks again at end of input fills the disk.
 
 ## Commands
 

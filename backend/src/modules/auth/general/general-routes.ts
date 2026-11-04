@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
-import { cookieSchema, locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
+import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
@@ -21,24 +21,6 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
       200: json('Auth health status', authHealthSchema),
     },
   }),
-  startImpersonation: xRoute({
-    method: 'post',
-    path: '/impersonation/start',
-    xGuard: [userGuard, sysAdminGuard],
-    summary: 'Start impersonating',
-    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
-    request: { body: jsonBody(z.object({ targetUserId: validIdSchema })) },
-    responses: { 204: { description: 'Impersonating', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(404) },
-  }),
-  stopImpersonation: xRoute({
-    method: 'post',
-    path: '/impersonation/stop',
-    xGuard: [userGuard],
-    summary: 'Stop impersonating',
-    description:
-      'Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.',
-    responses: { 204: { description: 'Stopped impersonating' } },
-  }),
   checkEmail: xRoute({
     method: 'post',
     path: '/check-email',
@@ -49,7 +31,12 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.',
     request: { body: jsonBody(emailBodySchema) },
-    responses: { 200: json('Whether this browser is recognized for the address', z.object({ recognized: z.boolean() })) },
+    responses: {
+      200: json(
+        'Browser recognition\n\nWhether this browser signed in to the account with this address before, by its device cookie.',
+        z.object({ recognized: z.boolean() }),
+      ),
+    },
   }),
   getPendingMfa: xRoute({
     method: 'get',
@@ -58,7 +45,10 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Get pending MFA challenge',
     description:
       'For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.',
-    responses: { 200: json('The address of the account the held challenge signs in to', z.object({ email: z.string() })), ...errors(401) },
+    responses: {
+      200: json('Pending sign-in address\n\nThe address of the account the held MFA challenge signs in to.', z.object({ email: z.string() })),
+      ...errors(401),
+    },
   }),
   invokeToken: xRoute({
     method: 'get',
@@ -104,7 +94,13 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Confirm the invited address',
     description:
       'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.',
-    responses: { 204: { description: 'Confirmation link sent to the invited address' }, ...errors(404, 409) },
+    responses: {
+      204: {
+        description:
+          'Confirmation link sent\n\nA new link, bound to the signed-in account, went to the invited address. Every older link stops working.',
+      },
+      ...errors(404, 409),
+    },
   }),
   resendInvitationWithToken: xRoute({
     method: 'post',
@@ -115,7 +111,12 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.',
     request: { body: jsonBody(z.object({ tokenId: validUuidSchema })) },
-    responses: { 204: { description: 'Invitation email sent when the invitation is pending' } },
+    responses: {
+      204: {
+        description:
+          'Accepted\n\nAn email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist.',
+      },
+    },
   }),
   signOut: xRoute({
     method: 'post',

@@ -53,7 +53,12 @@ const schema = (name: string, tagsByKind: Record<string, string[]> = {}): GenCom
   tagsByKind,
 });
 
-const schemas = [schema('UserBase', { module: ['users'] }), schema('SessionBase', { module: ['me'] }), schema('BadRequestError')];
+const schemas = [
+  schema('UserBase', { module: ['users'] }),
+  schema('SessionBase', { module: ['me'] }),
+  { ...schema('BadRequestError'), description: 'The request fails validation.', extendsRef: '#/components/schemas/ApiError' },
+  schema('ApiError'),
+];
 
 const response = (status: number, description: string, extra: Partial<GenResponseSummary> = {}) => ({ status, description, ...extra });
 
@@ -145,7 +150,7 @@ export const SchemasTagTable: Story = {
 
 const sidebarOnClose = fn();
 
-/** Sidebar rows link to their hash, mark the active row, and on click scroll there and close the sidebar sheet. */
+/** Sidebar rows link to their hash with the tag that renders it, mark the active row, and on click scroll there and close the sidebar sheet. */
 export const SidebarItems: Story = {
   // A search that hides a row makes its link navigate; these rows stay in place
   parameters: { app: { url: '/' } },
@@ -172,8 +177,9 @@ export const SidebarItems: Story = {
     const sessions = canvas.getByRole('link', { name: /^Get my sessions\s*get$/ });
     const userBase = canvas.getByRole('link', { name: 'UserBase' });
 
-    await expect(getMe).toHaveAttribute('href', '/docs/operations#tag/me/get/me');
-    await expect(userBase).toHaveAttribute('href', '/docs/schemas#/components/schemas/UserBase');
+    // A hash alone lands nowhere in a new tab: a section renders only while its tag is open
+    await expect(getMe).toHaveAttribute('href', '/docs/operations?operationTag=me#tag/me/get/me');
+    await expect(userBase).toHaveAttribute('href', '/docs/schemas?schemaTag=data#/components/schemas/UserBase');
     await expect(getMe).toHaveAttribute('data-active', 'false');
     await expect(sessions).toHaveAttribute('data-active', 'true');
     await expect(userBase).toHaveAttribute('data-active', 'true');
@@ -313,13 +319,20 @@ export const PageBranchReclick: Story = {
 const meDetail: GenOperationDetail = {
   operationId: 'getMe',
   responses: [
-    response(200, 'Current user', { schema: schemas[0].schema, example: { id: 'u1' } }),
-    response(400, 'Bad request', { name: 'BadRequestError', example: { message: 'bad' } }),
+    response(200, 'Current user', {
+      schema: schemas[0].schema,
+      example: { id: 'u1' },
+      headers: [{ name: 'X-Total-Count', description: 'Rows in the full list.' }],
+    }),
+    response(400, 'Bad request', { name: 'BadRequestError', ref: '#/components/responses/BadRequestError' }),
     response(404, 'Not found'),
   ],
 };
 
-/** Every response is listed collapsed, in format view; a response without a schema says so. */
+/**
+ * A success response is listed collapsed, in format view. Every error shares one row, which lists each status with its
+ * text and, at the end of its label line, its body or that it has none.
+ */
 export const Responses: Story = {
   parameters: { app: { queryData: docsQueries([meDetail]) } },
   render: () => (
@@ -331,17 +344,20 @@ export const Responses: Story = {
     const canvas = within(canvasElement);
 
     const ok = await canvas.findByRole('button', { name: /200\s*Current user/ });
-    const badRequest = canvas.getByRole('button', { name: /400\s*Bad request\s*BadRequestError/ });
-    const notFound = canvas.getByRole('button', { name: /404\s*Not found/ });
-    for (const trigger of [ok, badRequest, notFound]) await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    const errors = canvas.getByRole('button', { name: /4xx.*errors.*400.*404/ });
+    for (const trigger of [ok, errors]) await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await userEvent.click(ok);
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
     await expect(await canvas.findByRole('radio', { name: /view_format/ })).toHaveAttribute('aria-checked', 'true');
     await expect(canvas.getByRole('radio', { name: /view_example/ })).toHaveAttribute('aria-checked', 'false');
+    // A header a client acts on shows as a line, in the shape the error entries use
+    await expect(canvas.getByText('X-Total-Count').closest('p')).toHaveTextContent(/header.*X-Total-Count.*Rows in the full list\./);
 
-    await userEvent.click(notFound);
-    await expect(await canvas.findByText(/no_response_body/)).toBeVisible();
+    await userEvent.click(errors);
+    await expect(await canvas.findByText('The request fails validation.')).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'ApiError' })).toHaveAttribute('href', '/docs/schemas?schemaTag=data#/components/schemas/ApiError');
+    await expect(canvas.getByText(/no_response_body/)).toBeVisible();
   },
 };
 

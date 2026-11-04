@@ -30,9 +30,9 @@ type Actor = {
   connectionId?: string;
 };
 
-const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; impersonator?: { id: string } | null; tenantId?: string | undefined }) => ({
+const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; tenantId?: string | undefined }) => ({
   req: { param: (name: string) => (name === 'tenantId' ? opts.tenantId : undefined) },
-  var: { actor: opts.actor, isSystemAdmin: opts.isSystemAdmin ?? false, impersonator: opts.impersonator ?? null },
+  var: { actor: opts.actor, isSystemAdmin: opts.isSystemAdmin ?? false },
   set: vi.fn(),
 });
 
@@ -105,8 +105,6 @@ describe('tenantGuard', () => {
 
       vi.mocked(findUserSsoConnection).mockResolvedValue(bound);
       expect(await run(mockCtx({ actor: member('magic'), isSystemAdmin: true, tenantId: testTenantId }))).toHaveBeenCalled();
-      // An impersonation: the method is its admin's, who proved nothing as the bound member.
-      expect(await run(mockCtx({ actor: member('magic'), impersonator: { id: 'admin' }, tenantId: testTenantId }))).toHaveBeenCalled();
       expect(await run(mockCtx({ actor: service(testTenantId), tenantId: testTenantId }))).toHaveBeenCalled();
 
       setTenantCache(testTenantId, tenantRow('active', []));

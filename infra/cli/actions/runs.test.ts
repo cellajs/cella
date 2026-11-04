@@ -16,8 +16,11 @@ const record = (run: string, over: Partial<RunRecord> = {}): RunRecord => ({
 
 const store = (records: RunRecord[], log = 'line 1\nline 2\n'): RunStore => ({
   listRuns: async (limit) => records.map((r) => r.run).slice(0, limit),
-  readRecord: async (run) => records.find((r) => r.run === run),
-  readLog: async () => log,
+  readRecord: async (run) => {
+    const newest = records.find((r) => r.run === run);
+    return newest && { newest };
+  },
+  readLog: async () => ({ newest: log }),
   readBootAccount: async (key) =>
     key === 'backend-20261015T010300Z-boot.log' ? 'service=backend\nboot_rc=1\n\n--- boot error ---\nmigrate exited 1\n\nlast boot line' : undefined,
 });

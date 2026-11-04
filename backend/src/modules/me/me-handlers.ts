@@ -1,7 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
@@ -41,8 +40,6 @@ app.openapi(meRoutes.getMyInvitations, async (ctx) => {
 });
 
 app.openapi(meRoutes.revokeMySessions, async (ctx) => {
-  // The admin acts as the user, never on the user's sessions.
-  refuseImpersonation(ctx.var.session);
   const { ids } = ctx.req.valid('json');
   const { data, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
   if (signedOut) deleteAuthCookie(ctx, 'session');

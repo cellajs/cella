@@ -1,9 +1,9 @@
 import { sql } from 'drizzle-orm';
-import type { SeedScript } from '../types';
 import { getSeedDb } from '#/db/db';
 import { recalculateCounters, recalculateViewCounts } from '#/modules/entities/counters-queries';
 import { requestBooks } from '#/modules/entities/sync-requests';
 import { startSpinner, succeedSpinner } from '#/utils/console';
+import type { SeedScript } from '../types';
 
 // Seed scripts use the admin connection for privileged operations.
 const db = getSeedDb();

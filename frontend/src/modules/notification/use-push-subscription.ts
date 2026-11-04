@@ -29,6 +29,8 @@ export async function disablePushSubscription(): Promise<void> {
  * deployment serves no VAPID key; `enable` runs the permission prompt, so call it from a user gesture only.
  */
 export function usePushSubscription() {
+  // Compiler gap: try/finally in the enable and disable handlers.
+  'use no memo';
   const [supported, setSupported] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);

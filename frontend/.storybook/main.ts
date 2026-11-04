@@ -1,3 +1,4 @@
+import process from 'node:process';
 import type { StorybookConfig } from '@storybook/react-vite';
 import tailwindcss from '@tailwindcss/vite';
 import { appConfig } from 'shared';
@@ -12,20 +13,14 @@ const serwistStub: Plugin = {
 };
 
 const config: StorybookConfig = {
-  "stories": [
-    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
-  ],
-  "core": {
-    "disableTelemetry": true,
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableTelemetry: true,
   },
-  "addons": [
-    "@storybook/addon-docs",
-    "@storybook/addon-a11y",
-    "@storybook/addon-vitest"
-  ],
-  "framework": {
-    "name": "@storybook/react-vite",
-    "options": {}
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest'],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
   },
   viteFinal: async (config) => {
     config.resolve = config.resolve || {};
@@ -42,9 +37,10 @@ const config: StorybookConfig = {
     // storybook dev and build merge frontend/vite.config.ts, which registers Tailwind already. The vitest storybook
     // project applies only this viteFinal, so it gets Tailwind here.
     const hasTailwind = (config.plugins ?? []).flat(2).some((plugin) => plugin && 'name' in plugin && plugin.name.startsWith('@tailwindcss/vite'));
+    const hasDocs = (config.plugins ?? []).flat(2).some((plugin) => plugin && 'name' in plugin && plugin.name === 'docs-frontmatter');
     // Every virtual module the app imports must resolve: an unresolved import fails Vite's dependency scan, so
     // dependencies are found mid-run and each discovery reloads the tests.
-    config.plugins = [...(config.plugins ?? []), ...(hasTailwind ? [] : [tailwindcss()]), docsFrontmatter(), serwistStub];
+    config.plugins = [...(config.plugins ?? []), ...(hasTailwind ? [] : [tailwindcss()]), ...(hasDocs ? [] : [docsFrontmatter()]), serwistStub];
     // The email stories render backend HTML: proxy the dev preview route so their fetch stays same-origin.
     config.server = {
       ...config.server,

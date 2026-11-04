@@ -18,21 +18,13 @@ interface MenuSheetArchivedToggleProps {
   onToggle: () => void;
   archivedCount: number;
   archivedChannelIds?: string[];
-  /** Places the dots to the row above in a submenu, whose avatar gap differs per row height. */
-  connectorClassName?: string;
   /** The rows that may drop on it to cross, active and archived; none outside edit mode. */
   dropItems?: UserMenuItem[];
 }
 
 const emptyChannelIds: string[] = [];
 
-function MenuSheetArchivedToggle({
-  onToggle,
-  archivedCount,
-  archivedChannelIds = emptyChannelIds,
-  connectorClassName = '-top-2.5 h-4.75',
-  dropItems,
-}: MenuSheetArchivedToggleProps) {
+function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds = emptyChannelIds, dropItems }: MenuSheetArchivedToggleProps) {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -60,8 +52,9 @@ function MenuSheetArchivedToggle({
         onClick={onToggle}
         disabled={archivedCount < 1 && !dropAction}
         variant="ghost"
+        // Borderless, so the icon centers on the avatars and dots above it
         className={cn(
-          'w-full gap-0 p-0 ring-inset ring-offset-0 transition duration-300 group-data-[submenu=true]/archived:h-8',
+          'w-full gap-0 border-0 p-0 ring-inset ring-offset-0 transition duration-300 group-data-[submenu=true]/archived:h-8',
           dropAction && 'bg-muted ring-2 ring-primary',
         )}
       >
@@ -79,7 +72,7 @@ function MenuSheetArchivedToggle({
         </div>
       </Button>
       {/* In a submenu it joins the last row above, down to 0.5625rem above the icon */}
-      <SubmenuConnector className={cn('hidden group-data-[submenu=true]/archived:flex', connectorClassName)} />
+      <SubmenuConnector className="-top-2 hidden h-4.25 group-data-[submenu=true]/archived:flex" />
     </div>
   );
 }

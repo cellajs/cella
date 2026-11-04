@@ -9,7 +9,6 @@ import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
   createMfaToken,
-  createSystemAdminUser,
   createTestUser,
   createTotpUser,
   expectRefusal,
@@ -22,7 +21,7 @@ import {
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
-import { askStepUpCode, insertImpersonation, insertSession, insertStaleSession, type TestSession } from './session-helpers';
+import { askStepUpCode, insertStaleSession, type TestSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
@@ -32,7 +31,7 @@ type Tier = 'factor' | 'account' | 'enroll';
 
 /**
  * A step-up proves the user is present on one session again: with a factor they hold, or with a code mailed for that
- * session. It stamps that session only, never an impersonation, and signs nobody in.
+ * session. It stamps that session only, and signs nobody in.
  */
 describe('step-up', async () => {
   const call = await createAppClient();
@@ -82,22 +81,6 @@ describe('step-up', async () => {
     expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(204);
     expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
     expect(await stateOf(session)).toEqual({ steppedUp: true, methods: ['totp'] });
-  });
-
-  it('must not step up an impersonation session via a factor or an emailed code', async () => {
-    const admin = await createSystemAdminUser('step-up-admin@security-test.com');
-    const target = await createTotpUser('step-up-target@security-test.com');
-    const impersonation = await insertImpersonation(await insertSession(admin), target);
-
-    const viaFactor = await call(stepUp, { body: { totpCode: totpCode() }, headers: impersonation.headers });
-    await expectRefusal(viaFactor, 403, 'impersonation_forbidden');
-    const viaMail = await call(sendStepUpCode, { headers: impersonation.headers });
-    expect(viaMail.response.status).toBe(403);
-    const viaPasskey = await call(getStepUpPasskeyChallenge, { headers: impersonation.headers });
-    expect(viaPasskey.response.status).toBe(403);
-    expect(await stateOf(impersonation)).toEqual({ steppedUp: false, methods: [] });
-    expect((await sessionRow(impersonation.id)).steppedUpAt).toBeNull();
-    expect(vi.mocked(mailer.sendEmails)).not.toHaveBeenCalled();
   });
 
   it('offers the emailed code to a user without a second factor while other accounts hold factors (positive control)', async () => {

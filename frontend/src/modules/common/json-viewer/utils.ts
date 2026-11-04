@@ -74,7 +74,7 @@ interface NodeDescription {
 }
 
 /** A description keyword. Always a string, so a parameter or property named `description`, which holds a schema, never matches. */
-const isDescriptionKeyword = (key: string | number, value: unknown) =>
+export const isDescriptionKeyword = (key: string | number, value: unknown): value is string =>
   (key === 'description' || key === 'refDescription') && typeof value === 'string';
 
 /** Whether a schema holds a description keyword at any depth. */
@@ -109,9 +109,9 @@ export function describeNode(
   const hasAnyOf = Array.isArray(keywords?.anyOf);
   const hasOneOf = Array.isArray(keywords?.oneOf);
 
-  // 'ref' renders as a label holding only the schema name: '#/components/schemas/User' becomes 'User'.
+  // 'ref' renders as a label.
   const refField = keywords?.ref;
-  const refValue = typeof refField === 'string' ? refField.split('/').pop() || refField : null;
+  const refValue = typeof refField === 'string' ? refField : null;
 
   // Rendered as a label and filtered out of the entries below.
   const contentTypeField = keywords?.contentType;

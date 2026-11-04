@@ -1,8 +1,9 @@
 import i18n from 'i18next';
-import { Children, type ReactNode } from 'react';
+import { Children, type ReactNode, use } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { MiddleCut } from '~/modules/common/middle-cut';
+import { DrawerLeadContext } from '~/modules/ui/drawer';
 
 // A confirmation spells out this many names and counts the rest, so a large selection keeps its question short
 const maxListedNames = 3;
@@ -19,8 +20,11 @@ function listParts(names: string[]) {
 
 type ListParts = ReturnType<typeof listParts>;
 
-/** A name on one line, cut in the middle when it overflows the line. */
+/** A name on one line, cut in the middle when it overflows the line. In a drawer's lead it wraps with the sentence. */
 function CutName({ text }: { text: string }) {
+  // A box that cannot wrap moves to the next line whole when the words before it leave too little room
+  if (use(DrawerLeadContext)) return <strong className="wrap-break-word font-semibold text-foreground">{text}</strong>;
+
   return (
     <strong className="font-semibold text-foreground">
       {/* 1ch less than the line leaves room for the mark that ends the sentence, so a cut name keeps its "?" on its line */}
@@ -64,8 +68,9 @@ interface NamedTextProps {
 /**
  * A sentence that names what it is about: what a confirmation hits, or the entity a sheet or dialog acts on. The
  * translation marks the name (or an email address, a count of items) with `<strong>`, so it shows in semibold. The
- * `name` and each name of a list stay on one line and are cut in the middle when they overflow it; anything else it
- * marks keeps to one line while it fits one, so an address never splits at its hyphen.
+ * `name` and each name of a list stay on one line and are cut in the middle when they overflow it, except in a drawer's
+ * lead, where they wrap with the sentence; anything else it marks keeps to one line while it fits one, so an address
+ * never splits at its hyphen.
  */
 export function NamedText({ i18nKey, name, values = {} }: NamedTextProps) {
   const { t } = useTranslation();

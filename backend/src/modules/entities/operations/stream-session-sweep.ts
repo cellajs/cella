@@ -18,7 +18,7 @@ const sweepIntervalMs = 60_000;
 let sweepTimer: ReturnType<typeof setInterval> | null = null;
 let sweeping = false;
 
-type SessionState = Pick<SessionModel, 'userId' | 'revokedAt' | 'revocationReason' | 'expiresAt' | 'impersonatorSessionId'>;
+type SessionState = Pick<SessionModel, 'userId' | 'revokedAt' | 'revocationReason' | 'expiresAt'>;
 
 /** Why a stream must close now, or null while its session still holds what the stream was opened with. */
 function staleStreamError(
@@ -30,13 +30,6 @@ function staleStreamError(
   if (!session) return { code: 'unauthorized', message: 'Session ended' };
   if (session.revokedAt) return streamErrorForEnding(session.revocationReason ?? 'sign_out');
   if (isExpiredDate(session.expiresAt)) return { code: 'unauthorized', message: 'Session expired' };
-  if (session.impersonatorSessionId) {
-    // An impersonation holds only while its admin's session does and the admin keeps the system role.
-    const admin = sessionsById.get(session.impersonatorSessionId);
-    if (!admin || admin.revokedAt || isExpiredDate(admin.expiresAt) || !systemAdmins.has(admin.userId)) {
-      return { code: 'unauthorized', message: 'Impersonation ended' };
-    }
-  }
   // The stream reads as system admin while the user holds the role and it connected from an allowed address.
   if (subscriber.isSystemAdmin !== (subscriber.systemAccessAllowed && systemAdmins.has(subscriber.userId))) {
     return { code: 'access_changed', message: subscriber.isSystemAdmin ? 'System role removed' : 'System role granted' };
@@ -47,24 +40,21 @@ function staleStreamError(
 /**
  * Re-checks the session behind every open app stream and closes each stream that must end: its session expired, was
  * revoked between its session check and its registration (the revoke closes only the streams registered by then) or
- * went with its user, an impersonation's admin lost their session or system role, or the system role was removed or
- * granted since the stream connected (the client reconnects on `access_changed`).
+ * went with its user, or the system role was removed or granted since the stream connected (the client reconnects on
+ * `access_changed`).
  */
 async function sweepAppStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all();
   if (subscribers.length === 0) return;
 
   const sessions = await findSessionStates(dbCtx, { ids: [...new Set(subscribers.map((subscriber) => subscriber.sessionId))] });
-  const impersonatorIds = [...new Set(sessions.flatMap(({ impersonatorSessionId }) => (impersonatorSessionId ? [impersonatorSessionId] : [])))];
-  const impersonators = impersonatorIds.length === 0 ? [] : await findSessionStates(dbCtx, { ids: impersonatorIds });
 
-  const subscriberUserIds = subscribers
-    .filter((subscriber) => subscriber.isSystemAdmin || subscriber.systemAccessAllowed)
-    .map(({ userId }) => userId);
-  const adminIds = [...new Set([...subscriberUserIds, ...impersonators.map(({ userId }) => userId)])];
+  const adminIds = [
+    ...new Set(subscribers.filter((subscriber) => subscriber.isSystemAdmin || subscriber.systemAccessAllowed).map(({ userId }) => userId)),
+  ];
   const admins = adminIds.length === 0 ? [] : await findSystemRoleHolders(dbCtx, { userIds: adminIds, role: 'admin' });
 
-  const sessionsById = new Map([...sessions, ...impersonators].map(({ id, ...state }) => [id, state]));
+  const sessionsById = new Map(sessions.map(({ id, ...state }) => [id, state]));
   const systemAdmins = new Set(admins.map(({ userId }) => userId));
 
   const stale = subscribers.flatMap((subscriber) => {

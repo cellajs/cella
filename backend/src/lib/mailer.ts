@@ -137,6 +137,8 @@ async function sendBatch({ subject, html, versions, replyTo, htmlParams, headers
 
 /** Sends the app's mail through Brevo's transactional API. */
 export const mailer = {
+  /** False without a Brevo key: every send is then a no-op. */
+  enabled: !!env.BREVO_API_KEY,
   /**
    * Renders once per language group with Brevo placeholders (`brevoPlaceholder`) whose keys carry a nonce drawn for the
    * send, then sends in batches of `maxVersionsPerCall`.

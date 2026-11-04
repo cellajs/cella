@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import type { Me, User, UserMinimalBase } from 'sdk';
+import type { Me, User } from 'sdk';
 import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -28,21 +28,18 @@ interface UserStoreState {
   /** Current user. `null` while signed out; set by the authenticated route guard. */
   user: MeUser | null;
   isSystemAdmin: boolean;
-  /** The system admin acting as `user` through an impersonation, as `/me` names them; `null` on the user's own session. */
-  impersonator: UserMinimalBase | null;
   /** The last user signed in on this browser, kept after sign-out. */
   lastUser: LastUser | null;
-  /** Stores what `/me` answered in one write; also sets lastUser, unless impersonated. */
+  /** Stores what `/me` answered in one write; also sets lastUser. */
   setMe: (me: Me) => void;
-  /** Merges into the user; also sets lastUser, unless impersonated. */
+  /** Merges into the user; also sets lastUser. */
   updateUser: (user: User) => void;
   reset: () => void;
 }
 
-const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'impersonator' | 'lastUser'> = {
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser'> = {
   user: null,
   isSystemAdmin: false,
-  impersonator: null,
   lastUser: null,
 };
 
@@ -54,19 +51,17 @@ export const useUserStore = create<UserStoreState>()(
         updateUser: (user) => {
           set((state) => ({
             user: { ...state.user, ...user },
-            lastUser: state.impersonator ? state.lastUser : { id: user.id, email: user.email },
+            lastUser: { id: user.id, email: user.email },
           }));
 
           mirrorLanguage(user.language);
           mirrorContrast(user.contrast);
         },
-        setMe: ({ user, isSystemAdmin, impersonator }) => {
+        setMe: ({ user, isSystemAdmin }) => {
           set((state) => {
             state.user = user;
             state.isSystemAdmin = isSystemAdmin;
-            state.impersonator = impersonator;
-            // The browser's last user stays its admin: an impersonated user never signed in here.
-            if (!impersonator) state.lastUser = { id: user.id, email: user.email };
+            state.lastUser = { id: user.id, email: user.email };
           });
 
           mirrorLanguage(user.language);
@@ -80,7 +75,6 @@ export const useUserStore = create<UserStoreState>()(
         partialize: (state) => ({
           user: state.user,
           isSystemAdmin: state.isSystemAdmin,
-          impersonator: state.impersonator,
           lastUser: state.lastUser,
         }),
         storage: createJSONStorage(() => localStorage),

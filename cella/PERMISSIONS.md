@@ -165,14 +165,14 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `act
 | Guard | Admits | Refuses with |
 | --- | --- | --- |
 | `publicGuard` | Anyone, with no actor | Nothing |
-| `userGuard` | A session cookie: the signed-in user, or an admin impersonating them | 401 |
+| `userGuard` | A session cookie: the signed-in user | 401 |
 | `serviceGuard` | An API key or an access token, masked by its scopes, never a system admin | 401; 403 from a browser origin |
 | `tokenGuard` | An access token only, for the MCP face | 401 |
 | `actorGuard` | Any of the three proofs | 401, 403 |
 | `tenantGuard` | An actor with a foothold in the URL's tenant, a service account only in its own. Applies the tenant's sign-in policy | 403 `forbidden`, `sso_required` |
 | `orgGuard` | The URL's organization in the tenant `tenantGuard` admitted to, for an actor bound to it or to a channel below it, or a system admin | 404 |
-| `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks | 403 `step_up_required`, `impersonation_forbidden` |
-| `sysAdminGuard` | A system admin from an allowed IP address, never an impersonation | 403 |
+| `stepUpGuard`, `stepUpEnrollGuard`, `stepUpFactorGuard` | A session that recently proved its user again, as much as the action asks | 403 `step_up_required` |
+| `sysAdminGuard` | A system admin from an allowed IP address | 403 |
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
 `tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above. A tenant holds one organization, so an actor bound to nothing in it gets `tenantGuard`'s 403; `orgGuard`'s 404 remains for the tenant's creator racing the first organization.
@@ -198,12 +198,17 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | A tenant quota that is full | 403 `restrict_by_app` with `meta.resource` and `meta.quota`; `restrict_by_org` for member seats | The tenant's policy, not a rate: waiting does not lift it, so never a 429 |
 | A tenant's invitation mails for the day spent | 429 `invitation_limit_reached` with `meta.retryAfter` | A rate: the next day lifts it, and a system admin raises the tenant's `invitationMailsPerDay` |
 | An account-security route without the recent proof it asks | 403 `step_up_required` naming the methods | `withStepUp` opens the proof dialog on it and runs the action again |
-| An action on the account itself while impersonating | 403 `impersonation_forbidden` | The admin acts as the user, never on the account |
 | A sign-in method the tenant does not allow for this person | 403 `sso_required` with the connection | The tenant decides how the people it knows through a connection sign in |
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. It is stamped on the user's own GET requests, never while an admin impersonates them. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. It is stamped on the user's own GET requests. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+
+## System admins
+
+A system admin holds the `admin` system role, counted only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action, and every guard but `serviceGuard` lets them through without a membership, so a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user: a support change runs as the admin, carries the admin's actor in `createdBy` or `updatedBy`, and shows under the admin's name in the organization's activities. A system admin never reaches a user's account security (factors, sessions, connected apps), their inbox, menu or preferences, and joins a collaborative description only with the access of their own account.
+
+Support reads before it writes: the users table says what role and last-seen a user has, the organization's members page what they hold there. To see a page as a member of a given role sees it, hold that role: invite an account that has no system role at that role for the length of the case and remove it after; both moves are activities the organization's admins can read. Make the change as yourself and tell the user what changed; never hand anyone a session. Account-security trouble (a lost factor, a stuck MFA challenge) is the user's to recover through the step-up and recovery paths.
 
 ## Behavior
 

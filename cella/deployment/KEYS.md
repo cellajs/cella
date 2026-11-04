@@ -6,7 +6,7 @@ This document explains the Scaleway API keys a deployment uses, how to rotate th
 
 Every key does one kind of work: an Owner API key only for the moments that write IAM, an operator key that works
 from your own address, a deploy key per environment, and a key per machine. No privileged key or passphrase sits in a
-file on your machine. Rotating keys or secrets starts a deploy that replaces every machine.
+file on your machine. Rotating keys or secrets deploys the live release again, which replaces every machine.
 
 ## Zones
 
@@ -100,7 +100,7 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 ## Rotation
 
-`pnpm infra` opens with the last rotation of each kind, and `status` lists every key's age; no age is a deadline. A rotation ends by starting the environment's target, and that deploy replaces every machine, also on the same release, so none keeps a key or a value from before. After a compromise, rotate keys first.
+`pnpm infra` opens with the last rotation of each kind, and `status` lists every key's age; no age is a deadline. A rotation ends by deploying the release that is live again, which replaces every machine, so none keeps a key or a value from before, and then by starting the environment's target when it is another commit. The live release deployed once already, so a target that fails never leaves the machines on what the rotation replaced; a rotation before the first deploy starts the target alone. After a compromise, rotate keys first.
 
 ### Rotate secrets
 
@@ -114,7 +114,7 @@ With an Owner API key and your operator key at hand, `pnpm infra` → **Rotate k
 
 Where the runner serves the environment, the rotation also replaces the runner key, and then the runner machine on your operator key, as the key reaches the machine only in its user data. The runner key is the app's, so a rotation in each of its environments replaces it again. After a compromise, one **Rotate keys** per environment covers every Scaleway key but the operator's and the observer's, which reads no key; the inventory names a key an intruder added to it, which you delete in the console.
 
-The running machines booted with the deleted machine keys: until the deploy the rotation starts replaces them, a reboot cannot hydrate and the backend's presigned URLs fail. The rotation ends by printing the inventory. Revoke the Owner API key you pasted afterwards.
+The running machines booted with the deleted machine keys: until the deploy of the live release replaces them, a reboot cannot hydrate and the backend's presigned URLs fail. The rotation ends by printing the inventory. Revoke the Owner API key you pasted afterwards.
 
 ## A stolen laptop
 

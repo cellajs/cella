@@ -52,7 +52,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema, mockCreateAttachmentsBody()) },
     responses: {
       200: json(
-        'Nothing created: rows an earlier attempt created (idempotent), and rejected ids',
+        'Nothing created\n\nThis request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.',
         attachmentCreateResponseSchema,
         mockBatchAttachmentsResponse(),
       ),
@@ -99,7 +99,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     description:
       'Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
     request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
-    responses: { 200: json('Attachment with its stored file', attachmentSchema), ...errors(409) },
+    responses: { 200: json('Attachment with stored file', attachmentSchema), ...errors(409) },
   }),
   deleteAttachments: xRoute({
     method: 'delete',

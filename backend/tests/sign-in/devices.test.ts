@@ -24,7 +24,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
 afterEach(async () => await clearDatabase());
 
-const browser = (deviceId: string | null = nanoid(24)): SignInContext => ({
+const browser = (deviceId = nanoid(24)): SignInContext => ({
   rawIp: null,
   country: 'NL',
   asn: null,
@@ -134,16 +134,6 @@ describe('new sign-in notice', () => {
     expect(later).toBeNull();
     expect(notices()).toHaveLength(0);
     expect(await devicesOf(user.id)).toHaveLength(1);
-  });
-
-  it('never enrolls or mails an impersonation session', async () => {
-    const user = await createTestUser(signUpUser.email);
-    await seedEarlierSignIn(user.id);
-
-    const { newDevice } = await createSession(user, browser(null), 'passkey', 'impersonation');
-
-    expect(newDevice).toBeNull();
-    expect(await devicesOf(user.id)).toHaveLength(0);
   });
 
   it('stops after three notices in a day while still enrolling the browser', async () => {

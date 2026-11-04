@@ -10,13 +10,25 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 - Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves `appConfig.frontendUrl`, http://localhost:3000 for app number 0; a linked git worktree runs on ports of its own, which Vite prints ([Dev ports](../../../shared/README.md#dev-ports)). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
 - Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". Ports of another `devAppIndex` belong to other apps.
 - A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `backend/.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC worker on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
-- When you start the stack yourself, capture its stdout: `pnpm dev > <scratch>/dev-stack.log 2>&1` (background). pino writes no file, and backend errors are there.
+- When you start the stack yourself, capture its stdout with a size cap: `pnpm dev 2>&1 | head -c 200000000 > <scratch>/dev-stack.log` (background; macOS `head` takes bytes only). pino writes no file, and backend errors are there.
 - Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<services.cdc.port>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
 - Typecheck: `cd frontend && pnpm ts` (tsgo). Lint: `pnpm exec biome check <file>` from repo root.
 
+## Worktree stacks
+
+At most two worktrees run a stack at once, on the shared database or a throwaway one: each holds memory and CPU, and each throwaway database holds a volume in Docker. Before starting one, list the checkouts that serve a port and the database containers:
+
+```sh
+for p in $(lsof -a -c node -iTCP -sTCP:LISTEN -t); do lsof -a -p "$p" -d cwd -Fn | sed -n 's/^n//p'; done | sort -u
+docker ps --format '{{.Names}}  {{.Ports}}'
+```
+
+- Paths under `.claude/worktrees/<name>/` (or another linked worktree) count, the main checkout does not. With two worktrees listed, check without a stack (typecheck, unit tests, a static page) or wait.
+- Once the check is done, stop the listeners (`lsof -tiTCP:<port> -sTCP:LISTEN`) and remove a throwaway container with its volume (`docker rm -fv <name>`).
+
 ## A throwaway database
 
-Clean seeded data, or a branch with migrations, beside the stack you already run. Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free: `pnpm a11y:run` takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
+Clean seeded data, or a branch with migrations, beside the stack you already run. Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free, and a second throwaway stack takes offset 60, port 5450 and a container name of its own: `pnpm a11y:run` takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
 
 ```sh
 # The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml
@@ -39,9 +51,9 @@ pnpm seed                                                                  # mig
 
 ## Drive (browser)
 
-- Playwright is a `frontend` devDependency, and Node resolves a bare `import 'playwright'` from the script file's own folder, so a scratch script elsewhere fails with `ERR_MODULE_NOT_FOUND`. Pipe it in from `frontend/`: `cd frontend && node --input-type=module < <script.mjs>`. The drivers under `cella/skills/` load it through `two-tab-sync-test/driver-lib.mjs`. Chromium cache: `~/Library/Caches/ms-playwright`.
+- Playwright is a `frontend` devDependency, and Node resolves a bare `import 'playwright'` from the script file's own folder, so a scratch script elsewhere fails with `ERR_MODULE_NOT_FOUND`. Pipe it in from `frontend/`: `cd frontend && node --input-type=module < <script.mjs>`. The drivers under `cella/skills/` load it through `verify/session-lib.mjs`. Chromium cache: `~/Library/Caches/ms-playwright`.
 - Signed-in pages: mint a session, with no UI login and no cookie built by hand (the app signs every cookie). `pnpm --filter backend session:mint <email>` ([backend scripts](../../../backend/scripts/README.md)) prints `<cookie name>=<signed value>` and a curl line with the API URL; the seeded admin is `ADMIN_EMAIL` in `backend/.env`, and acts as one from an address in `SYSTEM_ADMIN_IP_ALLOWLIST` there: a `.env` copied from `.env.example` allows this machine. Set the cookie with `context.addCookies([{ name, value, url: <appConfig.frontendUrl> }])`; the API is same-origin, under `<frontendUrl>/api`.
-- When the script is done, sign the session out (`POST <api>/auth/sign-out` with the cookie and a JSON content type), or it stays listed as live in the user's sessions until it expires. In a driver: `mintSession` and `endSession` in `two-tab-sync-test/driver-lib.mjs`, or `startSession` and `endSession` in `a11y/src/session.ts`.
+- When the script is done, sign the session out (`POST <api>/auth/sign-out` with the cookie and a JSON content type), or it stays listed as live in the user's sessions until it expires. In a driver: `mintSession` and `endSession` in `verify/session-lib.mjs`, or `startSession` and `endSession` in `a11y/src/session.ts`.
 - A freshly seeded admin opens on the onboarding dialog: `PUT <api>/me` with `{ userFlags: { finishedOnboarding: true } }` skips it, as the drivers do.
 - Boot smoke of a checkout or a new app: `node cella/skills/verify/smoke-driver.mjs` from the repo root starts `pnpm dev`, waits for a healthy stack with an active CDC replication, signs in as `ADMIN_EMAIL` through the magic link the backend prints, opens `/home` and an organization's attachments (seeded rows expected), then stops the stack. `START=` attaches to a stack that already runs and has no log to read the link from, so it leaves the magic link out; `OUT_DIR` holds the stack log, screenshots and `evidence.json`. The nightly `create-flow.yml` workflow in [create-cella](https://github.com/cellajs/create-cella/blob/main/.github/workflows/create-flow.yml) runs it on a new app: keep its interface stable.
 - Realtime behavior across two tabs (entity sync, collaborative descriptions): the `two-tab-sync-test` skill and its driver.

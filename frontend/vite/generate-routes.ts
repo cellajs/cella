@@ -5,4 +5,4 @@ import { routerOptions } from './router-options.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 await new Generator({ config: getConfig(routerOptions, root), root }).run();
-console.info(`[gen:routes] wrote ${routerOptions.generatedRouteTree}`);
+console.info(`[generate:routes] wrote ${routerOptions.generatedRouteTree}`);

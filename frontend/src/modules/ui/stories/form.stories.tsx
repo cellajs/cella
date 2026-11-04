@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useForm } from 'react-hook-form';
 import { action } from 'storybook/actions';
@@ -6,6 +5,7 @@ import { expect, userEvent } from 'storybook/test';
 import * as z from 'zod';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { formResolver } from '~/utils/form-resolver';
 
 /**
  * Building forms with React Hook Form and Zod.
@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>;
 const formSchema = z.object({ username: z.string().min(6, { message: 'Username must be at least 6 characters.' }) });
 
 function ProfileForm(args: Story['args']) {
-  const form = useForm<z.infer<typeof formSchema>>({ resolver: zodResolver(formSchema), defaultValues: { username: '' } });
+  const form = useForm<z.infer<typeof formSchema>>({ resolver: formResolver(formSchema), defaultValues: { username: '' } });
   function onSubmit(values: z.infer<typeof formSchema>) {
     action('onSubmit')(values);
   }

@@ -15,7 +15,7 @@ export const yDocKeyString = (key: YDocKey) => `${key.entityType}:${key.entityId
 const handlers = new Set<(message: TabMessage) => void>();
 let channel: BroadcastChannel | null = null;
 
-/** The channel of the bound user's database, opened on first use; null while none is bound (signed out, or impersonating). */
+/** The channel of the bound user's database, opened on first use; null while none is bound (signed out). */
 function currentChannel(): BroadcastChannel | null {
   const name = getLocalUserDb()?.name;
   if (!name || typeof BroadcastChannel === 'undefined') {

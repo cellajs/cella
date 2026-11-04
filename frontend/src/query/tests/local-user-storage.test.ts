@@ -24,7 +24,6 @@ const { teardownUserState } = await import('~/utils/teardown-user-state');
 const dbName = (owner: string) => `${appConfig.slug}:${owner}`;
 const admin = { id: 'admin-1', email: 'admin@example.test' };
 const target = { id: 'user-1', email: 'user@example.test' };
-const adminRef = { id: admin.id, name: 'Ada Admin', slug: 'ada', thumbnailUrl: null, entityType: 'user' as const };
 
 /** The `storage` event another tab's sign-in, sign-out or profile edit fires here, carrying the user it stored. */
 const storeInAnotherTab = (user: { id: string; email: string } | null) =>
@@ -72,23 +71,8 @@ function queueOfflineEdit(variables: { name: string; stx?: { mutationId: string 
 }
 
 describe('the per-user database follows who is signed in', () => {
-  it('must not store an impersonated user’s data on the admin’s device: no database is bound, and the admin’s returns after', async () => {
-    userStore.setState({ user: admin as never, impersonator: null });
-    expect(getLocalUserDb()?.name).toBe(dbName(admin.id));
-
-    // `/me` names the user and the admin behind them in one write: the admin's database closes, none opens for the user.
-    userStore.setState({ user: target as never, impersonator: adminRef });
-    expect(getLocalUserDb()).toBeNull();
-    expect(await Dexie.exists(dbName(target.id))).toBe(false);
-
-    // The impersonation ended: one write again, straight back to the admin's own database.
-    userStore.setState({ user: admin as never, impersonator: null });
-    expect(getLocalUserDb()?.name).toBe(dbName(admin.id));
-    expect(await Dexie.exists(dbName(target.id))).toBe(false);
-  });
-
   it('must not replay a paused write under the session of a user who signed in in another tab', async () => {
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     const sent: string[] = [];
     onlineManager.setOnline(false);
     const edit = new MutationObserver(queryClient, {
@@ -129,7 +113,7 @@ describe('the per-user database follows who is signed in', () => {
 
   it('must not lose the writes a lost session left queued when the same user signs in again on the page: they return to memory and stay stored', async () => {
     // The page's first restore is done; signing in restores the user's empty database, then an edit made offline pauses and is stored.
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     markCacheRestored();
     await localUserStorageReady();
     queueOfflineEdit({ name: 'offline edit' });
@@ -142,7 +126,7 @@ describe('the per-user database follows who is signed in', () => {
     expect(queryClient.getMutationCache().getAll()).toEqual([]);
 
     // Signing in again binds the same database with no reload, and the first cache write comes before any restore.
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     queryClient.setQueryData(['thing', 'after-sign-in'], { id: 1 });
     await persistCache();
     await localUserStorageReady();
@@ -154,7 +138,7 @@ describe('the per-user database follows who is signed in', () => {
   // Only paused mutations were stored, so the write after the replay's resume deleted it, and the 401 then cleared memory: it was nowhere.
   it('must not lose an edit whose replay meets the lost session: it stays stored while its request runs and returns at the next sign-in', async () => {
     vi.stubGlobal('location', new URL('https://app.example/organization/attachments'));
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     markCacheRestored();
     await localUserStorageReady();
     const request = queueOfflineEdit({ name: 'offline edit', stx: { mutationId: 'm-1' } });
@@ -173,7 +157,7 @@ describe('the per-user database follows who is signed in', () => {
     request.answer(Object.assign(new Error('Unauthorized'), { status: 401, type: 'session_expired' }));
     await vi.waitFor(() => expect(getLocalUserDb()).toBeNull());
 
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     await localUserStorageReady();
     expect(pausedInMemory()).toMatchObject([{ name: 'offline edit' }]);
     expect(await storedQueue()).toMatchObject([{ isPaused: true, variables: { name: 'offline edit' } }]);
@@ -184,7 +168,7 @@ describe('the per-user database follows who is signed in', () => {
     const gateway = () => new Response(null, { status: 503 });
     const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => gateway());
     onTestFinished(() => probe.mockRestore());
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     markCacheRestored();
     await localUserStorageReady();
     onlineManager.setOnline(false);
@@ -215,7 +199,7 @@ describe('the per-user database follows who is signed in', () => {
   it('must not lose an edit whose replay meets a deploy behind a healthy edge: it retries past any count, stored, until the API answers', async () => {
     const probe = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(null, { status: 204 }));
     onTestFinished(() => probe.mockRestore());
-    userStore.setState({ user: target as never, impersonator: null });
+    userStore.setState({ user: target as never });
     markCacheRestored();
     await localUserStorageReady();
     onlineManager.setOnline(false);

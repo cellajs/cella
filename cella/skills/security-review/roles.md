@@ -8,7 +8,7 @@ Every prompt ends with the rules of [SKILL.md](./SKILL.md#rules-for-every-agent)
 
 Cheap model. Reads the class section, verifies every path at the checkout, inventories what holds, and ranks what an attacker should try. Five minutes and about 45k output tokens in the first run.
 
-**Prompt.** "You are the SCOUT for security class `<id> <name>` in the cella repo. Read `cella/skills/security-review/classes.md` section `<id>` and `cella/skills/security-review/roles.md` section Scout. Read and cite code in `<checkout>` (main at `<commit>`, node_modules installed); write `<main checkout>/.todos/security-review/briefs/<id>.md`. Earlier reports settled: `<list>`; cite them, do not redo. Advisory rows: `node cella/skills/security-review/tools/classify.mjs .todos/security-review --list <id>`. For a class with a spec checklist (A3, A4, A5, B6, C5), read the spec page once and make the checklist your table. Reply with under 200 words: the lead count, the three strongest leads, and every catalog path that moved or is gone."
+**Prompt.** "You are the SCOUT for security class `<id> <name>` in the cella repo. Read `cella/skills/security-review/classes.md` section `<id>` and `cella/skills/security-review/roles.md` section Scout. Read and cite code in `<checkout>` (main at `<commit>`, node_modules installed); write `<main checkout>/.todos/security-review/briefs/<id>.md`. Earlier reports settled: `<list>`; cite them, do not redo. For a class with a spec checklist (A3, A4, A5, B6, C5), read the spec page once and make the checklist your table. Reply with under 200 words: the lead count, the three strongest leads, and every catalog path that moved or is gone."
 
 **The brief.**
 

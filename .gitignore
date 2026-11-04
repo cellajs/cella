@@ -28,6 +28,7 @@ my-cella-app
 *.sw?
 .turbo
 .todos
+.scratch
 .env
 .env.*
 !.env.example
@@ -46,8 +47,6 @@ frontend/vite/temp-api-gen-*
 sdk/src/temp-api-gen-*
 sdk/src/.generate-sdk.lock
 sdk/src/.spec-hash
-# Derived from sdk/gen/openapi.json by frontend/vite/sdk-static.ts when served or built
-sdk/gen/docs.gen/
 *.cache.json
 .pnpm-store
 .worktrees

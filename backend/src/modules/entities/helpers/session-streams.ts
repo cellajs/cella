@@ -5,14 +5,12 @@ import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-ma
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 
-/** Endings after which the browser holds a newer session: a sign-in replaced it, or the admin's own one returns. */
-const endingsWithSuccessor = new Set<SessionEndReason>(['replaced', 'impersonation_stopped']);
-
-/** What a stream bound to an ended session hears: reconnect with the newer session, or the session is gone for good. */
+/**
+ * What a stream bound to an ended session hears: reconnect with the session a sign-in replaced it with, or the session
+ * is gone for good.
+ */
 export function streamErrorForEnding(reason: SessionEndReason): StreamErrorPayload {
-  return endingsWithSuccessor.has(reason)
-    ? { code: 'session_replaced', message: 'Session replaced' }
-    : { code: 'unauthorized', message: 'Session revoked' };
+  return reason === 'replaced' ? { code: 'session_replaced', message: 'Session replaced' } : { code: 'unauthorized', message: 'Session revoked' };
 }
 
 /** How long a close waits for the client to take its error event. */

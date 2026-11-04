@@ -59,9 +59,9 @@ export const tenantGuard = xMiddleware(
     // The tenant's sign-in policy: a person who holds an identity through this tenant's connection must have
     // signed in with an allowed method, whether by session or by a token their session authorized, and with a
     // federation only through that connection. Externals without such an identity are untouched. System admins are
-    // exempt, acting as a user too: an impersonation's method is its admin's. A session's method and connection are in
-    // the cached facts, so only a mismatch or a federation sign-in pays for the lookup.
-    if (actor.kind === 'user' && !ctx.var.isSystemAdmin && !ctx.var.impersonator && tenant.authStrategies.length > 0) {
+    // exempt. A session's method and connection are in the cached facts, so only a mismatch or a federation sign-in
+    // pays for the lookup.
+    if (actor.kind === 'user' && !ctx.var.isSystemAdmin && tenant.authStrategies.length > 0) {
       const strategy = actor.authStrategy ?? null;
       const allowed = !!strategy && tenant.authStrategies.includes(strategy);
       if (!allowed || (strategy && isFederationKey(strategy))) {

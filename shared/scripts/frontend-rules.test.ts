@@ -42,21 +42,16 @@ describe('route-context-selector', () => {
   });
 });
 
-describe('form-no-validate and form-resolver', () => {
+describe('form-no-validate', () => {
   const component = 'frontend/src/modules/example/example-form.tsx';
   const found = (source: string) => frontendFindings(component, source, new Set()).map(({ rule }) => rule);
 
-  it('reports a form react-hook-form validates without noValidate, and a direct zodResolver import', () => {
-    const source = [
-      "import { zodResolver } from '@hookform/resolvers/zod';",
-      'export function ExampleForm() {',
-      '  return <form onSubmit={form.handleSubmit(onSubmit)} />;',
-      '}',
-    ].join('\n');
-    expect(found(source)).toEqual(['form-resolver', 'form-no-validate']);
+  it('reports a form react-hook-form validates without noValidate', () => {
+    const source = ['export function ExampleForm() {', '  return <form onSubmit={form.handleSubmit(onSubmit)} />;', '}'].join('\n');
+    expect(found(source)).toEqual(['form-no-validate']);
   });
 
-  it('accepts noValidate, a form the browser posts, and the resolver module itself', () => {
+  it('accepts noValidate and a form the browser posts', () => {
     const source = [
       'export function ExampleForm() {',
       '  return (',
@@ -68,7 +63,6 @@ describe('form-no-validate and form-resolver', () => {
       '}',
     ].join('\n');
     expect(found(source)).toEqual([]);
-    expect(frontendFindings('frontend/src/utils/form-resolver.ts', "import { zodResolver } from '@hookform/resolvers/zod';", new Set())).toEqual([]);
   });
 });
 

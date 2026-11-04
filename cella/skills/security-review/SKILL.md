@@ -11,7 +11,7 @@ The unit of a review is a **vector class**, never an advisory or a file: every a
 
 ## When to run a class
 
-- **A new advisory.** `tools/classify.mjs` files it into a class. Rerun that class only when the advisory names a sub-vector the class's last brief lacks; otherwise the version minimum and the existing test cover it.
+- **A new advisory.** The [classifier rules](./classes.md#classifier-rules) file it into a class. Rerun that class only when the advisory names a sub-vector the class's last brief lacks; otherwise the version minimum and the existing test cover it.
 - **A periodic pass.** Rank classes by commits since their last reviewed commit touched their files (`git log --since` over each class's file list) and run the top batch.
 - **An app after a new entity or module.** Run B1, B2, B3 and E2 over the app's own entities: the briefs are the template's, the attacks are against the app's hierarchy and roles.
 - **A new boundary.** Code that parses, signs, fetches, renders or stores for the first time gets its class before it ships.
@@ -95,10 +95,7 @@ cella/skills/security-review/
   SKILL.md                 this file: when, the pipeline, the batch steps, the rules
   classes.md               the 28 classes: gain, merges, advisories, files, holds, asks
   roles.md                 prompt templates, file formats and final messages per agent, the combiner included
-  tools/ghsa-intake.mjs    every GitHub advisory ever published for the direct dependencies
-  tools/ghsa-retry.mjs     re-query the packages an intake failed on
-  tools/classify.mjs       advisory to class, by package then by CWE; --list <class>
-.todos/security-review/    untracked: data/, briefs/, reports/, ledger.md
+.todos/security-review/    untracked: briefs/, reports/, ledger.md
 ```
 
-Intake: `node cella/skills/security-review/tools/ghsa-intake.mjs . .todos/security-review/data` (needs `gh` signed in), then `node cella/skills/security-review/tools/classify.mjs .todos/security-review` and `--list <class>` for one class's rows.
+Advisory intake is a scratch script per run, in `.scratch/`, never a committed tool: for each direct dependency, `gh api graphql` over `securityVulnerabilities` (paginated, `gh` signed in), then each row files into a class by the [classifier rules](./classes.md#classifier-rules). The class sections already carry each class's advisory counts from the October 2026 intake; a fresh intake matters only for advisories published since.

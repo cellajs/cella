@@ -3,7 +3,7 @@ import { useId } from 'react';
 import type { GenComponentSchema } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { schemaAnchor } from '~/modules/docs/helpers/reference-links';
 import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { SchemaItem } from '~/modules/docs/sidebar/schema-item';

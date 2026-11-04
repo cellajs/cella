@@ -12,15 +12,15 @@ const stepUpTierGuard = (tier: StepUpTier, functionName: string, name: string, d
   });
 
 /**
- * Account-security actions need more than a session: a recent proof of the user's presence on this very session, and
- * never an impersonation. How much proof depends on what the action does (`stepUpTiers`): this guard is for changing
- * or ending the account (factor deletes, MFA, provider connect, account deletion).
+ * Account-security actions need more than a session: a recent proof of the user's presence on this very session. How
+ * much proof depends on what the action does (`stepUpTiers`): this guard is for changing or ending the account (factor
+ * deletes, MFA, provider connect, account deletion).
  */
 export const stepUpGuard = stepUpTierGuard(
   'account',
   'stepUpGuard',
   'Step-up',
-  `The user confirms it's them on this session in the last ${stepUpMinutes} minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Refused during impersonation.`,
+  `The user confirms it's them on this session in the last ${stepUpMinutes} minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code.`,
 );
 
 /** For actions that hand out lasting access: minting an API key, creating or re-enabling a service account. */
@@ -28,7 +28,7 @@ export const stepUpFactorGuard = stepUpTierGuard(
   'factor',
   'stepUpFactorGuard',
   'Step-up: second factor',
-  `The user confirms it's them in the last ${stepUpMinutes} minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first. Refused during impersonation.`,
+  `The user confirms it's them in the last ${stepUpMinutes} minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first.`,
 );
 
 /** For setting up a second factor: a passkey or an authenticator app. */
@@ -36,5 +36,5 @@ export const stepUpEnrollGuard = stepUpTierGuard(
   'enroll',
   'stepUpEnrollGuard',
   'Step-up: new factor',
-  `The user confirms it's them on this session in the last ${stepUpMinutes} minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off. Refused during impersonation.`,
+  `The user confirms it's them on this session in the last ${stepUpMinutes} minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off.`,
 );

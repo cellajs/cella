@@ -49,19 +49,19 @@
           },
           "stepUpGuard": {
             "name": "Step-up",
-            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Refused during impersonation."
+            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code."
           },
           "stepUpFactorGuard": {
             "name": "Step-up: second factor",
-            "description": "The user confirms it's them in the last 10 minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first. Refused during impersonation."
+            "description": "The user confirms it's them in the last 10 minutes with a passkey or TOTP code, or an SSO sign-in where the institution confirmed MFA. Someone without a second factor sets one up first."
           },
           "stepUpEnrollGuard": {
             "name": "Step-up: new factor",
-            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off. Refused during impersonation."
+            "description": "The user confirms it's them on this session in the last 10 minutes: with a passkey or TOTP code if they have one, otherwise a fresh sign-in or an emailed code. Someone who lost their factor can also use an emailed code while MFA is off."
           },
           "sysAdminGuard": {
             "name": "System admin",
-            "description": "Requires the system admin role and a request from an allowed IP address. Refused during impersonation."
+            "description": "Requires the system admin role and a request from an allowed IP address."
           },
           "tenantGuard": {
             "name": "Tenant",
@@ -230,7 +230,7 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification, account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting sign-in by magic link, passkey (WebAuthn), OAuth (Google, Microsoft, GitHub) and institutional SSO through a federation (SURFconext), with TOTP as a second factor. They cover sign-up, sign-in, MFA, step-up, email verification and account linking.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -379,7 +379,7 @@
     },
     "responses": {
       "BadRequestError": {
-        "description": "Bad request: problem processing request.",
+        "description": "Bad request",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -397,7 +397,7 @@
         }
       },
       "UnauthorizedError": {
-        "description": "Unauthorized: authentication required.",
+        "description": "Unauthorized",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -415,7 +415,7 @@
         }
       },
       "ForbiddenError": {
-        "description": "Forbidden: insufficient permissions.",
+        "description": "Forbidden",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -433,7 +433,7 @@
         }
       },
       "NotFoundError": {
-        "description": "Not found: resource does not exist.",
+        "description": "Not found",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -451,7 +451,7 @@
         }
       },
       "ConflictError": {
-        "description": "Conflict: resource state conflict.",
+        "description": "Conflict",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -469,7 +469,7 @@
         }
       },
       "PayloadTooLargeError": {
-        "description": "Payload too large: the request body exceeds its limit.",
+        "description": "Payload too large",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -487,7 +487,7 @@
         }
       },
       "TooManyRequestsError": {
-        "description": "Rate limit: too many requests.",
+        "description": "Too many requests",
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
@@ -982,7 +982,7 @@
             }
           }
         ],
-        "description": "The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.",
+        "description": "The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.",
         "example": {
           "name": "Something's missing or wrong",
           "message": "Check what you entered and try again.",
@@ -1092,7 +1092,7 @@
             }
           }
         ],
-        "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
+        "description": "The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.",
         "example": {
           "name": "Not signed in",
           "message": "Sign in to continue.",
@@ -1118,7 +1118,7 @@
             }
           }
         ],
-        "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
+        "description": "The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.",
         "example": {
           "name": "No access",
           "message": "You don't have permission to do this.",
@@ -1144,7 +1144,7 @@
             }
           }
         ],
-        "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
+        "description": "The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.",
         "example": {
           "name": "Not found",
           "message": "This resource does not exist or has been deleted.",
@@ -1170,7 +1170,7 @@
             }
           }
         ],
-        "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
+        "description": "The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
         "example": {
           "name": "Signed in as someone else",
           "message": "This link is for another account. Sign out, then open it again.",
@@ -1196,7 +1196,7 @@
             }
           }
         ],
-        "description": "The request body is larger than the limit for its content type (413): a JSON body, a file upload and any other body each have their own.",
+        "description": "The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.",
         "example": {
           "name": "Too large to save",
           "message": "Shorten it or split it up.",
@@ -1222,7 +1222,7 @@
             }
           }
         ],
-        "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
+        "description": "A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
         "example": {
           "name": "Too many attempts",
           "message": "Wait a moment, then try again.",
@@ -1318,21 +1318,10 @@
           "isSystemAdmin": {
             "type": "boolean",
             "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
-          },
-          "impersonator": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/UserMinimalBase"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The system admin acting as the user through an impersonation; null on the user's own session."
           }
         },
-        "required": ["user", "isSystemAdmin", "impersonator"],
-        "description": "The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.",
+        "required": ["user", "isSystemAdmin"],
+        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
         "example": {
           "user": {
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -1358,8 +1347,7 @@
             "lastSignInAt": "2024-05-02T20:53:18.498Z",
             "lastSeenAt": "2024-05-02T20:53:18.498Z"
           },
-          "isSystemAdmin": false,
-          "impersonator": null
+          "isSystemAdmin": false
         },
         "x-tags": ["data", "me", "cella"]
       },
@@ -1630,7 +1618,7 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["regular", "impersonation", "mfa"]
+                  "enum": ["regular", "mfa"]
                 },
                 "userId": {
                   "type": "string",
@@ -1696,11 +1684,7 @@
                 },
                 "revocationReason": {
                   "type": ["string", "null"],
-                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
-                },
-                "impersonatorSessionId": {
-                  "type": ["string", "null"],
-                  "format": "uuid"
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
                 },
                 "steppedUpAt": {
                   "type": ["string", "null"]
@@ -1737,7 +1721,6 @@
                 "revokedAt",
                 "revokedBy",
                 "revocationReason",
-                "impersonatorSessionId",
                 "steppedUpAt",
                 "steppedUpVia",
                 "isCurrent",
@@ -1820,7 +1803,6 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
-              "impersonatorSessionId": null,
               "steppedUpAt": null,
               "steppedUpVia": null,
               "isCurrent": true,
@@ -3243,9 +3225,13 @@
                         "required": ["key", "label"]
                       },
                       "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance"
+                    },
+                    "emailEnabled": {
+                      "type": "boolean",
+                      "description": "Whether the server has an email key: without one no email goes out"
                     }
                   },
-                  "required": ["restrictedMode", "federations"]
+                  "required": ["restrictedMode", "federations", "emailEnabled"]
                 }
               }
             }
@@ -3283,7 +3269,7 @@
         },
         "responses": {
           "200": {
-            "description": "Whether this browser is recognized for the address",
+            "description": "Browser recognition\n\nWhether this browser signed in to the account with this address before, by its device cookie.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3321,7 +3307,7 @@
         "x-rate-limiter": [],
         "responses": {
           "200": {
-            "description": "The address of the account the held challenge signs in to",
+            "description": "Pending sign-in address\n\nThe address of the account the held MFA challenge signs in to.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3556,7 +3542,7 @@
         "x-rate-limiter": ["spamLimiter"],
         "responses": {
           "204": {
-            "description": "Confirmation link sent to the invited address"
+            "description": "Confirmation link sent\n\nA new link, bound to the signed-in account, went to the invited address. Every older link stops working."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3572,90 +3558,6 @@
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/auth/impersonation/start": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "startImpersonation",
-        "tags": ["auth", "cella"],
-        "summary": "Start impersonating",
-        "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": ["userGuard", "sysAdminGuard"],
-        "x-rate-limiter": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "targetUserId": {
-                    "type": "string",
-                    "maxLength": 50
-                  }
-                },
-                "required": ["targetUserId"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Impersonating",
-            "headers": {
-              "Set-Cookie": {
-                "schema": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "required": true
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLargeError"
-          }
-        }
-      }
-    },
-    "/auth/impersonation/stop": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "stopImpersonation",
-        "tags": ["auth", "cella"],
-        "summary": "Stop impersonating",
-        "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
-        "responses": {
-          "204": {
-            "description": "Stopped impersonating"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
           }
         }
       }
@@ -3688,7 +3590,7 @@
         },
         "responses": {
           "204": {
-            "description": "Invitation email sent when the invitation is pending"
+            "description": "Accepted\n\nAn email goes out only when the id names a pending invitation. The answer is the same either way, so it tells nobody which invitations exist."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3758,7 +3660,7 @@
         },
         "responses": {
           "204": {
-            "description": "Accepted alike whether a link, a pointer to the institution or nothing was mailed"
+            "description": "Accepted\n\nThe same answer whether a sign-in link, a pointer to the institution's sign-in or nothing was mailed, so it does not tell whether the address has an account."
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3789,7 +3691,7 @@
         "x-rate-limiter": ["tokenLimiter"],
         "responses": {
           "200": {
-            "description": "The full address the held link signs in, as the confirm page shows it",
+            "description": "Pending sign-in address\n\nThe full address the held link signs in to, as the confirm page shows it.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5235,7 +5137,7 @@
         "x-rate-limiter": ["spamLimiter"],
         "responses": {
           "200": {
-            "description": "The address the link was sent to",
+            "description": "Recovery link sent\n\nThe body names the address the link went to.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5310,7 +5212,7 @@
                         "type": "string",
                         "enum": ["passkey", "totp", "email", "enroll"]
                       },
-                      "description": "What the user can offer to step up for the tier; empty while impersonating."
+                      "description": "What the user can offer to step up for the tier."
                     }
                   },
                   "required": ["steppedUp", "methods"]
@@ -6219,7 +6121,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": ["regular", "impersonation", "mfa"]
+                            "enum": ["regular", "mfa"]
                           },
                           "userId": {
                             "type": "string",
@@ -6285,11 +6187,7 @@
                           },
                           "revocationReason": {
                             "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
-                          },
-                          "impersonatorSessionId": {
-                            "type": ["string", "null"],
-                            "format": "uuid"
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
                           },
                           "steppedUpAt": {
                             "type": ["string", "null"]
@@ -6319,7 +6217,6 @@
                           "revokedAt",
                           "revokedBy",
                           "revocationReason",
-                          "impersonatorSessionId",
                           "steppedUpAt",
                           "steppedUpVia"
                         ]
@@ -6456,7 +6353,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Upload token with a scope for a user or organization",
+            "description": "Upload token\n\nIts storage prefix names the organization, when given, and the user; a newsletter image goes under the system prefix.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6893,7 +6790,7 @@
         },
         "responses": {
           "200": {
-            "description": "Number of notifications marked read",
+            "description": "Marked read\n\n`updated` is the number of notifications this request marked read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6999,7 +6896,7 @@
         },
         "responses": {
           "200": {
-            "description": "Updated notification preferences",
+            "description": "Preferences updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -7073,7 +6970,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Redirect to the confirmation page",
+            "description": "Redirect to confirmation",
             "headers": {
               "Location": {
                 "schema": {
@@ -7350,7 +7247,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Number of subscriptions removed",
+            "description": "Subscriptions removed\n\n`deleted` is the number removed, 0 when the endpoint belongs to another user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7649,7 +7546,7 @@
         "x-rate-limiter": ["syncReadLimiter"],
         "responses": {
           "200": {
-            "description": "Unseen counts per parent channel entity per entity type",
+            "description": "Unseen counts\n\nKeyed by parent channel entity id, then by product entity type.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10845,7 +10742,7 @@
         },
         "responses": {
           "200": {
-            "description": "Nothing created: rows an earlier attempt created (idempotent), and rejected ids",
+            "description": "Nothing created\n\nThis request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.",
             "content": {
               "application/json": {
                 "example": {
@@ -11730,7 +11627,7 @@
         },
         "responses": {
           "200": {
-            "description": "Attachment with its stored file",
+            "description": "Attachment with stored file",
             "content": {
               "application/json": {
                 "schema": {
@@ -11894,7 +11791,7 @@
             "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
-            "description": "Insufficient scope: the call needs a scope the token lacks, which the WWW-Authenticate challenge names",
+            "description": "Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.",
             "headers": {
               "WWW-Authenticate": {
                 "schema": {
@@ -12359,7 +12256,7 @@
         },
         "responses": {
           "200": {
-            "description": "What an invite would do with each address",
+            "description": "Invite outcomes\n\nOne outcome per address, judged from the members and invitations the caller can see.",
             "content": {
               "application/json": {
                 "example": {
