@@ -136,7 +136,7 @@ describe('csv export', () => {
         lastSeenAt: seenAt,
         counts: { memberships: {}, products: Object.fromEntries(statTypes.map((type) => [type, 3])), activity: { [statTypes[0]]: postedAt } },
       },
-      { id: 'user-12', name: 'Organization 12', email: null, membership: null, createdAt: null, lastSeenAt: null },
+      { id: 'user-12', name: 'Organization 12', email: null, membership: { role: 'admin' }, createdAt: null, lastSeenAt: null },
     ];
 
     const columns = columnsOf(() => members.useColumns(true, false, 'organization'));
@@ -144,7 +144,7 @@ describe('csv export', () => {
     expect(await csvLines(columns, rows)).toEqual([
       `c:name,c:email,c:role,c:mfa_short,c:created_at,c:last_seen_at,c:last_post,${cells(memberCountTypes, (type) => `c:${type}`)}`,
       `Tenant 48,ada@example.com,member,c:mfa_on,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
-      `Organization 12,-,-,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
+      `Organization 12,-,admin,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
     ]);
 
     // The MFA column is the admins' alone
