@@ -85,13 +85,11 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
           {/* One-step create names the account after its key; an account named otherwise shows here */}
           {account.name !== apiKey.name && <ExpandableTileDetail label={t('c:service_account')}>{account.name}</ExpandableTileDetail>}
           <ExpandableTileDetail label={t('c:role')}>{t(`c:${account.role}`)}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t('c:access')}>
+            {apiKey.scopes ? <ScopeBadges scopes={apiKey.scopes} /> : t('c:full_access')}
+          </ExpandableTileDetail>
           {!isLive && <ExpandableTileDetail label={t(`c:${status}`)}>{dateShort(keyEndedAt(apiKey))}</ExpandableTileDetail>}
           {isLive && apiKey.expiresAt && <ExpandableTileDetail label={t('c:expires_at')}>{dateShort(apiKey.expiresAt)}</ExpandableTileDetail>}
-          {showActivity && (
-            <ExpandableTileDetail label={t('c:last_used')}>
-              <LastUsed date={account.lastSeenAt} />
-            </ExpandableTileDetail>
-          )}
           {apiKey.createdBy && (
             <ExpandableTileDetail label={t('c:created_by')}>
               <CreatedBy actor={apiKey.createdBy} />
@@ -101,9 +99,6 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
             <DateTooltip date={apiKey.createdAt}>
               <span>{dateShort(apiKey.createdAt)}</span>
             </DateTooltip>
-          </ExpandableTileDetail>
-          <ExpandableTileDetail label={t('c:access')} wide>
-            {apiKey.scopes ? <ScopeBadges scopes={apiKey.scopes} /> : t('c:full_access')}
           </ExpandableTileDetail>
         </>
       }
