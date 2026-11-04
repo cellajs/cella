@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
+import type { ErrorKey } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
 import countries from '#json/countries.json';
 
@@ -191,7 +192,7 @@ export const locationSchema = z.object({ Location: z.string() });
  * @param errorType - Translation key, e.g. 'invalid_slug'.
  */
 export const refineWithType =
-  <T>(check: (val: T) => boolean, errorType: string) =>
+  <T>(check: (val: T) => boolean, errorType: ErrorKey) =>
   (val: T, ctx: z.RefinementCtx) => {
     if (!check(val)) {
       ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });

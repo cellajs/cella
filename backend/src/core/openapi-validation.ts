@@ -1,4 +1,5 @@
 import { appConfig } from 'shared';
+import type { ErrorKey } from '#/core/error';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { errorResponseComponents } from '#/schemas/error-response-schemas';
 
@@ -26,7 +27,7 @@ export const recordDocumentedErrors = (operationId: string, statuses: number[]) 
  * @returns Undefined for a documented status, a request no `createXRoute` route matched, or an answer no route documents
  * on its own: a server error, and the 409 `write_conflict` the database gives any transaction a concurrent one beat.
  */
-export const undocumentedErrorStatus = (operationId: string | undefined, status: number, type: string): string | undefined => {
+export const undocumentedErrorStatus = (operationId: string | undefined, status: number, type: ErrorKey): string | undefined => {
   if (!operationId || status >= 500 || type === 'write_conflict') return undefined;
   const documented = documentedErrorStatuses.get(operationId);
   if (!documented || documented.has(status)) return undefined;

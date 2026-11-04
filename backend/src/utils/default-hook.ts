@@ -17,7 +17,7 @@ export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
     // superRefine with refineWithType carries a custom type, which has its own texts; otherwise fall back to
     // `form.{code}` with the validator's message.
     const customType = code === 'custom' && 'params' in issue ? (issue.params?.type as ErrorKey | undefined) : undefined;
-    const type = customType ?? (`form.${code}` as ErrorKey);
+    const type = customType ?? (`form.${code}` satisfies ErrorKey);
 
     throw new AppError(400, type, 'error', { message: customType ? undefined : message, meta: { path: issue.path.join('.') } });
   }

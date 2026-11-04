@@ -78,7 +78,7 @@ interface ClientError {
   name: string;
   status: number;
   /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
-  type: string;
+  type: ErrorKey;
   severity: Severity;
   entityType?: AppError['entityType'];
   meta?: AppError['meta'];

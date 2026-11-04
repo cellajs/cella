@@ -33,7 +33,7 @@ type AppErrorOpts = {
 export class AppError extends Error {
   override name: Error['name'];
   status: AppErrorStatus;
-  type: ErrorSchemaType['type'];
+  type: ErrorKey;
   severity: ErrorSchemaType['severity'];
   willRedirect: boolean;
   entityType?: ErrorSchemaType['entityType'];
