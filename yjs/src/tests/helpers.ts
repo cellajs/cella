@@ -4,12 +4,12 @@ import type { AddressInfo } from 'node:net';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
 import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import type { SocketContext } from '../server/upgrade';
 
 interface TokenOptions {

@@ -14,6 +14,18 @@ export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
 export type SeenTrackedProductType = (typeof appConfig.seenTrackedProductTypes)[number];
 
+/** A collaborative document: its entity, and the tenant its rows are stored and read under. */
+export interface YjsDocKey {
+  entityType: ProductEntityType;
+  entityId: string;
+  tenantId: string;
+}
+
+/** A document key plus its organization: the one its rows carry, and its token and HTTP routes check. */
+export interface YjsDocScope extends YjsDocKey {
+  organizationId: string;
+}
+
 // App configuration types
 
 type MenuStructureEntry = (typeof appConfig.menuStructure)[number];

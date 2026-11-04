@@ -1,12 +1,13 @@
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { yjsCloseCodes, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { z } from 'zod';
 import { maxLength } from '#/db/utils/constraints';
 import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
-import type { LogNotice, LogRow, YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import type { LogNotice, LogRow } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import {
   docKey,

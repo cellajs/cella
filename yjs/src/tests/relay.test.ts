@@ -1,6 +1,6 @@
+import type { YjsDocScope } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { yjsAwarenessMaxStateBytes } from '../constants';
 import {
   awarenessClientIds,

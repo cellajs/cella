@@ -2,7 +2,7 @@ import { hashKey, onlineManager, type QueryState } from '@tanstack/react-query';
 import i18n from 'i18next';
 import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
-import { appConfig } from 'shared';
+import { appConfig, type YjsDocScope } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
 import { yjsCloseCodes, yjsFragmentName, yjsMessageTypes, yjsSyncSubtypes } from 'shared/utils/yjs-protocol';
 import { Awareness } from 'y-protocols/awareness';
@@ -26,7 +26,7 @@ import {
 import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore } from '~/modules/user/user-store';
-import { getLocalUserDb, type UnsaveableReason, type YDocKey, type YDocRecord, type YjsDocScope } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type YDocKey, type YDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const gracePeriodMs = 30_000;

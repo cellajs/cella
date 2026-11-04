@@ -1,3 +1,5 @@
+import { isProduct, type YjsDocKey } from 'shared';
+
 // Database-free: the Yjs log's limits, keys, row shapes and notice codec, which the relay shares through `#/`.
 
 /**
@@ -27,18 +29,6 @@ export const yjsMaxServerRowIds = 10_000;
  */
 export const yjsHttpChunkBytes = 512 * 1024;
 
-/** A collaborative document: its entity, and the tenant its rows are stored and read under. */
-export interface YjsDocKey {
-  entityType: string;
-  entityId: string;
-  tenantId: string;
-}
-
-/** A document key plus the organization its rows carry. */
-export interface YjsDocScope extends YjsDocKey {
-  organizationId: string;
-}
-
 /** One logged update, in arrival order: a client's, under its sender, or a server-origin one with no user. */
 export interface LogRow {
   id: number;
@@ -58,9 +48,7 @@ export interface YjsDocumentRead {
  * retired. Keys only. A relay acts on a notice holding any row it has not relayed: rows of one batch can commit out of
  * id order, so a receiver may have read the newest while an older one was still uncommitted.
  */
-export type LogNotice =
-  | { tenantId: string; entityType: string; entityId: string; logIds: number[] }
-  | { tenantId: string; entityType: string; entityId: string; retired: true };
+export type LogNotice = YjsDocKey & ({ logIds: number[] } | { retired: true });
 
 /** The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. */
 export function encodeLogNotice(notice: LogNotice): string {
@@ -72,7 +60,10 @@ export function encodeLogNotice(notice: LogNotice): string {
 const isKey = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const isLogId = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 
-/** The notice a payload carries, or null for anything else. Never throws: any session on the database may notify on the channel. */
+/**
+ * The notice a payload carries, or null for anything else, a type that is no product type of this app included. Never
+ * throws: any session on the database may notify on the channel.
+ */
 export function decodeLogNotice(payload: string): LogNotice | null {
   let parsed: unknown;
   try {
@@ -82,7 +73,7 @@ export function decodeLogNotice(payload: string): LogNotice | null {
   }
   if (typeof parsed !== 'object' || parsed === null) return null;
   const { t, e, i, ids, retired } = parsed as Record<string, unknown>;
-  if (!isKey(t) || !isKey(e) || !isKey(i)) return null;
+  if (!isKey(t) || !isKey(e) || !isProduct(e) || !isKey(i)) return null;
   const key = { tenantId: t, entityType: e, entityId: i };
   if (retired === true) return { ...key, retired: true };
   return Array.isArray(ids) && ids.length > 0 && ids.every(isLogId) ? { ...key, logIds: ids } : null;

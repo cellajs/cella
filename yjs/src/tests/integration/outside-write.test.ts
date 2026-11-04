@@ -4,7 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
-import { hierarchy } from 'shared';
+import { hierarchy, type YjsDocScope } from 'shared';
 import { testDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
@@ -12,7 +12,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { createSignedToken, deferred, startRelayServer, until } from '../helpers';
 import {
   cleanupSeed,

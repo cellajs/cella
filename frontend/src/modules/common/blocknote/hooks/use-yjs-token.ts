@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import type { YjsDocScope } from 'shared';
 import { yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
-import type { YjsDocScope } from '~/query/local-user-db';
 
 /**
  * One entity's Yjs token while `enabled`, read by the connection layer from the same query, and a {@link yjsTokenRefusal}

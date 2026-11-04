@@ -1,10 +1,9 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
-import { MissingAncestorError } from 'shared';
+import { MissingAncestorError, type YjsDocScope } from 'shared';
 import { yjsCloseCodes, yjsMessageTypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket, WebSocketServer } from 'ws';
-import type { YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { docKey, yjsPendingQueueCap } from '../constants';
 import { authorizeDocument } from '../data/permissions';
 import { log } from '../lib/pino';

@@ -1,7 +1,8 @@
 import { and, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import type { Tx } from '#/db/create-connection';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import type { LogRow, YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { collectGarbage } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';

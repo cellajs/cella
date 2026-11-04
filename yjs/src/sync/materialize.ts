@@ -1,5 +1,5 @@
+import type { YjsDocKey, YjsDocScope } from 'shared';
 import { stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
-import type { YjsDocKey, YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { docKey } from '../constants';
 import { env } from '../env';
 import { log } from '../lib/pino';

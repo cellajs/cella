@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encodeLogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
+import { encodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { flushMicrotasks } from './helpers';
 
 /** A pg.Client stand-in: `connect` and `LISTEN` succeed unless a test says otherwise, and the test drives its events. */
@@ -38,7 +38,7 @@ const { logListenerStatus, startLogListener, stopLogListener } = await import('.
 
 const onNotice = vi.fn();
 const onListening = vi.fn();
-const notice = { tenantId: 'tenant-1', entityType: 'attachment', entityId: 'entity-1', logIds: [7] };
+const notice = { tenantId: 'tenant-1', entityType: 'attachment', entityId: 'entity-1', logIds: [7] } satisfies LogNotice;
 
 beforeEach(() => {
   vi.useFakeTimers();

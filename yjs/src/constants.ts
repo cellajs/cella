@@ -1,4 +1,4 @@
-import type { YjsDocKey } from '#/modules/yjs/helpers/yjs-log';
+import type { YjsDocKey } from 'shared';
 
 /** Grace period after the last client leaves before the session's log is compacted and the session forgotten. */
 export const yjsCleanupDelayMs = 5 * 60 * 1000;

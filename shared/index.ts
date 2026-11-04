@@ -93,6 +93,8 @@ export type {
   TrackedEventType,
   UploadTemplateId,
   UserFlags,
+  YjsDocKey,
+  YjsDocScope,
 } from './types.ts';
 export { actionToVerb, activityActions, menuSections, severityLevels, trackedEventTypes } from './types.ts';
 

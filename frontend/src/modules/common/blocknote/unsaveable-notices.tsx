@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { YjsDocScope } from 'shared';
 import { yjsFragmentName } from 'shared/utils/yjs-protocol';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
@@ -11,7 +12,7 @@ import { CopiedIcon } from '~/modules/common/copied-icon';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord, type YjsDocScope } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const reasonTexts: Record<UnsaveableReason, TKey> = {
