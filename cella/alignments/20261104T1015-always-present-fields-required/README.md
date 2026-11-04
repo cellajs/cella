@@ -1,6 +1,6 @@
 ---
 breaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: compiler
 grep: last_seen_at, getApiIncludedMembership, adoptGeneration, getSeenChannelId
 generate: true
@@ -16,7 +16,7 @@ Each type allowed a value no writer ever leaves out, so readers carried guards a
 
 ## Blast radius
 
-Touches the database: two Yjs columns and one push column. Apps that never build tokens, change frames, catchup answers or actor refs by hand only regenerate. Test fixtures that pass `null` for these fields stop compiling. No `clientCacheVersion` bump: no cached query changes shape.
+Touches the database: two Yjs columns and one push column. Apps that never build tokens, change frames, catchup answers or actor refs by hand only regenerate. Test fixtures that pass `null` for these fields stop compiling. Bumps `clientCacheVersion`: a cached invitation list may hold a row without its creator.
 
 ## Run
 
