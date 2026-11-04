@@ -1,4 +1,5 @@
 import type { Context } from 'hono';
+import type { Env } from '#/core/context';
 import { env } from '#/env';
 import { getIp } from '#/utils/get-ip';
 
@@ -6,7 +7,7 @@ import { getIp } from '#/utils/get-ip';
 const systemAdminAllowList = (): string[] => (env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(','));
 
 /** Whether the request's address is on the system admin allow-list. */
-export const isSystemAccessAllowed = (ctx: Context): boolean => {
+export const isSystemAccessAllowed = (ctx: Context<Env>): boolean => {
   const allowList = systemAdminAllowList();
   if (allowList.includes('*')) return true;
   const ip = getIp(ctx);

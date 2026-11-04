@@ -1,10 +1,11 @@
 import type { Context } from 'hono';
+import type { Env } from '#/core/context';
 
 /**
  * Single-trusted-proxy topology: the last forwarding entry is the address exactly one proxy appended for its peer,
  * with the socket address as the fallback. Behind no proxy, or one that passes the client's header through, the client chooses it.
  */
-export const getIp = (ctx: Context): string | null => {
+export const getIp = (ctx: Context<Env>): string | null => {
   const xff = ctx.req.header('x-forwarded-for');
   if (xff) {
     const client = xff
