@@ -205,6 +205,14 @@ export type StreamSignal = {
 };
 
 /**
+ * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export type StreamError = {
+  code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
+  message: string;
+};
+
+/**
  * The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.
  */
 export type BadRequestError = ApiError & {

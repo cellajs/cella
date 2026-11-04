@@ -1,7 +1,8 @@
 import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { endStream, type StreamErrorPayload, writeError } from '#/modules/entities/stream/helpers';
+import { endStream, writeError } from '#/modules/entities/stream/helpers';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
+import type { StreamErrorPayload } from '#/schemas';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 

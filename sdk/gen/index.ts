@@ -619,6 +619,7 @@ export type {
   StepUpResponse,
   StepUpResponses,
   StreamChange,
+  StreamError,
   StreamSignal,
   StxBase,
   SystemInviteData,

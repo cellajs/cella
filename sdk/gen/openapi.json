@@ -993,6 +993,25 @@
         },
         "x-tags": ["data", "entities", "cella"]
       },
+      "StreamError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "description": "Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
+        "example": {
+          "code": "session_replaced",
+          "message": "Session replaced"
+        },
+        "x-tags": ["data", "entities", "cella"]
+      },
       "BadRequestError": {
         "allOf": [
           {

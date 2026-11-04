@@ -1,5 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
-import { postAppCatchup, type StreamChange, type StreamSignal } from 'sdk';
+import { postAppCatchup, type StreamChange, type StreamError, type StreamSignal } from 'sdk';
+import { zStreamError } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { workerAwayPing } from 'shared/stream-ping';
 import { devtools } from 'zustand/middleware';
@@ -45,6 +46,8 @@ const changeBufferCap = 500;
 const catchupTimeoutMs = 60_000;
 /** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
 const streamSilenceMs = 75_000;
+/** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
+const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
 
 interface StreamStoreState {
   state: StreamState;
@@ -370,8 +373,8 @@ class StreamManager {
       if (!(event instanceof MessageEvent) || !event.data) return;
       noteActivity();
       try {
-        const payload: { code?: string; message?: string } = JSON.parse(event.data);
-        const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
+        const payload = zStreamError.parse(JSON.parse(event.data));
+        const permanent = finalStreamErrorCodes.has(payload.code);
         // Any other end fails the stream as a transport error does, so a server that keeps ending it before catchup opens the circuit.
         if (!permanent) return this.handleStreamFailure(`Server stream error: ${payload.code}`);
         console.debug(`[${streamName}] Server stream error:`, payload);
@@ -379,7 +382,7 @@ class StreamManager {
         this.store.getState().setState('error');
         this.openCircuit(`server error: ${payload.code}`, true);
       } catch {
-        // Malformed payload, let onerror handle the eventual transport close.
+        // Malformed payload or a code this release does not know: let onerror handle the eventual transport close.
       }
     });
 

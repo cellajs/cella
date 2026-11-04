@@ -50,6 +50,7 @@ export {
   type CatchupOrganizationSummary,
   type CatchupView,
   type StreamChange,
+  type StreamErrorPayload,
   type StreamSignal,
   streamCatchupBodySchema,
 } from '#/schemas/stream-schemas';

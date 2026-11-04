@@ -148,6 +148,14 @@ export const zStreamSignal = z.object({
 });
 
 /**
+ * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export const zStreamError = z.object({
+  code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
+  message: z.string(),
+});
+
+/**
  * The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.
  */
 export const zApiError = z.object({

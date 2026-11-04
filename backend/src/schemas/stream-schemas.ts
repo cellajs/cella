@@ -3,7 +3,7 @@ import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { maxStreamChangeIds } from '#/modules/entities/stream/helpers';
 import { validIdSchema } from '#/schemas/common-schemas';
-import { mockStreamChange, mockStreamSignal } from '#/schemas/stream-mocks';
+import { mockStreamChange, mockStreamError, mockStreamSignal } from '#/schemas/stream-mocks';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 
 /** The client patches every host column its own productEmbeddings config declares for the embedded product. */
@@ -116,6 +116,26 @@ export const streamSignalSchema = z
   });
 
 export type StreamSignal = z.infer<typeof streamSignalSchema>;
+
+/**
+ * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized` as final;
+ * `session_replaced` means the browser holds a newer session to reconnect with, and `access_changed` that the session
+ * holds but the stream's access must be computed again. `resync` means the CDC worker corrected or rebuilt its books:
+ * the client reconnects, and its catch-up brings the new generation.
+ */
+export const streamErrorSchema = z
+  .object({
+    code: z.enum(['unauthorized', 'session_replaced', 'access_changed', 'resync']),
+    message: z.string(),
+  })
+  .openapi('StreamError', {
+    description:
+      'Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.',
+    example: mockStreamError(),
+    'x-tags': schemaTags('data', 'entities', 'cella'),
+  });
+
+export type StreamErrorPayload = z.infer<typeof streamErrorSchema>;
 
 /** One client view: the org-sequence cursor it has caught up to for one product type of one organization. */
 const catchupViewSchema = z.object({
