@@ -153,36 +153,37 @@ function syncSubtype(data: unknown): number | null {
 }
 
 /** A `ws` socket that stamps every Step2 and Update frame it sends, which the relay answers with `Saved` in order. */
-function ledgerSocket(client: Client): typeof globalThis.WebSocket {
-  const Base = WebSocket as unknown as new (address: string, protocols?: string | string[]) => { send(data: unknown): void };
-  class LedgerSocket extends Base {
-    constructor(address: string, protocols?: string | string[]) {
-      super(address, protocols);
-      client.unsaved = [];
-      client.sockets++;
+function ledgerSocket(ledger: Pick<Client, 'unsaved' | 'sockets'>) {
+  // ws implements the WHATWG socket y-websocket takes, which @types/ws does not declare; ws stays for its handshake errors, which carry the HTTP status.
+  const Base = WebSocket as unknown as typeof globalThis.WebSocket;
+  return class LedgerSocket extends Base {
+    constructor(url: string | URL, protocols?: string | string[]) {
+      super(url, protocols);
+      ledger.unsaved = [];
+      ledger.sockets++;
     }
 
-    send(data: unknown) {
+    send(data: Parameters<InstanceType<typeof Base>['send']>[0]) {
       const subtype = syncSubtype(data);
-      if (subtype === SYNC.step2 || subtype === SYNC.update) client.unsaved.push(performance.now());
+      if (subtype === SYNC.step2 || subtype === SYNC.update) ledger.unsaved.push(performance.now());
       super.send(data);
     }
-  }
-  return LedgerSocket as unknown as typeof globalThis.WebSocket;
+  };
 }
 
 function openClient(run: RunState, role: Client['role'], docIndex: number, token: string): Client {
   const doc = new Y.Doc();
-  const client = { role, docIndex, doc, unsaved: [], saved: 0, sockets: 0, generation: null } as unknown as Client;
+  // The socket class takes the ledger before the provider exists; the client is that same object, completed with the provider.
+  const ledger: Pick<Client, 'unsaved' | 'sockets'> = { unsaved: [], sockets: 0 };
   const provider = new WebsocketProvider(YJS_URL, attachmentId(docIndex), doc, {
     connect: false,
     // Node has BroadcastChannel: without this, clients in this process would sync past the relay.
     disableBc: true,
     params: { token, entityType: 'attachment', tenantId: TENANT_ID },
     maxBackoffTime: 30_000,
-    WebSocketPolyfill: ledgerSocket(client),
+    WebSocketPolyfill: ledgerSocket(ledger),
   });
-  client.provider = provider;
+  const client: Client = Object.assign(ledger, { role, docIndex, doc, provider, saved: 0, generation: null });
   provider.messageHandlers[MESSAGE.generation] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (client.generation !== null && client.generation !== generation) bump(run, 'yjs.generation_changes');
@@ -200,7 +201,7 @@ function openClient(run: RunState, role: Client['role'], docIndex: number, token
     if (event) bump(run, `yjs.close.${event.code}`);
   });
   provider.on('connection-error', (event) => {
-    const status = /\b(\d{3})\b/.exec(String((event as unknown as { message?: string }).message ?? ''))?.[1];
+    const status = /\b(\d{3})\b/.exec('message' in event ? String(event.message) : '')?.[1];
     bump(run, `yjs.connection_error${status ? `.${status}` : ''}`);
   });
   if (role === 'viewer') {
