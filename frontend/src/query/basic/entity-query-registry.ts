@@ -1,4 +1,4 @@
-import { type EntityType, isProduct, type ProductEntityType } from 'shared';
+import { type EntityType, isProduct, type ProductEntityType, type SeqRange } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import type { ItemData } from '~/query/basic/types';
 
@@ -15,11 +15,7 @@ export interface EntityQueryKeys {
 /** The backend's max limit for range fetches: a response of exactly this size may truncate the range. */
 export const syncChunkSize = 1000;
 
-/** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
-export interface SeqRange {
-  afterSeq: number;
-  untilSeq: number;
-}
+export type { SeqRange };
 
 /** The org sequence position a product row carries, which `ItemData` does not type. */
 export function seqOf(row: ItemData): number | undefined {

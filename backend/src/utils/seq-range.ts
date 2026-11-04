@@ -1,12 +1,8 @@
 import type { Column, SQL } from 'drizzle-orm';
 import { asc, gt, isNull, lte } from 'drizzle-orm';
-import { appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { appConfig, hierarchy, type ProductEntityType, type SeqRange } from 'shared';
 
-/** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
-export interface SeqRange {
-  afterSeq: number;
-  untilSeq: number;
-}
+export type { SeqRange };
 
 /** The range a product list query asks for; `productListQuerySchema` admits both bounds or neither. */
 export const seqRangeOf = ({ afterSeq, untilSeq }: { afterSeq?: number; untilSeq?: number }): SeqRange | undefined =>

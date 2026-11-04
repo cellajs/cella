@@ -85,6 +85,7 @@ export type {
   RelatedChannelType,
   ResourceType,
   SeenTrackedProductType,
+  SeqRange,
   Severity,
   SystemRole,
   Theme,
