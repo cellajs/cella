@@ -121,7 +121,7 @@ interface UpdateMembershipOpts {
   values: Partial<typeof membershipsTable.$inferInsert>;
 }
 
-/** Updates a membership of the request's organization and returns the row; undefined when none has the id. */
+/** Updates a membership of the request's organization and returns the row; null when none has the id. */
 export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMembershipOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
@@ -129,7 +129,7 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMe
     .set(values)
     .where(and(eq(membershipsTable.id, id), eq(membershipsTable.organizationId, organizationId)))
     .returning();
-  return updated;
+  return updated ?? null;
 };
 
 interface FindMembersPaginatedOpts {
