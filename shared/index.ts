@@ -82,7 +82,6 @@ export type {
   OrganizationRole,
   OrganizationSetupConfig,
   ProductEntityType,
-  PropagationHint,
   RelatedChannelType,
   ResourceType,
   SeenTrackedProductType,

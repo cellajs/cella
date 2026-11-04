@@ -126,14 +126,3 @@ type HierarchyNullableMap = typeof hierarchy._nullableMap;
 export type NullableAncestorType<E extends string> = E extends keyof HierarchyNullableMap ? HierarchyNullableMap[E] : never;
 
 export type EntityActionType = (typeof appConfig.entityActions)[number];
-
-type ProductEmbedding = (typeof appConfig.productEmbeddings)[number];
-
-/** Which host products need cache updates when an embedded product changes. */
-export type PropagationHint = {
-  embeddedProduct: ProductEmbedding['embeddedProduct'];
-  hostProduct: ProductEmbedding['hostProduct'];
-  hostColumn: ProductEmbedding['hostColumn'];
-  update: string[];
-  remove: string[];
-};
