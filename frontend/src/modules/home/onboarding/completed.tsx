@@ -45,10 +45,10 @@ export function OnboardingCompleted() {
       <Confetti />
 
       {user.userFlags.finishedOnboarding && (
-        <UndoIcon strokeWidth={0.1} className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24" />
+        <UndoIcon strokeWidth={0.1} className="text-primary -mt-52 -mb-12 size-100 scale-y-75 rotate-30 max-md:hidden md:-translate-x-24" />
       )}
-      <h1 className="font-bold text-3xl">{t('c:onboarding_completed')}</h1>
-      <p className="max-w-md pb-8 text-foreground text-xl md:text-2xl md:leading-9">{t('c:onboarding_completed.text')}</p>
+      <h1 className="text-3xl font-bold">{t('c:onboarding_completed')}</h1>
+      <p className="text-foreground max-w-md pb-8 text-xl md:text-2xl md:leading-9">{t('c:onboarding_completed.text')}</p>
 
       {/* Both actions appear together, once the organization list has settled and the flag is set: neither moves under the pointer. */}
       {user.userFlags.finishedOnboarding && (

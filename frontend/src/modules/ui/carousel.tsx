@@ -250,7 +250,7 @@ export function CarouselDots({ className, size, gap, ...props }: CarouselDotsPro
   }, [api]);
 
   return (
-    // ::before widens the hover zone without layout (z-10 lifts it over a device bezel); the positioned buttons paint above it and keep their clicks.
+    // ::before widens the hover zone (z-10 lifts it over a device bezel); the positioned buttons still paint above it
     <div
       role="tablist"
       className={cn(
@@ -273,7 +273,7 @@ export function CarouselDots({ className, size, gap, ...props }: CarouselDotsPro
           <span
             aria-hidden="true"
             className={cn(
-              'pointer-coarse:size-[45%] size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-focus-visible/dots:size-[45%]',
+              'size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-focus-visible/dots:size-[45%] pointer-coarse:size-[45%]',
               current === index ? 'bg-foreground' : 'bg-muted-foreground/40 group-hover/dot:bg-muted-foreground',
             )}
           />

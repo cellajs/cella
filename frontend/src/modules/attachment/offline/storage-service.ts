@@ -196,7 +196,7 @@ class AttachmentStorageService {
     }
 
     const blob = file.data;
-    const size = file.size ?? blob.size ?? 0;
+    const size = file.size ?? blob.size;
 
     // Fall back to file.id while no attachment id exists yet.
     const actualAttachmentId = attachmentId || file.id;

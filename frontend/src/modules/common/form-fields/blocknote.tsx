@@ -6,7 +6,7 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
-  /** Omit to disable file/media uploads (the editor renders no file panel without it). */
+  /** Omit to disable uploads */
   baseFilePanelProps?: BaseUppyFilePanelProps;
 };
 export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {

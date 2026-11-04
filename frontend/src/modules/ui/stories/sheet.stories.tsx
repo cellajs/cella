@@ -18,15 +18,15 @@ const meta: Meta<typeof SheetContent> = {
     <Sheet>
       <SheetTrigger>Open</SheetTrigger>
       <SheetContent {...args}>
-        <SheetHeader className="with-close-btn">
+        <SheetHeader>
           <SheetTitle>Are you absolutely sure?</SheetTitle>
-          <SheetDescription>
-            This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-          </SheetDescription>
         </SheetHeader>
+        <SheetDescription className="px-4 pb-4">
+          This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+        </SheetDescription>
         <SheetFooter>
           <SheetClose className="hover:underline">Cancel</SheetClose>
-          <SheetClose className="rounded bg-primary px-4 py-2 text-primary-foreground">Submit</SheetClose>
+          <SheetClose className="bg-primary text-primary-foreground rounded px-4 py-2">Submit</SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>

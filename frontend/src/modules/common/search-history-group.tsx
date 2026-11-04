@@ -27,12 +27,12 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
         <ComboboxItem key={search} value={{ kind: 'history', value: search } satisfies HistoryEntry} className="group/recent justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <SearchRowIcon>
-              <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
+              <HistoryIcon className="text-muted-foreground size-4 shrink-0" />
             </SearchRowIcon>
             <span className="truncate font-medium">{search}</span>
           </div>
           <div className="flex items-center">
-            <span className="mx-3 text-faint-foreground text-xs max-sm:hidden">{index}</span>
+            <span className="text-faint-foreground mx-3 text-xs max-sm:hidden">{index}</span>
             <SearchRecentRemoveButton onRemove={() => onRemove(search)} />
           </div>
         </ComboboxItem>

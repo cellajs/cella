@@ -8,7 +8,6 @@ import { cn } from '~/utils/cn';
 interface IndicatorBarProps {
   /** Shared by the bars of one list, so the bar springs from row to row. */
   layoutId: string;
-  /** False renders a static bar. */
   animate?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -16,7 +15,7 @@ interface IndicatorBarProps {
 
 /** Bar that marks the active row of a section list. */
 export function IndicatorBar({ layoutId, animate = true, className, style }: IndicatorBarProps) {
-  const barClassName = cn('absolute left-2 ml-px w-[0.20rem] rounded-full bg-primary', className);
+  const barClassName = cn('bg-primary absolute left-2 ml-px w-[0.20rem] rounded-full', className);
   if (!animate) return <span className={barClassName} style={style} />;
 
   return (
@@ -31,7 +30,7 @@ const groupClassNames = {
 };
 
 interface SpyNavItemProps {
-  /** Section id: link hash and data-spy-link target. */
+  /** Section id. */
   id: string;
   isActive: boolean;
   layoutId: string;
@@ -52,7 +51,7 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
         variant="ghost"
         size="sm"
         className={cn(
-          'focus-inset h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal text-muted-foreground',
+          'focus-inset text-muted-foreground h-auto min-h-8 w-full justify-start gap-2 py-1.5 text-left font-normal whitespace-normal',
           groupClassName.active,
           className,
         )}

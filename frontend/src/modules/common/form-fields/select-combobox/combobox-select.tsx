@@ -25,9 +25,8 @@ import { InputGroupAddon } from '~/modules/ui/input-group';
 export interface ComboboxOption {
   value: string;
   label: string;
-  /** Leads the option's row, and the picked value in a closed field. */
   icon?: ReactNode;
-  /** Muted text closing the row, and the picked value in a closed searchable field, such as an offset. */
+  /** Muted text closing the row, such as an offset */
   detail?: string;
   /** Text the search matches besides the label, such as a timezone's id and name. */
   keywords?: string;
@@ -142,7 +141,7 @@ export function ComboboxSelect<TOption extends ComboboxOption>({
               <span className="truncate">{selectedOption.label}</span>
             </div>
           ) : (
-            <span className="truncate text-muted-foreground">{triggerText}</span>
+            <span className="text-muted-foreground truncate">{triggerText}</span>
           )}
         </ComboboxPrimitive.Trigger>
       )}
@@ -174,7 +173,6 @@ interface ComboboxFormFieldProps<TFieldValues extends FieldValues, TOption exten
     Omit<ComboboxSelectProps<TOption>, 'value' | 'onChange' | 'disabled' | 'searchableTrigger'> {
   /** Without one the field renders an empty label. */
   label?: string;
-  /** Shows the required star on the label. */
   required?: boolean;
   /** Runs after the field takes the picked value, an empty string once cleared. */
   onSelect?: (value: string) => void;

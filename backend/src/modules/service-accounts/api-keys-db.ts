@@ -54,6 +54,6 @@ const { hash: _hash, ...safeColumns } = getColumns(apiKeysTable);
 export const apiKeySafeColumns = safeColumns;
 
 /** Includes the hash; use only in the guard. */
-export type UnsafeApiKeyModel = typeof apiKeysTable.$inferSelect;
+type UnsafeApiKeyModel = typeof apiKeysTable.$inferSelect;
 export type InsertApiKeyModel = typeof apiKeysTable.$inferInsert;
 export type ApiKeyModel = Omit<UnsafeApiKeyModel, 'hash'>;

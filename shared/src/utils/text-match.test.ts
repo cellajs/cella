@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match';
+import { findMatchRanges, foldText, matchesTerms, parseTerms, trimAroundMatch } from './text-match.ts';
 
 describe('foldText', () => {
   it('lowercases and strips accents', () => {

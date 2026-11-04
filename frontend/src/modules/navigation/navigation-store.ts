@@ -41,9 +41,6 @@ interface NavigationStoreState {
   navSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
   toggleNavSheetPanel: (panel: string) => void;
 
-  navSheetHelpOpen: boolean; // Descriptions of the open panel or panel drawer show; a panel toggle or a closed sheet resets it
-  setNavSheetHelpOpen: (navSheetHelpOpen: boolean) => void;
-
   floatingNavActive: boolean; // Floating nav is visible, which hides the bottom bar
   setFloatingNavActive: (floatingNavActive: boolean) => void;
 
@@ -64,7 +61,6 @@ interface InitStore
     | 'keepOpenPreference'
     | 'floatingNavActive'
     | 'navSheetPanel'
-    | 'navSheetHelpOpen'
   > {}
 
 const maxRecentSelections = 6;
@@ -81,7 +77,6 @@ const initStore: InitStore = {
   floatingNavActive: false,
   activeSections: null,
   navSheetPanel: null,
-  navSheetHelpOpen: false,
 };
 
 export const useNavigationStore = create<NavigationStoreState>()(
@@ -128,7 +123,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.navSheetOpen = navSheetOpen;
               if (!navSheetOpen) {
                 state.navSheetPanel = null;
-                state.navSheetHelpOpen = false;
                 return;
               }
               state.navSheetOrganizationId = organizationId;
@@ -163,12 +157,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           toggleNavSheetPanel: (panel) => {
             set((state) => {
               state.navSheetPanel = state.navSheetPanel === panel ? null : panel;
-              state.navSheetHelpOpen = false;
-            });
-          },
-          setNavSheetHelpOpen: (navSheetHelpOpen) => {
-            set((state) => {
-              state.navSheetHelpOpen = navSheetHelpOpen;
             });
           },
           reset: () => set(initStore),

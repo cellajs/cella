@@ -7,9 +7,9 @@ import { TagBadges, TagHashLink, TagTable } from '~/modules/docs/tag-table';
 
 interface TagSchemasTableProps {
   schemas: GenComponentSchema[];
-  /** Schema-kind tag name for setting the `schemaTag` search param on row click. */
+  /** Set as the `schemaTag` search param on row click. */
   tagName: string;
-  /** Tag kinds (e.g., 'module', 'owner') to render as dynamic columns. */
+  /** A column each, e.g. 'module', 'owner'. */
   tagKinds: string[];
   onPrerender?: () => void;
 }

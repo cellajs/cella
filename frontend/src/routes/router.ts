@@ -6,6 +6,7 @@ import { appStreamManager } from '~/query/realtime/stream-manager';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
 import { createNotFoundComponent } from '~/routes/-route-utils';
 import { setRouter } from '~/routes/-router-instance';
+import { parseSearch, stringifySearch } from '~/routes/-search-serializer';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { setHasNavigated, setSkipPageEnter } from '~/utils/nav-transition';
@@ -19,6 +20,9 @@ export const router = createRouter({
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,
+  // Every search value is a string and a list its comma-separated values; a route schema coerces the rest
+  parseSearch,
+  stringifySearch,
   // Covers not-founds scoped to an intermediate route; the root notFoundComponent only handles the root match.
   defaultNotFoundComponent: createNotFoundComponent('public'),
 });

@@ -20,7 +20,7 @@ export function Textarea({ className, autoResize = false, ref, ...props }: Texta
   return (
     <textarea
       data-slot="textarea"
-      className={cn(inputClass, 'field-sizing-content flex min-h-16', autoResize && 'resize-none overflow-hidden', className)}
+      className={cn(inputClass, 'flex field-sizing-content min-h-16', autoResize && 'resize-none overflow-hidden', className)}
       ref={setRefs}
       {...props}
     />

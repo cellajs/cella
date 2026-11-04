@@ -5,7 +5,7 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
-  'focus-effect inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent bg-clip-padding font-medium text-sm transition-colors disabled:pointer-events-none disabled:opacity-50',
+  'focus-effect inline-flex items-center justify-center gap-2 rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega; the neutral hovers take the one
@@ -24,10 +24,10 @@ export const buttonVariants = cva(
         ghost: 'hover:bg-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
-        cell: 'group/cell-button flex w-full justify-start font-normal text-foreground-soft hover:text-foreground focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',
+        cell: 'group/cell-button text-foreground-soft hover:text-foreground flex w-full justify-start font-normal focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',
         input: 'border-input bg-background aria-invalid:border-destructive',
-        // A list row in a DrawerRowGroup, as in the menu sheet: pressing fills it, a selected one reads medium; only a DrawerRowSeparator between groups draws a line
-        row: 'relative w-full justify-start gap-3 font-normal text-md active:bg-accent aria-pressed:font-medium',
+        // A list row in a DrawerRowGroup, as in the menu sheet
+        row: 'text-md active:bg-accent relative w-full justify-start gap-3 font-normal aria-pressed:font-medium',
       },
       soft: { true: '', false: '' },
       // Feedback while held (the press utility); input-styled buttons stay put like the fields they sit among, rows show a fill
@@ -60,7 +60,7 @@ export const buttonVariants = cva(
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/80' },
       { variant: 'info', soft: false, className: 'bg-info text-info-foreground hover:bg-info/80' },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/80' },
-      // A row's height and inset outrank the size variant: about 52px on a phone, a native action sheet row.
+      // A row's height and inset outrank the size variant, sized like a native action sheet row
       { variant: 'row', className: 'h-11 px-4' },
       // A disabled solid fill is a flat tint, so it can't read as a live secondary button; a busy one keeps its fill under the spinner.
       {

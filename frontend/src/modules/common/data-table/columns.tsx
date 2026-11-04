@@ -11,21 +11,19 @@ import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
 import { tw } from '~/utils/tw';
 
-/** The label inside a `cell` Button: a link underline on hover, darker while the button is held. */
+/** The label inside a `cell` Button */
 export const cellLinkTextClass = tw('link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline');
 
 type DateValue = string | Date | null | undefined;
 
 interface DateColumnOptions<T> {
   name: string;
-  /** Defaults to true. */
   sortable?: boolean;
-  /** The first sort lists the newest date first. Defaults to true; false for a date that reads forward, such as a deadline. */
+  /** The first sort lists the newest date first; false for a date that reads forward, such as a deadline */
   newestFirst?: boolean;
-  /** The width the column shows from; null shows it at every width. Defaults to 'md'. */
+  /** Null shows it at every width */
   minBreakpoint?: BreakpointKey | null;
   hidden?: boolean;
-  /** Reads the date; defaults to the row field named by the column key. */
   get?: (row: T) => DateValue;
 }
 
@@ -54,7 +52,6 @@ export const dateColumn = <T,>(
 
 interface CountColumnOptions<T> {
   name: string;
-  /** Defaults to a box. */
   icon?: IconComponent;
   hidden?: boolean;
   get: (row: T) => number | null | undefined;
@@ -87,10 +84,9 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
 interface EmailColumnOptions {
   name: string;
   minBreakpoint?: BreakpointKey;
-  /** In px, resizable down to the minimum width. Defaults to a share of the free width. */
+  /** In px; defaults to a share of the free width */
   width?: number;
   resizable?: boolean;
-  /** `text-muted-foreground` where another column, such as the name, identifies the row. */
   cellClass?: string;
 }
 
@@ -106,7 +102,7 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
         draggable={false}
-        className="active:press link-decoration active:link-decoration-strong truncate outline-0 transition-colors hover:text-foreground hover:underline"
+        className="active:press link-decoration active:link-decoration-strong hover:text-foreground truncate outline-0 transition-colors hover:underline"
       >
         <HighlightText text={row.email} />
       </a>

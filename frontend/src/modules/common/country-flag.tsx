@@ -7,7 +7,7 @@ import { regionName } from '~/utils/region-name';
 interface CountryFlagProps extends ImgHTMLAttributes<HTMLImageElement> {
   countryCode: string;
   imgType?: 'svg' | 'png';
-  /** Defaults to the country's name, also shown on hover; `''` where the name is written beside the flag. */
+  /** `''` where the name is written beside the flag. */
   alt?: string;
 }
 
@@ -32,7 +32,7 @@ export function CountryFlag({ countryCode, className, imgType = 'svg', width = 1
       alt={label}
       width={width}
       height={height}
-      // Tailwind's preflight gives images `height: auto`, which Chrome's lazy-image audit reads as no explicit size, so the box is sized in CSS too
+      // Chrome's lazy-image audit reads preflight's `height: auto` as no explicit size
       style={{ width, height, ...style }}
       loading="lazy"
       decoding="async"

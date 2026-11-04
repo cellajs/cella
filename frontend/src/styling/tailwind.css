@@ -796,14 +796,10 @@
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
     @apply font-sans overflow-x-clip max-sm:text-[118.75%];
-    /* Touch keeps none for the app's own pull-to-refresh (body as well). A fine pointer gets contain: in Chrome a root
-       none on an axis also stops every nested scroller from bouncing on that axis. */
-    @apply overscroll-none pointer-fine:overscroll-contain;
-    /* A grid header pinned with fixed cells (use-sticky-header.ts) cannot follow the bounce that moves the rows and sticky
-       bars around it, so the page holds still on that axis while one is pinned. */
-    &:has([data-header-pinned]) {
-      overscroll-behavior-y: none;
-    }
+    /* No overscroll bounce anywhere, body as well: it moved sticky bars with the content. In Chrome a root none also stops
+       every nested scroller from bouncing; Safari needs none on each scroller. It also keeps the browser's pull-to-refresh
+       off for the app's own. */
+    @apply overscroll-none;
 
     /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
        scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
@@ -848,7 +844,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none pointer-fine:overscroll-contain overflow-x-clip antialiased font-normal text-pretty;
+    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip antialiased font-normal text-pretty;
   }
 
   /* Typed text wraps plainly: `pretty` can move earlier lines while the caret is on the last one. */

@@ -7,7 +7,6 @@ import { zUpdateTenantBody } from 'sdk/zod.gen';
 import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { FormActions } from '~/modules/common/form-fields/form-actions';
@@ -28,14 +27,13 @@ type FormValues = z.infer<typeof formSchema>;
 interface UpdateTenantFormProps {
   tenant: Tenant;
   sheet?: boolean;
-  callback?: (args: CallbackArgs<Tenant>) => void;
 }
 
 export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 
-export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: UpdateTenantFormProps) {
+export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
 
@@ -63,11 +61,10 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: UpdateTen
     mutate(
       { path: { tenantId: tenant.id }, body },
       {
-        onSuccess: (updatedTenant) => {
+        onSuccess: () => {
           if (isSheet) sheeter.getState().remove(sheetId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
-          callback?.({ data: updatedTenant, status: 'success' });
         },
       },
     );

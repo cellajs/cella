@@ -11,7 +11,7 @@ import { tw } from '~/utils/tw';
 
 const currentYear = new Date().getFullYear();
 
-const headingClass = tw('font-heading font-semibold text-sm text-white/60 tracking-wider');
+const headingClass = tw('font-heading text-sm font-semibold tracking-wider text-white/60');
 const textClass = tw('mt-4 text-sm text-white/90');
 
 export interface FooterLinkProps {
@@ -95,7 +95,7 @@ export function MarketingFooter() {
           <Logo size="xl" textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
         </Link>
 
-        <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
+        <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
           {legalFooterLinks.map((link) => (
             <li key={link.title}>
               <FooterLink title={link.title} href={link.href} />
@@ -103,7 +103,7 @@ export function MarketingFooter() {
           ))}
         </ul>
 
-        <p className="pb-12 text-center text-white/60 text-xs">{t('c:credits', { year: currentYear })}</p>
+        <p className="pb-12 text-center text-xs text-white/60">{t('c:credits', { year: currentYear })}</p>
       </div>
     </section>
   );

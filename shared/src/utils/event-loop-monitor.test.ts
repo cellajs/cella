@@ -19,7 +19,7 @@ describe('getEventLoopLagMs', () => {
     vi.resetModules();
     histogram.mean = Number.NaN;
     histogram.reset.mockClear();
-    const monitor = await import('./event-loop-monitor');
+    const monitor = await import('./event-loop-monitor.ts');
     getEventLoopLagMs = monitor.getEventLoopLagMs;
     windowMs = monitor.eventLoopWindowMs;
   });

@@ -7,16 +7,14 @@ import { frontierPrefix, signalVersionPrefix } from '#/modules/entities/counter-
  * @param counts - The `counts` of a `channel_counters` row.
  * @returns The versions of the organization's versioned signals by type, and its frontier per entity type.
  */
-export function parseCounterCounts(counts: Record<string, unknown> | null | undefined) {
+export function parseCounterCounts(counts: Record<string, unknown>) {
   const frontiers: Record<string, number> = {};
   const signals: Record<string, number> = {};
 
-  if (counts) {
-    for (const [key, value] of Object.entries(counts)) {
-      if (typeof value !== 'number') continue;
-      if (key.startsWith(signalVersionPrefix)) signals[key.slice(signalVersionPrefix.length)] = value;
-      else if (key.startsWith(frontierPrefix)) frontiers[key.slice(frontierPrefix.length)] = value;
-    }
+  for (const [key, value] of Object.entries(counts)) {
+    if (typeof value !== 'number') continue;
+    if (key.startsWith(signalVersionPrefix)) signals[key.slice(signalVersionPrefix.length)] = value;
+    else if (key.startsWith(frontierPrefix)) frontiers[key.slice(frontierPrefix.length)] = value;
   }
 
   return { signals, frontiers };

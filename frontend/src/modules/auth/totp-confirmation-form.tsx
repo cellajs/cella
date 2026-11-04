@@ -16,9 +16,8 @@ type FormValues = z.infer<typeof formSchema>;
 interface TotpConfirmationFormProps {
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
-  /** While the code is checked: the field is disabled and Confirm shows its spinner. */
+  /** Disables the field and shows Confirm's spinner. */
   loading?: boolean;
-  /** Defaults to `c:totp_verify`. */
   label?: string;
 }
 

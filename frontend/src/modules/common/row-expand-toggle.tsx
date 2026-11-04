@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-/** Link class of a row with a chevron: the hover fill follows the whole `group/expand-row`, so pointing at the chevron keeps it, and being expanded adds no fill. */
+/** Link class of a row with a chevron: the hover fill follows the whole `group/expand-row`, chevron included. */
 export const expandRowLinkClass = cn(buttonVariants({ variant: null }), 'group-hover/expand-row:bg-hover group-hover/expand-row:text-foreground');
 
 /** ArrowRight opens and ArrowLeft closes the row from its focused link, without navigating. */
@@ -29,12 +29,12 @@ export function RowExpandToggle({ isExpanded, onToggle }: RowExpandToggleProps) 
       type="button"
       tabIndex={-1}
       aria-hidden="true"
-      className="group/expand-toggle absolute inset-y-0 right-1 my-auto flex size-8 no-focus-ring:h-full items-center justify-center"
+      className="group/expand-toggle no-focus-ring:h-full absolute inset-y-0 right-1 my-auto flex size-8 items-center justify-center"
       // Chrome focuses a clicked button; focus stays where it was
       onMouseDown={(event) => event.preventDefault()}
       onClick={onToggle}
     >
-      <span className="flex size-6 items-center justify-center rounded-sm group-hover/expand-toggle:bg-hover group-active/expand-toggle:bg-hover">
+      <span className="group-hover/expand-toggle:bg-hover group-active/expand-toggle:bg-hover flex size-6 items-center justify-center rounded-sm">
         <ChevronDownIcon className={cn('opacity-40 transition duration-200 group-hover/expand-toggle:opacity-100', isExpanded && 'rotate-180')} />
       </span>
     </button>

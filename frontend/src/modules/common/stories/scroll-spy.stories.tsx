@@ -34,10 +34,10 @@ const tabs: SidebarTab[] = [
 
 const SectionCard = ({ id, title, lines = 8 }: { id: string; title: string; lines?: number }) => (
   <AsideAnchor id={id}>
-    <div className="rounded-lg border bg-card p-6 shadow-sm">
-      <h2 className="mb-4 font-semibold text-xl">{title}</h2>
+    <div className="bg-card rounded-lg border p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
       {Array.from({ length: lines }, (_, i) => (
-        <p key={i} className="mb-3 text-muted-foreground leading-relaxed">
+        <p key={i} className="text-muted-foreground mb-3 leading-relaxed">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
           veniam, quis nostrud exercitation ullamco.
         </p>
@@ -57,7 +57,7 @@ const SidebarWithRouter = () => (
         variant="ghost"
         size="lg"
         data-spy-link={id}
-        className={cn('w-full justify-start text-left hover:bg-hover', id.includes('delete') && 'text-red-600', 'data-spy-active:bg-secondary')}
+        className={cn('hover:bg-hover w-full justify-start text-left', id.includes('delete') && 'text-destructive', 'data-spy-active:bg-secondary')}
         render={
           <Link
             to="."
@@ -86,8 +86,8 @@ const SidebarWithoutRouter = () => (
         key={id}
         data-spy-link={id}
         className={cn(
-          'flex items-center gap-2 rounded-md px-4 py-2 text-left text-sm transition-colors hover:bg-hover',
-          id.includes('delete') && 'text-red-600',
+          'hover:bg-hover flex items-center gap-2 rounded-md px-4 py-2 text-left text-sm transition-colors',
+          id.includes('delete') && 'text-destructive',
           'data-spy-active:bg-secondary data-spy-active:font-medium',
         )}
         onClick={() => scrollToSectionById(id)}
@@ -152,16 +152,15 @@ const TestPanel = () => {
   };
 
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-xs">
-      <div className="font-semibold text-sm">Test controls</div>
+    <div className="bg-muted/30 space-y-2 rounded-lg border p-3 text-xs">
+      <div className="text-sm font-semibold">Test controls</div>
 
-      {/* Scroll-to buttons */}
       <div className="flex flex-wrap gap-1">
         {tabs.map(({ id, label }) => (
           <button
             key={id}
             type="button"
-            className="rounded border px-2 py-1 text-xs hover:bg-hover"
+            className="hover:bg-hover rounded border px-2 py-1 text-xs"
             onClick={() => {
               addLog(`→ scrollTo(${id})`);
               scrollToSectionById(id);
@@ -172,24 +171,22 @@ const TestPanel = () => {
         ))}
       </div>
 
-      {/* Action buttons */}
       <div className="flex gap-1">
-        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-hover" onClick={runCycleTest}>
+        <button type="button" className="hover:bg-hover rounded border px-2 py-1 text-xs" onClick={runCycleTest}>
           Cycle all
         </button>
-        <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-hover" onClick={checkState}>
+        <button type="button" className="hover:bg-hover rounded border px-2 py-1 text-xs" onClick={checkState}>
           Check state
         </button>
-        <button type="button" className="ml-auto rounded border px-2 py-1 text-xs hover:bg-hover" onClick={() => setLog([])}>
+        <button type="button" className="hover:bg-hover ml-auto rounded border px-2 py-1 text-xs" onClick={() => setLog([])}>
           Clear
         </button>
       </div>
 
-      {/* Log */}
-      <div ref={logRef} className="max-h-32 space-y-0.5 overflow-y-auto rounded bg-background/50 p-2 font-mono">
+      <div ref={logRef} className="bg-background/50 max-h-32 space-y-0.5 overflow-y-auto rounded p-2 font-mono">
         {log.length === 0 && <div className="text-muted-foreground">Click a button or scroll manually…</div>}
         {log.map((entry, i) => (
-          <div key={i} className={entry.startsWith('✗') ? 'text-red-500' : entry.startsWith('✓') ? 'text-green-600' : ''}>
+          <div key={i} className={entry.startsWith('✗') ? 'text-destructive' : entry.startsWith('✓') ? 'text-success' : ''}>
             {entry}
           </div>
         ))}
@@ -201,15 +198,13 @@ const TestPanel = () => {
 // ─── Full page layout ────────────────────────────────────────────────────────
 
 const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: boolean; label?: string; showTests?: boolean }) => (
-  <div className="min-h-svh bg-background text-foreground">
-    {/* Sticky header */}
-    <div className="sticky top-0 z-10 border-b bg-background p-3">
-      <h1 className="font-semibold text-base">{label ?? 'Scroll Spy Test'}</h1>
+  <div className="bg-background text-foreground min-h-svh">
+    <div className="bg-background sticky top-0 z-10 border-b p-3">
+      <h1 className="text-base font-semibold">{label ?? 'Scroll Spy Test'}</h1>
       <p className="text-muted-foreground text-xs">{withRouter ? 'TanStack Router (production-like)' : 'No Router (isolation)'}</p>
     </div>
 
     <div className="flex">
-      {/* Sidebar */}
       <div className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r p-4 md:block">
         <Sidebar withRouter={withRouter} />
         {showTests && (
@@ -219,7 +214,6 @@ const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: b
         )}
       </div>
 
-      {/* Content */}
       <div className="relative max-w-3xl flex-1 space-y-6 p-6 md:p-8">
         <SectionCard id="general" title="General Settings" lines={10} />
         <SectionCard id="details" title="Details" lines={12} />
@@ -229,8 +223,7 @@ const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: b
       </div>
     </div>
 
-    {/* Mobile sidebar (bottom) */}
-    <div className="fixed right-0 bottom-0 left-0 z-10 border-t bg-background p-2 md:hidden">
+    <div className="bg-background fixed right-0 bottom-0 left-0 z-10 border-t p-2 md:hidden">
       <Sidebar withRouter={withRouter} />
     </div>
   </div>

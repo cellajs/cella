@@ -59,8 +59,6 @@ export interface LoadedYDoc {
 export interface UnsavedYDoc extends YjsDocScope {
   /** Why the edits can never be saved, once parked; null while they are stored and wait for a server. */
   parked: UnsaveableReason | null;
-  /** The parked row in `unsaveableYDocs`, which a discard deletes; absent while not parked. */
-  parkedId?: number;
 }
 
 /** The proof that the server holds a document's local rows: a saved handshake, or a connection that turned clean. */
@@ -287,7 +285,7 @@ class StoreWriter implements YDocWriter {
           // Another generation's rows are another history, which this proof says nothing about.
           if (!record || record.generation !== generation) return;
           await rowsOf(this.db, this.key)
-            .filter((row) => row.local === 1 && row.id !== undefined && covers(row.id))
+            .filter((row) => row.local === 1 && covers(row.id))
             .modify({ local: 0 });
           const left = await rowsOf(this.db, this.key)
             .filter((row) => row.local === 1)
@@ -556,7 +554,7 @@ export async function trimYDoc(key: YDocKey, db: LocalUserDatabase | null = getL
     doc.destroy();
 
     await db.yDocStates.put({ ...key, state });
-    await db.yDocUpdates.bulkDelete(folded.map((row) => row.id as number));
+    await db.yDocUpdates.bulkDelete(folded.map((row) => row.id));
     const updateBytes = rows.filter((row) => row.local === 1).reduce((sum, row) => sum + row.update.byteLength, 0);
     await db.yDocs.put({ ...record, bytes: state.byteLength + updateBytes, updateBytes, updatedAt: Date.now() });
   });
@@ -630,13 +628,12 @@ async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
     const parked = await db.unsaveableYDocs.toArray();
     return [
       ...stored.map(({ entityType, entityId, tenantId, organizationId }) => ({ entityType, entityId, tenantId, organizationId, parked: null })),
-      ...parked.map(({ id, entityType, entityId, tenantId, organizationId, reason }) => ({
+      ...parked.map(({ entityType, entityId, tenantId, organizationId, reason }) => ({
         entityType,
         entityId,
         tenantId,
         organizationId,
         parked: reason,
-        parkedId: id,
       })),
     ];
   });

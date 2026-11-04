@@ -43,7 +43,7 @@ const column: ColumnOrColumnGroup<AnyTreeRow> = {
     cn(
       'justify-center p-0',
       row._hasChildren &&
-        'aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background',
+        'aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2',
     ),
   renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex} />,
 };

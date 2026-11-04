@@ -31,7 +31,7 @@ interface MenuSheetSectionProps {
   options: MenuSectionOptions;
   /** False for a lone section: collapsing it would hide the whole sheet. */
   isCollapsible: boolean;
-  /** The organization whose menu sheet holds the section, handed to its create action. */
+  /** Handed to the create action. */
   organizationId?: string;
 }
 

@@ -35,5 +35,3 @@ export const pushSubscriptionsTable = snakeCase.table(
   },
   (table) => [index('push_subscriptions_user_index').on(table.userId)],
 );
-
-export type PushSubscriptionModel = typeof pushSubscriptionsTable.$inferSelect;

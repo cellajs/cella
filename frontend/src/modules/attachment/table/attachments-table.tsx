@@ -30,23 +30,19 @@ function selectDefaultViewRows({ items }: { items: Attachment[] }) {
 
 export interface AttachmentsTableProps {
   channel: EnrichedChannel;
-  isSheet?: boolean;
-  /** Override for special contexts; defaults to the caller's create permission on the channel. */
-  canUpload?: boolean;
 }
 
-export function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  const uploadAllowed = useCanUploadAttachments(channel);
-  const allowUpload = canUpload ?? uploadAllowed;
+export function AttachmentsTable({ channel }: AttachmentsTableProps) {
+  const canUpload = useCanUploadAttachments(channel);
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet, defaults: attachmentsSearchDefaults });
+  const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ defaults: attachmentsSearchDefaults });
 
   const organizationId = channelOrganizationId(channel);
   const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
 
   const { q, sort, order } = search;
 
-  const [columns, setColumns] = useColumnVisibility(useColumns(channel, isSheet));
+  const [columns, setColumns] = useColumnVisibility(useColumns(channel));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
@@ -83,8 +79,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        isSheet={isSheet}
-        canUpload={allowUpload}
+        canUpload={canUpload}
         queryKey={isDefaultView ? canonicalOptions.queryKey : queryOptions.queryKey}
       />
       <SearchScope q={q}>

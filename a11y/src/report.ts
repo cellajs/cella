@@ -59,7 +59,7 @@ const table = (level: 'A' | 'AA') =>
   ].join('\n');
 
 const open = ledger.criteria.filter((r) => !r.status);
-const byAgent = ledger.criteria.filter((r) => r.decidedBy === 'agent');
+const byAgent = ledger.criteria.flatMap((r) => (r.decidedBy === 'agent' ? [r] : []));
 const byPerson = ledger.criteria.filter((r) => r.decidedBy === 'human');
 const unconfirmed = open.length + byAgent.length;
 
@@ -165,7 +165,7 @@ ${byAgent
   .map((r) => {
     const review = r.evidence.find((e) => e.check === 'review:agent');
     return [
-      `- [ ] **${r.id} ${r.name}** (${r.level}): ${r.status ? statusLabel[r.status] : 'Not evaluated yet'}${r.remarks ? `. ${r.remarks}` : ''}`,
+      `- [ ] **${r.id} ${r.name}** (${r.level}): ${statusLabel[r.status]}${r.remarks ? `. ${r.remarks}` : ''}`,
       `  - Agent's evidence (${review?.date}): ${review?.summary}`,
     ].join('\n');
   })

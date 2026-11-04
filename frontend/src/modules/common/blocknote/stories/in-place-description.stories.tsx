@@ -48,7 +48,7 @@ function InPlaceDescriptionDemo() {
 
   return (
     <div className="w-xl">
-      <p className="mb-2 text-muted-foreground text-xs">
+      <p className="text-muted-foreground mb-2 text-xs">
         State: <span data-testid="description-state">{state}</span>
       </p>
       <DescriptionLayers

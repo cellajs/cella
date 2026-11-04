@@ -26,7 +26,6 @@ interface SidebarOrganizationButtonProps {
   isActive: boolean;
   /** Its pages are open. */
   isCurrent: boolean;
-  /** The rail shows icons without labels. */
   isCollapsed: boolean;
   onClick: TriggerOrganizationFn;
 }
@@ -51,7 +50,7 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
         // An outline, not a ring: its offset stays transparent over the button's open fill
         className={cn(
           'size-8 shrink-0 transition-transform group-hover:scale-110',
-          isCurrent && 'outline-2 outline-primary outline-offset-2',
+          isCurrent && 'outline-primary outline-2 outline-offset-2',
           // Only the organization you are in, or are opening, shows its color
           !isCurrent &&
             !isActive &&
@@ -84,7 +83,7 @@ function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreate
       onClick={() => onClick(buttonRef)}
       itemClassName="pb-0"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-foreground/30 more-contrast:border-sidebar-foreground/40 border-dashed transition-transform group-hover:scale-110">
+      <span className="border-sidebar-foreground/30 more-contrast:border-sidebar-foreground/40 flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed transition-transform group-hover:scale-110">
         {/* The nav icons' rendered stroke: theirs is drawn at size-5, this one at size-4 */}
         <PlusIcon className="size-4" strokeWidth={(appConfig.theme.strokeWidth * 5) / 4} />
       </span>
@@ -93,7 +92,6 @@ function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreate
 }
 
 interface SidebarOrganizationButtonsProps {
-  /** The rail shows icons without labels. */
   isCollapsed: boolean;
   onClick: TriggerOrganizationFn;
 }

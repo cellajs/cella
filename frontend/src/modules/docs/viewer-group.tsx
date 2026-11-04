@@ -19,11 +19,9 @@ const renderSpecText = (text: string) => <SpecText text={text} />;
 
 interface ViewerGroupProps {
   schema: GenSchema | GenRequest;
-  /** Code to display in zod mode */
   zodCode?: string;
-  /** Code to display in type mode */
   typeCode?: string;
-  /** Example JSON to display in example mode */
+  /** A JSON value. */
   example?: unknown;
   defaultInspectDepth?: number;
   defaultViewMode?: SchemaViewMode;

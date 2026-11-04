@@ -12,13 +12,13 @@ export function RadioGroupItem({ className, ...props }: Radio.Root.Props) {
     <Radio.Root
       data-slot="radio-group-item"
       className={cn(
-        'focus-effect relative inline-flex aspect-square size-4 shrink-0 rounded-full border border-input field-hover:border-input-hover text-primary transition-[color,box-shadow] aria-invalid:border-destructive data-disabled:cursor-not-allowed data-disabled:opacity-50',
+        'focus-effect border-input field-hover:border-input-hover text-primary aria-invalid:border-destructive relative inline-flex aspect-square size-4 shrink-0 rounded-full border transition-[color,box-shadow] data-disabled:cursor-not-allowed data-disabled:opacity-50',
         className,
       )}
       {...props}
     >
       <Radio.Indicator data-slot="radio-group-indicator" className="relative flex size-full items-center justify-center">
-        <CircleIcon className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary" />
+        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
       </Radio.Indicator>
     </Radio.Root>
   );

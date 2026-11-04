@@ -24,7 +24,7 @@ export function WelcomePage() {
   return (
     <>
       <Dialog open={onboardingState !== 'completed'} onOpenChange={handleOpenChange}>
-        <DialogContent className="flex h-dvh max-h-none min-w-full flex-col rounded-none bg-background/75 p-0 max-sm:pt-0">
+        <DialogContent className="bg-background/75 flex h-dvh max-h-none min-w-full flex-col rounded-none p-0 max-sm:pt-0">
           <DialogTitle className="sr-only">{t('c:onboarding_welcome')}</DialogTitle>
           <CloseButton onClick={complete} className="absolute top-4 right-4 z-10" />
           <Onboarding state={onboardingState} onStart={() => setOnboardingState('stepper')} onComplete={complete} />

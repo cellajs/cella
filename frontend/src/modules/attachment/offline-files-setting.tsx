@@ -120,7 +120,6 @@ export function OfflineFilesSetting() {
     );
 
   return (
-    // The bar keeps its stops close on a wide dialog, while the balloon takes the full width so its text stays short
     <div className="[--bar-width:min(100%,28.75rem)]">
       <SliderPrimitive.Root
         value={dragged ?? pending ?? current}
@@ -146,38 +145,37 @@ export function OfflineFilesSetting() {
           onPointerLeave={() => setHovered(null)}
           className="relative flex w-full cursor-pointer flex-col gap-3 pb-1"
         >
-          {/* Each label sits over its stop, the outer two at the track's ends; text-xs fits all four in one row at phone width */}
           <div className="relative h-9 text-sm max-sm:text-xs" aria-hidden="true">
             {offlineFilesTiers.map((value, index) => (
               <span
                 key={value}
                 className={cn(
-                  'absolute top-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap text-muted-foreground transition-colors first:translate-x-0 first:items-start last:-translate-x-full last:items-end',
+                  'text-muted-foreground absolute top-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap transition-colors first:translate-x-0 first:items-start last:-translate-x-full last:items-end',
                   (index === explored || index === current) && 'text-foreground',
                   index === current && 'font-medium',
                 )}
                 style={{ left: `${stopPercent(index)}%` }}
               >
                 {t(offlineFilesTierText[value].label)}
-                {budgets[index] > 0 && <span className="font-normal text-muted-foreground text-xs">{formatBytes(budgets[index])}</span>}
+                {budgets[index] > 0 && <span className="text-muted-foreground text-xs font-normal">{formatBytes(budgets[index])}</span>}
               </span>
             ))}
           </div>
           <SliderPrimitive.Track className="relative h-2 w-full">
             {/* h-full: the indicator inherits its height, and an inset box computes to auto */}
-            <div className="absolute inset-0 h-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted absolute inset-0 h-full overflow-hidden rounded-full">
               <div
-                className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300 motion-reduce:transition-none"
+                className="bg-primary/10 absolute inset-y-0 left-0 transition-[width] duration-300 motion-reduce:transition-none"
                 style={{ width: `${stopPercent(explored)}%` }}
               />
               <SliderPrimitive.Indicator
                 className={cn(
-                  'absolute inset-y-0 bg-primary/20 transition-[width] duration-400 group-data-dragging/slider:duration-150 motion-reduce:transition-none',
+                  'bg-primary/20 absolute inset-y-0 transition-[width] duration-400 group-data-dragging/slider:duration-150 motion-reduce:transition-none',
                   snapEase,
                 )}
               />
               <div
-                className="absolute inset-y-0 left-0 bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                className="bg-primary absolute inset-y-0 left-0 transition-[width] duration-500 ease-out motion-reduce:transition-none"
                 style={{ width: `${keptPercent}%`, minWidth: stored - droppedBy(explored) > 0 ? 3 : 0 }}
               />
               <div
@@ -185,13 +183,12 @@ export function OfflineFilesSetting() {
                 style={{ left: `${keptPercent}%`, width: `${trackPercent(stored) - keptPercent}%`, minWidth: droppedBy(explored) > 0 ? 3 : 0 }}
               />
             </div>
-            {/* A mark per stop 2px above the bar, the outer two flush with its ends; the thumb covers the one at its own stop */}
             {offlineFilesTiers.map((value, index) => (
               <span
                 key={value}
                 aria-hidden="true"
                 className={cn(
-                  'absolute bottom-[calc(100%+2px)] h-1 w-0.5 -translate-x-1/2 rounded-full bg-input',
+                  'bg-input absolute bottom-[calc(100%+2px)] h-1 w-0.5 -translate-x-1/2 rounded-full',
                   index === 0 && 'translate-x-0',
                   index === lastIndex && '-translate-x-full',
                 )}
@@ -204,7 +201,7 @@ export function OfflineFilesSetting() {
               aria-describedby={confirming ? confirmId : descriptionId}
               getAriaValueText={(_, value) => valueText(value)}
               className={cn(
-                'focus-within-effect z-10 block h-5 w-2.5 rounded-full border border-primary bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 hover:ring-ring/30 has-focus-visible:ring-offset-background data-dragging:duration-150 motion-reduce:transition-none',
+                'focus-within-effect border-primary hover:ring-ring/30 has-focus-visible:ring-offset-background z-10 block h-5 w-2.5 rounded-full border bg-white shadow-sm transition-[inset-inline-start,background-color,border-color] duration-400 hover:ring-4 data-dragging:duration-150 motion-reduce:transition-none',
                 snapEase,
                 pending !== null && 'border-destructive bg-card',
               )}
@@ -213,17 +210,17 @@ export function OfflineFilesSetting() {
         </SliderPrimitive.Control>
       </SliderPrimitive.Root>
 
-      <div className={cn('relative mt-4 rounded-lg border bg-background p-4 transition-colors', pending !== null && 'border-destructive/50')}>
+      <div className={cn('bg-background relative mt-4 rounded-lg border p-4 transition-colors', pending !== null && 'border-destructive/50')}>
         <span
           aria-hidden="true"
           className={cn(
-            'absolute -top-1.75 size-3 -translate-x-1/2 rotate-45 rounded-tl-[3px] border-t border-l bg-background transition-[left,border-color] duration-300 motion-reduce:transition-none',
+            'bg-background absolute -top-1.75 size-3 -translate-x-1/2 rotate-45 rounded-tl-[3px] border-t border-l transition-[left,border-color] duration-300 motion-reduce:transition-none',
             snapEase,
             pending !== null && 'border-destructive/50',
           )}
           style={{ left: `clamp(1rem, calc(50% + var(--bar-width) * ${(stopPercent(explored) - 50) / 100}), calc(100% - 1rem))` }}
         />
-        {/* Every state stacks in one cell, so the balloon keeps the height of the tallest and the dialog never resizes */}
+        {/* The tallest state sets the cell's height, so the dialog never resizes */}
         <div className="grid text-sm">
           <p id={showStatus ? descriptionId : undefined} aria-hidden={!showStatus} className={fadeClass(showStatus)}>
             {t('c:offline_files.status', {
@@ -246,7 +243,7 @@ export function OfflineFilesSetting() {
             className={cn(fadeClass(confirming), 'flex flex-wrap items-center gap-x-3 gap-y-2')}
           >
             <p className="flex min-w-48 flex-1 gap-2" aria-hidden="true">
-              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <TriangleAlertIcon className="text-destructive mt-0.5 size-4 shrink-0" />
               <span>
                 <NamedText i18nKey="c:confirm.remove_offline_files" name={formatBytes(asked)} />
               </span>

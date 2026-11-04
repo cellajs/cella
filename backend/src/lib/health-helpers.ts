@@ -90,18 +90,12 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
   };
 }
 
-export interface ProbeResult {
-  ok: boolean;
-  latencyMs: number;
-  reason?: string;
-  body?: Record<string, unknown> | null;
-}
+/** A probe that reached the worker carries its health body; one that did not, why. */
+export type ProbeResult = { ok: true; latencyMs: number; body: Record<string, unknown> } | { ok: false; latencyMs: number; reason: string };
 
 /** Maps an active probe of a worker's `/health?depth=full`; an unreachable worker is `unhealthy` here. */
 export function mapProbeComponent(result: ProbeResult, extractDetails: (body: Record<string, unknown>) => Record<string, unknown>): HealthComponent {
-  if (!result.ok || !result.body) {
-    return { status: 'unhealthy', checkedVia: 'probe', latencyMs: result.latencyMs, reason: result.reason ?? 'unreachable' };
-  }
+  if (!result.ok) return { status: 'unhealthy', checkedVia: 'probe', latencyMs: result.latencyMs, reason: result.reason };
   const reported = result.body.status;
   const status: HealthStatus = reported === 'unhealthy' ? 'unhealthy' : reported === 'degraded' ? 'degraded' : 'healthy';
   return { status, checkedVia: 'probe', latencyMs: result.latencyMs, details: extractDetails(result.body) };

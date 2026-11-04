@@ -14,6 +14,6 @@ export const jsonViewerTheme = {
   /** Shape of the schema keyword badges: composition, ref and required */
   badge: tw('rounded px-1 py-0.5 text-xs'),
   required: tw('text-faint-foreground'),
-  /** Count of matches inside a collapsed node */
-  matchBadge: tw('bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200'),
+  /** Count of matches inside a collapsed node, in the colors of a marked match */
+  matchBadge: tw('bg-(--match-bg) text-(--match-fg)'),
 };

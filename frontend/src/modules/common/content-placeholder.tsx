@@ -8,7 +8,7 @@ import { cn } from '~/utils/cn';
 interface ContentPlaceholderProps {
   title: TKey;
   icon?: IconComponent;
-  /** `sm` fits a section inside a card or popup; the default fills a page, tab or table body. */
+  /** `sm` for a section in a card or popup. */
   size?: 'default' | 'sm';
   className?: string;
   children?: ReactNode;
@@ -25,9 +25,8 @@ export function ContentPlaceholder({ title, icon: Icon, size = 'default', classN
       data-size={size}
       className={cn('group/placeholder relative flex size-full flex-col items-center justify-center p-8 text-center data-[size=sm]:p-4', className)}
     >
-      {/* A thin stroke scales with the icon: the small one gets a heavier stroke to stay as visible. */}
       {Icon && <Icon strokeWidth={size === 'sm' ? 1 : 0.7} className="size-20 opacity-50 group-data-[size=sm]/placeholder:size-10" />}
-      <p className="mt-4 text-faint-foreground text-sm group-data-[size=sm]/placeholder:mt-2">{titleText}</p>
+      <p className="text-faint-foreground mt-4 text-sm group-data-[size=sm]/placeholder:mt-2">{titleText}</p>
       {children && <div className="mt-8 group-data-[size=sm]/placeholder:mt-4">{children}</div>}
     </div>
   );

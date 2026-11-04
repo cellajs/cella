@@ -137,13 +137,11 @@ export function AppSearch() {
             placeholder={t('c:placeholder.search')}
           />
         </SearchDialogBar>
-        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. On a phone
-            the results take what the dialog has left above the keyboard. */}
         <ScrollArea
           id="item-search"
           ref={scrollAreaRef}
           className="max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col sm:h-[40vh]"
-          viewportClassName="max-sm:min-h-0 overscroll-contain max-sm:pb-[env(safe-area-inset-bottom)]"
+          viewportClassName="max-sm:min-h-0 overscroll-none max-sm:pb-[env(safe-area-inset-bottom)]"
         >
           {!isLoading && notFound && !hasHistoryToShow && (
             <ComboboxEmpty className="h-full sm:h-[36vh]">

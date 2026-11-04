@@ -11,10 +11,10 @@ import { ButtonGroup } from '~/modules/ui/button-group';
 
 interface JsonActionsProps {
   url: string;
-  /** The JSON value the copy button writes to the clipboard. */
+  /** Copied as JSON. */
   data: unknown;
   filename: string;
-  /** Names what was copied in the success toast. */
+  /** Named in the copy toast. */
   resourceName: string;
   className?: string;
 }

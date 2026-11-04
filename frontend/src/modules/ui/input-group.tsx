@@ -11,7 +11,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
       data-slot="input-group"
       role="group"
       className={cn(
-        'group/input-group relative flex h-10 w-full min-w-0 items-center rounded-md border border-input bg-background outline-hidden transition-[color,box-shadow] has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-start]]:h-auto has-[>textarea]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:flex-col has-[[data-slot][aria-invalid=true]]:border-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-start]]:[&>input]:pl-2',
+        'group/input-group border-input bg-background has-[[data-slot][aria-invalid=true]]:border-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background relative flex h-10 w-full min-w-0 items-center rounded-md border outline-hidden transition-[color,box-shadow] has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=inline-start]]:[&>input]:pl-2',
         className,
       )}
       {...props}
@@ -20,7 +20,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 const inputGroupAddonVariants = cva(
-  "flex h-auto cursor-text select-none items-center justify-center gap-2 py-1.5 font-medium text-muted-foreground text-sm group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
+  "text-muted-foreground flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
@@ -83,7 +83,7 @@ export function InputGroupText({ className, ...props }: React.ComponentProps<'sp
   return (
     <span
       className={cn(
-        "flex items-center gap-2 text-muted-foreground text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        "text-muted-foreground flex items-center gap-2 text-sm [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

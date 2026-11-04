@@ -33,8 +33,9 @@ export const mockServiceAccountResponse = (
 const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
 const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
-export const mockApiKeyResponse = (key = 'apiKey:default'): WithActorRefs<ApiKeyModel> => {
-  const apiKey = withFakerSeed<Omit<ApiKeyModel, 'createdBy'>>(key, () => ({
+/** The key as a response carries it: the row without its hash and without `revokedBy`, which stays in the table. */
+export const mockApiKeyResponse = (key = 'apiKey:default'): Omit<WithActorRefs<ApiKeyModel>, 'revokedBy'> => {
+  const apiKey = withFakerSeed<Omit<ApiKeyModel, 'createdBy' | 'revokedBy'>>(key, () => ({
     id: mockUuid(),
     actorId: mockUuid(),
     tenantId: mockTenantId(),
@@ -44,7 +45,6 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): WithActorRefs<ApiKey
     scopes: ['attachment:read'],
     expiresAt: null,
     revokedAt: null,
-    revokedBy: null,
     createdAt: mockPastIsoDate(),
   }));
   // Outside the seed above: a seeded mock ends by unseeding the generator, so a value drawn after it differs per run.

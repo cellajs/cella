@@ -71,7 +71,7 @@ function SchemaDetail({ schema, id, className }: SchemaDetailProps) {
           <HashUrlButton hash={schemaAnchor(schema)} href={href} />
         </CardTitle>
         {schema.description && (
-          <CardDescription className="my-2 max-w-measure text-base">
+          <CardDescription className="max-w-measure my-2 text-base">
             <SpecText text={schema.description} />
           </CardDescription>
         )}
@@ -108,7 +108,7 @@ export function TagSchemasList({ schemas }: TagSchemasListProps) {
           key={schema.name}
           schema={schema}
           id={`spy-${schemaAnchor(schema)}`}
-          className="rounded-none border-input border-t border-dashed last:rounded-b-lg"
+          className="border-input rounded-none border-t border-dashed last:rounded-b-lg"
         />
       ))}
     </div>

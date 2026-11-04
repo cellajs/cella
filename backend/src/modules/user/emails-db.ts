@@ -37,5 +37,4 @@ export const emailsTable = snakeCase.table(
  */
 export type EmailProof = 'magic' | EnabledOAuthProvider | FederationKey;
 
-export type EmailModel = typeof emailsTable.$inferSelect;
 export type InsertEmailModel = typeof emailsTable.$inferInsert;

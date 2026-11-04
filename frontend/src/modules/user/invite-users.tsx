@@ -75,7 +75,6 @@ const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
 const modeEntrance = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
 
 interface InviteUsersProps {
-  /** Without one the form sends a system invite. */
   channel?: EnrichedChannel;
   /** Rendered in the `invite-users` dialog, which a sent invite closes. */
   dialog?: boolean;
@@ -83,7 +82,6 @@ interface InviteUsersProps {
   description?: ReactNode;
   /** Skips the chooser. Without the dialog's title there is no way back to it. */
   mode?: InviteMode;
-  /** Takes the place of the cancel button, as the onboarding footer does. */
   children?: ReactNode;
 }
 
@@ -123,7 +121,7 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
           <button type="button" className="text-muted-foreground hover:text-foreground hover:underline" onClick={() => chooseMode(null)}>
             {t('c:invite')}
           </button>
-          <ChevronRightIcon className="size-4 text-faint-foreground" />
+          <ChevronRightIcon className="text-faint-foreground size-4" />
           <UnsavedBadge title={t(inviteModes[mode].crumb)} />
         </span>
       ) : (
@@ -180,19 +178,18 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
                       type="button"
                       variant="outline"
                       size="auto"
-                      className="h-auto items-start justify-start whitespace-normal rounded-xl p-4 text-left max-sm:grid max-sm:grid-cols-[auto_1fr] max-sm:items-center max-sm:gap-x-2.5 max-sm:gap-y-1 sm:flex-col sm:gap-2.5"
+                      className="h-auto items-start justify-start rounded-xl p-4 text-left whitespace-normal max-sm:grid max-sm:grid-cols-[auto_1fr] max-sm:items-center max-sm:gap-x-2.5 max-sm:gap-y-1 sm:flex-col sm:gap-2.5"
                       onClick={() => chooseMode(mode)}
                     >
                       <Icon className="size-5 sm:size-10 sm:stroke-[1.25]" />
                       <span>{t(label)}</span>
-                      <span className="font-normal text-muted-foreground max-sm:col-start-2">{t(text)}</span>
+                      <span className="text-muted-foreground font-normal max-sm:col-start-2">{t(text)}</span>
                     </Button>
                   );
                 })}
               </div>
             </motion.div>
           )}
-          {/* Who, as what, then what each address gets: the tiles sum up the send right above its button */}
           {inviteMode && channel && <InviteRoleField form={form} channel={channel} held={held} />}
           {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
           {inviteMode && list.hasList && <InviteGroups check={check} list={list} held={held} role={channel ? role : undefined} />}

@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, inArray, lte, max, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, lte, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext } from '#/core/context';
@@ -278,8 +278,9 @@ interface FindMaxDisplayOrdersOpts {
 
 /** Each user's highest membership `displayOrder`, the baseline for the next; a user without memberships has no row. */
 export const findMaxDisplayOrders = async (ctx: DbContext, { userIds }: FindMaxDisplayOrdersOpts) => {
+  // Grouped by user, so max() covers at least one notNull displayOrder: drizzle's max() would type it nullable.
   return ctx.var.db
-    .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.displayOrder) })
+    .select({ userId: membershipsTable.userId, maxOrder: sql<number>`max(${membershipsTable.displayOrder})`.mapWith(Number) })
     .from(membershipsTable)
     .where(inArray(membershipsTable.userId, userIds))
     .groupBy(membershipsTable.userId);

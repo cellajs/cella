@@ -144,7 +144,7 @@ export function AppNav() {
       {navBar && isMobile && <BottomBarNav onNavItemClick={triggerNavItem} />}
       {navBar && !isMobile && <SidebarNav onNavItemClick={triggerNavItem} onOrganizationClick={triggerOrganization} />}
       {/* Without a nav bar the open menu takes its place: this pushes the page aside by the menu's width */}
-      {isMenuAlwaysOpen && <div data-slot="sidebar-spacer" className="shrink-0 focus-view:hidden" style={{ width: sheetPanelWidth }} />}
+      {isMenuAlwaysOpen && <div data-slot="sidebar-spacer" className="focus-view:hidden shrink-0" style={{ width: sheetPanelWidth }} />}
     </>
   );
 }

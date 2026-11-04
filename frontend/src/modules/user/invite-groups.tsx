@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
 import type { TKey } from '~/lib/i18n-locales';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { ExpandableTile, StatusDot, tileTones } from '~/modules/common/expandable-tile';
+import { ExpandableTile, tileTones } from '~/modules/common/expandable-tile';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { StatusDot } from '~/modules/common/status-dot';
 import { Accordion } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Chip } from '~/modules/ui/chip';
@@ -56,7 +57,7 @@ export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
     if (typedInvalid) {
       return (
         <>
-          <StatusDot tone="destructive" />
+          <StatusDot variant="destructive" pulse={false} />
           <span className="min-w-0">
             <span className={cn('font-medium', tileTones.destructive.text)}>{t('c:invite_state_not_address')}</span>
             {` · ${lowercaseLabel(t('c:invite_state_check_spelling'))}`}
@@ -73,7 +74,7 @@ export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
   };
 
   return (
-    <div role="status" className={cn('flex items-baseline gap-1.5 text-muted-foreground text-sm', !typedInvalid && 'sr-only')}>
+    <div role="status" className={cn('text-muted-foreground flex items-baseline gap-1.5 text-sm', !typedInvalid && 'sr-only')}>
       {content()}
     </div>
   );
@@ -112,7 +113,7 @@ function EditableAddress({ value, onFix }: EditableAddressProps) {
 interface InviteChipProps {
   address: string;
   person?: InvitePerson;
-  /** A date or reason beside the address. The tile carries the color. */
+  /** A date or reason beside the address. */
   fact?: string;
   onRemove: () => void;
 }
@@ -155,14 +156,14 @@ function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
     >
       <span className="flex flex-wrap gap-x-1.5 whitespace-normal">
         {person ? (
-          <span className="inline-grid break-all text-start *:[grid-area:1/1]">
+          <span className="inline-grid text-start break-all *:[grid-area:1/1]">
             <span className={cn(showsAddress && 'invisible')}>{person.name}</span>
             <span className={cn(!showsAddress && 'invisible')}>{address}</span>
           </span>
         ) : (
           <span className="break-all">{address}</span>
         )}
-        {fact && <span className="whitespace-nowrap text-muted-foreground">{fact}</span>}
+        {fact && <span className="text-muted-foreground whitespace-nowrap">{fact}</span>}
       </span>
     </Chip>
   );

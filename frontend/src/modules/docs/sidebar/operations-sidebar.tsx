@@ -14,7 +14,6 @@ const renderItem = (op: GenOperationSummary, isActive: boolean) => <OperationIte
 
 interface OperationsSidebarProps {
   activeTag?: string;
-  /** The operations page is open: off it, a tag only links there. */
   isOnRoute: boolean;
 }
 
@@ -28,7 +27,7 @@ export function OperationsSidebar({ activeTag, isOnRoute }: OperationsSidebarPro
   const search = useOperationSearch();
 
   return (
-    <SidebarMenu className="gap-1 no-focus-ring:gap-0 p-0 pt-1 pb-4">
+    <SidebarMenu className="no-focus-ring:gap-0 gap-1 p-0 pt-1 pb-4">
       {tags.map((tag) => {
         const isExpanded = activeTag === tag.name;
         // Only pass items for expanded tag to avoid mounting all operations upfront

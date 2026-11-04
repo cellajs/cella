@@ -13,7 +13,7 @@ export function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null
     id: 'search',
     triggerRef,
     title: i18n.t('c:search'),
-    className: tw('border-0 p-0 shadow-floating sm:mb-4 sm:max-w-2xl'),
+    className: tw('shadow-floating border-0 p-0 sm:mb-4 sm:max-w-2xl'),
     headerClassName: 'hidden',
     drawerOnMobile: false,
     searchLayout: true,

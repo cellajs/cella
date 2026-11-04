@@ -49,7 +49,7 @@ export function DocsLandingPage() {
   );
 }
 
-const cardClass = tw('group/docs-tile flex items-start gap-3 rounded-lg border border-input p-4 transition-colors hover:bg-hover');
+const cardClass = tw('group/docs-tile border-input hover:bg-hover flex items-start gap-3 rounded-lg border p-4 transition-colors');
 
 /** A docs tile: the landing tiles and a page's child pages; internal targets go through the router. */
 export function DocsTileCard({ tile }: { tile: DocsTile }) {
@@ -58,12 +58,12 @@ export function DocsTileCard({ tile }: { tile: DocsTile }) {
   const inner = (
     <>
       <div className="min-w-0 flex-1">
-        <h3 className="link-decoration group-active/docs-tile:link-decoration-strong font-medium text-base group-hover/docs-tile:underline">
+        <h3 className="link-decoration group-active/docs-tile:link-decoration-strong text-base font-medium group-hover/docs-tile:underline">
           {tile.label}
         </h3>
-        {tile.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{tile.description}</p>}
+        {tile.description && <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{tile.description}</p>}
       </div>
-      <TrailingIcon className="mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/docs-tile:opacity-100" />
+      <TrailingIcon className="text-muted-foreground mt-1 shrink-0 opacity-0 transition-opacity group-hover/docs-tile:opacity-100" />
     </>
   );
 

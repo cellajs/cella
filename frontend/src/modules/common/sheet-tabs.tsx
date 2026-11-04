@@ -27,7 +27,7 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
               key={tab.id}
               type="button"
               data-current={currentTab.id === tab.id}
-              className="group/sheet-tab focus-effect relative inline-flex h-10 select-none items-center whitespace-nowrap rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground data-[current=true]:text-foreground"
+              className="group/sheet-tab focus-effect text-muted-foreground hover:text-foreground data-[current=true]:text-foreground relative inline-flex h-10 items-center rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors select-none"
               onClick={() => setCurrentId(tab.id)}
             >
               <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>
@@ -36,7 +36,7 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
                   initial={false}
                   layoutId={layoutId}
                   transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                  className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
+                  className="bg-primary absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm"
                 />
               )}
             </button>

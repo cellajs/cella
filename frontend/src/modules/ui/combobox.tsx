@@ -14,7 +14,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
   return (
     <ComboboxPrimitive.Trigger data-slot="combobox-trigger" className={cn("[&_svg:not([class*='size-'])]:size-4", className)} {...props}>
       {children}
-      <ChevronDownIcon data-slot="combobox-trigger-icon" className="pointer-events-none size-4 text-faint-foreground" />
+      <ChevronDownIcon data-slot="combobox-trigger-icon" className="text-faint-foreground pointer-events-none size-4" />
     </ComboboxPrimitive.Trigger>
   );
 }
@@ -38,7 +38,7 @@ export function ComboboxInput({
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean;
   showClear?: boolean;
-  /** Muted text ahead of the trigger and clear buttons, such as the picked timezone's offset. */
+  /** Muted text ahead of the trigger and clear buttons. */
   detail?: ReactNode;
 }) {
   // Base UI's group part is the popup's anchor, so the popup takes the field's full width
@@ -46,7 +46,7 @@ export function ComboboxInput({
     <ComboboxPrimitive.InputGroup render={<InputGroup className={cn('w-auto', className)} />}>
       <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
       <InputGroupAddon align="inline-end">
-        {detail && <span className="font-normal text-faint-foreground tabular-nums">{detail}</span>}
+        {detail && <span className="text-faint-foreground font-normal tabular-nums">{detail}</span>}
         {showTrigger && (
           <InputGroupButton
             size="icon-xs"
@@ -90,7 +90,7 @@ export function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(
-            'group/combobox-content data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 relative max-h-(--available-height) w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30',
+            'group/combobox-content data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 bg-popover text-popover-foreground ring-foreground/10 data-closed:animate-out data-open:animate-in *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 relative max-h-(--available-height) w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-md shadow-md ring-1 duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8',
             className,
           )}
           {...props}
@@ -118,7 +118,7 @@ export function ComboboxItem({ className, children, ...props }: ComboboxPrimitiv
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden active:bg-accent data-disabled:pointer-events-none data-highlighted:bg-accent data-selected:font-medium data-highlighted:text-accent-foreground data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "active:bg-accent data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-selected:font-medium [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -141,13 +141,13 @@ export function ComboboxItemIndicator({ className, asRemove, ...props }: Combobo
       keepMounted
       data-slot="combobox-item-indicator"
       className={cn(
-        'pointer-events-none not-data-selected:invisible flex size-4 items-center justify-center text-success',
+        'text-success pointer-events-none flex size-4 items-center justify-center not-data-selected:invisible',
         asRemove && 'text-foreground',
         className,
       )}
       {...props}
     >
-      <Icon className="pointer-events-none pointer-coarse:size-5 size-4" />
+      <Icon className="pointer-events-none size-4 pointer-coarse:size-5" />
     </ComboboxPrimitive.ItemIndicator>
   );
 }
@@ -156,7 +156,7 @@ export function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.P
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
-      className={cn('flex w-full items-center justify-center py-2 text-center text-faint-foreground text-sm empty:hidden', className)}
+      className={cn('text-faint-foreground flex w-full items-center justify-center py-2 text-center text-sm empty:hidden', className)}
       {...props}
     />
   );
@@ -170,14 +170,14 @@ export function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.Gr
   return (
     <ComboboxPrimitive.GroupLabel
       data-slot="combobox-group-label"
-      className={cn('group-label pointer-coarse:px-3 px-2 pointer-coarse:py-2 py-1.5 text-xs', className)}
+      className={cn('group-label px-2 py-1.5 text-xs pointer-coarse:px-3 pointer-coarse:py-2', className)}
       {...props}
     />
   );
 }
 
 export function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.Props) {
-  return <ComboboxPrimitive.Separator data-slot="combobox-separator" className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />;
+  return <ComboboxPrimitive.Separator data-slot="combobox-separator" className={cn('bg-border -mx-1 my-1 h-px', className)} {...props} />;
 }
 
 export { ComboboxPrimitive };

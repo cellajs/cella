@@ -15,7 +15,7 @@ interface LogoProps {
   size?: keyof typeof sizes;
   iconColor?: string;
   textColor?: string;
-  /** Hover text and accessible name: the app name, or where the link around the logo goes; null when the link has a tooltip. */
+  /** Hover text and accessible name; null when the link around it has a tooltip. */
   title?: string | null;
 }
 

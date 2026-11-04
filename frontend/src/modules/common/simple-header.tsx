@@ -1,4 +1,3 @@
-import type { TOptions } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHasScrolled } from '~/hooks/use-has-scrolled';
@@ -8,22 +7,19 @@ import { cn } from '~/utils/cn';
 interface SimpleHeaderProps {
   heading?: TKey;
   text?: TKey;
-  textOptions?: TOptions & { returnObjects?: false };
   children?: ReactNode;
   className?: string;
-  textClassName?: string;
-  /** Collapses the text after a scroll while a `group/sticky` ancestor carries `data-sticky="true"`, as a stuck `StickyBox` does. */
+  /** Collapses the text after a scroll inside a stuck `StickyBox` (`group/sticky`). */
   collapseText?: boolean;
 }
 
-export function SimpleHeader({ heading, text, textOptions, children, className = '', textClassName = '', collapseText }: SimpleHeaderProps) {
+export function SimpleHeader({ heading, text, children, className = '', collapseText }: SimpleHeaderProps) {
   const { t } = useTranslation();
   const hasScrolled = useHasScrolled();
-  const textSetsSpacing = collapseText || !!textClassName;
 
   return (
-    <div className={cn('flex flex-col', !textSetsSpacing && 'gap-1', className)}>
-      {heading && <h1 className="font-heading font-semibold text-xl">{t(heading)}</h1>}
+    <div className={cn('flex flex-col', !collapseText && 'gap-1', className)}>
+      {heading && <h1 className="font-heading text-xl font-semibold">{t(heading)}</h1>}
       {text && (
         <p
           className={cn(
@@ -32,10 +28,9 @@ export function SimpleHeader({ heading, text, textOptions, children, className =
             collapseText &&
               hasScrolled &&
               'overflow-hidden group-data-[sticky=true]/sticky:mt-0 group-data-[sticky=true]/sticky:max-h-0 group-data-[sticky=true]/sticky:opacity-0',
-            textClassName,
           )}
         >
-          {t(text, textOptions)}
+          {t(text)}
         </p>
       )}
       {children}

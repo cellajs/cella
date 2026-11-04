@@ -18,7 +18,7 @@ import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
-  /** It is a row of a submenu: a smaller row that may link to its parent's page. */
+  /** A submenu row, which may link to its parent's page. */
   isSubitem: boolean;
   /** Its avatar rests grey until hovered or focused. */
   isResting?: boolean;
@@ -56,15 +56,15 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
-      className="group/menu-sheet-item relative flex h-12 w-full select-none items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset standalone:[-webkit-touch-callout:none] focus:outline-hidden focus-visible:ring-ring active:bg-accent data-[subitem=true]:h-10 sm:hover:bg-hover sm:hover:text-foreground"
+      className="group/menu-sheet-item standalone:[-webkit-touch-callout:none] focus-visible:ring-ring active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-start gap-1 rounded-sm ring-2 ring-transparent select-none ring-inset focus:outline-hidden data-[subitem=true]:h-10"
     >
-      <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
+      <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
       {isSubitem && !item.membership.archived && <SubmenuConnector className="-top-2 h-4" />}
       <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(
-            'size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80',
+            'bg-card size-8 group-hover/menu-sheet-item:opacity-100 group-data-[link-active=true]/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 sm:opacity-80',
             Icon && 'bg-transparent shadow-none',
             isResting &&
               'pointer-fine:group-[:not(:hover,:focus-visible)]/menu-sheet-item:resting-avatar pointer-coarse:group-[:not(:focus-visible)]/menu-sheet-item:resting-avatar',
@@ -76,7 +76,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
           url={item.thumbnailUrl}
         />
         {item.membership.muted && canMute(item) && (
-          <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg bg-card opacity-80">
+          <span className="bg-card absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg opacity-80">
             <BellOffIcon className="size-2.5" strokeWidth={2} />
           </span>
         )}
@@ -84,13 +84,13 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       <div className="flex grow flex-col justify-center truncate pr-2 text-left">
         <div
           className={cn(
-            'truncate pt-3.5 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]',
+            'text-md transition-spacing truncate pt-3.5 leading-5 duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]',
             isSubitem ? 'group-data-[link-active=true]/menu-sheet-item:font-medium' : 'font-medium',
           )}
         >
           {item.name}
         </div>
-        <div className="pointer-events-none text-muted-foreground text-xs">
+        <div className="text-muted-foreground pointer-events-none text-xs">
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 sm:group-hover/menu-sheet-item:opacity-100">
             {t(item.membership.role)}
             {!hasSubmenu && item.submenu?.length

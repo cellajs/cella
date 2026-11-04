@@ -47,7 +47,7 @@ function OperationTags({ tagsByKind }: Pick<GenOperationSummary, 'tagsByKind'>) 
     <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
       {kinds.map(([kind, values]) => (
         <div key={kind}>
-          <dt className="inline text-muted-foreground">{upperFirst(kind)}</dt>
+          <dt className="text-muted-foreground inline">{upperFirst(kind)}</dt>
           <dd className="inline">
             {' '}
             <HighlightText text={values.join(', ')} />
@@ -77,12 +77,12 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
             <HighlightText text={operation.summary} />
             <HashUrlButton hash={operation.hash} href={href} />
           </CardTitle>
-          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
+          <div className="text-muted-foreground shrink-0 px-2 py-0.5 font-mono text-sm max-sm:hidden">
             <HighlightText text={operation.id} />
           </div>
         </div>
         {operation.description && (
-          <CardDescription className="max-w-measure whitespace-pre-line text-base">
+          <CardDescription className="max-w-measure text-base whitespace-pre-line">
             <SpecText text={operation.description} />
           </CardDescription>
         )}
@@ -91,7 +91,7 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
           <MethodLabel method={operation.method} size="md" />
-          <code className="break-all text-muted-foreground sm:text-lg">
+          <code className="text-muted-foreground break-all sm:text-lg">
             <HighlightText text={operation.path} />
           </code>
           {operation.deprecated && (
@@ -134,7 +134,7 @@ export function TagOperationsList({ operations, tagName }: TagOperationsListProp
           key={operation.hash}
           operation={operation}
           detail={detailsById.get(operation.id)}
-          className="rounded-none border-input border-t border-dashed last:rounded-b-lg"
+          className="border-input rounded-none border-t border-dashed last:rounded-b-lg"
         />
       ))}
     </div>

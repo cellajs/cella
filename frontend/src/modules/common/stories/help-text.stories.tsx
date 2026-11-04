@@ -10,7 +10,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Collapsible: Story = {
   args: {
-    children: <span className="font-medium text-sm">What is this setting?</span>,
+    children: <span className="text-sm font-medium">What is this setting?</span>,
     content: 'This setting controls the visibility of your profile to other users in the organization.',
   },
 };

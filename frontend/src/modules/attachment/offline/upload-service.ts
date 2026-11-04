@@ -85,7 +85,7 @@ class AttachmentUploadService {
   private async checkCloudAvailability(organizationId: string): Promise<CloudAvailability> {
     try {
       const token = await getUploadToken({ query: { templateId: 'attachment', organizationId } });
-      return token?.params && token?.signature ? 'available' : 'unconfigured';
+      return token.params && token.signature ? 'available' : 'unconfigured';
     } catch {
       return 'unreachable';
     }

@@ -2,20 +2,16 @@ import { Skeleton } from '~/modules/ui/skeleton';
 import { cn } from '~/utils/cn';
 
 interface ListSkeletonProps {
-  /** Number of placeholder cards (default: 3) */
-  count?: number;
-  /** Approximate height of each card in px (default: 160) */
-  cardHeight?: number;
   className?: string;
 }
 
 /** Stacked card placeholders for card lists while their query is pending, so an empty state never flashes first. */
-export function ListSkeleton({ count = 3, cardHeight = 160, className }: ListSkeletonProps) {
+export function ListSkeleton({ className }: ListSkeletonProps) {
   return (
-    <div className={cn('fade-in flex animate-in flex-col gap-4 duration-300', className)}>
-      {Array.from({ length: count }).map((_, index) => (
+    <div className={cn('fade-in animate-in flex flex-col gap-4 duration-300', className)}>
+      {Array.from({ length: 3 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
-        <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${cardHeight}px` }} />
+        <Skeleton key={index} className="w-full rounded-lg" style={{ height: 160 }} />
       ))}
     </div>
   );

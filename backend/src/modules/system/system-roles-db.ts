@@ -20,4 +20,3 @@ export const systemRolesTable = snakeCase.table('system_roles', {
 });
 
 export type SystemRoleModel = typeof systemRolesTable.$inferSelect;
-export type InsertSystemRoleModel = typeof systemRolesTable.$inferInsert;

@@ -8,7 +8,7 @@ import { useCan } from '~/modules/entities/use-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
 /** A channel as its tabs gate on it; a list row may come without its writer or its stored arrangement. */
-type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?: ToolsConfig | null };
+type TabsChannel = EnrichedChannel & { createdBy?: ActorRef | null; toolsConfig?: ToolsConfig };
 
 /** What a channel's page tabs resolve with, on its page bar and in the menu alike: the update grant, the context roles held over it, its stored arrangement. */
 export function useChannelTabOptions(channel: TabsChannel): ResolvePlacementOptions {

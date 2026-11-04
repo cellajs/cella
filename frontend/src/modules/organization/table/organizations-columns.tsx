@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { PencilIcon, ShieldUserIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
+import { PencilIcon, TrashIcon, UserRoundIcon, UserRoundShieldIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { hierarchy, isChannel, isProduct } from 'shared';
@@ -136,7 +136,7 @@ export const useColumns = () => {
     ...organizationRoles.map((role) => ({
       ...countColumn<OrganizationRow>(`${role}Count`, {
         name: t(`c:${role}`, { count: 2 }),
-        icon: role === hierarchy.getMostPrivilegedRole('organization') ? ShieldUserIcon : UserRoundIcon,
+        icon: role === hierarchy.getMostPrivilegedRole('organization') ? UserRoundShieldIcon : UserRoundIcon,
         get: (row) => row.included.counts?.membership[role],
       }),
       maxWidth: 140,

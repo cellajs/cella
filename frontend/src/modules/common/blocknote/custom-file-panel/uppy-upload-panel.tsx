@@ -164,15 +164,15 @@ export function UppyFilePanel({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && close()} onOpenChangeComplete={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="md:max-w-xl">
-        <DialogHeader className="with-close-btn">
-          <DialogTitle className="h-6">{t('c:upload_resource', { resource: t(`c:${blockType}`) })}</DialogTitle>
-          <DialogDescription className="hidden">{isOnline ? t('c:loading') : t('c:offline')}</DialogDescription>
+        <DialogHeader>
+          <DialogTitle className="h-6 min-w-0 truncate leading-6">{t('c:upload_resource', { resource: t(`c:${blockType}`) })}</DialogTitle>
         </DialogHeader>
+        <DialogDescription className="hidden">{isOnline ? t('c:loading') : t('c:offline')}</DialogDescription>
 
         {uppy ? (
           <UploadDashboard uppy={uppy} />
         ) : (
-          <div className="flex h-100 flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
+          <div className="text-muted-foreground flex h-100 flex-col items-center justify-center gap-2 text-sm">
             {isInitializing ? <Spinner noDelay /> : null}
             <span>{isOnline ? t('c:loading') : t('c:offline')}</span>
           </div>

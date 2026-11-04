@@ -8,7 +8,7 @@ export function SubmenuConnector({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn('pointer-events-none absolute left-6.75 flex w-0.5 flex-col justify-evenly text-foreground opacity-50', className)}
+      className={cn('text-foreground pointer-events-none absolute left-6.75 flex w-0.5 flex-col justify-evenly opacity-50', className)}
     >
       <span className="size-0.5 rounded-full bg-current" />
       <span className="size-0.5 rounded-full bg-current" />

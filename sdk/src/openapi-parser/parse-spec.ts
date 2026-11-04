@@ -179,7 +179,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   // Count operations dropped by a hidden-kind tag so the overview can report the documented/hidden split.
   let hiddenOperationCount = 0;
 
-  const extensionDefs = (spec.info?.['x-extensions'] ?? []) as GenExtensionDefinition[];
+  const extensionDefs = (spec.info['x-extensions'] ?? []) as GenExtensionDefinition[];
 
   // Tag kinds: module feeds the sidebar, schema feeds the schemas page buckets, hidden drops its operations.
   const tagKindMap = new Map<string, OpenApiTagKind>();
@@ -297,12 +297,11 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     kind: data.kind,
   }));
 
-  const specInfo = spec.info || {};
   const info: GenInfoSummary = {
-    title: specInfo.title ?? '',
-    version: specInfo.version ?? '',
-    description: specInfo.description ?? '',
-    openapiVersion: spec.openapi ?? '',
+    title: spec.info.title,
+    version: spec.info.version,
+    description: spec.info.description ?? '',
+    openapiVersion: spec.openapi,
     // documented = emitted to the docs; hidden = dropped by a hidden-kind tag. Service-disabled ops count as neither.
     documentedOperationCount: operations.length,
     hiddenOperationCount,
@@ -344,15 +343,15 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
 
   // Sorted by owner, module, and name for stable output; untagged schemas sort last at their level.
   componentSchemas.sort((a, b) => {
-    const ownerA = a.tagsByKind?.owner?.[0] ?? '';
-    const ownerB = b.tagsByKind?.owner?.[0] ?? '';
+    const ownerA = a.tagsByKind.owner?.[0] ?? '';
+    const ownerB = b.tagsByKind.owner?.[0] ?? '';
     if (ownerA !== ownerB) {
       if (!ownerA) return 1;
       if (!ownerB) return -1;
       return ownerA.localeCompare(ownerB);
     }
-    const moduleA = a.tagsByKind?.module?.[0] ?? '';
-    const moduleB = b.tagsByKind?.module?.[0] ?? '';
+    const moduleA = a.tagsByKind.module?.[0] ?? '';
+    const moduleB = b.tagsByKind.module?.[0] ?? '';
     if (moduleA !== moduleB) {
       if (!moduleA) return 1;
       if (!moduleB) return -1;

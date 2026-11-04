@@ -74,29 +74,26 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   label: TKey;
   /** Name of the search input. */
   searchName: string;
-  /** Keeps the search open offline, for a list filtered in the client. */
   allowOfflineSearch?: boolean;
   /** Columns the view menu lists and an export writes; a grid has none. */
   columns?: ColumnOrColumnGroup<TRow>[];
   setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
-  /** The list's main action, such as create: before the count; on a phone a floating button. */
+  /** Before the count; on a phone a floating button */
   action?: TableBarAction;
-  /** Floats the action on a phone. Defaults to true; a list in a sheet keeps it in the row. */
+  /** False keeps the action in the row on a phone, as a list in a sheet does */
   floatAction?: boolean;
-  /** Rendered after the count. */
   countExtra?: ReactNode;
   /** What the list filters on beside its search words, offered in the search's popup. */
   searchFilters?: SearchFilters;
   sort?: ViewMenuSort;
   export?: ViewMenuExport<TRow>;
-  /** Controls of the page's own, such as a view toggle, after the view menu. */
+  /** After the view menu */
   controls?: ReactNode;
-  /** Shows the focus view toggle from `lg` up. Defaults to true. */
+  /** Shows the focus view toggle from `lg` up */
   focusView?: boolean;
-  /** Slides the closed bar back in on a scroll up, for a long page. */
   sticky?: boolean;
   selection?: { count: number; onClear: () => void; children: ReactNode };
-  /** Rendered below the bar. */
+  /** Rendered below the bar */
   after?: ReactNode;
 }
 
@@ -151,7 +148,7 @@ export function TableBarShell<TRow extends object>({
             isFiltered={isFiltered}
             allowOfflineSearch={allowOfflineSearch}
             name={searchName}
-            label={t('c:placeholder.search_resource', { resource: t(label, { count: 2 }) })}
+            label={t('c:placeholder.search_list')}
             value={searchVars.q ?? ''}
             resultCount={resultCount}
             onSearch={onSearch}

@@ -206,7 +206,7 @@ interface InviteFormFooterProps {
   held: boolean;
   loading: boolean;
   onCancel: () => void;
-  /** Takes the place of the cancel button, as the onboarding footer does. */
+  /** Takes the place of the cancel button. */
   children?: ReactNode;
 }
 

@@ -21,8 +21,8 @@ export const CustomColors: Story = { args: { iconColor: '#FF6B00', textColor: '#
 export const ArtBoxes: Story = {
   render: () => (
     <div className="flex items-center gap-4">
-      <LogoMark className="size-24 outline outline-primary" />
-      <LogoText className="h-24 w-auto outline outline-primary" />
+      <LogoMark className="outline-primary size-24 outline" />
+      <LogoText className="outline-primary h-24 w-auto outline" />
     </div>
   ),
 };

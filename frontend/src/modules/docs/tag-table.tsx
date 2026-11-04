@@ -7,7 +7,6 @@ import { Badge } from '~/modules/ui/badge';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
 interface TagHashLinkProps extends Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> {
-  /** Search param that records the expanded tag. */
   tagParam: 'operationTag' | 'schemaTag';
   tagName: string;
   hash: string;
@@ -53,7 +52,7 @@ interface TagTableProps<T> {
   columns: ColumnOrColumnGroup<T>[];
   rowKeyGetter: (row: T) => string;
   hideHeader?: boolean;
-  /** Called on hover/focus to trigger prerendering of this tag's details. */
+  /** On hover or focus, to prerender the tag's details. */
   onPrerender?: () => void;
 }
 

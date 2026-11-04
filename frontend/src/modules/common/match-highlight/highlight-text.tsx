@@ -30,9 +30,9 @@ export function HighlightText({ text }: HighlightTextProps): ReactNode {
 }
 
 interface MatchReasonProps {
-  /** Searched text a narrow screen leaves out, such as the email beside a name: its column starts at `md`. */
+  /** Searched text whose column starts at `md`, such as the email beside a name. */
   text: string | null | undefined;
-  /** The text the cell shows; while it holds a match itself, the reason stays hidden. */
+  /** While it holds a match itself, the reason stays hidden. */
   shownText: string;
   className?: string;
 }
@@ -43,7 +43,7 @@ export function MatchReason({ text, shownText, className }: MatchReasonProps) {
   if (!text || !findMatchRanges(text, terms).length || findMatchRanges(shownText, terms).length) return null;
 
   return (
-    <span className={cn('block truncate text-muted-foreground text-xs md:hidden', className)}>
+    <span className={cn('text-muted-foreground block truncate text-xs md:hidden', className)}>
       <HighlightText text={text} />
     </span>
   );

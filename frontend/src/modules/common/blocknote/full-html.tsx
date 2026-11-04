@@ -102,10 +102,7 @@ const queueFirstPass = (compute: () => (() => void) | undefined) => {
 
 interface BlockNoteFullHtmlProps extends Pick<CommonBlockNoteProps, 'id' | 'className' | 'dense' | 'clickOpensPreview'> {
   defaultValue: string;
-  /**
-   * Lays the document out as inline text, so what follows it (a badge, a button) stays on its last line: for a one-block summary.
-   * The surrounding block then sets the line height.
-   */
+  /** For a one-block summary: what follows it stays on its last line, and the surrounding block sets the line height */
   inline?: boolean;
   /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;

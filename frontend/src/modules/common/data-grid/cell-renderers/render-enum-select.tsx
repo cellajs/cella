@@ -11,17 +11,15 @@ export const enumSelectEditorOptions = { editorType: 'select', commitOnOutsideCl
 
 type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'column' | 'onRowChange' | 'onClose'> & {
   row: TRow;
-  /** List of allowed values, or pre-built `{ value, label }` options. */
   options: readonly TValue[] | readonly SelectDrawerOption<TValue>[];
-  /** Render the visible label for a value (only used when `options` is a plain string list). */
+  /** Only for a plain string list of `options` */
   renderOption?: (value: TValue) => ReactNode;
-  /** Optional fixed width for the popover content (desktop only; drawer fills width on mobile). */
+  /** In px, for the desktop popover */
   width?: number;
-  /** Shortcut: read/write a flat top-level field on the row. Mutually exclusive with `currentValue`/`setValue`. */
+  /** A flat row field to read and write; excludes `currentValue` and `setValue` */
   field?: keyof TRow;
-  /** Current value to show as selected. Provide together with `setValue` for nested/derived fields. */
+  /** With `setValue`, for nested or derived fields */
   currentValue?: TValue;
-  /** Build the next row from the chosen value (for nested or derived fields). */
   setValue?: (row: TRow, value: TValue) => TRow;
 };
 
@@ -139,7 +137,7 @@ function EnumSelectMenu<TValue extends string>({
       <ComboboxList ref={listRef} className="rounded-lg p-1 outline-hidden" tabIndex={-1}>
         {options.map((opt) => (
           <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2">
-            <span className="flex-1 text-foreground">{opt.label}</span>
+            <span className="text-foreground flex-1">{opt.label}</span>
             <ComboboxItemIndicator />
           </ComboboxItem>
         ))}

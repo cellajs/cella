@@ -49,7 +49,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   const currentSection = spySection || legalOverviewId;
 
   return (
-    <div className={cn('mb-6 flex w-full flex-col gap-2 no-focus-ring:gap-0', className)}>
+    <div className={cn('no-focus-ring:gap-0 mb-6 flex w-full flex-col gap-2', className)}>
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
@@ -78,18 +78,17 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                   }}
                   className={cn(
                     expandRowLinkClass,
-                    'focus-inset w-full justify-start pr-9 pl-5 text-left font-medium group-data-[active=true]/subject:bg-accent group-data-[active=true]/subject:font-semibold',
+                    'focus-inset group-data-[active=true]/subject:bg-accent w-full justify-start pr-9 pl-5 text-left font-medium group-data-[active=true]/subject:font-semibold',
                   )}
                 >
-                  {/* Caps the guideline, so it shows only alongside it: same color, on its center line, expanded only */}
-                  {isActive && isExpanded && <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30" />}
+                  {/* Caps the guideline: same color, on its center line */}
+                  {isActive && isExpanded && <div className="bg-muted-foreground/30 absolute left-[0.53rem] size-1 rounded-full" />}
                   <span className="truncate">{t(label)}</span>
                 </Link>
                 <RowExpandToggle isExpanded={isExpanded} onToggle={toggle} />
               </div>
-              {/* After the row, so a hover or active fill never covers the rail */}
               <div className="pointer-events-none absolute top-5.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/subject:flex">
-                <div className="w-px flex-1 bg-muted-foreground/30" />
+                <div className="bg-muted-foreground/30 w-px flex-1" />
               </div>
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
               <CollapsibleContent keepMounted className={collapsiblePanelClass}>

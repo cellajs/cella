@@ -21,9 +21,8 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
         <main className="focus:outline-hidden">
           {/* The gradient keeps the hero's height, centered and clipped: a short header shows its middle, unsquashed */}
           <section className="rich-gradient relative overflow-hidden pt-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">
-            {/* A half-opaque halo of the page background clears the gradient behind the title without blanking it */}
             {title && (
-              <h1 className="relative z-1 mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl before:absolute before:-inset-x-24 before:-inset-y-16 before:-z-1 before:rounded-full before:bg-background/50 before:blur-3xl md:text-5xl">
+              <h1 className="before:bg-background/50 relative z-1 mx-auto mt-12 mb-4 max-w-2xl px-4 text-center text-4xl font-semibold before:absolute before:-inset-x-24 before:-inset-y-16 before:-z-1 before:rounded-full before:blur-3xl md:text-5xl">
                 {t(title)}
               </h1>
             )}

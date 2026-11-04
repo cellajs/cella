@@ -71,15 +71,13 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         initialFocus={() => touchInitialFocus(popupRef)}
         finalFocus={() => finalFocusFor(triggerRef, String(id))}
       >
-        {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
-        {(title || (description && !inline)) && (
-          // Inline, the page scrolls: it has no padding to keep the stuck header off the window's edge, so top-4 does, and the description scrolls away
-          <DialogHeader sticky className={cn(dock ? 'text-center' : headerClassName, inline && 'sm:top-4')}>
-            {title && <DialogTitle className="h-6 truncate leading-6">{titleContent}</DialogTitle>}
-            {description && !inline && <DialogDescription>{description}</DialogDescription>}
+        {title && (
+          // Inline, the page has no padding: top-4 keeps the stuck header off the window's edge
+          <DialogHeader sticky closeButton={!dock} className={cn(dock && 'justify-center', headerClassName, inline && 'sm:top-4')}>
+            <DialogTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</DialogTitle>
           </DialogHeader>
         )}
-        {description && inline && <DialogDescription>{description}</DialogDescription>}
+        {description && <DialogDescription className={cn(dock && 'text-center')}>{description}</DialogDescription>}
         <OverlayCloseContext.Provider value={{ close: dismiss, back: dismiss }}>{content}</OverlayCloseContext.Provider>
       </DialogContent>
     </Dialog>

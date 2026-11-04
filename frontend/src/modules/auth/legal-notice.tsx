@@ -65,7 +65,6 @@ const noticeKeys = {
 } as const;
 
 interface LegalNoticeProps {
-  /** Named in the sign-up sentence. */
   email?: string;
   mode: keyof typeof noticeKeys;
   className?: string;

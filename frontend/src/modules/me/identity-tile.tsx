@@ -8,7 +8,6 @@ interface IdentityTileProps {
   /** The provider or connection id. */
   value: string;
   icon: ReactNode;
-  /** The provider or institution. */
   title: string;
   identity: Omit<MeAuthData['oauthIdentities'][number], 'provider'>;
   /** The federation an institution's identity came through. */

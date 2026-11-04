@@ -7,5 +7,5 @@ export function AuthDivider() {
 
   if (!isStrategyEnabled('oauth') && !isStrategyEnabled('sso')) return null;
 
-  return <div className="text-center text-muted-foreground text-xs">{t('c:or')}</div>;
+  return <div className="text-muted-foreground text-center text-xs">{t('c:or')}</div>;
 }

@@ -52,7 +52,7 @@ function ClosedSearchField({
   const { moreCount, hiddenClass } = useFittingChips(rowRef, chipKeys);
 
   return (
-    <div className={cn('relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border border-input pl-1.5', className)}>
+    <div className={cn('border-input relative flex h-10 min-w-0 grow items-center gap-2 rounded-md border pl-1.5', className)}>
       <button
         ref={triggerRef}
         type="button"
@@ -64,7 +64,7 @@ function ClosedSearchField({
       />
       <SearchIcon className={cn('pointer-events-none size-5 shrink-0', chipCount === 0 && 'opacity-50')} />
       {chipCount === 0 ? (
-        <span className="pointer-events-none truncate text-faint-foreground">{label}</span>
+        <span className="text-faint-foreground pointer-events-none truncate">{label}</span>
       ) : (
         <div ref={rowRef} className="pointer-events-none relative flex min-w-0 grow items-center gap-1.5">
           {chips.map((chip, index) => (
@@ -230,7 +230,7 @@ export function PhoneSearchChips({
           finalFocus={triggerRef}
         >
           <DialogTitle className="sr-only">{label}</DialogTitle>
-          {/* Puts the icon where the closed field has it: the list's gutter, the field's edge and its pl-1.5 */}
+          {/* Puts the icon where the closed field has it: the field's edge and its pl-1.5 */}
           <div className="flex min-h-0 flex-1 flex-col [--search-icon-size:1.25rem] [--search-icon-start:calc(0.875rem+1px)]">
             <Combobox<SearchSelection>
               {...searchComboboxProps}
@@ -276,7 +276,7 @@ export function PhoneSearchChips({
                   // text-lg sizes the search icon
                   wrapClassName="h-12 min-w-0 flex-1 border-b-0 pl-(--search-icon-start) text-lg"
                 />
-                {/* Mounted while empty too: a status region announces changes only once it exists. The modal dialog hides the bar's own count */}
+                {/* The modal dialog hides the bar's own count */}
                 <span role="status" className="sr-only">
                   {resultCount && countText(t, resultCount, { found: true })}
                 </span>
@@ -301,7 +301,7 @@ export function PhoneSearchChips({
 
               <ScrollArea
                 className="flex min-h-0 flex-1 flex-col"
-                viewportClassName="min-h-0 overscroll-contain pb-[env(safe-area-inset-bottom)]"
+                viewportClassName="min-h-0 overscroll-none pb-[env(safe-area-inset-bottom)]"
                 // Scrolling means reading what is below the keyboard
                 onTouchMove={() => inputRef.current?.blur()}
               >

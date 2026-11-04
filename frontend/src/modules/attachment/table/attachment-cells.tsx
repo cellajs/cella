@@ -77,7 +77,7 @@ function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >
-      <Icon className={cn('size-2.5 text-background', isUploading && 'animate-spin')} />
+      <Icon className={cn('text-background size-2.5', isUploading && 'animate-spin')} />
     </div>
   );
 }
@@ -122,7 +122,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       tabIndex={tabIndex}
       // Not `disabled`: a disabled button shows no tooltip saying why, and it drops focus out of the grid.
       aria-disabled={!!pending || isInProgress}
-      className="justify-center aria-disabled:opacity-50 aria-disabled:hover:text-foreground-soft"
+      className="aria-disabled:hover:text-foreground-soft justify-center aria-disabled:opacity-50"
       aria-label={tooltip}
       data-tooltip="true"
       data-tooltip-content={tooltip}

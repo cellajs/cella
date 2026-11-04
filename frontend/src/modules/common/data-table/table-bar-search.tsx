@@ -34,7 +34,7 @@ export function TableBarSearch({ isFiltered, allowOfflineSearch = false, resultC
       compactOnPhone
       edgeless
       className={cn(
-        'w-full sm:max-w-56 sm:max-lg:data-in-use:max-w-none lg:max-w-96 xl:max-w-md',
+        'w-full sm:max-w-56 sm:max-lg:data-in-use:max-w-none lg:max-w-72 xl:max-w-88',
         isCompact && isFiltered && 'sm:max-w-none',
         className,
       )}

@@ -86,7 +86,7 @@ function UnsavedEditItem({ edit }: { edit: UnsavedEdit }) {
   return (
     <li className="flex items-baseline justify-between gap-3">
       <span className="truncate">{yDocLabel({ entityId, entityType, firstLine })}</span>
-      <span className="shrink-0 text-muted-foreground text-xs">{parked ? t('c:cannot_save') : t('c:not_saved')}</span>
+      <span className="text-muted-foreground shrink-0 text-xs">{parked ? t('c:cannot_save') : t('c:not_saved')}</span>
     </li>
   );
 }
@@ -104,10 +104,11 @@ export function UnsavedEditsDialog({ edits, onConfirm, onCancel }: UnsavedEditsD
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+        {/* Keep editing is the way out, so the dialog adds no close button */}
+        <DialogHeader closeButton={false}>
           <DialogTitle>{t('c:confirm.sign_out_unsaved')}</DialogTitle>
-          <DialogDescription>{t('c:sign_out_unsaved.text')}</DialogDescription>
         </DialogHeader>
+        <DialogDescription>{t('c:sign_out_unsaved.text')}</DialogDescription>
         <ul className="flex max-h-60 flex-col gap-1.5 overflow-y-auto text-sm">
           {edits.map((edit) => (
             <UnsavedEditItem key={edit.key} edit={edit} />

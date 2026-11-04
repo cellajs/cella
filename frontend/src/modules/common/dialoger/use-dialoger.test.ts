@@ -18,9 +18,9 @@ describe('dialoger store', () => {
   });
 
   it('keeps the defaults for options passed as undefined', () => {
-    dialoger.getState().create(null, dialog('a', { drawerOnMobile: undefined, headerClassName: undefined }));
+    dialoger.getState().create(null, dialog('a', { drawerOnMobile: undefined }));
 
-    expect(dialoger.getState().get('a')).toMatchObject({ drawerOnMobile: true, headerClassName: 'with-close-btn' });
+    expect(dialoger.getState().get('a')).toMatchObject({ drawerOnMobile: true });
   });
 
   it('removes only the dialog with id 0', () => {

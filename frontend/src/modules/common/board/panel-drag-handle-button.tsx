@@ -12,17 +12,14 @@ import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
 interface PanelDragHandleButtonProps {
-  /** Sortable name announced by screen readers (e.g. the project name). */
+  /** Announced by screen readers */
   name: string;
-  /** aria-label when the board isn't reorderable (no drag handle). Omit to leave it unlabeled. */
+  /** aria-label when the board is not reorderable */
   fallbackLabel?: string;
-  /** Per-panel layout classes (collapsed vs expanded shape). */
   className?: string;
-  /** Leading icon or avatar; when the board is reorderable it swaps to a drag grip on hover. */
   icon: ReactNode;
-  /** Chip shown under the pointer while dragging; defaults to a chip with the name. */
+  /** Shown under the pointer while dragging */
   preview?: ReactNode;
-  /** Trailing label content (kept visible on hover), shown only while the panel is expanded. */
   children?: ReactNode;
 }
 
@@ -98,7 +95,7 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
         className={cn(
           buttonVariants({ variant: 'ghost' }),
           className,
-          'group/drag cursor-grab focus-ring:focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background active:cursor-grabbing',
+          'group/drag focus-ring:focus:ring-2 focus:ring-ring focus:ring-offset-background cursor-grab focus:ring-offset-2 active:cursor-grabbing',
         )}
       >
         {content}

@@ -167,7 +167,7 @@ async function migrateCacheToCurrent(db: LocalUserDatabase, fromVersion: number)
   const meta = await db.meta.get(cacheKey);
   if (!meta) return;
   const bundledQueries: DehydratedQuery[] = [];
-  for (const query of meta.bundledQueries ?? []) {
+  for (const query of meta.bundledQueries) {
     const entityType = entityTypeOf(query.queryKey);
     bundledQueries.push(entityType ? { ...query, state: await migrateQueryState(entityType, query.state, fromVersion) } : query);
   }
@@ -351,7 +351,7 @@ export const persister = {
       const productRecords = await db.queries.toArray();
       for (const { queryHash, state } of productRecords) lastPersistedVersion.set(queryHash, versionOf(state));
 
-      const bundledQueries = meta.bundledQueries ?? [];
+      const { bundledQueries } = meta;
       // Seed the snapshot the next write diffs against.
       lastBundledSnapshot = snapshotOf(bundledQueries);
 

@@ -87,6 +87,7 @@ function clippedText(page: Page) {
 const textLength = (page: Page) =>
   page
     .locator('body')
+    // biome-ignore lint/performance/useDomNodeTextContent: the rendered text, so text that zoom or reflow hides counts as lost
     .innerText()
     .then((text) => text.length);
 

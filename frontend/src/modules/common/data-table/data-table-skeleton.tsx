@@ -3,9 +3,8 @@ import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 interface DataTableSkeletonProps {
-  /** Row height in px; each bar is 18px shorter. */
+  /** In px */
   cellHeight?: number;
-  /** Phones show at most 3. */
   columnCount?: number;
   /** Widths of the first columns; the rest size themselves. */
   cellWidths?: string[];
@@ -21,7 +20,7 @@ export function DataTableSkeleton({ columnCount = 4, cellHeight = 40, cellWidths
   const columns = Array.from({ length: isMobile ? Math.min(columnCount, 3) : columnCount }, (_, i) => ({ key: i, style: { width: cellWidths[i] } }));
 
   return (
-    <div className="fade-in w-full animate-in overflow-auto duration-300">
+    <div className="fade-in animate-in w-full overflow-auto duration-300">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">

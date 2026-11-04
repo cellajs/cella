@@ -116,7 +116,7 @@ export const resolveCollectionReadFilter = (
   const { hierarchy } = resolveHierarchy(rules);
   const ancestors = hierarchy.getOrderedAncestors(entityType);
   // The product's parent: where a requested home channel and the narrowed scopes compare.
-  const homeLevel = ancestors[0] ?? 'organization';
+  const homeLevel = ancestors[0];
   const atHome = (channelIds: string[], condition?: RowConditionName): ReadScope[] =>
     channelIds.length === 0 ? [] : [{ channelType: homeLevel, channelIds, ...(condition && { condition }) }];
 

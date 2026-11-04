@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
-import { errorSearchSchema } from '~/modules/common/search-params-schemas';
+import { booleanSearchParam, errorSearchSchema } from '~/modules/common/search-params-schemas';
 
 /** An unsafe redirect reads as absent. */
 const redirectSearchSchema = z
@@ -11,7 +11,7 @@ const redirectSearchSchema = z
 export const authenticateRouteSearchParamsSchema = z.object({
   tokenId: z.string().optional(),
   redirect: redirectSearchSchema,
-  fromRoot: z.boolean().optional(),
+  fromRoot: booleanSearchParam,
 });
 
 /** The page the institution's sign-in returns to. */

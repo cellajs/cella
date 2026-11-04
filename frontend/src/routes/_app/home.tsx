@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { z } from 'zod';
+import { booleanSearchParam } from '~/modules/common/search-params-schemas';
 import { HomePage } from '~/modules/home/home-page';
 import { redirectToWelcomeIfOnboarding } from '~/modules/home/route-logic';
 import { withSuspense } from '~/routes/-route-utils';
@@ -8,7 +9,7 @@ import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_app/home')({
   validateSearch: z.object({
-    skipWelcome: z.boolean().optional(),
+    skipWelcome: booleanSearchParam,
     // The home page opens the user sheet
     userSheetId: z.string().optional(),
   }),

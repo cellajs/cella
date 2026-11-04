@@ -33,5 +33,4 @@ export const passkeysTable = snakeCase.table(
   ],
 );
 
-export type PasskeyModel = typeof passkeysTable.$inferSelect;
 export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;

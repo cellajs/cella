@@ -13,7 +13,7 @@ export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: str
 
 /** A tab of either bar: a link in PageTabNav, a button in LocalTabNav. */
 export const tabNavItemClass = tw(
-  'focus-effect focus-inset group/tab relative select-none rounded-sm px-2 py-3 font-medium text-muted-foreground transition-colors standalone:[-webkit-touch-callout:none] last:mr-4 hover:text-foreground focus-visible:text-foreground data-[active=true]:text-foreground lg:px-4',
+  'focus-effect focus-inset group/tab text-muted-foreground standalone:[-webkit-touch-callout:none] hover:text-foreground focus-visible:text-foreground data-[active=true]:text-foreground relative rounded-sm px-2 py-3 font-medium transition-colors select-none last:mr-4 lg:px-4',
 );
 
 /** A tab's caption: a translation key, or `text` shown as written, such as an entity's name. */
@@ -38,31 +38,25 @@ interface TabNavShellProps {
   title?: string;
   avatar?: TabNavAvatar;
   className?: string;
-  /** Active-tab underline, rendered in the track ahead of the tabs. */
   indicator?: TabIndicator;
-  /** The tab links or buttons, rendered inside the scrolling track. */
   children: ReactNode;
 }
 
-/**
- * Sticky shell of PageTabNav and LocalTabNav. The side columns split the free space, so the tabs stay centered until the
- * stuck avatar and title need room; the right column gives way first, then the track scrolls from its first tab
- * (`justify-center-safe`). Container queries size the left cell, so the shell also works inside a sheet.
- */
+/** Sticky shell of PageTabNav and LocalTabNav; container queries size the left cell, so it also works inside a sheet. */
 export function TabNavShell({ title, avatar, className, indicator, children }: TabNavShellProps) {
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"
-      className={cn('group/sticky @container z-80 grid grid-cols-[1fr_auto_1fr] border-b bg-background', className)}
+      className={cn('group/sticky bg-background @container z-80 grid grid-cols-[1fr_auto_1fr] border-b', className)}
     >
-      <div className="col-start-1 hidden min-w-max items-center starting:opacity-0 transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex">
+      <div className="col-start-1 hidden min-w-max items-center transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex starting:opacity-0">
         {avatar && (
           <EntityAvatar className="m-3 size-5" type={avatar.type ?? 'organization'} id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />
         )}
-        {title && <div className="@4xl:block hidden max-w-42 truncate font-semibold text-sm leading-5">{title}</div>}
+        {title && <div className="hidden max-w-42 truncate text-sm leading-5 font-semibold @4xl:block">{title}</div>}
       </div>
       <div className="no-scrollbar col-start-2 min-w-0 overflow-x-auto">
-        <div className="justify-center-safe relative flex min-w-max gap-1 px-1">
+        <div className="relative flex min-w-max justify-center-safe gap-1 px-1">
           {indicator && <TabIndicatorBar indicator={indicator} />}
           {children}
         </div>

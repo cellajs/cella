@@ -25,31 +25,30 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
 
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
 
-  // anyOf takes precedence over oneOf when both are present.
   const compositionLabel = hasAnyOf ? 'anyOf' : hasOneOf ? 'oneOf' : null;
 
   return (
     <>
       {typeValues.length > 0 && (
-        // One unit: a union wraps whole, with no pipe left at the end of a line.
+        // One unit, so a union wraps whole
         <span>
           {typeValues.map((type, index) => (
             <span key={type}>
               <span className={cn(jsonViewerTheme.schemaType, 'ml-0.5 px-1 py-0.5 text-xs')}>{type}</span>
-              {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
+              {index < typeValues.length - 1 && <span className="text-muted-foreground mx-1">|</span>}
             </span>
           ))}
         </span>
       )}
-      {compositionLabel && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-muted text-code-type')}>{compositionLabel}</span>}
+      {compositionLabel && <span className={cn(jsonViewerTheme.badge, 'bg-muted text-code-type ml-0.5')}>{compositionLabel}</span>}
       {refValue && (
-        <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>
+        <span className={cn(jsonViewerTheme.badge, 'bg-primary/10 text-primary ml-0.5')}>
           {renderRef ? renderRef(refValue) : refValue.split('/').pop()}
         </span>
       )}
-      {contentTypeValue && <span className="ml-1 text-muted-foreground text-xs italic">{contentTypeValue}</span>}
+      {contentTypeValue && <span className="text-muted-foreground ml-1 text-xs italic">{contentTypeValue}</span>}
       {constraints && (
-        <span className="ml-1.5 text-muted-foreground text-xs">
+        <span className="text-muted-foreground ml-1.5 text-xs">
           {[
             constraints.minLength != null && `min:${constraints.minLength}`,
             constraints.maxLength != null && `max:${constraints.maxLength}`,

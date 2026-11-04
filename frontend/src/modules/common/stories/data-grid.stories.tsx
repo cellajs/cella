@@ -297,7 +297,7 @@ export const CopyCell: Story = {
     return (
       <div className="space-y-4">
         <div className="text-muted-foreground text-sm">
-          Click a cell, then press <kbd className="rounded border bg-muted px-1.5 py-0.5">Cmd+C</kbd> to copy.
+          Click a cell, then press <kbd className="bg-muted rounded border px-1.5 py-0.5">Cmd+C</kbd> to copy.
         </div>
         <div style={{ height: 300 }}>
           <DataGrid
@@ -309,7 +309,7 @@ export const CopyCell: Story = {
         </div>
         <div className="flex items-center gap-2 text-sm" data-testid="copy-output">
           <span className="font-medium">Last copied:</span>
-          <code className="rounded bg-muted px-2 py-1" data-testid="copied-value">
+          <code className="bg-muted rounded px-2 py-1" data-testid="copied-value">
             {copied ?? '(nothing yet)'}
           </code>
         </div>
@@ -400,10 +400,8 @@ export const ShouldVirtualizeRows: Story = {
 
     await step('Scrolling should render new rows', async () => {
       const container = canvas.getByTestId('scroll-container');
-      // Scroll down
       container.scrollTop = 500;
       await waitFor(() => {
-        // Should still have rendered rows after scroll
         const grid = canvas.getByRole('grid');
         const rows = grid.querySelectorAll('[role="row"]:not(:first-child)');
         expect(rows.length).toBeGreaterThan(0);
@@ -438,8 +436,7 @@ export const ShouldKeepGrownRowHeights: Story = {
   tags: ['!dev', '!autodocs'],
   render: function Render(args) {
     return (
-      // h-auto: the grid grows and the container scrolls, as in DataTable. Without scroll anchoring, which hides a jump
-      // by moving the scroll position in some layouts but not in others.
+      // h-auto: the grid grows and the container scrolls, as in DataTable; no scroll anchoring, which hides a jump in some layouts
       <div style={{ height: 300, overflow: 'auto', overflowAnchor: 'none' }} data-testid="scroll-container">
         <DataGrid {...args} rows={largeData} enableVirtualization className="h-auto" />
       </div>

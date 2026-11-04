@@ -28,11 +28,11 @@ interface CollapsibleTagItemProps<T> {
   tag: { name: string; count: number };
   items: T[];
   isExpanded: boolean;
-  /** The tag or one of its items is in view: highlights the row. */
+  /** The tag or one of its items is in view. */
   isActive: boolean;
   /** The tag's own section is current, not one of its items. */
   isAtTag: boolean;
-  /** The tag's own page is open. Off it the row only links there: its items scroll to sections of that page. */
+  /** Off the tag's page, the row only links there. */
   isOnRoute: boolean;
   /** The page's search hides this tag: its link clears the search. */
   isHidden?: boolean;
@@ -40,7 +40,7 @@ interface CollapsibleTagItemProps<T> {
   layoutId: string;
   renderItem: (item: T, isActive: boolean) => ReactNode;
   itemKey: (item: T) => string;
-  /** Called on hover while the tag is collapsed, to prerender its details in the page. */
+  /** On hover while collapsed. */
   onPrerender?: () => void;
 }
 
@@ -83,7 +83,7 @@ function CollapsibleTagItemBase<T>({
           aria-expanded={isOnRoute ? isExpanded : undefined}
           className={cn(
             expandRowLinkClass,
-            'focus-inset h-8 no-focus-ring:h-9 w-full justify-start pl-5 font-normal text-muted-foreground group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:text-foreground',
+            'focus-inset no-focus-ring:h-9 text-muted-foreground group-data-[active=true]/tag:bg-accent group-data-[expanded=true]/tag:text-foreground h-8 w-full justify-start pl-5 font-normal group-data-[active=true]/tag:font-medium',
             isOnRoute && 'pr-9',
           )}
           onKeyDown={isOnRoute ? (event) => handleExpandKeys(event, isExpanded, toggle) : undefined}
@@ -98,7 +98,7 @@ function CollapsibleTagItemBase<T>({
         {isOnRoute && <RowExpandToggle isExpanded={isExpanded} onToggle={toggle} />}
       </div>
       {/* After the row, so a hover or active fill never covers the rail */}
-      <div className="pointer-events-none absolute no-focus-ring:top-5 top-4.5 bottom-3 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/tag:block" />
+      <div className="no-focus-ring:top-5 bg-muted-foreground/30 pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden w-px group-data-[expanded=true]/tag:block" />
       <div className={sidebarBulletClass} />
       <CollapsibleContent className={collapsiblePanelClass}>
         <div className="relative flex flex-col py-1">

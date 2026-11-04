@@ -9,7 +9,7 @@ export function SpecText({ text }: { text: string }) {
   return parts.map((part, index) =>
     index % 2 ? (
       // biome-ignore lint/suspicious/noArrayIndexKey: parts of one fixed string
-      <code key={index} className="wrap-anywhere rounded-md bg-muted box-decoration-clone px-1.5 py-0.5 font-medium text-[0.875em] text-foreground">
+      <code key={index} className="bg-muted text-foreground rounded-md box-decoration-clone px-1.5 py-0.5 text-[0.875em] font-medium wrap-anywhere">
         <HighlightText text={part} />
       </code>
     ) : (

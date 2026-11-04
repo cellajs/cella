@@ -29,7 +29,7 @@ const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape
 type FormValues = z.infer<typeof formSchema>;
 
 interface ContactFormProps {
-  /** Rendered in the contact dialog, which a sent message closes. */
+  /** In the contact dialog, which a sent message closes. */
   dialog?: boolean;
 }
 
@@ -92,7 +92,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
         </form>
       </Form>
       {isLargeScreen ? (
-        <div className="mb-12 w-full overflow-hidden rounded-md bg-accent">
+        <div className="bg-accent mb-12 w-full overflow-hidden rounded-md">
           <Suspense>
             <ContactFormMap />
           </Suspense>

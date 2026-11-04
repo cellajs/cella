@@ -38,9 +38,9 @@ export function LegalPage() {
           <div
             key={currentSubject}
             id={`spy-${legalOverviewId}`}
-            className="prose dark:prose-invert mb-40 min-h-svh max-w-full bg-background px-4 pt-4 md:px-8 lg:mx-auto lg:max-w-4xl"
+            className="prose dark:prose-invert bg-background mb-40 min-h-svh max-w-full px-4 pt-4 md:px-8 lg:mx-auto lg:max-w-4xl"
           >
-            <h2 className="pt-8 pb-4 font-bold text-2xl">{t(label)}</h2>
+            <h2 className="pt-8 pb-4 text-2xl font-bold">{t(label)}</h2>
             <Component />
             {/* The lazy text suspends inside MarketingLayout; registering here waits for its sections */}
             <RegisterSpySections ids={sections.map((section) => section.id)} />

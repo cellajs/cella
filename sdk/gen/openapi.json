@@ -889,6 +889,35 @@
         },
         "x-tags": ["base", "cella"]
       },
+      "StxStored": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/StxBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "changedFields": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "maxItems": 100,
+                "description": "The fields the last write changed, set by the server; absent after a create or a server-driven write"
+              }
+            }
+          }
+        ],
+        "description": "The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.",
+        "example": {
+          "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
+          "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
+          "fieldTimestamps": {},
+          "changedFields": ["name", "updatedAt"]
+        },
+        "x-tags": ["base", "cella"]
+      },
       "StreamChange": {
         "type": "object",
         "properties": {
@@ -1781,10 +1810,6 @@
                 "revokedAt": {
                   "type": ["string", "null"]
                 },
-                "revokedBy": {
-                  "type": ["string", "null"],
-                  "format": "uuid"
-                },
                 "revocationReason": {
                   "type": ["string", "null"],
                   "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
@@ -1822,7 +1847,6 @@
                 "createdAt",
                 "expiresAt",
                 "revokedAt",
-                "revokedBy",
                 "revocationReason",
                 "steppedUpAt",
                 "steppedUpVia",
@@ -1904,7 +1928,6 @@
               "ipAsn": null,
               "deviceIdHash": "e73e1e9b96a7acab442bcbafafbc1c5f",
               "revokedAt": null,
-              "revokedBy": null,
               "revocationReason": null,
               "steppedUpAt": null,
               "steppedUpVia": null,
@@ -3212,7 +3235,7 @@
             ]
           },
           "stx": {
-            "$ref": "#/components/schemas/StxBase"
+            "$ref": "#/components/schemas/StxStored"
           },
           "description": {
             "type": ["string", "null"],
@@ -3701,10 +3724,6 @@
           "revokedAt": {
             "type": ["string", "null"]
           },
-          "revokedBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
           "createdBy": {
             "anyOf": [
               {
@@ -3760,20 +3779,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "actorId",
-          "tenantId",
-          "name",
-          "prefix",
-          "last4",
-          "scopes",
-          "expiresAt",
-          "revokedAt",
-          "revokedBy",
-          "createdBy",
-          "createdAt"
-        ],
+        "required": ["id", "actorId", "tenantId", "name", "prefix", "last4", "scopes", "expiresAt", "revokedAt", "createdBy", "createdAt"],
         "description": "A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.",
         "example": {
           "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
@@ -3785,7 +3791,6 @@
           "scopes": ["attachment:read"],
           "expiresAt": null,
           "revokedAt": null,
-          "revokedBy": null,
           "createdAt": "2024-11-20T15:58:25.416Z",
           "createdBy": {
             "id": "f51db79f-5767-434a-9a5a-1f68f22c07d3",
@@ -6850,10 +6855,6 @@
                           "revokedAt": {
                             "type": ["string", "null"]
                           },
-                          "revokedBy": {
-                            "type": ["string", "null"],
-                            "format": "uuid"
-                          },
                           "revocationReason": {
                             "type": ["string", "null"],
                             "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
@@ -6884,7 +6885,6 @@
                           "createdAt",
                           "expiresAt",
                           "revokedAt",
-                          "revokedBy",
                           "revocationReason",
                           "steppedUpAt",
                           "steppedUpVia"
@@ -9690,9 +9690,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 2048,
+              "description": "Comma-separated values"
             },
             "required": false,
+            "description": "Comma-separated values",
             "name": "include",
             "in": "query"
           }
@@ -10420,9 +10422,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 2048,
+              "description": "Comma-separated values"
             },
             "required": false,
+            "description": "Comma-separated values",
             "name": "include",
             "in": "query"
           }
@@ -10656,9 +10660,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 2048,
+              "description": "Comma-separated values"
             },
             "required": false,
+            "description": "Comma-separated values",
             "name": "include",
             "in": "query"
           }
@@ -13514,18 +13520,22 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255
+              "maxLength": 2048,
+              "description": "Comma-separated values"
             },
             "required": false,
+            "description": "Comma-separated values",
             "name": "include",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "maxLength": 2048
+              "maxLength": 2048,
+              "description": "Comma-separated values"
             },
             "required": false,
+            "description": "Comma-separated values",
             "name": "userIds",
             "in": "query"
           }
@@ -14289,7 +14299,6 @@
                     "scopes": ["attachment:read"],
                     "expiresAt": null,
                     "revokedAt": null,
-                    "revokedBy": null,
                     "createdAt": "2024-09-23T23:15:48.299Z",
                     "createdBy": {
                       "id": "316b4c70-d649-481d-b03f-61d16dcebe99",
@@ -14334,7 +14343,6 @@
                         "scopes": ["attachment:read"],
                         "expiresAt": null,
                         "revokedAt": null,
-                        "revokedBy": null,
                         "createdAt": "2024-09-23T23:15:48.299Z",
                         "createdBy": {
                           "id": "316b4c70-d649-481d-b03f-61d16dcebe99",
@@ -14692,7 +14700,6 @@
                       "scopes": ["attachment:read"],
                       "expiresAt": null,
                       "revokedAt": null,
-                      "revokedBy": null,
                       "createdAt": "2024-11-20T15:58:25.416Z",
                       "createdBy": {
                         "id": "f51db79f-5767-434a-9a5a-1f68f22c07d3",
@@ -14835,7 +14842,6 @@
                   "scopes": ["attachment:read"],
                   "expiresAt": null,
                   "revokedAt": null,
-                  "revokedBy": null,
                   "createdAt": "2024-09-23T23:15:48.299Z",
                   "createdBy": {
                     "id": "316b4c70-d649-481d-b03f-61d16dcebe99",
@@ -14873,7 +14879,6 @@
                     "scopes": ["attachment:read"],
                     "expiresAt": null,
                     "revokedAt": null,
-                    "revokedBy": null,
                     "createdAt": "2024-09-23T23:15:48.299Z",
                     "createdBy": {
                       "id": "316b4c70-d649-481d-b03f-61d16dcebe99",

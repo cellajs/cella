@@ -13,7 +13,7 @@ import { channelBaseSchema } from '#/schemas/entity-base';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
-import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
+import { stxBaseSchema, stxStoredSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /** `attachment:read` reads as "Read attachments"; `write` covers create, update and delete. */
@@ -83,6 +83,7 @@ export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.register('ChannelBase', channelBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
+  registry.register('StxStored', stxStoredSchema);
   registry.register('StreamChange', streamChangeSchema);
   registry.register('StreamSignal', streamSignalSchema);
   registry.register('StreamError', streamErrorSchema);

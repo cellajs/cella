@@ -7,7 +7,7 @@ const showDelay = 400;
 const skipDelayWindow = 500;
 
 const tooltipClass = tw(
-  'pointer-events-none fixed z-200 hidden rounded-md bg-muted-foreground px-3 py-1.5 text-primary-foreground text-xs max-md:invisible',
+  'bg-muted-foreground text-primary-foreground pointer-events-none fixed z-200 hidden rounded-md px-3 py-1.5 text-xs max-md:invisible',
 );
 
 const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {

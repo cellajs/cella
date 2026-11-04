@@ -18,9 +18,7 @@ type SearchResult = EnrichedChannel | UserBase;
 interface SearchResultBlockProps {
   results: SearchResult[];
   entityType: ChannelEntityType | 'user';
-  /** Header text; the entity type's name by default. */
   label?: string;
-  /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -49,11 +47,11 @@ export function SearchResultBlock({
       <ComboboxGroup>
         <button
           type="button"
-          className="group-label sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover px-4 py-2 text-xs hover:text-foreground"
+          className="group-label bg-popover hover:text-foreground sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center px-4 py-2 text-xs"
           onClick={onToggleCollapsed}
         >
           {label ?? t(entityType)}
-          {collapsed && <span className="ml-3 font-normal text-faint-foreground">{results.length}</span>}
+          {collapsed && <span className="text-faint-foreground ml-3 font-normal">{results.length}</span>}
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>

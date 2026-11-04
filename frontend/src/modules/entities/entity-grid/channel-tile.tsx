@@ -58,8 +58,8 @@ export function ChannelTileCard({ entity, className, children }: ChannelTileCard
     <ChannelTileContext.Provider value={entity}>
       <Card
         className={cn(
-          // The edge is drawn over the content, so a cover is shaded at its edge in its own hue and a white cover still has one
-          'has-[.tile-link:active]:press relative gap-0 overflow-hidden border-0 py-0 transition after:pointer-events-none after:absolute after:inset-0 after:inset-ring after:inset-ring-edge-overlay after:rounded-[inherit] focus-ring:has-[.tile-link:focus-visible]:ring-2 focus-ring:has-[.tile-link:focus-visible]:ring-ring focus-ring:has-[.tile-link:focus-visible]:ring-offset-2 focus-ring:has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
+          // The edge is drawn over the content, so a white cover still has one
+          'has-[.tile-link:active]:press after:inset-ring-edge-overlay focus-ring:has-[.tile-link:focus-visible]:ring-2 focus-ring:has-[.tile-link:focus-visible]:ring-ring focus-ring:has-[.tile-link:focus-visible]:ring-offset-2 focus-ring:has-[.tile-link:focus-visible]:ring-offset-background relative gap-0 overflow-hidden border-0 py-0 transition after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:inset-ring sm:gap-0 sm:py-0',
           className,
         )}
       >
@@ -89,7 +89,7 @@ interface ChannelTileBannerProps {
   children?: ReactNode;
 }
 
-/** Banner image (or the entity's color) with a frosted bar holding `children`, by default the heading. `overlay` sits on the banner beside the link. */
+/** Banner image (or the entity's color) with a bar holding `children`, by default the heading. */
 export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps) {
   const entity = useTileEntity();
   return (
@@ -97,11 +97,11 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
       <TileLink className="block">
         <div
           // A min height would transfer through the aspect ratio into a min width wider than a phone's column
-          className={cn('relative flex aspect-9/4 flex-col bg-center bg-cover sm:aspect-5/2', !entity.bannerUrl && placeholderColorClass(entity.id))}
+          className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderColorClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
-          <div className="flex min-h-14 items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85">
+          <div className="bg-background/50 group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85 flex min-h-14 items-center gap-3 px-4 py-2 backdrop-blur-xs transition-colors">
             {children ?? <ChannelTileHeading />}
           </div>
         </div>
@@ -119,7 +119,7 @@ interface ChannelTileRowProps {
 /** A banner-less tile: one linked row holding `children`, by default the heading. */
 export function ChannelTileRow({ children }: ChannelTileRowProps) {
   return (
-    <TileLink className="flex w-full items-center gap-3 p-3 transition-colors hover:bg-hover sm:p-6">{children ?? <ChannelTileHeading />}</TileLink>
+    <TileLink className="hover:bg-hover flex w-full items-center gap-3 p-3 transition-colors sm:p-6">{children ?? <ChannelTileHeading />}</TileLink>
   );
 }
 
@@ -136,7 +136,7 @@ export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
     <>
       {leading ?? <EntityAvatar className="size-8 sm:size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />}
       <div className="flex grow flex-col gap-0.5 truncate">
-        <div className="inline-flex items-center gap-2 truncate font-semibold text-sm leading-5">
+        <div className="inline-flex items-center gap-2 truncate text-sm leading-5 font-semibold">
           <span className="truncate">
             <HighlightText text={entity.name} />
           </span>
@@ -181,7 +181,7 @@ export function ChannelTileStats() {
   const dateLabel = t(lastPostedAt ? 'c:last_post_on' : 'c:created_on', { date: dateFull(shownDate) });
 
   return (
-    <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-xs sm:text-sm">
+    <div className="text-muted-foreground inline-flex items-center gap-2 truncate text-xs sm:text-sm">
       {postTypes.map((type) => {
         const count = counts?.entities?.[type] ?? 0;
         return <TileCount key={type} icon={getMemberStatIcon(type)} count={count} resource={t(`c:${type}`, { count })} />;
@@ -211,7 +211,7 @@ export function ChannelTileMemberCount({ countRole }: ChannelTileMemberCountProp
   const memberCount = countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total;
 
   return (
-    <span className="ms-auto inline-flex items-center gap-2 whitespace-nowrap text-muted-foreground text-xs sm:text-sm">
+    <span className="text-muted-foreground ms-auto inline-flex items-center gap-2 text-xs whitespace-nowrap sm:text-sm">
       <TileCount icon={UsersIcon} count={memberCount} resource={t(`c:${countRole ?? 'member'}`, { count: memberCount })} />
       {isUnpublishedDraft(entity) && !!counts.membership.pending && (
         <>
@@ -225,7 +225,7 @@ export function ChannelTileMemberCount({ countRole }: ChannelTileMemberCountProp
   );
 }
 
-/** Banner overlay, centered above the heading bar: the member previews on the row (`include=members`, the channel's most privileged role) and a +N bubble for the rest. */
+/** Banner overlay: the member previews on the row (`include=members`) and a +N bubble for the rest. */
 export function ChannelTileMembers() {
   const entity = useTileEntity();
   const members = entity.included?.members;
@@ -254,7 +254,7 @@ export function ChannelTileParentChip({ parent }: ChannelTileParentChipProps) {
       {...getChannelRoute(parent)}
       {...pageTopHashNav}
       draggable={false}
-      className="focus-effect absolute top-2 right-2 max-w-40 truncate rounded bg-background/60 px-1.5 py-0.5 text-xs backdrop-blur-xs hover:underline"
+      className="focus-effect bg-background/60 absolute top-2 right-2 max-w-40 truncate rounded px-1.5 py-0.5 text-xs backdrop-blur-xs hover:underline"
     >
       {t('c:in_channel', { name: parent.name })}
     </Link>
@@ -265,7 +265,7 @@ interface ChannelTileFooterProps {
   children: ReactNode;
 }
 
-/** Area below the banner, its parts in wrapping lines with the last at the bottom; it takes the card's remaining height and disappears when its parts render nothing. */
+/** Area below the banner; disappears when its parts render nothing. */
 export function ChannelTileFooter({ children }: ChannelTileFooterProps) {
   return <div className="flex grow flex-wrap content-between items-center gap-3 px-4 py-3 empty:hidden">{children}</div>;
 }
@@ -275,13 +275,13 @@ export function ChannelTileDescription() {
   const { t } = useTranslation();
   const { description } = useTileEntity();
   if (description === undefined) return null;
-  return <p className="w-full text-muted-foreground text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
+  return <p className="text-muted-foreground w-full text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
 }
 
 interface ChannelTileMembershipProps {
   /** Shows only `fallback`, for grids that describe another user. */
   hideOwnRole?: boolean;
-  /** Shown without a membership or an invite, typically a join button. */
+  /** Shown without a membership or an invite. */
   fallback?: ReactNode;
 }
 

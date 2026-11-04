@@ -6,19 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { cn } from '~/utils/cn';
 
 interface ToolCardProps {
-  /** i18n key for the card title; without one the card has no header. */
+  /** Without it the card has no header. */
   label?: TKey;
-  /** Interpolated into the title as `resource`, lowercased. */
+  /** Interpolated into the title as `resource`. */
   resource?: TKey;
   description?: ReactNode;
-  /** Shows the unsaved-changes badge in the title. */
   unsaved?: boolean;
   id?: string;
   className?: string;
   children: ReactNode;
 }
 
-/** A settings section. Below `sm` it drops the card chrome but keeps its padding, so a phone shows a heading over full-width fields, as native settings do, with whitespace between sections. */
+/** A settings section; below `sm` it drops the card chrome, as native settings do. */
 export function ToolCard({ label, resource, description, unsaved, id, className, children }: ToolCardProps) {
   const { t } = useTranslation();
   const title = label && t(label, { resource: resource ? t(resource) : '' });

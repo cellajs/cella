@@ -6,7 +6,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input
 import { cn } from '~/utils/cn';
 
 interface SearchFieldProps {
-  /** The applied query, such as the URL's `q`: the field takes it over while nobody types in it. */
+  /** The applied query; the field takes it over while nobody types in it. */
   value: string;
   /** Receives the typed query once typing pauses. */
   onSearch: (value: string) => void;
@@ -16,13 +16,11 @@ interface SearchFieldProps {
   id?: string;
   disabled?: boolean;
   isSearching?: boolean;
-  /** What the query finds, as "4 tasks"; empty while there is no query. */
+  /** What the query finds, as "4 tasks". */
   count?: string;
-  /** Beside the clear button while a query is typed, such as a find's steps. */
   children?: ReactNode;
-  /** Runs before the field's own keys; an event it handles (`preventDefault`) skips them. */
+  /** Runs first; `preventDefault` skips the field's own keys. */
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
-  /** Leaves out the X, for a field beside a button that clears it. */
   hideClear?: boolean;
   ref?: RefObject<HTMLInputElement | null>;
   className?: string;
@@ -109,9 +107,8 @@ export function SearchField({
       </InputGroupAddon>
 
       <InputGroupAddon className="gap-0.5 pr-1.5 has-[>button]:mr-0" align="inline-end">
-        {/* Mounted while empty too: a status region announces changes only once it exists */}
         {count !== undefined && (
-          <span role="status" className="mr-1 whitespace-nowrap font-normal text-muted-foreground text-sm tabular-nums">
+          <span role="status" className="text-muted-foreground mr-1 text-sm font-normal whitespace-nowrap tabular-nums">
             {inputValue && count}
           </span>
         )}

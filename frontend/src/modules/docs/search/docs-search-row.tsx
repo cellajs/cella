@@ -9,7 +9,7 @@ import { cn } from '~/utils/cn';
 function Breadcrumbs({ crumbs }: { crumbs: string[] }) {
   if (!crumbs.length) return null;
   return (
-    <span className="flex items-center gap-0.5 text-muted-foreground text-xs">
+    <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
       {crumbs.map((crumb, index) => (
         <Fragment key={crumb}>
           {index > 0 && <ChevronRightIcon className="size-3" />}
@@ -35,7 +35,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
         ) : (
           <span aria-hidden="true" className={cn(treeLineClass, '-inset-y-2')} />
         )}
-        <SearchRowIcon>{item.type === 'heading' && <HashIcon className="size-3.5 text-muted-foreground" />}</SearchRowIcon>
+        <SearchRowIcon>{item.type === 'heading' && <HashIcon className="text-muted-foreground size-3.5" />}</SearchRowIcon>
         <span className={cn('truncate', item.type === 'text' && 'text-muted-foreground')}>
           <HighlightText text={item.title} />
         </span>

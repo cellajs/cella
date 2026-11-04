@@ -8,16 +8,13 @@ import { Button } from '~/modules/ui/button';
 interface ApiErrorDescriptionProps {
   /** One sentence on what happened. */
   message?: string;
-  /** The server's own message for a 5xx, which names the cause; only a development server sends it. */
+  /** The server's message for a 5xx; only a development server sends it. */
   cause?: string;
-  /** Set for a failure worth reporting: its request id is shown, with a button that copies what support asks for. */
+  /** Set for a failure worth reporting. */
   report?: ApiError;
 }
 
-/**
- * The body of an API error toast, in a fixed order: what happened, the cause a development server names, and the
- * request id of a failure worth reporting, with a button that copies everything support asks for.
- */
+/** The body of an API error toast; a failure worth reporting shows its request id and copies what support asks for. */
 export function ApiErrorDescription({ message, cause, report }: ApiErrorDescriptionProps) {
   const { t } = useTranslation();
   const { copied, copyToClipboard } = useCopyToClipboard(2000);
@@ -42,11 +39,11 @@ export function ApiErrorDescription({ message, cause, report }: ApiErrorDescript
   return (
     <div className="flex flex-col gap-1">
       {message && <p>{message}</p>}
-      {cause && <p className="line-clamp-3 break-words font-mono text-xs">{cause}</p>}
+      {cause && <p className="line-clamp-3 font-mono text-xs break-words">{cause}</p>}
       {report?.requestId && (
         <p className="flex items-center gap-1 text-xs">
           <span className="min-w-0">
-            {t('c:request_id')}: <span className="break-all font-mono">{report.requestId}</span>
+            {t('c:request_id')}: <span className="font-mono break-all">{report.requestId}</span>
           </span>
           <Button variant="ghost" size="micro" className="shrink-0" aria-label={copied ? t('c:copied') : t('c:copy')} onClick={copyReport}>
             <CopiedIcon copied={copied} icon={CopyIcon} />

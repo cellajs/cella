@@ -6,22 +6,19 @@ import { NamedText } from '~/modules/common/named-text';
 import { openConfirm } from '~/modules/common/open-confirm';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
 import type { LeaveChannelProps } from '~/modules/memberships/use-leave-channel';
-import { Button, type ButtonProps } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface JoinedButtonProps extends LeaveChannelProps {
   /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */
   role?: MembershipBase['role'] | null;
-  /** `outline` leaves the success color to the check; `success` fills the whole button with it. */
-  variant?: 'success' | 'outline';
-  size?: ButtonProps['size'];
-  /** Hides the label below `xs`, for a button that shares its row with a title. */
+  /** Hides the label below `xs`. */
   iconOnlyOnPhone?: boolean;
   className?: string;
 }
 
 /** The joined state: its check turns into an X on hover or focus, and a click asks to leave in a popconfirm (a drawer below `sm`). */
-export function JoinedButton({ role, variant = 'outline', size = 'sm', iconOnlyOnPhone = false, className, ...props }: JoinedButtonProps) {
+export function JoinedButton({ role, iconOnlyOnPhone = false, className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
@@ -33,13 +30,8 @@ export function JoinedButton({ role, variant = 'outline', size = 'sm', iconOnlyO
     });
 
   return (
-    <Button size={size} variant={variant} className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
-      <CheckIcon
-        className={cn(
-          'group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden',
-          variant === 'outline' && 'text-success',
-        )}
-      />
+    <Button size="sm" variant="outline" className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
+      <CheckIcon className="text-success group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden" />
       <XIcon className="hidden group-hover/joined-button:block group-focus-visible/joined-button:block group-data-dropdowner-active/joined-button:block" />
       <span className={cn(iconOnlyOnPhone && 'max-xs:hidden')}>{role ? t(role) : t('c:joined')}</span>
       <span className="sr-only">{t('c:leave')}</span>

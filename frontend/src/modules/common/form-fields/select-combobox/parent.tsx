@@ -10,11 +10,11 @@ import { getQueryItems } from '~/query/basic/mutate-query';
 
 type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ChannelEntityType;
-  /** Restrict the offered parents to one organization (e.g. sub-channels of the picked org). */
+  /** Offers only this organization's parents */
   organizationId?: string;
   options?: ComboboxSelectProps['options'];
   onSelect?: (item: ChannelBase) => void;
-  /** Offers a clear button on a picked parent, for a field that may stay empty; clearing sets an empty string. */
+  /** Clearing sets an empty string */
   clearable?: boolean;
 };
 

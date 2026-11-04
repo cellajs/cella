@@ -24,19 +24,20 @@ export interface Evidence {
   date?: string;
 }
 
-export interface LedgerRow {
+/** A decided row names who decided it; an undecided row has neither a status nor a decider. */
+type Verdict = { status: Status; decidedBy: 'audit' | Reviewer } | { status: null; decidedBy: null };
+
+export type LedgerRow = Verdict & {
   id: string;
   name: string;
   level: 'A' | 'AA';
   en301549: string | null;
-  status: Status | null;
   /** Reader-facing text for the VPAT's "Remarks and Explanations" column. */
   remarks: string;
-  decidedBy: 'audit' | Reviewer | null;
   /** Checks the audit could not complete, such as `manual`. */
   open: string[];
   evidence: Evidence[];
-}
+};
 
 interface Ledger {
   /** Name of the app the results are about. A ledger of another app (a fresh scaffold carries the template's) is never read. */
@@ -59,7 +60,7 @@ export const product = (JSON.parse(readFileSync(path.join(repoRoot, 'package.jso
  * Decides a row from its evidence. Any failure makes it Partially Supports; only rows whose checks all ran and passed
  * become Supports. Everything else stays undecided with the open checks listed.
  */
-function decideByAudit(criterion: Criterion, evidence: Evidence[]): Pick<LedgerRow, 'status' | 'remarks' | 'decidedBy' | 'open'> {
+function decideByAudit(criterion: Criterion, evidence: Evidence[]): Verdict & Pick<LedgerRow, 'remarks' | 'open'> {
   const ran = new Set(evidence.map((e) => e.check));
   const open: string[] = criterion.checks.filter((check) => check === 'manual' || !ran.has(check));
   if (evidence.some((e) => e.result === 'review')) open.push('review');

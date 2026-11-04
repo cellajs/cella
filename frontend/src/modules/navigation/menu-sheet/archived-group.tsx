@@ -54,21 +54,21 @@ function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds =
         variant="ghost"
         // Borderless, so the icon centers on the avatars and dots above it
         className={cn(
-          'w-full gap-0 border-0 p-0 ring-inset ring-offset-0 transition duration-300 group-data-[submenu=true]/archived:h-8',
-          dropAction && 'bg-muted ring-2 ring-primary',
+          'w-full gap-0 border-0 p-0 ring-offset-0 transition duration-300 ring-inset group-data-[submenu=true]/archived:h-8',
+          dropAction && 'bg-muted ring-primary ring-2',
         )}
       >
         <div className="flex w-12 items-center justify-center py-2">
           <ArchiveIcon className="ml-2 size-5 opacity-75 group-data-[submenu=true]/archived:size-3.5" />
         </div>
-        <div className="grow truncate p-2 text-left text-muted-foreground">
+        <div className="text-muted-foreground grow truncate p-2 text-left">
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{dropAction ? t(`c:drop_to_${dropAction}`) : t('c:archived')}</span>
-          <span className="inline-block px-2 py-1 text-faint-foreground text-xs group-data-[archived-visible=true]/archived:hidden">
+          <span className="text-faint-foreground inline-block px-2 py-1 text-xs group-data-[archived-visible=true]/archived:hidden">
             {archivedUnseenCount > 0 ? <CountBadge count={archivedUnseenCount} className="inline-flex" /> : archivedCount}
           </span>
         </div>
         <div className="px-3">
-          <ChevronDownIcon className="opacity-50 transition-transform group-data-[has-archived=false]/archived:hidden group-data-[submenu=true]/archived:size-3.5 group-data-[archived-visible=true]/archived:rotate-180" />
+          <ChevronDownIcon className="opacity-50 transition-transform group-data-[archived-visible=true]/archived:rotate-180 group-data-[has-archived=false]/archived:hidden group-data-[submenu=true]/archived:size-3.5" />
         </div>
       </Button>
       {/* In a submenu it joins the last row above, down to 0.5625rem above the icon */}
@@ -80,9 +80,8 @@ function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds =
 interface MenuSheetArchivedGroupProps extends MenuSheetArchivedToggleProps {
   isSubmenu?: boolean;
   isOpen: boolean;
-  /** It sits under a row that moves, so it travels with that row too. */
+  /** Travels with the moving row it sits under. */
   movesWithRow?: boolean;
-  /** The archived rows. */
   children: ReactNode;
 }
 

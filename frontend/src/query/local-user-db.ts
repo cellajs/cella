@@ -1,5 +1,5 @@
 import type { DehydratedState } from '@tanstack/react-query';
-import { Dexie } from 'dexie';
+import { Dexie, type EntityTable } from 'dexie';
 import { appConfig, type ProductEntityType, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { AttachmentBlob, DownloadQueueEntry } from '~/modules/attachment/offline/attachments-db';
 
@@ -61,7 +61,7 @@ export interface YDocStateRecord extends YDocKey {
 
 /** One update appended after the base. A `local` row holds an edit no server answer has proven saved yet. */
 export interface YDocUpdateRecord extends YDocKey {
-  id?: number;
+  id: number;
   update: Uint8Array;
   local: 0 | 1;
 }
@@ -111,7 +111,7 @@ export class LocalUserDatabase extends Dexie {
   /** Each stored document's base state. */
   yDocStates!: Dexie.Table<YDocStateRecord, [ProductEntityType, string]>;
   /** Append-only update log per stored document, one `add` per row so tabs never overwrite each other's rows. */
-  yDocUpdates!: Dexie.Table<YDocUpdateRecord, number>;
+  yDocUpdates!: EntityTable<YDocUpdateRecord, 'id'>;
   /** Edits that can never be saved, kept until the user copies or discards them; never evicted. */
   unsaveableYDocs!: Dexie.Table<UnsaveableYDocRecord, number>;
 

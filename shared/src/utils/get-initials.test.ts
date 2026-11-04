@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getInitials } from './get-initials';
+import { getInitials } from './get-initials.ts';
 
 describe('getInitials', () => {
   it('takes the first letter of the first and of the last word', () => {

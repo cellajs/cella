@@ -30,5 +30,3 @@ export const oidcPayloadsTable = snakeCase.table(
     index('oidc_payloads_expires_at_idx').on(table.expiresAt),
   ],
 );
-
-export type OidcPayloadModel = typeof oidcPayloadsTable.$inferSelect;

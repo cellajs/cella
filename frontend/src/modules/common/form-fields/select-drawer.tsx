@@ -62,8 +62,6 @@ interface SelectDrawerProps<TValue extends string> extends Pick<SelectDrawerRows
   /** Names what the choice applies to, such as a table row, in place of the visible title. */
   lead?: ReactNode;
   value: TValue | undefined;
-  /** Rendered below the rows, such as a filter's clear button. */
-  footer?: ReactNode;
 }
 
 /** A single select as a bottom sheet; the caller closes it on select. */
@@ -76,7 +74,6 @@ export function SelectDrawer<TValue extends string>({
   options,
   value,
   onSelect,
-  footer,
 }: SelectDrawerProps<TValue>) {
   const headerShown = !titleHidden && !lead;
 
@@ -87,11 +84,9 @@ export function SelectDrawer<TValue extends string>({
           <DrawerTitle>{title}</DrawerTitle>
         </DrawerHeader>
         {/* The dropdowner drawer's inset, so a select sheet and a menu sheet start their rows at one height */}
-        <div className={cn('flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]', headerShown && 'pt-0')}>
-          {/* Two lines at most, so a long name leaves the rows in view */}
+        <div className="flex flex-col gap-2 p-4 pb-[calc(1rem+var(--bottom-inset))]">
           {lead && <DrawerLead className="line-clamp-2">{lead}</DrawerLead>}
           <SelectDrawerRows options={options} selected={value === undefined ? [] : [value]} onSelect={onSelect} />
-          {footer}
         </div>
       </DrawerContent>
     </Drawer>

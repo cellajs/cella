@@ -4,7 +4,7 @@ import { CodeBlockContent } from '~/modules/ui/code-block';
 import { codeTheme } from '~/utils/code-theme';
 
 interface CodeViewerProps {
-  /** TypeScript source, zod schemas included. */
+  /** TypeScript source. */
   code: string;
 }
 

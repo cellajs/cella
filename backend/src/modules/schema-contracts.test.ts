@@ -13,7 +13,14 @@ describe('memberListQuerySchema', () => {
     expect(memberListQuerySchema.parse({ ...baseQuery, userIds: `${firstId}, ${secondId}` }).userIds).toEqual([firstId, secondId]);
   });
 
-  it.each(['', 'not-an-id', `${firstId},`, Array.from({ length: 51 }, () => firstId).join(',')])('rejects invalid member ID list %s', (userIds) => {
+  it.each([
+    ['', []],
+    [`${firstId},`, [firstId]],
+  ])('reads %j as %j: an empty value filters nothing and an empty entry is skipped', (userIds, expected) => {
+    expect(memberListQuerySchema.parse({ ...baseQuery, userIds }).userIds).toEqual(expected);
+  });
+
+  it.each(['not-an-id', Array.from({ length: 51 }, () => firstId).join(',')])('rejects invalid member ID list %s', (userIds) => {
     expect(memberListQuerySchema.safeParse({ ...baseQuery, userIds }).success).toBe(false);
   });
 });

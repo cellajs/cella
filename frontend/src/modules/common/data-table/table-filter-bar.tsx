@@ -7,16 +7,15 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface TableFilterBarProps {
-  /** Buttons before the count, such as a create button. */
+  /** Before the count */
   actions?: ReactNode;
   count?: ReactNode;
-  /** The search field: in the row, also on a phone, where it opens as a dialog. */
   search: ReactNode;
-  /** What the search finds, as "3 tasks found": below `lg` it shows below the filtered row. Empty leaves that line out. */
+  /** As "3 tasks found", below the filtered row under `lg`; empty leaves that line out */
   foundCount: string;
   /** For a view whose search is its main control: the field fills the row and holds the count itself, so leave `count` out. */
   wideSearch?: boolean;
-  /** View controls closing the row, such as a view toggle and the view menu. */
+  /** At the row's end */
   controls?: ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
@@ -71,7 +70,6 @@ export function TableFilterBar({
       ) : (
         <>
           {start}
-          {/* The free room of the row, so a field can take what it needs of it */}
           <div className="flex min-w-0 grow items-center justify-end gap-2">{search}</div>
         </>
       )}
@@ -80,7 +78,7 @@ export function TableFilterBar({
   );
 
   const foundLine = hasFoundLine && foundCount && (
-    <div className="flex h-11 items-center gap-1.5 border-b text-muted-foreground text-sm tabular-nums">
+    <div className="text-muted-foreground flex h-11 items-center gap-1.5 border-b text-sm tabular-nums">
       <span role="status">{foundCount}</span>
       <span aria-hidden>·</span>
       {/* Its text as far from the dot as the count is: the padding is the hover's room */}
@@ -94,7 +92,7 @@ export function TableFilterBar({
   // Above a pinned grid header (z-20), so the field's options stay over it, and below the page tabs (z-80)
   if (sticky && !isPhone) {
     return (
-      <StickyBox hideWhenOutOfView className="z-30 bg-background">
+      <StickyBox hideWhenOutOfView className="bg-background z-30">
         {row}
         {foundLine}
       </StickyBox>

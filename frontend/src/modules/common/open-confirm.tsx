@@ -12,17 +12,16 @@ type ConfirmOptions = {
   /** Names the confirmation; pressing its trigger again closes it. */
   id: string;
   title: ReactNode;
-  /** `end` by default. */
   align?: DropdownData['align'];
 } & (
   | {
-      /** A form whose action needs hooks, e.g. a `Delete*` component; it closes the confirmation itself. */
+      /** A form whose action needs hooks; it closes the confirmation itself. */
       content: ReactNode;
     }
   | {
       /** Runs after the confirmation closes. */
       onConfirm: () => void;
-      /** What goes, e.g. `c:connection`: the act reads "Delete connection". */
+      /** E.g. `c:connection`: the act reads "Delete connection". */
       resource?: TKey;
       label?: TKey;
       cancelLabel?: TKey;
@@ -66,12 +65,12 @@ export function openConfirm(trigger: HTMLElement, options: ConfirmOptions) {
 interface DeleteDialogOptions {
   id: string;
   triggerRef: TriggerRef;
-  /** What is deleted, e.g. `c:project`: the title and question count it. */
+  /** E.g. `c:project`; the title and question count it. */
   resource: TKey;
   count: number;
   /** A `Delete*` form; it closes the dialog itself. */
   content: ReactNode;
-  /** Replaces "Delete 3 projects", e.g. for a removal. */
+  /** Replaces "Delete 3 projects". */
   title?: ReactNode;
   /** Replaces the counted question, e.g. a `NamedText` that lists the items. */
   description?: ReactNode;

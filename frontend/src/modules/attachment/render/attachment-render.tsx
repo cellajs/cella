@@ -29,14 +29,14 @@ interface AttachmentRenderProps {
   type: string;
   url: string;
   pendingUpload?: PendingUpload;
-  /** Used as the save name for non-renderable types (the "download to view" action). */
+  /** Save name for the download placeholder. */
   filename?: string;
   alt?: string;
   imagePanZoom?: boolean;
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
-  /** A click on the empty letterbox dismisses the viewer; it also sizes the media to its content so that area is a click target. */
+  /** Called on a click on the empty letterbox; also sizes the media to its content. */
   onBackdropClick?: () => void;
 }
 

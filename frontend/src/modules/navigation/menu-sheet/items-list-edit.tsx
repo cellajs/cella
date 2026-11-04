@@ -11,7 +11,6 @@ interface MenuSheetItemsListEditProps {
   isArchived: boolean;
   /** Runs before a row of this list is archived; true when the row has to wait for the archived list it moves into to open. */
   prepareArchive?: () => boolean;
-  /** It lists a row's submenu, so its rows render as sub-rows. */
   isSubmenu?: boolean;
 }
 

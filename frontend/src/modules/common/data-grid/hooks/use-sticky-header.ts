@@ -52,7 +52,6 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
 
       // The grid's template rows keep reserving the header height, so rows don't jump up.
       isSticky = true;
-      grid!.dataset.headerPinned = '';
     }
 
     function removeFixed() {
@@ -62,7 +61,6 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       headerCells = [];
       originalStyles = [];
       isSticky = false;
-      delete grid!.dataset.headerPinned;
     }
 
     function syncHorizontal(rect?: DOMRect) {

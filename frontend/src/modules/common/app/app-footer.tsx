@@ -15,12 +15,10 @@ type CommonKeyOf<K> = K extends `c:${infer Key}` ? Key : never;
 type CommonKey = CommonKeyOf<TKey>;
 
 export interface FooterLinkProps {
-  /** The link's `c:` locale key, which names it. */
   id: CommonKey;
   href: string;
 }
 
-/** The in-app footer's own links; a caller passing `links` replaces them. */
 const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
   { id: 'legal', href: '/legal' },

@@ -13,30 +13,22 @@ import { cn } from '~/utils/cn';
 
 interface PageHeaderProps extends Omit<PageCoverProps, 'id' | 'url'> {
   entity: ChannelBase | UserBase;
-  /** Controls at the header's end; the viewer's role shows on the membership button placed here, not in the header. */
   panel?: ReactNode;
-  /** Takes the place of the context line below the name, for an entity that sits in no hierarchy. */
   subline?: ReactNode;
-  /** Positioned over the avatar, which does not clip it. */
   avatarBadge?: ReactNode;
-  /** Ancestor chain, root first. Entries must be enriched: their routes need `ancestorSlugs`. */
+  /** Root first. */
   parents?: EnrichedChannel[];
-  /** @deprecated Use `parents`. */
-  parent?: EnrichedChannel;
 }
 
-export function PageHeader({ entity, panel, subline, avatarBadge, parents, parent, ...coverProps }: PageHeaderProps) {
-  // Ancestor chain, root first; the deprecated single `parent` folds in
-  const ancestors = parents ?? (parent ? [parent] : []);
+export function PageHeader({ entity, panel, subline, avatarBadge, parents = [], ...coverProps }: PageHeaderProps) {
   const isUser = entity.entityType === 'user';
 
   return (
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      {/* 64px, centered on 32px: scrolled to its top, it lines up with the nav rail and the nav sheet headers */}
-      <div className="absolute bottom-0 flex min-h-16 w-full bg-background/50 p-1 backdrop-blur-xs dark:bg-background/75" id={pageTopHashNav.hash}>
-        {/* A user avatar rises by half its size to sit centered on the cover's edge */}
+      {/* Scrolled to its top, it lines up with the nav rail and the nav sheet headers */}
+      <div className="bg-background/50 dark:bg-background/75 absolute bottom-0 flex min-h-16 w-full p-1 backdrop-blur-xs" id={pageTopHashNav.hash}>
         <div className={cn('relative shrink-0', isUser ? 'mx-3 -mt-10 size-20 sm:-mt-13 sm:size-26' : 'mx-2 my-1 size-12')}>
           <EntityAvatar
             id={entity.id}
@@ -49,21 +41,20 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents, paren
         </div>
 
         <div className="flex flex-col truncate py-1 pl-1">
-          <h1 className="max-sm:wrap-break-word mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">
+          <h1 className="mb-1 leading-6 font-semibold max-sm:line-clamp-2 max-sm:wrap-break-word max-sm:whitespace-normal sm:truncate md:text-xl">
             {entity.name}
           </h1>
 
           <div className="flex items-center gap-2 text-sm">
             {subline ?? (
-              // The text column clips: each link's ring sits in a padding its negative margin takes back
-              <p className="flex min-w-0 items-center gap-1 pr-1 text-faint-foreground">
-                <ContextLine type={entity.entityType} ancestors={ancestors} />
+              <p className="text-faint-foreground flex min-w-0 items-center gap-1 pr-1">
+                <ContextLine type={entity.entityType} ancestors={parents} />
                 {appConfig.mode === 'development' && <span className="mt-0.5 ml-2 text-xs opacity-50 max-sm:hidden">{entity.id}</span>}
               </p>
             )}
           </div>
         </div>
-        <div className="ml-auto flex items-center">{panel}</div>
+        {panel && <div className="ml-auto flex items-center">{panel}</div>}
       </div>
     </div>
   );
@@ -83,32 +74,28 @@ function ContextLine({ type, ancestors }: ContextLineProps) {
   const [channel, ...subChannels] = ancestors.filter((ancestor) => ancestor.entityType !== 'organization');
 
   const label = t(`c:${type}`);
-  const typeElement = <span className="font-semibold text-foreground" />;
   const trail = channel && <ChannelTrail channel={channel} subChannels={isMobile ? [] : subChannels} />;
   const organizationLink = organization && !isMobile && <ContextLink channel={organization} />;
-  const values = { type: label, channel: channel?.name, organization: organization?.name };
 
-  if (trail && organizationLink) {
-    return (
-      <Trans
-        t={t}
-        i18nKey="c:entity_context.in_by"
-        values={values}
-        components={{ type: typeElement, channel: trail, organization: organizationLink }}
-      />
-    );
-  }
-  if (trail) return <Trans t={t} i18nKey="c:entity_context.in" values={values} components={{ type: typeElement, channel: trail }} />;
-  if (organizationLink) {
-    return <Trans t={t} i18nKey="c:entity_context.by" values={values} components={{ type: typeElement, organization: organizationLink }} />;
-  }
-  return <span className="font-semibold text-foreground">{label}</span>;
+  if (!trail && !organizationLink) return <span className="text-foreground">{label}</span>;
+
+  const placement = trail && organizationLink ? 'in_by' : trail ? 'in' : 'by';
+  return (
+    <Trans
+      t={t}
+      i18nKey={`c:entity_context.${placement}`}
+      values={{ type: label, channel: channel?.name, organization: organization?.name }}
+      components={{
+        type: <span className="text-foreground" />,
+        ...(trail && { channel: trail }),
+        ...(organizationLink && { organization: organizationLink }),
+      }}
+    />
+  );
 }
 
 interface ChannelTrailProps {
-  /** The channel right below the organization. */
   channel: EnrichedChannel;
-  /** The channels between it and the entity, root first, listed in parentheses. */
   subChannels: EnrichedChannel[];
 }
 
@@ -137,7 +124,6 @@ interface ContextLinkProps {
   className?: string;
 }
 
-/** A name in the context line, linking to its page and cut in the middle when the line runs short. */
 function ContextLink({ channel, className }: ContextLinkProps) {
   const route = getChannelRoute(channel);
   return (
@@ -147,7 +133,7 @@ function ContextLink({ channel, className }: ContextLinkProps) {
       {...pageTopHashNav}
       draggable={false}
       className={cn(
-        'focus-inset link-decoration active:link-decoration-strong -m-1 flex min-w-0 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground hover:underline',
+        'focus-inset link-decoration active:link-decoration-strong text-muted-foreground hover:text-foreground -m-1 flex min-w-0 rounded-sm p-1 transition-colors hover:underline',
         className,
       )}
     >

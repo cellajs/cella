@@ -35,7 +35,7 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       minBreakpoint: 'md',
       width: 200,
       renderCell: ({ row }) => (
-        <code className="truncate text-muted-foreground text-xs">
+        <code className="text-muted-foreground truncate text-xs">
           <HighlightText text={row.id} />
         </code>
       ),

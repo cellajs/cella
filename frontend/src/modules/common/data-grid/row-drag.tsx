@@ -193,7 +193,7 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
       config.renderRowDragPreview ? (
         config.renderRowDragPreview(row)
       ) : (
-        <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">Row {rowIdx + 1}</div>
+        <div className="bg-background rounded border px-2 py-1 text-sm shadow-md">Row {rowIdx + 1}</div>
       ),
       preview.container,
     );

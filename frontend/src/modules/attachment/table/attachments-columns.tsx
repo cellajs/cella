@@ -30,7 +30,7 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
-export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOrColumnGroup<Attachment>[] => {
+export const useColumns = (channel: EnrichedChannel): ColumnOrColumnGroup<Attachment>[] => {
   const { t } = useTranslation();
 
   const can = useCan();
@@ -121,7 +121,6 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
     {
       key: 'viewCount',
       name: t('c:views'),
-      hidden: isSheet,
       minBreakpoint: 'md',
       width: 100,
       renderCell: ({ row }) => {
@@ -141,7 +140,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
         );
       },
     },
-    dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
+    dateColumn('createdAt', { name: t('c:created_at') }),
     {
       key: 'createdBy',
       name: t('c:created_by'),

@@ -10,6 +10,8 @@ export type SheetData = {
   side: 'bottom' | 'top' | 'right' | 'left';
   title?: ReactNode;
   titleContent?: ReactNode;
+  /** In the title bar after the title and outside the sheet's accessible name, such as an id chip or an options menu. */
+  titleAside?: ReactNode;
   description?: ReactNode;
   className?: string;
   headerClassName?: string;

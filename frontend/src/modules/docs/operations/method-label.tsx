@@ -11,15 +11,13 @@ const methodColors: Record<string, string> = {
 const sizes = { sm: 'text-xs', md: 'text-md' };
 
 interface MethodLabelProps {
-  /** HTTP method in lowercase, as the docs JSON holds it; CSS uppercases it. */
+  /** Lowercase; CSS uppercases it. */
   method: string;
   size?: keyof typeof sizes;
 }
 
 export function MethodLabel({ method, size = 'sm' }: MethodLabelProps) {
   return (
-    <span className={cn('shrink-0 font-medium font-mono uppercase', methodColors[method] ?? 'text-gray-600 dark:text-gray-400', sizes[size])}>
-      {method}
-    </span>
+    <span className={cn('shrink-0 font-mono font-medium uppercase', methodColors[method] ?? 'text-muted-foreground', sizes[size])}>{method}</span>
   );
 }

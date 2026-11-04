@@ -21,16 +21,16 @@ export function Uploader() {
       }}
     >
       <DialogContent className="h-[40vh] min-h-fit max-w-xl sm:w-[80vw] md:max-w-2xl">
-        <DialogHeader className="with-close-btn">
-          <DialogTitle className={uploadData.title ? 'h-6 leading-6' : 'sr-only'}>{uploadData.title || t('c:upload')}</DialogTitle>
-          {uploadData.onDeleteImage ? (
-            <DialogDescription>
-              <Trans t={t} i18nKey="c:replace_image.text" components={{ delete_anchor: <InlineLinkButton onClick={uploadData.onDeleteImage} /> }} />
-            </DialogDescription>
-          ) : (
-            uploadData.description && <DialogDescription>{uploadData.description}</DialogDescription>
-          )}
+        <DialogHeader>
+          <DialogTitle className={uploadData.title ? 'h-6 min-w-0 truncate leading-6' : 'sr-only'}>{uploadData.title || t('c:upload')}</DialogTitle>
         </DialogHeader>
+        {uploadData.onDeleteImage ? (
+          <DialogDescription>
+            <Trans t={t} i18nKey="c:replace_image.text" components={{ delete_anchor: <InlineLinkButton onClick={uploadData.onDeleteImage} /> }} />
+          </DialogDescription>
+        ) : (
+          uploadData.description && <DialogDescription>{uploadData.description}</DialogDescription>
+        )}
         <UploadDashboard uppy={uppy} autoOpen={isImageTemplate(uploadData.templateId) ? 'imageEditor' : null} />
       </DialogContent>
     </Dialog>

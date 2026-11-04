@@ -30,7 +30,7 @@ export function TimezoneFormField<TFieldValues extends FieldValues>({ country, .
     icon: entry.country ? (
       <CountryFlag countryCode={entry.country} imgType="png" alt="" className="shrink-0" />
     ) : (
-      <GlobeIcon className="size-4 text-faint-foreground" />
+      <GlobeIcon className="text-faint-foreground size-4" />
     ),
     detail: entry.offsetLabel,
     keywords: `${entry.zone} ${entry.genericName} ${entry.offsetLabel}`,
@@ -47,7 +47,7 @@ export function TimezoneFormField<TFieldValues extends FieldValues>({ country, .
       renderOption={(option) => (
         <>
           <span className="shrink-0">{option.city}</span>
-          <span className="truncate text-faint-foreground">{option.subtitle}</span>
+          <span className="text-faint-foreground truncate">{option.subtitle}</span>
         </>
       )}
       clearable

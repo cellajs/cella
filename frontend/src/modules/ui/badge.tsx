@@ -3,21 +3,21 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '~/utils/cn';
 
 export const badgeVariants = cva(
-  'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] aria-invalid:border-destructive [&>svg]:pointer-events-none [&>svg]:size-3',
+  'focus-effect aria-invalid:border-destructive flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] [&>svg]:pointer-events-none [&>svg]:size-3',
   {
     variants: {
       variant: {
         default: 'intent-primary border-transparent',
         brand: 'intent-brand border-transparent',
         success: 'intent-success border-transparent',
-        secondary: 'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-muted-hover',
+        secondary: 'bg-secondary text-secondary-foreground [a&]:hover:bg-muted-hover border-transparent',
         destructive: 'intent-destructive border-transparent',
         outline: 'text-foreground [a&]:hover:bg-hover [a&]:hover:text-foreground',
         warning: 'intent-warning border-transparent',
       },
       soft: { true: '', false: '' },
       size: {
-        micro: 'h-4 py-0 text-2xs',
+        micro: 'text-2xs h-4 py-0',
         xs: 'h-5',
         sm: 'h-6',
         md: 'h-7 text-sm',
@@ -25,7 +25,7 @@ export const badgeVariants = cva(
         xl: 'h-12 text-lg',
       },
       context: {
-        button: 'zoom-in absolute -top-1.5 -right-1.5 min-w-5 animate-in px-1 py-0 shadow-md',
+        button: 'zoom-in animate-in absolute -top-1.5 -right-1.5 min-w-5 px-1 py-0 shadow-md',
         none: '',
       },
     },

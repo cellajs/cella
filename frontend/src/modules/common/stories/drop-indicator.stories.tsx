@@ -9,7 +9,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const Container = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative flex h-24 w-48 items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground text-sm">
+  <div className="border-muted-foreground/30 text-muted-foreground relative flex h-24 w-48 items-center justify-center rounded-md border border-dashed text-sm">
     Drop target
     {children}
   </div>

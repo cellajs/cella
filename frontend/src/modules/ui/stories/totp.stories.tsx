@@ -186,7 +186,7 @@ export const AuthForm: Story = {
     return (
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-2 text-center">
-          <h2 className="font-semibold text-2xl">Verify your identity</h2>
+          <h2 className="text-2xl font-semibold">Verify your identity</h2>
           <p className="text-muted-foreground text-sm">Enter the 6-digit code sent to your device</p>
         </div>
 
@@ -208,7 +208,7 @@ export const AuthForm: Story = {
         </div>
 
         <div className="text-center">
-          <button className="text-muted-foreground text-sm underline hover:text-foreground">Didn't receive a code? Resend</button>
+          <button className="text-muted-foreground hover:text-foreground text-sm underline">Didn't receive a code? Resend</button>
         </div>
       </div>
     );
@@ -231,14 +231,14 @@ export const RecoveryCodes: Story = {
     return (
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2">
-          <h3 className="font-semibold text-lg">Enter Recovery Codes</h3>
+          <h3 className="text-lg font-semibold">Enter Recovery Codes</h3>
           <p className="text-muted-foreground text-sm">Enter any 3 of your 8-character recovery codes</p>
         </div>
 
         <div className="space-y-4">
           {codes.map((code, index) => (
             <div key={index} className="flex items-center space-x-2">
-              <span className="w-20 font-medium text-sm">Code {index + 1}:</span>
+              <span className="w-20 text-sm font-medium">Code {index + 1}:</span>
               <InputOTP length={8} validationType="alphanumeric" value={code} onValueChange={(value) => handleCodeChange(index, value)}>
                 <InputOTPGroup>
                   <InputOTPSlot />

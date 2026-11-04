@@ -227,8 +227,7 @@ export const useChangeEntityRoleMutation = () =>
 
       const { id: entityId, entityType, tenantId } = entity;
       const membership = findMembership(getCachedMemberships() ?? [], entityId);
-      const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
-      if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
+      const organizationId = channelOrganizationId(entity);
 
       if (membership) {
         const updated = await updateMembership({ body: { role }, path: { id: membership.id, tenantId, organizationId } });

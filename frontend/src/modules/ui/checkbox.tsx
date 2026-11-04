@@ -10,14 +10,14 @@ export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) 
       className={cn(
         // Transparent ::before extends the hit area just past the 4px focus/selection ring so edge clicks register.
         // Opaque fill: on a hovered row a see-through box takes the row's muted fill, which is how a disabled checkbox looks.
-        'peer focus-effect relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-input field-hover:border-input-hover bg-background transition-shadow before:absolute before:-inset-1.25 aria-invalid:border-destructive data-disabled:cursor-not-allowed data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground data-disabled:opacity-50',
+        'peer focus-effect border-input field-hover:border-input-hover bg-background aria-invalid:border-destructive data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border transition-shadow before:absolute before:-inset-1.25 data-disabled:cursor-not-allowed data-disabled:opacity-50',
         className,
       )}
       {...props}
     >
       <CheckboxPrimitive.Indicator data-slot="checkbox-indicator" className="flex items-center justify-center text-current transition-none">
-        <CheckIcon className="in-data-indeterminate:hidden size-4" />
-        <MinusIcon className="in-data-indeterminate:block hidden size-4" />
+        <CheckIcon className="size-4 in-data-indeterminate:hidden" />
+        <MinusIcon className="hidden size-4 in-data-indeterminate:block" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

@@ -23,20 +23,20 @@ type ListParts = ReturnType<typeof listParts>;
 /** A name on one line, cut in the middle when it overflows the line. In a drawer's lead it wraps with the sentence. */
 function CutName({ text }: { text: string }) {
   // A box that cannot wrap moves to the next line whole when the words before it leave too little room
-  if (use(DrawerLeadContext)) return <strong className="wrap-break-word font-semibold text-foreground">{text}</strong>;
+  if (use(DrawerLeadContext)) return <strong className="text-foreground font-semibold wrap-break-word">{text}</strong>;
 
   return (
-    <strong className="font-semibold text-foreground">
-      {/* 1ch less than the line leaves room for the mark that ends the sentence, so a cut name keeps its "?" on its line */}
+    <strong className="text-foreground font-semibold">
+      {/* 1ch less than the line keeps the sentence's closing "?" on a cut name's line */}
       <MiddleCut text={text} className="max-w-[calc(100%-1ch)]" />
     </strong>
   );
 }
 
 interface StrongProps {
-  /** The interpolated text of each list value, mapped to its parts. */
+  /** Keyed by a list's interpolated text. */
   lists: Map<string, ListParts>;
-  /** The interpolated `name`, which keeps to one line and is cut in the middle. */
+  /** The interpolated `name`. */
   name?: string;
   children?: ReactNode;
 }
@@ -59,18 +59,15 @@ function Strong({ lists, name, children }: StrongProps) {
 interface NamedTextProps {
   /** A sentence whose translation wraps what it names in `<strong>`. */
   i18nKey: TKey;
-  /** The item or entity the sentence names, interpolated as `{{name}}`. */
+  /** Interpolated as `{{name}}`. */
   name?: string;
   /** A list of names shows the first three and counts the rest. */
   values?: Record<string, string | number | string[]>;
 }
 
 /**
- * A sentence that names what it is about: what a confirmation hits, or the entity a sheet or dialog acts on. The
- * translation marks the name (or an email address, a count of items) with `<strong>`, so it shows in semibold. The
- * `name` and each name of a list stay on one line and are cut in the middle when they overflow it, except in a drawer's
- * lead, where they wrap with the sentence; anything else it marks keeps to one line while it fits one, so an address
- * never splits at its hyphen.
+ * A sentence whose translation marks what it names with `<strong>`. `name` and listed names stay on one line, cut in the
+ * middle, except in a drawer's lead, where they wrap; anything else marked keeps to one line while it fits.
  */
 export function NamedText({ i18nKey, name, values = {} }: NamedTextProps) {
   const { t } = useTranslation();

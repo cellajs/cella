@@ -119,7 +119,7 @@ function Cell<R, SR>({
         })
       )}
       {isEditable && (
-        <PencilIcon className="pointer-events-none absolute top-2 right-2 hidden size-3 text-muted-foreground sm:group-hover/cell:block" />
+        <PencilIcon className="text-muted-foreground pointer-events-none absolute top-2 right-2 hidden size-3 sm:group-hover/cell:block" />
       )}
     </div>
   );

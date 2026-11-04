@@ -13,7 +13,7 @@ export function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol
   return (
     <ol
       data-slot="breadcrumb-list"
-      className={cn('wrap-break-word flex flex-wrap items-center gap-1.5 text-muted-foreground text-sm sm:gap-2.5', className)}
+      className={cn('text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm wrap-break-word sm:gap-2.5', className)}
       {...props}
     />
   );
@@ -30,7 +30,7 @@ export function BreadcrumbLink({ render, className, ...props }: useRender.Compon
     props: {
       'data-slot': 'breadcrumb-link',
       className: cn(
-        'focus-effect link-decoration active:link-decoration-strong rounded-sm ring-offset-0 transition-colors hover:text-foreground hover:underline',
+        'focus-effect link-decoration active:link-decoration-strong hover:text-foreground rounded-sm ring-offset-0 transition-colors hover:underline',
         className,
       ),
       ...props,
@@ -46,7 +46,7 @@ export function BreadcrumbPage({ className, ...props }: React.ComponentProps<'sp
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn('font-normal text-foreground', className)}
+      className={cn('text-foreground font-normal', className)}
       {...props}
     />
   );

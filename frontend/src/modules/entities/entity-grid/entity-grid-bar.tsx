@@ -34,21 +34,20 @@ export const gridSortDefaults = <TSort extends string>([first]: readonly [GridSo
 interface EntityGridBarProps<TSort extends string> {
   queryKey: QueryKey;
   label: TKey;
-  /** Channel entity the grid lists; scopes the role filter to that entity's role vocabulary. */
+  /** Scopes the role filter to this entity's roles. */
   entityType: ChannelEntityType;
   searchVars: EntityGridBarSearch<TSort>;
   setSearch: (search: Partial<EntityGridBarSearch<TSort>>) => void;
-  /** The sort menu; the grid's search opens on the first (`gridSortDefaults`). */
+  /** The first is the default (`gridSortDefaults`). */
   sortOptions: readonly GridSortOption<TSort>[];
-  /** Shows the focus view toggle (default false). */
   focusView?: boolean;
-  /** The list's main action, such as create: on a phone a floating button, from `sm` up shown alone while the bar hides. */
+  /** A floating button on a phone; from `sm` up it stays while the bar hides. */
   action?: TableBarAction;
-  /** A grid/table view toggle after the filters; it hides with the bar. */
+  /** Hides with the bar. */
   viewToggle?: ReactNode;
-  /** Shows the role filter (default true); a discovery grid passes false, since a role narrows the backend scope to member rows. */
+  /** A discovery grid passes false: a role narrows the backend scope to member rows. */
   roleFilter?: boolean;
-  /** Keeps the bar at or below gridPreviewLimit while unfiltered (default false). */
+  /** Shows the bar at or below gridPreviewLimit while unfiltered. */
   alwaysShow?: boolean;
 }
 

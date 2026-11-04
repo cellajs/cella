@@ -32,10 +32,9 @@ export function NotificationsSheet() {
 
   return (
     <NavSheetFrame>
-      {/* Sticky like the menu sheet's section buttons: opaque card layer inside the sheet's scroll container. */}
-      <div className="sticky top-0 z-10 bg-card">
+      <div className="bg-card sticky top-0 z-10">
         <div className="flex min-h-16 items-center justify-between gap-2 px-5">
-          <h2 className="flex items-center gap-2 font-semibold text-base">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
             {t('c:notifications')}
             <UnreadCountBadge />
           </h2>
@@ -89,7 +88,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
       />
       <span className="flex min-w-0 flex-col gap-0.5">
         {/* One `c:notification.<type>` sentence per vocabulary type, interpolating actor, subject and channel; apps add theirs to app.json */}
-        <span className={cn('wrap-break-word text-sm', notification.readAt && 'text-muted-foreground')}>
+        <span className={cn('text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
           {t(`c:notification.${notification.type}`, {
             actor: actor?.name || t('c:someone'),
             subject: subjectTitle || t('c:unknown'),
@@ -101,8 +100,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
     </>
   );
 
-  // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode). A read row hovers as a
-  // navigable item does; an unread row's hover strengthens its fill as a secondary button's does.
+  // Unread rows carry the full accent: accent/30 barely shows on the card in light mode
   const className = cn(
     'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
     notification.readAt ? 'hover:bg-hover' : 'bg-accent hover:bg-muted-hover',
@@ -110,24 +108,17 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
 
   return (
     <li>
-      {route ? (
-        <Link
-          to={route.to}
-          params={route.params}
-          search={route.search}
-          onClick={openNotification}
-          {...pageTopHashNav}
-          draggable={false}
-          className={className}
-        >
-          {content}
-        </Link>
-      ) : (
-        // An unknown channel type still marks read; it just cannot navigate anywhere sensible.
-        <button type="button" onClick={openNotification} className={className}>
-          {content}
-        </button>
-      )}
+      <Link
+        to={route.to}
+        params={route.params}
+        search={route.search}
+        onClick={openNotification}
+        {...pageTopHashNav}
+        draggable={false}
+        className={className}
+      >
+        {content}
+      </Link>
     </li>
   );
 }

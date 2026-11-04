@@ -23,9 +23,9 @@ function TrapWithButtons({
   return (
     <FocusTrap active={active} containFocus={containFocus} initialFocus={initialFocus} returnFocus={returnFocus}>
       <fieldset className="flex flex-col gap-2 rounded border p-4">
-        <legend className="font-medium text-sm">{label}</legend>
+        <legend className="text-sm font-medium">{label}</legend>
         {Array.from({ length: count }, (_, i) => (
-          <button key={i} type="button" className="rounded border px-3 py-1.5 text-sm hover:bg-hover focus:outline-2 focus:outline-primary">
+          <button key={i} type="button" className="hover:bg-hover focus:outline-primary rounded border px-3 py-1.5 text-sm focus:outline-2">
             Button {i + 1}
           </button>
         ))}

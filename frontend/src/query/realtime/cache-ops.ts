@@ -105,7 +105,7 @@ function invalidateFilteredLists(entityType: ProductEntityType, orgListKey: read
  * detail and rows new to a list guard against the cached copy read before any write.
  * @returns The rows every list lacked, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: EntityQueryKeys, organizationId: string | null): ItemData[] {
+function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: EntityQueryKeys, organizationId: string): ItemData[] {
   const tombstones = rows.filter(isSoftDeleted);
   const live = rows.filter((row) => {
     if (isSoftDeleted(row)) return false;
@@ -121,7 +121,7 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
     writeKeepingMark<ItemData>(queryClient, keys.detail.byId(row.id), (old) => old && { ...old, ...guarded });
   }
 
-  const route = (row: ItemData): RoutableItemData => ({ ...row, entityType, organizationId: organizationId ?? undefined });
+  const route = (row: ItemData): RoutableItemData => ({ ...row, entityType, organizationId });
   // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
   const { seen, spliced, sawFilteredList } = spliceEntitiesIntoListCaches(queryClient, [...tombstones, ...live].map(route), {
     isRemoved: isSoftDeleted,
@@ -130,7 +130,7 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
   });
 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
-  if (organizationId && !sawFilteredList) {
+  if (!sawFilteredList) {
     for (const row of live) {
       const homeChannelId = resolveHomeChannelId(entityType, route(row));
       if (!homeChannelId || seen.has(row.id) || spliced.has(row.id)) continue;
@@ -156,13 +156,13 @@ const failedRange = (status: Exclude<RangeFetchResult['status'], 'ok'>): RangeFe
 
 export async function fetchRangeAndPatch(
   entityType: ProductEntityType,
-  organizationId: string | null,
+  organizationId: string,
   tenantId: string | null,
   range: SeqRange,
   keys: EntityQueryKeys,
   channelId?: string,
 ): Promise<RangeFetchResult> {
-  if (!tenantId && organizationId) {
+  if (!tenantId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} range fetch, falling back to invalidation`);
     return failedRange('unsupported');
   }
@@ -191,7 +191,7 @@ export async function fetchRangeAndPatch(
     const newRows = applyServerRows(entityType, items, keys, organizationId);
 
     // Filtered lists filter on the server, so one invalidation per flush lets the active ones refetch and place new rows.
-    if (newRows.length && organizationId) invalidateFilteredLists(entityType, keys.list.org(organizationId), newRows);
+    if (newRows.length) invalidateFilteredLists(entityType, keys.list.org(organizationId), newRows);
 
     if (items.length > 0) console.debug(`[CacheOps] Range fetch: ${label} patched ${items.length} entities`);
     const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item) ?? 0), 0);

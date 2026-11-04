@@ -6,9 +6,8 @@ interface HelpTextProps {
   children: ReactNode;
   content: ReactNode;
   className?: string;
-  /** At the end of the title row, such as an add button. */
   action?: ReactNode;
-  /** Of the help toggle, for a table cell that takes it from `renderCell`. */
+  /** Of the help toggle. */
   tabIndex?: number;
 }
 

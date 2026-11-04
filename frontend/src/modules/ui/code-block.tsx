@@ -6,7 +6,7 @@ export function CodeBlock({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="code-block"
-      className={cn('not-prose group/code-block relative w-full min-w-0 overflow-hidden rounded-md border bg-muted/50 text-sm', className)}
+      className={cn('not-prose group/code-block bg-muted/50 relative w-full min-w-0 overflow-hidden rounded-md border text-sm', className)}
       {...props}
     />
   );
@@ -18,7 +18,7 @@ export function CodeBlockActions({ className, ...props }: ComponentProps<'div'>)
     <div
       data-slot="code-block-actions"
       className={cn(
-        'absolute inset-e-2 top-2 z-10 flex items-center gap-1 opacity-0 pointer-coarse:opacity-100 transition-opacity group-focus-within/code-block:opacity-100 group-hover/code-block:opacity-100',
+        'absolute inset-e-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-focus-within/code-block:opacity-100 group-hover/code-block:opacity-100 pointer-coarse:opacity-100',
         className,
       )}
       {...props}
@@ -33,7 +33,7 @@ export function CodeBlockContent({ className, ...props }: ComponentProps<'pre'>)
       data-slot="code-block-content"
       // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region has to take keyboard focus.
       tabIndex={0}
-      className={cn('focus-effect focus-inset overflow-x-auto px-4 py-3.5 font-mono text-muted-foreground leading-normal', className)}
+      className={cn('focus-effect focus-inset text-muted-foreground overflow-x-auto px-4 py-3.5 font-mono leading-normal', className)}
       {...props}
     />
   );

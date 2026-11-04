@@ -12,7 +12,7 @@ export function CountBadge({ count, variant = 'primary', className }: CountBadge
   return (
     <span
       className={cn(
-        'flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-bold text-2xs leading-none',
+        'text-2xs flex h-4 min-w-4 items-center justify-center rounded-full px-1 leading-none font-bold',
         variant === 'destructive' ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-primary-foreground',
         className,
       )}

@@ -1,0 +1,41 @@
+name: PR title
+
+# The squash title becomes the commit on main that release-please reads, so it must be a Conventional Commit.
+# A workflow of its own so `edited` re-lints a retitled PR without rerunning CI. The `main` ruleset requires
+# this job by name, next to `ci-passed`.
+
+permissions: {}
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Lint PR title
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            revert
+            docs
+            chore
+            build
+            ci
+            style
+            test

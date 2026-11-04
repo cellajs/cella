@@ -8,14 +8,13 @@ interface TableBarContainerProps {
   children: ReactNode;
   className?: string;
   searchVars?: Record<string, unknown>;
-  /** Pins the bar under the sticky stack, as a phone's filtered row does: below the tab nav (z-80). */
+  /** Pins the bar under the sticky stack, below the tab nav (z-80) */
   pinned?: boolean;
 }
 
-// Pinned, its fill and bottom edge reach past the page gutters to the screen edges (the body clips the overflow), so what
-// it covers neither shows nor takes a tap beside it
+// Its fill reaches the screen edges (the body clips the overflow), so what it covers neither shows nor takes a tap beside it
 const pinnedClass = tw(
-  'z-70 bg-background before:absolute before:-inset-x-[100vmax] before:inset-y-0 before:-z-10 before:border-b before:bg-background',
+  'bg-background before:bg-background z-70 before:absolute before:-inset-x-[100vmax] before:inset-y-0 before:-z-10 before:border-b',
 );
 
 /** Row above a data table holding its filters and actions. Scrolls back to the top whenever the search vars change. */

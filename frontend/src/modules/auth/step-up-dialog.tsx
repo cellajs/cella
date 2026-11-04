@@ -110,7 +110,7 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
           onSubmit={submitCode}
           onCancel={() => setView(next ? 'add' : 'choose')}
         />
-        <p className="text-center text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-center text-sm">
           {t('c:step_up_no_mail')}{' '}
           <InlineLinkButton disabled={sending} onClick={() => sendCode()}>
             {t('c:step_up_code_resend')}
@@ -185,7 +185,7 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
         </Button>
       )}
       {recovery && (
-        <p className="mt-2 text-center text-muted-foreground text-sm">
+        <p className="text-muted-foreground mt-2 text-center text-sm">
           {t('c:step_up_lost_factor')}{' '}
           <InlineLinkButton disabled={sending} onClick={() => (recovery === 'enroll' ? setView('add') : sendCode())}>
             {t(recovery === 'enroll' ? 'c:step_up_new_factor' : 'c:step_up_email')}

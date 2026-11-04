@@ -15,7 +15,6 @@ export interface RoleGroupProps {
 interface SelectRolesProps extends RoleGroupProps {
   onChange: (value: EntityRole[]) => void;
   value?: EntityRole[];
-  /** Puts a star after the legend. */
   required?: boolean;
 }
 
@@ -34,7 +33,7 @@ function RoleCheckbox({ role, checked, onToggle }: RoleCheckboxProps) {
     // biome-ignore lint/a11y/noLabelWithoutControl: the Base UI control renders the hidden input this label wraps
     <label className="inline-flex cursor-pointer items-center gap-2">
       <Checkbox checked={checked} onCheckedChange={onToggle} aria-labelledby={labelId} />
-      <span id={labelId} className="font-normal text-sm leading-none peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-70">
+      <span id={labelId} className="text-sm leading-none font-normal peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-70">
         {t(role)}
       </span>
     </label>
@@ -49,7 +48,7 @@ export function SelectRoles({ onChange, value = emptyRoles, label, required, cla
   return (
     <Fieldset.Root className="flex flex-col gap-2">
       {label && (
-        <Fieldset.Legend className="font-medium text-sm">
+        <Fieldset.Legend className="text-sm font-medium">
           {label}
           {required && <RequiredMark />}
         </Fieldset.Legend>

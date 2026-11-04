@@ -9,7 +9,7 @@ import { DropdownMenuGroup, DropdownMenuLabel } from '~/modules/ui/dropdown-menu
 
 interface PopConfirmProps {
   children: ReactNode;
-  /** The question asked: a `NamedText` when it names what the action hits, so that name shows in bold. */
+  /** A `NamedText` when it names what the action hits. */
   title: ReactNode;
 }
 
@@ -19,10 +19,9 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
 
   if (surface === 'menu') {
     return (
-      // contain-inline-size keeps a long question from widening the popup: it grows only to the popup's min-width.
-      // text-balance carries a name that fits but leaves no room for its "?" down to the line of that mark
+      // contain-inline-size keeps a long question from widening the popup past its min-width
       <DropdownMenuGroup className="min-w-80 contain-inline-size">
-        <DropdownMenuLabel className="text-balance py-2 font-normal text-foreground text-sm">{title}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-foreground py-2 text-sm font-normal text-balance">{title}</DropdownMenuLabel>
         {children}
       </DropdownMenuGroup>
     );
@@ -40,14 +39,14 @@ export function PopConfirm({ children, title }: PopConfirmProps) {
 
   return (
     <div className="flex w-max max-w-80 flex-col gap-3 p-3">
-      <p className="text-balance text-sm">{title}</p>
+      <p className="text-sm text-balance">{title}</p>
       {children}
     </div>
   );
 }
 
 interface DeleteQuestionProps {
-  /** What is deleted, e.g. `c:project`. */
+  /** E.g. `c:project`. */
   resource: TKey;
   name: string;
 }

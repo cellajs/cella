@@ -112,7 +112,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
           variant="cell"
           size="cell"
           title={row.path}
-          className="min-w-0 font-mono text-foreground text-xs"
+          className="text-foreground min-w-0 font-mono text-xs"
           render={
             <Link
               {...operationLinkOptions(row)}
@@ -143,7 +143,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         if (!row.hasResponseBody) {
           return (
             <span
-              className="w-full text-center text-muted-foreground text-xs"
+              className="text-muted-foreground w-full text-center text-xs"
               data-tooltip="true"
               data-tooltip-content={t('c:docs.no_response_body')}
             >
@@ -153,7 +153,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         }
         if (!row.hasExample) {
           return (
-            <span className="w-full text-center text-muted-foreground" data-tooltip="true" data-tooltip-content={t('c:docs.no_example_yet')}>
+            <span className="text-muted-foreground w-full text-center" data-tooltip="true" data-tooltip-content={t('c:docs.no_example_yet')}>
               -
             </span>
           );
@@ -183,7 +183,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       width: 200,
       minWidth: 120,
       renderCell: ({ row }) => (
-        <code className="truncate text-muted-foreground text-xs">
+        <code className="text-muted-foreground truncate text-xs">
           <HighlightText text={row.id} />
         </code>
       ),

@@ -2,6 +2,7 @@ import type { Query } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
 import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
+import { isInfiniteQueryData } from '~/query/basic/mutate-query';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
 import { getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
 import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
@@ -32,11 +33,8 @@ function enrichListData(
   let dataChanged = false;
 
   const newPages = data.pages.map((page) => {
-    if (!page.items) return page;
-
     let pageChanged = false;
     const newItems = page.items.map((item) => {
-      if (!item.id) return item;
       const enriched = enrichWithAncestorSlugs(item, memberships, ancestors, slugIndex);
       if (enriched !== item) pageChanged = true;
       return enriched;
@@ -53,13 +51,10 @@ function enrichListData(
 function buildSlugMap(entityType: ChannelEntityType): Map<string, string> {
   const slugMap = new Map<string, string>();
   for (const query of queryClient.getQueryCache().findAll({ queryKey: [entityType, 'list'] })) {
-    const data = query.state.data as EnrichableListData | undefined;
-    if (!data?.pages) continue;
+    const data = query.state.data;
+    if (!isInfiniteQueryData<EnrichableChannel>(data)) continue;
     for (const page of data.pages) {
-      if (!page.items) continue;
-      for (const item of page.items) {
-        if (item.id && item.slug) slugMap.set(item.id, item.slug);
-      }
+      for (const item of page.items) slugMap.set(item.id, item.slug);
     }
   }
   return slugMap;
@@ -79,8 +74,8 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
   const cache = queryClient.getQueryCache();
 
   for (const query of cache.findAll({ queryKey: [entityType, 'list'] })) {
-    const data = query.state.data as EnrichableListData | undefined;
-    if (!data?.pages) continue;
+    const data = query.state.data;
+    if (!isInfiniteQueryData<EnrichableChannel>(data)) continue;
     const enriched = enrichListData(data, memberships, entityType, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }
@@ -88,7 +83,7 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
   const ancestors = getExtendedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
     const data = query.state.data as EnrichableChannel | undefined;
-    if (!data?.id) continue;
+    if (!data) continue;
     const enriched = enrichWithAncestorSlugs(data, memberships, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
   }

@@ -44,7 +44,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
       className={cn(
         'group/step relative flex flex-col not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
         // The connector from this step's icon down to the next step's icon
-        "not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)] not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap) not-last:after:w-0.5 not-last:after:bg-border not-last:after:transition-colors not-last:after:duration-200 not-last:after:content-[''] data-[completed=true]:not-last:after:bg-primary",
+        "not-last:after:bg-border data-[completed=true]:not-last:after:bg-primary not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)] not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap) not-last:after:w-0.5 not-last:after:transition-colors not-last:after:duration-200 not-last:after:content-['']",
         isCurrentStep && 'gap-(--step-gap)',
       )}
       data-completed={isCompletedStep}
@@ -55,7 +55,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             variant="ghost"
             type="button"
             tabIndex={isClickable ? 0 : -1}
-            className="pointer-events-none size-(--step-icon-size) rounded-full border-2 border-border p-0 data-[clickable=true]:pointer-events-auto data-[completed=true]:border-primary data-[current=true]:border-primary data-[completed=true]:bg-primary data-[current=true]:bg-secondary data-[completed=true]:text-primary-foreground"
+            className="border-border data-[completed=true]:border-primary data-[current=true]:border-primary data-[completed=true]:bg-primary data-[current=true]:bg-secondary data-[completed=true]:text-primary-foreground pointer-events-none size-(--step-icon-size) rounded-full border-2 p-0 data-[clickable=true]:pointer-events-auto"
             aria-current={isCurrentStep ? 'step' : undefined}
             data-current={isCurrentStep}
             data-completed={isCompletedStep}

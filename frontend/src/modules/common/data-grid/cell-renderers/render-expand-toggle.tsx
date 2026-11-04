@@ -6,18 +6,15 @@ import { cn } from '~/utils/cn';
 export interface RenderExpandToggleProps {
   expanded: boolean;
   hasChildren: boolean;
-  /** Pixel height of the row; connector paths are drawn in row-relative pixel coordinates. */
+  /** In px */
   rowHeight: number;
-  /** Nesting depth of the row. 0 = root. Draws a connector line above nested rows. */
+  /** 0 is root */
   depth?: number;
-  /** True when this row is the last child of its parent. Suppresses the connector line below. */
   isLastChild?: boolean;
-  /** True when the parent is the last child of its grandparent; decides if the depth-1 trunk continues through deeper rows. */
   parentIsLastChild?: boolean;
-  /** Maximum nesting depth; its final level receives the thin, hollow depth-limit treatment. */
+  /** Its final level draws thin and hollow */
   maxDepth?: number;
   tabIndex?: number;
-  /** Optional accessible label for the toggle. Falls back to "Expand"/"Collapse". */
   label?: string;
   onToggle: () => void;
 }
@@ -152,7 +149,7 @@ export function RenderExpandToggle({
         // Connectors stretch to the rendered cell for mobile row and rem scaling; the viewBox keeps desktop drawing coordinates.
         <svg
           aria-hidden
-          className="pointer-events-none absolute inset-0 size-full text-input"
+          className="text-input pointer-events-none absolute inset-0 size-full"
           viewBox={`0 0 ${col} ${rowHeight}`}
           preserveAspectRatio="none"
         >
@@ -201,10 +198,10 @@ export function RenderExpandToggle({
         isDeepest ? (
           <span
             aria-hidden
-            className="absolute top-1/2 left-[calc(50%+4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-input bg-background"
+            className="border-input bg-background absolute top-1/2 left-[calc(50%+4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
           />
         ) : (
-          <span aria-hidden className="absolute top-1/2 left-[calc(50%-4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-input" />
+          <span aria-hidden className="bg-input absolute top-1/2 left-[calc(50%-4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full" />
         )
       ) : null}
     </span>

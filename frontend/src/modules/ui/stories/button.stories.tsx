@@ -118,7 +118,7 @@ export const VariantMatrix: Story = {
     <div className="flex flex-col gap-4">
       {([true, false] as const).map((soft) => (
         <div key={String(soft)} className="flex flex-col gap-2">
-          <p className="font-medium text-muted-foreground text-xs uppercase">{soft ? 'soft' : 'solid'}</p>
+          <p className="text-muted-foreground text-xs font-medium uppercase">{soft ? 'soft' : 'solid'}</p>
           <div className="flex flex-wrap items-center gap-2">
             {buttonVariantNames.map((variant) => (
               <Button key={variant} variant={variant} soft={soft} size="sm">

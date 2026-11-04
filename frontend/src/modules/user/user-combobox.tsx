@@ -7,11 +7,12 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { StatusDot, tileTones } from '~/modules/common/expandable-tile';
+import { tileTones } from '~/modules/common/expandable-tile';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { MiddleCut } from '~/modules/common/middle-cut';
 import { SearchResultsSkeleton } from '~/modules/common/search-results-skeleton';
 import { SearchSpinner } from '~/modules/common/search-spinner';
+import { StatusDot } from '~/modules/common/status-dot';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxList } from '~/modules/ui/combobox';
@@ -177,7 +178,7 @@ export function UserCombobox({ chosen, onPick, onRemove, channel, autoFocus, onT
                 <div className="flex min-w-0 items-center gap-2">
                   {view && view.group !== 'new' ? (
                     <span className="flex shrink-0 items-center gap-1.5 text-sm">
-                      <StatusDot tone={view.tone} />
+                      <StatusDot variant={view.tone} pulse={false} />
                       <span className={cn('font-medium max-sm:hidden', tileTones[view.tone].text)}>{view.word}</span>
                     </span>
                   ) : (

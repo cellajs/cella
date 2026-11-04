@@ -12,10 +12,10 @@ export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount }: 
   const { t } = useTranslation();
   return (
     <>
-      <span className="mx-1.5 whitespace-nowrap text-muted-foreground text-xs italic">{t('c:item_count', { count: itemCount })}</span>
+      <span className="text-muted-foreground mx-1.5 text-xs whitespace-nowrap italic">{t('c:item_count', { count: itemCount })}</span>
       <span className={jsonViewerTheme.bracket}>{closeBracket}</span>
       {hiddenMatchCount > 0 && (
-        <span className={cn(jsonViewerTheme.matchBadge, 'ml-1.5 rounded px-1.5 py-0.5 font-medium text-sm')} title={t('c:matches_collapsed.text')}>
+        <span className={cn(jsonViewerTheme.matchBadge, 'ml-1.5 rounded px-1.5 py-0.5 text-sm font-medium')} title={t('c:matches_collapsed.text')}>
           {t('c:match_count', { count: hiddenMatchCount })}
         </span>
       )}

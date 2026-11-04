@@ -10,13 +10,12 @@ import { cn } from '~/utils/cn';
 interface TagSectionCardProps {
   scope: 'operations' | 'schemas';
   name: string;
-  /** Scroll-spy section id of the tag, which the copied link points to. */
+  /** Scroll-spy id; the copied link points to it. */
   sectionId: string;
   description?: string;
   isOpen: boolean;
-  /** The tag's table and expand link. */
   children: ReactNode;
-  /** The tag's full list below the card, prerendered with content-visibility: hidden on hover. */
+  /** Opens below the card; prerendered hidden on hover. */
   details: ReactNode;
 }
 
@@ -33,7 +32,7 @@ export function TagSectionCard({ scope, name, sectionId, description, isOpen, ch
             <HashUrlButton hash={sectionId} />
           </CardTitle>
           {description && (
-            <CardDescription className="my-2 max-w-measure text-base">
+            <CardDescription className="max-w-measure my-2 text-base">
               <SpecText text={description} />
             </CardDescription>
           )}

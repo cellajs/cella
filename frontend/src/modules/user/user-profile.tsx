@@ -38,7 +38,7 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
         avatarBadge={isSelf && <ProfilePictureButton user={user} className="sm:size-8" />}
       />
       <Suspense>
-        {/* No wrapper: the slot's tools bring their own container and top padding, so one can run a full-width tab nav */}
+        {/* No wrapper: the slot's tools bring their own container, so one can run a full-width tab nav */}
         <UserProfileContent user={user} organizationId={organizationId} isSheet={isSheet} />
       </Suspense>
     </>

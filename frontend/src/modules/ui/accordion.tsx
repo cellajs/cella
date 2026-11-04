@@ -16,13 +16,13 @@ export function AccordionTrigger({ className, children, ...props }: AccordionPri
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'focus-effect link-decoration active:link-decoration-strong flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm transition-all hover:underline data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
+          'focus-effect link-decoration active:link-decoration-strong flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all hover:underline data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
           className,
         )}
         {...props}
       >
         {children}
-        <ChevronDownIcon className="pointer-events-none size-5 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 group-hover/accordion-header:text-foreground" />
+        <ChevronDownIcon className="text-muted-foreground group-hover/accordion-header:text-foreground pointer-events-none size-5 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );
@@ -32,7 +32,7 @@ export function AccordionContent({ className, children, ...props }: AccordionPri
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"
-      className="overflow-hidden text-sm motion-safe:not-data-open:animate-accordion-up motion-safe:data-open:animate-accordion-down"
+      className="motion-safe:not-data-open:animate-accordion-up motion-safe:data-open:animate-accordion-down overflow-hidden text-sm"
       {...props}
     >
       <div className={cn('pt-0 pb-4', className)}>{children}</div>

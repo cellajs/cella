@@ -1,6 +1,8 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
 import type * as React from 'react';
-import { HeaderClose } from '~/modules/ui/dialog';
+import { useRef } from 'react';
+import { useStuck } from '~/hooks/use-stuck';
+import { type HeaderBarProps, HeaderClose, stuckEdgeClass } from '~/modules/ui/dialog';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -25,7 +27,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-113 bg-overlay data-closed:animate-out data-open:animate-in',
+        'data-closed:fade-out-0 data-open:fade-in-0 bg-overlay data-closed:animate-out data-open:animate-in fixed inset-0 z-113',
         // Same duration as the popup, which Base UI waits on before unmounting; forwards keeps the overlay hidden until then
         'data-closed:fill-mode-forwards data-closed:duration-300 data-open:duration-300',
         className,
@@ -59,7 +61,7 @@ export function SheetContent({
       className={cn(
         // The sheet's color sits on the popup, which a bounce of the scroll area reveals. A caller sets `--sheet-bg`, not a fill on its content.
         'flex flex-col bg-(--sheet-bg) shadow-lg [--sheet-bg:var(--background)] focus-visible:outline-hidden',
-        !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
+        !container && 'data-closed:animate-out data-open:animate-in fixed z-114 transition data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&
           'data-closed:slide-out-to-right data-open:slide-in-from-right inset-y-0 right-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
@@ -73,7 +75,7 @@ export function SheetContent({
       )}
       {...props}
     >
-      <ScrollArea className="size-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
+      <ScrollArea className="size-full" viewportClassName="touch-pan-y overscroll-none" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
     </SheetPrimitive.Popup>
@@ -95,15 +97,20 @@ export function SheetContent({
   );
 }
 
-export function SheetHeader({ className, sticky, children, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+/** The title bar of a sheet: the title, anything placed after it and a close button, on one row. */
+export function SheetHeader({ className, sticky, closeButton = true, children, ...props }: HeaderBarProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useStuck(ref, !!sticky);
+
   return (
     <div
+      ref={ref}
       data-slot="sheet-header"
-      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-(--sheet-bg)', className)}
+      className={cn('relative flex shrink-0 items-center gap-2 p-4', sticky && ['sticky top-0 z-10 bg-(--sheet-bg)', stuckEdgeClass], className)}
       {...props}
     >
       {children}
-      <HeaderClose />
+      {closeButton && <HeaderClose />}
     </div>
   );
 }
@@ -113,7 +120,7 @@ export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>
 }
 
 export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
-  return <SheetPrimitive.Title data-slot="sheet-title" className={cn('font-semibold text-foreground', className)} {...props} />;
+  return <SheetPrimitive.Title data-slot="sheet-title" className={cn('text-foreground font-semibold', className)} {...props} />;
 }
 
 export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props) {

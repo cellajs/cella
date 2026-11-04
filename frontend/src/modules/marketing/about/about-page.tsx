@@ -39,12 +39,8 @@ export function AboutPage() {
       <MarketingNav />
 
       <main className="focus:outline-hidden">
-        <Hero
-          title="about:hero.title"
-          // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
-          text="about:hero.text"
-        >
-          <div className="mb-8 flex xs:flex-row flex-col items-center gap-4">
+        <Hero title="about:hero.title" text="about:hero.text">
+          <div className="xs:flex-row mb-8 flex flex-col items-center gap-4">
             <Button
               variant="outline-ghost"
               size="lg"
@@ -60,10 +56,10 @@ export function AboutPage() {
                 id="install-command"
                 aria-label={t('c:install_command')}
                 value={installCommand}
-                className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
+                className="bg-background ring-primary/10 focus-visible:ring-primary/20 focus:border-input-hover block h-14 w-80 rounded-full border border-transparent px-8 py-6 font-mono text-sm font-light ring-4 transition focus:outline-hidden sm:w-96"
               />
               {copied && (
-                <div className="absolute top-2.5 right-2 left-8 rounded-full bg-background py-2 text-left font-mono text-sm">
+                <div className="bg-background absolute top-2.5 right-2 left-8 rounded-full py-2 text-left font-mono text-sm">
                   {t('about:install_copied')}
                 </div>
               )}
@@ -80,7 +76,7 @@ export function AboutPage() {
             </div>
           </div>
           <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')}>
-            <span className="font-normal text-base text-muted-foreground group-hover:text-foreground">{t('about:continue_below_fold')}</span>
+            <span className="text-muted-foreground group-hover:text-foreground text-base font-normal">{t('about:continue_below_fold')}</span>
             <ArrowDownIcon className="repeat-5 animate-bounce opacity-70 group-hover:opacity-100 motion-reduce:animate-none" />
           </Button>
         </Hero>

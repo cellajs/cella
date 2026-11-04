@@ -37,7 +37,7 @@ export function SchemasPage() {
     <div className="container">
       <DocsPageHeader title={t('c:schema', { count: 2 })} />
 
-      <p className="py-5 text-muted-foreground text-sm">
+      <p className="text-muted-foreground py-5 text-sm">
         {t('c:resource_count', { count: schemaCount, resource: t('c:schema', { count: schemaCount }) })}
       </p>
 

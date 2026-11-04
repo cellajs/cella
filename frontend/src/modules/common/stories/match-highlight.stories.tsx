@@ -31,7 +31,7 @@ function MatchHighlightDemo({ query: initialQuery }: { query: string }) {
       <div className="flex w-96 flex-col gap-3">
         <div className="flex items-center gap-2">
           <Input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search" />
-          <span data-testid="counter" className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">
+          <span data-testid="counter" className="text-muted-foreground text-xs whitespace-nowrap tabular-nums">
             {steps.index >= 0 ? `${steps.index + 1}/${steps.total}` : steps.total}
           </span>
           <Button variant="outline" size="sm" onClick={steps.previous}>
@@ -43,7 +43,7 @@ function MatchHighlightDemo({ query: initialQuery }: { query: string }) {
         </div>
         <ul className="flex flex-col gap-1">
           {people.map((name) => (
-            <li key={name} data-match-current={steps.currentId === name || undefined} className="rounded px-2 py-1 data-[match-current]:bg-accent">
+            <li key={name} data-match-current={steps.currentId === name || undefined} className="data-[match-current]:bg-accent rounded px-2 py-1">
               <HighlightText text={name} />
             </li>
           ))}

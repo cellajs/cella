@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { PreferenceDescription, PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
+import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 import { SegmentedControl, SegmentedControlItem } from '~/modules/ui/segmented-control';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -17,28 +17,22 @@ function ModeControl() {
   const setMode = useUIStore((state) => state.setMode);
 
   return (
-    <div className="flex flex-col py-2">
-      <SegmentedControl
-        size="sm"
-        aria-label={t('c:appearance')}
-        aria-describedby="mode-description"
-        value={mode}
-        onValueChange={setMode}
-        className="grid grid-cols-2 self-center rounded-full [--segment-px:--spacing(3)] *:rounded-full"
-      >
-        <SegmentedControlItem value="light">
-          <SunIcon className="size-4" />
-          {t('c:light')}
-        </SegmentedControlItem>
-        <SegmentedControlItem value="dark" className="group/mode">
-          <MoonIcon className="size-4 group-data-checked/mode:fill-current" />
-          {t('c:dark')}
-        </SegmentedControlItem>
-      </SegmentedControl>
-      <div className="px-3">
-        <PreferenceDescription id="mode-description">{t('c:dark_mode.text')}</PreferenceDescription>
-      </div>
-    </div>
+    <SegmentedControl
+      size="sm"
+      aria-label={t('c:appearance')}
+      value={mode}
+      onValueChange={setMode}
+      className="my-2 grid grid-cols-2 self-center rounded-full [--segment-px:--spacing(3)] *:rounded-full"
+    >
+      <SegmentedControlItem value="light">
+        <SunIcon className="size-4" />
+        {t('c:light')}
+      </SegmentedControlItem>
+      <SegmentedControlItem value="dark" className="group/mode">
+        <MoonIcon className="size-4 group-data-checked/mode:fill-current" />
+        {t('c:dark')}
+      </SegmentedControlItem>
+    </SegmentedControl>
   );
 }
 
@@ -69,7 +63,6 @@ export function PreferencesContent() {
         <PreferenceSwitch
           id="increaseContrast"
           label={t('c:increase_contrast')}
-          description={t('c:increase_contrast.text')}
           checked={contrast === 'more'}
           onCheckedChange={handleContrastChange}
         />
@@ -77,7 +70,6 @@ export function PreferencesContent() {
         <PreferenceSwitch
           id="keepNavOpen"
           label={t('c:keep_nav_open')}
-          description={t('c:keep_nav_open.text')}
           checked={keepOpenPreference}
           onCheckedChange={setKeepOpenPreference}
           className="max-2xl:hidden"
