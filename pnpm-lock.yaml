@@ -54,6 +54,9 @@ importers:
 
   a11y:
     dependencies:
+      sdk:
+        specifier: workspace:*
+        version: link:../sdk
       shared:
         specifier: workspace:*
         version: link:../shared

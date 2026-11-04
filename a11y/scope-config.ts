@@ -1,28 +1,30 @@
-import type { AuditApi, ScopeState } from './src/scope.ts';
+import { getMe, getMyMemberships, getOrganizations, updateMe } from 'sdk';
+import type { Client } from 'sdk/client';
+import type { ScopeState } from './src/scope.ts';
 import { auditContrast, settle } from './src/session.ts';
 
 /**
  * Brings the audit user into the state the pages below expect, before the first visit. A freshly seeded user has not
  * finished onboarding, and `/home` then redirects to the welcome page.
  */
-export const prepare = async (api: AuditApi) => {
-  const { user } = await api<{ user: { userFlags: { finishedOnboarding?: boolean }; contrast?: string } }>('/me');
-  if (!user.userFlags.finishedOnboarding) await api('/me', { method: 'PUT', body: { userFlags: { finishedOnboarding: true } } });
+export const prepare = async (client: Client) => {
+  const { user } = await getMe({ client });
+  if (!user.userFlags.finishedOnboarding) await updateMe({ client, body: { userFlags: { finishedOnboarding: true } } });
   // The browser context asks for more contrast, but `/me` overwrites the seeded UI store on every authenticated page.
   // Without this the run would quietly measure the default edges on exactly the pages richest in form controls.
-  if (user.contrast !== auditContrast) await api('/me', { method: 'PUT', body: { contrast: auditContrast } });
+  if (user.contrast !== auditContrast) await updateMe({ client, body: { contrast: auditContrast } });
 };
 
 /**
  * Values for the `{name}` placeholders in the paths below, read from the API as the audit user before the first visit.
  * A resolver that returns null skips nothing by itself: a state whose path needs the value fails with a clear message.
  */
-export const placeholders: Record<string, (api: AuditApi) => Promise<string | null>> = {
+export const placeholders: Record<string, (client: Client) => Promise<string | null>> = {
   /** Path prefix of an organization the audit user administers, the first in their menu: settings and the invite dialog need that role. */
-  org: async (api) => {
+  org: async (client) => {
     const [{ items: organizations }, { items: memberships }] = await Promise.all([
-      api<{ items: { id: string; tenantId: string; slug: string }[] }>('/organizations?limit=50'),
-      api<{ items: { channelId: string; channelType: string; role: string; archived: boolean; displayOrder: number }[] }>('/me/memberships'),
+      getOrganizations({ client, query: { limit: 50 } }),
+      getMyMemberships({ client }),
     ]);
     const [administered] = memberships
       .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)

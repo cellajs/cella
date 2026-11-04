@@ -12,6 +12,7 @@
     "ts": "tsgo --pretty"
   },
   "dependencies": {
+    "sdk": "workspace:*",
     "shared": "workspace:*"
   },
   "devDependencies": {
