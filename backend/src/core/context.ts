@@ -43,6 +43,12 @@ export type ActorBinding = Actor['bindings'][number];
 export type DbContext = { var: Pick<Env['Variables'], 'db'> };
 
 /**
+ * The request scope the guard chain set, without an actor: `tenantGuard` sets the tenant, `orgGuard` the organization;
+ * cross-tenant routes set none.
+ */
+export type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'organizationId'>> };
+
+/**
  * Someone acting inside a tenant, whatever proved them: no user row, so it stays callable with an API key or an access token.
  * The organization fields are present only behind `orgGuard`; operations that need them take `OrgContext`.
  */
