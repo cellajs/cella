@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type OrganizationFlags, roles } from 'shared';
+import { appConfig, recordFromKeys, roles, typedEntries } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -31,15 +31,12 @@ import { toolsConfigSchema } from '#/schemas/tools-config';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
-/** Flag keys come from the app-owned config; built loose then cast because with zero flags `keyof OrganizationFlags` is `never`. */
+/** Flag keys come from the app-owned config. */
 const organizationFlagsSchema = z.object(
-  Object.keys(appConfig.defaultOrganizationFlags).reduce(
-    (acc, key) => {
-      acc[key] = z.boolean();
-      return acc;
-    },
-    {} as Record<string, z.ZodBoolean>,
-  ) as { [K in keyof OrganizationFlags]: z.ZodBoolean },
+  recordFromKeys(
+    typedEntries(appConfig.defaultOrganizationFlags).map(([key]) => key),
+    () => z.boolean(),
+  ),
 );
 
 export const organizationSchema = z

@@ -1,4 +1,4 @@
-import { appConfig, type EntityType } from 'shared';
+import { appConfig, type EntityType, recordFromKeys } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
@@ -32,13 +32,8 @@ export type Restrictions = {
 export const defaultRestrictions = (): Restrictions => {
   const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
 
-  const quotas = quotaKeys.reduce((acc, key) => {
-    acc[key] = defaultQuotas[key] ?? 0;
-    return acc;
-  }, {} as Quotas);
-
   return {
-    quotas,
+    quotas: recordFromKeys(quotaKeys, (key) => defaultQuotas[key] ?? 0),
     rateLimits: { ...appConfig.defaultRestrictions.rateLimits },
     allowUnregisteredClients: true,
   };

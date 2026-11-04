@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type UserFlags } from 'shared';
+import { appConfig, recordFromKeys, typedEntries } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { memberCountsSchema } from '#/modules/memberships/helpers/member-counts';
@@ -12,12 +12,9 @@ import { userBaseSchema } from '#/schemas/user-schema-base';
 export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProviders);
 
 export const userFlagsSchema = z.object(
-  Object.keys(appConfig.defaultUserFlags).reduce(
-    (acc, key) => {
-      acc[key as keyof UserFlags] = z.boolean();
-      return acc;
-    },
-    {} as { [K in keyof UserFlags]: z.ZodBoolean },
+  recordFromKeys(
+    typedEntries(appConfig.defaultUserFlags).map(([key]) => key),
+    () => z.boolean(),
   ),
 );
 

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { appConfig, recordFromKeys } from 'shared';
 
 /**
  * The types the public counts cover: users and channel types. Product tables enforce row-level security, which hides
@@ -7,8 +7,4 @@ import { appConfig } from 'shared';
  */
 export const publicCountTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
-type PublicCountType = (typeof publicCountTypes)[number];
-
-export const publicCountsSchema = z.object(
-  Object.fromEntries(publicCountTypes.map((type) => [type, z.number()])) as Record<PublicCountType, z.ZodNumber>,
-);
+export const publicCountsSchema = z.object(recordFromKeys(publicCountTypes, () => z.number()));
