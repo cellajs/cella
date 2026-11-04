@@ -1,8 +1,9 @@
 import { type ActivityAction, type EntityHierarchy, type EntityType, hierarchy, type ResourceType } from 'shared';
+import type { StreamSignalType } from 'shared/stream-signal-types';
 
 /** A signal whose version the changes of a tracked table move. */
 interface VersionedSignal {
-  type: string;
+  type: StreamSignalType;
   /** The changes that move it; every change when absent. */
   actions?: ActivityAction[];
   /** Whether the live signal names the changed channel row and goes to that channel's readers; without it, to the organization's. */
