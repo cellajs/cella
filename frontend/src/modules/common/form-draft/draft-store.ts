@@ -4,15 +4,15 @@ import { immer } from 'zustand/middleware/immer';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface DraftStoreState {
-  /** Draft values by form id. */
-  forms: Record<string, unknown>;
+  /** Draft values by form id, untyped: a draft restored from disk may predate its form's current fields. */
+  forms: Record<string, Record<string, unknown>>;
   /** The ids of forms with unsaved changes; a clean form has no entry. */
   dirtyForms: Record<string, boolean>;
 
-  setForm<T>(key: string, value: T): void;
+  setForm(key: string, values: Record<string, unknown>): void;
   /** Removes the form's draft and its dirty flag. */
   resetForm(key: string): void;
-  getForm<T>(key: string): T | undefined;
+  getForm(key: string): Record<string, unknown> | undefined;
   /** Clears the drafts in memory, on sign-out. */
   reset(): void;
   setFormDirty(key: string, dirty: boolean): void;
@@ -27,9 +27,9 @@ export const useDraftStore = create<DraftStoreState>()(
     persist(
       (set, get) => ({
         ...initStore,
-        setForm: <T>(key: string, value: T) => {
+        setForm: (key, values) => {
           set((state) => {
-            state.forms[key] = value;
+            state.forms[key] = values;
           });
         },
         resetForm: (key: string) => {
@@ -38,7 +38,7 @@ export const useDraftStore = create<DraftStoreState>()(
             delete state.dirtyForms[key];
           });
         },
-        getForm: <T>(key: string): T | undefined => get().forms[key] as T | undefined,
+        getForm: (key) => get().forms[key],
         reset: () => set(initStore),
         setFormDirty: (key: string, dirty: boolean) => {
           set((state) => {
