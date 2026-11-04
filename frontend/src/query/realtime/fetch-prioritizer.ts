@@ -243,7 +243,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
 
   // The org id is the fallback home for rows without ancestor ids.
-  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[] });
+  if (result.status === 'ok') publishSyncedRows({ entityType, organizationId, rows: result.items });
 
   // Overflow, unsupported, exhausted retries, or fewer rows than announced: a row changed again since, one this reader may not read, or one deleted with its channel.
   const undelivered = result.status !== 'ok' || result.reachedSeq < untilSeq;
