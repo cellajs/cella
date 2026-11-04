@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.36.0](https://github.com/cellajs/cella/compare/0.35.0...0.36.0) (2026-11-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* refactor work ([#1710](https://github.com/cellajs/cella/issues/1710))
+* every read is paced, limiters key on the actor and document their budget ([#1708](https://github.com/cellajs/cella/issues/1708))
+* TypeScript review: unions over strings, shapes declared once, casts and guards the types now refuse ([#1706](https://github.com/cellajs/cella/issues/1706))
+
+### 🎉 New features
+
+* every read is paced, limiters key on the actor and document their budget ([#1708](https://github.com/cellajs/cella/issues/1708)) ([8e391e6](https://github.com/cellajs/cella/commit/8e391e6d4fc0e3cfec3035b343347ea4e9e077aa))
+
+
+### 🐞 Bug fixes
+
+* **infra:** the apply prunes a secret the move deleted before the up ([#1703](https://github.com/cellajs/cella/issues/1703)) ([761b49d](https://github.com/cellajs/cella/commit/761b49d329ae1d3afd49b4af3b2cfc6c4b73998b))
+* **infra:** the builder's spec generation passes a placeholder database URL ([#1705](https://github.com/cellajs/cella/issues/1705)) ([a865306](https://github.com/cellajs/cella/commit/a865306df7e97ce62f61c3e1df225578314ea345))
+* **infra:** the cron home's privilege may read custom, a verified difference still starts the target ([#1707](https://github.com/cellajs/cella/issues/1707)) ([0690b90](https://github.com/cellajs/cella/commit/0690b9059c623d62b988e75c4e9ad2cc622b6c60))
+* **infra:** the deploy key writes IPAM, which a private NIC at a reserved address takes ([#1709](https://github.com/cellajs/cella/issues/1709)) ([b975869](https://github.com/cellajs/cella/commit/b975869713f5b758c49a4cd3429886061d41f99d))
+* **tests:** route and MCP tests follow the read limiter and the route key order ([#1711](https://github.com/cellajs/cella/issues/1711)) ([5996e03](https://github.com/cellajs/cella/commit/5996e03df24a9eb8f3f07ab7ec95085e3ea20a76))
+
+
+### 🔧 Small improvements
+
+* refactor work ([#1710](https://github.com/cellajs/cella/issues/1710)) ([f93cd9b](https://github.com/cellajs/cella/commit/f93cd9b17320dbf4cb5f31f73b38c66c917b207f))
+* TypeScript review: unions over strings, shapes declared once, casts and guards the types now refuse ([#1706](https://github.com/cellajs/cella/issues/1706)) ([4eef5e5](https://github.com/cellajs/cella/commit/4eef5e5530d7022f409b925a2b7d2ef20d9e3873))
+
 ## [0.35.0](https://github.com/cellajs/cella/compare/0.34.0...0.35.0) (2026-11-04)
 
 
