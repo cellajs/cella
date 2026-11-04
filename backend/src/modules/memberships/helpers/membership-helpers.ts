@@ -2,13 +2,14 @@ import {
   appConfig,
   hierarchy as appHierarchy,
   type ChannelEntityType,
+  type ChannelIdColumns,
   type EntityHierarchy,
   type EntityRole,
   type OrganizationRole,
   resolveHierarchy,
 } from 'shared';
 import type { MenuStructureItem } from 'shared/config-builder/types';
-import type { EntityModel } from '#/tables';
+import type { MembershipEntity } from '#/lib/module';
 
 /**
  * Role for an auto-created associated membership (menuStructure): the invited role carries over
@@ -91,22 +92,21 @@ export const membershipsBroughtAlong = <C extends string = ChannelEntityType>(
   return along;
 };
 
-/** The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one the row holds. */
-export const channelIdColumnsOf = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
-  return appConfig.channelEntityTypes.reduce(
-    (acc, channelEntityType) => {
-      const entityFieldIdName = appConfig.entityIdColumnKeys[channelEntityType];
-      if (entity.entityType === channelEntityType) {
-        acc[entityFieldIdName] = entity.id;
-      }
-      if (entityFieldIdName in entity) {
-        acc[entityFieldIdName] = entity[entityFieldIdName as keyof typeof entity] as string;
-      }
-
-      return acc;
-    },
-    {} as Record<(typeof appConfig.entityIdColumnKeys)[ChannelEntityType], string>,
-  );
+/**
+ * The channel id columns a membership of the entity carries: the entity's own id under its type's column, plus each one
+ * the row holds, null for an ancestor level the row leaves empty.
+ * @throws Error for a row below the organization without an `organizationId`: a partial row, since every channel table requires it.
+ */
+export const channelIdColumnsOf = (entity: MembershipEntity): { organizationId: string } & Partial<ChannelIdColumns> => {
+  const columns: Partial<ChannelIdColumns> = {};
+  for (const channelType of appConfig.channelEntityTypes) {
+    const key = appConfig.entityIdColumnKeys[channelType];
+    const value = entity.entityType === channelType ? entity.id : entity[key];
+    if (typeof value === 'string' || value === null) columns[key] = value;
+  }
+  const { organizationId } = columns;
+  if (!organizationId) throw new Error(`channelIdColumnsOf: ${entity.entityType} ${entity.id} carries no organizationId`);
+  return { ...columns, organizationId };
 };
 
 /**
