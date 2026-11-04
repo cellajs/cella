@@ -22,15 +22,14 @@ function jsonRequest(path: string, body: Record<string, unknown>) {
   });
 }
 
-/** A route behind a fresh `limit` limiter keyed on `identifiers`; `userId` and `actorId` set who sends. */
-function keyedRoute(identifiers: RateLimitKeyPart[], userId?: string, actorId?: string) {
+/** A route behind a fresh `limit` limiter keyed on `identifiers`; `actorId` sets who sends. */
+function keyedRoute(identifiers: RateLimitKeyPart[], actorId?: string) {
   const limiter = rateLimiter('limit', `key_${nanoid(8)}`, identifiers, { limits: { points: 10, duration: 60 } });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
-  if (userId || actorId) {
+  if (actorId) {
     app.use(async (ctx, next) => {
-      if (userId) ctx.set('user', { id: userId } as Env['Variables']['user']);
-      if (actorId) ctx.set('actor', { id: actorId } as Env['Variables']['actor']);
+      ctx.set('actor', { id: actorId } as Env['Variables']['actor']);
       await next();
     });
   }
@@ -44,8 +43,7 @@ function keyedRoute(identifiers: RateLimitKeyPart[], userId?: string, actorId?: 
   };
 }
 
-/** Fake node-server bindings so getIp's socket fallback resolves to null without crashing. */
-const emptyBindings = { incoming: { socket: {} } } as Env['Bindings'];
+const bare = () => new Request('http://localhost/test', { method: 'POST' });
 
 describe('rate limiter identifier validation', () => {
   describe('email identifier', () => {
@@ -81,44 +79,21 @@ describe('rate limiter identifier validation', () => {
   describe('fallback chain identifier', () => {
     const fromIp = new Request('http://localhost/test', { method: 'POST', headers: { 'x-forwarded-for': '1.2.3.4' } });
 
-    it('keys per user when authenticated, ignoring the IP', async () => {
-      const route = keyedRoute([['userId', 'ip']], 'user-1');
-      expect((await route.app.request(fromIp.clone(), undefined, emptyBindings)).status).toBe(200);
-      expect(route.keys()).toEqual(['userId:user-1']);
+    it('keys per actor when authenticated, ignoring the IP', async () => {
+      const route = keyedRoute([['actorId', 'ip']], 'actor-1');
+      expect((await route.app.request(fromIp.clone())).status).toBe(200);
+      expect(route.keys()).toEqual(['actorId:actor-1']);
     });
 
     it('falls back to the IP for anonymous requests', async () => {
-      const route = keyedRoute([['userId', 'ip']]);
-      expect((await route.app.request(fromIp.clone(), undefined, emptyBindings)).status).toBe(200);
+      const route = keyedRoute([['actorId', 'ip']]);
+      expect((await route.app.request(fromIp.clone())).status).toBe(200);
       expect(route.keys()).toEqual([subjectSegment('ip', '1.2.3.4')]);
     });
 
     it('rejects when no identifier in the chain resolves, counting nothing', async () => {
-      const route = keyedRoute([['userId', 'ip']]);
-      const req = new Request('http://localhost/test', { method: 'POST' });
-      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
-      expect(route.keys()).toEqual([]);
-    });
-  });
-
-  describe('actor identifier', () => {
-    const bare = () => new Request('http://localhost/test', { method: 'POST' });
-
-    it('keys on the actor id', async () => {
-      const route = keyedRoute(['actorId'], undefined, 'actor-1');
-      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(200);
-      expect(route.keys()).toEqual(['actorId:actor-1']);
-    });
-
-    it('keeps the actor and the user as separate subjects', async () => {
-      const route = keyedRoute(['actorId', 'userId'], 'user-1', 'actor-1');
-      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(200);
-      expect(route.keys()).toEqual(['actorId:actor-1userId:user-1']);
-    });
-
-    it('rejects when no actor is set, even for a signed-in user', async () => {
-      const route = keyedRoute(['actorId'], 'user-1');
-      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(400);
+      const route = keyedRoute([['actorId', 'ip']]);
+      expect((await route.app.request(bare())).status).toBe(400);
       expect(route.keys()).toEqual([]);
     });
   });
@@ -132,7 +107,7 @@ describe('rate limiter identifier validation', () => {
       expect(`${ip}${email}`).not.toMatch(/1\.2\.3\.4|victim|example/);
       // The same subject under another kind is another pseudonym; an id stays legible.
       expect(subjectSegment('email', '1.2.3.4')).not.toBe(ip);
-      expect(subjectSegment('userId', 'user-1')).toBe('userId:user-1');
+      expect(subjectSegment('actorId', 'actor-1')).toBe('actorId:actor-1');
     });
 
     it('keeps one bucket per subject: an IPv6 /64, an address whatever its case', () => {
@@ -143,16 +118,14 @@ describe('rate limiter identifier validation', () => {
   });
 
   describe('empty key guard', () => {
-    it('rejects when the key resolves empty (userId limiter on an anonymous request)', async () => {
-      const route = keyedRoute(['userId']);
-      const req = new Request('http://localhost/test', { method: 'POST' });
-      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
+    it('rejects when the key resolves empty (actorId limiter on an anonymous request)', async () => {
+      const route = keyedRoute(['actorId']);
+      expect((await route.app.request(bare())).status).toBe(400);
     });
 
     it('lets the request through when the optional identifier resolves', async () => {
-      const route = keyedRoute(['userId'], 'user-2');
-      const req = new Request('http://localhost/test', { method: 'POST' });
-      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(200);
+      const route = keyedRoute(['actorId'], 'actor-2');
+      expect((await route.app.request(bare())).status).toBe(200);
     });
   });
 });

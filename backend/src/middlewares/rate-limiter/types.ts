@@ -1,10 +1,12 @@
-import type { Context, MiddlewareHandler } from 'hono';
+import type { Context } from 'hono';
 import type { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
 import type { ErrorKey } from '#/core/error';
+import type { XMiddlewareHandler } from '#/core/openapi-extensions';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
-export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'actorId' | 'tenantId';
+/** Who a limiter counts: a signed-in user or service account (`actorId`), both set by the guards. */
+export type RateLimitIdentifier = 'ip' | 'email' | 'actorId' | 'tenantId';
 /** One key segment: an identifier, or a chain where the first available one wins. An unresolved chain rejects. */
 export type RateLimitKeyPart = RateLimitIdentifier | RateLimitIdentifier[];
 export type Identifiers = Record<RateLimitIdentifier, string | null>;
@@ -40,8 +42,19 @@ type LimiterStatusLists = { successStatusCodes?: number[]; failStatusCodes?: num
 
 export type RateLimitOptions = Partial<BucketLimits> & LimiterStatusLists;
 
+/**
+ * What the docs show of a limiter: its budget and window, in seconds, and for a failure budget how long a spent one
+ * blocks. A tenant budget shows its ceiling.
+ */
+export interface RateLimitPolicy {
+  mode: RateLimitMode;
+  points: number;
+  duration: number;
+  blockDuration?: number;
+}
+
 /** A route limiter: `keyPrefix` (`<key>_<mode>`) starts the keys of its rows, `buckets` are what `checkRateLimitStatus` reads. */
-export type RateLimiterHandler = MiddlewareHandler<Env> & { keyPrefix: string; buckets: Bucket[] };
+export type RateLimiterHandler = XMiddlewareHandler & { keyPrefix: string; buckets: Bucket[] };
 
 export interface RateLimiterOpts {
   limits?: RateLimitOptions;

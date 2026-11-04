@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
 import type { ExtensionType, ExtensionValueMetadata, GuardContext, SecurityRequirement, XMiddlewareHandler } from '#/core/openapi-extensions';
+import type { RateLimitPolicy } from '#/middlewares/rate-limiter/types';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
 
 type MiddlewareFunction<E extends Env = Env> = Parameters<typeof createMiddleware<E>>[0];
@@ -22,6 +23,10 @@ type XMiddlewareOptions = {
   provides?: GuardContext[];
   /** Guards only: the context this guard reads; `createXRoute` refuses a route where no guard before it provides it. */
   requires?: GuardContext[];
+  /** Guards only: the limiters this guard runs itself; every route that lists the guard documents them with their errors. */
+  limiters?: XMiddlewareHandler[];
+  /** Limiters only: the budget the docs show beside `description`. */
+  policy?: RateLimitPolicy;
 };
 
 /** Global store for extension value metadata: per extension type, by middleware function name. */
@@ -32,11 +37,11 @@ export const getExtensionValueMetadata = () => extensionValueMetadata;
 
 /** Sets `.name`, `.__extensionType`, `.__description`, `.__errors` and the guard metadata for OpenAPI introspection. */
 const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandler<E>, options: XMiddlewareOptions): XMiddlewareHandler<E> => {
-  const { functionName, type, name, description, errors, security, provides, requires } = options;
+  const { functionName, type, name, description, errors, security, provides, requires, limiters, policy } = options;
 
   if (description) {
     const values = extensionValueMetadata.get(type) ?? new Map<string, ExtensionValueMetadata>();
-    values.set(functionName, { name, description });
+    values.set(functionName, { name, description, policy });
     extensionValueMetadata.set(type, values);
   }
   const extended = Object.assign(middleware, {
@@ -46,6 +51,7 @@ const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandl
     __security: security,
     __provides: provides,
     __requires: requires,
+    __limiters: limiters,
   });
   // name requires Object.defineProperty since function.name is read-only in JS.
   Object.defineProperty(extended, 'name', { value: functionName, writable: false });

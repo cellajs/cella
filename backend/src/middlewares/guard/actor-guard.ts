@@ -16,6 +16,7 @@ export const actorGuard = xMiddleware(
     errors: [401, 403],
     security: [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }],
     provides: ['actor'],
+    limiters: serviceGuard.__limiters,
     name: 'Actor',
     description: 'Works with a signed-in session, a secret API key or an access token. The request acts as the user or service account behind it.',
   },

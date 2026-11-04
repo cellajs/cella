@@ -927,6 +927,19 @@ export type GetAuthHealthData = {
   url: '/auth/health';
 };
 
+export type GetAuthHealthErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAuthHealthError = GetAuthHealthErrors[keyof GetAuthHealthErrors];
+
 export type GetAuthHealthResponses = {
   /**
    * Auth health status
@@ -998,9 +1011,17 @@ export type GetPendingMfaData = {
 
 export type GetPendingMfaErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
@@ -1814,6 +1835,10 @@ export type GithubErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GithubError = GithubErrors[keyof GithubErrors];
@@ -1837,6 +1862,10 @@ export type GoogleErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GoogleError = GoogleErrors[keyof GoogleErrors];
@@ -1860,6 +1889,10 @@ export type MicrosoftErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type MicrosoftError = MicrosoftErrors[keyof MicrosoftErrors];
@@ -2008,6 +2041,10 @@ export type GetSsoEntryErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetSsoEntryError = GetSsoEntryErrors[keyof GetSsoEntryErrors];
@@ -2050,6 +2087,10 @@ export type StartSsoErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type StartSsoError = StartSsoErrors[keyof StartSsoErrors];
@@ -2079,6 +2120,10 @@ export type StartSsoFederationErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type StartSsoFederationError = StartSsoFederationErrors[keyof StartSsoFederationErrors];
@@ -2187,6 +2232,10 @@ export type GetStepUpErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetStepUpError = GetStepUpErrors[keyof GetStepUpErrors];
@@ -2583,9 +2632,17 @@ export type GetMeData = {
 
 export type GetMeErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -2705,9 +2762,17 @@ export type GetMyAuthData = {
 
 export type GetMyAuthErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
@@ -2730,9 +2795,17 @@ export type GetMyInvitationsData = {
 
 export type GetMyInvitationsErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitationsErrors];
@@ -2928,9 +3001,17 @@ export type GetMyMembershipsData = {
 
 export type GetMyMembershipsErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMyMembershipsError = GetMyMembershipsErrors[keyof GetMyMembershipsErrors];
@@ -2955,9 +3036,17 @@ export type GetConnectedAppsData = {
 
 export type GetConnectedAppsErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetConnectedAppsError = GetConnectedAppsErrors[keyof GetConnectedAppsErrors];
@@ -3036,6 +3125,10 @@ export type GetPublicCountsErrors = {
    * Bad request
    */
   400: BadRequestError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetPublicCountsError = GetPublicCountsErrors[keyof GetPublicCountsErrors];
@@ -3166,9 +3259,17 @@ export type GetNotificationPreferencesData = {
 
 export type GetNotificationPreferencesErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetNotificationPreferencesError = GetNotificationPreferencesErrors[keyof GetNotificationPreferencesErrors];
@@ -3342,9 +3443,17 @@ export type GetPushVapidData = {
 
 export type GetPushVapidErrors = {
   /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetPushVapidError = GetPushVapidErrors[keyof GetPushVapidErrors];
@@ -3526,6 +3635,10 @@ export type GetRequestsErrors = {
    * Forbidden
    */
   403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
@@ -3878,6 +3991,10 @@ export type GetTenantsErrors = {
    * Forbidden
    */
   403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
@@ -4039,6 +4156,10 @@ export type GetConnectionsErrors = {
    * Forbidden
    */
   403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetConnectionsError = GetConnectionsErrors[keyof GetConnectionsErrors];
@@ -4261,6 +4382,10 @@ export type GetUsersErrors = {
    * Forbidden
    */
   403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
@@ -4314,6 +4439,10 @@ export type GetUserErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetUserError = GetUserErrors[keyof GetUserErrors];
@@ -4348,6 +4477,10 @@ export type GetApiProtectedResourceMetadataErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetApiProtectedResourceMetadataError = GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
@@ -4548,6 +4681,10 @@ export type GetOrganizationsErrors = {
    * Forbidden
    */
   403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
@@ -4594,6 +4731,10 @@ export type GetOrganizationErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
@@ -5083,6 +5224,10 @@ export type GetAttachmentErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
@@ -5231,6 +5376,10 @@ export type GetMcpProtectedResourceMetadataErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMcpProtectedResourceMetadataError = GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
@@ -5687,6 +5836,10 @@ export type GetMembersErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetMembersError = GetMembersErrors[keyof GetMembersErrors];
@@ -5772,6 +5925,10 @@ export type GetPendingMembershipsErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetPendingMembershipsError = GetPendingMembershipsErrors[keyof GetPendingMembershipsErrors];
@@ -5985,6 +6142,10 @@ export type GetServiceAccountsErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetServiceAccountsError = GetServiceAccountsErrors[keyof GetServiceAccountsErrors];
@@ -6148,6 +6309,10 @@ export type GetApiKeysErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
 
 export type GetApiKeysError = GetApiKeysErrors[keyof GetApiKeysErrors];

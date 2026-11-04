@@ -1,6 +1,6 @@
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   mockBatchAttachmentsResponse,
   mockCreateAttachmentsBody,
@@ -28,8 +28,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     method: 'get',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    // Sync-driven read backpressure on the range-read path (template pattern for app product lists)
-    xRateLimiter: [syncReadLimiter],
     xTool: {
       description: 'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
       approvalRequired: false,

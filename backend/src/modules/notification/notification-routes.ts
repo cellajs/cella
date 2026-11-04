@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, userGuard } from '#/middlewares/guard';
-import { syncReadLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { unsubscribeCategories } from '#/modules/notification/helpers/category-token';
 import {
   markReadBodySchema,
@@ -21,7 +21,6 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'get',
     path: '/',
     xGuard: [userGuard],
-    xRateLimiter: [syncReadLimiter],
     summary: 'List notifications',
     description:
       'Returns the current user notification inbox, newest first, with the unread count. ' +

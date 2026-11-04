@@ -3,7 +3,15 @@ import { xMiddleware } from '#/core/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, refuseRateLimited, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { adoptDbCount, maxWindowMs, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
-import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
+import type {
+  Outcome,
+  RateLimiterHandler,
+  RateLimiterOpts,
+  RateLimitKeyPart,
+  RateLimitMode,
+  RateLimitPolicy,
+  Tier,
+} from '#/middlewares/rate-limiter/types';
 
 const defaultOptions = {
   points: 10,
@@ -34,15 +42,18 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
   /** The window the in-process counter keeps for a key: the limiter's own, up to the hour the counter keeps an idle key. */
   const windowMs = config.duration * 1000;
   if (fastPath && windowMs > maxWindowMs) throw new Error(`${keyPrefix}: counting in process needs a window of at most an hour`);
+  if (mode === 'limit' && limits?.blockDuration) throw new Error(`${keyPrefix}: a limit refuses until its window ends; a block needs a fail mode`);
   const isFailMode = mode === 'fail' || mode === 'failseries';
   const store = getRateLimiterInstance({ ...config, keyPrefix });
+  const policy: RateLimitPolicy = { mode, points: config.points, duration: config.duration };
+  if (isFailMode) policy.blockDuration = config.blockDuration || config.duration;
   /** The buckets a reserved attempt counts in: the route's own and, behind a failure budget, the 24-hour one. */
   const tiers: Tier[] =
     mode === 'limit' ? [] : [{ store, limits: config, counts: isFailMode ? 'fail' : 'success', resetsOnSuccess: mode === 'failseries' }];
   if (isFailMode) tiers.push(slowTier(keyPrefix));
 
   const handler = xMiddleware(
-    { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', errors: [400, 429], name: name ?? key, description },
+    { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', errors: [400, 429], name: name ?? key, description, policy },
     async (ctx, next) => {
       const extractedIdentifiers = await extractIdentifiers(ctx, identifiers.flat());
 
@@ -54,7 +65,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         const identifier = chain.find((id) => extractedIdentifiers[id]);
 
         if (!identifier) {
-          // Chains and bare ip/email must resolve; bare userId, actorId and tenantId are skipped, and an empty key is refused below
+          // Chains and bare ip/email must resolve; bare actorId and tenantId are skipped, and an empty key is refused below
           if (Array.isArray(part) || part === 'ip' || part === 'email') {
             throw new AppError(400, 'invalid_request', 'warn');
           }

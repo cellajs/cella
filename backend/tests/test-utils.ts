@@ -66,11 +66,12 @@ export async function emptyTables(roots: string[]) {
 
 /** Vitest hoists vi.mock(), so call at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock) */
 export const rateLimiterCoreMock = () => ({
-  rateLimiter: vi.fn().mockImplementation((mode: string, key: string) => {
+  rateLimiter: vi.fn().mockImplementation((mode: string, key: string, _identifiers: unknown, opts?: { functionName?: string }) => {
     const handler = async (_: Context, next: Next) => {
       await next();
     };
-    // Marked as the real limiter is, so a route documents the limiter's 400 and 429 under tests too.
+    // Named and marked as the real limiter is, so a route documents the limiter and its 400 and 429 under tests too.
+    Object.defineProperty(handler, 'name', { value: opts?.functionName ?? `${key}Limiter` });
     return Object.assign(handler, { keyPrefix: `${key}_${mode}`, buckets: [], __extensionType: 'x-rate-limiter', __errors: [400, 429] });
   }),
 });

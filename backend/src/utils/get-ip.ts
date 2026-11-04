@@ -14,5 +14,5 @@ export const getIp = (ctx: Context): string | null => {
       .at(-1);
     if (client) return client;
   }
-  return ctx.env.incoming.socket.remoteAddress ?? null;
+  return ctx.env?.incoming?.socket.remoteAddress ?? null;
 };

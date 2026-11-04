@@ -12,11 +12,11 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
  */
 const proofSuccessStatusCodes = [200, 201, 204, 302];
 
-/** Keyed per user when authenticated, so invite flows behind a shared NAT IP get their own budget. */
-export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
+/** Keyed per actor when authenticated, so invite flows behind a shared NAT IP get their own budget. */
+export const spamLimiter = rateLimiter('success', 'spam', [['actorId', 'ip']], {
   limits: { successStatusCodes: [200, 201, 204] },
   name: 'Emails sent',
-  description: "10 requests per hour for each user, or each IP address when not signed in. Failed requests don't count.",
+  description: 'Mails sent for each user, or for each IP address when not signed in. A failed request does not count.',
 });
 
 /**
@@ -27,7 +27,7 @@ export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
 export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
   limits: { points: 30, duration: 60 * 60 },
   name: 'Email lookups',
-  description: '30 lookups per hour for each IP address. Every lookup counts, whatever the answer. Past it, sign-in goes on without lookups.',
+  description: 'Lookups for each IP address. Every lookup counts, whatever the answer; past the budget, sign-in goes on without lookups.',
 });
 
 /** Failed proofs per IP, one series per kind of proof (`tokenType`: a provider, a link type, `passkey`) under its own key prefix. */
@@ -36,51 +36,51 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
     limits: { successStatusCodes: proofSuccessStatusCodes },
     functionName: 'tokenLimiter',
     name: 'Failed sign-ins',
-    description: '10 failed attempts per hour for each IP address and kind of sign-in, then blocked for 30 minutes. A success resets the count.',
+    description: 'Failed attempts for each IP address and kind of sign-in. A success resets the count.',
   });
 
 /** A budget, as API points are: it holds for the hour. One request signs up to 50 files, and the client keeps the links it got. */
-export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userId', 'ip']], {
+export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['actorId', 'ip']], {
   limits: { points: 2000, duration: 60 * 60 },
   name: 'File links',
-  description: '2,000 requests per hour for each user. One request can cover up to 50 files.',
+  description: 'Requests for each user or service account. One request can cover up to 50 files.',
 });
 
 /**
  * A budget: each token signs one assembly of up to `maxFilesPerUpload` files. The uploader asks one as it opens and
  * one per assembly, and the offline upload service one per file it sends.
  */
-export const uploadTokenLimiter = rateLimiter('limit', 'uploadToken', [['userId', 'ip']], {
+export const uploadTokenLimiter = rateLimiter('limit', 'uploadToken', [['actorId', 'ip']], {
   limits: { points: 300, duration: 60 * 60 },
   name: 'Upload tokens',
-  description: '300 tokens per hour for each user.',
+  description: 'Tokens for each user or service account.',
 });
 
 /**
  * A budget: a browser registers when its user turns push on and when its push service rotates the subscription, so a
  * user on several devices stays far below it.
  */
-export const pushSubscriptionLimiter = rateLimiter('limit', 'pushSubscription', ['userId'], {
+export const pushSubscriptionLimiter = rateLimiter('limit', 'pushSubscription', ['actorId'], {
   limits: { points: 30, duration: 60 * 60 },
   name: 'Push subscriptions',
-  description: '30 registrations per hour for each user.',
+  description: 'Registrations for each user.',
 });
 
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },
   name: 'Failed TOTP codes',
-  description: '5 wrong codes per hour for each IP address, then blocked for 30 minutes. A correct code resets the count.',
+  description: 'Wrong codes for each IP address. A correct code resets the count.',
 });
 
 /**
  * Keyed per account: a session guessing second factors is blocked whatever IP it uses; a proof that verifies clears
  * the series. A wrong factor answers 401 (404 for one the user does not hold).
  */
-export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
+export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['actorId'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204], failStatusCodes: [401, 404] },
   name: 'Failed step-ups',
-  description: '5 failed checks per hour for each account, then blocked for 30 minutes. A passed check resets the count.',
+  description: 'Failed checks for each account. A passed check resets the count.',
 });
 
 /**
@@ -94,7 +94,7 @@ export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   refusalType: 'magic_link_recently_sent',
   exempt: (ctx, { email }) => !!email && isRecognizedBrowser(ctx, email),
   name: 'Magic links, new browser',
-  description: '3 emails per 30 minutes for each address, when the browser has never signed in to it.',
+  description: 'Emails for each address, when the browser has never signed in to it.',
 });
 
 /**
@@ -106,7 +106,7 @@ export const recognizedMagicLinkLimiter = rateLimiter('limit', 'recognizedMagicL
   refusalType: 'magic_link_recently_sent',
   exempt: async (ctx, { email }) => !email || !(await isRecognizedBrowser(ctx, email)),
   name: 'Magic links, known browser',
-  description: '10 emails per 30 minutes for each address, when the browser has signed in to it before.',
+  description: 'Emails for each address, when the browser has signed in to it before.',
 });
 
 /**
@@ -116,7 +116,7 @@ export const recognizedMagicLinkLimiter = rateLimiter('limit', 'recognizedMagicL
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
   limits: { points: 30, duration: 60 * 5 },
   name: 'Passkey challenges',
-  description: '30 challenges per 5 minutes for each IP address.',
+  description: 'Challenges for each IP address.',
 });
 
 /**
@@ -129,7 +129,7 @@ export const pointsLimiter = (cost = 1) =>
     limits: { points: 5000, duration: 60 * 60 },
     functionName: 'pointsLimiter',
     name: 'API points',
-    description: `An hourly budget for each user or service account in a tenant: 1 point per request, 1 per item on bulk routes. Default ${defaultRestrictions().rateLimits.apiPointsPerHour.toLocaleString('en')} an hour, and each tenant can change it.`,
+    description: `Points for each user or service account in a tenant: 1 per request, 1 per item on a bulk route. A tenant starts at ${defaultRestrictions().rateLimits.apiPointsPerHour.toLocaleString('en')} an hour, which a system admin can raise up to the ceiling shown.`,
     getConsumePoints: cost > 0 ? () => cost : bulkBodyLength,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
@@ -146,44 +146,48 @@ export const pointsLimiter = (cost = 1) =>
 export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFetch', ['ip'], {
   limits: { points: 60, duration: 60 },
   name: 'Client metadata fetches',
-  description: '60 fetches per minute for each IP address.',
+  description: 'Fetches for each IP address.',
 });
 
-/** Per-second ceiling for API keys and access tokens: a runaway integration hits this long before the hourly points budget. */
+/**
+ * Per-second ceiling for API keys and access tokens, run by `serviceGuard` for every machine caller: a runaway
+ * integration hits this long before the hourly points budget.
+ */
 export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorId'], {
   limits: { points: 30, duration: 1 },
   name: 'Request burst',
-  description: '30 requests per second for each user or service account using an API key or access token.',
+  description: 'Requests for each user or service account using an API key or access token.',
 });
 
 /** Per-second ceiling for MCP endpoint requests, a bucket of its own: the route a tool call runs charges the burst. */
 export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'], {
   limits: { points: 30, duration: 1 },
   name: 'MCP requests',
-  description: '30 requests per second for each user or service account.',
+  description: 'Requests for each user or service account.',
 });
 
 /**
- * Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff.
- * A pace, in a short window: a client catching up reads once per product type and organization, and one watching a
- * busy scope reads at each notification, so a spent key has to be back within minutes.
- * Counted in process: every list and delta read passes here, and a transaction on each cost as much as the read.
+ * The pace of every read: `createXRoute` mounts it on each GET route that declares no limiter of its own, so one
+ * client cannot hold the event loop with reads. It is also the backpressure for the read fan-out one SSE notification
+ * triggers; a 429 rides the client's invalidate-and-backoff. A pace, in a short window: a client catching up reads once
+ * per product type and organization, and one watching a busy scope reads at each notification, so a spent key has to
+ * be back within minutes. Counted in process: a transaction on each read would cost as much as the read.
  */
-export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
+export const readLimiter = rateLimiter('limit', 'read', [['actorId', 'ip']], {
   limits: { points: 1000, duration: 60 * 5 },
   countsInProcess: true,
-  name: 'Sync reads',
-  description: '1,000 reads per 5 minutes for each user.',
+  name: 'Reads',
+  description: 'Reads for each user or service account, or for each IP address when not signed in.',
 });
 
 /**
  * Bounds stream connection attempts per user, as a pace in a short window. A browser whose stream keeps dropping
  * reconnects about 20 times in 5 minutes at most (10 seconds up, 5 to 7 back off), and a user may have several.
  */
-export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['userId', 'ip']], {
+export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['actorId', 'ip']], {
   limits: { points: 60, duration: 60 * 5 },
   name: 'Stream connections',
-  description: '60 connection attempts per 5 minutes for each user.',
+  description: 'Connection attempts for each user.',
 });
 
 /**
@@ -191,10 +195,10 @@ export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['use
  * as long as the client's longest backoff. An editing tab pulls every 10 seconds and posts one update at a time, the
  * next as soon as the last is answered while edits keep coming: up to one per keystroke on a slow connection.
  */
-export const yjsHttpLimiter = rateLimiter('limit', 'yjsHttp', [['userId', 'ip']], {
+export const yjsHttpLimiter = rateLimiter('limit', 'yjsHttp', [['actorId', 'ip']], {
   limits: { points: 600, duration: 60 },
   name: 'Yjs over HTTP',
-  description: '600 pulls and pushes per minute for each user, counted together.',
+  description: 'Pulls and pushes for each user, counted together.',
 });
 
 /** Cost = length of the request body array. Attach to routes taking `{ ids: [...] }` or a top-level array body. */

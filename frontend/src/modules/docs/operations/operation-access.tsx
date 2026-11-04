@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import type { TKey } from '~/lib/i18n-locales';
 import { extensionLabel } from '~/modules/docs/helpers/extension-label';
+import { extensionValue } from '~/modules/docs/helpers/extension-value';
 import { type AccessValue, ExplainedValue, explainedUnderline } from '~/modules/docs/operations/access-explanation';
 import { infoQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
@@ -37,7 +38,7 @@ function WrittenOut({ open, values }: { open: boolean; values: AccessValue[] }) 
 
 /** How an operation is called: the proofs it accepts, its middleware and its MCP tool. The bar opens every explanation at once. */
 export function OperationAccess({ operation }: { operation: GenOperationSummary }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [helpOpen, setHelpOpen] = useState(false);
   const { data: info } = useSuspenseQuery(infoQueryOptions);
 
@@ -96,13 +97,7 @@ export function OperationAccess({ operation }: { operation: GenOperationSummary 
           </AccessRow>
         )}
         {middleware.map((ext) => {
-          const values: AccessValue[] = operation.extensions[ext.id].map((value) => ({
-            value,
-            code: value,
-            name: ext.values?.[value]?.name ?? value,
-            description: ext.values?.[value]?.description,
-            isGuard: ext.key === 'x-guard',
-          }));
+          const values = operation.extensions[ext.id].map((value) => extensionValue(ext, value, t, i18n.resolvedLanguage));
           return (
             <AccessRow key={ext.id} label={extensionLabel(ext)}>
               <ValueList values={values} enabled={!helpOpen} />

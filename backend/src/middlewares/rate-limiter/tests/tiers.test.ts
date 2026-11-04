@@ -50,7 +50,7 @@ describe('the buckets a failure budget counts in', () => {
 
   it('must not open a 24-hour bucket for a limit or success budget', async () => {
     for (const mode of ['limit', 'success'] as const) {
-      const route = guardedRoute(mode, json(200));
+      const route = guardedRoute(mode, json(200), { ...budget, blockDuration: 0 });
       await route.attempt('1.2.3.4');
 
       expect(route.limiter.buckets, mode).toHaveLength(1);

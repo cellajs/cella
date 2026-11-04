@@ -31,7 +31,7 @@ const inboxMailsPerType = getRateLimiterInstance({ keyPrefix: 'securityInboxMail
 /** Whether a mail `raisedBy` raised may go: the user's own budget first, so one user cannot spend the ceiling. */
 const inboxHasRoom = async (type: AccountSecurityType, raisedBy: string) => {
   try {
-    const perUser = await reserveAttempt(inboxMailsPerUser, `${type}:${subjectSegment('userId', raisedBy)}`, perUserLimits);
+    const perUser = await reserveAttempt(inboxMailsPerUser, `${type}:${subjectSegment('actorId', raisedBy)}`, perUserLimits);
     return perUser.granted && (await reserveAttempt(inboxMailsPerType, type, perTypeLimits)).granted;
   } catch (err) {
     log.error('Security inbox throttle failed', { type, err });
