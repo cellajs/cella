@@ -7,6 +7,9 @@ import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import WebSocket from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
+import type { z } from 'zod';
+import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
+import type { StreamChange } from '#/schemas/stream-schemas';
 import { benchCookie } from './bench-user';
 import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
 import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
@@ -114,7 +117,7 @@ async function mintToken(docIndex: number, userIndex: number): Promise<string> {
   const url = `${BASE_URL}/${TENANT_ID}/${ORG_ID}/yjs/token?entityType=attachment&entityId=${attachmentId(docIndex)}`;
   const res = await fetch(url, { headers: { cookie: benchCookie(userIndex) } });
   if (!res.ok) throw new Error(`token for attachment ${docIndex} answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return ((await res.json()) as { token: string }).token;
+  return ((await res.json()) as z.output<typeof yjsTokenResponseSchema>).token;
 }
 
 /** Runs `fn` over `items`, `limit` at a time. */
@@ -308,11 +311,6 @@ function typeOnce(run: RunState, typer: Typer): void {
   provider.awareness.setLocalStateField('cursor', { anchor: cursor, head: cursor });
   bump(run, 'yjs.keystrokes');
   run.sink.keystroke();
-}
-
-/** An SSE change: product rows of one `productType`. */
-interface StreamChange {
-  productType: string;
 }
 
 /**

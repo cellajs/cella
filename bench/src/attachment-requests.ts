@@ -2,6 +2,9 @@ import { nanoid } from 'nanoid';
 import { hierarchy } from 'shared';
 import { hashSourceId } from 'shared/utils/hash-source-id';
 import { uuidv7 } from 'uuidv7';
+import type { z } from 'zod';
+import type { attachmentCreateManyStxBodySchema, attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
+import type { idsWithStxBodySchema } from '#/schemas/common-schemas';
 import { ORG_PATH } from './bench-user';
 import { TOTAL_ATTACHMENTS } from './seeds/attachment-constants';
 import { benchAttachmentHome } from './seeds/attachment-home';
@@ -15,7 +18,7 @@ const FIRST_CHURN_INDEX = 0x1000000;
 const hlcTimestamp = (sourceId: string, counter = 0) => `${Date.now()}:${String(counter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
 
 /** A rename of the user's own seeded attachment, with the field timestamp a client sends. */
-export function attachmentEdit(userIndex: number): { path: string; json: unknown } {
+export function attachmentEdit(userIndex: number): { path: string; json: z.input<typeof attachmentUpdateStxBodySchema> } {
   const sourceId = uuidv7();
   const stx = { mutationId: uuidv7(), sourceId, fieldTimestamps: { name: hlcTimestamp(sourceId) } };
   return {
@@ -31,7 +34,10 @@ function createHomeField(index: number): Record<string, string> {
 }
 
 /** One batch of new attachments and the body that deletes them again. The files never exist: an empty key names no stored object. */
-export function churnBatch(): { create: unknown[]; remove: unknown } {
+export function churnBatch(): {
+  create: z.input<typeof attachmentCreateManyStxBodySchema>;
+  remove: z.input<ReturnType<typeof idsWithStxBodySchema>>;
+} {
   const first = FIRST_CHURN_INDEX + Math.floor(Math.random() * 0xffffffff) * CHURN_BATCH_SIZE;
   const ids = Array.from({ length: CHURN_BATCH_SIZE }, (_, i) => attachmentId(first + i));
   const stx = { mutationId: uuidv7(), sourceId: uuidv7(), fieldTimestamps: {} };

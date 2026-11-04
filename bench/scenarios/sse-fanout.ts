@@ -1,3 +1,4 @@
+import type { StreamChange } from '#/schemas/stream-schemas';
 import { attachmentEdit } from '../src/attachment-requests';
 import { benchUser, ORG_PATH } from '../src/bench-user';
 import { SSE_HOLD_MS, SSE_SYNC_MODE } from '../src/config';
@@ -6,17 +7,6 @@ import { defineScenario } from '../src/runner';
 const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (the spread itself is measured), ceiling like the background tier. */
 const TIER_MAX_MS = 30_000;
-
-/** An app-stream change: product rows of one `productType`. */
-interface StreamChange {
-  productType: string;
-  rows: { seq: number | null }[];
-  /** Set past the frame's row cap: the rows' range, nulls for a delete. */
-  overflow: { afterSeq: number | null; untilSeq: number | null } | null;
-  spreadWindow: number | null;
-  channelId: string | null;
-  organizationId: string | null;
-}
 
 /** FNV-1a 32-bit: same deterministic jitter as the frontend scheduler. */
 function hashSpread(key: string): number {

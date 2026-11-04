@@ -52,7 +52,7 @@ export interface HttpResponse {
   headers: IncomingHttpHeaders;
   body: Buffer;
   text(): string;
-  json<T = unknown>(): T;
+  json(): unknown;
 }
 
 /** Requests over one keep-alive connection per VU. Resolves for every status; rejects on a transport error or timeout. */
