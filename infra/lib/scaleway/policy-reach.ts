@@ -53,9 +53,9 @@ export async function readPolicy(auth: IamAuth, organizationId: string, policyNa
 }
 
 /**
- * Add projects to the reach of a policy in place: its rules are rewritten with every project they already cover, the new ones, and the
- * condition they share, so the keys it grants keep working and nothing else changes. Needs IAM write: an Owner key.
- * `absent` when the organization has no such policy; `unchanged` when it covers the projects already.
+ * Add projects, or a declared set its rules lack, to a policy in place: its rules are rewritten with every project they already cover, the
+ * new ones, and the condition they share, so the keys it grants keep working and nothing else changes. Needs IAM write: an Owner key.
+ * `absent` when the organization has no such policy; `unchanged` when it covers the projects already and holds every one of `projectSets`.
  */
 export async function extendPolicyReach(opts: {
   auth: IamAuth;
@@ -70,7 +70,9 @@ export async function extendPolicyReach(opts: {
   const policy = await readPolicy(opts.auth, opts.organizationId, opts.policyName);
   if (!policy) return 'absent';
   const current = policyReach(policy.rules, opts.projectSets);
-  if (opts.projectIds.every((id) => current.projectIds.includes(id))) return 'unchanged';
+  const held = new Set(policy.rules.flatMap((rule) => rule.permission_set_names ?? []));
+  const covered = opts.projectIds.every((id) => current.projectIds.includes(id));
+  if (covered && opts.projectSets.every((set) => held.has(set))) return 'unchanged';
   const projectIds = [...new Set([...current.projectIds, ...opts.projectIds])];
   await scwSend(opts.auth, 'PUT', `${IAM_BASE}/rules`, { policy_id: policy.id, rules: await opts.rules({ ...current, projectIds }) });
   return 'extended';
