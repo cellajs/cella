@@ -1,0 +1,35 @@
+name: Install the workspace
+description: >-
+  pnpm and Node at the versions the root package.json pins, the dependencies from the lockfile, and the example env
+  files when a step boots a service or loads the backend env. Run it after the checkout.
+inputs:
+  env-files:
+    description: Copy backend/.env.example and frontend/.env.example to .env
+    default: 'false'
+  filter:
+    description: pnpm --filter arguments that install a part of the workspace; empty installs all of it
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+      with:
+        node-version-file: package.json
+        cache: "pnpm"
+
+    - name: Create .env files
+      if: inputs.env-files == 'true'
+      shell: bash
+      run: |
+        cp ./backend/.env.example ./backend/.env
+        cp ./frontend/.env.example ./frontend/.env
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        FILTER: ${{ inputs.filter }}
+      run: pnpm install --frozen-lockfile $FILTER

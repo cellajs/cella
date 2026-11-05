@@ -71,6 +71,8 @@ jobs:
 
       - name: Close the wait a newer release replaced
         if: cancelled() && steps.wait.outputs.id != ''
+        env:
+          DEPLOYMENT_ID: ${{ steps.wait.outputs.id }}
         run: |
           jq -n --arg description "A newer release replaced $TAG" '{ state: "inactive", $description }' |
-            gh api "repos/$GITHUB_REPOSITORY/deployments/${{ steps.wait.outputs.id }}/statuses" --input - --silent
+            gh api "repos/$GITHUB_REPOSITORY/deployments/$DEPLOYMENT_ID/statuses" --input - --silent
