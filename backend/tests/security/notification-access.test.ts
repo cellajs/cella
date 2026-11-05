@@ -131,7 +131,10 @@ describe('Notification access', async () => {
     // The leaver leaves; afterwards the item and the organization are renamed.
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, leaver.id), eq(membershipsTable.organizationId, tenant.organization.id)));
     await adminDb.update(attachmentsTable).set({ name: 'Renamed secret plan' }).where(eq(attachmentsTable.id, attachmentIds.secret));
-    await db.update(organizationsTable).set({ name: 'Renamed organization' }).where(eq(organizationsTable.id, tenant.organization.id));
+    await db
+      .update(organizationsTable)
+      .set({ name: 'Renamed organization', thumbnailUrl: 'https://example.com/organization.png' })
+      .where(eq(organizationsTable.id, tenant.organization.id));
   });
 
   // Each test starts from unread, unmailed rows and users who never had a digest.
@@ -157,7 +160,12 @@ describe('Notification access', async () => {
     const { items, unreadCount } = await inbox(stayer);
     expect(unreadCount).toBe(2);
     const fresh = items.find((item) => item.subjectId === attachmentIds.fresh);
-    expect(fresh).toMatchObject({ subjectTitle: 'Fresh item', channelName: 'Renamed organization' });
+    expect(fresh).toMatchObject({
+      subjectTitle: 'Fresh item',
+      channelName: 'Renamed organization',
+      channelThumbnailUrl: 'https://example.com/organization.png',
+      organizationName: 'Renamed organization',
+    });
   });
 
   it("must not mail a left organization's mention via the instant email, even on a row anyone may read", async () => {
@@ -197,7 +205,7 @@ describe('Notification access', async () => {
       // The stayer still belongs, so the rows stay, but none names its item or channel.
       const { items, unreadCount } = await inbox(stayer);
       expect(unreadCount).toBe(2);
-      for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '' });
+      for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '', channelThumbnailUrl: null });
 
       await fanOutMention();
       expect(mailsTo(stayer.email)).toEqual([]);

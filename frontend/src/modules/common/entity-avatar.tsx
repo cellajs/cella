@@ -34,18 +34,18 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
   return (
     <Avatar {...props} data-type={type} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} className="transition-[filter]" />}
-      {/* The fallback is the container, so the letters scale with the avatar; a user wider than size-6 shows two */}
+      {/* The fallback is the container, so the letters scale with the avatar; a user's two letters at every size, bolder below size-6 and a step smaller above it */}
       <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
         <span className="sr-only">{name}</span>
         <div
           aria-hidden
           className={cn(
             'more-contrast:text-black/85 flex h-full items-center justify-center text-[50cqi] leading-none font-semibold text-black/50 transition-colors',
-            isUser && '@min-[calc(1.5rem+1px)]:text-[40cqi]',
+            isUser && '@max-[1.5rem]:font-bold @min-[calc(1.5rem+1px)]:text-[40cqi]',
           )}
         >
           {initial ?? '-'}
-          {isUser && secondInitial && <span className="hidden @min-[calc(1.5rem+1px)]:inline">{secondInitial}</span>}
+          {isUser && secondInitial}
         </div>
       </AvatarFallback>
     </Avatar>

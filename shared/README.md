@@ -29,10 +29,11 @@ A second checkout of the same app gets a further offset. `src/config-builder/app
 - The main checkout keeps the configured ports.
 - A linked git worktree claims one of nine slots, 100 ports apart: 3100 and 4100-4106, then 3200 and 4200-4206, and so on. The claim is a file in `dev-port-slots/` of the shared git directory. It is kept between runs and freed when the worktree is removed. Once all nine are held, a new worktree takes the slot whose stack started longest ago.
 - `DEV_PORT_OFFSET` sets the offset by hand, `0` for the configured ports. It is read from the process environment only: `backend/.env` loads after the config is built. The database is shared: the offset never moves it.
+- The configured ports are the developer's, in the main checkout too. A second stack beside theirs, an agent's or a test's, runs with `DEV_PORT_OFFSET=50` (the next with `60`) and ends with `DEV_PORT_OFFSET=50 pnpm killports` when done. `pnpm a11y:run` takes offset 70 on top of the checkout's. One CDC worker reads a database's replication slot: on the shared database, the stack that starts second waits for the slot and shows no live updates until the first stops.
 
 `appConfig.devPortOffset` reports the result, and `appConfig.frontendUrl` is where that checkout's app runs. Generated files read the same in every checkout: `backend/openapi.cache.json`, and the SDK and docs generated from it, are written with the configured URLs.
 
-`pnpm stop` ends the Vite dev server and Drizzle Studio on this checkout's ports only. In a checkout with an offset it leaves the database container running, because the main checkout shares it.
+`pnpm stop` ends the Vite dev server and Drizzle Studio on this checkout's ports only. In a checkout with an offset it leaves the database container running, because the main checkout shares it. `pnpm killports` ends every listener on this checkout's dev ports, the services included, and leaves the database container: it clears a stack an earlier session left behind.
 
 Every dev server and database container listens on `127.0.0.1` only, so no other machine on the network reaches the stack; production and staging listen on every interface. `DEV_HOST=0.0.0.0 pnpm dev` opens the Vite dev server to other devices, such as a phone, while the services it proxies stay on loopback.
 

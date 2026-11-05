@@ -1,5 +1,6 @@
 import type { Attachment } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { requiredAttachmentHome } from '~/modules/attachment/tests/attachment-home';
 import { callHook, goOffline, goOnline, mutationsOf, queryClient, resetMutationHooks } from '~/query/tests/mutation-hooks-kit';
 
 type Req = { path: Record<string, string | undefined>; body: Record<string, unknown> | Array<Record<string, unknown>> };
@@ -14,8 +15,9 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), e
 const { attachmentQueryKeys, useAttachmentCreateMutation, useAttachmentUpdateMutation } = await import('~/modules/attachment/query');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
-// The rows here carry no channel id, so they splice into the organization's home list.
-const homeKey = attachmentQueryKeys.list.home(ctx.organizationId);
+// The rows carry the channel ids the app requires, so they splice into the home list of the deepest: the organization's in the template.
+const home = requiredAttachmentHome(ctx.organizationId);
+const homeKey = attachmentQueryKeys.list.home(ctx.organizationId, home.homeChannelId);
 
 /** A stored attachment of the organization; the fields the mutation callbacks read and those a create body requires, since the body is parsed before it is sent. */
 const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
@@ -28,6 +30,7 @@ const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
     size: 1024,
     keys: { original: `${id}.png` },
     ...ctx,
+    ...home.columns,
     ...overrides,
   }) as Attachment;
 const [att0, att1] = ['01970000-0000-7000-8000-000000000000', '01970000-0000-7000-8000-000000000001'];

@@ -1,5 +1,6 @@
 import type { KeyObject } from 'node:crypto';
 import { signYjsToken as signToken, type YjsTokenPayload, yjsTokenSigningKey } from 'shared/utils/yjs-token';
+import type { UserId } from '#/db/utils/ids';
 import { serviceSecret } from '#/env';
 
 /** Token TTL: 5 minutes. The relay closes a socket when its token expires, so revoked access reaches open sockets within it. */
@@ -11,7 +12,7 @@ let signingKey: KeyObject | undefined;
  * Ed25519-signed token naming the entity the user may edit and its scope, so the relay verifies access without a backend
  * call and cannot mint one.
  */
-export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>): string {
+export function signYjsToken(params: Omit<YjsTokenPayload, 'exp' | 'userId'> & { userId: UserId }): string {
   signingKey ??= yjsTokenSigningKey(serviceSecret('YJS_TOKEN_PRIVATE_KEY'));
   return signToken(params, signingKey, tokenTtlMs);
 }

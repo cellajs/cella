@@ -49,7 +49,7 @@ export function MenuSheetOrganization({ organization, menu, hasSwitcher }: MenuS
             >
               <span className="flex min-w-0 grow flex-col gap-0.5">
                 <h2 className="truncate text-base leading-5 font-semibold">{organization.name}</h2>
-                <span className="text-muted-foreground grid overflow-hidden text-xs">
+                <span className="text-muted-foreground grid overflow-hidden text-xs font-medium">
                   <span className="truncate transition [grid-area:1/1] group-hover/organization-link:-translate-y-2 group-hover/organization-link:opacity-0 group-hover/organization-link:delay-300 group-focus-visible/organization-link:-translate-y-2 group-focus-visible/organization-link:opacity-0">
                     {t(organization.membership.role)}
                   </span>

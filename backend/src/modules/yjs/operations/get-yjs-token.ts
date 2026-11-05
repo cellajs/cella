@@ -1,5 +1,5 @@
 import type { ProductEntityType } from 'shared';
-import type { OrgContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { signYjsToken } from '#/modules/yjs/helpers/sign-yjs-token';
 import { authorizeYjsEditor } from '#/modules/yjs/operations/authorize-yjs-editor';
 
@@ -7,15 +7,15 @@ import { authorizeYjsEditor } from '#/modules/yjs/operations/authorize-yjs-edito
  * Signs a Yjs token for one product entity the caller may collaboratively edit (`authorizeYjsEditor`). The claims are
  * the caller and the document's scope as the entity row states it: the relay trusts every claim, so none is taken
  * from the query.
- * @param ctx - A user acting in a resolved organization.
+ * @param ctx - A signed-in user acting in a resolved organization.
  * @param params - The entity to edit.
  * @returns The signed token.
  */
-export async function getYjsTokenOp(ctx: OrgContext, params: { entityType: ProductEntityType; entityId: string }) {
+export async function getYjsTokenOp(ctx: UserContext, params: { entityType: ProductEntityType; entityId: string }) {
   const doc = await authorizeYjsEditor(ctx, params);
 
   const token = signYjsToken({
-    userId: ctx.var.actor.id,
+    userId: ctx.var.user.id,
     entityType: params.entityType,
     entityId: doc.entityId,
     tenantId: doc.tenantId,

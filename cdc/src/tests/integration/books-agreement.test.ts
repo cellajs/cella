@@ -1,6 +1,5 @@
 import { eq, getTableName, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import type { Pgoutput } from 'pg-logical-replication';
 import type { ActivityAction, ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { DmlMessage } from '../../pipeline/parse-message';
@@ -209,7 +208,7 @@ function workloadOn(tx: Tx, seed: number) {
       xid,
       commitLsn: `0/${xid.toString(16).toUpperCase()}`,
       commitTime: BigInt(0),
-    } as unknown as Pgoutput.MessageBegin);
+    });
     for (const [index, change] of changes.entries()) {
       const message = { tag: change.tag, relation: { name: change.table }, old: change.old, new: change.new } as unknown as DmlMessage;
       const result = parseMessage(message);

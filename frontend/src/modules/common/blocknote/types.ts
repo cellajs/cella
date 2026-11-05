@@ -61,7 +61,7 @@ export type CommonBlockNoteProps = {
   /** Default true; false shows the document read-only. */
   editable?: boolean;
   className?: string;
-  /** The heading levels the menus offer, default 1 to 3. */
+  /** The heading levels the editor allows, default 1 to 3: the menus offer them, and a heading made at another level moves to the nearest. */
   headingLevels?: NonNullable<HeadingOptions['defaultLevel']>[];
   /** The block handle, to drag a block or open its move and type menu; default true. */
   sideMenu?: boolean;

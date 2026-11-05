@@ -100,8 +100,8 @@ export function AccountSheet() {
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         />
         {/* Cover and bar line up with a page header without an uploaded cover */}
-        <div className="bg-background/50 dark:bg-background/75 pointer-events-none absolute inset-x-0 bottom-0 h-18 px-3 pt-9 text-center backdrop-blur-xs">
-          <div className="absolute -top-13 left-1/2 -translate-x-1/2">
+        <div className="bg-background/50 dark:bg-background/75 pointer-events-none absolute inset-x-0 bottom-0 h-16 px-3 pt-7 text-center backdrop-blur-xs">
+          <div className="absolute -top-15 left-1/2 -translate-x-1/2">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
@@ -119,7 +119,7 @@ export function AccountSheet() {
               variant="outline-ghost"
               size="icon"
               onClick={uploadCover}
-              className={cn('absolute top-2.5 right-2.5 size-8 max-sm:size-10', frostedButton, revealOnCoverHover)}
+              className={cn('absolute top-4 right-4 size-8 max-sm:size-10', frostedButton, revealOnCoverHover)}
             >
               <ImageUpIcon />
             </Button>

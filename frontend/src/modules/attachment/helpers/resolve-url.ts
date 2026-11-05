@@ -1,5 +1,6 @@
 import type { Attachment } from 'sdk';
 import { parseMediaRef } from 'shared/utils/media-ref';
+import { systemUploadPrefix } from 'shared/utils/upload-visibility';
 import { type CloudFileVariant, getCloudUrl, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { isPendingUpload, markPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
@@ -59,6 +60,7 @@ export async function resolveAttachmentUrl(
 /** Org context a block reference falls back to when the attachment isn't in cache. */
 interface RefContext {
   tenantId?: string;
+  /** The document's media prefix: an organization id, or `systemUploadPrefix`, which names no organization. */
   organizationId?: string;
 }
 
@@ -91,7 +93,7 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
   }
 
   const tenantId = cached?.tenantId ?? ctx.tenantId;
-  const organizationId = cached?.organizationId ?? ctx.organizationId;
+  const organizationId = cached?.organizationId ?? (ctx.organizationId === systemUploadPrefix ? undefined : ctx.organizationId);
   if (!tenantId || !organizationId) {
     console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId for id:', media.id);
     return '';

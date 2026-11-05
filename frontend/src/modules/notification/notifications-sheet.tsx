@@ -9,6 +9,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { navigationStore } from '~/modules/navigation/navigation-store';
@@ -25,10 +26,14 @@ type Notification = GetNotificationsResponse['items'][number];
 export function NotificationsSheet() {
   const { t } = useTranslation();
   const { data, isLoading } = useQuery(notificationsQueryOptions());
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const { mutate: markRead } = useMarkNotificationsReadMutation();
 
   const items = data?.items ?? [];
   const hasUnread = (data?.unreadCount ?? 0) > 0;
+  // The listed rows count too: a system admin is told of organizations they hold no membership in
+  const organizationIds = new Set([...(myMemberships?.items ?? []), ...items].map(({ organizationId }) => organizationId));
+  const showOrganization = organizationIds.size > 1;
 
   return (
     <NavSheetFrame>
@@ -54,7 +59,7 @@ export function NotificationsSheet() {
 
         <ul className="flex flex-col gap-1 pb-60">
           {items.map((notification) => (
-            <NotificationRow key={notification.id} notification={notification} onOpen={markRead} />
+            <NotificationRow key={notification.id} notification={notification} showOrganization={showOrganization} onOpen={markRead} />
           ))}
         </ul>
       </div>
@@ -62,7 +67,14 @@ export function NotificationsSheet() {
   );
 }
 
-function NotificationRow({ notification, onOpen }: { notification: Notification; onOpen: (body: { ids?: string[] }) => void }) {
+interface NotificationRowProps {
+  notification: Notification;
+  /** The place line names the organization only for someone in more than one. */
+  showOrganization: boolean;
+  onOpen: (body: { ids?: string[] }) => void;
+}
+
+function NotificationRow({ notification, showOrganization, onOpen }: NotificationRowProps) {
   const { t } = useTranslation();
   const relativeDate = useRelativeDate(notification.createdAt);
   const route = getProductRoute(notification);
@@ -77,25 +89,49 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   };
 
   const { actor, channelName, subjectTitle } = notification;
+  // A subject homed in the organization names no channel: the place line names the organization where it helps
+  const hasChannel = notification.channelType !== 'organization';
   const content = (
     <>
-      <EntityAvatar
-        type="user"
-        className={cn('size-8 shrink-0', notification.readAt && 'opacity-70')}
-        id={actor?.id ?? 'unknown'}
-        name={actor?.name ?? ''}
-        url={actor?.thumbnailUrl ?? null}
-      />
+      <span className={cn('relative shrink-0', notification.readAt && 'opacity-70')}>
+        <EntityAvatar type="user" className="size-8" id={actor?.id ?? 'unknown'} name={actor?.name ?? ''} url={actor?.thumbnailUrl ?? null} />
+        {hasChannel && (
+          <EntityAvatar
+            aria-hidden
+            type={notification.channelType}
+            id={notification.channelId}
+            name={channelName}
+            url={notification.channelThumbnailUrl}
+            className={cn('absolute -right-1 -bottom-1 size-4 rounded-sm ring-2', notification.readAt ? 'ring-card' : 'ring-accent')}
+          />
+        )}
+      </span>
       <span className="flex min-w-0 flex-col gap-0.5">
-        {/* One `c:notification.<type>` sentence per vocabulary type, interpolating actor, subject and channel; apps add theirs to app.json */}
+        {/* One `c:notification.<type>` sentence per vocabulary type, and one without its channel; apps add theirs to app.json */}
         <span className={cn('text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
-          {t(`c:notification.${notification.type}`, {
+          {t(hasChannel ? `c:notification.${notification.type}` : `c:notification.${notification.type}.no_channel`, {
             actor: actor?.name || t('c:someone'),
             subject: subjectTitle || t('c:unknown'),
             channel: channelName || t('c:unknown'),
           })}
         </span>
-        <span className="text-muted-foreground text-xs">{relativeDate}</span>
+        <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
+          <span className="shrink-0">{relativeDate}</span>
+          {showOrganization && (
+            <>
+              <span aria-hidden>·</span>
+              <EntityAvatar
+                aria-hidden
+                type="organization"
+                id={notification.organizationId}
+                name={notification.organizationName}
+                url={notification.organizationThumbnailUrl}
+                className="size-3.5 shrink-0 rounded-sm"
+              />
+              <span className="truncate">{notification.organizationName}</span>
+            </>
+          )}
+        </span>
       </span>
     </>
   );

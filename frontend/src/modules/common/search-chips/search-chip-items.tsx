@@ -22,6 +22,7 @@ export function FilterChip({ chip, isPicking = false, onPress, size, className }
   return (
     <Chip
       size={size}
+      start={chip.start && <span className={cn('flex *:size-6', size === 'lg' && '*:size-7')}>{chip.start}</span>}
       onRemove={chip.onRemove}
       removeLabel={t('c:remove_resource', { resource: chip.label })}
       onPress={onPress}

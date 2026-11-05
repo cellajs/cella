@@ -10,7 +10,7 @@ A product module opts in by declaring a notification source on its own module. M
 - **The fan-out mails what it wrote.** Once every row of a change is written, the rows of a mail category go out to recipients with a verified address who keep that category on. A row is stamped right after its mail went out, and the digest skips it; a failed send leaves the row to the digest, when the recipient has one.
 - **A digest has one window.** A recipient's window ends when the run starts and is settled right after their mail went out, so a failed send leaves it open for the next hourly run. A row whose write commits while a run reads can fall in neither window.
 
-A recipient must belong to the row's organization, or be a system admin, and may read the row when it is written. The inbox and the digest ask again: they list only rows of organizations the recipient still belongs to, the inbox shows a subject the recipient may no longer read with empty names, and the digest leaves it out. The instant mail goes on the decision made at the write.
+A recipient must belong to the row's organization, or be a system admin, and may read the row when it is written. The inbox and the digest ask again: they list only rows of organizations the recipient still belongs to, the inbox shows a subject the recipient may no longer read with empty names, keeping only the organization's, and the digest leaves it out. The instant mail goes on the decision made at the write.
 
 ## Failure modes
 

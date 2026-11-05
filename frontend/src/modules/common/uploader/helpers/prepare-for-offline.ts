@@ -10,7 +10,11 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 
 /** Stores each file's blob locally, under the id its attachment row will be created with. */
 export const storeUploadBlobs = async (files: CustomUppyFile[], organizationId: string, templateId: UploadTemplateId, status: UploadStatus) => {
-  for (const file of files) await attachmentStorage.storeUploadBlob(file, organizationId, status, { templateId }, file.meta.attachmentId);
+  for (const file of files) {
+    // `onBeforeFileAdded` mints the id; Uppy's own file id names no attachment.
+    if (!file.meta.attachmentId) throw new Error('Upload file carries no attachment id');
+    await attachmentStorage.storeUploadBlob(file, file.meta.attachmentId, organizationId, status, { templateId });
+  }
 };
 
 /** Stores the files on this device, for the upload service to send once cloud storage is reachable, and answers with a completed assembly. */

@@ -225,9 +225,11 @@ li:has(.is-focused) {
   border-radius: 2rem;
 }
 
+/* Plain wrap in both, as typed text needs (see [contenteditable] in tailwind.css): a `pretty` read view breaks lines elsewhere, so text jumps on entering edit. */
 .bn-shadcn .bn-editor,
 .bn-shadcn .bn-static-editor {
   white-space: pre-wrap;
+  text-wrap: wrap;
   padding: 0px;
   background: transparent;
   height: 100%;
@@ -388,4 +390,15 @@ li:has(.is-focused) {
 }
 [data-content-type="heading"][data-level="3"] {
   --level: 1.1rem;
+}
+
+/* A dense editor sits in a card, beside body text at text-md: its headings stay close to that size, an h3 apart by weight alone. */
+.bn-shadcn.bn-dense [data-content-type="heading"] {
+  --level: 1.125rem;
+}
+.bn-shadcn.bn-dense [data-content-type="heading"][data-level="2"] {
+  --level: 1rem;
+}
+.bn-shadcn.bn-dense [data-content-type="heading"][data-level="3"] {
+  --level: var(--text-md);
 }
