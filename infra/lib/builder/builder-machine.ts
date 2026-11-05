@@ -142,7 +142,11 @@ export function agentBundleScript(pnpmVersion: string): string {
   ].join('\n');
 }
 
-/** The keyless container that builds the frontend on its copy: this environment's OpenAPI spec first, which the docs page serves with its URLs. */
+/**
+ * The keyless container that builds the frontend on its copy: this environment's OpenAPI spec first, which the docs page serves with its
+ * URLs. CI's frontend-build job runs this same script on every PR (`pnpm --filter infra builder-script frontend`), so a change it cannot
+ * build fails there and not at the release deploy.
+ */
 export function frontendScript(pnpmVersion: string): string {
   return [
     `npm install -g --silent pnpm@${pnpmVersion}`,
