@@ -250,36 +250,43 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
   return result;
 }
 
-/** The two columns every channel table has; the table union needs narrowing to select them. */
-type NamedTable = AnyPgTable & { id: PgColumn; name: PgColumn };
+/** Columns every channel table has; the table union needs narrowing to select them. */
+type LabelledTable = AnyPgTable & { id: PgColumn; name: PgColumn; thumbnailUrl: PgColumn };
 
-interface FindChannelNamesOpts {
+export type ChannelLabel = { name: string; thumbnailUrl: string | null };
+
+interface FindChannelLabelsOpts {
   channelIds: string[];
 }
 
 /**
- * Display names for a set of channel ids, so a digest can group by channel without the caller
- * knowing which table each id lives in.
+ * Name and thumbnail for a set of channel ids, organizations included, so a digest can group by channel and a card
+ * can show its place without the caller knowing which table each id lives in.
  *
  * Driven by `appConfig.channelEntityTypes`, so a hierarchy change is picked up automatically. Channel tables sit
  * outside RLS (application-layer guards cover them), and the ids only ever come from rows the recipient was already
- * cleared to read.
+ * cleared to read, or from the organization of an inbox row, which the recipient belongs to.
  */
-export async function findChannelNames(ctx: DbContext, { channelIds }: FindChannelNamesOpts): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
-  if (channelIds.length === 0) return names;
+export async function findChannelLabels(ctx: DbContext, { channelIds }: FindChannelLabelsOpts): Promise<Map<string, ChannelLabel>> {
+  const labels = new Map<string, ChannelLabel>();
+  if (channelIds.length === 0) return labels;
 
   const unique = [...new Set(channelIds)];
 
   await Promise.all(
     appConfig.channelEntityTypes.map(async (channelType) => {
-      const table = getEntityTable(channelType) as NamedTable;
-      const rows = await ctx.var.db.select({ id: table.id, name: table.name }).from(table).where(inArray(table.id, unique));
-      for (const row of rows) names.set(String(row.id), String(row.name));
+      const table = getEntityTable(channelType) as LabelledTable;
+      const rows = await ctx.var.db
+        .select({ id: table.id, name: table.name, thumbnailUrl: table.thumbnailUrl })
+        .from(table)
+        .where(inArray(table.id, unique));
+      for (const row of rows) {
+        labels.set(String(row.id), { name: String(row.name), thumbnailUrl: row.thumbnailUrl === null ? null : String(row.thumbnailUrl) });
+      }
     }),
   );
 
-  return names;
+  return labels;
 }
 
 interface UserIdsOpts {

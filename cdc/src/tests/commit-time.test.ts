@@ -20,8 +20,4 @@ describe('commitTimeMs', () => {
     if (parsed.tag !== 'begin') throw new Error(`Parsed a ${parsed.tag} message`);
     expect(commitTimeMs(parsed)).toBe(committedAt.getTime());
   });
-
-  it('has no time for a message without one', () => {
-    expect(commitTimeMs({ tag: 'begin', xid: 1, commitLsn: null, commitTime: BigInt(0) })).toBeNull();
-  });
 });

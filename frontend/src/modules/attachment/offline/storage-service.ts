@@ -186,10 +186,10 @@ class AttachmentStorageService {
   /** Store a blob from Uppy file upload (stores as 'raw' variant). */
   async storeUploadBlob(
     file: CustomUppyFile,
+    attachmentId: string,
     organizationId: string,
     uploadStatus: UploadStatus = 'pending',
     uploadContext?: UploadContext,
-    attachmentId?: string,
   ): Promise<AttachmentBlob> {
     if (!file.data || !(file.data instanceof Blob)) {
       throw new Error('File data must be a Blob');
@@ -198,13 +198,11 @@ class AttachmentStorageService {
     const blob = file.data;
     const size = file.size ?? blob.size;
 
-    // Fall back to file.id while no attachment id exists yet.
-    const actualAttachmentId = attachmentId || file.id;
-    const key = makeBlobKey(actualAttachmentId, 'raw');
+    const key = makeBlobKey(attachmentId, 'raw');
 
     const record: AttachmentBlob = {
       id: key,
-      attachmentId: actualAttachmentId,
+      attachmentId,
       variant: 'raw',
       organizationId,
       blob,
@@ -222,7 +220,7 @@ class AttachmentStorageService {
 
     try {
       await attachmentsDb.blobs.add(record);
-      this.invalidateSharedBlobUrls(actualAttachmentId);
+      this.invalidateSharedBlobUrls(attachmentId);
       return record;
     } catch (error) {
       console.error('[AttachmentStorage] Failed to store upload blob:', error);

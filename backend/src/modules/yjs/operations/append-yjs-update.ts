@@ -1,5 +1,6 @@
 import type { YjsDocScope } from 'shared';
 import type { DbContext } from '#/core/context';
+import type { UserId } from '#/db/utils/ids';
 import { yjsMaxDocumentBytes, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate } from '#/modules/yjs/helpers/yjs-state';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
@@ -22,7 +23,7 @@ export interface AppendYjsUpdateOpts {
   /** The Yjs update to log. */
   update: Uint8Array;
   /** The client whose update this is, whom a materialization may credit; null for a server-origin row. */
-  userId: string | null;
+  userId: UserId | null;
   /** The generation the update extends: a client's own, or the one an outside write just read. */
   generation: string;
   /** False skips the notification: the relay announces its appends after they commit, batched. Default true. */

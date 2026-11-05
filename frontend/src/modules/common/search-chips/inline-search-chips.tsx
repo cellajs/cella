@@ -189,8 +189,9 @@ export function InlineSearchChips({
       selection.recent.onPick();
       return setIsOpen(false);
     }
+    // Enter on the typed word ends the search, as in most search fields; touch drops its keyboard too, and that blur closes
     if (selection.kind === 'text') {
-      if (!canAddFilter(groups)) return close();
+      if (!isTouchInteraction()) return close();
       search.commitDraft();
       return endOnTouch();
     }

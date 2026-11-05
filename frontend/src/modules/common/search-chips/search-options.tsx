@@ -39,11 +39,17 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
       : [...group.options].sort((a, b) => rank(a) - rank(b)).filter((option, index) => index < (group.rowLimit ?? 0) || option.isSelected);
 
   return (
-    <ComboboxGroup>
-      <ComboboxGroupLabel className="px-(--search-icon-start) pt-2 pb-0 pointer-coarse:px-(--search-icon-start) pointer-coarse:pb-0">
-        {group.label}
-      </ComboboxGroupLabel>
-      <div className="flex flex-wrap gap-1 px-(--search-icon-start) py-1.5">
+    <ComboboxGroup
+      aria-label={group.isUnlabeled ? group.label : undefined}
+      data-unlabeled={group.isUnlabeled || undefined}
+      className="[[data-unlabeled]+&]:border-t [[data-unlabeled]+&]:border-dashed"
+    >
+      {!group.isUnlabeled && (
+        <ComboboxGroupLabel className="px-(--search-icon-start) pt-2 pb-0 pointer-coarse:px-(--search-icon-start) pointer-coarse:pb-0">
+          {group.label}
+        </ComboboxGroupLabel>
+      )}
+      <div className={cn('flex flex-wrap gap-1 px-(--search-icon-start)', group.isUnlabeled ? 'py-2' : 'py-1.5')}>
         {options.map((option) => (
           <ComboboxItem
             key={option.value}
@@ -51,23 +57,26 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
             aria-selected={option.isSelected}
             title={group.isIconOnly ? option.label : undefined}
             className={cn(
-              'border-input w-auto shrink-0 rounded-full border px-2.5 py-0',
+              // The input's chips put gap-1 between icon and label; the count keeps its distance with ml-1
+              'border-input w-auto shrink-0 gap-1 rounded-full border px-2.5 py-0',
               group.isIconOnly
                 ? 'h-7.5 gap-1.5 pl-0 *:first:size-7 pointer-coarse:h-8.5 pointer-coarse:pl-0.75'
                 : group.isCompact
                   ? 'h-6.5 pointer-coarse:h-8.5'
-                  : 'h-7.5 max-sm:h-6.5 max-sm:gap-1.5 max-sm:px-2 pointer-coarse:h-8.5 max-sm:pointer-coarse:h-8.5',
+                  : 'h-7.5 max-sm:h-6.5 max-sm:px-2 pointer-coarse:h-8.5 max-sm:pointer-coarse:h-8.5',
               (group.isCompact || group.isIconOnly) &&
                 !option.isSelected &&
                 'hover:border-input active:border-input data-highlighted:border-input border-transparent',
               option.count === 0 && !option.isSelected && 'text-muted-foreground border-dashed',
               option.isSelected &&
-                'more-contrast:border-foreground bg-foreground/12 active:bg-foreground/18 data-highlighted:bg-foreground/18 border-transparent font-medium',
+                'more-contrast:border-foreground bg-foreground/12 active:bg-foreground/18 data-highlighted:bg-foreground/18 border-transparent',
             )}
           >
             {option.icon}
             {group.isIconOnly ? <span className="sr-only">{option.label}</span> : option.label}
-            {option.count !== undefined && <span className="text-muted-foreground text-xs tabular-nums">{option.count}</span>}
+            {option.count !== undefined && (
+              <span className={cn('text-muted-foreground text-xs tabular-nums', !group.isIconOnly && 'ml-1')}>{option.count}</span>
+            )}
           </ComboboxItem>
         ))}
       </div>
@@ -189,7 +198,9 @@ export function SearchOptionsList({
 
   if (pickingChip && pickingGroup) {
     const label = t('c:change_resource_to', { resource: pickingChip.label });
-    return <SearchOptionRow group={{ ...pickingGroup, label, options: pickingGroup.options.filter((option) => !option.isSelected) }} />;
+    return (
+      <SearchOptionRow group={{ ...pickingGroup, label, isUnlabeled: false, options: pickingGroup.options.filter((option) => !option.isSelected) }} />
+    );
   }
 
   if (typingWord) {

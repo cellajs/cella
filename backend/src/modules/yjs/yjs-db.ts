@@ -2,6 +2,7 @@ import { bigint, bytea, index, primaryKey, snakeCase, uuid, varchar } from 'driz
 import { appConfig } from 'shared';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { tenantIdLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -60,7 +61,7 @@ export const yjsUpdatesTable = snakeCase.table(
       .references(() => tenantsTable.id),
     organizationId: uuid().notNull(),
     /** The client whose update this is; null for a server-origin row. Credits the materialized write. */
-    userId: uuid(),
+    userId: uuid().$type<UserId>(),
     payload: bytea().notNull(),
     createdAt: isoTimestamp().defaultNow().notNull(),
   },

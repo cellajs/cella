@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { type ProductEntityType, toTableName, type YjsDocKey, type YjsDocScope } from 'shared';
 import type { DbContext } from '#/core/context';
+import type { UserId } from '#/db/utils/ids';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -92,7 +93,7 @@ export const findYjsDocumentGeneration = async (ctx: DbContext, { doc }: FindYjs
 interface InsertYjsUpdateOpts {
   doc: YjsDocScope;
   /** The sender, or null for a server-origin row. */
-  userId: string | null;
+  userId: UserId | null;
   payload: Uint8Array;
 }
 

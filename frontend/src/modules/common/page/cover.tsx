@@ -54,7 +54,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
         <Button
           variant="outline-ghost"
           size="xs"
-          className="bg-background/50 hover:bg-background/75 dark:bg-background/75 absolute top-2.5 right-2.5 backdrop-blur-xs max-sm:size-10"
+          className="bg-background/50 hover:bg-background/75 dark:bg-background/75 absolute top-4 right-4 backdrop-blur-xs max-sm:size-10"
           onClick={openUploadDialog}
         >
           <ImageUpIcon />

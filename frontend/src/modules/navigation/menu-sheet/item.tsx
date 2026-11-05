@@ -56,7 +56,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
-      className="group/menu-sheet-item standalone:[-webkit-touch-callout:none] focus-visible:ring-ring active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-start gap-1 rounded-sm ring-2 ring-transparent select-none ring-inset focus:outline-hidden data-[subitem=true]:h-10"
+      className="group/menu-sheet-item standalone:[-webkit-touch-callout:none] focus-visible:ring-ring active:bg-accent sm:hover:bg-hover sm:hover:text-foreground relative flex h-12 w-full items-center gap-1 rounded-sm ring-2 ring-transparent select-none ring-inset focus:outline-hidden data-[subitem=true]:h-10"
     >
       <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
@@ -81,25 +81,15 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
           </span>
         )}
       </span>
-      <div className="flex grow flex-col justify-center truncate pr-2 text-left">
-        <div
-          className={cn(
-            'text-md transition-spacing truncate pt-3.5 leading-5 duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]',
-            isSubitem ? 'group-data-[link-active=true]/menu-sheet-item:font-medium' : 'font-medium',
-          )}
-        >
-          {item.name}
-        </div>
-        <div className="text-muted-foreground pointer-events-none text-xs">
-          <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 sm:group-hover/menu-sheet-item:opacity-100">
-            {t(item.membership.role)}
-            {!hasSubmenu && item.submenu?.length
-              ? ` · ${t('c:resource_count', { count: item.submenu.length, resource: t(item.submenu[0].entityType, { count: item.submenu.length }) })}`
-              : ''}
-          </span>
-        </div>
-      </div>
-      {unseenCount > 0 && <CountBadge count={unseenCount} className="mr-3 shrink-0 self-center" />}
+      <span
+        className={cn(
+          'text-md grow truncate pr-2 leading-5 group-data-[subitem=true]/menu-sheet-item:pb-1 group-data-[subitem=true]/menu-sheet-item:text-sm',
+          isSubitem ? 'group-data-[link-active=true]/menu-sheet-item:font-medium' : 'font-medium',
+        )}
+      >
+        {item.name}
+      </span>
+      {unseenCount > 0 && <CountBadge count={unseenCount} className="mr-3 shrink-0" />}
     </Link>
   );
 }

@@ -47,11 +47,20 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"
-      className={cn('group/sticky bg-background @container z-80 grid grid-cols-[1fr_auto_1fr] border-b', className)}
+      className={cn(
+        'group/sticky bg-background after:bg-border @container z-80 grid grid-cols-[1fr_auto_1fr] pb-px after:absolute after:inset-x-3 after:bottom-0 after:h-px',
+        className,
+      )}
     >
       <div className="col-start-1 hidden min-w-max items-center transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex starting:opacity-0">
         {avatar && (
-          <EntityAvatar className="m-3 size-5" type={avatar.type ?? 'organization'} id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />
+          <EntityAvatar
+            className="m-3 mr-2 size-5"
+            type={avatar.type ?? 'organization'}
+            id={avatar.id}
+            name={avatar.name}
+            url={avatar.thumbnailUrl}
+          />
         )}
         {title && <div className="hidden max-w-42 truncate text-sm leading-5 font-semibold @4xl:block">{title}</div>}
       </div>

@@ -61,8 +61,11 @@ function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds =
         <div className="flex w-12 items-center justify-center py-2">
           <ArchiveIcon className="ml-2 size-5 opacity-75 group-data-[submenu=true]/archived:size-3.5" />
         </div>
-        <div className="text-muted-foreground grow truncate p-2 text-left">
-          <span className="text-sm group-data-[submenu=true]/archived:text-xs">{dropAction ? t(`c:drop_to_${dropAction}`) : t('c:archived')}</span>
+        {/* A flex row, so hiding the taller count leaves the label where it is */}
+        <div className="text-muted-foreground flex min-w-0 grow items-center p-2 text-left">
+          <span className="truncate text-sm group-data-[submenu=true]/archived:text-xs">
+            {dropAction ? t(`c:drop_to_${dropAction}`) : t('c:archived')}
+          </span>
           <span className="text-faint-foreground inline-block px-2 py-1 text-xs group-data-[archived-visible=true]/archived:hidden">
             {archivedUnseenCount > 0 ? <CountBadge count={archivedUnseenCount} className="inline-flex" /> : archivedCount}
           </span>

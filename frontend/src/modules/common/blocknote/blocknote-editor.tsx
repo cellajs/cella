@@ -15,6 +15,7 @@ import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { headingLevelsExtension } from '~/modules/common/blocknote/custom-elements/heading-levels/heading-levels-extension';
 import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
 import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
@@ -135,7 +136,13 @@ export function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
-    extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter, ...(pinTitleBlock ? [pinnedTitleExtension()] : [])],
+    extensions: [
+      ...(extensions ?? []),
+      checkedExtension(),
+      headingLevelsExtension({ levels: headingLevels }),
+      syntaxHighlighter,
+      ...(pinTitleBlock ? [pinnedTitleExtension()] : []),
+    ],
     ...(pinTitleBlock && { dropCursor: { hooks: { computeDropPosition: pinnedTitleDropPosition } } }),
     // The org context is the fallback for a reference whose attachment is not cached.
     resolveFileUrl: (ref: string) =>

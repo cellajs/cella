@@ -8,6 +8,8 @@ export interface SearchChip {
   value?: string;
   label: string;
   icon?: ReactNode;
+  /** Media on the chip's start edge, such as a person's avatar, in place of an icon; the chip sizes it to its height. */
+  start?: ReactNode;
   onRemove: () => void;
 }
 
@@ -23,7 +25,7 @@ export interface SearchOption {
 /** One filter of a list. Its values widen each other; different filters and the search words narrow. */
 export interface SearchOptionGroup {
   key: string;
-  /** The heading over the filter's values. */
+  /** The heading over the filter's values, or only their accessible name when unlabeled. */
   label: string;
   options: SearchOption[];
   onToggle: (value: string) => void;
@@ -40,6 +42,8 @@ export interface SearchOptionGroup {
   matchIcon?: ReactNode;
   /** How many options the row shows; a selected one always shows, and typing finds the rest. */
   rowLimit?: number;
+  /** Its row goes without a heading, split from an unlabeled row above by a dashed line. A pressed chip's alternatives keep theirs. */
+  isUnlabeled?: boolean;
 }
 
 /** A search made before, with its filters. */

@@ -9,7 +9,7 @@ import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
 import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
 import {
-  findChannelNames,
+  findChannelLabels,
   findUsersMinimal,
   findVerifiedRecipients,
   stampEmailed,
@@ -47,7 +47,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
   if (mailable.length === 0) return;
 
   const actors = await findUsersMinimal(dbCtx, { userIds: mailable.map((row) => row.actorId).filter((id): id is string => id !== null) });
-  const channelNames = await findChannelNames(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
+  const channels = await findChannelLabels(dbCtx, { channelIds: mailable.map((row) => row.channelId) });
   const titles = await findContextNames(mailable.map((row) => ({ ...row, id: contextOf(row) })));
 
   let mailed = 0;
@@ -60,7 +60,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
     try {
       const statics = {
         actorName: notification.actorId ? (actors.get(notification.actorId)?.name ?? '') : '',
-        channelName: channelNames.get(notification.channelId) ?? '',
+        channelName: channels.get(notification.channelId)?.name ?? '',
       };
       const recipient = {
         email: user.email,

@@ -194,6 +194,8 @@ export const resolveEntity = async <T extends EntityType>(
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
+  // A slug names no row of a type without a slug column.
+  if (bySlug && !hasSlug(table)) return undefined;
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
   const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 

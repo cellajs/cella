@@ -1,4 +1,4 @@
-import type { OrgContext } from '#/core/context';
+import type { DbContext } from '#/core/context';
 import { findPendingInactiveMembershipsByChannels } from '#/modules/memberships/inactive-memberships-queries';
 import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { log } from '#/utils/logger';
@@ -6,6 +6,8 @@ import { log } from '#/utils/logger';
 interface DispatchDeferredInvitesOpts {
   /** The channels whose held invitations go out: a published channel and its descendants. */
   channelIds: string[];
+  /** The channels' organization: its default language is the one a mail to an address without an account takes. */
+  organization: { defaultLanguage: string };
 }
 
 /**
@@ -14,12 +16,12 @@ interface DispatchDeferredInvitesOpts {
  * channel again; one whose mail failed is still held for the next call. An invitation no account holds gets its first
  * link here (`mailInvitations`).
  */
-export async function dispatchDeferredInvites(ctx: OrgContext, { channelIds }: DispatchDeferredInvitesOpts) {
+export async function dispatchDeferredInvites(ctx: DbContext, { channelIds, organization }: DispatchDeferredInvitesOpts) {
   const pendingRows = await findPendingInactiveMembershipsByChannels(ctx, { channelIds });
   const heldIds = pendingRows.flatMap(({ id, remindedAt }) => (remindedAt ? [] : [id]));
   if (!heldIds.length) return { dispatched: 0 };
 
-  const mailed = await mailInvitations(ctx, { ids: heldIds, organization: ctx.var.organization });
+  const mailed = await mailInvitations(ctx, { ids: heldIds, organization });
 
   log.info('Deferred invites dispatched', { count: mailed.length, channels: channelIds.length });
 

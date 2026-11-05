@@ -2,6 +2,7 @@ import { index, jsonb, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/
 import { activityActions, appConfig, trackedEventTypes } from 'shared';
 import { activityChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { ActorId } from '#/db/utils/ids';
 import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
@@ -11,7 +12,8 @@ export const activitiesTable = snakeCase.table(
   {
     id: varchar({ length: maxLength.id }).notNull(),
     tenantId: varchar({ length: tenantIdLength }),
-    userId: uuid(),
+    /** The row's writer as the CDC worker infers it from the row's writer columns: a user or a service account. */
+    userId: uuid().$type<ActorId>(),
     entityType: varchar({ enum: appConfig.entityTypes }),
     resourceType: varchar({ enum: appConfig.resourceTypes }),
     action: varchar({ enum: activityActions }).notNull(),

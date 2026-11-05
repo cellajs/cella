@@ -19,7 +19,7 @@ interface OpenTransaction {
    * When it committed. Its activities take this as `createdAt`: the activities key is (id, createdAt), so a change
    * delivered twice has to carry the same time both times to be recorded once.
    */
-  commitTime: string | null;
+  commitTime: string;
 }
 
 /**
@@ -60,13 +60,13 @@ export class TransactionBuffer {
 
   /**
    * Opens a source transaction.
-   * @returns When it committed, in Unix milliseconds; null when its BEGIN carries no time.
+   * @returns When it committed, in Unix milliseconds.
    */
-  onBegin(msg: Pgoutput.MessageBegin): number | null {
+  onBegin(msg: Pgoutput.MessageBegin): number {
     // The replication client reads position 0/0 as null, and no commit lies there.
     if (msg.commitLsn === null) throw new Error(`BEGIN of transaction ${msg.xid} carries no commit position`);
     const committedAt = commitTimeMs(msg);
-    this.transaction = { xid: msg.xid, commitLsn: msg.commitLsn, commitTime: committedAt === null ? null : new Date(committedAt).toISOString() };
+    this.transaction = { xid: msg.xid, commitLsn: msg.commitLsn, commitTime: new Date(committedAt).toISOString() };
     return committedAt;
   }
 
@@ -76,7 +76,7 @@ export class TransactionBuffer {
     if (!transaction) throw new Error(`The change at ${lsn} arrived outside a transaction`);
 
     const { activity } = result;
-    if (transaction.commitTime) activity.createdAt = transaction.commitTime;
+    activity.createdAt = transaction.commitTime;
 
     if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);

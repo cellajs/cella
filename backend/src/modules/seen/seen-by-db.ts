@@ -1,6 +1,7 @@
 import { foreignKey, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import type { UserId } from '#/db/utils/ids';
 import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -12,7 +13,7 @@ export const seenByTable = snakeCase.table(
   'seen_by',
   {
     id: uuid().notNull().$defaultFn(generateId),
-    userId: uuid().notNull(),
+    userId: uuid().notNull().$type<UserId>(),
     productId: uuid().notNull(),
     productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
     createdAt: isoTimestampWithoutZone().defaultNow().notNull(),

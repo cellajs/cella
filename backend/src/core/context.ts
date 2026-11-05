@@ -61,8 +61,10 @@ export type ActorContext = {
 export type OrgContext = { var: ActorContext['var'] & Pick<Env['Variables'], 'organization' | 'organizationId'> };
 
 /**
- * A signed-in user: everything in `OrgContext` plus `user`, `memberships` and the session. `userGuard` guarantees the
- * actor is a `UserActor`; the type keeps the union because Hono hands every handler the same `Env`.
+ * A signed-in user: `user`, `memberships` and the session beside the actor. The tenant and organization fields are set
+ * only behind `tenantGuard` and `orgGuard`, so an operation that reads them runs on a route that mounts those guards or
+ * takes the value as an argument. `userGuard` guarantees the actor is a `UserActor`; the type keeps the union because
+ * Hono hands every handler the same `Env`.
  */
 export type UserContext = { var: Omit<Env['Variables'], 'requestId'> };
 

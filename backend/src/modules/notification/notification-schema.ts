@@ -11,6 +11,11 @@ export const notificationSchema = createSelectSchema(notificationsTable).omit({ 
   actor: nullableUserMinimalBaseSchema,
   /** Display names for the card's sentence; empty when the subject is gone or the user may not read it. */
   channelName: z.string(),
+  /** Null with no image, and when the subject is gone or the user may not read it. */
+  channelThumbnailUrl: z.string().nullable(),
+  /** The organization of the row, which the recipient belongs to, for the card's place. */
+  organizationName: z.string(),
+  organizationThumbnailUrl: z.string().nullable(),
   /** The context's name, as the digest names it: the thread for a comment or reply, else the subject's own. */
   subjectTitle: z.string(),
 });

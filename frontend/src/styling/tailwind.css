@@ -26,7 +26,6 @@
   --text-md: 0.889rem;
   /* Badge and counter text. */
   --text-2xs: 0.6rem;
-  --transition-property-spacing: margin, padding;
 
   /* Steps down from --radius, which the token blocks below define; upstream shadcn classes also read --radius-md. */
   --radius-sm: calc(var(--radius) - 4px);

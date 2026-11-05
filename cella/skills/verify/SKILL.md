@@ -9,6 +9,7 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 - Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves `appConfig.frontendUrl`, http://localhost:3000 for app number 0; a linked git worktree runs on ports of its own, which Vite prints ([Dev ports](../../../shared/README.md#dev-ports)). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
 - Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs come from the config, so a server on another port fails with "Failed to fetch". Ports of another `devAppIndex` belong to other apps.
+- The configured ports are the developer's, in the main checkout too. Use the stack that answers on `appConfig.frontendUrl`, ask the developer to start it, or run your own with `DEV_PORT_OFFSET=50 pnpm dev` on the shared database (one CDC worker reads its slot: the second stack shows no live updates) or as a [throwaway stack](#a-throwaway-database). Keep it attached to your session, never `nohup`, and end it with `DEV_PORT_OFFSET=50 pnpm killports`: a stack left behind blocks the developer's `pnpm dev`.
 - A worktree's Vite proxies `/api` to the worktree's own backend, which migrates the database named in `backend/.env` on boot: the main checkout's, unless the worktree has its own. Give a branch with migrations its own database first ([A throwaway database](#a-throwaway-database)), and never run a second CDC worker on a shared one: it waits for the slot the running one holds and reports degraded meanwhile.
 - When you start the stack yourself, capture its stdout with a size cap: `pnpm dev 2>&1 | head -c 200000000 > <scratch>/dev-stack.log` (background; macOS `head` takes bytes only). pino writes no file, and backend errors are there.
 - Stack health: the API's `/health?depth=full` shows the `cdc` component `healthy`, or the `reason` it is not. The worker's own `curl http://localhost:<services.cdc.port>/health?depth=full` adds `replication.status` (`active` while it reads), `setupProblems` and `failure`.
@@ -24,7 +25,7 @@ docker ps --format '{{.Names}}  {{.Ports}}'
 ```
 
 - Paths under `.claude/worktrees/<name>/` (or another linked worktree) count, the main checkout does not. With two worktrees listed, check without a stack (typecheck, unit tests, a static page) or wait.
-- Once the check is done, stop the listeners (`lsof -tiTCP:<port> -sTCP:LISTEN`) and remove a throwaway container with its volume (`docker rm -fv <name>`).
+- Once the check is done, `pnpm killports` from the worktree ends its listeners, and `docker rm -fv <name>` removes a throwaway container with its volume.
 
 ## A throwaway database
 
@@ -47,7 +48,7 @@ pnpm seed                                                                  # mig
 - Every command runs with those exports: `pnpm seed` without them seeds the database you work in. An agent's shell keeps no exports between calls, so put them in a wrapper script that ends in `exec "$@"` and run each command through it.
 - The API and Vite serve pages and writes. Nothing here starts the CDC worker or the relay, so pages get no live updates.
 - Both Vite servers share `frontend/node_modules/.vite`: the second re-bundles the dependencies there, and the first re-bundles once more at its next start.
-- Afterwards stop the two listeners (`lsof -tiTCP:<port> -sTCP:LISTEN`) and `docker rm -fv scratch_db`.
+- Afterwards `DEV_PORT_OFFSET=50 pnpm killports` and `docker rm -fv scratch_db`.
 
 ## Drive (browser)
 

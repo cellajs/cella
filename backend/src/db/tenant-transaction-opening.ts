@@ -18,7 +18,8 @@ export interface TenantSessionVars {
  * @throws A tenant id outside the id alphabet, before a connection is taken.
  */
 export function tenantTransactionOpening({ tenantId, includeDeleted }: TenantSessionVars, readOnly: boolean): string {
-  if (!idAlphabet.test(tenantId)) throw new Error('Tenant transaction refused: an id outside the id alphabet');
+  // `test` reads a missing id as the text 'undefined', which is inside the alphabet.
+  if (typeof tenantId !== 'string' || !idAlphabet.test(tenantId)) throw new Error('Tenant transaction refused: an id outside the id alphabet');
   return (
     `BEGIN${readOnly ? ' READ ONLY' : ''}; ` +
     `SELECT set_config('app.tenant_id', ${escapeLiteral(tenantId)}, true), ` +

@@ -3,7 +3,7 @@ import { boolean, foreignKey, index, primaryKey, snakeCase, uuid, varchar } from
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { UserId } from '#/db/utils/ids';
+import type { ActorId, UserId } from '#/db/utils/ids';
 import { isoTimestamp, isoTimestampWithoutZone, timestampColumns } from '#/db/utils/timestamp-columns';
 import type { preferencesSchema } from '#/modules/notification/notification-schema';
 import { notificationTypes } from '#/modules/notification/notification-types';
@@ -32,9 +32,9 @@ export const notificationsTable = snakeCase.table(
   {
     id: uuid().notNull().$defaultFn(generateId),
     createdAt: isoTimestampWithoutZone().defaultNow().notNull(),
-    userId: uuid().notNull(),
+    userId: uuid().notNull().$type<UserId>(),
     /** Who caused the notification: the event's user, else the row's creator; null when neither is known. */
-    actorId: uuid(),
+    actorId: uuid().$type<ActorId>(),
     type: varchar({ enum: notificationTypes }).notNull(),
     /** Product type of the row the notification is about (`subjectId`). */
     entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),

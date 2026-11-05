@@ -119,7 +119,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
       changesInTransaction = 0;
       const committedAt = txBuffer.onBegin(msg);
       // How long ago the source transaction committed is how far the worker is behind.
-      if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
+      replicationState.lagMs = Date.now() - committedAt;
       return;
     }
     case 'commit':
