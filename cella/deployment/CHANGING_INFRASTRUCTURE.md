@@ -19,7 +19,7 @@ deletes the machines and changes none of it. Every pull request says which appli
 - buckets and their policies
 - secret containers and their versions
 - DNS records
-- the main job's definition, the engine image it runs and the applied description (`control/<mode>/applied.json`)
+- the main job's definition with its schedule, the engine image it runs and the applied description (`control/<mode>/applied.json`)
 
 Identities are IAM, written at an Owner moment ([Identities](#identities)). To apply, `pnpm infra` → **Review & apply changes** (`pnpm infra apply`):
 

@@ -41,9 +41,13 @@ describe('the main job', () => {
 
   it('names the engine image by its digest, never by a tag, which can move to another image', () => {
     const image = `rg.nl-ams.scw.cloud/app/infra-engine@${DIGEST}`;
-    expect(declaredMainJob({ projectId: 'p', organizationId: 'o', image }).imageUri).toBe(image);
-    expect(() => declaredMainJob({ projectId: 'p', organizationId: 'o', image: 'rg.nl-ams.scw.cloud/app/infra-engine:0.34.0' })).toThrow(/digest/);
-    expect(() => declaredMainJob({ projectId: 'p', organizationId: 'o', image: `rg.nl-ams.scw.cloud/app/infra-engine:${DIGEST}` })).toThrow(/digest/);
+    expect(declaredMainJob({ projectId: 'p', organizationId: 'o', everyMinutes: 1, image }).imageUri).toBe(image);
+    expect(() =>
+      declaredMainJob({ projectId: 'p', organizationId: 'o', everyMinutes: 1, image: 'rg.nl-ams.scw.cloud/app/infra-engine:0.34.0' }),
+    ).toThrow(/digest/);
+    expect(() =>
+      declaredMainJob({ projectId: 'p', organizationId: 'o', everyMinutes: 1, image: `rg.nl-ams.scw.cloud/app/infra-engine:${DIGEST}` }),
+    ).toThrow(/digest/);
   });
 
   it('reads a succeeded run as deployed: Scaleway reports a run that exited 0 with no exit code (staging, 2026-10-20)', () => {

@@ -1,4 +1,4 @@
 # What each environment deploys. Production always deploys: the newest release, or the release its line names. Any other environment
-# deploys only while it has a line here: without one the runner starts nothing for it. Removing such a line pauses deploys, not costs.
+# deploys only while it has a line here: without one no scheduled run deploys it. Removing such a line pauses deploys, not costs.
 # <environment> <target> [retry <n>], the target being branch:<name>, releases, a release tag or a full commit id.
-# Read by the runner at the head of the default branch.
+# Read by the main job's scheduled runs at the head of the default branch, from the first one after a merge.

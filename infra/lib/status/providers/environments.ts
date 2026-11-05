@@ -11,7 +11,7 @@ export type EnvironmentsFacts = { text: string; stacks: string[] };
 
 /**
  * Whether the environments file and the stacks set up agree, the same in every mode: a stack other than production that has no line deploys
- * nothing and still costs, and a line without a stack deploys nowhere. It reads this checkout; the runner reads the file once it is merged.
+ * nothing and still costs, and a line without a stack deploys nowhere. It reads this checkout; a scheduled run reads the file once it is merged.
  */
 export const environmentsProvider: StatusProvider<EnvironmentsFacts> = {
   domain: 'environments',
@@ -27,7 +27,7 @@ export const environmentsProvider: StatusProvider<EnvironmentsFacts> = {
     try {
       lines = [...parseEnvironmentsFile(facts.text).keys()];
     } catch (error) {
-      return [environments.error(`the runner refuses the whole file: ${errorMessage(error)}`)];
+      return [environments.error(`a scheduled run refuses the whole file: ${errorMessage(error)}`)];
     }
     const findings = [
       ...facts.stacks

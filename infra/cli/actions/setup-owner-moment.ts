@@ -1,5 +1,4 @@
 import { confirm, select } from '@inquirer/prompts';
-import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { declaresUploads, uploadsPolicy } from '../../lib/scaleway/declared-identities';
 import { deleteApiKey } from '../../lib/scaleway/iam-client';
@@ -21,7 +20,6 @@ import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from '../shared'
 import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
 import { acquireOwnerKey } from './owner-key';
-import { rotateRunnerKey, runnerServes } from './runner';
 
 export type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
@@ -36,8 +34,6 @@ export interface CiKeyResult {
 export interface OwnerMomentResult {
   projectId: string;
   ciKey: CiKeyResult;
-  /** True when the rotation replaced the runner key: the runner machine still holds the deleted one until it is replaced. */
-  runnerKeyRotated: boolean;
 }
 
 /** Mint (or rotate) the deploy key, retrying on operator confirm. */
@@ -135,7 +131,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
  * action checks one, and nothing else runs on it (no Pulumi, no state, no value of the app's). The uploads application with its policy and
  * key (in the runtime folder), the deploy key (its copy for the main job), and the app's operators and observer: created when the app has
  * none, else given this environment's project in place; the observer's key goes to this machine's env files. A rotation replaces the deploy
- * key and the uploads key, the runner's too when the runner serves this environment. Undefined when declined.
+ * key and the uploads key. Undefined when declined.
  */
 export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -188,22 +184,8 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
     console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
   );
 
-  // The runner key starts this environment's deploys, so after a compromise it goes with the rest; the operator part replaces the machine.
-  let runnerKeyRotated = false;
-  const { naming, region } = deriveInfra(appConfig);
-  if (mode === 'rotate-keys' && runnerServes({ projectId, definition: naming.resource('main') })) {
-    console.info('\n→ Runner key');
-    try {
-      const replaced = await rotateRunnerKey(ownerKey, { appSlug: appConfig.appSlug, region });
-      console.info(`  ${changeMark} A new runner key replaced ${replaced} key(s); the runner machine is replaced next, on the operator key.`);
-      runnerKeyRotated = true;
-    } catch (error) {
-      console.warn(`${warningMark} Runner key not rotated: ${errorMessage(error)}. Run \`${actionCommand('rotate-keys')}\` again.`);
-    }
-  }
-
   printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
   await offerOwnerKeyRevoke(pair);
-  return { projectId, ciKey, runnerKeyRotated };
+  return { projectId, ciKey };
 }

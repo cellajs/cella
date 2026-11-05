@@ -4,11 +4,11 @@ This document describes the Infra CLI: what it does, its commands and status che
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A runner in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A schedule in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
 
 ## What it does
 
-`infra/` is the deploy engine the apps built from cella share through template upgrades: a Pulumi program for the foundation (network, database, load balancer, buckets, secret containers, DNS and the main job), the deploy that makes and deletes the machines through the Scaleway API, the agent every machine runs, the runner that starts the deploys, and the CLI an operator runs on their own machine. The engine names no app: what an app deploys is in the registries under [config/](config/), which an upgrade merges like every other template file.
+`infra/` is the deploy engine the apps built from cella share through template upgrades: a Pulumi program for the foundation (network, database, load balancer, buckets, secret containers, DNS and the main job with its schedule), the deploy that makes and deletes the machines through the Scaleway API, the agent every machine runs, and the CLI an operator runs on their own machine. The engine names no app: what an app deploys is in the registries under [config/](config/), which an upgrade merges like every other template file.
 
 ## How a release flows
 
@@ -16,7 +16,7 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 
 **Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**: the engine built from your checkout, with the **applied description** of the app, which every run of the main job starts from.
 
-**Deploy**: when the runner sees an environment's target move, it starts a run of the main job, and the engine image runs one command:
+**Deploy**: the main job's schedule starts a run every few minutes, at the cadence [config/general.config.ts](config/general.config.ts) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
 
 ```
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha> --retry <n>
@@ -40,14 +40,14 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name, a main job that runs another image than the digest the last apply recorded, or another command, env or secret references. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, the runner's included, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name that is older than a run of the main job may last, a main job that runs another image than the digest the last apply recorded, or another command, schedule, env or secret references. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
 
 Stable check `id`s:
 
 - `config.stackState`, `identity.project`, `identity.keyAges`
 - `inventory.applications`, `inventory.keys`, `inventory.policies`, `inventory.machines`, `inventory.mainJob`
 - `state.bucket`, `state.lock`
-- `secrets.required`, `environments.lines`, `runs.last`, `live.<service>`, `live.components`
+- `secrets.required`, `environments.lines`, `schedule.last`, `runs.last`, `live.<service>`, `live.components`
 - `db.publicEndpoint`, `dns.zone`
 
 ## Deploy telemetry
@@ -68,7 +68,7 @@ A service is an entry in [config/services.config.ts](config/services.config.ts) 
 
 | Path | Holds |
 | --- | --- |
-| [config/](config/) | The registries: services, general settings (machine image, database size, asset retention), runtime secrets, managed keys, stores, env suppliers, health, the frontend CSP and telemetry; and engine-config.ts, where the engine reads the app's config |
+| [config/](config/) | The registries: services, general settings (machine image, database size, asset retention, the schedule's cadence), runtime secrets, managed keys, stores, env suppliers, health, the frontend CSP and telemetry; and engine-config.ts, where the engine reads the app's config |
 | [cli/](cli/) | The menu and its actions |
 | [resources/](resources/) | The Pulumi program: the foundation, no machine |
 | [tasks/](tasks/README.md) | The deploy's steps and the operator tasks |
@@ -76,11 +76,9 @@ A service is an entry in [config/services.config.ts](config/services.config.ts) 
 | [compose/](compose/) | The Compose model, assembled from the service registry into `compose.gen.yml` |
 | [agent/](agent/) | The agent every machine runs |
 | [caddy/](caddy/) | The frontend's Caddy image and its Caddyfile |
-| [runner/](runner/) | The runner's program |
 | [Dockerfile](Dockerfile) | The engine image an apply builds |
 | [tests/](tests/README.md) | Tests that span modules, and their helpers |
 | [environments](environments) | What each environment deploys |
-| [runner.json](runner.json) | The runner's project, release and environments |
 
 ## Vocabulary
 
@@ -94,8 +92,8 @@ One name per concept across code and docs:
 | **blocked** | How a run ends when a required runtime value is missing, which an operator stores. |
 | **apply needed** | How a run ends when its target describes the app otherwise than the applied description; the apply from its checkout starts it again. |
 | **unchanged** | How a run ends when every role served its target already, under the same retry counter and rotation. |
-| **runner** | The app's small machine that starts a deploy when an environment's target moves. |
-| **main job** | An environment's Serverless Jobs definition; each of its runs is one deploy, on the engine image. |
+| **main job** | An environment's Serverless Jobs definition, with its schedule; each of its runs deploys at most one target, on the engine image. |
+| **scheduled run** | A run of the main job its schedule starts at the environment's cadence: under the lease, it deploys the target when no run record names that target and retry counter, and otherwise ends within seconds. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry; the main job names it by digest. |
 | **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. Its hash is in `control/<mode>/applied.json` and the image's stamp. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |

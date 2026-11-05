@@ -5,6 +5,7 @@ import { environmentsProvider } from './providers/environments';
 import { inventoryProvider } from './providers/inventory';
 import { liveProvider } from './providers/live';
 import { runsProvider } from './providers/runs';
+import { scheduleProvider } from './providers/schedule';
 import { secretsProvider } from './providers/secrets';
 import { identityProvider, stackProvider } from './providers/stack';
 import { stateProvider } from './providers/state';
@@ -19,6 +20,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   stateProvider,
   secretsProvider,
   environmentsProvider,
+  scheduleProvider,
   runsProvider,
   liveProvider,
   componentsProvider,
@@ -33,6 +35,7 @@ const NEXT_ACTION_PRIORITY = [
   'config.stackState',
   'state.bucket',
   'secrets.required',
+  'schedule.last',
   'runs.last',
   'live.',
   'db.publicEndpoint',

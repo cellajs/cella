@@ -29,6 +29,8 @@ export interface RunRecord {
   run: string;
   environment: string;
   target: string;
+  /** The retry counter it deployed the target under; a record from before the counter was kept has none, which reads as 0. */
+  retry?: number;
   startedAt: string;
   endedAt?: string;
   outcome: RunOutcome;
@@ -39,12 +41,26 @@ export interface RunRecord {
   boot?: RunBootAccount[];
 }
 
-/** A run's id: when it started and what it deploys, so ids sort by time and say their target (`20261015T002000Z-21bae33f7c`). */
-export function runId(sha: string, now = new Date()): string {
-  return `${now
+/** When a run started, to the second, as its id begins (`20261015T002000Z`). */
+export function runStamp(now: Date): string {
+  return now
     .toISOString()
     .replace(/[-:]/g, '')
-    .replace(/\.\d+Z$/, 'Z')}-${sha.slice(0, 10)}`;
+    .replace(/\.\d+Z$/, 'Z');
+}
+
+/** A run's id: when it started and what it deploys, so ids sort by time and say their target (`20261015T002000Z-21bae33f7c`). */
+export function runId(sha: string, now = new Date()): string {
+  return `${runStamp(now)}-${sha.slice(0, 10)}`;
+}
+
+/**
+ * The start an id names, to the second: a deploy handed the id of the record its scheduled run opened starts its own record there, so the
+ * record grows from the first version. Undefined for an id of another form.
+ */
+export function runStartedAt(run: string): Date | undefined {
+  const parts = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z-/.exec(run);
+  return parts ? new Date(`${parts[1]}-${parts[2]}-${parts[3]}T${parts[4]}:${parts[5]}:${parts[6]}Z`) : undefined;
 }
 
 /** The record's key in the diagnostics bucket. */
@@ -65,11 +81,12 @@ export class RunRecorder {
   private readonly current: RunRecord;
   private readonly lines: string[] = [];
 
-  constructor(init: { run: string; environment: string; target: string; now?: Date }) {
+  constructor(init: { run: string; environment: string; target: string; retry: number; now?: Date }) {
     this.current = {
       run: init.run,
       environment: init.environment,
       target: init.target,
+      retry: init.retry,
       startedAt: (init.now ?? new Date()).toISOString(),
       outcome: 'running',
       steps: [],
@@ -164,6 +181,7 @@ export function isRunRecord(value: unknown): value is RunRecord {
   const record = value as Record<string, unknown>;
   return (
     ['run', 'environment', 'target', 'startedAt', 'outcome'].every((key) => typeof record[key] === 'string') &&
+    (record.retry === undefined || typeof record.retry === 'number') &&
     Array.isArray(record.steps) &&
     record.steps.every((step) => typeof step?.title === 'string' && typeof step.seconds === 'number' && typeof step.outcome === 'string')
   );
@@ -175,7 +193,7 @@ export function isRunRecord(value: unknown): value is RunRecord {
  */
 export function recordGrows(prev: RunRecord, next: RunRecord): string | undefined {
   if (prev.outcome !== 'running') return JSON.stringify(next) === JSON.stringify(prev) ? undefined : 'changed the record after its end';
-  for (const key of ['run', 'environment', 'target', 'startedAt'] as const) if (prev[key] !== next[key]) return `changed ${key}`;
+  for (const key of ['run', 'environment', 'target', 'retry', 'startedAt'] as const) if (prev[key] !== next[key]) return `changed ${key}`;
   for (const [index, step] of prev.steps.entries()) {
     const later = next.steps[index];
     if (!later) return `dropped step "${step.title}"`;

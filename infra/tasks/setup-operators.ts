@@ -2,7 +2,7 @@ import { sameRules } from '../lib/scaleway/declared-identities';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { IAM_BASE, type IamAuth } from '../lib/scaleway/iam-client';
 import { DNS_PERMISSION_SETS, OPERATOR_ORG_PERMISSION_SETS, OPERATOR_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
-import { extendPolicyReach, type LivePolicy, type LiveRule, type PolicyReach, policyReach, readPolicy } from '../lib/scaleway/policy-reach';
+import { type LivePolicy, type LiveRule, type PolicyReach, policyReach, readPolicy } from '../lib/scaleway/policy-reach';
 import { type AppPrincipalNames, appPrincipalNames } from '../lib/scaleway/principals';
 import { ensureApplication, ensureGroup, type PolicyRule } from '../lib/scaleway/scaleway-iam';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
@@ -15,7 +15,7 @@ export interface SetupOperatorsOptions {
   projectId: string;
   /** The app's own slug (`appSlug`): the operators are one set per app. */
   slug: string;
-  /** The projects the operators reach from now on, beside every project their policy reaches today (the runner's among them). */
+  /** The projects the operators reach from now on, beside every project their policy reaches today. */
   projectIds: readonly string[];
   /** The stack's DNS zone: a zone served from a project outside the app's adds a DNS-only rule for that project. */
   dnsZone?: string;
@@ -37,7 +37,7 @@ export interface OperatorsResult {
 export const OPERATOR_POLICY_DESCRIPTION = "Operator policy: all products of the app's projects + IAM read, no condition (auto-generated)";
 
 /** Where an operator key made under the old address condition is revoked, for every notice that a rewrite dropped it. */
-export function durableKeyRevokeNotice(names: AppPrincipalNames): string {
+function durableKeyRevokeNotice(names: AppPrincipalNames): string {
   return `A key of '${names.operator}' made before this works from every address until it ends: revoke a durable one in the console (IAM → Applications → ${names.operator} → API keys).`;
 }
 
@@ -154,43 +154,4 @@ export async function setupOperators(opts: SetupOperatorsOptions): Promise<Opera
 /** The projects an operator policy's rules give every product in. */
 export function operatorPolicyReach(rules: readonly LiveRule[]): PolicyReach {
   return policyReach(rules, OPERATOR_PROJECT_PERMISSION_SETS);
-}
-
-/** Where each operator policy stands after a reach extension, and whether the rewrite took an address condition off the application's. */
-export interface OperatorReachResult {
-  application: 'extended' | 'unchanged' | 'absent';
-  group: 'extended' | 'unchanged' | 'absent';
-  conditionDropped: boolean;
-}
-
-/**
- * Add projects to the reach of the app's operators in place: the application's policy and the group's. Needs IAM write: an Owner key.
- * `absent` for a policy the app does not have; `unchanged` for one that covers the projects already.
- */
-export async function extendOperatorReach(opts: {
-  auth: IamAuth;
-  organizationId: string;
-  /** The app's own slug (`appSlug`). */
-  slug: string;
-  projectIds: readonly string[];
-  dnsZone?: string;
-}): Promise<OperatorReachResult> {
-  const names = appPrincipalNames(opts.slug);
-  const [first] = opts.projectIds;
-  let conditionDropped = false;
-  const rules = async ({ projectIds, condition }: PolicyReach) => {
-    conditionDropped ||= Boolean(condition);
-    const dnsProjectIds = first ? await resolveDnsProjectIds(opts.auth, opts.dnsZone ?? '', first) : [];
-    return operatorRules({ projectIds, organizationId: opts.organizationId, dnsProjectIds });
-  };
-  const reach = {
-    auth: opts.auth,
-    organizationId: opts.organizationId,
-    projectSets: OPERATOR_PROJECT_PERMISSION_SETS,
-    projectIds: opts.projectIds,
-    rules,
-  };
-  const application = await extendPolicyReach({ ...reach, policyName: `${names.operator}-policy` });
-  const group = await extendPolicyReach({ ...reach, policyName: `${names.operators}-policy` });
-  return { application, group, conditionDropped };
 }

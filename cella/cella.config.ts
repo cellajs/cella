@@ -28,7 +28,6 @@ export default defineConfig({
       'infra/compose.gen.yml',
       'infra/Pulumi.production.yaml',
       'infra/environments',
-      'infra/runner.json',
       'sdk/gen',
       'shared/config',
       'backend/drizzle',

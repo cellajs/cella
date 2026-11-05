@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { readAppliedEngine } from '../lib/deploy/applied-engine';
+import { findJobDefinition, listJobRuns, readJobDefinition } from '../lib/deploy/job-runs';
 import { type LiveRecord, readLiveRecord } from '../lib/deploy/live-record';
 import { deriveInfra, hasDomain as hasDeployDomain } from '../lib/naming';
 import { menuPath } from '../lib/operator-actions';
@@ -59,8 +60,8 @@ function isNoSuchBucket(err: unknown): boolean {
 
 /**
  * Build the probe session the providers draw on: resolved stack context, the key to probe with (the observer key, else the key the process
- * was started with), and one memoized best-effort read of the state bucket's presence and the control records (the lease, the live record, the rotations),
- * shared by the state and live providers.
+ * was started with), and one memoized best-effort read of the state bucket's presence, the control records (the lease, the live record, the
+ * rotations) and the main job's definition with its newest runs, shared by the providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
   const identity = resolveOperatorIdentity();
@@ -123,6 +124,21 @@ export function buildSession(ctx: StatusContext): ProbeSession {
         }
       } catch {
         // Leave every field undefined (reported as unknown).
+      }
+      try {
+        const { naming, region } = deriveInfra(ctx.appConfig);
+        const auth = { secretKey };
+        const definitionId = projectId && (await findJobDefinition(auth, { region, projectId, name: naming.resource('main') }));
+        if (projectId && !definitionId) out.mainJob = null;
+        if (projectId && definitionId) {
+          const [definition, runs] = await Promise.all([
+            readJobDefinition(auth, { region, definitionId }),
+            listJobRuns(auth, { region, projectId, definitionId }),
+          ]);
+          out.mainJob = { definitionId, definition, runs };
+        }
+      } catch {
+        // Leave mainJob undefined (reported as unknown).
       }
       return out;
     })();

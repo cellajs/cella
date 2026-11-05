@@ -1,10 +1,9 @@
 import { type AppliedEngine, engineImageRef, engineImageRepository } from '../../deploy/applied-engine';
-import { commandOf, findJobDefinition, listJobRuns, readJobDefinition, readJobDefinitionSecrets, runEnded } from '../../deploy/job-runs';
-import { declaredMainJob, type MainJobDeclaration } from '../../deploy/main-job';
+import { commandOf, readJobDefinitionSecrets } from '../../deploy/job-runs';
+import { declaredMainJob, MAIN_JOB_TIME_LIMIT_HOURS, type MainJobDeclaration, scheduleEveryMinutes } from '../../deploy/main-job';
 import { machineRoles } from '../../machine-roles';
 import { deriveInfra } from '../../naming';
 import { actionCommand } from '../../operator-actions';
-import { runnerName } from '../../runner/runner-machine';
 import { declaredIdentities } from '../../scaleway/declared-identities';
 import { IAM_BASE, listOrganizationPolicies } from '../../scaleway/iam-client';
 import { durableKeyLife, organizationIdOfKey } from '../../scaleway/operator-identity';
@@ -28,18 +27,18 @@ export interface InventoryFacts {
   apiKeys: Array<{ access_key: string; application_id?: string | null; user_id?: string | null; description?: string; expires_at?: string | null }>;
   /** The policies bound to an application or a group, with their rules. */
   policies: InventoryPolicy[];
-  /** The project's machines, in every zone of the region; undefined when the run holds no operator key to list them with. */
-  machines?: Array<{ id: string; name: string }>;
+  /** The project's machines, in every zone of the region, with the Instance API's creation time; undefined without an operator key. */
+  machines?: Array<{ id: string; name: string; createdAt?: string }>;
   /** Each role's machine that serves, from the live record. */
   liveMachines: Record<string, string>;
   /** The environment's machine roles: a machine named for one of their slots is the engine's. */
   roles: readonly string[];
-  /** Whether a run of the main job runs now, and what its definition runs; undefined when the environment has no main job. */
+  /** What the main job's definition runs; undefined when the environment has no main job. */
   mainJob?: {
-    running: boolean;
     imageUri?: string;
     command?: string;
     env: Record<string, string>;
+    cron?: { schedule: string; timezone: string };
     /** Each secret it references, with the name and folder Secret Manager gives it; undefined when they could not be read. */
     secretReferences?: Array<{ env?: string; file?: string; secretId: string; name?: string; path?: string }>;
   };
@@ -54,7 +53,7 @@ export interface InventoryExpectation {
   projectId: string;
   /** Every application name of this environment starts with it (`<slug>-<mode>-`). */
   environmentPrefix: string;
-  /** This environment's applications and the app's own (operator, observer, runner), each with the name of its one policy. */
+  /** This environment's applications and the app's own (operator, observer), each with the name of its one policy. */
   declared: Readonly<Record<string, string>>;
   /** Applications that hold exactly one key; the observer holds one per machine, the operator one per sitting. */
   oneKey: readonly string[];
@@ -136,18 +135,20 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
   }
   const live = new Set(Object.values(facts.liveMachines));
   const slotNames = new Set(facts.roles.flatMap((role) => ['a', 'b'].map((slot) => `${expect.machinePrefix}${role}-${slot}`)));
-  // A deploy deletes the machine it switched from and its builder before it ends, so with no run going on such a machine is a finding too.
-  const deploying = facts.mainJob?.running === true;
-  for (const { id, name } of facts.machines ?? []) {
+  // A deploy deletes the machine it switched from and its builder before it ends, and no run outlasts the job's time limit: an older one is
+  // a finding. The age is Scaleway's, which no key of the engine writes.
+  const limitMs = MAIN_JOB_TIME_LIMIT_HOURS * 3_600_000;
+  for (const { id, name, createdAt } of facts.machines ?? []) {
     if (live.has(id)) continue;
     const kind = name.startsWith(`${expect.machinePrefix}builder-`)
       ? 'a builder'
       : slotNames.has(name)
         ? 'a machine the live record does not name'
         : undefined;
+    const ageMs = createdAt ? now - Date.parse(createdAt) : Number.POSITIVE_INFINITY;
     if (!kind) found.machines.push(`${name}: not made by the engine`);
-    else if (deploying) found.passing.push(`${name}: ${kind}, while a deploy runs`);
-    else found.machines.push(`${name}: ${kind}, and no deploy runs (a failed run left it, or someone named it so)`);
+    else if (ageMs < limitMs) found.passing.push(`${name}: ${kind}, a machine a deploy may be making`);
+    else found.machines.push(`${name}: ${kind}, older than a deploy runs (a failed run left it, or someone named it so)`);
   }
   return found;
 }
@@ -155,15 +156,19 @@ export function inventoryFindings(facts: InventoryFacts, expect: InventoryExpect
 const folderOf = (path: string | undefined) => (path ?? '').replace(/\/+$/, '');
 
 /**
- * Where a definition differs from the declared one (D-b): the runner key may edit it, and a run of an edited one reads the deploy key and the
- * passphrase. The image, the command, every env value, an env var it adds, and each secret reference: one outside the engine folder, one the
- * declaration does not name, one that reads another secret, and a required one that is gone.
+ * Where a definition differs from the declared one (D-b): a key that may edit it can make a run read another secret. The image, the command,
+ * the schedule, every env value, an env var it adds, and each secret reference: one outside the engine folder, one the declaration does not
+ * name, one that reads another secret, and a required one that is gone. A definition without its schedule deploys nothing by itself.
  */
 export function mainJobDifferences(live: NonNullable<InventoryFacts['mainJob']>, declared: MainJobDeclaration): string[] {
   const differs: string[] = [];
   if (live.imageUri !== declared.imageUri) differs.push(`image ${live.imageUri}`);
   // Whitespace around the script changes nothing it runs.
   if (live.command?.trim() !== commandOf({ startup_command: declared.startupCommands })?.trim()) differs.push('its command');
+  if (!live.cron) differs.push('no schedule');
+  else if (live.cron.schedule !== declared.cron.schedule || live.cron.timezone !== declared.cron.timezone) {
+    differs.push(`schedule '${live.cron.schedule}' (${live.cron.timezone})`);
+  }
   for (const [name, value] of Object.entries(declared.env)) {
     if (live.env[name] !== value) differs.push(name in live.env ? `env ${name} differs` : `env ${name} is missing`);
   }
@@ -219,7 +224,7 @@ function mainJobVerdict(
 /** The environment's expectation, from the identities Update identities writes and the app's own, named `<application>-policy`. */
 function expectationOf(appConfig: { slug: string; appSlug: string }, mode: string, projectId: string): InventoryExpectation {
   const app = appPrincipalNames(appConfig.appSlug);
-  const appLevel = [app.operator, app.observer, runnerName(appConfig.appSlug)];
+  const appLevel = [app.operator, app.observer];
   const declared = Object.fromEntries([
     ...declaredIdentities({ slug: appConfig.slug, mode }, { projectId, organizationId: '' }).policies.map((policy) => [
       policy.applicationName,
@@ -262,9 +267,9 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
       const operatorSecretKey = session.operatorKey?.secretKey;
-      const { naming, region, zones } = deriveInfra(session.appConfig);
-      const { live, applied } = await session.scalewayFacts();
-      if (!live) return undefined;
+      const { region, zones } = deriveInfra(session.appConfig);
+      const { live, applied, mainJob: job } = await session.scalewayFacts();
+      if (!live || job === undefined) return undefined;
       const org = (path: string) => (page: number) => `${IAM_BASE}/${path}?organization_id=${organizationId}&page=${page}&page_size=100`;
       // A referenced secret's name and folder, which the observer reads as metadata; one it cannot read keeps neither.
       const secretPlace = (secretId: string) =>
@@ -287,7 +292,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
         operatorSecretKey
           ? Promise.all(
               zones.map((zone) =>
-                listAll<{ id: string; name: string }>(
+                listAll<{ id: string; name: string; creation_date?: string }>(
                   { secretKey: operatorSecretKey },
                   (page) => `https://api.scaleway.com/instance/v1/zones/${zone}/servers?project=${session.projectId}&page=${page}&per_page=100`,
                   'servers',
@@ -298,18 +303,15 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
               () => undefined,
             )
           : undefined,
-        findJobDefinition(auth, { region, projectId: session.projectId, name: naming.resource('main') }).then(async (definitionId) => {
-          if (!definitionId) return undefined;
-          const [runs, definition, secretReferences] = await Promise.all([
-            listJobRuns(auth, { region, projectId: session.projectId ?? '', definitionId }),
-            readJobDefinition(auth, { region, definitionId }),
-            readJobDefinitionSecrets(auth, { region, definitionId })
+        job
+          ? readJobDefinitionSecrets(auth, { region, definitionId: job.definitionId })
               .then((references) => Promise.all(references.map(async (reference) => ({ ...reference, ...(await secretPlace(reference.secretId)) }))))
-              .catch(() => undefined),
-          ]);
-          const { imageUri, command, env } = definition;
-          return { running: runs.some((run) => !runEnded(run)), imageUri, command, env, secretReferences };
-        }),
+              .catch(() => undefined)
+              .then((secretReferences) => {
+                const { imageUri, command, env, cron } = job.definition;
+                return { imageUri, command, env, cron, secretReferences };
+              })
+          : undefined,
       ]);
       const withRules = await Promise.all(
         policies
@@ -322,7 +324,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
           })),
       );
       const liveMachines = Object.fromEntries(Object.entries(live.roles).map(([role, entry]) => [role, entry.machine]));
-      const machines = servers?.map(({ id, name }) => ({ id, name }));
+      const machines = servers?.map(({ id, name, creation_date }) => ({ id, name, ...(creation_date ? { createdAt: creation_date } : {}) }));
       const roles = machineRoles(session.appConfig).map((role) => role.role);
       return { applications, groups, apiKeys, policies: withRules, machines, liveMachines, roles, mainJob, organizationId, applied };
     } catch {
@@ -369,6 +371,7 @@ export const inventoryProvider: StatusProvider<InventoryFacts> = {
             projectId: session.projectId ?? '',
             organizationId: facts.organizationId,
             image: engineImageRef(engineImageRepository(region, naming.registryNamespace), applied.imageDigest),
+            everyMinutes: scheduleEveryMinutes(session.mode),
           });
         }),
       ),

@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { generalConfig } from '../../config/general.config';
+import { resolvePerMode } from '../general-config';
 import { ENGINE_FOLDER } from '../scaleway/secret-paths';
 import { infraDir } from '../utils/paths';
 
 /**
- * The main job: one Serverless Jobs definition per environment, made by the operator's apply, that runs one deploy of a target
- * per run on the engine image the apply published. Its keys arrive by secret reference; the target and the retry counter by the start call,
- * which anyone who reads job runs can see, so they are the only values a start carries.
+ * The main job: one Serverless Jobs definition per environment, made by the operator's apply, that runs at most one deploy of a target
+ * per run on the engine image the apply published. Its keys arrive by secret reference. A run its schedule starts finds the target itself;
+ * a start by hand carries the target and the retry counter, which anyone who reads job runs can see, so they are the only values a start carries.
  */
 
 /** The deploy key's copy the main job's definition references: `{ accessKey, secretKey }`, written when the key is made or replaced. */
@@ -15,9 +17,9 @@ const DEPLOY_KEY_SECRET_NAME = 'deploy-key';
 /** The folder of the secrets the definition references: the engine's, which only the operator reads. */
 const MAIN_JOB_SECRET_FOLDER = ENGINE_FOLDER.replace(/\/$/, '');
 
-/** How a run ends, as its exit code. The runner starts a target once; a blocked one waits for the operator. */
+/** How a run ends, as its exit code. A scheduled run starts a target once; a blocked one waits for the operator. */
 export const MAIN_JOB_EXIT = {
-  /** The target is live: deployed by this run, or already serving (`unchanged` in the record). */
+  /** The target is live: deployed by this run, or already serving (`unchanged` in the record); a scheduled run that started nothing. */
   deployed: 0,
   /** The deploy failed; a role it had not switched still serves the release before. A failed target is not started again by itself. */
   failed: 1,
@@ -29,7 +31,7 @@ export const MAIN_JOB_EXIT = {
 } as const;
 
 /**
- * How a run ended, for a person and the runner. Scaleway reports a run that exited 0 as `succeeded` with no exit code, so the state says
+ * How a run ended, for a person. Scaleway reports a run that exited 0 as `succeeded` with no exit code, so the state says
  * deployed; a `failed` run's exit code tells blocked from failed; every other end (an interrupted run) is failed.
  */
 export function mainJobOutcome(run: { state: string; exit_code?: number | null }): 'deployed' | 'blocked' | 'failed' {
@@ -38,13 +40,13 @@ export function mainJobOutcome(run: { state: string; exit_code?: number | null }
   return 'failed';
 }
 
-/** The root `package.json`'s `engines.node`: the Node every run of the engine and the runner starts on. */
+/** The root `package.json`'s `engines.node`: the Node every run of the engine starts on. */
 export function rootNodeVersion(root = join(infraDir, '..')): string {
   return (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { engines: { node: string } }).engines.node;
 }
 
 /**
- * The names a run's engine sees, all others dropped: the target and the retry counter a start sets, the deploy key the definition
+ * The names a run's engine sees, all others dropped: the target and the retry counter a start by hand sets, the deploy key the definition
  * references and the project. A start call may set any other name too (`NODE_OPTIONS`, `GIT_CONFIG_*`, `RELEASES_ONLY`); none reaches
  * Node, git or the release check.
  */
@@ -59,6 +61,32 @@ export const MAIN_JOB_SCRIPT = `cd /engine || exit 1
 exec /usr/bin/env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root ${MAIN_JOB_ENV_NAMES.map((name) => `${name}="$${name}"`).join(' ')} pnpm --silent --filter infra main-job
 `;
 
+/** How long one run may take before Scaleway ends it: the definition's time limit, and the age a deploy's machine can reach unnamed. */
+export const MAIN_JOB_TIME_LIMIT_HOURS = 1;
+
+/** When Scaleway starts a run by itself: a cron expression and the canonical time zone it is read in. */
+export interface MainJobSchedule {
+  schedule: string;
+  timezone: string;
+}
+
+/**
+ * The minutes between an environment's scheduled runs, `schedule.everyMinutes` of config/general.config.ts.
+ * @throws for a mode that is no environment, which has no main job
+ */
+export function scheduleEveryMinutes(mode: string): number {
+  if (mode !== 'production' && mode !== 'staging') throw new Error(`'${mode}' is no environment with a main job`);
+  return resolvePerMode(generalConfig.schedule.everyMinutes, mode);
+}
+
+/**
+ * A scheduled run every `everyMinutes`: it ends within seconds when the target has a run, and deploys the target when it has none. The
+ * cadence is how soon a release or a merged environments line deploys.
+ */
+function mainJobSchedule(everyMinutes: number): MainJobSchedule {
+  return { schedule: everyMinutes === 1 ? '* * * * *' : `*/${everyMinutes} * * * *`, timezone: 'Etc/UTC' };
+}
+
 /** The main job's definition as the last apply publishes it (D-b): the apply writes it, and the inventory compares the live one against it. */
 export interface MainJobDeclaration {
   imageUri: string;
@@ -67,13 +95,15 @@ export interface MainJobDeclaration {
   /** The secrets a run reads, by the env var each lands in: its name in {@link secretFolder}. An optional one may be missing from an older stack. */
   secretReferences: Record<string, { name: string; optional?: true }>;
   secretFolder: string;
+  cron: MainJobSchedule;
 }
 
 /**
- * The declared definition of an environment's main job: the engine image by digest, the script and the project.
+ * The declared definition of an environment's main job: the engine image by digest, the script, the project and the schedule.
+ * @param everyMinutes the cadence of {@link scheduleEveryMinutes}.
  * @throws for an image named by a tag, which can move to another image
  */
-export function declaredMainJob(opts: { projectId: string; organizationId: string; image: string }): MainJobDeclaration {
+export function declaredMainJob(opts: { projectId: string; organizationId: string; image: string; everyMinutes: number }): MainJobDeclaration {
   if (!/@sha256:[0-9a-f]{64}$/.test(opts.image)) throw new Error(`the main job runs the engine image by its digest, got '${opts.image}'`);
   return {
     imageUri: opts.image,
@@ -82,6 +112,7 @@ export function declaredMainJob(opts: { projectId: string; organizationId: strin
     // The deploy key only: a deploy plans no stack, so its runs read no passphrase.
     secretReferences: { DEPLOY_KEY_JSON: { name: DEPLOY_KEY_SECRET_NAME } },
     secretFolder: MAIN_JOB_SECRET_FOLDER,
+    cron: mainJobSchedule(opts.everyMinutes),
   };
 }
 

@@ -1,9 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { gitKeyOptions } from '../../lib/deploy/git-remote';
 import { REPOSITORY_KEY_NAME, repositoryUrl } from '../../lib/deploy/repository-key';
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { readRunnerFile } from '../../lib/runner/runner-file';
-import { RUNNER_REPOSITORY_KEY } from '../../lib/runner/runner-machine';
+import { actionLabel } from '../../lib/operator-actions';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
@@ -13,9 +11,9 @@ import { acquireOperatorKey } from './operator-unlock';
 
 /**
  * Store, replace or remove the read-only key a private repository is fetched with, in the runtime folder of this environment's
- * project, on the operator key. The deploy reads it there and writes it into the builder's cloud-init. Where the runner is set up, its project keeps a
- * copy, which Replace the runner gives to the runner machine. A key the repository does not answer is not stored. An empty answer
- * removes a stored key, for a repository anyone may read.
+ * project, on the operator key. A scheduled run reads the environments file and the release tags with it, and the deploy writes it into the
+ * builder's cloud-init. A key the repository does not answer is not stored. An empty answer removes a stored key, for a repository anyone
+ * may read.
  */
 export async function runRepositoryKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -29,20 +27,13 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
   const operator = await acquireOperatorKey(context);
   const secrets = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
   const stored = await secrets.getSecretByName(REPOSITORY_KEY_NAME, RUNTIME_FOLDER);
-  const runnerProject = readRunnerFile()?.projectId;
-  const runnerSecrets = runnerProject
-    ? createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId: runnerProject })
-    : undefined;
-  const runnerStored = await runnerSecrets?.getSecretByName(RUNNER_REPOSITORY_KEY.name, RUNNER_REPOSITORY_KEY.path);
-  const runnerNote = runnerSecrets ? ` \`${actionCommand('runner-replace')}\` gives the runner machine the change.` : '';
 
   const key = (await maskedSecret({ message: `Repository read key${stored ? pc.dim(' (empty removes the stored key)') : ''}` })).trim();
   if (!key) {
     if (!stored) return console.info('No key given; nothing stored.');
     if (!(await confirmOrDefault({ message: `Remove the repository read key of ${context.environment}?`, default: false }))) return;
     await secrets.deleteSecret(stored.id);
-    if (runnerStored) await runnerSecrets?.deleteSecret(runnerStored.id);
-    console.info(`${checkMark} Removed: the builder of ${context.environment} fetches without a key.${runnerNote}`);
+    console.info(`${checkMark} Removed: ${context.environment} fetches without a key.`);
     return;
   }
 
@@ -62,15 +53,5 @@ export async function runRepositoryKey(context: InfraContext): Promise<void> {
       description: "Read-only key of the app's repository, for the builder",
     }));
   await secrets.putSecretValue({ secretId: container.id, value: key, description: 'Set by the operator', disablePrevious: true });
-  if (runnerSecrets) {
-    const runnerContainer =
-      runnerStored ??
-      (await runnerSecrets.ensureSecret({
-        name: RUNNER_REPOSITORY_KEY.name,
-        path: RUNNER_REPOSITORY_KEY.path,
-        description: "Read-only key of the app's repository, for the runner",
-      }));
-    await runnerSecrets.putSecretValue({ secretId: runnerContainer.id, value: key, description: 'Set by the operator', disablePrevious: true });
-  }
-  console.info(`${checkMark} Stored: the next build of ${context.environment} fetches with it.${runnerNote}`);
+  console.info(`${checkMark} Stored: the next scheduled run and build of ${context.environment} fetch with it.`);
 }

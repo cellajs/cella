@@ -31,7 +31,6 @@ import { readCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, stackNameFor } from '../shared';
 import { acquireIdentityKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
-import { runnerServes } from './runner';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
 export function splitOwnApplication<App extends { id: string }>(
@@ -226,11 +225,6 @@ async function destroyStack(context: InfraContext, owner: OwnerKey, kept: readon
   console.info(`\n${pc.bold('Kept, with their contents:')} ${keptNames(context, kept)}.`);
   if (dump) console.info(`${pc.bold('Final dump:')} ${naming.bootDiagBucket}/${dump} ${pc.dim('(RUNBOOKS.md, "Restore the final dump")')}`);
   console.info(pc.dim(`A setup again (\`pnpm infra --mode ${context.environment}\`) adopts them, in project ${projectId}.`));
-  if (runnerServes({ projectId, definition: naming.resource('main') })) {
-    console.info(
-      pc.dim(`The runner still lists ${context.environment}: drop it from infra/runner.json, then \`${actionCommand('runner-replace')}\`.`),
-    );
-  }
   return true;
 }
 

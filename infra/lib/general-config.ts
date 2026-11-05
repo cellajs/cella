@@ -17,10 +17,23 @@ export interface GeneralConfig {
     /** Days before stale, content-hashed frontend chunks under `assets/` expire. */
     retentionDays: PerMode<number>;
   };
+  schedule: {
+    /** Minutes between the main job's scheduled runs: a whole number from 1 to 60. */
+    everyMinutes: PerMode<number>;
+  };
 }
 
-/** Identity helper for `config/general.config.ts` compile-time checking. */
+/**
+ * `config/general.config.ts`, checked as it loads.
+ * @throws for a schedule cadence that is no whole number of minutes from 1 to 60, which no cron step writes
+ */
 export function defineGeneral<const T extends GeneralConfig>(config: T): T {
+  const every = config.schedule.everyMinutes;
+  for (const minutes of typeof every === 'object' ? Object.values(every) : [every]) {
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 60) {
+      throw new Error(`general.config.ts: schedule.everyMinutes takes a whole number of minutes from 1 to 60, got ${minutes}.`);
+    }
+  }
   return config;
 }
 

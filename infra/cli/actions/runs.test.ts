@@ -20,32 +20,24 @@ const store = (records: RunRecord[], log = 'line 1\nline 2\n'): RunStore => ({
     const newest = records.find((r) => r.run === run);
     return newest && { newest };
   },
+  currentRecord: async (run) => records.find((r) => r.run === run),
   readLog: async () => ({ newest: log }),
   readBootAccount: async (key) =>
     key === 'backend-20261015T010300Z-boot.log' ? 'service=backend\nboot_rc=1\n\n--- boot error ---\nmigrate exited 1\n\nlast boot line' : undefined,
 });
 
 describe('Show runs', () => {
-  it('must not let a record that says deployed hide a job run that failed: a cut-short or rewritten record is flagged', async () => {
-    const lines: string[] = [];
-    const jobRuns = [
-      {
-        id: 'r1',
-        state: 'failed',
-        exit_code: 1,
-        created_at: '2026-10-14T23:59:00Z',
-        terminated_at: '2026-10-15T00:07:00Z',
-        environment_variables: { TARGET_SHA: 'b'.repeat(40) },
-      },
-    ];
-    await showRuns(store([record('20261015T000000Z-bbbbbbbbbb')]), {
-      pick: false,
-      print: (line) => lines.push(line),
-      jobRuns,
-      environment: 'staging',
-    });
-    expect(lines[0]).toContain('deployed');
-    expect(lines[0]).toContain('the job run ended failed');
+  it('reads a record left running as interrupted unless a deploy holds the lease under its run, as the deploy names it', async () => {
+    const run = '20261015T000000Z-bbbbbbbbbb';
+    const running = record(run, { outcome: 'running', endedAt: undefined });
+    const label = async (owner: string) => {
+      const lines: string[] = [];
+      const lock = { owner, operation: 'deploy', acquiredAt: '', expiresAt: new Date(Date.now() + 60_000).toISOString() };
+      await showRuns(store([running]), { pick: false, print: (line) => lines.push(line), lock });
+      return lines[0];
+    };
+    expect(await label(`run:${run}`)).not.toContain('interrupted');
+    expect(await label('run:20261015T000100Z-cccccccccc')).toContain('interrupted');
   });
 
   it('lists every run, one that left no record too, and shows the newest in full with a failed machine’s boot error and the end of its log', async () => {
@@ -102,8 +94,9 @@ describe('Show runs', () => {
       definition,
       environment: 'production',
     });
-    expect(lines[0]).toContain('started with its own values: sets REPO to another value');
-    expect(lines[1]).not.toContain('its own values');
+    // The sentence on the scheduled runs comes first.
+    expect(lines[1]).toContain('started with its own values: sets REPO to another value');
+    expect(lines[2]).not.toContain('its own values');
   });
 
   it('says so when no run has left a record', async () => {

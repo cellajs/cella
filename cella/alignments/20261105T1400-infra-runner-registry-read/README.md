@@ -29,7 +29,7 @@ No script: manual.
 ## Verify
 
 ```sh
-pnpm --filter infra exec vitest run lib/scaleway/policy-reach.test.ts
+pnpm --filter infra exec vitest run
 pnpm infra runs --mode <env>
 pnpm check
 ```

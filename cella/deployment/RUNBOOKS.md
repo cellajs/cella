@@ -29,7 +29,7 @@ A blocked run booted no machine of the release, and the running release stays. `
 
 - **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
-The runner never starts a blocked target again.
+No scheduled run starts a blocked target again: storing the value, or the apply, does.
 
 ## Apply needed
 
@@ -137,7 +137,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 `pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>` and for an Owner API key that expires within a day, and nothing else: the Owner key holds every right, so the one key deletes the resources and the identities. It refuses a key the bucket policies do not name, before it touches anything: your user joins `<app>-operators`, and the next **Review & apply changes** names you.
 
-It deletes every machine the deploys and the builder made, the reserved addresses they held, the load balancer with its address, the DNS records, the private network, the security groups, the database, the main job, the registry namespace, every secret container but the keys that protect stored data, and the environment's identities: the deploy and uploads applications with their policies and keys, and the `<slug>-<mode>` group. The app's operators, observer and runner stay: they serve the other environments.
+It deletes every machine the deploys and the builder made, the reserved addresses they held, the load balancer with its address, the DNS records, the private network, the security groups, the database, the main job, the registry namespace, every secret container but the keys that protect stored data, and the environment's identities: the deploy and uploads applications with their policies and keys, and the `<slug>-<mode>` group. The app's operators and observer stay: they serve the other environments.
 
 Before the database goes, it writes a **final dump** into the boot-diag bucket, under `dumps/<mode>/<time>`, from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there. When the dump fails, nothing of the stack is destroyed, and the teardown says what it did before. A write the app takes after the dump is lost, so stop traffic first.
 
@@ -145,7 +145,7 @@ A destroy that stops halfway leaves what it had not reached, still in the state,
 
 It keeps, with their contents: the two upload buckets, the boot-diag bucket with the run records and the rotations (the live record goes with the machines it named), the state bucket, and the `data-encryption-key` and `pii-hash-secret` containers in `/runtime/`, without which the dump's encrypted and hashed fields no longer read. Each kept bucket keeps its policy. Third-party keys go with the other secrets: a setup again asks for them.
 
-The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`, drop the environment from `infra/runner.json` and **Replace the runner**. A setup again (`pnpm infra --mode <mode>`) runs in the same project and adopts what was kept before its first apply, so that apply changes nothing about them.
+The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`. A setup again (`pnpm infra --mode <mode>`) runs in the same project and adopts what was kept before its first apply, so that apply changes nothing about them.
 
 ## Restore the final dump
 

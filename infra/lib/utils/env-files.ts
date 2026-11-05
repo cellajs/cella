@@ -81,7 +81,7 @@ export function dropPromptOnlyEnv(env: NodeJS.ProcessEnv = process.env): string[
 
 /**
  * The values a parsed mode env file exports, and the warnings it earns. A retired name is dropped: the admin application key is gone, and the
- * provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI runner, a shell export).
+ * provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI job, a shell export).
  */
 export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
   const values = { ...parsed };

@@ -84,7 +84,7 @@
       "ignoreDependencies": ["@serwist/window", "pdfjs-dist"]
     },
     "infra": {
-      "entry": ["index.ts", "tasks/*.ts", "agent/src/entry.ts", "runner/src/main.ts"]
+      "entry": ["index.ts", "tasks/*.ts", "agent/src/entry.ts"]
     },
     "shared": {
       // pino resolves transport targets by name.

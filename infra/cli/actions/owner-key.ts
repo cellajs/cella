@@ -25,7 +25,7 @@ export interface OwnerKey extends KeyPair {
 }
 
 /**
- * An Owner API key for every action that writes IAM: an Owner moment of a setup or a rotation, the operator key, the runner, identities. It is
+ * An Owner API key for every action that writes IAM: an Owner moment of a setup or a rotation, the operator key, identities. It is
  * typed at the prompt, never read from the environment.
  * The bearer is validated first: an organization Owner, or a principal holding IAMManager; an application the engine created is refused by name.
  * The key is used as it is: an Owner moment runs no Pulumi and no child process. A durable key (`durableKeyLife`) is refused, as it would

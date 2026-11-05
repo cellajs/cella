@@ -3,6 +3,7 @@ import { makeLockS3 } from '../../tests/helpers/fake-lock-s3';
 import {
   acquireLock,
   forceUnlock,
+  handOverLock,
   type LockInfo,
   lockKey,
   parseRotations,
@@ -75,6 +76,19 @@ describe('acquireLock / releaseLock', () => {
     const res = await acquireLock(s3, 'b', 'k', opts);
     expect(res.acquired).toBe(true);
     expect(JSON.parse(current()!.body).owner).toBe('operator:a');
+  });
+
+  it("hands a scheduled run's lease to its deploy, which takes it over at once; the same owner without adopt, a second session of one person, waits", async () => {
+    const { s3, current } = makeLockS3();
+    const looking = { owner: 'run:20261106T120000Z', operation: 'scheduled run', ttlMs: 60_000, now: 1_000_000 };
+    expect((await acquireLock(s3, 'b', 'k', looking)).acquired).toBe(true);
+    const deploy = 'run:20261106T120000Z-aaaaaaaaaa';
+    expect(await handOverLock(s3, 'b', 'k', { from: 'run:someone-else', to: deploy, operation: 'deploy', ttlMs: 60_000 })).toBe(false);
+    expect(await handOverLock(s3, 'b', 'k', { from: looking.owner, to: deploy, operation: 'deploy', ttlMs: 60_000, now: 1_000_000 })).toBe(true);
+    expect(JSON.parse(current()!.body)).toMatchObject({ owner: deploy, operation: 'deploy' });
+    const child = { owner: deploy, operation: 'deploy', ttlMs: 60_000, now: 1_001_000 };
+    expect((await acquireLock(s3, 'b', 'k', child)).acquired).toBe(false);
+    expect((await acquireLock(s3, 'b', 'k', { ...child, adopt: true })).acquired).toBe(true);
   });
 
   it('release removes our own lock', async () => {

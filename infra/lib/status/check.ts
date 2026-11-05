@@ -16,7 +16,7 @@ export const manageDbEndpoint: NextAction = {
   command: actionCommand('db-close'),
 };
 
-/** Deploy the environment's target: the runner does once its target moves, this starts a run now. */
+/** Deploy the environment's target: a scheduled run does once its target moves, this starts a run now. */
 export function deployAction(mode: string): NextAction {
   return { description: `Start a run of ${mode}'s main job for its target`, command: `${actionCommand('start-deploy')} --mode ${mode}` };
 }
