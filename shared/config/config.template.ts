@@ -226,6 +226,7 @@ export const config = {
   maxSessionsPerUser: 10,
 
   // A code verifies one step either side of now (RFC 6238 §5.2): each step more is one more code a guess can hit.
+  // Google Authenticator reads neither the period nor the digits of the key URI, so other values lock its users out.
   totp: { intervalInSeconds: 30, gracePeriodInSeconds: 30, digits: 6 },
 
   // API configuration
