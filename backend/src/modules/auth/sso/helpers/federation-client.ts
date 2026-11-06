@@ -1,6 +1,12 @@
 import * as oauth from 'oauth4webapi';
 import { AppError } from '#/core/error';
-import { authorizationUrl, isProviderRefusal, providerDeadline } from '#/modules/auth/oauth/helpers/code-flow';
+import {
+  type AuthorizationResponse,
+  authorizationResponseParams,
+  authorizationUrl,
+  isProviderRefusal,
+  providerDeadline,
+} from '#/modules/auth/oauth/helpers/code-flow';
 import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { log } from '#/utils/logger';
 
@@ -59,22 +65,21 @@ export const createFederationAuthorizationUrl = async (
   return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce, loginHint });
 };
 
-interface CodeExchangeInput {
-  code: string;
-  state: string;
+interface CodeExchangeInput extends AuthorizationResponse {
   codeVerifier: string;
   nonce: string;
 }
 
 /**
- * Exchanges the callback's code for the sign-in's claims. The id_token is verified in full (signature against the
- * federation's keys, issuer, audience, expiry, the nonce this round trip minted), then userinfo is read with the access
- * token: the federation releases most claims there.
+ * Exchanges the callback's code for the sign-in's claims. The response's `iss` must name the federation, and must be
+ * there when its metadata announces the parameter (RFC 9207): the callback is shared, so this tells federations apart.
+ * The id_token is verified in full (signature against the federation's keys, issuer, audience, expiry, the nonce this
+ * round trip minted), then userinfo is read with the access token: the federation releases most claims there.
  * @throws AppError 401 `invalid_credentials` when the federation refuses the code or the tokens fail verification.
  */
 export const exchangeFederationCode = async (
   federation: Federation,
-  { code, state, codeVerifier, nonce }: CodeExchangeInput,
+  { code, state, iss, codeVerifier, nonce }: CodeExchangeInput,
   options: FederationClientOptions = {},
 ): Promise<SsoClaims> => {
   const as = await discoverFederation(federation, options);
@@ -85,7 +90,7 @@ export const exchangeFederationCode = async (
       : oauth.ClientSecretBasic(federation.clientSecret);
 
   try {
-    const params = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
+    const params = oauth.validateAuthResponse(as, client, authorizationResponseParams({ code, state, iss }), state);
     const response = await oauth.authorizationCodeGrantRequest(
       as,
       client,

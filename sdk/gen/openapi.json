@@ -6742,6 +6742,15 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255
             },
             "required": false,
@@ -6835,6 +6844,15 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255
             },
             "required": false,
@@ -6923,6 +6941,15 @@
             },
             "required": true,
             "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
             "in": "query"
           },
           {
@@ -7277,6 +7304,15 @@
             },
             "required": true,
             "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
             "in": "query"
           },
           {

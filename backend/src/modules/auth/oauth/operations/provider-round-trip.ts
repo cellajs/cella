@@ -81,7 +81,7 @@ export const startOAuth = async (ctx: OAuthStartContext, provider: BaseOAuthProv
  *   profile read fails otherwise, and what the flow throws.
  */
 export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuthProviders) => {
-  const { code, state, error } = ctx.req.valid('query');
+  const { code, state, iss, error } = ctx.req.valid('query');
   const { client, fetchUser } = oauthProviders[provider];
   // The route's `xEnabledBy` switch refuses a provider this app has off.
   const strategy = provider as EnabledOAuthProvider;
@@ -98,10 +98,13 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
 
   try {
     // For an OIDC provider, id_token claims, `nonce` binding, and signature are validated inside the provider client.
-    const { accessToken } = await client.validateAuthorizationCode(code, state, {
-      codeVerifier: cookiePayload.codeVerifier,
-      nonce: cookiePayload.nonce,
-    });
+    const { accessToken } = await client.validateAuthorizationCode(
+      { code, state, iss },
+      {
+        codeVerifier: cookiePayload.codeVerifier,
+        nonce: cookiePayload.nonce,
+      },
+    );
 
     const providerUser = await fetchUser({ headers: { Authorization: `Bearer ${accessToken}` }, signal: providerDeadline() });
 

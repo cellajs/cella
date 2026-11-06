@@ -1,7 +1,13 @@
 import * as oauth from 'oauth4webapi';
 import { appConfig } from 'shared';
 import { env } from '#/env';
-import { authorizationUrl, isProviderRefusal, providerDeadline } from '#/modules/auth/oauth/helpers/code-flow';
+import {
+  type AuthorizationResponse,
+  authorizationResponseParams,
+  authorizationUrl,
+  isProviderRefusal,
+  providerDeadline,
+} from '#/modules/auth/oauth/helpers/code-flow';
 
 /** Thrown when the provider rejects the authorization response or code exchange (bad, expired, or replayed code). */
 export class OAuthCodeExchangeError extends Error {
@@ -64,23 +70,28 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
      * Exchanges the authorization code for tokens with the PKCE verifier. OIDC providers also get id_token claim
      * validation, `nonce` binding, and a signature check against the provider JWKS.
      */
-    async validateAuthorizationCode(code: string, state: string, { codeVerifier, nonce }: OAuthFlowContext): Promise<{ accessToken: string }> {
+    async validateAuthorizationCode(response: AuthorizationResponse, { codeVerifier, nonce }: OAuthFlowContext): Promise<{ accessToken: string }> {
       try {
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
-        const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
-        const response = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier, {
+        // A multi-tenant alias learns its tenant's issuer from the id_token: its response `iss` is compared once that is known.
+        const params = authorizationResponseParams({ ...response, iss: resolveIssuerFromIdToken ? undefined : response.iss });
+        const callbackParams = oauth.validateAuthResponse(as, client, params, response.state);
+        const tokenResponse = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier, {
           signal: providerDeadline(),
         });
 
-        const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(response, as) : as;
-        const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, response, {
+        const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(tokenResponse, as) : as;
+        if (response.iss && response.iss !== effectiveAs.issuer) {
+          throw new OAuthCodeExchangeError(new Error('unexpected "iss" (issuer) response parameter value'));
+        }
+        const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, tokenResponse, {
           requireIdToken: oidc,
           expectedNonce: oidc ? (nonce ?? oauth.expectNoNonce) : undefined,
         });
 
         // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
-        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, response, { signal: providerDeadline() });
+        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, tokenResponse, { signal: providerDeadline() });
 
         return { accessToken: tokens.access_token };
       } catch (error) {
@@ -93,7 +104,8 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
 
 export const githubAuth = createProviderClient({
   as: {
-    issuer: 'https://github.com',
+    // The issuer of GitHub's server metadata (RFC 8414), which its callbacks name in `iss`.
+    issuer: 'https://github.com/login/oauth',
     authorization_endpoint: 'https://github.com/login/oauth/authorize',
     token_endpoint: 'https://github.com/login/oauth/access_token',
   },

@@ -134,7 +134,7 @@ describe('SSO sign-in through an institution', async () => {
     call(startSso, { path: { connectionId }, query, headers: defaultHeaders });
   const finish = async (state: string, claims: Record<string, unknown>) => {
     vi.mocked(exchangeFederationCode).mockResolvedValueOnce(claims as never);
-    return call(ssoCallback, { query: { state, code: 'the-code' }, headers: defaultHeaders });
+    return call(ssoCallback, { query: { state, code: 'the-code', iss: 'https://connect.test.surfconext.nl' }, headers: defaultHeaders });
   };
   const signInThrough = async (connectionId: string, claims: Record<string, unknown> = claimsOf()) =>
     finish(stateOf((await start(connectionId)).response), claims);
@@ -197,6 +197,8 @@ describe('SSO sign-in through an institution', async () => {
     const { response } = await signInThrough(connection.id);
 
     expect(response.status).toBe(302);
+    // The response's issuer reaches the exchange, which compares it with the federation's (RFC 9207).
+    expect(vi.mocked(exchangeFederationCode).mock.calls.at(-1)?.[1]).toMatchObject({ iss: 'https://connect.test.surfconext.nl' });
     expect(cookieChange(response, 'session')).toBe('set');
 
     const [user] = await getUserByEmail(studentEmail);

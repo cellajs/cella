@@ -569,7 +569,7 @@ describe('OAuth Authentication', async () => {
     };
 
     const callback = (fn: (typeof providers)[number]['fn'], state: string) =>
-      call(fn, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+      call(fn, { query: { state, code: 'mock-auth-code', iss: 'https://issuer.example' }, headers: defaultHeaders });
 
     it.each(providers)('refuses a $provider callback without a state cookie', async ({ fn, client }) => {
       await expectRefusal(await callback(fn, 'no-such-state'), 401, 'invalid_state');
@@ -622,8 +622,9 @@ describe('OAuth Authentication', async () => {
 
       expect(response.status).toBe(302);
       expect(started).toEqual(urls.map((url, index) => ({ url, authorization: 'Bearer mock-access-token', inFlight: index + 1 })));
-      const [[code, exchangedState, options]] = vi.mocked(client.validateAuthorizationCode).mock.calls;
-      expect([code, exchangedState]).toEqual(['mock-auth-code', state]);
+      // The response's issuer reaches the client, which compares it with the provider's (RFC 9207).
+      const [[authorizationResponse, options]] = vi.mocked(client.validateAuthorizationCode).mock.calls;
+      expect(authorizationResponse).toEqual({ code: 'mock-auth-code', state, iss: 'https://issuer.example' });
       expect(options).toEqual({ codeVerifier: 'verifier', nonce: oidc ? 'nonce' : undefined });
     });
 
