@@ -42,6 +42,8 @@ export const tokensTable = snakeCase.table(
     identityId: uuid().references(() => identitiesTable.id, { onDelete: 'cascade' }),
     /** A membership invitation's link goes with its row, so no answered or deleted invitation keeps a live link. */
     inactiveMembershipId: uuid().references(() => inactiveMembershipsTable.id, { onDelete: 'cascade' }),
+    /** For a sign-in link: the invitation the asking browser had followed, accepted at the click on any device. */
+    followedInvitationId: uuid().references(() => inactiveMembershipsTable.id, { onDelete: 'set null' }),
     redirectPath: varchar({ length: maxLength.field }),
     pendingSignUp: jsonb().$type<PendingSignUp>(),
     /** The session a token is bound to: a step-up link stamps only this session. */
@@ -66,6 +68,7 @@ export const tokensTable = snakeCase.table(
     index('tokens_session_id_idx').on(table.sessionId).where(sql`${table.sessionId} is not null`),
     // The same for an invitation's tokens, when its row is deleted or a new link replaces them.
     index('tokens_inactive_membership_id_idx').on(table.inactiveMembershipId).where(sql`${table.inactiveMembershipId} is not null`),
+    index('tokens_followed_invitation_id_idx').on(table.followedInvitationId).where(sql`${table.followedInvitationId} is not null`),
     // One live step-up code per session: of two concurrent requests that both cleared the session's code, the later insert is refused.
     uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.type} = 'step-up'`),
   ],

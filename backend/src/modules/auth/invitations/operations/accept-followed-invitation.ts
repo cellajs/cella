@@ -26,17 +26,19 @@ export const findFollowedInvitation = async (ctx: Context<Env>): Promise<Followe
 };
 
 interface AcceptFollowedInvitationOpts {
-  /** The address the sign-in link proved. */
+  /** The address the sign-in proved: by a magic link or verification mail, or by the provider with the invitation link. */
   provenEmail: string;
   followed: FollowedInvitation | null;
 }
 
 /**
- * Accepts, at the sign-in that follows, the invitation whose emailed link this browser opened: only when the sign-in
- * link proved the invited address, the invitation is bound to `user` (by that proof's claim or before) and no second
- * factor still stands between the click and the session. Any other invitation, such as one the account claims by its
- * address alone, waits for an answer in the app. The accept is the Accept button's (`handleMembershipInvitationOp`);
- * a refusal or a failure leaves the invitation to that button and never fails the sign-in.
+ * Accepts, at the sign-in that follows, the invitation whose emailed link was opened: in this browser, or in the one
+ * that asked for the magic link. Only when the sign-in proved the invited address, the invitation is bound to `user`
+ * (by that proof's claim or before) and no second factor still stands between the click and the session. A magic
+ * link, an OAuth sign-up and its verification mail call it; a passkey never does, since its account held the address
+ * before, so its invitation came without a link. Any other invitation, such as one the account claims by its address
+ * alone, waits for an answer in the app. The accept is the Accept button's (`handleMembershipInvitationOp`); a refusal
+ * or a failure leaves the invitation to that button and never fails the sign-in.
  */
 export const acceptFollowedInvitation = async (user: UserModel, { provenEmail, followed }: AcceptFollowedInvitationOpts) => {
   if (!followed || user.mfaRequired || followed.email.toLowerCase() !== provenEmail.toLowerCase()) return;

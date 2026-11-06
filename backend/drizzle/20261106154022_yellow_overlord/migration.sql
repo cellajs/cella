@@ -1,0 +1,3 @@
+ALTER TABLE "tokens" ADD COLUMN "followed_invitation_id" uuid;--> statement-breakpoint
+CREATE INDEX "tokens_followed_invitation_id_idx" ON "tokens" ("followed_invitation_id") WHERE "followed_invitation_id" is not null;--> statement-breakpoint
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_followed_invitation_id_inactive_memberships_id_fkey" FOREIGN KEY ("followed_invitation_id") REFERENCES "inactive_memberships"("id") ON DELETE SET NULL;

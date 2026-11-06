@@ -49,6 +49,7 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
       | 'createdBy'
       | 'identityId'
       | 'inactiveMembershipId'
+      | 'followedInvitationId'
       | 'redirectPath'
       | 'pendingSignUp'
       | 'sessionId'
@@ -83,6 +84,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       createdBy: token.createdBy ?? null,
       identityId: token.identityId ?? null,
       inactiveMembershipId: token.inactiveMembershipId ?? null,
+      followedInvitationId: token.followedInvitationId ?? null,
       redirectPath: token.redirectPath ?? null,
       pendingSignUp: token.pendingSignUp ?? null,
       sessionId: token.sessionId ?? null,
