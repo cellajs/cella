@@ -3,7 +3,7 @@ import { healthContract } from '../../../config/health.config';
 import { createFetchProbe } from '../../../tasks/wait-for-version';
 import type { LiveRecord } from '../../deploy/live-record';
 import { roleOf } from '../../machine-roles';
-import { serviceEndpoints } from '../../services';
+import { enabledServices, serviceEndpoints } from '../../services';
 import { check, deployAction, diagAction } from '../check';
 import type { StatusProvider } from '../types';
 
@@ -14,8 +14,8 @@ const short = (sha: string): string => sha.slice(0, 7);
 export interface LiveServiceFact {
   slug: string;
   healthUrl: string;
-  /** undefined when the probe was not run. `status: 0` means unreachable. */
-  probe?: { status: number; version?: string };
+  /** undefined when the probe was not run. `status: 0` means unreachable; `html` an answer by the frontend's page, not the service. */
+  probe?: { status: number; version?: string; html?: true };
   /** The commit the live record says serves it, when known. */
   expectedSha?: string;
   /** The role whose machine serves it, when it is not its own: the single-process host for a service running there. */
@@ -39,7 +39,9 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
   async gather(session) {
     let endpoints: ReturnType<typeof serviceEndpoints>;
     try {
-      endpoints = serviceEndpoints(session.appConfig);
+      // A disabled service has no container and no route: its path falls through to the frontend, which is no reading of it.
+      const enabled = new Set(enabledServices(session.appConfig.services).map((service) => service.slug));
+      endpoints = serviceEndpoints(session.appConfig).filter((endpoint) => enabled.has(endpoint.slug));
     } catch {
       return undefined;
     }
@@ -64,6 +66,12 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
     return facts.map((svc) => {
       const service = check(`live.${svc.slug}`, `Service ${svc.slug}`);
       if (!svc.probe) return service.unknown(`not probed (${svc.healthUrl})`);
+      if (svc.probe.html) {
+        return service.missing(
+          `answered by the frontend's page at ${svc.healthUrl}: the service runs no container or its route is gone`,
+          diagAction(session.mode),
+        );
+      }
       if (svc.probe.status !== 200 && svc.probe.status !== 204) {
         const how = svc.probe.status === 0 ? 'unreachable' : `unhealthy (HTTP ${svc.probe.status})`;
         return service.missing(`${how} at ${svc.healthUrl}`, diagAction(session.mode));

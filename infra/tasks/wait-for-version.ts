@@ -6,6 +6,8 @@ export interface ProbeResult {
   status: number;
   /** Value of the X-App-Version header, lowercased lookup, or undefined. */
   version: string | undefined;
+  /** The answer is an HTML page: the frontend's route answered where the service has none, with the release header of the frontend. */
+  html?: true;
 }
 
 /** Performs a single HTTP probe. Injectable so a caller can be unit-tested. */
@@ -26,7 +28,8 @@ export function createFetchProbe(timeoutMs: number): ProbeFn {
     try {
       // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket.
       const res = await fetch(url.replace(/^ws(s?):/, 'http$1:'), { signal: AbortSignal.timeout(timeoutMs), redirect: 'follow' });
-      return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined };
+      const html = (res.headers.get('content-type') ?? '').startsWith('text/html');
+      return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined, ...(html ? { html: true as const } : {}) };
     } catch {
       return { status: 0, version: undefined };
     }
