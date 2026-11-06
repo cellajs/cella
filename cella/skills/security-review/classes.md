@@ -569,13 +569,13 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### E2 Write integrity and the sync engine
 - **Gain:** integrity, cross-tenant write.
-- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
+- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`changedFields` on the mutation bus), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
 - **Advisories:** none.
 - **Files:**
   - `backend/tests/security/attachment-idempotency.test.ts`; in `backend/tests/`: `attachment-overlapping-edits.test.ts`, `attachment-seq-reads.test.ts`, `recalculate-sequence.test.ts`, `filter-existing-product-ids.test.ts`, `catchup-baseline.test.ts`, `catchup-propagation.test.ts`.
   - Schema evolution tests: `shared/src/schema-evolution/tests/{engine,engine-empty,queued-variables}.test.ts` and `backend/src/core/schema-evolution/tests/lens-seam.test.ts`.
   - Immutability tests: `backend/tests/integration/rls-security.test.ts`.
-  - `checkIdempotency` is used by `modules/attachment/operations/create-attachments.ts`; `insertEntityLock` by `organization-routes.ts`; `filterExistingProductIds` is defined in `modules/entities/embedding-queries.ts`; `stripChangedFields` is used at four sites. There is no restore route.
+  - `checkIdempotency` is used by `modules/attachment/operations/create-attachments.ts`; `insertEntityLock` by `organization-routes.ts`; `filterExistingProductIds` is defined in `modules/entities/embedding-queries.ts`; `stxWithIds` is used by the soft deletes. There is no restore route.
 - **Holds:**
   - `attachment-idempotency`: user B sending A's mutationId with a new id gets only its own row, stored `createdBy` is B; B sending A's row id gets nothing (`rejectedIds`); the same user with the same ids on another tenant's path gets nothing of the first tenant; a deleted row is not revived; partial and concurrent replays; quota with replays.
   - `attachment-overlapping-edits`: field timestamps of two edits while the row is held.

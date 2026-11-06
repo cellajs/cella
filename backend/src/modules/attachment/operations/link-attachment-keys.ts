@@ -4,10 +4,8 @@ import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { tenantContext } from '#/db/tenant-context';
 import { updateStamps } from '#/db/utils/stamps';
-import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { withActorRef } from '#/modules/actors/actor-refs';
-import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { type AttachmentKeys, type attachmentLinkKeysBodySchema, attachmentVariantSchema } from '#/modules/attachment/attachment-schema';
 import { namesUploaderStorage } from '#/modules/attachment/helpers/storage-key';
@@ -52,7 +50,6 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
         ...(storedSize === null ? {} : { size: storedSize }),
         convertedContentType: convertedContentType || null,
         ...updateStamps(actorId),
-        stx: stripChangedFields(attachmentsTable.stx),
       },
     });
     await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });

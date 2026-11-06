@@ -190,7 +190,7 @@ function workloadOn(tx: Tx, seed: number) {
   const edit = (values: Record<string, unknown>) => ({
     ...values,
     updatedAt: now(),
-    stx: { mutationId: newId(), sourceId: 'tab-1', changedFields: Object.keys(values) },
+    stx: { mutationId: newId(), sourceId: 'tab-1', fieldTimestamps: {} },
   });
 
   /**

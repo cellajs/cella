@@ -5,8 +5,6 @@ import { mockUuid, withFakerSeed } from '#/mocks';
 export const mockStxBase = (key = 'stx-base:default') =>
   withFakerSeed(key, () => ({ mutationId: mockUuid(), sourceId: mockUuid(), fieldTimestamps: {} }));
 
-export const mockStxStored = () => ({ ...mockStxBase(), changedFields: ['name', 'updatedAt'] });
-
 /**
  * The stx of one test write: a mutation id of its own and a stamp for each field the write changes. A create or a
  * delete names no field.

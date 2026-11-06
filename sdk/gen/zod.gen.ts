@@ -660,11 +660,7 @@ export const zAttachment = z.object({
       }),
     ])
     .nullable(),
-  stx: zStxBase.and(
-    z.object({
-      changedFields: z.array(z.string().max(64)).max(100).optional(),
-    }),
-  ),
+  stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
   deletedAt: z.string().nullable(),

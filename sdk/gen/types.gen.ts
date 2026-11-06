@@ -711,15 +711,7 @@ export type Attachment = {
         slug: null;
       }
     | null;
-  /**
-   * The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.
-   */
-  stx: StxBase & {
-    /**
-     * The fields the last write changed, set by the server; absent after a create or a server-driven write
-     */
-    changedFields?: Array<string>;
-  };
+  stx: StxBase;
   description: string | null;
   keywords: string;
   deletedAt: string | null;

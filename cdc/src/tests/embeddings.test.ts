@@ -139,7 +139,6 @@ function rendered({ table, lookup, values, written }: (typeof statements)[number
     table: getTableName(table),
     items: items.sql,
     strippedIds: items.params.flat(),
-    stx: dialect.sqlToQuery(values.stx).sql,
     where: where.sql,
     scope: where.params.flat(),
     writtenIds: dialect.sqlToQuery(written).params.flat(),
@@ -157,15 +156,15 @@ describe('isReferenceCleanupWrite: in the update handler', () => {
   const stored = {
     ...taskRow('t1', { items: ['i1', 'i2'] }),
     updatedAt,
-    stx: { mutationId: 'm1', sourceId: 'tab-1', changedFields: ['name', 'updatedAt'] },
+    stx: { mutationId: 'm1', sourceId: 'tab-1', fieldTimestamps: {} },
   };
 
   /** An update of the stored row. The cast covers the relation of a pgoutput message: the handler reads the two row images only. */
   const update = (row: Row) => ({ tag: 'update', old: stored, new: row }) as unknown as Pgoutput.MessageUpdate;
 
   it('must not turn the cleanup write of a host array into an activity', () => {
-    // As cleanupEmbeddingReferences writes it: the array without the id, stx without changedFields, updatedAt untouched.
-    const cleaned = { ...stored, items: ['i2'], stx: { mutationId: 'm1', sourceId: 'tab-1' } };
+    // As cleanupEmbeddingReferences writes it: the array without the id, nothing else.
+    const cleaned = { ...stored, items: ['i2'] };
 
     expect(parseUpdate(metaOf('task'), update(cleaned))).toBeNull();
   });
@@ -176,7 +175,7 @@ describe('isReferenceCleanupWrite: in the update handler', () => {
       ...stored,
       items: ['i2'],
       updatedAt: '2026-10-01T10:05:00.000Z',
-      stx: { mutationId: 'm2', sourceId: 'tab-1', changedFields: ['items', 'updatedAt'] },
+      stx: { mutationId: 'm2', sourceId: 'tab-1', fieldTimestamps: {} },
     };
 
     const result = parseUpdate(metaOf('task'), update(edited));
@@ -211,8 +210,6 @@ describe('cleanupEmbeddingReferences', () => {
     expect(statement.where).toContain('"tasks"."items" &&');
     expect(statement.where).toContain('"tasks"."organization_id" =');
     expect(statement.scope).toEqual(['i1', 'o1']);
-    // Without changedFields: an earlier write's list does not describe this one.
-    expect(statement.stx).toBe(`"tasks"."stx" - 'changedFields'`);
   });
 
   it('strips the id of a soft-deleted embedded row, and issues nothing for an update that deletes nothing', async () => {

@@ -1,7 +1,6 @@
 import { and, arrayOverlaps, asc, eq, getColumns, inArray, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
-import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
@@ -19,7 +18,6 @@ interface ResolvedEmbedding {
   parentColumnName: string;
   parentColumn: AnyPgColumn;
   hostIdColumn: AnyPgColumn;
-  hostStxColumn: AnyPgColumn;
 }
 
 /** What the cleanup writes through: the worker's pool, or the transaction a test keeps to itself. */
@@ -62,7 +60,6 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
       parentColumnName,
       parentColumn,
       hostIdColumn: hostColumns.id,
-      hostStxColumn: hostColumns.stx,
     });
   }
 
@@ -90,7 +87,7 @@ export async function cleanupEmbeddingReferences(
 
   if (relevantEvents.length === 0) return;
 
-  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn, hostStxColumn } of embeddings) {
+  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } of embeddings) {
     const references = relevantEvents.flatMap(({ result: { rowData } }) => {
       const parentId = rowData[parentColumnName];
       if (typeof parentId === 'string') return [{ parentId, id: rowData.id }];
@@ -121,7 +118,6 @@ export async function cleanupEmbeddingReferences(
             FROM unnest(${hostColumn}) AS elem
             WHERE elem NOT IN ${embeddedIds}
           )`,
-            stx: stripChangedFields(hostStxColumn),
           })
           .where(
             inArray(
