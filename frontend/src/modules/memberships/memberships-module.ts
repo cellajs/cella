@@ -11,8 +11,9 @@ defineFrontendModule({
   description: 'UI for managing user memberships in channels.',
   signals: {
     'membership.changed': ({ organizationId, subjectId }) => {
-      // Without a subject the signal is about the organization's memberships as a whole: its member lists.
+      // Without a subject the signal is about the organization's memberships as a whole: its member lists and the counts on its channels.
       membershipOps.invalidateMemberQueries(organizationId);
+      membershipOps.invalidateChannelDetails(organizationId);
       if (!subjectId) return;
 
       // One of the user's own memberships: its channel lists, its memberships and the permissions they grant.
