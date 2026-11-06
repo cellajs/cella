@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import { usersTable } from '#/modules/user/user-db';
@@ -121,6 +122,8 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     const { response } = await call(toggleMfa, { body: { mfaRequired: true }, headers: current.headers });
     expect(response.status).toBe(200);
+    // One Set-Cookie per cookie name (RFC 6265bis 4.1.1): the new session's cookie replaces the old one.
+    expect(response.headers.getSetCookie().filter((line) => line.startsWith(`${authCookieName('session')}=`))).toHaveLength(1);
 
     // This browser carries on with the mfa session the response set, so its stream closes with a code the client
     // reconnects on; the other browser lost its session for good.

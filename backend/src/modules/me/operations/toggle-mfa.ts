@@ -42,10 +42,12 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   invalidateCache.user(user.id);
 
   if (updatedUser.mfaRequired && factor) {
-    // The mfa session set next takes this cookie's place.
-    deleteAuthCookie(ctx, 'session');
-
-    await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor, connectionId: session.connectionId });
+    // The mfa session's cookie replaces this one, one Set-Cookie per name (RFC 6265bis 4.1.1). Its session is revoked
+    // already, so a sign-in that throws (a system admin outside the allowlist) clears it.
+    await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor, connectionId: session.connectionId }).catch((err) => {
+      deleteAuthCookie(ctx, 'session');
+      throw err;
+    });
   }
 
   if (changed) sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
