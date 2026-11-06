@@ -23,6 +23,9 @@ import { log } from '#/utils/logger';
 const hour = 60 * 60;
 const day = 24 * hour;
 
+/** The provider routes that start an authorization request: the authorization endpoint and pushed requests. */
+const authorizationRoutes = new Set(['authorization', 'pushed_authorization_request']);
+
 /**
  * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key), with the
  * account's tenant. Client authentication records it; the resource lookup that follows keeps the token in that tenant
@@ -142,8 +145,12 @@ export async function createProvider(): Promise<Provider> {
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch, allowClient },
       resourceIndicators: {
         enabled: true,
-        // Every token names its resource; a request without one gets `invalid_target` at the guard, never a broad token.
-        defaultResource: () => undefined,
+        // Every token names its resource. An authorization request without one is answered `invalid_target` on the
+        // client's redirect URI (RFC 8707 §2.1); at the token endpoint the grant's resource applies (`useGrantedResource`).
+        defaultResource: (ctx, _client, oneOf) => {
+          if (!oneOf && authorizationRoutes.has(ctx.oidc.route)) throw new errors.InvalidTarget('resource indicator is required');
+          return undefined;
+        },
         useGrantedResource: () => true,
         getResourceServerInfo: (ctx, resourceIndicator, client) => {
           const resource = parseResource(resourceIndicator);
