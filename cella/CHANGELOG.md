@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.39.0](https://github.com/cellajs/cella/compare/0.38.0...0.39.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* translations move to shared/locales and data files to shared/json, the showcase beside its seed ([#1737](https://github.com/cellajs/cella/issues/1737))
+
+### 🔧 Small improvements
+
+* translations move to shared/locales and data files to shared/json, the showcase beside its seed ([#1737](https://github.com/cellajs/cella/issues/1737)) ([1e07e4a](https://github.com/cellajs/cella/commit/1e07e4a75a338443209f7f9393d902f7a8c7b6ae))
+
+
+### 🧹 Chores
+
+* the template asks for cli 0.6.6, which keeps an app's copy of a protected file upstream moves ([#1739](https://github.com/cellajs/cella/issues/1739)) ([afddcfd](https://github.com/cellajs/cella/commit/afddcfd144f073c3a829e9cdcb4203dab55b9df2))
+
 ## [0.38.0](https://github.com/cellajs/cella/compare/0.37.0...0.38.0) (2026-11-06)
 
 
