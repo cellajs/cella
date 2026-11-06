@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.38.0](https://github.com/cellajs/cella/compare/0.37.0...0.38.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* invitations are accepted after an OAuth sign-up and on another device, a used invite link opens the app, and placeholder colors get a dark fill ([#1729](https://github.com/cellajs/cella/issues/1729))
+* changed fields ride the mutation bus, not the stored stx ([#1728](https://github.com/cellajs/cella/issues/1728))
+* schema docs bucketed by role, names only for shared shapes ([#1726](https://github.com/cellajs/cella/issues/1726))
+* the dev tools move into @cellajs/cli: testbed, bench, a11y, screenshots, i18n, style and pentest ([#1723](https://github.com/cellajs/cella/issues/1723))
+* invitation answers move under /me, a phone stack on the /about hero, pinch zoom in the attachment viewer, and requests without a response take the app offline ([#1724](https://github.com/cellajs/cella/issues/1724))
+
+### 🎉 New features
+
+* invitation answers move under /me, a phone stack on the /about hero, pinch zoom in the attachment viewer, and requests without a response take the app offline ([#1724](https://github.com/cellajs/cella/issues/1724)) ([48a25e5](https://github.com/cellajs/cella/commit/48a25e5bcd506c297c1e4f3165ce8eef5cd76413))
+* invitations are accepted after an OAuth sign-up and on another device, a used invite link opens the app, and placeholder colors get a dark fill ([#1729](https://github.com/cellajs/cella/issues/1729)) ([e1c59c3](https://github.com/cellajs/cella/commit/e1c59c3a2181572bf7890c787af9c59403454ae7))
+* marketing screenshots seed from a curated json/showcase.json ([#1727](https://github.com/cellajs/cella/issues/1727)) ([7f099fc](https://github.com/cellajs/cella/commit/7f099fc429b4f347012ead7ae4f243018112f8e0))
+* the dev tools move into @cellajs/cli: testbed, bench, a11y, screenshots, i18n, style and pentest ([#1723](https://github.com/cellajs/cella/issues/1723)) ([8c5dd4f](https://github.com/cellajs/cella/commit/8c5dd4f635947b55122a2d120eb80a727373490f))
+
+
+### 🐞 Bug fixes
+
+* every docs viewer folds schema descriptions behind a help toggle, the account sheet opens from the left on phones, and the attachment stories drive pointer events ([#1734](https://github.com/cellajs/cella/issues/1734)) ([3e36b61](https://github.com/cellajs/cella/commit/3e36b6178e6720ce9db9f0decb56be2eba83b055))
+* placeholder avatars keep their light fill in dark mode, covers and banners dim under an overlay ([#1730](https://github.com/cellajs/cella/issues/1730)) ([34ad5f5](https://github.com/cellajs/cella/commit/34ad5f5f7e890844143659e7bd35f2a296f3cd16))
+
+
+### 🔧 Small improvements
+
+* changed fields ride the mutation bus, not the stored stx ([#1728](https://github.com/cellajs/cella/issues/1728)) ([19793b1](https://github.com/cellajs/cella/commit/19793b1e8cbd783631246d722ad82aa40241cc85))
+* schema docs bucketed by role, names only for shared shapes ([#1726](https://github.com/cellajs/cella/issues/1726)) ([2c82e93](https://github.com/cellajs/cella/commit/2c82e93cbb07b501c86999cbc9a7a632538b5d77))
+
+
+### 🧹 Chores
+
+* the locale types file leaves git, written on install and before the typecheck ([#1731](https://github.com/cellajs/cella/issues/1731)) ([e380611](https://github.com/cellajs/cella/commit/e3806114e76e34664310a26adba3b974e32ff516))
+
+
+### 🧪 Tests
+
+* the page scroll story starts from a leave, so a cursor resting on the viewer cannot block its first wheel ([#1735](https://github.com/cellajs/cella/issues/1735)) ([d73f25a](https://github.com/cellajs/cella/commit/d73f25a816f64ba9ca12244c08f1a7bbb3b6d044))
+
 ## [0.37.0](https://github.com/cellajs/cella/compare/0.36.0...0.37.0) (2026-11-06)
 
 
