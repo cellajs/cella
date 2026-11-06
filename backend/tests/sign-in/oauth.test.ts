@@ -287,10 +287,12 @@ describe('OAuth Authentication', async () => {
 
   describe('Security & Input Validation', () => {
     it('should handle very long redirect URL', async () => {
-      const longRedirect = 'a'.repeat(2000);
+      const longRedirect = `/${'a'.repeat(2000)}`;
       const { response: res } = await call(github, { query: { type: 'auth', redirectAfter: longRedirect }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
+      // A path the last hop would refuse is dropped at the start, so it never grows the state cookie past what a browser keeps.
+      expect(JSON.parse(mockCookieStore.get('oauth-state') ?? '{}').redirectAfter).toBeUndefined();
     });
   });
 

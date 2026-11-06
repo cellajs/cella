@@ -3,6 +3,7 @@ import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import type { OAuthCookiePayload, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -18,7 +19,9 @@ type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVeri
  * @throws AppError 401 for a connect or a verify whose pin or token this browser does not hold.
  */
 export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
-  const { type, redirectAfter } = ctx.req.valid('query');
+  const { type, redirectAfter: requestedPath } = ctx.req.valid('query');
+  // Normalized now, as the last hop would: a raw path can percent-encode past the 4096 octets a browser keeps of a cookie.
+  const redirectAfter = frontendRedirectPath(requestedPath) ?? undefined;
   const cookieContent: OAuthCookiePayload = { state, provider, codeVerifier, nonce, type, redirectAfter, connectionId };
 
   if (type === 'connect') {
