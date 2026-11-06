@@ -5,9 +5,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { repoFiles, repoRoot } from '../../../shared/scripts/repo-files.ts';
-import { loadTailwindNode } from '../../../shared/scripts/tailwind-class-rules.ts';
+import { loadTailwindNode, openRepository, repoFiles } from '@cellajs/cli/style';
 
+const repoRoot = path.join(import.meta.dirname, '../../..');
+await openRepository(repoRoot);
 const candidates = process.argv.slice(2);
 if (candidates.length === 0) {
   console.error('usage: node tw-check.mjs <class> [<class> ...]');
@@ -26,7 +27,7 @@ const css = readFileSync(cssFile, 'utf8')
   // Source scanning is irrelevant here: candidates are passed explicitly.
   .replace(/@source[^;]*;/g, '');
 
-const { compile } = loadTailwindNode();
+const { compile } = await loadTailwindNode();
 const compiler = await compile(css, { base: path.dirname(cssFile), onDependency: () => {} });
 const out = compiler.build(candidates);
 

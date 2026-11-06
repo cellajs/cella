@@ -5,7 +5,7 @@ description: Review how the whole frontend writes and ships its classes and CSS 
 
 # CSS review
 
-Most of what this review finds compiles, so `pnpm style` passes it: a variant nothing can satisfy, a class that restyles the whole page on a flip, a shorter form that changes a line height. A script finds these cheaply and an agent judges them. An agent reading files without the scripts' leads costs far more and misses whatever needs the whole repo to prove.
+Most of what this review finds compiles, so `pnpm cella style` passes it: a variant nothing can satisfy, a class that restyles the whole page on a flip, a shorter form that changes a line height. A script finds these cheaply and an agent judges them. An agent reading files without the scripts' leads costs far more and misses whatever needs the whole repo to prove.
 
 **One run, one PR.** Each pass that fixes something becomes one commit on the run's branch.
 
@@ -18,7 +18,7 @@ Work in a worktree. Run the tools from the repo root of the checkout under revie
 3. **Sibling comparison.** One agent compares families of sibling components ([passes.md](./passes.md#4-sibling-comparison)). A census cannot see this, since each finding is an absence or a difference between components. It stops after three more families with nothing of medium value or higher. A third iteration runs only if this one finds something of high value, and it runs in the browser.
 4. **Refutation.** A fresh agent receives the top findings and every new rule, and tries to break them ([passes.md](./passes.md#5-refutation)). Hand it the claims and the code, never the reasoning.
 5. **Fix**, one commit per pass, each change with the proof [How far to trust a finding](#how-far-to-trust-a-finding) asks for. Run `pnpm check`. A change that breaks an app ships an alignment.
-6. **Turn finds into rules.** A finding a regex or the AST can catch becomes a `pnpm style` rule in the same PR, so the next run does not pay for it again. A rule that fails on an app's own code needs an alignment too.
+6. **Turn finds into rules.** A finding a regex or the AST can catch becomes a `pnpm cella style` rule, so the next run does not pay for it again. The rules live in `@cellajs/cli`: the rule goes in a cella-cli PR that the run's PR links, and cella takes it with the CLI release. A rule that fails on an app's own code needs an alignment too.
 
 ## Tools
 

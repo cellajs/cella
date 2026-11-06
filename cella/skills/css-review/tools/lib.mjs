@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { lineColumn, repoFiles, repoRoot } from '../../../../shared/scripts/repo-files.ts';
-import { parseSource } from '../../../../shared/scripts/source-comments.ts';
-import { classTexts, classTokens, isClassSource, loadTailwindNode } from '../../../../shared/scripts/tailwind-class-rules.ts';
+import { classTexts, classTokens, isClassSource, lineColumn, loadTailwindNode, openRepository, parseSource, repoFiles } from '@cellajs/cli/style';
 
-export { repoRoot };
+/** The checkout these tools live in. */
+export const repoRoot = join(import.meta.dirname, '../../../..');
+await openRepository(repoRoot);
 
 const git = (args, input) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', input, maxBuffer: 1e9 });
 const read = (file) => readFileSync(join(repoRoot, file), 'utf8');
@@ -45,7 +45,7 @@ export function classStrings(options) {
 export async function freshDesignSystem() {
   const entry = stylesheets().find((file) => /@import\s+['"]tailwindcss['"]/.test(read(file)));
   if (!entry) throw new Error('no frontend stylesheet imports tailwindcss');
-  return loadTailwindNode().__unstable__loadDesignSystem(read(entry), { base: dirname(join(repoRoot, entry)) });
+  return (await loadTailwindNode()).__unstable__loadDesignSystem(read(entry), { base: dirname(join(repoRoot, entry)) });
 }
 
 /** Names of the frontend's own `@utility` (a functional `x-*` without its `-*`) and `@custom-variant` declarations. */
