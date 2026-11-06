@@ -156,6 +156,8 @@ export interface GenRequest {
   path?: GenSchema;
   /** Query parameters, each with its own required flag */
   query?: GenSchema;
+  /** Header parameters, such as the preconditions `If-Match` and `If-None-Match` */
+  headers?: GenSchema;
   /** Request body, with its content type and required flag */
   body?: GenSchema;
   /** Example request body value */
