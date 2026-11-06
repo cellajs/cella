@@ -29,10 +29,10 @@ interface EmailCategoryInput {
  * Turns one email category off or back on from an emailed link, without a session. The link carries the user id and a
  * token that is an HMAC over `userId:category`, so holding it proves it was received in that user's mail and authorizes
  * exactly that one category. The newsletter is a flag on the user; the notification categories are email preferences.
- * @throws AppError 401 `unsubscribe_failed` for a token of another user or category, 404 `not_found` for a deleted user.
+ * @throws AppError 403 `unsubscribe_failed` for a token of another user or category, 404 `not_found` for a deleted user.
  */
 export async function setEmailCategoryOp(ctx: DbContext, { userId, category, token, enabled }: EmailCategoryInput) {
-  if (!verifyCategoryToken(userId, category, token)) throw new AppError(401, 'unsubscribe_failed', 'warn', { entityType: 'user' });
+  if (!verifyCategoryToken(userId, category, token)) throw new AppError(403, 'unsubscribe_failed', 'warn', { entityType: 'user' });
 
   const user = await findUserById(ctx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });

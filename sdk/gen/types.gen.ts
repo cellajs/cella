@@ -4858,9 +4858,9 @@ export type UnsubscribeNotificationsErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized
+   * Forbidden
    */
-  401: UnauthorizedError;
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -4899,9 +4899,9 @@ export type ResubscribeNotificationsErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized
+   * Forbidden
    */
-  401: UnauthorizedError;
+  403: ForbiddenError;
   /**
    * Not found
    */

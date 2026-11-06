@@ -2292,7 +2292,7 @@ export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 404, 429
+ * @returns Possible status codes: 204, 400, 403, 404, 429
  */
 export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<UnsubscribeNotificationsData, ThrowOnError>,
@@ -2315,7 +2315,7 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 404, 429
+ * @returns Possible status codes: 204, 400, 403, 404, 429
  */
 export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<ResubscribeNotificationsData, ThrowOnError>,

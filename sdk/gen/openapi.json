@@ -98,6 +98,15 @@
               "duration": 3600
             }
           },
+          "oneClickUnsubscribeLimiter": {
+            "name": "One-click unsubscribes",
+            "description": "Requests for each IP address, whatever the answer: a mail provider posts many recipients' unsubscribes from one address.",
+            "policy": {
+              "mode": "limit",
+              "points": 1000,
+              "duration": 300
+            }
+          },
           "presignedUrlLimiter": {
             "name": "File links",
             "description": "Requests for each user or service account. One request can cover up to 50 files.",
@@ -11398,7 +11407,7 @@
         "summary": "Open an unsubscribe link",
         "description": "Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners and link previews open links on their own. No auth.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11455,7 +11464,7 @@
         "summary": "Unsubscribe from a notification category",
         "description": "Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
+        "x-rate-limiter": ["oneClickUnsubscribeLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11492,8 +11501,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -11549,8 +11558,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"

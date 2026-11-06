@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb } from '#/db/db';
 import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
@@ -18,6 +18,9 @@ import {
   sentMails,
 } from '../helpers';
 import { clearSecurityTestData } from './helpers';
+
+// The one-click limiter is under test here; a case that counts on it posts from an address of its own.
+vi.unmock('#/middlewares/rate-limiter/core');
 
 /** A user created the way sign-up creates one, subscribed to the newsletter. */
 const signUp = async (label: string) => {
@@ -47,10 +50,10 @@ const openLink = async (link: string) => {
  * Posts an unsubscribe link the way a mail client's one-click unsubscribe does (RFC 8058): a form post with no Origin and
  * no session. `resubscribe` posts the same link's undo as the confirmation page does, from the app's origin.
  */
-const postLink = async (link: string, action: 'unsubscribe' | 'resubscribe' = 'unsubscribe') => {
+const postLink = async (link: string, action: 'unsubscribe' | 'resubscribe' = 'unsubscribe', ip = defaultHeaders['x-forwarded-for']) => {
   const { baseApp } = await import('#/routes');
   const target = link.replace(appConfig.backendUrl, '').replace('/notifications/unsubscribe', `/notifications/${action}`);
-  const oneClick = { 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': defaultHeaders['x-forwarded-for'] };
+  const oneClick = { 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': ip };
   const init = action === 'unsubscribe' ? { headers: oneClick, body: 'List-Unsubscribe=One-Click' } : { headers: defaultHeaders };
   const response = await baseApp.request(target, { method: 'POST', ...init });
   return { status: response.status, body: response.status === 204 ? null : await response.json() };
@@ -82,10 +85,22 @@ describe('Unsubscribe links', () => {
       linkFor(owner.id, 'digest', digestToken.slice(0, -1)),
     ]) {
       const { status, body } = await postLink(target);
-      expect(status, target).toBe(401);
+      expect(status, target).toBe(403);
       expect(body, target).toMatchObject({ type: 'unsubscribe_failed' });
     }
     expect([await emailSettings(owner.id), await emailSettings(other.id)]).toEqual(before);
+  });
+
+  it("must not refuse a recipient's one-click unsubscribe via other recipients' dead links from the same mail provider", async () => {
+    const reader = await signUp('one-click-reader');
+    // A mail provider posts every recipient's one-click from a few addresses, links that no longer verify among them.
+    const provider = `198.51.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
+    const deadLink = linkFor(reader.id, 'digest', '0'.repeat(64));
+
+    for (let n = 0; n < 12; n++) expect((await postLink(deadLink, 'unsubscribe', provider)).status, `dead link ${n}`).toBe(403);
+
+    expect((await postLink(buildUnsubscribeLink(reader.id, 'newsletter'), 'unsubscribe', provider)).status).toBe(204);
+    expect(await emailSettings(reader.id)).toMatchObject({ newsletter: false });
   });
 
   it('changes nothing when a link is only opened, turns off only its category when posted, and turns it back on', async () => {
