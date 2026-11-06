@@ -40,7 +40,8 @@ export const formatMailTime = (iso: string, lng: string) => {
 
 /** The request details as rows in `lng`. A row whose value is unknown is left out; the time is always known. */
 const requestDetailRows = (lng: string, { at, country, browser, os }: RequestDetails): RequestDetailRow[] => {
-  const t = (key: string, values: Record<string, string> = {}) => i18n.t(`backend:email.request_details.${key}`, { lng, ...values, ...plainText });
+  const t = (key: 'browser' | 'browser_value' | 'country' | 'country_value' | 'time', values: Record<string, string> = {}) =>
+    i18n.t(`backend:email.request_details.${key}`, { lng, ...values, ...plainText });
 
   const rows: RequestDetailRow[] = [];
   if (country) rows.push({ label: t('country'), value: t('country_value', { country: countryName(country, lng) }) });

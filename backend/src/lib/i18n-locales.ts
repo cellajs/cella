@@ -1,3 +1,4 @@
+import { toRuntimeNamespaces } from 'shared/utils/locale-namespaces';
 import enApp from '../../../locales/en/app.json';
 import enAppError from '../../../locales/en/appError.json';
 import enBackend from '../../../locales/en/backend.json';
@@ -9,8 +10,8 @@ import nlBackend from '../../../locales/nl/backend.json';
 import nlCommon from '../../../locales/nl/common.json';
 import nlError from '../../../locales/nl/error.json';
 
-/** Configure the locales you need in backend. `app.json` merges into `c`, matching the frontend; `appError.json` holds the app's own error types. */
+/** Every language the backend serves, all loaded at start. A language or a locale file an app adds goes here. */
 export const locales = {
-  en: { backend: enBackend, c: { ...enCommon, ...enApp }, error: enError, appError: enAppError },
-  nl: { backend: nlBackend, c: { ...nlCommon, ...nlApp }, error: nlError, appError: nlAppError },
+  en: toRuntimeNamespaces({ app: enApp, appError: enAppError, backend: enBackend, common: enCommon, error: enError }),
+  nl: toRuntimeNamespaces({ app: nlApp, appError: nlAppError, backend: nlBackend, common: nlCommon, error: nlError }),
 };
