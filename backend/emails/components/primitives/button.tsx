@@ -32,8 +32,8 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
   withBackground = false,
   ...props
 }) => {
-  // arcsize = Math.floor(borderRadius / Min(Width, Height)), as VML roundrect expects.
-  const arcsize = Math.floor((borderRadius / height) * 100);
+  // arcsize = Math.floor(borderRadius / Min(Width, Height)), as VML roundrect expects; 50% is a full pill.
+  const arcsize = Math.min(50, Math.floor((borderRadius / height) * 100));
   const lineHeight = borderSize ? height - 2 * borderSize : height;
 
   const baseStyles = {
