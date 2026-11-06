@@ -1,6 +1,6 @@
+import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { AboutStatement } from '~/modules/marketing/about/section';
 import { Button } from '~/modules/ui/button';
@@ -18,12 +18,12 @@ export function CallToAction() {
         <Button
           variant="ghost"
           size="xl"
-          render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
+          render={<Link to="/docs" />}
           // The glow sits behind the button: an opaque fill and no border keep it a 1px ring outside
           className="glow-button bg-background/95 hover:bg-background active:bg-background dark:hover:bg-background relative rounded-full border-0 px-10"
           press={false}
         >
-          {t('c:start_building')}
+          {t('c:view_docs')}
         </Button>
         <Button ref={buttonRef} variant="secondary" size="xl" onClick={() => contactFormHandler(buttonRef)} className="rounded-full px-10">
           {t('c:talk_to_us')}

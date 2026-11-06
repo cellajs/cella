@@ -41,7 +41,7 @@ interface AboutStatementProps {
   className?: string;
 }
 
-/** A statement whose `<strong>` parts carry the message in the foreground color. */
+/** A statement whose `<strong>` and `<em>` parts carry the message in the foreground color; `glow-underline` marks only `<strong>`. */
 export function AboutStatement({ text, className }: AboutStatementProps) {
   return (
     <p
@@ -50,7 +50,10 @@ export function AboutStatement({ text, className }: AboutStatementProps) {
         className,
       )}
     >
-      <Trans i18nKey={text as never} components={{ strong: <strong className="text-foreground font-semibold" /> }} />
+      <Trans
+        i18nKey={text as never}
+        components={{ strong: <strong className="text-foreground font-semibold" />, em: <em className="text-foreground not-italic" /> }}
+      />
     </p>
   );
 }

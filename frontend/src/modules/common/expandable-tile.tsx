@@ -1,6 +1,7 @@
 import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
 import { ChevronDownIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { AccordionContent } from '~/modules/ui/accordion';
 import { Card } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
@@ -23,18 +24,26 @@ interface TileHeadProps {
   iconLabel?: string;
   title: ReactNode;
   badges?: ReactNode;
+  /** A small icon on the icon's corner, where a status dot sits. */
+  iconBadge?: IconComponent;
   /** A new `pulse` value ripples the dot. */
   status?: { tone: TileTone; label: string; pulse?: number };
   meta: ReactNode;
   wrapMeta?: boolean;
 }
 
-function TileHead({ icon, iconLabel, title, badges, status, meta, wrapMeta }: TileHeadProps) {
+function TileHead({ icon, iconLabel, iconBadge: IconBadge, title, badges, status, meta, wrapMeta }: TileHeadProps) {
   return (
     <>
       {iconLabel && <span className="sr-only">{iconLabel}</span>}
       <span className="relative shrink-0 [&>img]:size-6 [&>svg]:size-6" aria-hidden="true">
         {icon}
+        {/* Centered on the status dot's center; the card fill cuts it out of the icon */}
+        {IconBadge && (
+          <span className="bg-card absolute -right-1.25 -bottom-0.25 flex size-4 items-center justify-center rounded-full">
+            <IconBadge className="size-3" />
+          </span>
+        )}
         {status && (
           <span className={cn('ring-card absolute -right-0.5 bottom-0.5 size-2.5 rounded-full ring-2', tileTones[status.tone].dot)}>
             {/* Inside the dot, so the ripple leaves the dot's ring in place */}

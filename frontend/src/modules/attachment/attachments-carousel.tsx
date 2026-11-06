@@ -235,9 +235,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {items.length > 1 && (
         <>
           <CarouselPrevious className="shadow-floating left-4 size-11 opacity-0 transition-opacity group-hover/carousel:opacity-100 focus-visible:opacity-100 lg:left-8 [&_svg]:size-5" />
+          {/* `--carousel-hidden-end`: the share of the slide a parent pushes past the window edge, which the arrow keeps clear of */}
           <CarouselNext
             ref={nextButtonRef}
-            className="shadow-floating right-4 size-11 opacity-0 transition-opacity group-hover/carousel:opacity-100 focus-visible:opacity-100 lg:right-8 [&_svg]:size-5"
+            className="shadow-floating right-[calc(1rem+var(--carousel-hidden-end,0%))] size-11 opacity-0 transition-opacity group-hover/carousel:opacity-100 focus-visible:opacity-100 lg:right-[calc(2rem+var(--carousel-hidden-end,0%))] [&_svg]:size-5"
           />
         </>
       )}
