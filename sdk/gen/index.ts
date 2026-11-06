@@ -553,6 +553,8 @@ export type {
   RedeemLinkTokenData,
   RedeemLinkTokenError,
   RedeemLinkTokenErrors,
+  RedeemLinkTokenResponse,
+  RedeemLinkTokenResponses,
   RejectInvitationData,
   RejectInvitationError,
   RejectInvitationErrors,

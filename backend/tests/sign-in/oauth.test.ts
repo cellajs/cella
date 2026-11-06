@@ -861,8 +861,8 @@ describe('OAuth Authentication', async () => {
       const { url, token } = mailedLink('verificationLink');
       expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/oauth-verification/${token}`);
       const opened = await openVerificationLink(token);
-      expect(opened.response.status).toBe(303);
-      const verifyStart = new URL(opened.response.headers.get('location') ?? '');
+      expect(opened.response.status).toBe(200);
+      const verifyStart = new URL(opened.redirectTo ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
       expect(verifyStart.searchParams.get('type')).toBe('verify');
       expect(await accountsFor(providerEmail)).toHaveLength(0);

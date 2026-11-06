@@ -1,17 +1,25 @@
-import { useParams } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
+import { useRedeemHeldLinkMutation } from '~/modules/auth/query';
 import { Button } from '~/modules/ui/button';
 
-/**
- * The page an invitation or address verification link leads to. The link is used only on a click here, a form post,
- * so a mail scanner that fetched it used up nothing.
- */
+/** Where an invitation or verification link leads: only a click here redeems it, so a mail scanner that fetched it used up nothing. */
 export function ConfirmLinkPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { type } = useParams({ from: '/_public/auth/confirm-link/$type' });
+
+  const { mutate: redeem, isPending } = useRedeemHeldLinkMutation();
+
+  const onConfirm = () =>
+    redeem(type, {
+      onError: (error) => {
+        const tokenId = typeof error.tokenId === 'string' ? error.tokenId : undefined;
+        navigate({ to: '/auth/error', search: { error: error.type, severity: error.severity, tokenId }, replace: true });
+      },
+    });
 
   const header =
     type === 'invitation'
@@ -21,12 +29,10 @@ export function ConfirmLinkPage() {
   return (
     <>
       <AuthHeader {...header} />
-      <form method="post" action={`${appConfig.backendAuthUrl}/invoke-token/${type}`}>
-        <Button type="submit" size="block">
-          {t('c:continue')}
-          <ArrowRightIcon />
-        </Button>
-      </form>
+      <Button size="block" loading={isPending} onClick={onConfirm}>
+        {t('c:continue')}
+        <ArrowRightIcon />
+      </Button>
     </>
   );
 }

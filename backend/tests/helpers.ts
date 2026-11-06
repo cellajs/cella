@@ -401,19 +401,20 @@ export class CookieJar {
 export const cookiesAfter = (cookieHeader: string, response: Response) => new CookieJar([cookieHeader]).absorb(response).header();
 
 /**
- * Opens an invitation or verification link as a browser does: the GET holds it, and the form post of its confirm page
- * redeems it. `browser` keeps the cookies both answers set. Returns the post's answer, or the GET's when it held nothing.
+ * Opens an invitation or verification link as a browser does: the GET holds it, and its confirm page's POST redeems
+ * it. `browser` keeps the cookies both answers set. Returns the last answer and where it sends the browser: the POST's
+ * `redirectTo`, or the GET's `Location` when the GET held nothing.
  */
 export async function openHeldLink(type: HeldLinkType, token: string, browser = new CookieJar()) {
   const call = await createAppClient();
   const inBrowser = () => ({ ...defaultHeaders, Cookie: browser.header() });
   const opened = await call(invokeToken, { path: { type, token }, headers: inBrowser() });
   browser.absorb(opened.response);
-  if (cookieChange(opened.response, `${type}-pending`) !== 'set') return opened;
+  if (cookieChange(opened.response, `${type}-pending`) !== 'set') return { ...opened, redirectTo: opened.response.headers.get('location') };
 
   const redeemed = await call(redeemLinkToken, { path: { type }, headers: inBrowser() });
   browser.absorb(redeemed.response);
-  return redeemed;
+  return { ...redeemed, redirectTo: (redeemed.data as { redirectTo?: string } | undefined)?.redirectTo ?? null };
 }
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */

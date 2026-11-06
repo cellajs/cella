@@ -70,9 +70,15 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Redeem held link',
     description:
-      'Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.',
+      'Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.',
     request: { params: z.object({ type: z.enum(heldLinkTypes) }) },
-    responses: { 303: { description: 'Redirect with token session', headers: locationSchema }, ...errors(401, 409) },
+    responses: {
+      200: json(
+        'Link redeemed\n\nWhere the browser goes next: the app with the token session, or the provider for a verification.',
+        z.object({ redirectTo: z.string() }),
+      ),
+      ...errors(401, 409),
+    },
   }),
   getTokenData: xRoute({
     method: 'get',

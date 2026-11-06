@@ -95,8 +95,8 @@ describe('Resend an invitation', async () => {
     expect(fresh.secret).toBe(hashToken(rawFresh));
 
     const opened = await openHeldLink('invitation', rawFresh);
-    expect(opened.response.status).toBe(303);
-    expect(opened.response.headers.get('location')).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
+    expect(opened.response.status).toBe(200);
+    expect(opened.redirectTo).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
 
     const old = await invoke(rawToken);
     await expectRefusal(old, 401, 'invitation_not_found');

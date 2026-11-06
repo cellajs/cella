@@ -1056,6 +1056,15 @@ export const zRedeemLinkTokenPath = z.object({
   type: z.enum(['oauth-verification', 'invitation']),
 });
 
+/**
+ * Link redeemed
+ *
+ * Where the browser goes next: the app with the token session, or the provider for a verification.
+ */
+export const zRedeemLinkTokenResponse = z.object({
+  redirectTo: z.string(),
+});
+
 export const zGetTokenDataPath = z.object({
   type: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),

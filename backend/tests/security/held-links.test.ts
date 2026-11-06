@@ -19,8 +19,8 @@ const scannerHeaders = {
 
 /**
  * A mail scanner or a link preview fetches an invitation or address verification link before its owner does. A GET,
- * and a HEAD that runs the GET handler, only hold the link for the app's confirm page, whose form post redeems it, so
- * the owner who opens the link afterwards still can.
+ * and a HEAD that runs the GET handler, only hold the link for the app's confirm page, whose POST redeems it, so the
+ * owner who opens the link afterwards still can.
  */
 describe('invitation and verification links fetched by a scanner', () => {
   const address = (label: string) => `${label}-${nanoid(6)}@security-test.com`.toLowerCase();
@@ -46,8 +46,8 @@ describe('invitation and verification links fetched by a scanner', () => {
 
     // Positive control: the invitee opens the link and confirms it on the page it leads to.
     const opened = await openHeldLink('invitation', rawToken);
-    expect(opened.response.status).toBe(303);
-    expect(opened.response.headers.get('location')).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`);
+    expect(opened.response.status).toBe(200);
+    expect(opened.redirectTo).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`);
     expect(cookieChange(opened.response, 'invitation')).toBe('set');
   });
 
@@ -61,8 +61,8 @@ describe('invitation and verification links fetched by a scanner', () => {
 
     // Positive control: the owner's confirmation redeems the link and goes on to the provider.
     const opened = await openHeldLink('oauth-verification', raw);
-    expect(opened.response.status).toBe(303);
-    expect(new URL(opened.response.headers.get('location') ?? '').pathname).toBe(new URL(`${appConfig.backendAuthUrl}/github`).pathname);
+    expect(opened.response.status).toBe(200);
+    expect(new URL(opened.redirectTo ?? '').pathname).toBe(new URL(`${appConfig.backendAuthUrl}/github`).pathname);
     expect(cookieChange(opened.response, 'oauth-verification')).toBe('set');
   });
 });

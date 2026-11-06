@@ -90,7 +90,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     const browser = new CookieJar([sessionCookie]);
     const opened = await openHeldLink('invitation', mailedLink('confirmUrl').token, browser);
-    expect(opened.response.status).toBe(303);
+    expect(opened.response.status).toBe(200);
 
     const { response } = await accept([browser.header()]);
     expect(response.status).toBe(200);
@@ -237,10 +237,10 @@ describe('Opening a token link while signed in', async () => {
     const me = await createTestUser('my-account@example.com');
     const { rawToken: raw } = await freshInvitation({ email: invitedEmail });
 
-    const { response } = await openHeldLink('invitation', raw, new CookieJar([await createTestSession(me)]));
+    const { response, redirectTo } = await openHeldLink('invitation', raw, new CookieJar([await createTestSession(me)]));
 
-    expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
+    expect(response.status).toBe(200);
+    expect(redirectTo).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
   });
 
   it('keeps an opened invitation usable long enough to sign in to another account', async () => {

@@ -255,6 +255,7 @@ import type {
   PushYjsUpdateResponses,
   RedeemLinkTokenData,
   RedeemLinkTokenErrors,
+  RedeemLinkTokenResponses,
   RejectInvitationData,
   RejectInvitationErrors,
   RejectInvitationResponses,
@@ -419,6 +420,7 @@ import {
   zPublishOrganizationResponse,
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
+  zRedeemLinkTokenResponse,
   zRejectInvitationResponse,
   zRemovePushSubscriptionResponse,
   zResendInvitationResponse,
@@ -747,18 +749,19 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
 /**
  * Redeem held link
  *
- * Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.
+ * Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.
  *
  * **POST /auth/invoke-token/{type}** ·· [redeemLinkToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invoke-token/{type}) ·· _auth · cella_
  *
  * @param {redeemLinkTokenData} options
  * @param {enum} options.path.type - `enum`
- * @returns Possible status codes: 303, 400, 401, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 409, 429
  */
 export const redeemLinkToken = <ThrowOnError extends boolean = true>(
   options: Options<RedeemLinkTokenData, ThrowOnError>,
-): RequestResult<unknown, RedeemLinkTokenErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<unknown, RedeemLinkTokenErrors, ThrowOnError, 'data'>({
+): RequestResult<RedeemLinkTokenResponses, RedeemLinkTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RedeemLinkTokenResponses, RedeemLinkTokenErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRedeemLinkTokenResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/invoke-token/{type}',
     ...options,

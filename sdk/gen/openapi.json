@@ -5513,7 +5513,7 @@
         "operationId": "redeemLinkToken",
         "tags": ["auth", "cella"],
         "summary": "Redeem held link",
-        "description": "Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.",
+        "description": "Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -5528,14 +5528,19 @@
           }
         ],
         "responses": {
-          "303": {
-            "description": "Redirect with token session",
-            "headers": {
-              "Location": {
+          "200": {
+            "description": "Link redeemed\n\nWhere the browser goes next: the app with the token session, or the provider for a verification.",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
-                },
-                "required": true
+                  "type": "object",
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["redirectTo"]
+                }
               }
             }
           },

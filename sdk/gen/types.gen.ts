@@ -1635,6 +1635,19 @@ export type RedeemLinkTokenErrors = {
 
 export type RedeemLinkTokenError = RedeemLinkTokenErrors[keyof RedeemLinkTokenErrors];
 
+export type RedeemLinkTokenResponses = {
+  /**
+   * Link redeemed
+   *
+   * Where the browser goes next: the app with the token session, or the provider for a verification.
+   */
+  200: {
+    redirectTo: string;
+  };
+};
+
+export type RedeemLinkTokenResponse = RedeemLinkTokenResponses[keyof RedeemLinkTokenResponses];
+
 export type GetTokenDataData = {
   body?: never;
   path: {
