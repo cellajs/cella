@@ -37,10 +37,11 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
       {/* The fallback is the container, so the letters scale with the avatar; a user's two letters at every size, bolder below size-6 and a step smaller above it */}
       <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
         <span className="sr-only">{name}</span>
+        {/* Trimmed to cap height and baseline, so the fallback centers the letters: Inter's line box sits them about 1px high */}
         <div
           aria-hidden
           className={cn(
-            'more-contrast:text-black/85 flex h-full items-center justify-center text-[50cqi] leading-none font-semibold text-black/50 transition-colors',
+            'more-contrast:text-black/85 text-[50cqi] leading-none font-semibold text-black/50 transition-colors [text-box:trim-both_cap_alphabetic]',
             isUser && '@max-[1.5rem]:font-bold @min-[calc(1.5rem+1px)]:text-[40cqi]',
           )}
         >
