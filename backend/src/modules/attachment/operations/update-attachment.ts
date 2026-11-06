@@ -38,7 +38,7 @@ export async function updateAttachmentOp(ctx: ActorContext, id: string, input: U
       stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
     };
     const updated = await updateAttachment(txCtx, { id, values });
-    if (!updated) assertNoWriteBetween(txCtx, 'attachment');
+    if (!updated) assertNoWriteBetween(txCtx, 'attachment', id);
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
     await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;

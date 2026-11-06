@@ -39,7 +39,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
 
   const values = { ...input, ...updateStamps(actorId) };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
-  if (!updatedRecord) assertNoWriteBetween(ctx, 'organization');
+  if (!updatedRecord) assertNoWriteBetween(ctx, 'organization', organization.id);
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });

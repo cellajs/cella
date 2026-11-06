@@ -30,7 +30,7 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
 
   // A draft another call published meanwhile is that call's to send for.
   const raced = wasDraft && !stamped;
-  if (raced) assertNoWriteBetween(ctx, 'organization');
+  if (raced) assertNoWriteBetween(ctx, 'organization', organization.id);
   const { dispatched } = raced ? { dispatched: 0 } : await dispatchDeferredInvites(ctx, { channelIds: [organization.id], organization });
 
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);

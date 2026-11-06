@@ -56,7 +56,7 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
         stx: stripChangedFields(attachmentsTable.stx),
       },
     });
-    if (!updated) assertNoWriteBetween(txCtx, 'attachment');
+    if (!updated) assertNoWriteBetween(txCtx, 'attachment', id);
     await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;
   });

@@ -8,6 +8,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checksAuthoringRules } from '#/core/openapi-validation';
 import { maxLength } from '#/db/utils/constraints';
+import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
 type SingleEntityType = ChannelEntityType | ProductEntityType;
@@ -23,8 +24,8 @@ export type WritePreconditions = {
   ifMatch?: TagList;
   ifNoneMatch?: TagList;
   evaluated: boolean;
-  /** The `updatedAt` a listed tag was compared with, which `preconditionWhere` keeps the write to. */
-  pinned?: { updatedAt: string | null };
+  /** The row and `updatedAt` a listed tag was compared with, which `preconditionWhere` keeps the write of that row to. */
+  pinned?: { id: string; updatedAt: string | null };
 };
 
 export type PreconditionContext = { var: Pick<Env['Variables'], 'preconditions'> };
@@ -80,25 +81,40 @@ export const checkPreconditions = (ctx: PreconditionContext, entityType: string,
   const tag = entityTag(entityType, row.id, row.updatedAt);
   const { ifMatch, ifNoneMatch } = conditions;
   if ((ifMatch && !strongMatch(ifMatch, tag)) || (ifNoneMatch && weakMatch(ifNoneMatch, tag))) throw preconditionFailed(conditions.entityType);
-  if (Array.isArray(ifMatch) || Array.isArray(ifNoneMatch)) conditions.pinned = { updatedAt: row.updatedAt };
+  if (Array.isArray(ifMatch) || Array.isArray(ifNoneMatch)) conditions.pinned = { id: row.id, updatedAt: row.updatedAt };
 };
 
+/** Preconditions no read compared, which a write must not pass: anything but `If-Match: *`, which any row meets. */
+const leftUnchecked = ({ evaluated, ifMatch, ifNoneMatch }: WritePreconditions) =>
+  !evaluated && (Array.isArray(ifMatch) || ifNoneMatch !== undefined);
+
 /**
- * The WHERE condition of a single-entity write whose preconditions held: `updated_at` still holds the version they were
- * compared with, to the millisecond the tag was computed from. Undefined without preconditions, which `and()` drops.
+ * The WHERE condition of a single-entity write to `table`: the row the preconditions were compared with still holds
+ * that version, to the millisecond the tag was computed from, and any other row of the table is left to the rest of
+ * the condition. Preconditions no read compared match no row, so the write answers 412 (`assertNoWriteBetween`).
+ * Undefined without preconditions or for another entity's table, which `and()` drops.
  */
-export const preconditionWhere = (ctx: PreconditionContext, table: { updatedAt: PgColumn }): SQL | undefined => {
-  const pinned = ctx.var.preconditions?.pinned;
-  return pinned && sql`date_trunc('milliseconds', ${table.updatedAt}) IS NOT DISTINCT FROM ${pinned.updatedAt}::timestamptz`;
+export const preconditionWhere = (ctx: PreconditionContext, table: { id: PgColumn; updatedAt: PgColumn }): SQL | undefined => {
+  const conditions = ctx.var.preconditions;
+  if (!conditions || getEntityTable(conditions.entityType) !== table) return undefined;
+  const { pinned } = conditions;
+  if (pinned) {
+    return sql`(${table.id} <> ${pinned.id} OR date_trunc('milliseconds', ${table.updatedAt}) IS NOT DISTINCT FROM ${pinned.updatedAt}::timestamptz)`;
+  }
+  return leftUnchecked(conditions) ? sql`false` : undefined;
 };
 
 /**
- * For a single-entity write that matched no row: with a pinned version (`preconditionWhere`), a write landed between
- * the check and this one. Without preconditions it leaves the outcome to the caller.
+ * For a single-entity write of row `id` that matched no row: with a pinned version (`preconditionWhere`) a write
+ * landed between the check and this one, and preconditions no read compared refuse the write. Otherwise it leaves the
+ * outcome to the caller.
  * @throws AppError 412 `precondition_failed`.
  */
-export const assertNoWriteBetween = (ctx: PreconditionContext, entityType: SingleEntityType) => {
-  if (ctx.var.preconditions?.pinned) throw preconditionFailed(entityType);
+export const assertNoWriteBetween = (ctx: PreconditionContext, entityType: SingleEntityType, id: string) => {
+  const conditions = ctx.var.preconditions;
+  if (!conditions || conditions.entityType !== entityType) return;
+  const target = conditions.pinned?.id ?? conditions.id.toLowerCase();
+  if (target === id.toLowerCase() && (conditions.pinned || leftUnchecked(conditions))) throw preconditionFailed(entityType);
 };
 
 const entityTypeOfIdParam = new Map<string, SingleEntityType>(
