@@ -10,6 +10,7 @@ import { inactiveMembershipSchema } from '#/modules/memberships/memberships-sche
 import { enabledOAuthProvidersSchema, userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import { validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
+import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 
 /** A session row as stored, secret and revoker omitted: what a revoke returns. */
 export const sessionBaseSchema = createSelectSchema(sessionsTable).omit({ revokedBy: true });
@@ -87,7 +88,7 @@ export const uploadTokenSchema = z
 
 export const uploadTokenQuerySchema = z.object({ organizationId: validUuidSchema.optional(), templateId: z.enum(appConfig.uploadTemplateIds) });
 
-export const updateMeBodySchema = userUpdateBodySchema.extend({ userFlags: userFlagsSchema.partial().optional() });
+export const updateMeBodySchema = userUpdateBodySchema.extend({ userFlags: mergePatchSchema(userFlagsSchema).optional() });
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 

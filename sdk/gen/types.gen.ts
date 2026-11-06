@@ -3326,7 +3326,7 @@ export type UpdateMeData = {
     thumbnailUrl?: string | null;
     slug?: string;
     userFlags?: {
-      finishedOnboarding?: boolean;
+      finishedOnboarding?: boolean | null;
     };
   };
   path?: never;
@@ -5209,13 +5209,13 @@ export type UpdateOrganizationData = {
     };
     toolsConfig?: {
       'organization.settings'?: {
-        order?: Array<string>;
-        hidden?: Array<string>;
-      };
+        order?: Array<string> | null;
+        hidden?: Array<string> | null;
+      } | null;
       'organization.tabs'?: {
-        order?: Array<string>;
-        hidden?: Array<string>;
-      };
+        order?: Array<string> | null;
+        hidden?: Array<string> | null;
+      } | null;
     };
   };
   headers?: {
@@ -6595,30 +6595,33 @@ export type UpdateTenantData = {
     subscriptionPlan?: string | null;
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
     /**
-     * Partial restrictions override
+     * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */
     restrictions?: {
       /**
        * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
        */
       quotas?: {
-        user?: number;
-        organization?: number;
-        attachment?: number;
-        serviceAccount?: number;
-        apiKey?: number;
-      };
-      allowUnregisteredClients?: boolean;
+        user?: number | null;
+        organization?: number | null;
+        attachment?: number | null;
+        serviceAccount?: number | null;
+        apiKey?: number | null;
+      } | null;
       rateLimits?: {
         /**
          * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
          */
-        apiPointsPerHour?: number;
+        apiPointsPerHour?: number | null;
         /**
          * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
          */
-        invitationMailsPerDay?: number;
-      };
+        invitationMailsPerDay?: number | null;
+      } | null;
+      /**
+       * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
+       */
+      allowUnregisteredClients?: boolean | null;
     };
   };
   path: {

@@ -326,7 +326,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `boundedRecord` in `backend/src/schemas/common-schemas.ts`.
   - JSON columns (17 files): `tenants.restrictions` in `backend/src/modules/tenants/tenants-db.ts`; `toolsConfig` in `backend/src/db/utils/channel-columns.ts`; organization settings are `organizationFlags` and `setupConfig` in `backend/src/modules/organization/organization-db.ts`.
   - `frontend/src/query/` cache merges. Persisted stores: `ui-store.ts`, `user-store.ts`, `navigation-store.ts`, `board-store.ts`, `offline-files-store.ts`, `docs-search-store.ts` (under `frontend/src/modules/...`) and `frontend/src/query/realtime/sync-store.ts`.
-  - `backend/src/db/utils/jsonb-merge.ts`: the one merge helper (SQL `col || jsonb`). `backend/src/core/stx/*` (stx field maps).
+  - `backend/src/utils/merge-patch.ts`: the one merge helper (`applyMergePatch`, RFC 7396, on the row an update locked; `userFlags` merge in SQL, `||` with the nulls stripped). `backend/src/core/stx/*` (stx field maps).
   - `shared/src/config-builder/utils.ts` (`mergeDeep`, config build only; skips `__proto__`, `constructor`, `prototype`).
   - `shared/src/utils/derive-description-core.ts`, `backend/src/modules/yjs/helpers/sanitize-block-media.ts` (`JSON.parse` of block JSON).
   - Test: `backend/tests/security/request-bodies.test.ts`.
@@ -334,7 +334,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `request-bodies`: every array and record in the OpenAPI document has a size bound (a record with a million keys).
   - Zod 4 drops `__proto__` from record and object input.
   - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
-  - jsonb merge is done in SQL from `JSON.stringify` of the parsed value, so a JS object merge never sees stored keys.
+  - `applyMergePatch` merges the parsed patch into the stored value and skips `__proto__`, `constructor` and `prototype` keys on top of Zod dropping `__proto__`.
   - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` map; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).
 - **Asks:** a record with `__proto__` through every record-taking route; the JSON column table; the dexie and immer version minimums.

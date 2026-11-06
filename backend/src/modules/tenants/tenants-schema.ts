@@ -8,6 +8,7 @@ import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/mo
 import { mockTenantResponse } from '#/modules/tenants/tenants-mocks';
 import { listQuerySchema, minimalBaseSchema, orderByQuerySchema, validNameSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
+import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 
 const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
@@ -58,20 +59,6 @@ export const tenantSchema = z
 
 export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, { name: validNameSchema }).pick({ name: true });
 
-const partialRestrictionsSchema = z
-  .object({
-    quotas: z
-      .partialRecord(z.enum(quotaKeys), z.number().int().min(0))
-      .optional()
-      .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)'),
-    allowUnregisteredClients: z.boolean().optional(),
-    rateLimits: rateLimitsSchema.partial().optional(),
-  })
-  .describe('Partial restrictions override');
-
-/** A partial restrictions update, or a stored row that predates a field: what `mergeRestrictions` lays over a base. */
-export type RestrictionsPatch = z.infer<typeof partialRestrictionsSchema>;
-
 export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
   status: tenantStatusSchema,
@@ -80,7 +67,11 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
 })
   .pick({ name: true, status: true, subscriptionId: true, subscriptionStatus: true, subscriptionPlan: true, authStrategies: true })
   .partial()
-  .extend({ restrictions: partialRestrictionsSchema.optional() });
+  .extend({
+    restrictions: mergePatchSchema(restrictionsSchema)
+      .optional()
+      .describe("A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again."),
+  });
 
 export const tenantListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['createdAt', 'name'], 'createdAt desc'),

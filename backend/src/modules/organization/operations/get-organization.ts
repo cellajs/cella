@@ -9,7 +9,7 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
 export async function getOrganizationOp(ctx: ActorContext, id: string, opts: { bySlug?: boolean; include: string[] }) {
   const { bySlug, include } = opts;
 
-  const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', bySlug);
+  const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', { bySlug });
 
   return toOrganizationResponse(ctx, entity, membership, { counts: include.includes('counts'), membership: include.includes('membership') });
 }

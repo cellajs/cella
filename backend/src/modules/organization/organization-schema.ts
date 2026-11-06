@@ -27,6 +27,7 @@ import {
 import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
 import { auditShape } from '#/schemas/entity-base';
+import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 import { toolsConfigSchema } from '#/schemas/tools-config';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
@@ -84,9 +85,9 @@ export const organizationContract = evolutionContract.channel('organization', {
     bannerUrl: validCDNUrlSchema.nullable(),
     logoUrl: validCDNUrlSchema.nullable(),
     welcomeText: z.string().max(maxLength.html).nullable(),
-    organizationFlags: organizationFlagsSchema.partial(),
-    setupConfig: setupConfigSchema.partial(),
-    toolsConfig: toolsConfigSchema,
+    organizationFlags: mergePatchSchema(organizationFlagsSchema),
+    setupConfig: mergePatchSchema(setupConfigSchema),
+    toolsConfig: mergePatchSchema(toolsConfigSchema),
   })
     .pick({
       slug: true,

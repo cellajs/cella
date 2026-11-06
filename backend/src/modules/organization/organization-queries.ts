@@ -3,7 +3,6 @@ import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'driz
 import type { EntityRole } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
-import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -54,24 +53,14 @@ interface UpdateOrganizationOpts {
 }
 
 /**
- * Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. Undefined when no row matched, as
- * when a write moved the row past the request's preconditions (`preconditionWhere`).
+ * Writes `values` to the organization within the request's tenant. Undefined when no row matched, as when a write
+ * moved the row past the request's preconditions (`preconditionWhere`).
  */
 export const updateOrganization = async (ctx: ActorContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
-  const { organizationFlags, setupConfig, toolsConfig, ...rest } = values;
-
-  const updateData = {
-    ...rest,
-    ...(organizationFlags && { organizationFlags: mergeJsonbShallow(organizationsTable.organizationFlags, organizationFlags) }),
-    ...(setupConfig && { setupConfig: mergeJsonbShallow(organizationsTable.setupConfig, setupConfig) }),
-    // For toolsConfig each listed slot key replaces that slot's stored arrangement wholesale
-    ...(toolsConfig && { toolsConfig: mergeJsonbShallow(organizationsTable.toolsConfig, toolsConfig) }),
-  };
-
   const [updated] = await db
     .update(organizationsTable)
-    .set(updateData)
+    .set(values)
     .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId), preconditionWhere(ctx, organizationsTable)))
     .returning();
   return updated;

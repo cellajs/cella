@@ -1526,7 +1526,7 @@ export const zUpdateMeBody = z.object({
     .optional(),
   userFlags: z
     .object({
-      finishedOnboarding: z.boolean().optional(),
+      finishedOnboarding: z.boolean().nullish(),
     })
     .optional(),
 });
@@ -2303,16 +2303,16 @@ export const zUpdateOrganizationBody = z.object({
     .object({
       'organization.settings': z
         .object({
-          order: z.array(z.string().max(255)).max(100).optional(),
-          hidden: z.array(z.string().max(255)).max(100).optional(),
+          order: z.array(z.string().max(255)).max(100).nullish(),
+          hidden: z.array(z.string().max(255)).max(100).nullish(),
         })
-        .optional(),
+        .nullish(),
       'organization.tabs': z
         .object({
-          order: z.array(z.string().max(255)).max(100).optional(),
-          hidden: z.array(z.string().max(255)).max(100).optional(),
+          order: z.array(z.string().max(255)).max(100).nullish(),
+          hidden: z.array(z.string().max(255)).max(100).nullish(),
         })
-        .optional(),
+        .nullish(),
     })
     .optional(),
 });
@@ -2795,20 +2795,20 @@ export const zUpdateTenantBody = z.object({
     .object({
       quotas: z
         .object({
-          user: z.int().gte(0).optional(),
-          organization: z.int().gte(0).optional(),
-          attachment: z.int().gte(0).optional(),
-          serviceAccount: z.int().gte(0).optional(),
-          apiKey: z.int().gte(0).optional(),
+          user: z.int().gte(0).nullish(),
+          organization: z.int().gte(0).nullish(),
+          attachment: z.int().gte(0).nullish(),
+          serviceAccount: z.int().gte(0).nullish(),
+          apiKey: z.int().gte(0).nullish(),
         })
-        .optional(),
-      allowUnregisteredClients: z.boolean().optional(),
+        .nullish(),
       rateLimits: z
         .object({
-          apiPointsPerHour: z.int().gte(0).optional(),
-          invitationMailsPerDay: z.int().gte(0).optional(),
+          apiPointsPerHour: z.int().gte(0).nullish(),
+          invitationMailsPerDay: z.int().gte(0).nullish(),
         })
-        .optional(),
+        .nullish(),
+      allowUnregisteredClients: z.boolean().nullish(),
     })
     .optional(),
 });

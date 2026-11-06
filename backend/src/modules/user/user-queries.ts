@@ -14,6 +14,7 @@ import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/module
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { getIsoDate } from '#/utils/iso-date';
+import type { MergePatch } from '#/utils/merge-patch';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
 
@@ -304,18 +305,19 @@ export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => 
 
 interface UpdateUserOpts {
   id: string;
-  values: Partial<Omit<InsertUserModel, 'userFlags'>> & { userFlags?: Partial<Record<keyof UserFlags, boolean>> };
+  values: Partial<Omit<InsertUserModel, 'userFlags'>> & { userFlags?: MergePatch<UserFlags> };
 }
 
 /**
- * Writes `values` to one user: an undefined value leaves its column, and `userFlags` merge into the stored flags.
+ * Writes `values` to one user: an undefined value leaves its column, and `userFlags` is a merge patch (RFC 7396) of
+ * the stored flags. Flags are flat booleans, so `||` with the nulls stripped is that merge, in one statement.
  * @returns The updated row, undefined when no user has `id`.
  */
 export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts) => {
   const { userFlags, ...rest } = values;
   const [updated] = await ctx.var.db
     .update(usersTable)
-    .set({ ...rest, ...(userFlags && { userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb` }) })
+    .set({ ...rest, ...(userFlags && { userFlags: sql`jsonb_strip_nulls(${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb)` }) })
     .where(eq(usersTable.id, id))
     .returning();
   return updated;

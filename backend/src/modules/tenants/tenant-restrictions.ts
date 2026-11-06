@@ -1,7 +1,8 @@
 import { appConfig, type EntityType, recordFromKeys } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { Restrictions, RestrictionsPatch } from '#/modules/tenants/tenants-schema';
+import type { Restrictions } from '#/modules/tenants/tenants-schema';
+import { applyMergePatch, type MergePatch } from '#/utils/merge-patch';
 
 /** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
 const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
@@ -36,12 +37,5 @@ export const assertTenantQuota = (ctx: ActorContext, key: QuotaKey, existing: nu
   throw new AppError(403, 'restrict_by_app', 'warn', { ...(entityType && { entityType }), meta: { resource: key, quota } });
 };
 
-/** Lays `patch` over `base` field by field, so a key the patch leaves out keeps the base's value. */
-export const mergeRestrictions = (base: Restrictions, patch?: RestrictionsPatch | null): Restrictions => ({
-  quotas: { ...base.quotas, ...patch?.quotas },
-  rateLimits: { ...base.rateLimits, ...patch?.rateLimits },
-  allowUnregisteredClients: patch?.allowUnregisteredClients ?? base.allowUnregisteredClients,
-});
-
-/** Merge stored restrictions with current defaults so stored rows gain missing fields. */
-export const normalizeRestrictions = (stored?: Partial<Restrictions> | null): Restrictions => mergeRestrictions(defaultRestrictions(), stored);
+/** Stored restrictions laid over the current defaults, so a row gains the fields it predates or a patch removed. */
+export const normalizeRestrictions = (stored?: MergePatch<Restrictions> | null): Restrictions => applyMergePatch(defaultRestrictions(), stored ?? {});

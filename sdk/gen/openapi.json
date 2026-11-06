@@ -8247,7 +8247,7 @@
                     "type": "object",
                     "properties": {
                       "finishedOnboarding": {
-                        "type": "boolean"
+                        "type": ["boolean", "null"]
                       }
                     }
                   }
@@ -8303,7 +8303,7 @@
                     "type": "object",
                     "properties": {
                       "finishedOnboarding": {
-                        "type": "boolean"
+                        "type": ["boolean", "null"]
                       }
                     }
                   }
@@ -12577,10 +12577,10 @@
                     "type": "object",
                     "properties": {
                       "organization.settings": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "order": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12588,7 +12588,7 @@
                             "maxItems": 100
                           },
                           "hidden": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12598,10 +12598,10 @@
                         }
                       },
                       "organization.tabs": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "order": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12609,7 +12609,7 @@
                             "maxItems": 100
                           },
                           "hidden": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12718,10 +12718,10 @@
                     "type": "object",
                     "properties": {
                       "organization.settings": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "order": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12729,7 +12729,7 @@
                             "maxItems": 100
                           },
                           "hidden": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12739,10 +12739,10 @@
                         }
                       },
                       "organization.tabs": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "order": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -12750,7 +12750,7 @@
                             "maxItems": 100
                           },
                           "hidden": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string",
                               "maxLength": 255
@@ -15534,51 +15534,52 @@
                     "type": "object",
                     "properties": {
                       "quotas": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "user": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "organization": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "attachment": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "serviceAccount": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "apiKey": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           }
                         },
                         "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
                       },
-                      "allowUnregisteredClients": {
-                        "type": "boolean"
-                      },
                       "rateLimits": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "apiPointsPerHour": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                           },
                           "invitationMailsPerDay": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
                           }
                         }
+                      },
+                      "allowUnregisteredClients": {
+                        "type": ["boolean", "null"],
+                        "description": "Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)"
                       }
                     },
-                    "description": "Partial restrictions override"
+                    "description": "A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again."
                   }
                 }
               }
@@ -15621,51 +15622,52 @@
                     "type": "object",
                     "properties": {
                       "quotas": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "user": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "organization": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "attachment": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "serviceAccount": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "apiKey": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0
                           }
                         },
                         "description": "Caps per tenant on entities, service accounts and API keys (0 = unlimited)"
                       },
-                      "allowUnregisteredClients": {
-                        "type": "boolean"
-                      },
                       "rateLimits": {
-                        "type": "object",
+                        "type": ["object", "null"],
                         "properties": {
                           "apiPointsPerHour": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)"
                           },
                           "invitationMailsPerDay": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 0,
                             "description": "Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)"
                           }
                         }
+                      },
+                      "allowUnregisteredClients": {
+                        "type": ["boolean", "null"],
+                        "description": "Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)"
                       }
                     },
-                    "description": "Partial restrictions override"
+                    "description": "A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again."
                   }
                 }
               }
