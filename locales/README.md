@@ -8,7 +8,7 @@
 
 ### Editor hover
 
-`t('c:accept')` types as its English text, `"Accept"`, so any TypeScript editor shows the text on hover. The types come from `resources.gen.d.ts`, which the frontend's locales plugin writes at every dev start and build: never edit it. A key added since then types as `string` until the next start.
+`t('c:accept')` types as its English text, `"Accept"`, so any TypeScript editor shows the text on hover. The types come from `resources.gen.d.ts`, generated and kept out of git: `pnpm install`, `pnpm ts` and every Vite start and build write it. A key added since then types as `string` until the next one.
 
 ### i18n Ally (VSCode)
 
