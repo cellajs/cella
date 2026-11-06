@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import { readFileSync } from 'node:fs';
-import { appConfig } from 'shared';
+import { appConfig, typedEntries } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
 import { emailFrame } from '../../emails/frame';
@@ -11,7 +11,9 @@ import { render } from '../../emails/renderer/render';
 import { accountSecurityEmail } from '../../emails/templates/account-security';
 
 // English is the source of truth for email.* keys.
-const enEmailKeys = Object.keys(enBackend).filter((k) => k.startsWith('email.'));
+const enEmailKeys = typedEntries(enBackend)
+  .map(([key]) => key)
+  .filter((key) => key.startsWith('email.'));
 
 /** A missing translation is fine as long as the fallback produces real text, not a raw key. */
 describe('email translation fallback', () => {
@@ -20,7 +22,7 @@ describe('email translation fallback', () => {
       const broken: string[] = [];
 
       for (const key of enEmailKeys) {
-        const result = i18n.t(`backend:${key}`, { lng });
+        const result: string = i18n.t(`backend:${key}`, { lng });
         // i18next returns the key itself when it cannot resolve it.
         if (result === key || result === `backend:${key}`) {
           broken.push(key);

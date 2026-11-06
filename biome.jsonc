@@ -29,7 +29,8 @@
       "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
-      "locales",
+      "locales/**",
+      "!locales/resources.gen.d.ts",
       "sdk/openapi-ts.config.ts",
       // Agent worktrees stay out of the index, which `pnpm sdk` walks with the ignore file off.
       "!!.claude"
@@ -537,6 +538,17 @@
           },
           "performance": {
             "noAccumulatingSpread": "off"
+          }
+        }
+      }
+    },
+    {
+      // Keys in sort order, so a key is found by name and two edits to one file rarely meet
+      "includes": ["locales/**/*.json"],
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "on"
           }
         }
       }

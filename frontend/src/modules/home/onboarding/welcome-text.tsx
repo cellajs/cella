@@ -14,7 +14,7 @@ export function WelcomeText({ invitations, onStart }: WelcomeTextProps) {
 
   // An invited user is greeted with what they came for, not with the pitch for starting something new.
   const [firstInvitation] = invitations;
-  let text = t('c:onboarding_welcome.text');
+  let text: string = t('c:onboarding_welcome.text');
   if (invitations.length > 1) text = t('c:onboarding_welcome_invitations.text', { count: invitations.length });
   else if (firstInvitation) text = t('c:onboarding_welcome_invited.text', { entityName: firstInvitation.entity.name });
 

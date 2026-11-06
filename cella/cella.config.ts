@@ -34,6 +34,7 @@ export default defineConfig({
       'frontend/public/static/common',
       'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
+      'locales/resources.gen.d.ts',
       // Routes of the app-owned marketing module
       'frontend/src/routes/_public/_marketing',
       'frontend/src/routes/_public/_marketing.tsx',

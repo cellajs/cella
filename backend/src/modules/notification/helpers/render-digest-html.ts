@@ -44,7 +44,8 @@ export function htmlToExcerpt(html: string, maxLength: number): string {
  * @returns The line, safe to place in the digest's HTML list.
  */
 export function describeDigestRow(type: string, contextTitle: string, lng: string): string {
-  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-' });
+  // The types cannot close a key built from the type: `defaultValue` opens them, and the generic line always resolves first
+  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-', defaultValue: '' });
 }
 
 /**
