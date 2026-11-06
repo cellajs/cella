@@ -13,7 +13,7 @@ import {
   type XMiddlewareHandler,
   type XRouteProps,
 } from '#/core/openapi-extensions';
-import { checksAuthoringRules, recordDocumentedErrors } from '#/core/openapi-validation';
+import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -102,6 +102,8 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const route = `${config.operationId} (${config.method} ${config.path})`;
+  const verb = /\/~([^/]+)$/.exec(config.path)?.[1];
+  if (verb) recordCustomVerb(verb);
   // A read declares a limiter only where its own budget differs from the read pace.
   const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
   const extensionMiddleware = collectExtensionMiddleware(limited);

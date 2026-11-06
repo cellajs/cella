@@ -7700,6 +7700,23 @@
                   }
                 }
               }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mentionEmail": {
+                    "type": "boolean"
+                  },
+                  "commentEmail": {
+                    "type": "boolean"
+                  },
+                  "digest": {
+                    "type": "string",
+                    "enum": ["off", "daily", "weekly"]
+                  }
+                }
+              }
             }
           }
         },

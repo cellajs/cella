@@ -9,10 +9,57 @@ export const checksAuthoringRules = appConfig.mode === 'development' || appConfi
 /** The parts of a generated OpenAPI document these checks read. */
 type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
 
-/** Normalize generated OpenAPI fields that need source-library compatibility fixes, and fold the shared error responses into their `$ref`s. */
+/**
+ * Normalize generated OpenAPI fields that need source-library compatibility fixes, fold the shared error responses into
+ * their `$ref`s, and give custom methods and updates their AEP form.
+ */
 export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
   foldErrorResponses(doc);
+  documentCustomMethods(doc);
+  documentMergePatch(doc);
+};
+
+/**
+ * Verbs routes declare as custom methods. A router matches no literal after a path param, so a route declares the
+ * custom method `:verb` at the routable path `/~verb`, and the server rewrites a request for `<resource>:<verb>` to it.
+ */
+const customVerbs = new Set<string>();
+
+export const recordCustomVerb = (verb: string) => {
+  customVerbs.add(verb);
+};
+
+/** A last segment `<resource>:<verb>`, the colon sent as is or percent-encoded. */
+const customMethodSuffix = /(?::|%3[aA])([a-z][a-z0-9-]*)$/;
+
+/**
+ * The routable path of a request path that ends in a custom method a route declares: `<x>:<verb>` as `<x>/~<verb>`.
+ * @returns Undefined for any other path, so a param value holding a colon reaches its route as sent.
+ */
+export const routablePath = (path: string): string | undefined => {
+  const match = customMethodSuffix.exec(path);
+  return match && customVerbs.has(match[1]) ? `${path.slice(0, match.index)}/~${match[1]}` : undefined;
+};
+
+/** The paths of the document as clients send them: a custom method's `/~verb` as `:verb`. */
+const documentCustomMethods = (doc: OpenApiDocument) => {
+  if (!doc.paths) return;
+  doc.paths = Object.fromEntries(Object.entries(doc.paths).map(([path, item]) => [path.replace(/\/~([a-z][a-z0-9-]*)$/, ':$1'), item]));
+};
+
+type RequestBodyNode = { content?: Record<string, unknown> };
+
+/**
+ * An update takes a JSON Merge Patch (RFC 7396): the JSON body validator accepts every `+json` media type, so a patch
+ * route's `application/json` body is documented as `application/merge-patch+json` too.
+ */
+const documentMergePatch = (doc: OpenApiDocument) => {
+  const paths = (doc.paths ?? {}) as Record<string, { patch?: { requestBody?: RequestBodyNode } }>;
+  for (const { patch } of Object.values(paths)) {
+    const content = patch?.requestBody?.content;
+    if (content?.['application/json']) content['application/merge-patch+json'] = content['application/json'];
+  }
 };
 
 /** Per `operationId`, the error statuses its route documents: `createXRoute` records them, the error handler reads them where authoring rules are checked. */
