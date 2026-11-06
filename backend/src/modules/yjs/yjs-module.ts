@@ -7,19 +7,6 @@ import { recordYjsOutsideWrite } from '#/modules/yjs/operations/record-outside-w
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { yjsHandlers } from '#/modules/yjs/yjs-handlers';
 import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
-import type { EntityModel } from '#/tables';
-
-type ProductRow = EntityModel<ProductEntityType>;
-
-/**
- * True when the write itself wrote the row's description: the stx it stored names the fields it wrote (`buildStx`).
- * An op that reads `before` without locking the row may read it ahead of another write, so a description committed in
- * between differs from it although this write left the description alone. Comparing with it only screens out a set an
- * earlier write left in the stx, from an op that keeps the stored stx on a write that changes nothing
- * (updateAttachmentOp strips the set then).
- */
-const wroteDescription = (row: ProductRow, before: ProductRow | undefined) =>
-  row.stx.changedFields?.includes('description') === true && row.description !== before?.description;
 
 /**
  * A description written by anything but the relay (a REST update, an MCP tool, an import) becomes an update of the
@@ -29,12 +16,13 @@ const wroteDescription = (row: ProductRow, before: ProductRow | undefined) =>
  * Only entity types with a materializer hold documents.
  */
 const recordOnUpdate = (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.updated`> => {
-  return async (ctx, { before = [], after = [] }) => {
+  return async (ctx, { after = [], changedFields = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
     await assertMaterializeWindow(ctx, { entityType, rows: after });
     const relayEntityId = yjsMaterializeWindow.getStore()?.entityId;
-    const written = after.filter((row, index) => row.id !== relayEntityId && wroteDescription(row, before[index]));
+    // The write's own field list says whether it wrote the description.
+    const written = after.filter((row, index) => row.id !== relayEntityId && changedFields[index]?.includes('description'));
     await recordYjsOutsideWrite(ctx, { entityType, rows: written });
   };
 };

@@ -6,7 +6,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
-import { batchResponseSchema, maxLength, productListQuerySchema, stxStoredSchema, validUuidSchema } from '#/schemas';
+import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 
 /** The single place the storage-key variant set is enumerated. `original` is always present. */
@@ -34,7 +34,7 @@ export const attachmentSchema = z
     ...attachmentSelectSchema.shape,
     ...auditShape,
     ...tombstoneShape,
-    stx: stxStoredSchema,
+    stx: stxBaseSchema,
     viewCount: productViewCountSchema,
   })
   .openapi('Attachment', {

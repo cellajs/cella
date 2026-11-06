@@ -1,11 +1,11 @@
 import { advanceClock } from '#/core/stx/hlc';
-import type { StxBase, StxStored } from '#/schemas/sync-transaction-schemas';
+import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /**
- * The stx stored with a write: the incoming mutation and source ids, the stored field timestamps with the incoming ones
- * of `acceptedFieldNames`, and those names as `changedFields`, plus `updatedAt` on an update of `entity`.
+ * The stx stored with a write: the incoming mutation and source ids, and the stored field timestamps with the incoming
+ * ones of `acceptedFieldNames`.
  */
-export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldNames?: string[]): StxStored {
+export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldNames?: string[]): StxBase {
   const existingTimestamps = entity?.stx.fieldTimestamps ?? {};
   const incomingTimestamps = stx.fieldTimestamps;
 
@@ -17,8 +17,5 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
     if (incomingTimestamps[field]) mergedTimestamps[field] = incomingTimestamps[field];
   }
 
-  // An update's list also names updatedAt: a worker of the previous release reads a stored list without it as its own cleanup.
-  const changedFields = acceptedFieldNames && entity ? [...acceptedFieldNames, 'updatedAt'] : acceptedFieldNames;
-
-  return { mutationId: stx.mutationId, sourceId: stx.sourceId, fieldTimestamps: mergedTimestamps, ...(changedFields && { changedFields }) };
+  return { mutationId: stx.mutationId, sourceId: stx.sourceId, fieldTimestamps: mergedTimestamps };
 }
