@@ -2834,6 +2834,10 @@ export type GetMyInvitationsResponses = {
     items: Array<{
       entity: ChannelBase;
       inactiveMembership: InactiveMembership;
+      /**
+       * The name of the organization the channel is in; null for an invitation to an organization.
+       */
+      organizationName: string | null;
     }>;
     total: number;
   };

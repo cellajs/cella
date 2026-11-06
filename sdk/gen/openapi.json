@@ -6664,7 +6664,8 @@
                         },
                         "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                         "tenantId": "i5coyr"
-                      }
+                      },
+                      "organizationName": null
                     },
                     {
                       "entity": {
@@ -6697,7 +6698,8 @@
                         },
                         "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                         "tenantId": "gwylqy"
-                      }
+                      },
+                      "organizationName": null
                     }
                   ],
                   "total": 2
@@ -6715,9 +6717,13 @@
                           },
                           "inactiveMembership": {
                             "$ref": "#/components/schemas/InactiveMembership"
+                          },
+                          "organizationName": {
+                            "type": ["string", "null"],
+                            "description": "The name of the organization the channel is in; null for an invitation to an organization."
                           }
                         },
-                        "required": ["entity", "inactiveMembership"]
+                        "required": ["entity", "inactiveMembership", "organizationName"]
                       }
                     },
                     "total": {

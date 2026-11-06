@@ -16,7 +16,12 @@ export function WelcomeText({ invitations, onStart }: WelcomeTextProps) {
   const [firstInvitation] = invitations;
   let text = t('c:onboarding_welcome.text');
   if (invitations.length > 1) text = t('c:onboarding_welcome_invitations.text', { count: invitations.length });
-  else if (firstInvitation) text = t('c:onboarding_welcome_invited.text', { entityName: firstInvitation.entity.name });
+  else if (firstInvitation) {
+    const { entity, organizationName } = firstInvitation;
+    text = organizationName
+      ? t('c:onboarding_welcome_invited_in_organization.text', { entityName: entity.name, organizationName })
+      : t('c:onboarding_welcome_invited.text', { entityName: entity.name });
+  }
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 p-8 text-center">

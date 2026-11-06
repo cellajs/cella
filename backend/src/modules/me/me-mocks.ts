@@ -74,6 +74,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default') =>
 const mockPendingInvitationResponse = (key = 'pending-invitation:default') => ({
   entity: mockChannelBase(`${key}:entity`),
   inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
+  organizationName: null,
 });
 
 export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);

@@ -1369,6 +1369,7 @@ export const zGetMyInvitationsResponse = z.object({
     z.object({
       entity: zChannelBase,
       inactiveMembership: zInactiveMembership,
+      organizationName: z.string().nullable(),
     }),
   ),
   total: z.number(),
