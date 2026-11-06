@@ -29,6 +29,7 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
     email: faker.internet.email({ provider: 'demo.local' }).toLowerCase(),
     userId: mockUuid(),
     inactiveMembershipId: undefined,
+    inviterName: faker.person.fullName(),
   }));
 
 export const mockSsoEntryResponse = (key = 'sso-entry:default') =>

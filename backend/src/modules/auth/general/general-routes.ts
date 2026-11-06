@@ -70,7 +70,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Get token data',
     description:
-      'Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.',
+      'Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.',
     request: { params: z.object({ type: z.enum(linkTokenTypes), id: validIdSchema }) },
     responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()), ...errors(401) },
   }),

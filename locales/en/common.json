@@ -365,6 +365,7 @@
   "invite_hint_search": "Only people you are connected with in {{appName}} show up. A pick moves below and stays checked here, and a second press removes it.",
   "invite_join": "Join {{name}}",
   "invite_join.text": "{{inviterName}} invited you as {{role, lowercase}}.",
+  "invite_join_system.text": "{{inviterName}} invited you to join {{appName}}.",
   "invite_link_spent": "This invitation link has expired or was already used. Open the link in your newest invitation email, or ask for a new invitation.",
   "invite_members.text": "Invite others to join <strong>{{name}}</strong>.",
   "invite_mode_bulk": "Paste a list",

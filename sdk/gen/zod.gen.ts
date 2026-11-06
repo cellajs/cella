@@ -924,6 +924,7 @@ export const zGetTokenDataResponse = z.object({
   userId: z.string().optional(),
   inactiveMembershipId: z.string().optional(),
   ssoConnectionId: z.string().optional(),
+  inviterName: z.string().optional(),
   invitation: z
     .object({
       entityType: z.enum(['organization']),

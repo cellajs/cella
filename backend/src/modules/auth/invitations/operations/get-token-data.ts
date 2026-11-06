@@ -10,7 +10,7 @@ import { findUserById } from '#/modules/user/user-queries';
 
 type TokenData = z.infer<typeof tokenWithDataSchema>;
 
-/** What a validated single-use token stands for. A membership invitation also says what it grants, for the confirm step. */
+/** What a validated single-use token stands for. An invitation names its sender; a membership invitation also says what it grants, for the confirm step. */
 export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): Promise<TokenData> {
   // An absent id is left out of the answer: JSON drops an undefined field.
   const tokenData: TokenData = {
@@ -18,6 +18,11 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     userId: tokenRecord.userId ?? undefined,
     inactiveMembershipId: tokenRecord.inactiveMembershipId ?? undefined,
   };
+
+  if (tokenRecord.type === 'invitation' && tokenRecord.createdBy) {
+    const sender = await findUserById(ctx, { id: tokenRecord.createdBy });
+    if (sender) tokenData.inviterName = sender.name;
+  }
 
   if (!tokenRecord.inactiveMembershipId) return tokenData;
 

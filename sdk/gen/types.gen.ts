@@ -1130,6 +1130,10 @@ export type GetTokenDataResponses = {
     userId?: string;
     inactiveMembershipId?: string;
     ssoConnectionId?: string;
+    /**
+     * Name of the user who sent an invitation, for a system invitation too
+     */
+    inviterName?: string;
     invitation?: {
       entityType: 'organization';
       entityName: string;
