@@ -16,6 +16,9 @@ import { channelBaseSchema } from '#/schemas/entity-base';
 import { log } from '#/utils/logger';
 import { pick } from '#/utils/pick';
 
+/** What answering an invitation reads of the user's request; a sign-in builds it before the user has a session. */
+export type InvitationAnswerContext = { var: Pick<UserContext['var'], 'db' | 'user' | 'memberships'> };
+
 interface HandleMembershipInvitationOpts {
   /**
    * The caller proved possession of the invitation's emailed token. Only then may an invitation not yet bound to a
@@ -31,7 +34,7 @@ interface HandleMembershipInvitationOpts {
  * a token accept loses the bind to another account.
  */
 export async function handleMembershipInvitationOp(
-  ctx: UserContext,
+  ctx: InvitationAnswerContext,
   inactiveMembershipId: string,
   acceptOrReject: 'accept' | 'reject',
   { viaToken = false }: HandleMembershipInvitationOpts = {},
@@ -39,8 +42,8 @@ export async function handleMembershipInvitationOp(
   const userId = ctx.var.user.id;
 
   const inactiveMembership = viaToken
-    ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId })
-    : await findInactiveMembershipForUser(ctx, { id: inactiveMembershipId });
+    ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId, userId })
+    : await findInactiveMembershipForUser(ctx, { id: inactiveMembershipId, userId });
 
   // Missing, rejected and another user's alike (PERMISSIONS.md, Refusals).
   if (!inactiveMembership) {

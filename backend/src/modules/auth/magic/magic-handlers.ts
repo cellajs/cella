@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-link';
 import { findOpenableMagicLink, readHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-browser';
@@ -26,11 +27,12 @@ app.openapi(authMagicLinkRoutes.getPendingMagicLink, async (ctx) => {
 app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
   const rawToken = readHeldMagicLink(ctx);
 
+  const followed = await findFollowedInvitation(ctx);
   // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
   const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
   deleteAuthCookie(ctx, 'magic-pending');
 
-  return handleMagicLink(ctx, tokenRecord);
+  return handleMagicLink(ctx, tokenRecord, followed);
 });
 
 export const authMagicLinkHandlers = app;

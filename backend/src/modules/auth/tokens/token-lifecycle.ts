@@ -232,6 +232,12 @@ export const isRequestedHere = (ctx: Context<Env>, type: RequestedLinkType, toke
 /** Drops the marker once the link is used: it has nothing left to say. */
 export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) => deleteAuthCookie(ctx, `${type}-requested`);
 
+/** The token this browser's cookie of `type` binds it to, whatever its state; undefined without one. */
+const findCookieBoundToken = async (ctx: Context<Env>, type: TokenType) => {
+  const cookie = getAuthCookie(ctx, type);
+  return cookie ? findBoundToken(dbCtx, { type, cookie }) : undefined;
+};
+
 /**
  * The live token this browser's cookie of `type` binds it to: a redeemed link (invitation, verification) or a
  * cookie-carried token (a second-factor challenge), for a flow that cannot go on without it. Reads only; nothing is
@@ -240,12 +246,17 @@ export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) =>
  *   expired: one shape for a link and a cookie-carried type alike.
  */
 export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord> => {
-  const cookie = getAuthCookie(ctx, type);
-  const token = cookie ? await findBoundToken(dbCtx, { type, cookie }) : undefined;
+  const token = await findCookieBoundToken(ctx, type);
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   return token;
+};
+
+/** {@link readBoundToken} for a flow that goes on without the token: null when this browser binds no live one. */
+export const findLiveBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord | null> => {
+  const token = await findCookieBoundToken(ctx, type);
+  return token && !isExpiredDate(token.expiresAt) ? token : null;
 };
 
 interface IssueCodeTokenOpts {
