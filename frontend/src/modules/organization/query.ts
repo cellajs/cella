@@ -23,13 +23,14 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
+import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
-import type { MutationData, QueryData } from '~/query/types';
+import type { ListFilters, MutationData, QueryData } from '~/query/types';
 
-type OrganizationFilters = Omit<NonNullable<ListOrganizationsData['query']>, 'limit' | 'offset'>;
+type OrganizationFilters = ListFilters<NonNullable<ListOrganizationsData['query']>>;
 
 const keys = createEntityKeys<OrganizationFilters>('organization');
 
@@ -65,18 +66,17 @@ const withDefaults = ({
 
 // Cache enrichment adds the ancestor slugs.
 const fetchOrganizationsPage = async (
-  query: OrganizationFilters,
-  limit: number,
-  offset: number,
+  { sort, order, ...query }: ReturnType<typeof withDefaults> & Pick<OrganizationFilters, 'include'>,
+  page: PageRequest,
   signal?: AbortSignal,
-): Promise<QueryData<EnrichedOrganization>> => listOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
+): Promise<QueryData<EnrichedOrganization>> => listOrganizations({ query: { ...query, orderBy: orderByParam(sort, order), ...page }, signal });
 
 export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) => fetchOrganizationsPage({ ...filters, include }, limit, offset, signal)),
+    ...tokenPaging((pageToken, signal) => fetchOrganizationsPage({ ...filters, include }, pageQuery(limit, pageToken), signal)),
     refetchOnMount: refetchOnMountForIncluded(include),
   });
 };
@@ -165,12 +165,6 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/** Fetch organizations for table export. Bypasses cache; items carry their counts and the caller's membership. */
-export const fetchOrganizationsForExport = async ({
-  limit,
-  offset = 0,
-  q,
-  sort,
-  order,
-}: Pick<OrganizationFilters, 'q' | 'sort' | 'order'> & { limit: number; offset?: number }) =>
-  (await fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, limit, offset)).items;
+/** A page of organizations for a table export. Bypasses cache; rows carry their counts and the caller's membership. */
+export const fetchOrganizationsForExport = ({ q, sort, order }: Pick<OrganizationFilters, 'q' | 'sort' | 'order'>, page: PageRequest) =>
+  fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, page);

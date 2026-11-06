@@ -3,6 +3,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findUsersPaginated } from '#/modules/user/user-queries';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
+import type { PageWindow } from '#/utils/list-page';
 
 type GetUsersInput = z.infer<typeof userListQuerySchema>;
 
@@ -11,9 +12,10 @@ type GetUsersInput = z.infer<typeof userListQuerySchema>;
  * admin gets each user's system `role`, and only they may filter or sort by it.
  * @throws AppError 403 `forbidden` (`meta.reason: 'system_role'`) for anyone else filtering or sorting by role.
  */
-export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
+export async function getUsersOp(ctx: UserContext, input: GetUsersInput, { offset, limit }: PageWindow) {
   const { isSystemAdmin, memberships } = ctx.var;
-  const { q, sort, order, offset, limit, role } = input;
+  const { q, orderBy, role } = input;
+  const { sort, order } = orderBy;
 
   // The system role is for system admins to see: a filter or sort on it would list the admins to anyone else.
   if (!isSystemAdmin && (role || sort === 'role')) {

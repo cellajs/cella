@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
+import { resolveListTotal } from '#/db/utils/list-total';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
@@ -42,25 +43,34 @@ const recipientStillBelongs = sql`(
 export interface FindNotificationsOpts {
   userId: string;
   unreadOnly: boolean;
+  offset: number;
   limit: number;
-  /** `createdAt` of the last row of the previous page; keyset paging avoids OFFSET scans. */
-  before?: string;
 }
 
-/** One page of a user's inbox, newest first. */
+/** A window of a user's inbox, newest first, and the rows the inbox holds. */
 export async function findNotificationsByUser(ctx: DbContext, opts: FindNotificationsOpts) {
-  const { userId, unreadOnly, limit, before } = opts;
+  const { db } = ctx.var;
+  const { userId, unreadOnly, offset, limit } = opts;
 
   const filters = [eq(notificationsTable.userId, userId), recipientStillBelongs];
   if (unreadOnly) filters.push(isNull(notificationsTable.readAt));
-  if (before) filters.push(lt(notificationsTable.createdAt, before));
+  const where = and(...filters);
 
-  return ctx.var.db
+  const itemsQuery = db
     .select()
     .from(notificationsTable)
-    .where(and(...filters))
-    .orderBy(desc(notificationsTable.createdAt))
-    .limit(limit);
+    .where(where)
+    .orderBy(desc(notificationsTable.createdAt), desc(notificationsTable.id))
+    .limit(limit)
+    .offset(offset);
+
+  return resolveListTotal(itemsQuery, {
+    kind: 'exact',
+    getTotal: async () => {
+      const [{ total }] = await db.select({ total: count() }).from(notificationsTable).where(where);
+      return total;
+    },
+  });
 }
 
 interface CountUnreadByUserOpts {

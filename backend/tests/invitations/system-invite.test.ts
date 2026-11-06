@@ -77,7 +77,7 @@ describe('System Invitation', async () => {
       await makeInviteRequest(['waiting@example.com'], sessionCookie);
 
       const { data } = await call(listRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
-      const listed = (data as { items: { email: string; type: string; wasInvited: boolean }[] }).items;
+      const listed = (data as { results: { email: string; type: string; wasInvited: boolean }[] }).results;
       expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, type }) => ({ email, type }))).toEqual([
         { email: 'waiting@example.com', type: 'waitlist' },
       ]);

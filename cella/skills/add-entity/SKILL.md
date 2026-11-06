@@ -91,7 +91,10 @@ and the renderers.
     The answer holds the rows and `rejectedIds`, and is 201 only when this request inserted a row.
   - **Update**: `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })` inside the write
     transaction, so the merge starts from a locked row; `assertBlockFields` on the ops.
-  - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`.
+  - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`,
+    with `orderBy: orderByQuerySchema([...fields], '<field> <direction>')` when the list orders. The
+    operation takes the query and the `PageWindow` (`offset`, `limit`) that the handler's
+    `readListPage` passes it, which also opens and issues the page tokens.
     `seqRangeOf(input)` tells a range read, which reads through `tenantReadIncludingDeleted`, AND-s
     the `where` of `seqRangeRead(<name>sTable, range)` and orders by its `orderBy`; a normal read
     uses `tenantRead` and hides deleted rows. `resolveCollectionReadFilter` and
@@ -136,8 +139,10 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
   - `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, rangeFetch)`,
     where `rangeFetch` spreads the `query` it receives (range and chunk limit) into the list request.
     Without the registration the first stream event for the type throws.
-  - The canonical options (one list per parent channel, which sync keeps fresh), the list options
-    and the detail options. The list fetches end in `.then(liveItems)`, which types their rows.
+  - The canonical options (one list per parent channel, which sync keeps fresh, read whole through
+    `fetchAllPages`), the list options (`tokenPaging`, whose key holds the table's `sort` and `order`
+    and whose fetch sends them as `orderByParam(sort, order)`) and the detail options. The list
+    fetches end in `.then(liveItems)`, which types their rows.
     Both list options are wrapped in `syncedListOptions` (`~/query/basic/synced-list-options`), so a
     list read keeps rows with a pending mutation as cached and runs on when the screen that started it
     leaves. The canonical one also passes its scope, `organizationId` and `tenantId`, plus the home

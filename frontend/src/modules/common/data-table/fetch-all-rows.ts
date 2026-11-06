@@ -1,13 +1,9 @@
-/** Rows per export fetch; the backend rejects limits above 1000, so exports page in chunks. */
+import { fetchAllPages, type PageRequest } from '~/query/basic/fetch-all-pages';
+import type { QueryData } from '~/query/types';
+
+/** Rows per export page: the backend reads at most 1000 per page. */
 export const exportChunkSize = 1000;
 
-/** Pages through fetchRows until a short chunk signals the end; one capped fetch would truncate the export. */
-export async function fetchAllRows<T>(fetchRows: (limit: number, offset: number) => Promise<T[]>): Promise<T[]> {
-  const rows: T[] = [];
-  while (true) {
-    const chunk = await fetchRows(exportChunkSize, rows.length);
-    rows.push(...chunk);
-    if (chunk.length < exportChunkSize) break;
-  }
-  return rows;
-}
+/** Every row of a list for an export, page by page; one capped read would truncate it. */
+export const fetchAllRows = async <T>(fetchPage: (page: PageRequest) => Promise<QueryData<T>>): Promise<T[]> =>
+  (await fetchAllPages(fetchPage, exportChunkSize)).results;

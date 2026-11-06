@@ -3,7 +3,7 @@ import { listSearchDefaults, listSearchSchema } from '~/modules/common/search-pa
 
 export const tenantsSearchDefaults = listSearchDefaults(zListTenantsQuery);
 
-/** Limit and offset stay out of the URL: the list query options page the rows. */
+/** Paging stays out of the URL: the list query options page the rows. */
 export const tenantsRouteSearchParamsSchema = listSearchSchema(zListTenantsQuery).extend({
   status: zListTenantsQuery.shape.status.catch(undefined),
 });

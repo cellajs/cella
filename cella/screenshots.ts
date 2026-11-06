@@ -98,9 +98,9 @@ export default defineScreenshotsBase({
      */
     org: async (user) => {
       const client = apiClient(user);
-      const [{ items: organizations }, { items: memberships }] = await Promise.all([
-        listOrganizations({ client, query: { limit: 50 } }),
-        listMyMemberships({ client }),
+      const [{ results: organizations }, { results: memberships }] = await Promise.all([
+        listOrganizations({ client, query: { maxPageSize: 50 } }),
+        listMyMemberships({ client, query: { maxPageSize: 1000 } }),
       ]);
       const published = organizations.filter(({ publishedAt }) => publishedAt);
       const organization =

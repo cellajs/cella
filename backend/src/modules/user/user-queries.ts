@@ -28,7 +28,7 @@ const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
   );
 };
 
-interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema>, 'sort' | 'order'> {
+interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches name and email. */
   q?: string;
   role?: SystemRoleModel['role'];

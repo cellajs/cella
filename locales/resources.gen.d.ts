@@ -1482,11 +1482,13 @@ export interface LocaleResources {
     "invalid_email": "Enter an email address like name@example.com";
     "invalid_handle": "Use only letters, numbers and hyphens. It cannot start or end with a hyphen.";
     "invalid_id": "ID may only contain lowercase letters and numbers (12-50 characters)";
-    "invalid_limit": "Limit must be a number greater than 0 and at most {{max}}";
     "invalid_max_items": "The number of {{name}} cannot exceed {{max}}.";
     "invalid_min_items": "Add at least {{min}} {{name}} to the list.";
     "invalid_name": "A name cannot contain < or > or a line break";
-    "invalid_offset": "Offset must be a number of 0 or more";
+    "invalid_order_by": "Order by one of {{fields}}, optionally followed by asc or desc";
+    "invalid_page_size": "Page size must be a number of 0 or more";
+    "invalid_page_token": "Page token not valid";
+    "invalid_page_token.text": "The page token was altered or belongs to a list read with other parameters. Start again from the first page.";
     "invalid_param": "Invalid parameters";
     "invalid_param.text": "If you copied a URL, please check if it is correct and complete.";
     "invalid_push_endpoint": "The subscription does not come from a known push service";
@@ -1494,6 +1496,7 @@ export interface LocaleResources {
     "invalid_request.text": "Check what you entered and try again.";
     "invalid_role": "Not allowed";
     "invalid_role.text": "Your role doesn't allow this.";
+    "invalid_skip": "Skip must be a number of 0 or more";
     "invalid_slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.";
     "invalid_state": "Invalid state";
     "invalid_state.text": "Could not complete the authentication process.";

@@ -20,7 +20,7 @@ export default defineScenario({
       await vu.http.get('/me', { headers, name: 'GET /me' });
       await vu.http.get('/me/memberships', { headers, name: 'GET /me/memberships' });
       await vu.http.get('/organizations', { headers, name: 'GET /organizations' });
-      await vu.http.get(`${ORG_PATH}/attachments?limit=40`, { headers, name: 'GET /attachments' });
+      await vu.http.get(`${ORG_PATH}/attachments?maxPageSize=40`, { headers, name: 'GET /attachments' });
       await vu.think(100);
     }
   },

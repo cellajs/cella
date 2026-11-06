@@ -20,7 +20,7 @@ export function useChannelTabOptions(channel: TabsChannel): ResolvePlacementOpti
 
   return {
     grants: canUpdate ? ['update'] : [],
-    pairs: heldContextRoles(channel, myMemberships?.items ?? []),
+    pairs: heldContextRoles(channel, myMemberships?.results ?? []),
     slotConfig: channel.toolsConfig?.[`${channel.entityType}.tabs`],
   };
 }

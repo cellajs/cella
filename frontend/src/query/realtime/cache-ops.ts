@@ -173,7 +173,7 @@ export async function fetchRangeAndPatch(
   const { afterSeq, untilSeq } = range;
   const label = `${entityType} after ${afterSeq} until ${untilSeq}`;
   try {
-    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: syncChunkSize } });
+    const { results: items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, maxPageSize: syncChunkSize } });
 
     // A stream flush fetches no backlog past one chunk: it reports overflow, and its caller marks the lists of the range.
     if (items.length >= syncChunkSize) {

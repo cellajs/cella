@@ -31,9 +31,9 @@ describe('Archived organizations', async () => {
     const member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'archived-member');
     const headers = { ...defaultHeaders, Cookie: member.sessionCookie };
     const organizationIds = async () => {
-      const memberships = (await call(listMyMemberships, { headers })).data as { items: { organizationId: string }[] };
-      const organizations = (await call(listOrganizations, { headers })).data as { items: { id: string }[] };
-      return [...memberships.items.map((m) => m.organizationId), ...organizations.items.map((o) => o.id)];
+      const memberships = (await call(listMyMemberships, { headers })).data as { results: { organizationId: string }[] };
+      const organizations = (await call(listOrganizations, { headers })).data as { results: { id: string }[] };
+      return [...memberships.results.map((m) => m.organizationId), ...organizations.results.map((o) => o.id)];
     };
     expect(await organizationIds()).toContain(tenant.organization.id);
 

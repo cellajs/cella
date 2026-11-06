@@ -287,7 +287,7 @@ describe('Cross-organization API isolation', async () => {
     const listedFor = async (as: Session) => {
       const { data, response } = await call(listUsers, { headers: headers(as) });
       expect(response.status).toBe(200);
-      return (data as { items: { id: string }[] }).items.map((user) => user.id);
+      return (data as { results: { id: string }[] }).results.map((user) => user.id);
     };
     expect(await listedFor(tenant)).not.toContain(userB.id);
 

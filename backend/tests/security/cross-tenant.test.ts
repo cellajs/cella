@@ -156,7 +156,7 @@ describe('Cross-tenant API isolation', async () => {
           headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
         });
         expect(response.status).toBe(200);
-        return (data as { items: { id: string }[] }).items.map((item) => item.id);
+        return (data as { results: { id: string }[] }).results.map((item) => item.id);
       };
       expect(await listedIds(tenantB)).not.toContain(presignAttachmentId);
       // The owning tenant's list carries it (positive control).

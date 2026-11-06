@@ -39,7 +39,9 @@ When adding or changing a query:
 
 Paginated queries own their filters, ordering, limit, offset, and total strategy. Name them
 `find<Entity>Paginated` and return `PaginatedResult<T>` as `{ items, total }` through
-`resolveListTotal`, which runs item and total reads concurrently:
+`resolveListTotal`, which runs item and total reads concurrently. The handler turns that window
+into the page a client reads (`results`, `nextPageToken`, `totalSize`) with `readListPage`, which
+opens the page token and decides the window; a query never sees a token:
 
 - `pageLength` when a delta page exposes no collection total.
 - `counter` only when an eligible precomputed counter exactly matches the requested scope.
@@ -48,8 +50,9 @@ Paginated queries own their filters, ordering, limit, offset, and total strategy
 Every offset-paginated query uses `getOrderColumns` with allowlisted columns and a unique
 tie-breaker. Use `pick(table, keys)` for direct table-column allowlists and an explicit map for
 aliases, joins, or SQL expressions; `append` adds fixed trailing order expressions. A list's
-default sort and order live only in its request schema (`.default()`): the query takes them as
-given, and the frontend reads the same defaults from the generated SDK.
+sortable fields and default order live only in its request schema (`orderByQuerySchema`): the
+query takes the parsed sort and order as given, and the frontend reads the same fields and default
+from the generated SDK.
 
 A query defect that affects behavior gets a focused regression test beside the query or in
 `backend/tests`. Database uniqueness still needs a schema constraint and generated migration; an

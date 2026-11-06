@@ -10,6 +10,7 @@ import { resendPendingInvitationOp } from '#/modules/memberships/operations/rese
 import { updateMembershipOp } from '#/modules/memberships/operations/update-membership';
 import { withdrawPendingInvitationOp } from '#/modules/memberships/operations/withdraw-pending-invitation';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -42,13 +43,13 @@ app.openapi(membershipRoutes.updateMembership, async (ctx) => {
 });
 
 app.openapi(membershipRoutes.listMembers, async (ctx) => {
-  const data = await getMembersOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getMembersOp(ctx, query, page)), 200);
 });
 
 app.openapi(membershipRoutes.listInvitations, async (ctx) => {
-  const data = await getPendingMembershipsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getPendingMembershipsOp(ctx, query, page)), 200);
 });
 
 app.openapi(membershipRoutes.resendInvitation, async (ctx) => {

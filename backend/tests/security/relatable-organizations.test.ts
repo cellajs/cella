@@ -17,8 +17,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 const [previewedRole] = hierarchy.getRoles('organization');
 
 type OrgList = {
-  items: { id: string; included: { members?: { id: string }[]; counts?: unknown } }[];
-  total: number;
+  results: { id: string; included: { members?: { id: string }[]; counts?: unknown } }[];
+  totalSize: number;
 };
 
 /**
@@ -80,23 +80,23 @@ describe('Organizations of another user (relatableUserId)', async () => {
   it("must not list another tenant's organization via relatableUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);
     expect(response.status).toBe(200);
-    const { items, total } = data as OrgList;
+    const { results: items, totalSize: total } = data as OrgList;
     expect(items.map((org) => org.id)).toEqual([shared.id]);
     expect(total).toBe(1);
   });
 
   it('lists the shared organization with its members and counts, and every one to the user and a system admin', async () => {
     const { data } = await listAs(viewer, target.id);
-    const org = (data as OrgList).items.find((item) => item.id === shared.id);
+    const org = (data as OrgList).results.find((item) => item.id === shared.id);
     expect(org?.included.members?.map((member) => member.id)).toContain(viewer.id);
     expect(org?.included.counts).toBeDefined();
 
     const own = await listAs(target, target.id);
-    expect((own.data as OrgList).items.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
+    expect((own.data as OrgList).results.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
 
     const sysAdmin = await createSystemAdminUser('relatable-sysadmin@security-test.com');
     const asAdmin = await listAs({ sessionCookie: await createTestSession(sysAdmin) }, target.id);
-    expect((asAdmin.data as OrgList).items.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
+    expect((asAdmin.data as OrgList).results.map((o) => o.id).sort()).toEqual([shared.id, foreign.id].sort());
   });
 
   it('must not pass a malformed relatableUserId to the database', async () => {
@@ -135,7 +135,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
       call(listOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
-    const idsOf = (data: unknown) => (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
+    const idsOf = (data: unknown) => (data as OrgList).results.map((org) => org.id).filter((id) => pair.includes(id));
 
     // The listed user's archive and role are not the viewer's to filter on: refused, never dropped.
     const refused: Record<string, string>[] = [{ excludeArchived: 'true' }, { role: memberRole }];

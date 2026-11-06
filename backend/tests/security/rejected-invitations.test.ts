@@ -20,7 +20,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-type PendingList = { items: { id: string; email: string }[]; total: number };
+type PendingList = { results: { id: string; email: string }[]; totalSize: number };
 
 /** A declined invitation is answered: nobody can accept it later, and it neither lists nor counts as pending. */
 describe('Rejected invitations', async () => {
@@ -191,7 +191,7 @@ describe('Rejected invitations', async () => {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(listed.status).toBe(200);
-    const { items, total } = (await listed.json()) as PendingList;
+    const { results: items, totalSize: total } = (await listed.json()) as PendingList;
     expect(items.map((item) => item.email)).toEqual(['pending-address@security-test.com']);
     expect(total).toBe(1);
 

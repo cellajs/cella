@@ -68,7 +68,7 @@ describe('member counts (include=counts)', async () => {
     });
 
     expect(error).toBeUndefined();
-    const items = (data as { items: MemberItem[] }).items;
+    const items = (data as { results: MemberItem[] }).results;
     const member = items.find(({ id }) => id === memberId);
     expect(member?.counts?.products[statType]).toBe(authored);
     expect(member?.counts?.activity[statType]).toEqual(expect.any(Number));

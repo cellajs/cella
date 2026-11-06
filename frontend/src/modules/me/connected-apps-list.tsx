@@ -14,7 +14,7 @@ import { dateShort } from '~/utils/date-short';
 export function ConnectedAppsList() {
   const { t } = useTranslation();
   const {
-    data: { items },
+    data: { results: items },
   } = useSuspenseQuery(meConnectedAppsQueryOptions());
   const { mutate: revoke, isPending, variables } = useRevokeConnectedAppMutation();
 

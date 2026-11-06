@@ -291,9 +291,9 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   const entity = useTileEntity();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const { data: myInvites } = useQuery({ ...meInvitationsQueryOptions(), enabled: false });
-  const membership = findMembership(myMemberships?.items ?? [], entity.id);
+  const membership = findMembership(myMemberships?.results ?? [], entity.id);
   if (hideOwnRole) return fallback;
-  if (myInvites?.items.some((invite) => invite.entity.id === entity.id)) return <Badge variant="secondary">{t('c:pending')}</Badge>;
+  if (myInvites?.results.some((invite) => invite.entity.id === entity.id)) return <Badge variant="secondary">{t('c:pending')}</Badge>;
   if (membership) return <JoinedButton channel={entity} role={membership.role} redirectPath={null} />;
   return fallback;
 }

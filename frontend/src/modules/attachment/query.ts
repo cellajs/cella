@@ -27,10 +27,10 @@ import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, cancelKeepingMark, removeDetailQueriesById, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
-import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { registerEntityQueryKeys, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { liveItems, offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { liveItems, orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
@@ -43,9 +43,10 @@ import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/qu
 import { mergeServerResponse, writeEntityToCache } from '~/query/offline/update-success-utils';
 import { queryClient } from '~/query/query-client';
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
+import type { ListFilters } from '~/query/types';
 import { createResourceError } from '~/utils/resource-error';
 
-type AttachmentFilters = Omit<NonNullable<ListAttachmentsData['query']>, 'limit' | 'offset' | 'afterSeq' | 'untilSeq'>;
+type AttachmentFilters = ListFilters<NonNullable<ListAttachmentsData['query']>>;
 
 const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
 const keys = {
@@ -95,12 +96,13 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   } = params;
 
   const filters = { q, sort, order };
+  const query = { q, orderBy: orderByParam(sort, order) };
 
   return syncedListOptions(
     infiniteQueryOptions({
       queryKey: keys.list.filtered(organizationId, filters),
-      ...offsetPaging(limit, (offset, signal) =>
-        listAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }).then(liveItems),
+      ...tokenPaging((pageToken, signal) =>
+        listAttachments({ path: { tenantId, organizationId }, query: { ...query, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
       ),
       meta: { persist: false },
       staleTime: syncStaleTime,
@@ -119,10 +121,7 @@ export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { orga
     queryOptions({
       queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
       queryFn: async () => {
-        return fetchAllPages(
-          ({ limit, offset }) => listAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }).then(liveItems),
-          1000,
-        );
+        return fetchAllPages((page) => listAttachments({ path: { tenantId, organizationId }, query: page }).then(liveItems), syncChunkSize);
       },
       staleTime: syncStaleTime,
     }),
@@ -147,9 +146,9 @@ export const useGroupAttachments = (tenantId: string | undefined, organizationId
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
     enabled: !!tenantId && !!organizationId && !!groupId,
-    select: ({ items }) => {
+    select: ({ results }) => {
       if (!groupId) return null;
-      const filtered = items.filter((item) => item.groupId === groupId);
+      const filtered = results.filter((item) => item.groupId === groupId);
       return filtered.length > 0 ? filtered : null;
     },
   });

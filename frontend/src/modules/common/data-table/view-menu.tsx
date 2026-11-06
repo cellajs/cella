@@ -17,6 +17,8 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { uiStore } from '~/modules/ui/ui-store';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
+import type { QueryData } from '~/query/types';
 import { getRouter } from '~/routes/-router-instance';
 
 export interface ViewMenuSort {
@@ -28,7 +30,7 @@ export interface ViewMenuSort {
 export interface ViewMenuExport<TRow> {
   /** Without extension; each format adds its own. */
   filename: string;
-  fetchRows: (limit: number, offset: number) => Promise<TRow[]>;
+  fetchRows: (page: PageRequest) => Promise<QueryData<TRow>>;
   selectedRows?: TRow[];
 }
 

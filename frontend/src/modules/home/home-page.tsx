@@ -29,7 +29,7 @@ export function HomePage() {
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
   const sections = resolvePlacementList(slot, getTools(slot));
-  const isOrganizationAdmin = !!myMemberships?.items.some(
+  const isOrganizationAdmin = !!myMemberships?.results.some(
     ({ channelType, role }) => channelType === 'organization' && role === organizationAdminRole,
   );
   const hasNoOrganization = orgQuery.isSuccess && flattenInfiniteData<Organization>(orgQuery.data).length === 0;

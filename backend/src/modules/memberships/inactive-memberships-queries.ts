@@ -283,7 +283,7 @@ export const bindInactiveMembershipsByEmail = async (ctx: DbContext, { email, us
   return bound.map((row) => row.id);
 };
 
-interface FindPendingMembershipsPaginatedOpts extends Pick<z.infer<typeof pendingMembershipListQuerySchema>, 'sort' | 'order'> {
+interface FindPendingMembershipsPaginatedOpts extends Pick<z.infer<typeof pendingMembershipListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
   entityId: string;
   offset: number;

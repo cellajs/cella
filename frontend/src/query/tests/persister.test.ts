@@ -252,7 +252,7 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
     const queryClient = new QueryClient();
     const offlineKey = ['me', 'memberships'];
     const goneKey = ['organization', 'detail', 'o1'];
-    for (const key of [offlineKey, goneKey]) await queryClient.query({ queryKey: key, queryFn: async () => ({ items: [{ id: 'm1' }] }) });
+    for (const key of [offlineKey, goneKey]) await queryClient.query({ queryKey: key, queryFn: async () => ({ results: [{ id: 'm1' }] }) });
     const { dataUpdatedAt } = queryClient.getQueryState(offlineKey)!;
     await save(queryClient);
     const fail = (error: Error) => () => Promise.reject(error);
@@ -266,7 +266,7 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
     expect(reloaded.getQueryState(offlineKey)).toMatchObject({
       status: 'success',
       error: null,
-      data: { items: [{ id: 'm1' }] },
+      data: { results: [{ id: 'm1' }] },
       dataUpdatedAt,
       isInvalidated: true,
     });

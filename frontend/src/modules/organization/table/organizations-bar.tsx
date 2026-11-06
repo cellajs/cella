@@ -13,6 +13,7 @@ import { fetchOrganizationsForExport } from '~/modules/organization/query';
 import type { OrganizationRow, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm, newsletterFormId } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type OrganizationsTableBarProps = BaseTableBarProps<OrganizationRow, OrganizationsRouteSearchParams>;
@@ -57,7 +58,7 @@ export function OrganizationsTableBar({
     });
   };
 
-  const fetchExport = (limit: number, offset: number) => fetchOrganizationsForExport({ limit, offset, q, sort, order });
+  const fetchExport = (page: PageRequest) => fetchOrganizationsForExport({ q, sort, order }, page);
 
   return (
     <TableBarShell

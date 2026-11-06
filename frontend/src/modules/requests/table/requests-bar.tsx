@@ -41,7 +41,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
       {...{ searchVars, total, columns, setColumns }}
       label="c:request"
       searchName="requestSearch"
-      export={{ filename: `${appConfig.slug}-requests`, fetchRows: (limit, offset) => fetchRequestsForExport({ ...searchVars, limit, offset }) }}
+      export={{ filename: `${appConfig.slug}-requests`, fetchRows: (page) => fetchRequestsForExport(searchVars, page) }}
       selection={{
         count: selected.length,
         onClear: clearSelection,

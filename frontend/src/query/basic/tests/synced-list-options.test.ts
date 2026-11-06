@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { offsetPaging } from '~/query/basic/infinite-query-options';
+import { tokenPaging } from '~/query/basic/infinite-query-options';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
 import { queryClient } from '~/query/query-client';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -25,8 +25,8 @@ const row = (id: string, name: string, seq = 1, deletedAt: string | null = null)
   deletedAt,
   organizationId: scope.organizationId,
 });
-const list = (...items: Row[]): QueryData<Row> => ({ items, total: items.length });
-const names = (data: unknown) => (data as { items: Row[] } | undefined)?.items.map(({ id, name }) => `${id}:${name}`).sort();
+const list = (...results: Row[]): QueryData<Row> => ({ results, totalSize: results.length });
+const names = (data: unknown) => (data as { results: Row[] } | undefined)?.results.map(({ id, name }) => `${id}:${name}`).sort();
 
 let rangeRows: Row[] = [];
 registerEntityQueryKeys('attachment', keys, async () => list(...rangeRows));
@@ -119,15 +119,21 @@ describe('a list read that ends while rows have pending mutations', () => {
 // A paged list read while rows of its first page had a pending delete: the emptied page ended the list, and a page that hid rows
 // offset the next one short, so a row showed twice.
 describe('a paged list read while rows of it have a pending delete', () => {
-  it('hides them and pages by the rows the server sent, before and after the delete settles', async () => {
+  it('hides them and pages by the token the server sent, before and after the delete settles', async () => {
     let server = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => row(id, id));
-    const readPage = async (offset: number) => ({ items: server.slice(offset, offset + 2), total: server.length });
-    const options = syncedListOptions(infiniteQueryOptions({ queryKey: keys.list.filtered({ q: 'x' }), ...offsetPaging(2, readPage) }));
+    // The server's token names the last row it sent, and the next page starts after it.
+    const readPage = async (pageToken: string): Promise<QueryData<Row>> => {
+      const start = pageToken ? server.findIndex(({ id }) => id === pageToken) + 1 : 0;
+      const results = server.slice(start, start + 2);
+      const more = start + 2 < server.length;
+      return { results, totalSize: server.length, ...(more && { nextPageToken: results[results.length - 1].id }) };
+    };
+    const options = syncedListOptions(infiniteQueryOptions({ queryKey: keys.list.filtered({ q: 'x' }), ...tokenPaging(readPage) }));
     const table = new InfiniteQueryObserver(queryClient, options);
     const leave = table.subscribe(() => {});
     await vi.waitFor(() => expect(table.getCurrentResult().isSuccess).toBe(true));
     await table.fetchNextPage();
-    const rows = () => table.getCurrentResult().data?.pages.flatMap(({ items }) => items.map(({ id }) => id));
+    const rows = () => table.getCurrentResult().data?.pages.flatMap(({ results }) => results.map(({ id }) => id));
 
     const settle = pendingMutation('delete', { rows: [{ id: 'a' }, { id: 'b' }] });
     cacheRemove(['attachment', 'list'], [{ id: 'a' }, { id: 'b' }]);
@@ -148,14 +154,14 @@ describe('a paged list read while rows of it have a pending delete', () => {
 describe('a paged list whose last observer leaves while it reads', () => {
   it('caches its read', async () => {
     const { read, started, answer } = heldRead();
-    const options = syncedListOptions(infiniteQueryOptions({ queryKey: keys.list.filtered({ q: 'x' }), ...offsetPaging(10, () => read()) }));
+    const options = syncedListOptions(infiniteQueryOptions({ queryKey: keys.list.filtered({ q: 'x' }), ...tokenPaging(() => read()) }));
     const leave = new InfiniteQueryObserver(queryClient, options).subscribe(() => {});
     await started;
 
     leave();
     answer(list(row('a', 'fresh')));
 
-    await vi.waitFor(() => expect(queryClient.getQueryData(options.queryKey)?.pages[0].items).toEqual([row('a', 'fresh')]));
+    await vi.waitFor(() => expect(queryClient.getQueryData(options.queryKey)?.pages[0].results).toEqual([row('a', 'fresh')]));
   });
 });
 

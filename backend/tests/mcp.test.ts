@@ -146,9 +146,9 @@ describe('MCP on the substrate (Phase E)', async () => {
     );
 
     // An integer query param takes a number; the call writes it into the query string.
-    const read = await toolCall(ctx, 'listAttachments', { limit: 5 });
+    const read = await toolCall(ctx, 'listAttachments', { maxPageSize: 5 });
     expect(read.response.status).toBe(200);
-    expect(toolResult(read).structuredContent).toMatchObject({ items: [], total: 0 });
+    expect(toolResult(read).structuredContent).toMatchObject({ results: [], totalSize: 0 });
 
     const write = await toolCall(ctx, 'updateAttachment', { attachmentId: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
     expect(write.response.status).toBe(403);
@@ -174,7 +174,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
     const [read, refused, invalid, ...rest] = data as Rpc[];
-    expect(read).toMatchObject({ id: 1, result: { structuredContent: { items: [], total: 0 } } });
+    expect(read).toMatchObject({ id: 1, result: { structuredContent: { results: [], totalSize: 0 } } });
     expect(refused).toMatchObject({ id: 2, error: { code: -32002, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
     // A message without a method keeps its id; a response the client posts back gets no answer.
     expect(invalid).toMatchObject({ id: 3, error: { code: -32600 } });

@@ -137,7 +137,7 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMe
   return updated ?? null;
 };
 
-interface FindMembersPaginatedOpts extends Pick<z.infer<typeof memberListQuerySchema>, 'sort' | 'order'> {
+interface FindMembersPaginatedOpts extends Pick<z.infer<typeof memberListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
   entityId: string;
   entityType: ChannelEntityType;

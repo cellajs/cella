@@ -1,19 +1,34 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { exportChunkSize, fetchAllRows } from './fetch-all-rows';
 
-/** `limitMax` of the backend's pagination schema (backend/src/schemas/common-schemas.ts): a larger page is rejected. */
-const backendLimitMax = 1000;
+/** The backend's largest page (`pageSizeCap` in backend/src/schemas/common-schemas.ts): a larger `maxPageSize` reads this many. */
+const backendPageSizeCap = 1000;
+
+/** A list endpoint over `rows` whose `totalSize` reports `reportedTotal`, as a counter that trails the list does. */
+const listEndpoint = (rows: { id: string }[], reportedTotal = rows.length) =>
+  vi.fn(async ({ maxPageSize, skip = 0, pageToken }: PageRequest) => {
+    const offset = (pageToken ? Number(pageToken) : 0) + skip;
+    const results = rows.slice(offset, offset + Math.min(maxPageSize, backendPageSizeCap));
+    const next = offset + results.length;
+    return { results, totalSize: reportedTotal, ...(next < rows.length && { nextPageToken: String(next) }) };
+  });
 
 describe('fetchAllRows', () => {
-  it('exports every row in pages the backend accepts, stopping at the first short page', async () => {
-    // More than one page, an exact page multiple (an empty last page ends it) and a single short page.
-    for (const total of [exportChunkSize + 500, exportChunkSize, 1]) {
+  it('exports every row once, in order, in pages the backend reads whole', async () => {
+    // More than one page, an exact page multiple and a single short page.
+    for (const total of [exportChunkSize * 2 + 500, exportChunkSize, 1]) {
       const all = Array.from({ length: total }, (_, i) => ({ id: `row-${i}` }));
-      const fetchRows = vi.fn(async (limit: number, offset: number) => all.slice(offset, offset + limit));
+      const fetchPage = listEndpoint(all);
 
-      expect(await fetchAllRows(fetchRows)).toEqual(all);
-      expect(fetchRows).toHaveBeenCalledTimes(Math.floor(total / exportChunkSize) + 1);
-      expect(fetchRows.mock.calls.every(([limit]) => limit <= backendLimitMax)).toBe(true);
+      expect(await fetchAllRows(fetchPage)).toEqual(all);
+      expect(fetchPage.mock.calls.every(([{ maxPageSize }]) => maxPageSize <= backendPageSizeCap)).toBe(true);
     }
+  });
+
+  // An organization-wide product list counts from a counter that can trail its rows (`productListResponseSchema`).
+  it('reads on past a total that trails the list', async () => {
+    const all = Array.from({ length: exportChunkSize * 3 }, (_, i) => ({ id: `row-${i}` }));
+    expect(await fetchAllRows(listEndpoint(all, exportChunkSize + 1))).toEqual(all);
   });
 });

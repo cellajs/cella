@@ -1,17 +1,31 @@
 import type { QueryKey } from '@tanstack/react-query';
+import { isRecord } from 'shared/utils/as-record';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
-import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
+import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParam, QueryData } from '~/query/types';
 
-export function getQueryItems<TItem>(data: BaseQueryItem<TItem>) {
-  return isQueryData(data) ? data.items : data.pages.flatMap(({ items }) => items);
+/**
+ * The rows of a list. A row a later page repeats shows once, where the earlier page has it: a row that entered the list
+ * before a page's position moves the next page back by one.
+ */
+export function getQueryItems<TItem>(data: QueryData<TItem> | { pages: QueryData<TItem>[] }): TItem[] {
+  if ('results' in data) return data.results;
+  const seen = new Set<unknown>();
+  return data.pages
+    .flatMap(({ results }) => results)
+    .filter((row) => {
+      const id = isRecord(row) ? row.id : undefined;
+      if (id === undefined) return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
 }
 
 export function isQueryData<TItem>(data: unknown): data is QueryData<TItem> {
-  return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
+  return typeof data === 'object' && data !== null && 'results' in data && 'totalSize' in data;
 }
 
-/** Assumes standard `PageParams` of the form `{ page: number; offset: number }`. */
 export function isInfiniteQueryData<TItem>(data: unknown): data is InfiniteQueryData<TItem> {
   return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
 }
@@ -30,21 +44,21 @@ export function mapListItems<TItem>(
   totalDelta = 0,
 ): BaseQueryItem<TItem> {
   if (isQueryData<TItem>(data)) {
-    const items = mapItems(data.items, 0);
-    return items === data.items && !totalDelta ? data : { ...data, items, total: data.total + totalDelta };
+    const results = mapItems(data.results, 0);
+    return results === data.results && !totalDelta ? data : { ...data, results, totalSize: data.totalSize + totalDelta };
   }
 
   let changed = false;
   const pages = data.pages.map((page, index) => {
-    const items = mapItems(page.items, index);
-    if (items === page.items && !totalDelta) return page;
+    const results = mapItems(page.results, index);
+    if (results === page.results && !totalDelta) return page;
     changed = true;
-    return { ...page, items, total: page.total + totalDelta };
+    return { ...page, results, totalSize: page.totalSize + totalDelta };
   });
   return changed ? { ...data, pages } : data;
 }
 
 /** Matches every query whose key starts with `queryKey`. */
-export function getSimilarQueries<TItem, TPageParam = PageParams>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] {
+export function getSimilarQueries<TItem, TPageParam = PageParam>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey });
 }

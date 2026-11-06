@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   booleanTransformSchema,
   idsBodySchema,
-  paginationQuerySchema,
+  orderByQuerySchema,
+  pageQuerySchema,
   productListQuerySchema,
   validDomainSchema,
   validEmailSchema,
@@ -31,41 +32,66 @@ describe('booleanTransformSchema', () => {
   });
 });
 
-describe('paginationQuerySchema', () => {
-  it('applies pagination defaults when parameters are absent', () => {
-    expect(paginationQuerySchema.parse({})).toMatchObject({ offset: 0, limit: appConfig.requestLimits.default });
+describe('pageQuerySchema', () => {
+  it('reads the default page size from the start when the params are absent', () => {
+    expect(pageQuerySchema.parse({})).toMatchObject({ maxPageSize: appConfig.requestLimits.default, skip: 0 });
   });
 
   it('parses complete unsigned integer strings', () => {
-    expect(paginationQuerySchema.parse({ offset: '12', limit: '39' })).toMatchObject({ offset: 12, limit: 39 });
+    expect(pageQuerySchema.parse({ skip: '12', maxPageSize: '39' })).toMatchObject({ skip: 12, maxPageSize: 39 });
   });
 
   it.each([
-    { offset: '-1' },
-    { offset: '1.5' },
-    { offset: '12junk' },
-    { offset: '9007199254740992' },
-    { limit: '' },
-    { limit: '0' },
-    { limit: '1.5' },
-    { limit: '3items' },
-    { limit: '1001' },
-    { limit: '9007199254740992' },
-  ])('rejects malformed or out-of-range pagination input %j', (input) => {
-    expect(paginationQuerySchema.safeParse(input).success).toBe(false);
+    ['0', appConfig.requestLimits.default],
+    ['1000', 1000],
+    ['1001', 1000],
+    ['5000', 1000],
+  ])('reads maxPageSize %s as %i', (maxPageSize, expected) => {
+    expect(pageQuerySchema.parse({ maxPageSize }).maxPageSize).toBe(expected);
+  });
+
+  it.each([
+    { skip: '-1' },
+    { skip: '1.5' },
+    { skip: '12junk' },
+    { skip: '9007199254740992' },
+    { maxPageSize: '' },
+    { maxPageSize: '-1' },
+    { maxPageSize: '1.5' },
+    { maxPageSize: '3items' },
+    { maxPageSize: '9007199254740992' },
+  ])('rejects malformed or negative paging input %j', (input) => {
+    expect(pageQuerySchema.safeParse(input).success).toBe(false);
+  });
+});
+
+describe('orderByQuerySchema', () => {
+  const schema = orderByQuerySchema(['name', 'createdAt'], 'createdAt desc');
+
+  it.each([
+    [undefined, { sort: 'createdAt', order: 'desc' }],
+    ['name', { sort: 'name', order: 'asc' }],
+    ['name asc', { sort: 'name', order: 'asc' }],
+    ['createdAt desc', { sort: 'createdAt', order: 'desc' }],
+  ])('parses %j', (input, expected) => {
+    expect(schema.parse(input)).toEqual(expected);
+  });
+
+  it.each(['', 'nam', 'names', 'name up', 'name  desc', 'name desc createdAt', 'name,createdAt', '-name'])('rejects %j', (input) => {
+    expect(schema.safeParse(input).success).toBe(false);
   });
 });
 
 describe('productListQuerySchema', () => {
-  const schema = productListQuerySchema({ sort: paginationQuerySchema.shape.sort });
+  const schema = productListQuerySchema({ orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc') });
 
   it('parses a range read from the query string', () => {
-    expect(schema.parse({ afterSeq: '50', untilSeq: '150', limit: '1000' })).toMatchObject({ afterSeq: 50, untilSeq: 150, limit: 1000 });
+    expect(schema.parse({ afterSeq: '50', untilSeq: '150', maxPageSize: '1000' })).toMatchObject({ afterSeq: 50, untilSeq: 150, maxPageSize: 1000 });
     expect(schema.parse({ afterSeq: '0', untilSeq: '1' })).toMatchObject({ afterSeq: 0, untilSeq: 1 });
   });
 
   it('reads a normal page without bounds', () => {
-    expect(schema.parse({ q: 'report', offset: '40' })).toMatchObject({ q: 'report', offset: 40 });
+    expect(schema.parse({ q: 'report', skip: '40' })).toMatchObject({ q: 'report', skip: 40 });
   });
 
   it.each([
@@ -76,7 +102,8 @@ describe('productListQuerySchema', () => {
     { afterSeq: '-1', untilSeq: '150' },
     { afterSeq: '50', untilSeq: '9007199254740992' },
     { afterSeq: '50', untilSeq: '150', q: 'report' },
-    { afterSeq: '50', untilSeq: '150', offset: '1000' },
+    { afterSeq: '50', untilSeq: '150', skip: '1000' },
+    { afterSeq: '50', untilSeq: '150', pageToken: 'v1:a:b:c' },
   ])('rejects range input %j', (input) => {
     expect(schema.safeParse(input).success).toBe(false);
   });
@@ -141,8 +168,9 @@ describe('validation messages', () => {
   const messageOf = (result: { error?: { issues: { message: string }[] } }) => result.error?.issues[0]?.message;
 
   it('translates a message when a value fails, after i18n initialized', () => {
-    expect(messageOf(paginationQuerySchema.safeParse({ offset: 'x' }))).toBe(i18n.t('error:invalid_offset'));
-    expect(messageOf(paginationQuerySchema.safeParse({ limit: '0' }))).toBe(i18n.t('error:invalid_limit', { max: 1000 }));
+    expect(messageOf(pageQuerySchema.safeParse({ skip: 'x' }))).toBe(i18n.t('error:invalid_skip'));
+    expect(messageOf(pageQuerySchema.safeParse({ maxPageSize: '-1' }))).toBe(i18n.t('error:invalid_page_size'));
+    expect(messageOf(orderByQuerySchema(['name'], 'name asc').safeParse('x'))).toBe(i18n.t('error:invalid_order_by', { fields: 'name' }));
     expect(messageOf(validNameSchema.safeParse(' '))).toBe(i18n.t('error:invalid_between_num', { name: 'Name', min: 1, max: 255 }));
     expect(messageOf(validUrlSchema.safeParse('http://example.com'))).toBe(i18n.t('error:invalid_url'));
     expect(messageOf(idsBodySchema().safeParse({ ids: [] }))).toBe(i18n.t('error:invalid_min_items', { min: 'one', name: 'ID' }));

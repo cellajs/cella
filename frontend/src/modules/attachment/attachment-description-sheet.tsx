@@ -33,7 +33,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
   // The sheet content is built once, so the row is read live: the editor and the save compare with the stored text.
   const { data: liveRow } = useQuery({
     ...attachmentsCanonicalOptions({ tenantId, organizationId }),
-    select: ({ items }) => items.find((item) => item.id === openedRow.id),
+    select: ({ results }) => results.find((item) => item.id === openedRow.id),
   });
   const attachment = liveRow ?? openedRow;
   const [deepest] = hierarchy.resolveNonNullAncestors('attachment', attachment);

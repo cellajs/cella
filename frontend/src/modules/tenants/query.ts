@@ -19,10 +19,12 @@ import {
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
-import type { MutationData } from '~/query/types';
+import { syncChunkSize } from '~/query/basic/entity-query-registry';
+import { fetchAllPages } from '~/query/basic/fetch-all-pages';
+import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import type { ListFilters, MutationData } from '~/query/types';
 
-type TenantFilters = Omit<NonNullable<ListTenantsData['query']>, 'limit' | 'offset'>;
+type TenantFilters = ListFilters<NonNullable<ListTenantsData['query']>>;
 type TenantsListParams = TenantFilters & { limit?: number };
 
 /** Tenants are resources, not entities, so their query keys are defined manually. */
@@ -45,7 +47,9 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) => listTenants({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
+    ...tokenPaging((pageToken, signal) =>
+      listTenants({ query: { q, status, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
+    ),
     refetchOnMount: true,
   });
 };
@@ -84,7 +88,10 @@ const connectionQueryKeys = {
 
 /** The tenant's connections: the institutions whose members sign in through a federation. */
 export const connectionsQueryOptions = (tenantId: string) =>
-  queryOptions({ queryKey: connectionQueryKeys.list(tenantId), queryFn: () => listConnections({ path: { tenantId } }) });
+  queryOptions({
+    queryKey: connectionQueryKeys.list(tenantId),
+    queryFn: () => fetchAllPages((page) => listConnections({ path: { tenantId }, query: page }), syncChunkSize),
+  });
 
 export const useConnectionCreateMutation = () => {
   const queryClient = useQueryClient();

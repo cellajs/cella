@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -18,7 +17,7 @@ import {
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, paginationSchema } from '#/schemas';
+import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, pageQuerySchema, paginationSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 const meRoutes = createXRoutes(['me', 'cella'], {
@@ -36,6 +35,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
+    request: { query: pageQuerySchema },
     responses: { 200: json('Invitations pending', paginationSchema(mePendingInvitationSchema), mockPaginatedInvitationsResponse()) },
   }),
   acceptInvitation: xRoute({
@@ -140,8 +140,9 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     path: '/memberships',
     xGuard: [userGuard],
     summary: 'Get my memberships',
-    description: 'Returns all memberships for the current user across all channel entities.',
-    responses: { 200: json('User memberships', z.object({ items: z.array(membershipBaseSchema) })) },
+    description: 'Returns the memberships of the current user across all channel entities.',
+    request: { query: pageQuerySchema },
+    responses: { 200: json('User memberships', paginationSchema(membershipBaseSchema)) },
   }),
   listConnectedApps: xRoute({
     method: 'get',
@@ -149,8 +150,9 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     xGuard: [userGuard],
     summary: 'Get connected apps',
     description: 'Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.',
+    request: { query: pageQuerySchema },
     responses: {
-      200: json('Connected apps', z.object({ items: z.array(connectedAppSchema) }), { items: [mockConnectedApp()] }),
+      200: json('Connected apps', paginationSchema(connectedAppSchema), { results: [mockConnectedApp()], totalSize: 1 }),
     },
   }),
   deleteConnectedApp: xRoute({

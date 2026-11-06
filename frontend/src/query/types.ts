@@ -6,18 +6,28 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 /** Mutation variables of a generated `*Data` type: the request without its `url`. */
 export type MutationData<T> = Omit<T, 'url'>;
 
+/** A list page as the API sends it, or a whole list read page by page, which names no next page. */
 export type QueryData<TItem> = {
-  items: TItem[];
-  total: number;
-  /** Rows the server sent that a page hides while a delete of them is pending: the next page's offset counts them until the delete settles. */
-  hiddenIds?: string[];
+  results: TItem[];
+  totalSize: number;
+  nextPageToken?: string;
 };
 
-export type PageParams = { page: number; offset: number };
-export type InfiniteQueryData<TItem, TPageParam = PageParams> = InfiniteData<QueryData<TItem>, TPageParam>;
+export type SortOrder = 'asc' | 'desc';
 
-export type BaseQueryItem<TItem, TPageParam = PageParams> = QueryData<TItem> | InfiniteQueryData<TItem, TPageParam>;
-export type BaseQueryResponse<TItem, TPageParam = PageParams> = [QueryKey, BaseQueryItem<TItem, TPageParam> | undefined];
+/** The fields a list orders by: its `orderBy` values without a direction. */
+export type SortFieldOf<TOrderBy> = TOrderBy extends `${infer F} ${SortOrder}` ? F : Extract<TOrderBy, string>;
+
+/** A list request's own params as its cache key holds them: no paging, and `orderBy` as the sort and order a table names. */
+export type ListFilters<TQuery> = Omit<TQuery, 'pageToken' | 'maxPageSize' | 'skip' | 'orderBy' | 'afterSeq' | 'untilSeq'> &
+  ('orderBy' extends keyof TQuery ? { sort?: SortFieldOf<NonNullable<TQuery['orderBy']>>; order?: SortOrder } : unknown);
+
+/** The page token an infinite list reads a page with: the previous page's `nextPageToken`, '' for the first page. */
+export type PageParam = string;
+export type InfiniteQueryData<TItem, TPageParam = PageParam> = InfiniteData<QueryData<TItem>, TPageParam>;
+
+export type BaseQueryItem<TItem, TPageParam = PageParam> = QueryData<TItem> | InfiniteQueryData<TItem, TPageParam>;
+export type BaseQueryResponse<TItem, TPageParam = PageParam> = [QueryKey, BaseQueryItem<TItem, TPageParam> | undefined];
 
 /** Org context needed by mutation defaults for offline persistence. */
 export type QueryOrgContext = { tenantId: string; organizationId: string };
@@ -40,7 +50,7 @@ export type ChannelListQueryOptions = UseInfiniteQueryOptions<
   ApiError,
   InfiniteQueryData<EnrichedChannel>,
   QueryKey,
-  PageParams
+  PageParam
 >;
 
 export type ChannelListQuery = (params: ChannelListParams) => ChannelListQueryOptions;

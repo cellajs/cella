@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -9,7 +8,7 @@ import {
   createConnectionBodySchema,
   updateConnectionBodySchema,
 } from '#/modules/connections/connections-schema';
-import { tenantOnlyParamSchema } from '#/schemas';
+import { pageQuerySchema, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 
 const connectionRoutes = createXRoutes(['connections', 'cella'], {
   listConnections: xRoute({
@@ -20,8 +19,8 @@ const connectionRoutes = createXRoutes(['connections', 'cella'], {
     summary: 'Get connections',
     description:
       "The tenant's connections: the institutions whose members sign in to its organization through an SSO federation. System admin access required.",
-    request: { params: tenantOnlyParamSchema },
-    responses: { 200: json('Connections', z.array(connectionSchema), [mockConnectionResponse()]) },
+    request: { params: tenantOnlyParamSchema, query: pageQuerySchema },
+    responses: { 200: json('Connections', paginationSchema(connectionSchema), { results: [mockConnectionResponse()], totalSize: 1 }) },
   }),
   createConnection: xRoute({
     method: 'post',

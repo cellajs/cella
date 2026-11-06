@@ -50,8 +50,8 @@ describe('propagateEmbeddedProduct', () => {
   const label = (id: string, name: string, updatedAt: string) => ({ id, name, updatedAt });
 
   beforeEach(() => {
-    registerEntityQueryKeys(taskType, taskKeys, async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys(labelType, labelKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(taskType, taskKeys, async () => ({ results: [], totalSize: 0 }));
+    registerEntityQueryKeys(labelType, labelKeys, async () => ({ results: [], totalSize: 0 }));
   });
   afterEach(() => queryClient.clear());
 
@@ -59,43 +59,43 @@ describe('propagateEmbeddedProduct', () => {
     queryClient.setQueryData(labelKeys.detail.byId('l1'), label('l1', 'new', '2026-02-01'));
     queryClient.setQueryData(labelKeys.detail.byId('l2'), label('l2', 'fresh', '2026-01-01'));
     queryClient.setQueryData(infiniteKey, {
-      pages: [{ items: [{ id: 't1', labels: [label('l1', 'old', '2026-01-01'), label('l2', 'local edit', '2026-01-01')] }], total: 1 }],
-      pageParams: [{ page: 0, offset: 0 }],
+      pages: [{ results: [{ id: 't1', labels: [label('l1', 'old', '2026-01-01'), label('l2', 'local edit', '2026-01-01')] }], totalSize: 1 }],
+      pageParams: [''],
     });
 
     propagateEmbeddedProduct(labelType, ['l1', 'l2'], 'update');
 
     // A copy as new as the fresh row may carry a concurrent edit, so it stays.
-    const after = queryClient.getQueryData<{ pages: { items: ItemData[] }[] }>(infiniteKey);
-    expect(after?.pages[0].items[0]).toEqual({ id: 't1', labels: [label('l1', 'new', '2026-02-01'), label('l2', 'local edit', '2026-01-01')] });
+    const after = queryClient.getQueryData<{ pages: { results: ItemData[] }[] }>(infiniteKey);
+    expect(after?.pages[0].results[0]).toEqual({ id: 't1', labels: [label('l1', 'new', '2026-02-01'), label('l2', 'local edit', '2026-01-01')] });
   });
 
   it('strips a removed id from id arrays, embedded copies and single object columns', () => {
     queryClient.setQueryData(flatKey, {
-      items: [
+      results: [
         { id: 't1', labels: ['l1', 'l2'] },
         { id: 't2', labels: [label('l1', 'gone', '2026-01-01')] },
         { id: 't3', labels: label('l1', 'gone', '2026-01-01') },
         { id: 't4', labels: ['l2'] },
       ],
-      total: 4,
+      totalSize: 4,
     });
     queryClient.setQueryData(taskKeys.detail.byId('t1'), { id: 't1', labels: ['l1'] });
-    const untouched = queryClient.getQueryData<{ items: ItemData[] }>(flatKey)?.items[3];
+    const untouched = queryClient.getQueryData<{ results: ItemData[] }>(flatKey)?.results[3];
 
     propagateEmbeddedProduct(labelType, ['l1'], 'remove');
 
-    const after = queryClient.getQueryData<{ items: ItemData[]; total: number }>(flatKey);
+    const after = queryClient.getQueryData<{ results: ItemData[]; totalSize: number }>(flatKey);
     expect(after).toEqual({
-      items: [
+      results: [
         { id: 't1', labels: ['l2'] },
         { id: 't2', labels: [] },
         { id: 't3', labels: null },
         { id: 't4', labels: ['l2'] },
       ],
-      total: 4,
+      totalSize: 4,
     });
-    expect(after?.items[3]).toBe(untouched);
+    expect(after?.results[3]).toBe(untouched);
     expect(queryClient.getQueryData(taskKeys.detail.byId('t1'))).toEqual({ id: 't1', labels: [] });
   });
 });

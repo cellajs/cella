@@ -24,7 +24,7 @@ describe("A member's personal view in the members list", async () => {
     const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/members?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
     expect(status).toBe(200);
-    return (body as { items: MemberRow[] }).items;
+    return (body as { results: MemberRow[] }).results;
   };
 
   beforeAll(async () => {

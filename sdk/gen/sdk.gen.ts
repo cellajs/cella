@@ -474,13 +474,13 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {listAttachmentsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
  * @param {integer=} options.query.afterSeq - `integer` (optional)
  * @param {integer=} options.query.untilSeq - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {string=} options.query.channelId - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -1699,6 +1699,9 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  * **GET /me/invitations** ·· [listMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
  *
  * @param {listMyInvitationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
 export const listMyInvitations = <ThrowOnError extends boolean = true>(
@@ -1829,11 +1832,14 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
 /**
  * Get my memberships
  *
- * Returns all memberships for the current user across all channel entities.
+ * Returns the memberships of the current user across all channel entities.
  *
  * **GET /me/memberships** ·· [listMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· _me · cella_
  *
  * @param {listMyMembershipsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
 export const listMyMemberships = <ThrowOnError extends boolean = true>(
@@ -1854,6 +1860,9 @@ export const listMyMemberships = <ThrowOnError extends boolean = true>(
  * **GET /me/connected-apps** ·· [listConnectedApps](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/connected-apps) ·· _me · cella_
  *
  * @param {listConnectedAppsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
 export const listConnectedApps = <ThrowOnError extends boolean = true>(
@@ -2037,13 +2046,13 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  * @param {listMembersData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @param {string=} options.query.userIds - `string` (optional)
@@ -2069,13 +2078,12 @@ export const listMembers = <ThrowOnError extends boolean = true>(
  * @param {listInvitationsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string} options.query.entityId - `string`
  * @param {enum} options.query.entityType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listInvitations = <ThrowOnError extends boolean = true>(
@@ -2162,9 +2170,10 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  * **GET /notifications** ·· [listNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications · cella_
  *
  * @param {listNotificationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {enum | boolean=} options.query.unread - `enum | boolean` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {string=} options.query.before - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
 export const listNotifications = <ThrowOnError extends boolean = true>(
@@ -2326,11 +2335,11 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * **GET /tenants/-/organizations** ·· [listOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/tenants/-/organizations) ·· _organizations · cella · channel_
  *
  * @param {listOrganizationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {string=} options.query.relatableUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
@@ -2568,11 +2577,11 @@ export const removePushSubscription = <ThrowOnError extends boolean = true>(
  * **GET /requests** ·· [listRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
  *
  * @param {listRequestsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listRequests = <ThrowOnError extends boolean = true>(
@@ -2695,9 +2704,10 @@ export const markSeen = <ThrowOnError extends boolean = true>(
  * @param {listServiceAccountsData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listServiceAccounts = <ThrowOnError extends boolean = true>(
@@ -2779,6 +2789,9 @@ export const updateServiceAccount = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.serviceAccountId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const listApiKeys = <ThrowOnError extends boolean = true>(
@@ -3010,11 +3023,11 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  * **GET /tenants** ·· [listTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· _tenants · cella_
  *
  * @param {listTenantsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
@@ -3094,6 +3107,9 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
  *
  * @param {listConnectionsData} options
  * @param {string} options.path.tenantId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listConnections = <ThrowOnError extends boolean = true>(
@@ -3200,11 +3216,11 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  * **GET /users** ·· [listUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users) ·· _users · cella_
  *
  * @param {listUsersData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */

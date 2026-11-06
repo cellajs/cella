@@ -8,6 +8,7 @@ import { publishOrganizationOp } from '#/modules/organization/operations/publish
 import { updateOrganizationOp } from '#/modules/organization/operations/update-organization';
 import { organizationRoutes } from '#/modules/organization/organization-routes';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -46,8 +47,8 @@ export const organizationHandlers = app;
 const listApp = new OpenAPIHono<Env>({ defaultHook });
 
 listApp.openapi(organizationRoutes.listOrganizations, async (ctx) => {
-  const data = await getOrganizationsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getOrganizationsOp(ctx, query, page)), 200);
 });
 
 /** The list across tenants, mounted at the `-` wildcard tenant. */

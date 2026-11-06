@@ -20,10 +20,10 @@ const homeKey = keys.list.home(row.organizationId);
 
 const seed = () => {
   queryClient.setQueryData(detailKey, row);
-  queryClient.setQueryData(homeKey, { items: [row], total: 1 });
+  queryClient.setQueryData(homeKey, { results: [row], totalSize: 1 });
 };
 const detail = () => queryClient.getQueryData<Row>(detailKey);
-const homeRow = () => queryClient.getQueryData<{ items: Row[] }>(homeKey)?.items[0];
+const homeRow = () => queryClient.getQueryData<{ results: Row[] }>(homeKey)?.results[0];
 
 afterEach(() => {
   queryClient.clear();

@@ -10,7 +10,6 @@ import {
 import {
   apiKeyParamSchema,
   apiKeySchema,
-  apiKeysResponseSchema,
   createApiKeyBodySchema,
   createdApiKeySchema,
   createServiceAccountBodySchema,
@@ -20,7 +19,7 @@ import {
   serviceAccountSchema,
   updateServiceAccountBodySchema,
 } from '#/modules/service-accounts/service-accounts-schema';
-import { paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import { pageQuerySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /**
  * All routes are user-only: creating and managing machine actors is a human act. Each operation first checks that the
@@ -68,8 +67,8 @@ const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get API keys',
     description: 'Lists the API keys of a service account. Secrets are never returned here.',
-    request: { params: serviceAccountParamSchema },
-    responses: { 200: json('API keys', apiKeysResponseSchema, { items: [mockApiKeyResponse()] }) },
+    request: { params: serviceAccountParamSchema, query: pageQuerySchema },
+    responses: { 200: json('API keys', paginationSchema(apiKeySchema), { results: [mockApiKeyResponse()], totalSize: 1 }) },
   }),
   createApiKey: xRoute({
     method: 'post',

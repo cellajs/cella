@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { digestFrequencies, notificationsTable } from '#/modules/notification/notification-db';
-import { booleanTransformSchema, integerQuerySchema, translatedError, validIdSchema } from '#/schemas';
+import { booleanTransformSchema, maxPageSizeSchema, pageQuerySchema, paginationSchema, validIdSchema } from '#/schemas';
 import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 
@@ -30,19 +30,13 @@ export const notificationSchema = createSelectSchema(notificationsTable).omit({ 
   subjectTitle: z.string(),
 });
 
-export const notificationListQuerySchema = z.object({
+/** A page of the inbox holds at most 100 rows: each one names its actor, channel and subject. */
+export const notificationListQuerySchema = pageQuerySchema.extend({
+  maxPageSize: maxPageSizeSchema(100),
   unread: booleanTransformSchema.describe('Return only unread notifications'),
-  limit: integerQuerySchema({ min: 1, max: 100, error: translatedError('error:invalid_limit', { max: 100 }) }).default(30),
-  before: z
-    .string()
-    .max(64)
-    .pipe(z.iso.datetime())
-    .openapi({ format: 'date-time' })
-    .optional()
-    .describe('createdAt of the last row of the previous page'),
 });
 
-export const notificationListResponseSchema = z.object({ items: notificationSchema.array(), unreadCount: z.number().int().min(0) });
+export const notificationListResponseSchema = paginationSchema(notificationSchema).extend({ unreadCount: z.int().min(0) });
 
 /** Omitting both marks every unread notification read. */
 export const markReadBodySchema = z.object({

@@ -29,8 +29,8 @@ describe('Organization member previews (include=members)', async () => {
 
   const readOrganizations = async (query: Record<string, string | number> = {}) => {
     const result = await call(listOrganizations, { query, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
-    const data = result.data as { items: OrgListItem[]; total: number } | undefined;
-    return { status: result.response.status, items: data?.items ?? [], total: data?.total ?? 0 };
+    const data = result.data as { results: OrgListItem[]; totalSize: number } | undefined;
+    return { status: result.response.status, items: data?.results ?? [], total: data?.totalSize ?? 0 };
   };
 
   const insertMembership = async (userId: string, orgId: string, role: EntityRole, createdAt: string, tenantId: string = tenant.tenantId) => {
@@ -115,7 +115,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M5: an empty page preserves the total count', async () => {
-    const result = await readOrganizations({ limit: 1, offset: 2 });
+    const result = await readOrganizations({ maxPageSize: 1, skip: 2 });
 
     expect(result.status).toBe(200);
     expect(result.items).toEqual([]);

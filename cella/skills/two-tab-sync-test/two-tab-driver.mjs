@@ -58,7 +58,7 @@ function instrument(page, tab) {
       let items = null;
       try {
         const body = await res.json();
-        items = (body.items ?? body.data?.items ?? []).map((i) => ({
+        items = (body.results ?? []).map((i) => ({
           id: i.id,
           name: i.name,
           deletedAt: i.deletedAt ?? null,

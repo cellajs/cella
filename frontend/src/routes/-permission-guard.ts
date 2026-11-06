@@ -25,7 +25,7 @@ export async function requireEntityAction(
   redirectTo: string = appConfig.defaultRedirectPath,
 ): Promise<void> {
   const memberships = await queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 'static' }).then(
-    ({ items }) => items,
+    ({ results }) => results,
     () => null,
   );
   if (!memberships) return;

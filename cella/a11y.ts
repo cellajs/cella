@@ -50,9 +50,9 @@ export default defineA11yBase({
     /** Path prefix of an organization the audit user administers, the first in their menu: settings and the invite dialog need that role. */
     org: async (user) => {
       const client = apiClient(user);
-      const [{ items: organizations }, { items: memberships }] = await Promise.all([
-        listOrganizations({ client, query: { limit: 50 } }),
-        listMyMemberships({ client }),
+      const [{ results: organizations }, { results: memberships }] = await Promise.all([
+        listOrganizations({ client, query: { maxPageSize: 50 } }),
+        listMyMemberships({ client, query: { maxPageSize: 1000 } }),
       ]);
       const [administered] = memberships
         .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)

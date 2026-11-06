@@ -35,14 +35,14 @@ const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
   }) as Attachment;
 const [att0, att1] = ['01970000-0000-7000-8000-000000000000', '01970000-0000-7000-8000-000000000001'];
 
-const homeList = () => queryClient.getQueryData<{ items: Attachment[] }>(homeKey)?.items ?? [];
+const homeList = () => queryClient.getQueryData<{ results: Attachment[] }>(homeKey)?.results ?? [];
 const detail = (id: string) => queryClient.getQueryData<Attachment>(attachmentQueryKeys.detail.byId(id));
 
 afterEach(resetMutationHooks);
 
 describe('attachment mutation hooks', () => {
   it('puts the stored row over the copy an edit left in the detail cache while its create was queued', async () => {
-    queryClient.setQueryData(homeKey, { items: [], total: 0 });
+    queryClient.setQueryData(homeKey, { results: [], totalSize: 0 });
     goOffline(batchCreateAttachments);
     // The first create runs and parks; the second waits behind it in the scope, unsent, so an edit may fold into it.
     for (const id of [att0, att1]) callHook(() => useAttachmentCreateMutation(ctx.tenantId, ctx.organizationId)).mutate([attachment(id)] as never);

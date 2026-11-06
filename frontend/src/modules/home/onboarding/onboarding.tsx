@@ -35,7 +35,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const { data: invitationsData } = useQuery(meInvitationsQueryOptions());
-  const invitations = invitationsData?.items ?? [];
+  const invitations = invitationsData?.results ?? [];
 
   // Locked at mount, after the welcome route has loaded both queries: an answer or a new organization mid-flow keeps the steps.
   const [steps] = useState(() => getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }));

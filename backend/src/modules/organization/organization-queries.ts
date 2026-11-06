@@ -89,7 +89,7 @@ export const publishOrganization = async (ctx: UserContext, { id }: PublishOrgan
   return published;
 };
 
-interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizationListQuerySchema>, 'sort' | 'order'> {
+interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizationListQuerySchema>['orderBy'], 'sort' | 'order'> {
   isSystemAdmin: boolean;
   targetUserId: string;
   /** Limits the list, its total and its includes to these organizations; unset lists every one the target belongs to. */
