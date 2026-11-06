@@ -45,6 +45,11 @@ describe('mcp-server', () => {
     expect(res?.result).toMatchObject({ protocolVersion: answered });
   });
 
+  it('answers a request with a null id as invalid, never as a notification', async () => {
+    const res = await handle(null, { jsonrpc: '2.0', id: null, method: 'tools/list' });
+    expect(res).toEqual({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid Request' } });
+  });
+
   it('answers GET and DELETE with 405 and the method it allows, so a client opens no stream and ends no session', async () => {
     // An MCP client sends its token on both, and a DELETE carries no body.
     const headers = { Authorization: 'Bearer header.payload.signature' };

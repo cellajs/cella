@@ -65,7 +65,9 @@ const isJsonRpcResponse = (message: unknown) =>
 export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
   if (isJsonRpcResponse(message)) return null;
   if (!isJsonRpcMessage(message)) return { jsonrpc: '2.0', id: readableId(message), error: { code: -32600, message: 'Invalid Request' } };
-  if (message.id === undefined || message.id === null) return null;
+  // A request id is a string or a number; without one the message is a notification, and a null id is neither.
+  if (message.id === null) return { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid Request' } };
+  if (message.id === undefined) return null;
 
   const id = message.id;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
