@@ -79,9 +79,8 @@
         // The service worker, which @serwist/vite builds from vite.config.ts.
         "src/lib/sw.ts"
       ],
-      // The `virtual:serwist` module of @serwist/vite imports the first at runtime, and knip does not read virtual modules.
       // vite.config.ts aliases `#pdfjs` to react-pdf's own pdfjs-dist, which react-pdf pins exactly, so the app lists no copy.
-      "ignoreDependencies": ["@serwist/window", "pdfjs-dist"]
+      "ignoreDependencies": ["pdfjs-dist"]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "agent/src/entry.ts"]

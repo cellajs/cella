@@ -6,4 +6,6 @@ export type PasskeyVerifyType = Exclude<PasskeyChallengeBody['type'], 'registrat
 
 export type TokenData = GetTokenDataResponse;
 
+export type TokenInvitation = NonNullable<TokenData['invitation']>;
+
 export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'invitation' | 'waitlist' | 'magicLinkSent';

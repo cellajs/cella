@@ -8,14 +8,14 @@ import { sendMagicLink, signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
-import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
+import type { TokenInvitation } from '~/modules/auth/types';
 import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
@@ -28,7 +28,11 @@ import { formResolver } from '~/utils/form-resolver';
 const passkeyEnabled = isStrategyEnabled('passkey');
 const magicLinkEnabled = isStrategyEnabled('magic');
 
-export function SignInStep() {
+interface SignInStepProps {
+  invitation?: TokenInvitation;
+}
+
+export function SignInStep({ invitation }: SignInStepProps) {
   const { t } = useTranslation();
   const { email, resetAuthStore, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
@@ -120,12 +124,12 @@ export function SignInStep() {
 
   return (
     <Form {...form}>
-      <AuthHeader title={getTitle()}>
-        {restrictedMode ? (
-          <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />
-        ) : (
-          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />
-        )}
+      <AuthHeader
+        image={invitation && <InvitationAvatar invitation={invitation} />}
+        title={getTitle()}
+        description={restrictedMode && <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />}
+      >
+        {!restrictedMode && <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />}
       </AuthHeader>
 
       {/* Built at submit time: a handler that reads a ref, handed over during render, keeps the compiler off this step */}
@@ -133,7 +137,7 @@ export function SignInStep() {
         <form noValidate onSubmit={(event) => form.handleSubmit(onSubmit, defaultOnInvalid)(event)} className="flex flex-col gap-4">
           <EmailField control={form.control} hidden={!restrictedMode} />
 
-          <SubmitButton ref={submitButtonRef} loading={isSending} className="w-full">
+          <SubmitButton ref={submitButtonRef} loading={isSending} size="block">
             {magicLinkEnabled ? (
               <>
                 <MailIcon />
@@ -146,8 +150,6 @@ export function SignInStep() {
               </>
             )}
           </SubmitButton>
-
-          {passkeyEnabled && <PasskeyStrategy type="authentication" />}
         </form>
       )}
     </Form>
@@ -161,8 +163,8 @@ function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) 
   if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
 
   return (
-    <p>
+    <>
       {t('c:new_here')} <InlineLinkButton onClick={() => onStep('signUp')}>{t('c:sign_up')}</InlineLinkButton>
-    </p>
+    </>
   );
 }

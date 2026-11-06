@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import type { TFunction } from 'i18next';
 import { Children, type ReactNode, use } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
@@ -10,12 +10,15 @@ const maxListedNames = 3;
 
 const strongClass = 'wrap-break-word inline-block max-w-full font-semibold text-foreground';
 
-/** The first three names and a count of the rest, as list parts: "a, b, c, and 37 more". */
-function listParts(names: string[]) {
+/**
+ * The first three names and a count of the rest, as list parts: "a, b, c, and 37 more". `t` and `language` come from the
+ * render, so the React Compiler's memo of the list follows a language change; the i18n singleton is invisible to it.
+ */
+function listParts(names: string[], t: TFunction, language: string | undefined) {
   const listed = names.slice(0, maxListedNames);
   const rest = names.length - listed.length;
-  const items = rest > 0 ? [...listed, i18n.t('c:counted_more', { count: rest })] : listed;
-  return new Intl.ListFormat(i18n.resolvedLanguage, { type: 'conjunction' }).formatToParts(items);
+  const items = rest > 0 ? [...listed, t('c:counted_more', { count: rest })] : listed;
+  return new Intl.ListFormat(language, { type: 'conjunction' }).formatToParts(items);
 }
 
 type ListParts = ReturnType<typeof listParts>;
@@ -70,13 +73,14 @@ interface NamedTextProps {
  * middle, except in a drawer's lead, where they wrap; anything else marked keeps to one line while it fits.
  */
 export function NamedText({ i18nKey, name, values = {} }: NamedTextProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage;
 
   const lists = new Map<string, ListParts>();
   const interpolated = Object.fromEntries(
     Object.entries(values).map(([key, value]) => {
       if (!Array.isArray(value)) return [key, value];
-      const parts = listParts(value);
+      const parts = listParts(value, t, language);
       const text = parts.map((part) => part.value).join('');
       lists.set(text, parts);
       return [key, text];

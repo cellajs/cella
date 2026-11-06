@@ -30,7 +30,10 @@ A development database that has been worked in fails the data check below: bench
 dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
 [A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
 `node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
-origin it shoots: it must be the shifted one.
+origin it shoots: it must be the shifted one. On that database the driver also turns MFA on for the shot user, with a
+passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
+(`pnpm --filter backend showcase:mfa`), so the account page and the member tables show both states. Nobody can sign in
+with those factors, so it leaves the database `backend/.env` names alone.
 
 That stack starts no relay, so a shot of a collaborative description reads "Connecting...": start `src/yjs-worker.ts` in
 `yjs/` through the same exports. An app's seed can be heavy and a second stack slows the first, so shoot one app at a

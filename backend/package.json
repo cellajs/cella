@@ -23,6 +23,7 @@
     "test": "cross-env TEST_MODE=core vitest run",
     "s3:cors": "tsx scripts/set-bucket-cors.ts",
     "session:mint": "tsx scripts/mint-session.ts",
+    "showcase:mfa": "tsx scripts/showcase-mfa.ts",
     "yjs:public-key": "tsx scripts/yjs-public-key.ts",
     "seed:assets": "tsx scripts/upload-seed-assets.ts",
     "compose": "tsx scripts/docker-compose.ts"

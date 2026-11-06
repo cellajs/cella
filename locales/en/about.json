@@ -218,7 +218,7 @@
   "sync_diagram.part_3.text": "For <strong>collaborative editing & online presence</strong>, the <strong>Yjs</strong> worker logs every edit as it arrives and relays it to clients. Permission is verified directly against the DB. A few seconds after the last edit, the worker hands the merged document to the API to save. Those not editing receive that write as an SSE notification.",
   "sync_diagram.part_4.label": "Part 4",
   "sync_diagram.part_4.text": "For small apps, <strong>one VM can run it all</strong>: the API process also starts the CDC, Yjs and other workers, with the frontend beside it. Nothing changes in how the parts talk to each other. One config flag gives each service its own VM.",
-  "sync_diagram.one_vm": "One VM",
+  "sync_diagram.one_vm": "Single VM",
   "sync_diagram.toggle_labels": "Toggle all data-flow labels",
   "showcase.title": "Build something real, launch faster",
   "showcase.text": "A showcase of real-world products built with Cella.",

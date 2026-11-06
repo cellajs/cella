@@ -27,10 +27,8 @@ export function ConfirmSignInPage() {
   if (error?.status === 401) {
     return (
       <>
-        <AuthHeader title={t('c:confirm_sign_in_expired')}>
-          <p>{t('c:confirm_sign_in_expired.text')}</p>
-        </AuthHeader>
-        <Button render={<Link to="/auth/authenticate" replace />}>
+        <AuthHeader title={t('c:confirm_sign_in_expired')} description={t('c:confirm_sign_in_expired.text')} />
+        <Button size="block" render={<Link to="/auth/authenticate" replace />}>
           <LogInIcon />
           {t('c:sign_in')}
         </Button>
@@ -49,13 +47,9 @@ export function ConfirmSignInPage() {
 
   return (
     <>
-      <AuthHeader title={t('c:confirm_sign_in')}>
-        <p>
-          <NamedText i18nKey="c:confirm_sign_in.text" values={{ email: data.email }} />
-        </p>
-      </AuthHeader>
+      <AuthHeader title={t('c:confirm_sign_in')} description={<NamedText i18nKey="c:confirm_sign_in.text" values={{ email: data.email }} />} />
       <form method="post" action={`${appConfig.backendAuthUrl}/magic/confirm`}>
-        <Button type="submit" className="w-full">
+        <Button type="submit" size="block">
           <LogInIcon />
           <MiddleCut text={t('c:continue_as', { email: data.email })} />
         </Button>

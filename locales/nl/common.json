@@ -138,6 +138,7 @@
   "sign_in_via_federation": "via {{federation}}",
   "sign_in_with_institution": "Inloggen met {{institution}}",
   "sign_in_with_your_institution": "Inloggen via je instelling",
+  "sign_in_with_your_institution_via": "Inloggen met je instelling via {{federation}}",
   "slide": "Dia",
   "slide_number": "Dia {{number}}",
   "someone": "Iemand",
@@ -166,5 +167,6 @@
   "update_tenant.text": "Bevat de organisatie <strong>{{name}}</strong>.",
   "update_tenant_no_organization.text": "Bevat nog geen organisatie.",
   "video": "Video",
-  "view_mode": "Weergave"
+  "view_mode": "Weergave",
+  "your_institution": "Je instelling"
 }

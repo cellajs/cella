@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
-import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
 import * as config from './shots-config.mjs';
 
 // A namespace import, so a shots-config.mjs written before an export existed still loads
@@ -112,6 +112,14 @@ const { base, api } = session;
 // off the mint output, so an app with its own slug needs no configuration here
 const slug = session.cookie.name.replace(/^__Host-/, '').replace(/-session-v\d+$/, '');
 log('target', { base, api, email: EMAIL, out: OUT_DIR ?? '(the files the app ships)' });
+
+// MFA on for the shot user and a share of their members, so the account page and member tables show both states. Only
+// on a throwaway database: nobody can sign in with the factors it adds, which locks a developer's own account out.
+if (process.env.DATABASE_ADMIN_URL && process.env.DATABASE_ADMIN_URL !== fileEnv.DATABASE_ADMIN_URL) {
+  const showcase = spawnSync('pnpm', ['--silent', '--filter', 'backend', 'showcase:mfa', EMAIL], { encoding: 'utf8' });
+  if (showcase.status !== 0) throw new Error(`showcase:mfa failed:\n${showcase.stdout}\n${showcase.stderr}`);
+  log('mfa', showcase.stdout.trim());
+} else log('mfa', 'left off: this run shoots the database backend/.env names');
 
 /**
  * Writes a screenshot to `path` in the app's format. WebP is lossless, so the pixels are the screenshot's own, at the

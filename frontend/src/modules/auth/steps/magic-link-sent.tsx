@@ -27,11 +27,8 @@ export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) 
           </div>
         }
         title={t('c:magic_link_check_email')}
-      >
-        <p>
-          <NamedText i18nKey={isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text'} values={{ email }} />
-        </p>
-      </AuthHeader>
+        description={<NamedText i18nKey={isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text'} values={{ email }} />}
+      />
       {appConfig.mode === 'development' && emailEnabled === false && (
         <Alert variant="info" className="mt-2">
           <InfoIcon />
@@ -40,7 +37,7 @@ export function MagicLinkSentStep({ emailEnabled }: { emailEnabled?: boolean }) 
         </Alert>
       )}
       {!isSignup && (
-        <Button variant="secondary" onClick={resetAuthStore} className="mt-2">
+        <Button variant="ghost" onClick={resetAuthStore} className="mt-2 self-center">
           <ArrowLeftIcon />
           {t('c:try_another_way')}
         </Button>

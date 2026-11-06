@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeftIcon, TriangleAlertIcon } from 'lucide-react';
+import { ArrowLeftIcon, FingerprintPatternIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { useDelayedFlag } from '~/hooks/use-delayed-flag';
-import { AuthDivider } from '~/modules/auth/auth-divider';
+import { type AuthAlternative, AuthAlternatives } from '~/modules/auth/auth-alternatives';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import { OAuthProviders } from '~/modules/auth/oauth-providers';
+import { useOAuthAlternatives } from '~/modules/auth/oauth-strategy';
+import { usePasskeySignIn } from '~/modules/auth/passkey-strategy';
 import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
 import { ServerUnavailableAlert } from '~/modules/auth/server-unavailable-alert';
-import { SsoProviders } from '~/modules/auth/sso-providers';
+import { useSsoAlternatives } from '~/modules/auth/sso-strategy';
 import { AcceptInvitationStep } from '~/modules/auth/steps/accept-invitation';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
 import { InvitationStep } from '~/modules/auth/steps/invitation';
@@ -19,9 +20,7 @@ import { MagicLinkSentStep } from '~/modules/auth/steps/magic-link-sent';
 import { SignInStep } from '~/modules/auth/steps/sign-in';
 import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
-import type { TokenData } from '~/modules/auth/types';
 import { useRestrictedMode } from '~/modules/auth/use-restricted-mode';
-import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meQueryOptions } from '~/modules/me/query';
@@ -31,6 +30,8 @@ import { useUserStore } from '~/modules/user/user-store';
 
 // Warn after this delay that the backend is slow to answer.
 const healthSlowMs = 5000;
+
+const passkeyEnabled = isStrategyEnabled('passkey');
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
@@ -64,6 +65,10 @@ export function AuthenticatePage() {
   const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
   const showSlowWarning = useDelayedFlag(isHealthLoading, healthSlowMs);
+
+  const passkeySignIn = usePasskeySignIn('authentication');
+  const sso = useSsoAlternatives(tokenData?.ssoConnectionId, healthData?.federations);
+  const oauth = useOAuthAlternatives(step);
 
   useEffect(() => {
     // The link-sent step stays until the visitor leaves it.
@@ -111,29 +116,31 @@ export function AuthenticatePage() {
 
   // The steps that sign in or up; the invitation step lays out its own ways in.
   const isSigningIn = ['checkEmail', 'signIn', 'signUp'].includes(step);
+  const invitation = inviteOtherAccount ? tokenData?.invitation : undefined;
+
+  const passkeyWays: AuthAlternative[] =
+    step === 'signIn' && passkeyEnabled
+      ? [{ id: 'passkey', icon: FingerprintPatternIcon, label: t('c:passkey.sign_in'), shortLabel: t('c:passkey'), onClick: passkeySignIn }]
+      : [];
+  const ssoWays = sso.institution ? [sso.institution, ...sso.federations] : sso.federations;
 
   return (
     <>
       {step === 'invitation' && tokenData && <InvitationStep tokenData={tokenData} federations={healthData?.federations} />}
 
-      {/* Answering an invitation with another account: it stays in view while signing in */}
-      {isSigningIn && inviteOtherAccount && tokenData?.invitation && <InvitationChip invitation={tokenData.invitation} />}
+      {step === 'checkEmail' && !restrictedMode && <CheckEmailStep invitation={invitation} />}
 
-      {step === 'checkEmail' && !restrictedMode && <CheckEmailStep />}
-
-      {step === 'signIn' && <SignInStep />}
-      {step === 'signUp' && <SignUpStep tokenData={tokenData} />}
+      {step === 'signIn' && <SignInStep invitation={invitation} />}
+      {step === 'signUp' && <SignUpStep tokenData={tokenData} invitation={invitation} />}
 
       {step === 'waitlist' && <WaitlistStep />}
       {step === 'magicLinkSent' && <MagicLinkSentStep emailEnabled={healthData?.emailEnabled} />}
 
       {isSigningIn && (
         <>
-          <AuthDivider />
-          {isStrategyEnabled('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
-          {isStrategyEnabled('oauth') && <OAuthProviders authStep={step} />}
+          <AuthAlternatives authStep={step} items={[...passkeyWays, ...ssoWays, ...oauth]} />
           {inviteOtherAccount && (
-            <Button variant="ghost" onClick={() => setInviteOtherAccount(false)}>
+            <Button variant="ghost" className="self-center" onClick={() => setInviteOtherAccount(false)}>
               <ArrowLeftIcon />
               {t('c:invite_back')}
             </Button>
@@ -143,16 +150,5 @@ export function AuthenticatePage() {
 
       {isHealthError && <ServerUnavailableAlert />}
     </>
-  );
-}
-
-/** Names the invitation being answered, above the steps that sign in to another account. */
-function InvitationChip({ invitation }: { invitation: NonNullable<TokenData['invitation']> }) {
-  const { t } = useTranslation();
-
-  return (
-    <EntityChip type={invitation.entityType} name={invitation.entityName} size="lg" className="intent-primary soft-bg soft-border mx-auto pr-3">
-      {t('c:invitation_to', { name: invitation.entityName })}
-    </EntityChip>
   );
 }

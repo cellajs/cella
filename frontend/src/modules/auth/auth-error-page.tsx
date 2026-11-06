@@ -48,7 +48,7 @@ export function AuthErrorPage() {
       )}
 
       <Button
-        variant={hasPrimaryAction ? 'secondary' : 'default'}
+        variant={hasPrimaryAction ? 'glass' : 'default'}
         render={<Link to="/auth/authenticate" search={resumeTokenId ? { tokenId: resumeTokenId } : {}} replace />}
       >
         <LogInIcon />

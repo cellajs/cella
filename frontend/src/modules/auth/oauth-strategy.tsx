@@ -1,19 +1,26 @@
 import { useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, type EnabledOAuthProvider } from 'shared';
+import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
 import type { BaseOAuthProviders } from 'shared/config-builder/types';
+import type { AuthAlternative } from '~/modules/auth/auth-alternatives';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { AuthStep } from '~/modules/auth/types';
-import { Button } from '~/modules/ui/button';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
+
+const oauthEnabled = isStrategyEnabled('oauth');
 
 const oauthProviderNames = { github: 'GitHub', google: 'Google', microsoft: 'Microsoft' } satisfies Record<BaseOAuthProviders, string>;
 
 /** The providers the app config enables, in its order. */
-export const enabledOAuthProviders = appConfig.enabledOAuthProviders.map((id) => ({ id, name: oauthProviderNames[id] }));
+export const enabledOAuthProviders = appConfig.enabledOAuthProviders.map((id) => ({
+  id,
+  name: oauthProviderNames[id],
+  icon: (() => <OAuthProviderIcon id={id} />) satisfies IconComponent,
+}));
 
 interface OAuthProviderIconProps {
   id: EnabledOAuthProvider;
@@ -26,13 +33,8 @@ export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
   );
 }
 
-interface OAuthProvidersProps {
-  /** Picks the wording: sign in, sign up or continue. */
-  authStep: AuthStep;
-}
-
-/** A button per enabled provider, which starts its round trip for a sign-in, a sign-up or the invitation in hand. */
-export function OAuthProviders({ authStep }: OAuthProvidersProps) {
+/** A way in per enabled provider, worded for `authStep`; none when the strategy is off. */
+export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
   const { t } = useTranslation();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
@@ -61,16 +63,14 @@ export function OAuthProviders({ authStep }: OAuthProvidersProps) {
     window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params}`);
   };
 
-  if (!enabledOAuthProviders.length) return null;
+  if (!oauthEnabled) return [];
 
-  return (
-    <div className="edgeless flex flex-col gap-2">
-      {enabledOAuthProviders.map(({ id, name }) => (
-        <Button loading={loadingProvider === id} key={id} variant="outline" onClick={() => authenticateWithProvider(id)}>
-          <OAuthProviderIcon id={id} />
-          <span>{t(labelKey, { provider: name })}</span>
-        </Button>
-      ))}
-    </div>
-  );
+  return enabledOAuthProviders.map(({ id, name, icon }) => ({
+    id,
+    icon,
+    label: t(labelKey, { provider: name }),
+    shortLabel: name,
+    loading: loadingProvider === id,
+    onClick: () => authenticateWithProvider(id),
+  }));
 }

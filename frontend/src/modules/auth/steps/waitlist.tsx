@@ -4,6 +4,7 @@ import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
+import { authFieldClass } from '~/modules/auth/steps/email-field';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 
 export function WaitlistStep() {
@@ -19,7 +20,8 @@ export function WaitlistStep() {
       <WaitlistForm
         email={email}
         className="flex-col items-stretch"
-        inputClassName="h-12"
+        inputClassName={authFieldClass}
+        buttonSize="block"
         buttonContent={
           <>
             {t('c:request_access')}

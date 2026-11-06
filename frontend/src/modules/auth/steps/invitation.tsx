@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,19 +6,18 @@ import { type GetAuthHealthResponse, sendMagicLink } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { ApiError } from '~/lib/api';
-import { AuthDivider } from '~/modules/auth/auth-divider';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { type AuthAlternative, AuthAlternatives } from '~/modules/auth/auth-alternatives';
+import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
-import { OAuthProviders } from '~/modules/auth/oauth-providers';
-import { ssoEntryQueryOptions } from '~/modules/auth/query';
-import { SsoProviders } from '~/modules/auth/sso-providers';
+import { useOAuthAlternatives } from '~/modules/auth/oauth-strategy';
+import { useSsoAlternatives } from '~/modules/auth/sso-strategy';
 import type { TokenData } from '~/modules/auth/types';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { Button } from '~/modules/ui/button';
 
 const magicLinkEnabled = isStrategyEnabled('magic');
 
@@ -46,9 +45,8 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
 
   const { email, invitation, ssoConnectionId } = tokenData;
 
-  // Shared with the institution button, so the order of the ways in is settled before anything shows.
-  const { data: entry, isLoading: isEntryLoading } = useQuery(ssoEntryQueryOptions(ssoConnectionId));
-  const institutionFirst = entry?.status === 'active';
+  const sso = useSsoAlternatives(ssoConnectionId, federations);
+  const oauth = useOAuthAlternatives('invitation');
 
   const { mutate: sendLink, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email, redirect } }),
@@ -62,46 +60,38 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
     },
   });
 
-  if (isEntryLoading) return <Spinner size="lg" />;
+  // The ways in are ordered once the institution lookup settles.
+  if (sso.isLoading) return <Spinner size="lg" />;
+
+  const { institution } = sso;
 
   // The address shows once the link is sent, on the sent step.
-  const emailWay = magicLinkEnabled && (
-    <SubmitButton
-      variant={institutionFirst ? 'secondary' : 'default'}
-      loading={isPending}
-      icon={<MailIcon />}
-      className="w-full"
-      onClick={() => sendLink()}
-    >
-      {t('c:continue_with_email')}
-    </SubmitButton>
-  );
+  const emailWay: AuthAlternative | null = magicLinkEnabled
+    ? { id: 'email', icon: MailIcon, label: t('c:continue_with_email'), shortLabel: t('c:email'), loading: isPending, onClick: () => sendLink() }
+    : null;
 
   return (
     <>
       <AuthHeader
-        image={invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-14" />}
+        image={invitation && <InvitationAvatar invitation={invitation} />}
         title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
-      >
-        {invitation && (
-          <p className="font-light">{t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })}</p>
-        )}
-      </AuthHeader>
+        description={invitation && t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })}
+      />
 
-      {institutionFirst ? (
-        <>
-          <SsoProviders connectionId={ssoConnectionId} federations={federations} primary />
-          <AuthDivider />
-          {emailWay}
-        </>
+      {institution ? (
+        <Button size="block" render={<a href={institution.href} />}>
+          <institution.icon />
+          <span className="truncate">{institution.label}</span>
+        </Button>
       ) : (
-        <>
-          {emailWay}
-          <AuthDivider />
-          {isStrategyEnabled('sso') && <SsoProviders federations={federations} />}
-        </>
+        emailWay && (
+          <SubmitButton size="block" loading={isPending} icon={<MailIcon />} onClick={emailWay.onClick}>
+            {emailWay.label}
+          </SubmitButton>
+        )
       )}
-      {isStrategyEnabled('oauth') && <OAuthProviders authStep="invitation" />}
+
+      <AuthAlternatives authStep="invitation" items={[...(institution && emailWay ? [emailWay] : []), ...sso.federations, ...oauth]} />
 
       {tokenData.inactiveMembershipId && (
         <p className="text-center">

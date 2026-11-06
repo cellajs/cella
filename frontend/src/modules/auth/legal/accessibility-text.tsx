@@ -5,7 +5,7 @@ import { accessibilityReview } from '~/modules/auth/legal/legal-config';
 import { SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
 import type { AccessibilityResults } from '~/modules/auth/legal/legal-types';
-import { enabledOAuthProviders } from '~/modules/auth/oauth-providers';
+import { enabledOAuthProviders } from '~/modules/auth/oauth-strategy';
 
 /** Joins items as prose: "a, b and c" or "a, b or c". */
 const listed = (items: string[], conjunction: 'and' | 'or') =>

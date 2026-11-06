@@ -16,7 +16,7 @@ let hashWriteBlockedUntil = 0;
 let initTime = 0;
 let pendingScrollTarget: string | null = null;
 let scrollSettleTimer = 0;
-let savedSection = ''; // Preserved across quick re-registrations (effect re-runs)
+let savedSection = ''; // Kept until the current task ends: an effect re-run registers again within it, a later visit reads the hash
 // Section a scroll was sent to: stays current until the user scrolls, even where the page can't bring it up to the trigger line
 let pinnedSection = '';
 let topWatchTarget: HTMLElement | Window | null = null;
@@ -233,6 +233,9 @@ export const unregisterSections = (ids: readonly string[]) => {
     unwatchScroller();
     pinnedSection = '';
     savedSection = currentSection;
+    queueMicrotask(() => {
+      savedSection = '';
+    });
     if (currentSection !== '') {
       currentSection = '';
       markActiveLinks();

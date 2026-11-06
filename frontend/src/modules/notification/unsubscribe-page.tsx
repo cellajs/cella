@@ -22,7 +22,7 @@ export function UnsubscribePage() {
   const resubscribed = isSuccess && variables?.enabled === true;
 
   const settingsLink = (
-    <Link to="/account" hash="notifications" className={buttonVariants({ variant: 'secondary', className: 'w-full' })}>
+    <Link to="/account" hash="notifications" className={buttonVariants({ variant: 'glass', size: 'block' })}>
       {t('c:notification_settings')}
     </Link>
   );
@@ -30,9 +30,7 @@ export function UnsubscribePage() {
   if (resubscribed) {
     return (
       <>
-        <AuthHeader title={t('c:unsubscribe_undone')}>
-          <p className="font-light">{t('c:unsubscribe_undone.text')}</p>
-        </AuthHeader>
+        <AuthHeader title={t('c:unsubscribe_undone')} description={t('c:unsubscribe_undone.text')} />
         {settingsLink}
       </>
     );
@@ -41,11 +39,9 @@ export function UnsubscribePage() {
   if (unsubscribed) {
     return (
       <>
-        <AuthHeader title={t('c:unsubscribe_done')}>
-          <p className="font-light">{t(`c:unsubscribe_${category}.text`)}</p>
-        </AuthHeader>
+        <AuthHeader title={t('c:unsubscribe_done')} description={t(`c:unsubscribe_${category}.text`)} />
         <div className="flex flex-col gap-2">
-          <Button variant="outline" className="w-full" disabled={isPending} onClick={() => mutate({ query, enabled: true })}>
+          <Button variant="glass" size="block" disabled={isPending} onClick={() => mutate({ query, enabled: true })}>
             {t('c:unsubscribe_undo')}
           </Button>
           {settingsLink}
@@ -58,7 +54,7 @@ export function UnsubscribePage() {
     <>
       <AuthHeader title={t(`c:unsubscribe_${category}`)} />
       <div className="flex flex-col gap-2">
-        <SubmitButton loading={isPending} icon={<BellOffIcon />} className="w-full" onClick={() => mutate({ query, enabled: false })}>
+        <SubmitButton loading={isPending} icon={<BellOffIcon />} size="block" onClick={() => mutate({ query, enabled: false })}>
           {t('c:unsubscribe')}
         </SubmitButton>
         {settingsLink}

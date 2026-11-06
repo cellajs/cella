@@ -100,7 +100,7 @@ export function InfoGrid<C extends string>({
           const categoryItems = items.filter((item) => item.category === category);
           return (
             <div key={category}>
-              <h2 className="mb-6 flex items-center gap-2 pl-6 text-xl font-semibold">
+              <h2 className="mb-6 flex items-center gap-2 pl-2 text-xl font-semibold sm:pl-6">
                 <CategoryIcon className="text-muted-foreground size-5" />
                 {t(`about:${namespace}.category_${category}` as TKey)}
               </h2>

@@ -272,11 +272,13 @@ export const whyLightSlides = [
   screenshot('screenshots/system-page.webp', 'System page'),
   screenshot('screenshots/org-page.webp', 'Organization page'),
   screenshot('screenshots/settings.webp', 'User settings page'),
+  screenshot('screenshots/docs-operations.webp', 'API documentation'),
 ];
 export const whyDarkSlides = [
   screenshot('screenshots/system-page-dark.webp', 'System page'),
   screenshot('screenshots/org-page-dark.webp', 'Organization page'),
   screenshot('screenshots/settings-dark.webp', 'User settings page'),
+  screenshot('screenshots/docs-operations-dark.webp', 'API documentation'),
 ];
 
 // About - Showcase

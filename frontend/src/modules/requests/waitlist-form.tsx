@@ -11,6 +11,7 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
+import type { ButtonProps } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
@@ -32,13 +33,13 @@ interface WaitlistFormProps {
   email?: string;
   inputClassName?: string;
   buttonContent?: ReactNode;
-  buttonClassName?: string;
+  buttonSize?: ButtonProps['size'];
   dialog?: boolean;
   className?: string;
   callback?: (args: CallbackArgs) => void;
 }
 
-export function WaitlistForm({ email, inputClassName, buttonContent, buttonClassName, dialog: isDialog, callback, className }: WaitlistFormProps) {
+export function WaitlistForm({ email, inputClassName, buttonContent, buttonSize, dialog: isDialog, callback, className }: WaitlistFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -82,7 +83,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
             </FormItem>
           )}
         />
-        <SubmitButton loading={isPending} className={cn('w-full px-6', buttonClassName)}>
+        <SubmitButton loading={isPending} size={buttonSize} className="w-full px-6">
           {buttonContent || (
             <>
               {t('c:join')}

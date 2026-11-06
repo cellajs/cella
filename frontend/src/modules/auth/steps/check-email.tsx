@@ -4,10 +4,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type CheckEmailData, checkEmail } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
+import type { TokenInvitation } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -16,14 +17,24 @@ import { formResolver } from '~/utils/form-resolver';
 const passkeyEnabled = isStrategyEnabled('passkey');
 const magicLinkEnabled = isStrategyEnabled('magic');
 
-export function CheckEmailStep() {
+interface CheckEmailStepProps {
+  invitation?: TokenInvitation;
+}
+
+export function CheckEmailStep({ invitation }: CheckEmailStepProps) {
   const { t } = useTranslation();
 
   const setStep = useAuthStore((state) => state.setStep);
   const setRestrictedMode = useAuthStore((state) => state.setRestrictedMode);
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
-  const title = inviteOtherAccount ? t('c:invite_sign_in') : appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
+  const title = invitation
+    ? t('c:invite_join', { name: invitation.entityName })
+    : inviteOtherAccount
+      ? t('c:invite_sign_in')
+      : appConfig.has.selfRegistration
+        ? t('c:sign_in_or_up')
+        : t('c:sign_in');
 
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email: '' } });
 
@@ -45,16 +56,21 @@ export function CheckEmailStep() {
 
   return (
     <Form {...form}>
-      <AuthHeader title={title}>
-        {inviteOtherAccount && <p className="font-light">{t('c:invite_sign_in.text')}</p>}
-        {/* An invitation in hand needs no sign-up, so its own line above stands alone */}
-        {!appConfig.has.selfRegistration && !inviteOtherAccount && <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />}
-      </AuthHeader>
+      {/* An invitation in hand needs no sign-up, so its own line stands alone */}
+      <AuthHeader
+        image={invitation && <InvitationAvatar invitation={invitation} />}
+        title={title}
+        description={
+          inviteOtherAccount
+            ? t('c:invite_sign_in.text')
+            : !appConfig.has.selfRegistration && <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />
+        }
+      />
 
       {(passkeyEnabled || magicLinkEnabled) && (
         <form noValidate onSubmit={form.handleSubmit((body) => submitEmail(body), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} />
-          <SubmitButton loading={isPending} className="w-full">
+          <SubmitButton loading={isPending} size="block">
             {t('c:continue')}
             <ArrowRightIcon />
           </SubmitButton>
