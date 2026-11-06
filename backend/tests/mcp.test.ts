@@ -113,7 +113,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   const toolCall = (ctx: Parameters<typeof rpc>[0], name: string, args: unknown) => rpc(ctx, 'tools/call', { name, arguments: args });
   const toolResult = (reply: { rpc: Rpc }) => reply.rpc.result as ToolResult;
 
-  it('publishes protected resource metadata and must name only read scopes in the challenge, so a client starts minimal', async () => {
+  it('publishes protected resource metadata and must name only read scopes in it and in the challenge, so a client starts minimal', async () => {
     const { org } = await orgWithAdmin();
     const metadata = await call(getMcpProtectedResourceMetadata, {
       path: { tenantId: org.tenantId, organizationId: org.id },
@@ -123,8 +123,9 @@ describe('MCP on the substrate (Phase E)', async () => {
     const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
     expect(metadata.data).toMatchObject({
       resource,
+      resource_name: expect.any(String),
       authorization_servers: [appConfig.oauthUrl],
-      scopes_supported: expect.arrayContaining(['attachment:read', 'attachment:write']),
+      scopes_supported: mcpInitialScope.split(' '),
     });
 
     const anonymous = await rpc({ org }, 'initialize');

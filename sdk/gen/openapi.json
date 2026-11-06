@@ -1717,6 +1717,9 @@
           "resource": {
             "type": "string"
           },
+          "resource_name": {
+            "type": "string"
+          },
           "authorization_servers": {
             "type": "array",
             "items": {
@@ -1739,10 +1742,11 @@
             "type": "string"
           }
         },
-        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "required": ["resource", "resource_name", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
         "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
         "example": {
           "resource": "http://localhost:3000/api/tenants/m5jfjs",
+          "resource_name": "Cella DEVELOPMENT API",
           "authorization_servers": ["http://localhost:3000/oauth"],
           "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
           "bearer_methods_supported": ["header"],
@@ -7972,8 +7976,9 @@
               "application/json": {
                 "example": {
                   "resource": "http://localhost:3000/mcp/tenants/5pooo8/organizations/8c598ff2-1070-4bfe-af42-de4764db5aba/mcp",
+                  "resource_name": "Cella DEVELOPMENT MCP",
                   "authorization_servers": ["http://localhost:3000/oauth"],
-                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "scopes_supported": ["organization:read", "attachment:read"],
                   "bearer_methods_supported": ["header"],
                   "resource_documentation": "http://localhost:3000/docs"
                 },

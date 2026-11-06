@@ -260,6 +260,7 @@ export const zStreamError = z.object({
  */
 export const zProtectedResourceMetadata = z.object({
   resource: z.string(),
+  resource_name: z.string(),
   authorization_servers: z.array(z.string()),
   scopes_supported: z.array(z.string()),
   bearer_methods_supported: z.array(z.string()),

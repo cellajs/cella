@@ -32,8 +32,11 @@ export function parseResource(uri: string): ResourceRef | null {
   return null;
 }
 
-/** Every read scope of the catalog, space-separated: the 401 challenge names it so a client's first consent grants no write. */
-export const mcpInitialScope = accessScopes.all.filter((scope) => scope.endsWith(':read')).join(' ');
+/** Every read scope of the catalog: what an MCP client asks for first, so its first consent grants no write. */
+const readScopes = accessScopes.all.filter((scope) => scope.endsWith(':read'));
+
+/** The read scopes, space-separated, as the MCP face's 401 challenge names them. */
+export const mcpInitialScope = readScopes.join(' ');
 
 /** RFC 9728: where a protected resource publishes its metadata; the `WWW-Authenticate` challenge points here. */
 export function resourceMetadataUrl(ref: ResourceRef): string {
@@ -65,8 +68,11 @@ export function bearerChallenge(ref: ResourceRef | null, refusal?: ChallengeRefu
 export function protectedResourceMetadata(ref: ResourceRef) {
   return {
     resource: resourceUri(ref),
+    resource_name: `${appConfig.name} ${ref.face === 'mcp' ? 'MCP' : 'API'}`,
     authorization_servers: [appConfig.oauthUrl],
-    scopes_supported: [...accessScopes.all],
+    // An MCP client asks for these when no challenge names a scope, and steps up from there; write scopes stay listed
+    // in the authorization server's metadata and on each MCP tool. The API face lists every scope it understands.
+    scopes_supported: ref.face === 'mcp' ? readScopes : [...accessScopes.all],
     bearer_methods_supported: ['header'],
     resource_documentation: `${appConfig.frontendUrl}/docs`,
   };

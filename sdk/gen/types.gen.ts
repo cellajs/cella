@@ -343,6 +343,7 @@ export type StreamError = {
  */
 export type ProtectedResourceMetadata = {
   resource: string;
+  resource_name: string;
   authorization_servers: Array<string>;
   scopes_supported: Array<string>;
   bearer_methods_supported: Array<string>;
