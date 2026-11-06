@@ -208,6 +208,8 @@ export const PageScrollWhileHovering: Story = {
       return event.defaultPrevented;
     };
 
+    // Starts from a leave: a browser cursor resting where the viewport mounts already blocks the page wheel
+    await userEvent.unhover(img);
     await expect(pageWheel()).toBe(false);
     await userEvent.hover(img);
     await expect(pageWheel()).toBe(true);
