@@ -22,7 +22,7 @@
   },
   "scripts": {
     "prepare": "lefthook install || exit 0",
-    "postinstall": "[ ! -f frontend/vite/write-locale-types.ts ] || pnpm locales:types",
+    "postinstall": "[ ! -e frontend/node_modules/shared ] || pnpm locales:types",
     "locales:types": "node frontend/vite/write-locale-types.ts",
     "docker": "pnpm --filter backend compose up --detach --wait",
     "docker:test": "pnpm --filter backend compose --profile test up -d --wait db_test",
