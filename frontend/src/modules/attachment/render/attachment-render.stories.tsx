@@ -54,23 +54,26 @@ const wheel = async (img: HTMLElement, deltaY: number, init: WheelEventInit = {}
   await frame();
 };
 
+/** A mouse pointer event; Chromium keeps the mouse active as pointer 1, so `setPointerCapture` accepts its id. */
+const pointer = (target: Element, type: string, init: PointerEventInit = {}) =>
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, ...init }));
+
 const drag = async (img: HTMLElement, dx: number, dy: number) => {
   const rect = img.getBoundingClientRect();
   const start = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
-  img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+  pointer(img, 'pointerdown', start);
   await frame();
   const end = { clientX: start.clientX + dx, clientY: start.clientY + dy };
-  img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...end }));
+  pointer(img, 'pointermove', end);
   await frame();
-  img.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, ...end }));
+  pointer(img, 'pointerup', end);
   await frame();
 };
 
-/** A press and release in place, `dx`/`dy` from the viewport centre. */
+/** A click in place, `dx`/`dy` from the viewport centre. */
 const press = async (img: HTMLElement, dx: number, dy: number) => {
   const at = fromCentre(img, dx, dy);
-  img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...at }));
-  img.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, ...at }));
+  for (const type of ['pointerdown', 'pointerup', 'click']) pointer(img, type, at);
   await frame();
 };
 
@@ -141,7 +144,8 @@ export const Viewer: Story = {
 
     await step('at fit or below, a drag or a click leaves the image in place', async () => {
       await drag(img, 40, 25);
-      await press(img, 50, 20);
+      // Far from the next step's click, so the two never make a double click
+      await press(img, -50, -20);
       await expect(panLayerOf(img)).toMatchObject({ x: 0, y: 0 });
     });
 
@@ -171,15 +175,16 @@ export const Viewer: Story = {
       await userEvent.click(zoomIn);
       // From the viewport's centre, where a press that never moves leaves the offset at 0
       const start = fromCentre(img);
-      img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+      pointer(img, 'pointerdown', start);
       await frame();
-      // The button comes up outside the viewport, which never sees that mouseup
-      document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      // The pointer leaves the viewport and its button comes up outside, where the viewport never sees the pointerup
+      pointer(img, 'pointerout', { relatedTarget: document.body });
+      pointer(document.body, 'pointerup');
       await frame();
 
       // Back over the image with no button held, the pointer moves without dragging the image along
       const back = { clientX: start.clientX + 40, clientY: start.clientY + 25 };
-      img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...back }));
+      pointer(img, 'pointermove', back);
       await new Promise((resolve) => setTimeout(resolve, 100));
       await expect(panLayerOf(img)).toMatchObject({ x: 0, y: 0 });
     });
@@ -219,10 +224,10 @@ export const BackdropDismiss: Story = {
     await userEvent.click(img);
     await expect(onBackdropClick).not.toHaveBeenCalled();
 
-    // The letterbox beside the image belongs to the stage, not to the pan layers above it
+    // Beside the image a click lands on the pan layer, which the viewport takes as a backdrop tap
     const rect = stage.getBoundingClientRect();
     const letterbox = document.elementFromPoint(rect.left + 5, rect.top + 5) as HTMLElement;
-    await expect(letterbox).toBe(stage);
+    await expect(letterbox).not.toBe(img);
     await userEvent.click(letterbox);
     await expect(onBackdropClick).toHaveBeenCalledTimes(1);
   },
