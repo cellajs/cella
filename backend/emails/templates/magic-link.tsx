@@ -12,6 +12,8 @@ interface MagicLinkStatic {
   invited: boolean;
 }
 
+const previewStatics: MagicLinkStatic = { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false, invited: false };
+
 export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipient & { email: string }>()({
   translate(lng, { magicLinkUrl, name, isNewUser, invited }) {
     const keyBase = isNewUser ? 'backend:email.magic_link.signup' : 'backend:email.magic_link';
@@ -44,5 +46,9 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
     );
   },
   requestDetails: true,
-  preview: { statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false, invited: false }, recipient: {} },
+  preview: { statics: previewStatics, recipient: {} },
+  previewVariants: {
+    signup: { statics: { ...previewStatics, name: '', isNewUser: true }, recipient: {} },
+    'signup-invited': { statics: { ...previewStatics, name: '', isNewUser: true, invited: true }, recipient: {} },
+  },
 });

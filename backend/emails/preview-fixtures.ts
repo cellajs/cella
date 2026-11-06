@@ -65,4 +65,25 @@ export type EmailPreviewName = keyof typeof previewTemplates;
 /** Sample data lives on each template's `preview` field, type-checked against its own props. */
 export const emailPreviews: Record<EmailPreviewName, AnyEmailTemplateDef> = previewTemplates;
 
-export const emailPreviewNames = Object.keys(previewTemplates) as EmailPreviewName[];
+const emailPreviewNames = Object.keys(previewTemplates) as EmailPreviewName[];
+
+/** One preview to render: a template's default sample data, or one of its `previewVariants`. */
+export interface EmailPreview {
+  name: EmailPreviewName;
+  /** Absent for the default `preview`. */
+  variant?: string;
+  data: AnyEmailTemplateDef['preview'];
+}
+
+/** Every preview: each template's default, then each of its variants. */
+export const emailPreviewList: EmailPreview[] = emailPreviewNames.flatMap((name) => {
+  const { preview, previewVariants = {} } = emailPreviews[name];
+  return [{ name, data: preview }, ...Object.entries(previewVariants).map(([variant, data]) => ({ name, variant, data }))];
+});
+
+/** A preview as the index and `/list` name it: `<name>`, or `<name>?variant=<variant>`. */
+export const previewPath = ({ name, variant }: Pick<EmailPreview, 'name' | 'variant'>) => (variant ? `${name}?variant=${variant}` : name);
+
+/** The sample data of a template's default preview, or of the variant named; undefined for a variant it does not declare. */
+export const previewData = (name: EmailPreviewName, variant?: string) =>
+  emailPreviewList.find((preview) => preview.name === name && preview.variant === variant)?.data;

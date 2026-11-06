@@ -38,4 +38,8 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
   },
   requestDetails: true,
   preview: { statics: { type: 'contact' }, recipient: {} },
+  previewVariants: {
+    waitlist: { statics: { type: 'waitlist' }, recipient: {} },
+    newsletter: { statics: { type: 'newsletter' }, recipient: {} },
+  },
 });

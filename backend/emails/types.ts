@@ -71,6 +71,8 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
   component(props: Record<string, unknown> & FrameProps): React.ReactElement;
   /** Sample data to render this template in previews and tests. */
   preview: EmailPreviewData<TStatic, TRecipient>;
+  /** More sample data by variant name, for each case in which the mail reads differently, such as a sign-up or a waitlist. */
+  previewVariants?: Record<string, EmailPreviewData<TStatic, TRecipient>>;
   htmlParams?: HtmlParams<TRecipient>;
   requestDetails?: RequestDetailsDeclaration<TStatic>;
   /**
@@ -88,6 +90,7 @@ export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient =
     translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): TTranslated;
     component(props: TTranslated & RecipientProps<TRecipient> & FrameProps): React.ReactElement;
     preview: EmailPreviewData<TStatic, TRecipient>;
+    previewVariants?: Record<string, EmailPreviewData<TStatic, TRecipient>>;
     htmlParams?: HtmlParams<TRecipient>;
     requestDetails?: RequestDetailsDeclaration<TStatic>;
     listUnsubscribe?: RecipientKey<TRecipient>;

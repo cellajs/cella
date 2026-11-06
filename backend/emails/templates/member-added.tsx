@@ -15,6 +15,14 @@ interface MemberAddedStatic {
 
 type MemberAddedRecipient = EmailRecipient & { name: string; entityLink: string };
 
+const previewStatics: MemberAddedStatic = {
+  senderName: 'John Doe',
+  senderEmail: 'john.doe@acme.example',
+  entityName: 'Acme',
+  role: hierarchy.getLeastPrivilegedRole('organization'),
+};
+const previewRecipient = { name: 'Emily', entityLink: 'https://example.com/acme' };
+
 export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAddedRecipient>()({
   translate(lng, { senderName, senderEmail, entityName, organizationName, role }, param = plainParam) {
     const scope = organizationScope(organizationName);
@@ -51,13 +59,8 @@ export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAdd
       />
     );
   },
-  preview: {
-    statics: {
-      senderName: 'John Doe',
-      senderEmail: 'john.doe@acme.example',
-      entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole('organization'),
-    },
-    recipient: { name: 'Emily', entityLink: 'https://example.com/acme' },
+  preview: { statics: previewStatics, recipient: previewRecipient },
+  previewVariants: {
+    'in-organization': { statics: { ...previewStatics, entityName: 'Website', organizationName: 'Acme' }, recipient: previewRecipient },
   },
 });

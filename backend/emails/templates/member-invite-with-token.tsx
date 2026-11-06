@@ -15,6 +15,14 @@ interface MemberInviteWithTokenStatic {
 
 type MemberInviteWithTokenRecipient = EmailRecipient & { inviteLink: string };
 
+const previewStatics: MemberInviteWithTokenStatic = {
+  senderName: 'John Doe',
+  senderEmail: 'john.doe@acme.example',
+  entityName: 'Acme',
+  role: hierarchy.getLeastPrivilegedRole('organization'),
+};
+const previewRecipient = { inviteLink: 'https://example.com/invite' };
+
 /** For an address without an account, which needs the token and is greeted by no name; an account gets member-invite. */
 export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTokenStatic, MemberInviteWithTokenRecipient>()({
   translate(lng, { senderName, senderEmail, entityName, organizationName, role }) {
@@ -52,13 +60,8 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTo
       />
     );
   },
-  preview: {
-    statics: {
-      senderName: 'John Doe',
-      senderEmail: 'john.doe@acme.example',
-      entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole('organization'),
-    },
-    recipient: { inviteLink: 'https://example.com/invite' },
+  preview: { statics: previewStatics, recipient: previewRecipient },
+  previewVariants: {
+    'in-organization': { statics: { ...previewStatics, entityName: 'Website', organizationName: 'Acme' }, recipient: previewRecipient },
   },
 });
