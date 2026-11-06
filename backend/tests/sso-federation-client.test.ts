@@ -41,6 +41,9 @@ const jwk = { ...(await exportJWK(publicKey)), kid: 'key_2026_10_02', alg: 'RS25
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
+/** When the id_token says the institution authenticated the person: an hour before the sign-in. */
+const authTime = Math.floor(Date.now() / 1000) - 3600;
+
 /** An id_token the federation would mint for this client: signed with the key its JWKS publishes. */
 const idToken = (claims: Record<string, unknown>, { audience = federation.clientId, expiresAt }: { audience?: string; expiresAt?: number } = {}) =>
   new SignJWT(claims)
@@ -55,7 +58,8 @@ const idToken = (claims: Record<string, unknown>, { audience = federation.client
 /**
  * A SURFconext stand-in behind `fetch`: the discovery document, the token endpoint (checking the client's basic
  * authentication and the code), the key set and userinfo. Counts the calls per path and keeps the id_tokens it issued.
- * `tokenResponse` overrides members of the token response; `expiresAt` (epoch seconds) dates the id_token's expiry.
+ * `tokenResponse` overrides members of the token response; `expiresAt` (epoch seconds) dates the id_token's expiry;
+ * `issParameter` announces that authorization responses name the issuer (RFC 9207).
  */
 const federationServer = (options: {
   nonce: string;
@@ -63,6 +67,7 @@ const federationServer = (options: {
   userinfoSub?: string;
   tokenResponse?: Record<string, unknown>;
   expiresAt?: number;
+  issParameter?: boolean;
 }) => {
   const calls: Record<string, number> = {};
   const idTokens: string[] = [];
@@ -83,6 +88,7 @@ const federationServer = (options: {
           id_token_signing_alg_values_supported: ['RS256'],
           token_endpoint_auth_methods_supported: ['client_secret_basic'],
           code_challenge_methods_supported: ['S256'],
+          ...(options.issParameter && { authorization_response_iss_parameter_supported: true }),
         });
       case '/oidc/token': {
         // Basic authentication per RFC 6749 §2.3.1: both parts form-url-encoded before base64, so decode them to compare.
@@ -94,7 +100,7 @@ const federationServer = (options: {
         const body = new URLSearchParams(String(init?.body));
         if (body.get('grant_type') !== 'authorization_code' || body.get('code') !== 'the-code') return json({ error: 'invalid_grant' }, 400);
         const issued = await idToken(
-          { nonce: options.nonce, acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport' },
+          { nonce: options.nonce, acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport', auth_time: authTime },
           { audience: options.tokenAudience, expiresAt: options.expiresAt },
         );
         idTokens.push(issued);
@@ -111,6 +117,8 @@ const federationServer = (options: {
           given_name: 'Sanne',
           family_name: 'de Vries',
           eduperson_affiliation: ['student', 'member'],
+          acr: 'https://refeds.org/profile/mfa',
+          auth_time: Math.floor(Date.now() / 1000),
         });
       default:
         return new Response('not found', { status: 404 });
@@ -124,7 +132,8 @@ const roundTrip = { state: 'the-state', codeVerifier: 'a'.repeat(43), nonce: 'th
 describe('federation client', () => {
   beforeEach(() => forgetFederation(federation.key));
 
-  it('builds the authorization URL from the discovered endpoint: code flow, PKCE S256, nonce and the IdP pin', async () => {
+  // The step-up an asserted MFA grants is dated from `auth_time`, so the start asks for it as an essential claim.
+  it('builds the authorization URL from the discovered endpoint: code flow, PKCE S256, nonce, essential auth_time and the IdP pin', async () => {
     const server = federationServer({ nonce: roundTrip.nonce });
     const url = await createFederationAuthorizationUrl(federation, { ...roundTrip, loginHint: 'https://idp.hu.nl/a,https://idp.hu.nl/b' }, server);
 
@@ -141,9 +150,12 @@ describe('federation client', () => {
       login_hint: 'https://idp.hu.nl/a,https://idp.hu.nl/b',
     });
     expect(params.code_challenge).toHaveLength(43);
+    expect(JSON.parse(params.claims)).toEqual({ id_token: { auth_time: { essential: true } } });
+    expect(params.max_age).toBeUndefined();
   });
 
-  it('exchanges the code and returns the verified id_token claims with userinfo over them', async () => {
+  // The step-up an SSO sign-in grants reads `acr` and `auth_time`: the id_token's, whatever userinfo answers.
+  it("exchanges the code and returns the verified id_token claims with userinfo over them, the authentication event the id_token's", async () => {
     const server = federationServer({ nonce: roundTrip.nonce });
     const claims = await exchangeFederationCode(federation, { ...roundTrip, code: 'the-code' }, server);
 
@@ -151,6 +163,7 @@ describe('federation client', () => {
       iss: issuer,
       sub: '0dd64f5cf2a23bef04a1e2ec225e76ff3935cece',
       acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
+      auth_time: authTime,
       schac_home_organization: 'hu.nl',
       email: 's.devries@student.hu.nl',
       eduperson_affiliation: ['student', 'member'],
@@ -174,6 +187,20 @@ describe('federation client', () => {
     await refusal(federationServer({ nonce: roundTrip.nonce, tokenAudience: 'another-client' }));
     forgetFederation(federation.key);
     await refusal(federationServer({ nonce: roundTrip.nonce, userinfoSub: 'someone-else' }));
+  });
+
+  // The callback is shared by every federation, so the response's `iss` tells them apart: a code another federation's
+  // response carried is refused before its exchange (mix-up, RFC 9700 §4.4).
+  it('refuses an authorization response that names another issuer, or none where the federation announces the parameter', async () => {
+    const server = federationServer({ nonce: roundTrip.nonce, issParameter: true });
+    const exchange = (iss?: string) => exchangeFederationCode(federation, { ...roundTrip, code: 'the-code', iss }, server);
+
+    await expect(exchange('https://proxy.other-federation.example')).rejects.toMatchObject({ status: 401, type: 'invalid_credentials' });
+    await expect(exchange()).rejects.toMatchObject({ status: 401, type: 'invalid_credentials' });
+    expect(server.calls['/oidc/token']).toBeUndefined();
+
+    // Positive control: a federation that announces the parameter signs in with its own issuer in the response.
+    await expect(exchange(issuer)).resolves.toMatchObject({ iss: issuer });
   });
 
   it("must not log the provider's tokens or ID token claims on a federation refusal", async () => {

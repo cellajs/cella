@@ -167,10 +167,11 @@ const connectCallbackFlow = async ({
 
 /**
  * Sign-up via invitation, for a provider account that asserts the invited address. An invitation link can be
- * forwarded, so opening it proves the inbox only together with the provider's own verification of the address: then
- * the account is created with its address and identity verified, in one transaction that also claims the invitations
- * waiting for the address, accepts the invitation of the link, and signs in without a second mail. Otherwise the
- * sign-up waits on the verification mail, and completing it claims the invitations the same way.
+ * forwarded, so opening it proves the inbox only together with a provider that hosts the address (`provesAddress`):
+ * then the account is created with its address and identity verified, in one transaction that also claims the
+ * invitations waiting for the address, accepts the invitation of the link, and signs in without a second mail.
+ * Otherwise the sign-up waits on the verification mail, a provider's verified flag alone included, and completing it
+ * claims the invitations the same way.
  */
 const inviteCallbackFlow = async ({
   ctx,
@@ -190,7 +191,7 @@ const inviteCallbackFlow = async ({
   const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
 
-  if (!providerUser.emailVerified) return pendingSignUp(providerUser, provider);
+  if (!providerUser.provesAddress) return pendingSignUp(providerUser, provider);
 
   const { email } = invitationToken;
   const created = await baseDb.transaction(async (tx) => {

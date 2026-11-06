@@ -1,7 +1,13 @@
 import * as oauth from 'oauth4webapi';
 import { appConfig } from 'shared';
 import { env } from '#/env';
-import { authorizationUrl, isProviderRefusal, providerDeadline } from '#/modules/auth/oauth/helpers/code-flow';
+import {
+  type AuthorizationResponse,
+  authorizationResponseParams,
+  authorizationUrl,
+  isProviderRefusal,
+  providerDeadline,
+} from '#/modules/auth/oauth/helpers/code-flow';
 
 /** Thrown when the provider rejects the authorization response or code exchange (bad, expired, or replayed code). */
 export class OAuthCodeExchangeError extends Error {
@@ -11,8 +17,15 @@ export class OAuthCodeExchangeError extends Error {
   }
 }
 
-/** Per-flow values minted at initiation and echoed back on the callback via the state cookie. */
-export type OAuthFlowContext = { codeVerifier?: string; nonce?: string };
+/** What a code exchange yields: the access token and, for an OIDC provider, the claims of the sign-in. */
+export interface ProviderGrant {
+  accessToken: string;
+  /** The userinfo claims with the id_token's over them, so the subject and the address are the id_token's. */
+  claims?: oauth.UserInfoResponse;
+}
+
+/** Per-flow values minted at initiation and echoed back on the callback via the state cookie; only an OIDC provider takes a nonce. */
+export type OAuthFlowContext = { codeVerifier: string; nonce?: string };
 
 type ProviderSetup = {
   as: oauth.AuthorizationServer & { authorization_endpoint: string };
@@ -52,41 +65,49 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
   return {
     /** False without a client id and secret in the environment: the provider would refuse the round trip. */
     configured: Boolean(clientId && clientSecret),
+    /** An OIDC provider: its round trip carries a nonce, which the id_token must echo. */
+    oidc,
 
-    /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
-    createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
+    /** Builds the provider authorization URL with state, scopes, the PKCE challenge and, for an OIDC provider, the nonce. */
+    createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext): Promise<URL> {
       return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
     },
 
     /**
-     * Exchanges the authorization code for tokens, enforcing PKCE when a `codeVerifier` is given. OIDC providers also get
-     * id_token claim validation, `nonce` binding, and a signature check against the provider JWKS.
+     * Exchanges the authorization code for tokens with the PKCE verifier. OIDC providers also get id_token claim
+     * validation, `nonce` binding and a signature check against the provider JWKS, then userinfo, refused unless its
+     * `sub` is the id_token's (OIDC Core §5.3.2).
      */
-    async validateAuthorizationCode(code: string, state: string, { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<{ accessToken: string }> {
+    async validateAuthorizationCode(response: AuthorizationResponse, { codeVerifier, nonce }: OAuthFlowContext): Promise<ProviderGrant> {
       try {
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
-        const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
-        const response = await oauth.authorizationCodeGrantRequest(
-          as,
-          client,
-          clientAuth,
-          callbackParams,
-          redirectUri,
-          codeVerifier ?? oauth.nopkce,
-          { signal: providerDeadline() },
-        );
+        // A multi-tenant alias learns its tenant's issuer from the id_token: its response `iss` is compared once that is known.
+        const params = authorizationResponseParams({ ...response, iss: resolveIssuerFromIdToken ? undefined : response.iss });
+        const callbackParams = oauth.validateAuthResponse(as, client, params, response.state);
+        const tokenResponse = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier, {
+          signal: providerDeadline(),
+        });
 
-        const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(response, as) : as;
-        const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, response, {
+        const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(tokenResponse, as) : as;
+        if (response.iss && response.iss !== effectiveAs.issuer) {
+          throw new OAuthCodeExchangeError(new Error('unexpected "iss" (issuer) response parameter value'));
+        }
+        const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, tokenResponse, {
           requireIdToken: oidc,
           expectedNonce: oidc ? (nonce ?? oauth.expectNoNonce) : undefined,
         });
 
-        // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
-        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, response, { signal: providerDeadline() });
+        if (!oidc) return { accessToken: tokens.access_token };
 
-        return { accessToken: tokens.access_token };
+        // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
+        await oauth.validateApplicationLevelSignature(effectiveAs, tokenResponse, { signal: providerDeadline() });
+        const idClaims = oauth.getValidatedIdTokenClaims(tokens);
+        if (!idClaims) throw new OAuthCodeExchangeError(new Error('id_token missing'));
+
+        const userinfoResponse = await oauth.userInfoRequest(effectiveAs, client, tokens.access_token, { signal: providerDeadline() });
+        const userinfo = await oauth.processUserInfoResponse(effectiveAs, client, idClaims.sub, userinfoResponse);
+        return { accessToken: tokens.access_token, claims: { ...userinfo, ...idClaims } };
       } catch (error) {
         if (isProviderRefusal(error)) throw new OAuthCodeExchangeError(error);
         throw error;
@@ -97,7 +118,8 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
 
 export const githubAuth = createProviderClient({
   as: {
-    issuer: 'https://github.com',
+    // The issuer of GitHub's server metadata (RFC 8414), which its callbacks name in `iss`.
+    issuer: 'https://github.com/login/oauth',
     authorization_endpoint: 'https://github.com/login/oauth/authorize',
     token_endpoint: 'https://github.com/login/oauth/access_token',
   },
@@ -112,6 +134,7 @@ export const googleAuth = createProviderClient({
     issuer: 'https://accounts.google.com',
     authorization_endpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
     token_endpoint: 'https://oauth2.googleapis.com/token',
+    userinfo_endpoint: 'https://openidconnect.googleapis.com/v1/userinfo',
     jwks_uri: 'https://www.googleapis.com/oauth2/v3/certs',
   },
   clientId: env.GOOGLE_CLIENT_ID || '',
@@ -129,6 +152,7 @@ export const microsoftAuth = createProviderClient({
     issuer: `https://login.microsoftonline.com/${entraTenant}/v2.0`,
     authorization_endpoint: `https://login.microsoftonline.com/${entraTenant}/oauth2/v2.0/authorize`,
     token_endpoint: `https://login.microsoftonline.com/${entraTenant}/oauth2/v2.0/token`,
+    userinfo_endpoint: 'https://graph.microsoft.com/oidc/userinfo',
     jwks_uri: `https://login.microsoftonline.com/${entraTenant}/discovery/v2.0/keys`,
   },
   clientId: env.MICROSOFT_CLIENT_ID || '',
@@ -158,6 +182,8 @@ export interface GoogleUserProps {
   family_name: string;
   email: string;
   email_verified: boolean;
+  /** The Google Workspace domain of the account; absent for a consumer account. */
+  hd?: string;
 }
 
 export interface MicrosoftUserProps {

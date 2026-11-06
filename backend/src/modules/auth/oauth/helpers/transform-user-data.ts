@@ -7,6 +7,8 @@ export type TransformedUser = {
   id: string;
   slug: string;
   email: string;
+  /** Set when the provider hosts the address's mailbox, so its sign-in proves the inbox: a verified flag records a check made once. */
+  provesAddress?: boolean;
   name: string;
   emailVerified: boolean;
   firstName: string;
@@ -27,6 +29,8 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
     id: user.sub,
     slug: slugFromEmail(normalizedEmail),
     email: normalizedEmail,
+    // Google hosts Gmail and Workspace (`hd`) mailboxes; for any other address its flag dates from the account's creation.
+    provesAddress: 'email_verified' in user && user.email_verified && (normalizedEmail.endsWith('@gmail.com') || !!user.hd),
     name,
     emailVerified: 'email_verified' in user ? user.email_verified : false,
     firstName: givenName,

@@ -1257,6 +1257,7 @@ export const zMicrosoftQuery = z.object({
 export const zGithubCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1265,6 +1266,7 @@ export const zGithubCallbackQuery = z.object({
 export const zGoogleCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1273,6 +1275,7 @@ export const zGoogleCallbackQuery = z.object({
 export const zMicrosoftCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1327,6 +1330,7 @@ export const zStartSsoFederationQuery = z.object({
 export const zSsoCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),

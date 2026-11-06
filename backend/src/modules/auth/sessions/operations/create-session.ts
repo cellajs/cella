@@ -65,6 +65,8 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
 export interface SessionExtras {
   /** The second factor an MFA completion presented, or `sso` for an institution's asserted MFA: the session starts stepped up by it. */
   steppedUpVia?: StepUpProof | null;
+  /** When that proof was made, an ISO timestamp; default now. An institution's MFA dates from its authentication. */
+  steppedUpAt?: string;
   /** The connection (an institution's trust) an SSO sign-in came through. */
   connectionId?: string | null;
 }
@@ -79,7 +81,7 @@ export const createSession = async (
   context: SignInContext,
   strategy: AuthStrategy,
   type: SessionType = 'regular',
-  { steppedUpVia = null, connectionId = null }: SessionExtras = {},
+  { steppedUpVia = null, steppedUpAt, connectionId = null }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
 
@@ -104,7 +106,7 @@ export const createSession = async (
     deviceIdHash: hashDeviceIdForUser(deviceId, user.id),
     createdAt: now,
     expiresAt: isoDateIn(sessionLifetime),
-    steppedUpAt: steppedUpVia ? now : null,
+    steppedUpAt: steppedUpVia ? (steppedUpAt ?? now) : null,
     steppedUpVia,
     connectionId,
   };

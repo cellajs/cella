@@ -38,6 +38,20 @@ export const authorizationUrl = async (
   return url;
 };
 
+/** An authorization response the callback validated: `code`, `state` and the issuer `iss`, when the server sends it. */
+export interface AuthorizationResponse {
+  code: string;
+  state: string;
+  iss?: string;
+}
+
+/** The response as `validateAuthResponse` reads it, which compares `iss` with the server's issuer. */
+export const authorizationResponseParams = ({ code, state, iss }: AuthorizationResponse) => {
+  const params = new URLSearchParams({ code, state });
+  if (iss) params.set('iss', iss);
+  return params;
+};
+
 /**
  * Whether oauth4webapi refused what the provider or federation answered: the code was rejected, or the response or
  * its tokens failed verification. Both clients answer it 401 `invalid_credentials`; any other error is a fault on this

@@ -2435,6 +2435,7 @@ export type GithubCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2477,6 +2478,7 @@ export type GoogleCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2519,6 +2521,7 @@ export type MicrosoftCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2689,6 +2692,7 @@ export type SsoCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;

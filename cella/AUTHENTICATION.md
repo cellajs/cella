@@ -21,6 +21,8 @@ actions that change how an account is protected first ask the session to prove i
 
 Each method is a sub-module of `backend/src/modules/auth/`, and `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up. The sign-in page first asks whether the address is known, and learns it only in a browser that signed in to that account before. Every other browser gets the neutral sign-in step, whether or not the address has an account.
 
+Microsoft sign-in accepts every Entra tenant and personal account unless `MICROSOFT_TENANT_ID` narrows it to `organizations`, `consumers` or one tenant named by its GUID; a tenant's domain name there fails every sign-in, since tokens name the tenant by its GUID.
+
 A magic-link or provider sign-in ends in a [session](./authentication/SESSIONS.md), or first in an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST` (none when unset, this machine in the development `.env`). The API reads the client address from the last `X-Forwarded-For` entry, so it must run behind exactly one proxy that appends the connecting peer to that header, as the template's load balancer does. An app behind no proxy, or one that passes the client's header through, lets a client choose the address its allowlist and rate limits read.
 
 ## Sign-up
@@ -29,7 +31,7 @@ An account exists only once its inbox is proven. The account, its proven address
 
 - **Magic link.** A link to an unknown address names no user. The account is created when the link is clicked.
 - **Provider.** A provider sign-up waits on a verification mail to the provider's address. The account is created when the same provider account signs in again in the browser that opened the mail.
-- **Invitation.** An invitation link can be forwarded, so an invitee skips that mail only when the provider verified the invited address itself. An account accepts an invitation once it holds the invited address, or through a link mailed to that inbox for this account. A magic-link sign-in to the invited address, in the browser that opened the invitation link and on an account without MFA, accepts it at once; an invitation the account claims by its address alone waits for an answer in the app. Accepting grants the membership and never adds the invited address to the accepting account.
+- **Invitation.** An invitation link can be forwarded, so an invitee skips that mail only when the provider hosts the invited address, as Google does for Gmail and Google Workspace accounts: a provider's verified flag alone may date from before the address changed hands. An account accepts an invitation once it holds the invited address, or through a link mailed to that inbox for this account. A magic-link sign-in to the invited address, in the browser that opened the invitation link and on an account without MFA, accepts it at once; an invitation the account claims by its address alone waits for an answer in the app. Accepting grants the membership and never adds the invited address to the accepting account.
 - **Who may sign up.** Open registration or a standing invitation, checked at the start and at completion. While registration is closed, a provider sign-up on an address the provider did not verify starts from the invitation link only.
 
 An account is identified by the proofs it holds (`identities`, `emails`), never by an address.
@@ -71,7 +73,7 @@ An account-security action needs more than a session: the session must have prov
 
 Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
-- **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA.
+- **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA, within the window from the moment the institution authenticated the person, which the sign-in asks its token to state; a token that gives no such moment counts as no factor.
 - **Set up a factor**: the dialog offers to add a passkey or an authenticator app. Setting it up proves it on the session, so the action runs right after.
 - **Emailed code**: mailed to the account's address for the session that asked and typed into the same dialog, so it works when the mail is read on a phone or in another browser.
 - **A lost factor**: with MFA off the mailbox signs the account in anyway, so a user who lost their passkey or authenticator may set up a new one with an emailed code. The code opens nothing else. With MFA on the other factor replaces the lost one.

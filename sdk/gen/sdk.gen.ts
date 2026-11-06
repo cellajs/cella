@@ -1194,6 +1194,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(
  * @param {githubCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1218,6 +1219,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
  * @param {googleCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1242,6 +1244,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
  * @param {microsoftCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1331,6 +1334,7 @@ export const startSsoFederation = <ThrowOnError extends boolean = true>(
  * @param {ssoCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)

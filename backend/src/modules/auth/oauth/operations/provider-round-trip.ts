@@ -13,6 +13,7 @@ import {
   type MicrosoftUserProps,
   microsoftAuth,
   OAuthCodeExchangeError,
+  type ProviderGrant,
 } from '#/modules/auth/oauth/helpers/providers';
 import { type TransformedUser, transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCallbackContext, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
@@ -22,25 +23,20 @@ import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/handle-oa
 interface OAuthProviderEntry {
   client: typeof githubAuth;
   scopes: string[];
-  /** Round trips carry a PKCE verifier and an OIDC nonce; the callback refuses a state stored without a verifier. */
-  pkce: boolean;
-  /** The provider's profile, read with the access token the code exchange returned; `init` carries it and the deadline. */
-  fetchUser: (init: RequestInit) => Promise<TransformedUser>;
+  /** The provider's profile from what the code exchange returned. */
+  fetchUser: (grant: ProviderGrant) => Promise<TransformedUser>;
 }
 
-/** An OIDC provider's profile from its userinfo endpoint. */
-const readUserinfo = (url: string) => async (init: RequestInit) => {
-  const response = await fetch(url, init);
-  return transformSocialUserData((await response.json()) as GoogleUserProps | MicrosoftUserProps);
-};
+/** An OIDC provider's profile: the claims its client verified. */
+const verifiedProfile = async ({ claims }: ProviderGrant) => transformSocialUserData(claims as GoogleUserProps | MicrosoftUserProps);
 
 // `openid` is required for Google and Microsoft so the token endpoint returns an id_token, which carries the nonce validated on callback.
 const oauthProviders = {
   github: {
     client: githubAuth,
     scopes: ['user:email'],
-    pkce: false,
-    fetchUser: async (init) => {
+    fetchUser: async ({ accessToken }) => {
+      const init = { headers: { Authorization: `Bearer ${accessToken}` }, signal: providerDeadline() };
       const [userResponse, emailsResponse] = await Promise.all([
         fetch('https://api.github.com/user', init),
         fetch('https://api.github.com/user/emails', init),
@@ -53,41 +49,39 @@ const oauthProviders = {
   google: {
     client: googleAuth,
     scopes: ['openid', 'profile', 'email'],
-    pkce: true,
-    fetchUser: readUserinfo('https://openidconnect.googleapis.com/v1/userinfo'),
+    fetchUser: verifiedProfile,
   },
   microsoft: {
     client: microsoftAuth,
     scopes: ['openid', 'profile', 'email'],
-    pkce: true,
-    fetchUser: readUserinfo('https://graph.microsoft.com/oidc/userinfo'),
+    fetchUser: verifiedProfile,
   },
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
 /**
- * Sends the browser to the provider with a fresh `state`, plus a PKCE verifier and a nonce for a `pkce` provider.
+ * Sends the browser to the provider with a fresh `state` and PKCE verifier, plus a nonce for an OIDC provider.
  * @throws AppError 503 `oauth_not_configured` when the environment has no client id and secret for the provider.
  */
 export const startOAuth = async (ctx: OAuthStartContext, provider: BaseOAuthProviders) => {
-  const { client, scopes, pkce } = oauthProviders[provider];
+  const { client, scopes } = oauthProviders[provider];
   if (!client.configured) throw new AppError(503, 'oauth_not_configured', 'warn', { meta: { strategy: provider } });
   const state = generateRandomState();
-  const flow = pkce ? { codeVerifier: generateRandomCodeVerifier(), nonce: generateRandomNonce() } : undefined;
+  const flow = { codeVerifier: generateRandomCodeVerifier(), ...(client.oidc && { nonce: generateRandomNonce() }) };
   const url = await client.createAuthorizationURL(state, scopes, flow);
 
   return handleOAuthInitiation(ctx, { provider, url, state, ...flow });
 };
 
 /**
- * Resumes the round trip `state` names: exchanges the code (with the stored verifier and nonce for a `pkce` provider),
- * reads the provider's profile and hands it to the flow the state cookie holds.
+ * Resumes the round trip `state` names: exchanges the code with the stored verifier (and nonce), reads the provider's
+ * profile and hands it to the flow the state cookie holds.
  * @throws AppError 400 `oauth_failed` when the provider answered an error, 401 `invalid_state` without a matching state
  *   cookie, 401 `invalid_credentials` when the provider refuses the code, 401 `oauth_failed` when the exchange or the
  *   profile read fails otherwise, and what the flow throws.
  */
 export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuthProviders) => {
-  const { code, state, error } = ctx.req.valid('query');
-  const { client, pkce, fetchUser } = oauthProviders[provider];
+  const { code, state, iss, error } = ctx.req.valid('query');
+  const { client, fetchUser } = oauthProviders[provider];
   // The route's `xEnabledBy` switch refuses a provider this app has off.
   const strategy = provider as EnabledOAuthProvider;
 
@@ -95,21 +89,17 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
 
   if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
 
-  // The cookie `state` names is the CSRF check. It must come from this provider's start, and a PKCE provider also
-  // needs the verifier that start stored.
-  if (!cookiePayload || cookiePayload.provider !== provider || (pkce && !cookiePayload.codeVerifier)) {
+  // The cookie `state` names is the CSRF check. It must come from this provider's start, with the verifier that start
+  // stored: the verifier binds the code to this browser.
+  if (!cookiePayload || cookiePayload.provider !== provider || !cookiePayload.codeVerifier) {
     throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
   }
 
   try {
-    // For an OIDC provider, id_token claims, `nonce` binding, and signature are validated inside the provider client.
-    const { accessToken } = await client.validateAuthorizationCode(
-      code,
-      state,
-      pkce ? { codeVerifier: cookiePayload.codeVerifier, nonce: cookiePayload.nonce } : undefined,
-    );
-
-    const providerUser = await fetchUser({ headers: { Authorization: `Bearer ${accessToken}` }, signal: providerDeadline() });
+    // For an OIDC provider, id_token claims, `nonce` binding, signature and userinfo are validated inside the provider client.
+    const { codeVerifier, nonce } = cookiePayload;
+    const grant = await client.validateAuthorizationCode({ code, state, iss }, { codeVerifier, nonce });
+    const providerUser = await fetchUser(grant);
 
     return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
   } catch (error) {
