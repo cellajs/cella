@@ -35,6 +35,24 @@ export function invalidateMemberQueries(organizationId: string | null): void {
   }
 }
 
+const isInOrganization = (data: unknown, organizationId: string) =>
+  typeof data === 'object' &&
+  data !== null &&
+  'id' in data &&
+  (data.id === organizationId || ('organizationId' in data && data.organizationId === organizationId));
+
+/** Channel details of one organization or, without one, of all, whose membership counts CDC writes after the REST answer. */
+export function invalidateChannelDetails(organizationId: string | null): void {
+  for (const channelType of appConfig.channelEntityTypes) {
+    if (!hasEntityQueryKeys(channelType)) continue;
+    queryClient.invalidateQueries({
+      queryKey: getEntityQueryKeys(channelType).detail.base,
+      predicate: ({ state }) => !organizationId || isInOrganization(state.data, organizationId),
+      refetchType: 'active',
+    });
+  }
+}
+
 /** The channel enrichment subscriber reruns on this, and useMenu rebuilds. */
 export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });

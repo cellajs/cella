@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClockIcon, SendIcon } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 import { type InviteResultData, inviteResultNeedsScreen, inviteResultTitle } from '~/modules/user/invite-result';
+import { pendingSystemInvitesQueryOptions } from '~/modules/user/query';
 import type { InviteCheck } from '~/modules/user/use-invite-check';
 import type { InviteList, InvitePerson } from '~/modules/user/use-invite-list';
 import { formResolver } from '~/utils/form-resolver';
@@ -86,6 +87,7 @@ interface UseInviteSubmitOptions {
 /** Sends the form as a membership invite to `channel`, or as a system invite without one, then says what happened. */
 export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInviteSubmitOptions) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const report = (result: InviteResultData) => {
     onSent();
@@ -99,6 +101,7 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
     mutationFn: ({ emails }: { emails: string[] }) => sendInBatches(emails, (batch) => baseSystemInvite({ body: { emails: batch } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: pendingSystemInvitesQueryOptions().queryKey }),
   });
 
   const onSubmit = ({ unparsed, typed: _typed, pasted: _pasted, people: _people, ...body }: InviteFormValues) => {

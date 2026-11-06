@@ -31,9 +31,9 @@ describe('email templates escape names interpolated into HTML', () => {
     const added = memberAddedEmail.translate('en', statics);
     const system = systemInviteEmail.translate('en', { senderName: hostile });
     const htmls = await Promise.all([
-      render(memberInviteWithTokenEmail.component({ ...withToken, name: 'Emily', inviteLink: link, frame: {} })),
+      render(memberInviteWithTokenEmail.component({ ...withToken, inviteLink: link, frame: {} })),
       render(memberAddedEmail.component({ ...added, name: 'Emily', entityLink: link, frame: {} })),
-      render(systemInviteEmail.component({ ...system, name: 'Emily', inviteLink: link, frame: {} })),
+      render(systemInviteEmail.component({ ...system, inviteLink: link, frame: {} })),
     ]);
 
     for (const html of htmls) {
@@ -92,7 +92,7 @@ describe('email plain-text parts keep names as typed', () => {
   });
 
   it('escapes a greeting name once', async () => {
-    const translated = magicLinkEmail.translate('en', { magicLinkUrl: link, name: "O'Brien & <Co>", isNewUser: false });
+    const translated = magicLinkEmail.translate('en', { magicLinkUrl: link, name: "O'Brien & <Co>", isNewUser: false, invited: false });
     expect(translated.hiText).toBe("Hi O'Brien & <Co>,");
 
     const html = await render(magicLinkEmail.component({ ...translated, frame: {} }));

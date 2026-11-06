@@ -7,6 +7,7 @@ import { zCreateOrganizationsBody } from 'sdk/zod.gen';
 import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
+import type { ApiError } from '~/lib/api';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
@@ -28,6 +29,8 @@ import { formResolver } from '~/utils/form-resolver';
 interface CreateOrganizationFormProps {
   /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
+  /** Rendered in the onboarding stepper: a first organization starts published, so the draft switch is left out. */
+  onboarding?: boolean;
   children?: ReactNode;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
@@ -38,7 +41,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const formContainerId = 'create-organization';
 
-export function CreateOrganizationForm({ dialog: isDialog, children, callback }: CreateOrganizationFormProps) {
+export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboarding, children, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -59,6 +62,11 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
     nextStep();
   };
 
+  // The handle check needs a tenant, which a first organization lacks, so a taken handle shows only once the create answers.
+  const onError = (error: ApiError) => {
+    if (error.type === 'slug_exists') form.setError('slug', { type: 'manual', message: t('error:slug_exists') });
+  };
+
   // 1 tenant = 1 organization: the submit mints a fresh tenant, then creates the organization in it.
   const onSubmit = async (values: FormValues) => {
     let tenantId: string;
@@ -70,7 +78,10 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
       return;
     }
 
-    createMutation.mutate({ path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] }, { onSuccess });
+    createMutation.mutate(
+      { path: { tenantId }, body: [{ ...values, draft: isOnboarding ? false : values.draft, id: `temp-${generateId()}` }] },
+      { onSuccess, onError },
+    );
   };
 
   return (
@@ -92,7 +103,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           nameValue={name}
           prefix="/~/"
         />
-        {hierarchy.canDraft('organization') && (
+        {!isOnboarding && hierarchy.canDraft('organization') && (
           <FormField
             control={form.control}
             name="draft"

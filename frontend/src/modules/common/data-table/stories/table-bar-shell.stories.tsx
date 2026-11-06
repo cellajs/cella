@@ -12,6 +12,7 @@ import { OrganizationsTableBar } from '~/modules/organization/table/organization
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
+import { pendingSystemInvitesQueryOptions } from '~/modules/user/query';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { userStore } from '~/modules/user/user-store';
 import { withApp } from '~/stories/with-app';
@@ -103,6 +104,7 @@ const meta = {
       queryData: [
         [listKey, { items: rows, total: 2 }],
         [meKeys.memberships, memberships],
+        [pendingSystemInvitesQueryOptions().queryKey, { count: 0 }],
       ],
     },
   },

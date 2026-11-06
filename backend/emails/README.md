@@ -9,7 +9,7 @@ A template is a `defineEmailTemplate()` definition with two parts:
 - `translate(lng, statics)`: pure function returning every translated string (plus any pass-through statics the component needs). Must include `subject`.
 - `component(props)`: a dumb React shell built from `components/` and `components/primitives/`. No i18n calls.
 
-`defineEmailTemplate` types `component()` to exactly what `translate()` returns (plus per-recipient placeholder strings), so the two cannot drift. Each definition carries a `preview: { statics, recipient }` field with sample data, type-checked against its own props. Export the template from [index.ts](index.ts), register its preview slug in [preview-fixtures.ts](preview-fixtures.ts) and add a story for it in `frontend/src/stories/email-templates.stories.tsx`.
+`defineEmailTemplate` types `component()` to exactly what `translate()` returns (plus per-recipient placeholder strings), so the two cannot drift. Each definition carries a `preview: { statics, recipient }` field with sample data, type-checked against its own props, and a template whose mail reads differently per case (a sign-up, a waitlist) adds each case under a name in `previewVariants`. Export the template from [index.ts](index.ts), register its preview slug in [preview-fixtures.ts](preview-fixtures.ts) and add a story for it and for each variant in `frontend/src/stories/email-templates.stories.tsx`.
 
 Two components carry the shared markup:
 
@@ -37,6 +37,6 @@ Per-recipient props leave the render as Brevo placeholders, and Brevo fills them
 `preview-fixtures.ts` maps each preview slug (used in URLs and Storybook story names) to its template; the sample props live on the template's `preview` field and are shared by previews and tests.
 
 - **Storybook**: the _Emails / Email templates_ stories fetch rendered HTML from the backend into an iframe, with language and placeholder controls.
-- **Dev route**: with the backend running (`pnpm dev`), `http://localhost:4000/dev/emails` lists templates and `/dev/emails/:name?lng=&placeholders=1` renders one. Mounted only outside production.
+- **Dev route**: with the backend running (`pnpm dev`), `http://localhost:4000/dev/emails` lists templates and their variants, and `/dev/emails/:name?lng=&variant=&placeholders=1` renders one. Mounted only outside production.
 
-`tests/emails/email-templates.test.ts` renders every fixture in every language.
+`tests/emails/email-templates.test.ts` renders every fixture and variant in every language.

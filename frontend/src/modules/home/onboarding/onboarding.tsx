@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
+import { NamedText } from '~/modules/common/named-text';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
 import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-steps';
@@ -49,46 +50,52 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
           <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-8 transition-[opacity,translate,scale] duration-500 ease-out sm:w-10/12 starting:translate-y-4 starting:scale-95 starting:opacity-0">
             {steps.length === 1 && <h2 className="flex justify-center text-lg font-semibold">{steps[0].label}</h2>}
             <Stepper steps={steps} onClickStep={(step, setStep) => setStep(step)} onComplete={onComplete}>
-              {steps.map(({ description, label, id }) => (
-                <Step key={id} label={label} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
-                  <Card>
-                    {description && (
-                      <CardHeader>
-                        <CardDescription>{description}</CardDescription>
-                      </CardHeader>
-                    )}
-                    <CardContent>
-                      {id === 'invitations' && <InvitationsStep>{skipButton}</InvitationsStep>}
-                      {id === 'profile' && (
-                        <UpdateUserForm user={user} compact>
-                          {skipButton}
-                        </UpdateUserForm>
+              {steps.map(({ description: stepDescription, label, id }) => {
+                // The steps are locked before the organization exists, so the invitation step names it once it does
+                const description =
+                  id === 'invitation' && organization ? <NamedText i18nKey="c:invite_members.text" name={organization.name} /> : stepDescription;
+                return (
+                  <Step key={id} label={label} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
+                    <Card>
+                      {description && (
+                        <CardHeader>
+                          <CardDescription>{description}</CardDescription>
+                        </CardHeader>
                       )}
-                      {id === 'organization' && !organization && (
-                        <CreateOrganizationForm
-                          callback={(args) => {
-                            if (args.status === 'success') setOrganization(args.data);
-                          }}
-                        >
-                          {skipButton}
-                        </CreateOrganizationForm>
-                      )}
-                      {id === 'organization' && organization && <p className="text-muted-foreground text-sm">{t('c:already_created_org.text')}</p>}
-                      {id === 'invitation' && organization && (
-                        <InviteUsers channel={organization} mode="email">
-                          {skipButton}
-                        </InviteUsers>
-                      )}
-                      {id === 'invitation' && !organization && (
-                        <div>
-                          <p className="text-muted-foreground mb-4 text-sm">{t('c:need_org_to_invite.text')}</p>
-                          {skipButton}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Step>
-              ))}
+                      <CardContent>
+                        {id === 'invitations' && <InvitationsStep>{skipButton}</InvitationsStep>}
+                        {id === 'profile' && (
+                          <UpdateUserForm user={user} compact>
+                            {skipButton}
+                          </UpdateUserForm>
+                        )}
+                        {id === 'organization' && !organization && (
+                          <CreateOrganizationForm
+                            onboarding
+                            callback={(args) => {
+                              if (args.status === 'success') setOrganization(args.data);
+                            }}
+                          >
+                            {skipButton}
+                          </CreateOrganizationForm>
+                        )}
+                        {id === 'organization' && organization && <p className="text-muted-foreground text-sm">{t('c:already_created_org.text')}</p>}
+                        {id === 'invitation' && organization && (
+                          <InviteUsers channel={organization} mode="email">
+                            {skipButton}
+                          </InviteUsers>
+                        )}
+                        {id === 'invitation' && !organization && (
+                          <div>
+                            <p className="text-muted-foreground mb-4 text-sm">{t('c:need_org_to_invite.text')}</p>
+                            {skipButton}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Step>
+                );
+              })}
             </Stepper>
           </div>
         )}

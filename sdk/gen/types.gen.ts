@@ -2834,6 +2834,10 @@ export type GetMyInvitationsResponses = {
     items: Array<{
       entity: ChannelBase;
       inactiveMembership: InactiveMembership;
+      /**
+       * The name of the organization the channel is in; null for an invitation to an organization.
+       */
+      organizationName: string | null;
     }>;
     total: number;
   };
@@ -3804,6 +3808,45 @@ export type SystemInviteResponses = {
 };
 
 export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
+
+export type GetPendingSystemInvitesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/system/invite/pending';
+};
+
+export type GetPendingSystemInvitesErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPendingSystemInvitesError = GetPendingSystemInvitesErrors[keyof GetPendingSystemInvitesErrors];
+
+export type GetPendingSystemInvitesResponses = {
+  /**
+   * Pending invitations
+   */
+  200: {
+    count: number;
+  };
+};
+
+export type GetPendingSystemInvitesResponse = GetPendingSystemInvitesResponses[keyof GetPendingSystemInvitesResponses];
 
 export type DeleteUsersData = {
   body: {

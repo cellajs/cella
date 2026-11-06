@@ -48,7 +48,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
     <StickyBox
       publishVar="--sticky-stack-nav"
       className={cn(
-        'group/sticky bg-background after:bg-border @container z-80 grid grid-cols-[1fr_auto_1fr] pb-px after:absolute after:inset-x-3 after:bottom-0 after:h-px',
+        'group/sticky bg-background after:bg-border @container z-80 grid grid-cols-[0_auto_1fr] pb-px after:absolute after:inset-x-3 after:bottom-0 after:h-px sm:grid-cols-[1fr_auto_1fr]',
         className,
       )}
     >
@@ -64,7 +64,8 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
         )}
         {title && <div className="hidden max-w-42 truncate text-sm leading-5 font-semibold @4xl:block">{title}</div>}
       </div>
-      <div className="no-scrollbar col-start-2 min-w-0 overflow-x-auto">
+      {/* Each fade is no wider than the row's padding on its side, so it shows only on a tab cut off by the edge */}
+      <div className="no-scrollbar col-start-2 min-w-0 overflow-x-auto mask-r-from-[calc(100%-1rem)] mask-l-from-[calc(100%-0.75rem)]">
         <div className="relative flex min-w-max justify-center-safe gap-1 px-1">
           {indicator && <TabIndicatorBar indicator={indicator} />}
           {children}

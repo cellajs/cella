@@ -6,6 +6,7 @@ import { resolveListTotal } from '#/db/utils/list-total';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
@@ -354,30 +355,39 @@ interface FindPendingInactiveMembershipsByUserOpts {
   userId: string;
 }
 
-/** The user's open invitations: inactive memberships not rejected, each with its channel's base columns. */
+/**
+ * The user's open invitations: inactive memberships not rejected, each with its channel's base columns and, for a
+ * channel below the organization, the organization's name.
+ */
 export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { userId }: FindPendingInactiveMembershipsByUserOpts) => {
   const { db } = ctx.var;
   const results = await Promise.all(
-    appConfig.channelEntityTypes.map((channelType) => {
+    appConfig.channelEntityTypes.map(async (channelType) => {
       const channelTable = getEntityTable(channelType);
       const cols = getColumns(channelTable);
       const channelBaseSelect = pick(cols, channelBaseSchema.keyof().options);
       const prepareRoles = hierarchy.getPrepareRoles(channelType);
+      const isOrganization = channelType === 'organization';
 
-      return db
-        .select({ entity: channelBaseSelect, inactiveMembership: inactiveMembershipsTable })
+      const query = db
+        .select({ entity: channelBaseSelect, inactiveMembership: inactiveMembershipsTable, organizationName: organizationsTable.name })
         .from(inactiveMembershipsTable)
         .innerJoin(channelTable, eq(channelTable.id, inactiveMembershipsTable.channelId))
-        .where(
-          and(
-            eq(inactiveMembershipsTable.channelType, channelType),
-            eq(inactiveMembershipsTable.userId, userId),
-            isNull(inactiveMembershipsTable.rejectedAt),
-            // An invitation to an unpublished channel stays hidden until it is published, except one for a prepare role:
-            // its email went out at once, so the invitee must be able to answer it.
-            or(isNotNull(cols.publishedAt), prepareRoles.length ? inArray(inactiveMembershipsTable.role, prepareRoles) : undefined),
-          ),
-        );
+        .$dynamic();
+      // An organization invitation joins the organizations table as its channel table and carries no organization name.
+      const joined = isOrganization ? query : query.innerJoin(organizationsTable, eq(organizationsTable.id, inactiveMembershipsTable.organizationId));
+
+      const rows = await joined.where(
+        and(
+          eq(inactiveMembershipsTable.channelType, channelType),
+          eq(inactiveMembershipsTable.userId, userId),
+          isNull(inactiveMembershipsTable.rejectedAt),
+          // An invitation to an unpublished channel stays hidden until it is published, except one for a prepare role:
+          // its email went out at once, so the invitee must be able to answer it.
+          or(isNotNull(cols.publishedAt), prepareRoles.length ? inArray(inactiveMembershipsTable.role, prepareRoles) : undefined),
+        ),
+      );
+      return rows.map((row) => ({ ...row, organizationName: isOrganization ? null : row.organizationName }));
     }),
   );
 

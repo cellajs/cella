@@ -44,7 +44,8 @@ export function OnboardingCompleted() {
     <div className="relative z-1 flex h-svh min-w-full flex-col items-center justify-center gap-6 p-4 text-center">
       <Confetti />
 
-      {user.userFlags.finishedOnboarding && (
+      {/* The arrow points at the organization in the rail; after a skip the rail holds only the create button */}
+      {user.userFlags.finishedOnboarding && hasOrganization && (
         <UndoIcon strokeWidth={0.1} className="text-primary -mt-52 -mb-12 size-100 scale-y-75 rotate-30 max-md:hidden md:-translate-x-24" />
       )}
       <h1 className="text-3xl font-bold">{t('c:onboarding_completed')}</h1>

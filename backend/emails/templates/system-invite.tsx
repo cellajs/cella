@@ -1,7 +1,7 @@
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
-import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
+import { invitePreviewText, linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
+import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 interface SystemInviteStatic {
   senderName: string;
@@ -9,16 +9,15 @@ interface SystemInviteStatic {
   senderEmail?: string;
 }
 
-type SystemInviteRecipient = EmailRecipient & { name: string; inviteLink: string };
+type SystemInviteRecipient = EmailRecipient & { inviteLink: string };
 
-/** System-level invitation, for new users. */
+/** System-level invitation, for an address without an account: it greets no one. */
 export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemInviteRecipient>()({
-  translate(lng, { senderName, senderEmail }, param = plainParam) {
+  translate(lng, { senderName, senderEmail }) {
     return {
       subject: i18n.t('backend:email.system_invite.subject', { lng, senderName, ...plainText }),
-      previewText: i18n.t('backend:email.system_invite.preview', { lng, ...plainText }),
+      previewText: invitePreviewText(lng),
       headerHtml: i18n.t('backend:email.system_invite.title', { lng }),
-      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       bodyHtml: i18n.t('backend:email.system_invite.text', { lng, sender: senderHtml(lng, senderName, senderEmail) }),
       expiresText: linkExpiresText(lng, 'invitation'),
       buttonText: i18n.t('c:join', { lng }),
@@ -27,14 +26,13 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, expiresText, buttonText, endingHtml, supportText, senderName, inviteLink, frame }) {
+  component({ previewText, headerHtml, bodyHtml, expiresText, buttonText, endingHtml, supportText, senderName, inviteLink, frame }) {
     return (
       <EmailMessage
         frame={frame}
         previewText={previewText}
         avatarName={senderName}
         headerHtml={headerHtml}
-        greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: inviteLink }}
         note={expiresText}
@@ -45,6 +43,6 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
   },
   preview: {
     statics: { senderName: 'John Doe', senderEmail: 'john.doe@acme.example' },
-    recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
+    recipient: { inviteLink: 'https://example.com/invite' },
   },
 });

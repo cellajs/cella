@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
-import { mockSystemInviteResponse } from '#/modules/system/system-mocks';
+import { mockPendingSystemInvitesResponse, mockSystemInviteResponse } from '#/modules/system/system-mocks';
 import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema, systemUserUpdateBodySchema } from '#/modules/system/system-schema';
 import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBodySchema } from '#/schemas';
@@ -18,6 +18,14 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: { body: jsonBody(inviteBodySchema) },
     responses: { 200: json('Invitations are sent', systemInviteResponseSchema, mockSystemInviteResponse()) },
+  }),
+  getPendingSystemInvites: xRoute({
+    method: 'get',
+    path: '/invite/pending',
+    xGuard: [userGuard, sysAdminGuard],
+    summary: 'Count pending system invitations',
+    description: 'Returns how many addresses hold an unexpired system invitation, one sent outside any organization.',
+    responses: { 200: json('Pending invitations', z.object({ count: z.number().int() }), mockPendingSystemInvitesResponse()) },
   }),
   deleteUsers: xRoute({
     method: 'delete',

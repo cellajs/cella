@@ -15,6 +15,7 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
   translate(lng, { content, subject, testEmail }) {
     return {
       subject,
+      previewText: subject,
       headerHtml: i18n.t('backend:email.newsletter.title', { lng }),
       unsubscribeText: i18n.t('backend:email.unsubscribe', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
@@ -22,11 +23,11 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
       testEmail: testEmail ?? false,
     };
   },
-  component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink, frame }) {
+  component({ previewText, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink, frame }) {
     return (
       <EmailLayout
         frame={frame}
-        previewText={subject}
+        previewText={previewText}
         headerHtml={headerHtml}
         wide
         headChildren={<style>{newsletterContentStyles}</style>}

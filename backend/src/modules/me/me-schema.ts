@@ -91,7 +91,14 @@ export const updateMeBodySchema = userUpdateBodySchema.extend({ userFlags: userF
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
-export const mePendingInvitationSchema = z.object({ entity: channelBaseSchema, inactiveMembership: inactiveMembershipSchema });
+export const mePendingInvitationSchema = z.object({
+  entity: channelBaseSchema,
+  inactiveMembership: inactiveMembershipSchema,
+  organizationName: z
+    .string()
+    .nullable()
+    .openapi({ description: 'The name of the organization the channel is in; null for an invitation to an organization.' }),
+});
 
 /** A consent the user gave to an OAuth client, as the account page lists it. */
 export const connectedAppSchema = z
