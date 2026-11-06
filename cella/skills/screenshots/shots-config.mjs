@@ -72,7 +72,7 @@ const openMenu = async (page) => {
 
   // Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
   // its row out of the match, so the loop asks for the first one each time.
-  const unfolded = page.locator('#nav-sheet li[data-archived-visible="true"][data-has-archived="true"] > div button');
+  const unfolded = page.locator('#nav-sheet [data-archived-visible="true"][data-has-archived="true"] > div button');
   while (await unfolded.count()) await unfolded.first().click();
 };
 
@@ -142,6 +142,26 @@ export const shots = [
       await page.locator('#spy-authentication-anchor-wrap').evaluate((element) => {
         element.style.scrollMarginTop = '3rem';
         element.scrollIntoView({ block: 'start' });
+      });
+      await hideDevUi(page);
+    },
+  },
+  {
+    id: 'docs-operations',
+    device: 'pc',
+    path: '/docs/operations/table',
+    out: 'frontend/public/static/marketing/screenshots/docs-operations',
+    // Module reads "auth" down the first screen and runs past the right edge at 1280px: off, the path column takes its
+    // room. The pencil beside "Documentation" is the pages shortcut only a system admin gets.
+    open: async (page) => {
+      await page.locator('.rdg-row').first().waitFor();
+      // Its name ends in "Some columns hidden": the table hides a few by default
+      await page.getByRole('button', { name: /^View\b.*columns hidden$/ }).click();
+      await page.getByRole('menuitemcheckbox', { name: 'Module' }).click();
+      await page.keyboard.press('Escape');
+      await page.getByRole('menu').waitFor({ state: 'hidden' });
+      await page.locator('a[href="/docs/pages"]').evaluateAll((elements) => {
+        for (const element of elements) element.style.visibility = 'hidden';
       });
       await hideDevUi(page);
     },

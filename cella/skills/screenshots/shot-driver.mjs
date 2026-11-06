@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
-import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
 import * as config from './shots-config.mjs';
 
 // A namespace import, so a shots-config.mjs written before an export existed still loads
