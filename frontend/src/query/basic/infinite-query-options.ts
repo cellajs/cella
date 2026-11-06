@@ -4,7 +4,7 @@ import { getQueryItems, isInfiniteQueryData } from '~/query/basic/mutate-query';
 import type { PageParam, QueryData, SortOrder } from '~/query/types';
 
 /** Pages a list by the `nextPageToken` each page names, until one names none. staleTime is omitted so it inherits the global default from query-client.ts. */
-export const baseInfiniteQueryOptions = {
+const baseInfiniteQueryOptions = {
   initialPageParam: '',
   getNextPageParam: (lastPage: QueryData<unknown>): PageParam | undefined => lastPage.nextPageToken,
 };

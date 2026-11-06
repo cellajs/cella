@@ -85,11 +85,11 @@ const pageSizeCap = 1000;
  * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,
  * `-1` and `1.5` fail with `error`; `z.coerce` would turn `''` and null into 0.
  */
-export const integerQuerySchema = (error?: ReturnType<typeof translatedError>) =>
+const integerQuerySchema = (error?: ReturnType<typeof translatedError>) =>
   z.preprocess((value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value), z.int(error).min(0, error));
 
 /** A list's sort direction. */
-export const orderSchema = z.enum(['asc', 'desc']);
+const orderSchema = z.enum(['asc', 'desc']);
 
 export type OrderDirection = z.infer<typeof orderSchema>;
 
