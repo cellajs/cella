@@ -21,6 +21,8 @@
       "frontend/vite/**",
       "frontend/vite.config.ts",
       "shared/**",
+      // Data files keep the layout they were written or generated in, such as an app's icon lists
+      "!shared/json",
       "cdc/src/**",
       "yjs/src/**",
       "infra/**",
@@ -30,8 +32,7 @@
       "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
-      "locales/**",
-      "!locales/resources.gen.d.ts",
+      "!shared/locales/resources.gen.d.ts",
       "sdk/openapi-ts.config.ts",
       // Agent worktrees stay out of the index, which `pnpm sdk` walks with the ignore file off.
       "!!.claude"
@@ -44,12 +45,7 @@
         "organizeImports": {
           "level": "on",
           "options": {
-            "groups": [
-              [":PACKAGE_WITH_PROTOCOL:", ":PACKAGE:"],
-              ["shared", "shared/**", "sdk", "sdk/**", "locales", "locales/**"],
-              ["~/**", "#/**", "#json/**"],
-              ":PATH:"
-            ]
+            "groups": [[":PACKAGE_WITH_PROTOCOL:", ":PACKAGE:"], ["shared", "shared/**", "sdk", "sdk/**"], ["~/**", "#/**", "#json/**"], ":PATH:"]
           }
         }
       }
@@ -547,7 +543,7 @@
     },
     {
       // Keys in sort order, so a key is found by name and two edits to one file rarely meet
-      "includes": ["locales/**/*.json"],
+      "includes": ["shared/locales/**/*.json"],
       "assist": {
         "actions": {
           "source": {

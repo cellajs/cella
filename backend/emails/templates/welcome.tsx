@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import welcomeConfig from '../../../json/text-blocks.json';
+import welcomeConfig from '../../../shared/json/text-blocks.json';
 import { EmailLayout, EmailText } from '../components';
 import { Link } from '../components/primitives';
 import { i18n, plainText } from '../i18n';
@@ -15,7 +15,7 @@ const withAppName = (text: string) => text.replaceAll('{{appName}}', appName);
 
 const { welcomeEmail } = welcomeConfig;
 
-/** The marketing copy is app-specific, in `json/text-blocks.json` under `welcomeEmail`. */
+/** The marketing copy is app-specific, in `shared/json/text-blocks.json` under `welcomeEmail`. */
 export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, WelcomeRecipient>()({
   translate(lng, _statics, param = plainParam) {
     return {

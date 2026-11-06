@@ -26,7 +26,7 @@ and the command cannot do it: run it, then **look at every image**.
 
 ## The database
 
-The shots show the showcase: `json/showcase.json`, the curated dataset the app owns for its marketing images, seeded by
+The shots show the showcase: `backend/scripts/seeds/showcase.json`, the curated dataset the app owns for its marketing images, seeded by
 `pnpm seed showcase`. A dozen organizations with their members and attachments, the admin's menu with a few unseen
 items, a short inbox, and MFA on for the admin (a passkey and an authenticator app nobody can sign in with) and a share
 of the members. Its names, ids and counts come out the same on every run; only the times move with the clock, so a

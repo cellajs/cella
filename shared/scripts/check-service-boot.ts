@@ -61,7 +61,7 @@ const serviceEnv: NodeJS.ProcessEnv = {
  * linked, and the workspace's `dependencies` are linked into its node_modules, as `pnpm install --prod` installs them.
  */
 const images = {
-  backend: { copy: ['backend/dist', 'backend/package.json'], link: ['backend/drizzle', 'locales', 'json'] },
+  backend: { copy: ['backend/dist', 'backend/package.json'], link: ['backend/drizzle', 'shared/locales', 'shared/json'] },
   cdc: { copy: ['cdc/dist', 'cdc/package.json'], link: [] },
   yjs: { copy: ['yjs/dist', 'yjs/package.json'], link: [] },
 };

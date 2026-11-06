@@ -142,7 +142,7 @@ const viteConfig = {
     warmup: { clientFiles: ['./src/main.tsx'] },
     // The folders the app reads from outside this package; a file it imports, such as a repo doc, is served too. Vite's
     // default, the workspace root, serves any file in the checkout by path to whoever reaches the server, a tunnel included.
-    fs: { allow: [import.meta.dirname, ...['shared', 'sdk', 'locales', 'json', 'node_modules'].map((dir) => path.join(repoRoot, dir))] },
+    fs: { allow: [import.meta.dirname, ...['shared', 'sdk', 'node_modules'].map((dir) => path.join(repoRoot, dir))] },
   },
   preview: { port: devPort },
   build: {
@@ -410,7 +410,7 @@ const viteConfig = {
     } satisfies Plugin,
     tailwindcss(),
     localesPlugin({
-      srcDir: path.resolve(import.meta.dirname, '../locales'),
+      srcDir: path.resolve(import.meta.dirname, '../shared/locales'),
       cacheDir: path.resolve(import.meta.dirname, '../.vscode/.locales-cache'),
     }),
     // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
@@ -432,7 +432,7 @@ const viteConfig = {
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
     alias: {
-      '#json': path.resolve(import.meta.dirname, '../json'),
+      '#json': path.resolve(import.meta.dirname, '../shared/json'),
       '~': path.resolve(import.meta.dirname, './src'),
       // react-pdf pins pdfjs-dist exactly and pdf.js refuses a worker of another version, so the worker comes from react-pdf's copy.
       '#pdfjs': path.dirname(createRequire(createRequire(import.meta.url).resolve('react-pdf')).resolve('pdfjs-dist/package.json')),

@@ -18,7 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(import.meta.dirname, './src'),
-      '#json': path.resolve(import.meta.dirname, '../json'),
+      '#json': path.resolve(import.meta.dirname, '../shared/json'),
     },
   },
   test: {
@@ -52,7 +52,7 @@ export default defineConfig({
         resolve: {
           alias: {
             '~': path.resolve(import.meta.dirname, './src'),
-            '#json': path.resolve(import.meta.dirname, '../json'),
+            '#json': path.resolve(import.meta.dirname, '../shared/json'),
           },
         },
       },

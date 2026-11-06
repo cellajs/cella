@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "paths": {
       "#/*": ["../backend/src/*"],
-      "#json/*": ["../json/*"]
+      "#json/*": ["../shared/json/*"]
     }
   },
   "include": ["src/**/*"],

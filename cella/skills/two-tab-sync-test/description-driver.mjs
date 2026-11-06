@@ -24,7 +24,7 @@ const runs = (name) => ONLY.includes(name);
 const RELAY = process.env.RELAY;
 
 // Status lines and button labels as this checkout words them, so a copy change breaks no assert.
-const strings = JSON.parse(readFileSync('locales/en/common.json', 'utf8'));
+const strings = JSON.parse(readFileSync('shared/locales/en/common.json', 'utf8'));
 
 const { chromium } = await loadPlaywright();
 const sessions = { a: mintSession(EMAIL), b: mintSession(EMAIL_B), viewer: EMAIL_VIEWER ? mintSession(EMAIL_VIEWER) : null };

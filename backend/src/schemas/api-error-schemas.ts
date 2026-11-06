@@ -11,7 +11,7 @@ export const apiErrorSchema = z
   .object({
     name: z.string(),
     message: z.string(),
-    /** Error key from `locales/en/error.json`, e.g. 'invalid_request'. */
+    /** Error key from `shared/locales/en/error.json`, e.g. 'invalid_request'. */
     type: z.string(),
     status: errorStatusCodeSchema,
     severity: z.enum(severityLevels),
