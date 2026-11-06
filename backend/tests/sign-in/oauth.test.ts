@@ -11,6 +11,7 @@ import { resolveSession } from '#/modules/auth/sessions/operations/resolve-sessi
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
@@ -725,13 +726,13 @@ describe('OAuth Authentication', async () => {
       // The cookie mock keeps plain values: this browser's single-use cookie for the opened link.
       mockCookieStore.set('invitation', invitation.rawSingleUseToken);
       mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', type: 'invite' }));
-      return invitation;
+      return { ...invitation, organization };
     };
 
     const inviteCallback = () => call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
 
-    it('creates the account verified and signs in, with no second verification mail', async () => {
-      const { inactiveMembership } = await openedInvitation(providerEmail);
+    it('creates the account verified, accepts the invitation and signs in, with no second verification mail', async () => {
+      const { inactiveMembership, organization } = await openedInvitation(providerEmail);
 
       const { response: res } = await inviteCallback();
       expect(res.status).toBe(302);
@@ -747,9 +748,10 @@ describe('OAuth Authentication', async () => {
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
       expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
 
-      // The invitation waiting for the address is the new account's, answered in the app.
-      const [claimed] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-      expect(claimed.userId).toBe(account.id);
+      // The invitation of the opened link is accepted with the sign-up, as at a magic-link sign-in.
+      expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toEqual([]);
+      const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, account.id));
+      expect(memberships.map(({ organizationId }) => organizationId)).toEqual([organization.id]);
     });
 
     it('must not create an account via an invite round trip whose provider has not verified the address', async () => {
