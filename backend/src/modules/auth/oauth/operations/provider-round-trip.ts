@@ -13,6 +13,7 @@ import {
   type MicrosoftUserProps,
   microsoftAuth,
   OAuthCodeExchangeError,
+  type ProviderGrant,
 } from '#/modules/auth/oauth/helpers/providers';
 import { type TransformedUser, transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCallbackContext, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
@@ -22,22 +23,20 @@ import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/handle-oa
 interface OAuthProviderEntry {
   client: typeof githubAuth;
   scopes: string[];
-  /** The provider's profile, read with the access token the code exchange returned; `init` carries it and the deadline. */
-  fetchUser: (init: RequestInit) => Promise<TransformedUser>;
+  /** The provider's profile from what the code exchange returned. */
+  fetchUser: (grant: ProviderGrant) => Promise<TransformedUser>;
 }
 
-/** An OIDC provider's profile from its userinfo endpoint. */
-const readUserinfo = (url: string) => async (init: RequestInit) => {
-  const response = await fetch(url, init);
-  return transformSocialUserData((await response.json()) as GoogleUserProps | MicrosoftUserProps);
-};
+/** An OIDC provider's profile: the claims its client verified. */
+const verifiedProfile = async ({ claims }: ProviderGrant) => transformSocialUserData(claims as GoogleUserProps | MicrosoftUserProps);
 
 // `openid` is required for Google and Microsoft so the token endpoint returns an id_token, which carries the nonce validated on callback.
 const oauthProviders = {
   github: {
     client: githubAuth,
     scopes: ['user:email'],
-    fetchUser: async (init) => {
+    fetchUser: async ({ accessToken }) => {
+      const init = { headers: { Authorization: `Bearer ${accessToken}` }, signal: providerDeadline() };
       const [userResponse, emailsResponse] = await Promise.all([
         fetch('https://api.github.com/user', init),
         fetch('https://api.github.com/user/emails', init),
@@ -50,12 +49,12 @@ const oauthProviders = {
   google: {
     client: googleAuth,
     scopes: ['openid', 'profile', 'email'],
-    fetchUser: readUserinfo('https://openidconnect.googleapis.com/v1/userinfo'),
+    fetchUser: verifiedProfile,
   },
   microsoft: {
     client: microsoftAuth,
     scopes: ['openid', 'profile', 'email'],
-    fetchUser: readUserinfo('https://graph.microsoft.com/oidc/userinfo'),
+    fetchUser: verifiedProfile,
   },
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
@@ -97,16 +96,10 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
   }
 
   try {
-    // For an OIDC provider, id_token claims, `nonce` binding, and signature are validated inside the provider client.
-    const { accessToken } = await client.validateAuthorizationCode(
-      { code, state, iss },
-      {
-        codeVerifier: cookiePayload.codeVerifier,
-        nonce: cookiePayload.nonce,
-      },
-    );
-
-    const providerUser = await fetchUser({ headers: { Authorization: `Bearer ${accessToken}` }, signal: providerDeadline() });
+    // For an OIDC provider, id_token claims, `nonce` binding, signature and userinfo are validated inside the provider client.
+    const { codeVerifier, nonce } = cookiePayload;
+    const grant = await client.validateAuthorizationCode({ code, state, iss }, { codeVerifier, nonce });
+    const providerUser = await fetchUser(grant);
 
     return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
   } catch (error) {

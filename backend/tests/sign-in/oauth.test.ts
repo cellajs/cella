@@ -49,13 +49,13 @@ vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
     configured: true,
     oidc: true,
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://accounts.google.com/o/oauth2/v2.0/auth')),
-    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
+    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token', claims: {} }),
   },
   microsoftAuth: {
     configured: true,
     oidc: true,
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')),
-    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
+    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token', claims: {} }),
   },
 }));
 vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
@@ -598,9 +598,10 @@ describe('OAuth Authentication', async () => {
 
     it.each([
       { ...providers[0], urls: ['https://api.github.com/user', 'https://api.github.com/user/emails'] },
-      { ...providers[1], urls: ['https://openidconnect.googleapis.com/v1/userinfo'] },
-      { ...providers[2], urls: ['https://graph.microsoft.com/oidc/userinfo'] },
-    ])('reads the $provider profile from its userinfo endpoints, all at once', async ({ provider, fn, client, oidc, urls }) => {
+      // An OIDC provider's profile is the claims its client verified, userinfo included: the round trip reads nothing more.
+      { ...providers[1], urls: [] },
+      { ...providers[2], urls: [] },
+    ])('reads the $provider profile with the exchanged token, its requests all at once', async ({ provider, fn, client, oidc, urls }) => {
       // Each request records how many were in flight when it started: parallel requests overlap.
       const started: { url: string; authorization: string | null; inFlight: number }[] = [];
       let inFlight = 0;

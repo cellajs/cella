@@ -17,6 +17,13 @@ export class OAuthCodeExchangeError extends Error {
   }
 }
 
+/** What a code exchange yields: the access token and, for an OIDC provider, the claims of the sign-in. */
+export interface ProviderGrant {
+  accessToken: string;
+  /** The userinfo claims with the id_token's over them, so the subject and the address are the id_token's. */
+  claims?: oauth.UserInfoResponse;
+}
+
 /** Per-flow values minted at initiation and echoed back on the callback via the state cookie; only an OIDC provider takes a nonce. */
 export type OAuthFlowContext = { codeVerifier: string; nonce?: string };
 
@@ -68,9 +75,10 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
 
     /**
      * Exchanges the authorization code for tokens with the PKCE verifier. OIDC providers also get id_token claim
-     * validation, `nonce` binding, and a signature check against the provider JWKS.
+     * validation, `nonce` binding and a signature check against the provider JWKS, then userinfo, refused unless its
+     * `sub` is the id_token's (OIDC Core §5.3.2).
      */
-    async validateAuthorizationCode(response: AuthorizationResponse, { codeVerifier, nonce }: OAuthFlowContext): Promise<{ accessToken: string }> {
+    async validateAuthorizationCode(response: AuthorizationResponse, { codeVerifier, nonce }: OAuthFlowContext): Promise<ProviderGrant> {
       try {
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
@@ -90,10 +98,16 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
           expectedNonce: oidc ? (nonce ?? oauth.expectNoNonce) : undefined,
         });
 
-        // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
-        if (oidc) await oauth.validateApplicationLevelSignature(effectiveAs, tokenResponse, { signal: providerDeadline() });
+        if (!oidc) return { accessToken: tokens.access_token };
 
-        return { accessToken: tokens.access_token };
+        // Defense-in-depth on top of the TLS-level trust in the direct token-endpoint exchange
+        await oauth.validateApplicationLevelSignature(effectiveAs, tokenResponse, { signal: providerDeadline() });
+        const idClaims = oauth.getValidatedIdTokenClaims(tokens);
+        if (!idClaims) throw new OAuthCodeExchangeError(new Error('id_token missing'));
+
+        const userinfoResponse = await oauth.userInfoRequest(effectiveAs, client, tokens.access_token, { signal: providerDeadline() });
+        const userinfo = await oauth.processUserInfoResponse(effectiveAs, client, idClaims.sub, userinfoResponse);
+        return { accessToken: tokens.access_token, claims: { ...userinfo, ...idClaims } };
       } catch (error) {
         if (isProviderRefusal(error)) throw new OAuthCodeExchangeError(error);
         throw error;
@@ -120,6 +134,7 @@ export const googleAuth = createProviderClient({
     issuer: 'https://accounts.google.com',
     authorization_endpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
     token_endpoint: 'https://oauth2.googleapis.com/token',
+    userinfo_endpoint: 'https://openidconnect.googleapis.com/v1/userinfo',
     jwks_uri: 'https://www.googleapis.com/oauth2/v3/certs',
   },
   clientId: env.GOOGLE_CLIENT_ID || '',
@@ -137,6 +152,7 @@ export const microsoftAuth = createProviderClient({
     issuer: `https://login.microsoftonline.com/${entraTenant}/v2.0`,
     authorization_endpoint: `https://login.microsoftonline.com/${entraTenant}/oauth2/v2.0/authorize`,
     token_endpoint: `https://login.microsoftonline.com/${entraTenant}/oauth2/v2.0/token`,
+    userinfo_endpoint: 'https://graph.microsoft.com/oidc/userinfo',
     jwks_uri: `https://login.microsoftonline.com/${entraTenant}/discovery/v2.0/keys`,
   },
   clientId: env.MICROSOFT_CLIENT_ID || '',
