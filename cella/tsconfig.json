@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["a11y.ts", "a11y.app.ts", "screenshots.ts", "screenshots.app.ts"]
+}

@@ -5,14 +5,20 @@ description: Run the WCAG audit, fix what it finds, check each fix in the runnin
 
 # The accessibility audit loop
 
-`pnpm a11y:run` decides what tools can prove and writes the ledger, `json/accessibility-conformance.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. The [a11y README](../../../a11y/README.md) owns the audit: its commands, partial runs, failed visits, what an app lists in `scope-config.ts`, and why an agent's decision stays provisional until a person confirms it. Agents also report failures that are not there, so the rules below lean toward leaving a row open.
+`pnpm cella a11y` decides what tools can prove and writes the ledger, `cella/a11y-ledger.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. The [CLI README](https://github.com/cellajs/cella-cli#a11y) owns the audit: its jobs and flags, partial runs, failed visits, how a row is decided and what publishing refuses. Agents also report failures that are not there, so the rules below lean toward leaving a row open.
+
+Passing automated checks shows that no failure was found, not that a criterion is met. Treat Supports from the audit as strong evidence, and spot-check it during the manual pass.
 
 ## Run
 
-Hold a testbed for the fix loop (`pnpm cella testbed`, attached to your session), so partial runs skip its start.
+Hold a testbed for the fix loop (`pnpm cella testbed`, attached to your session), so partial runs (`pnpm cella a11y --states <ids>`) skip its start. Every run prints its results folder: `.git/cella-a11y/` in the main checkout, the worktree's own git directory in a linked one. The files below are named from there.
 
 - A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. Read the visit's `failure-<mode>.png` and `.json` first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
 - A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
+
+## The scope
+
+`cella/a11y.ts` lists the template's pages and states, following steps 2 and 3 of W3C's WCAG-EM: every page type, plus overlays such as dialogs, sheets and menus. It comes with an upgrade, together with the UI it describes. An app lists its own in `cella/a11y.app.ts` (`defineA11yApp` from `@cellajs/cli/a11y`): states it adds, base states it replaces under the same id, ids it removes, placeholders and a `prepare` step. Open a template overlay through the base's helpers (`openAccountSheet`, `openMenuSheet`, `openSearchSheet`), never with a copy of its keystroke: a copy misses the next shortcut change. The openers find buttons by their English names, so an app with another default language changes those names. `forms` marks the states whose form the form probes test.
 
 ## Patterns for app UI
 
@@ -27,24 +33,24 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 
 ## The fix loop
 
-1. Read the failures in `a11y/results/manual-pass.md` and `a11y/results/axe.json` (every failing element per rule and state).
+1. Read the failures in `manual-pass.md` and `axe.json` (every failing element per rule and state).
 2. Fix the cause in the component, not the instance: a token, a primitive in `frontend/src/modules/ui`, a shared form field.
-3. Check the fix in the running app before trusting it. Drive the testbed with a short Playwright script: `startSession` (`a11y/src/session.ts`) signs in, `openState(session, '<id>')` (`a11y/src/drive.ts`) opens a state of the scope, also as a phone, a zoomed desktop or with motion allowed. Run it through `pnpm cella testbed -- <command>`, which hands it the testbed's ports and database. Check the state the fix is about and one neighbor that shares the component.
+3. Check the fix in the running app before trusting it. A short script in `.scratch/` opens a state of the scope signed in: `const { page, close } = await openState('<id>', { context })` from `@cellajs/cli/a11y`, also as a phone, a zoomed desktop or with motion allowed (`context` takes Playwright's context options). Run it through `pnpm cella testbed -- node .scratch/<script>.mjs`, which hands it the testbed's ports and database. Check the state the fix is about and one neighbor that shares the component.
 4. Changes that alter data (a reorder, a mute) are put back before the next run: the audit opens the first organization the audit user administers, and a changed order changes which one that is.
 5. Rerun the full audit. Rows the audit decides move by themselves.
 6. A row a reviewer decided keeps its decision and its remark, which now describes the old code: decide it again once step 3 showed the fix holds.
 
-Do not script what the tools already measure: contrast the audit takes from the pixels and token contrast in `pnpm style` ([How a row is decided](../../../a11y/README.md#how-a-row-is-decided)).
+Do not script what the tools already measure: contrast the audit takes from the pixels, in both color modes, and token contrast in `pnpm style`.
 
 # Reviewing the open criteria
 
-Use this part after a full audit, when `pnpm -C a11y report` lists open criteria.
+Use this part after a full audit, when `pnpm cella a11y report` lists open criteria.
 
 ## Preconditions
 
-- A fresh `pnpm a11y:run` with no skipped visits.
-- Packets in `a11y/results/review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (headings, landmarks, images, fields, label against name, other languages) and `tab-order.json`.
-- The open rows and the tools' notes: `a11y/results/manual-pass.md`.
+- A fresh `pnpm cella a11y` with no skipped visits.
+- Packets in `review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (headings, landmarks, images, fields, label against name, other languages) and `tab-order.json`.
+- The open rows and the tools' notes: `manual-pass.md`.
 
 ## Rules
 
@@ -96,11 +102,16 @@ Write the decisions to a JSON file and record them in one go. A decision that th
 ```
 
 ```
-pnpm -C a11y decide --file decisions.json
-pnpm -C a11y report
+pnpm cella a11y decide --file decisions.json
+pnpm cella a11y report
 ```
 
-`remarks` go into the published report: plain words for someone who uses the product, what does not work and how to get around it. `evidence` is for whoever checks the decision.
+`remarks` go into the published report: plain words for someone who uses the product, what does not work and how to get around it. `evidence` is for whoever checks the decision. An agent's decision is stored as `decidedBy: "agent"` and marked in the draft report: a missed failure would publish a wrong Supports, so it stays provisional until a person confirms it with `--by human`. `manual-pass.md` lists what a person confirms and what needs assistive technology.
+
+## In an app
+
+- `cella/a11y-ledger.json` is the app's own (`ignored` in `cella/cella.config.ts`): the first full run writes it, and a ledger of another product is never read.
+- `accessibilityReview` in `frontend/src/modules/auth/legal/legal-config.ts` holds what the accessibility statement claims. `pnpm cella a11y report --publish` prints it from the app's ledger and puts the PDF under `frontend/public/static/common`; shorten its descriptions for the statement's reader.
 
 ## With sub-agents
 

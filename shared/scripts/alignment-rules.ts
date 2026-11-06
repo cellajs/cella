@@ -111,7 +111,7 @@ export function alignmentFindings(files: string[], read: (file: string) => strin
 const alignmentExempt = [
   'README.md',
   '.github/',
-  'a11y/scope-config.ts',
+  'cella/a11y-ledger.json',
   'frontend/public/',
   'frontend/src/content',
   'frontend/src/routes/routeTree.gen.ts',

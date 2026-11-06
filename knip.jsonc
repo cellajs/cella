@@ -5,17 +5,17 @@
   "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
-      // `pnpm cella align --run` runs each alignment's codemod by path, so nothing imports them.
-      "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/alignments/*/*.ts"],
-      // `pnpm cella align --run` runs codemods with `pnpm exec tsx` from the root.
-      "ignoreDependencies": ["tsx"],
-      // `pnpm -C a11y stack` runs the a11y workspace's script of that name. `cwebp` is the system WebP encoder the screenshots
-      // driver calls, installed with `brew install webp`.
-      "ignoreBinaries": ["stack", "cwebp"]
-    },
-    "a11y": {
-      // `openState` is the starting point of a hand-written script that checks a fix in the running app; the audit never imports it.
-      "entry": ["src/drive.ts"]
+      // `pnpm cella align --run` runs each alignment's codemod by path, and `pnpm cella a11y` and `pnpm cella screenshots`
+      // load their adapters by path, so nothing imports them.
+      "entry": [
+        "cella/cella.config.ts",
+        "cella/a11y*.ts",
+        "cella/screenshots*.ts",
+        "cella/skills/**/*.mjs",
+        "cella/alignments/*/*.ts"
+      ],
+      // The CLI runs codemods and loads the adapters with the root's tsx.
+      "ignoreDependencies": ["tsx"]
     },
     "backend": {
       // The drizzle plugin makes every `*-db.ts` an entry, and knip reports no unused export of an entry. Off, the files

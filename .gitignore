@@ -53,7 +53,6 @@ sdk/src/.spec-hash
 
 # Baselines of the Artillery-era bench; runs now keep theirs in the git directory (cella-bench/)
 bench/.baselines/
-a11y/results/
 
 # Migration scripts
 scripts/migration/

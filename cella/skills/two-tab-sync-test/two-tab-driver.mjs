@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
+import { loadPlaywright, mintSession, signOut } from '@cellajs/cli/drive';
 import { caretToEnd, editorText, exactText, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
@@ -14,8 +14,9 @@ mkdirSync(SHOTS, { recursive: true });
 const EMAIL = process.env.EMAIL ?? 'xbench-user-0000@xbench.local';
 const ORG_PATH = process.env.ORG_PATH ?? 'xbench/xbench-org';
 
+const { chromium } = await loadPlaywright();
 const session = mintSession(EMAIL);
-const { base: BASE, cookie: COOKIE } = session;
+const { frontendUrl: BASE, cookie: COOKIE } = session;
 const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
 
 const evidence = [];
@@ -317,6 +318,6 @@ try {
 } finally {
   writeFileSync(join(OUT, 'evidence.json'), JSON.stringify(evidence, null, 1));
   await browser.close();
-  await endSession(session);
+  await signOut(session);
   console.log(`\nEvidence: ${evidence.length} entries -> ${join(OUT, 'evidence.json')}`);
 }

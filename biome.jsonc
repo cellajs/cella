@@ -25,7 +25,8 @@
       "infra/**",
       "bench/src/**",
       "bench/scenarios/**",
-      "a11y/src/**",
+      "cella/a11y*.ts",
+      "cella/screenshots*.ts",
       "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
@@ -173,6 +174,9 @@
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",
         "cella/cella.config.ts",
+        // `pnpm cella a11y` and `pnpm cella screenshots` load each adapter's default export.
+        "cella/a11y*.ts",
+        "cella/screenshots*.ts",
         "sdk/openapi-ts.config.ts",
         "frontend/.storybook/**",
         "frontend/src/content/mdx.d.ts",
@@ -477,8 +481,7 @@
         "frontend/vite/**",
         "frontend/vite.config.ts",
         "cdc/src/env.ts",
-        "yjs/src/env.ts",
-        "a11y/src/audit.ts"
+        "yjs/src/env.ts"
       ],
       "linter": {
         "rules": {
