@@ -171,7 +171,7 @@ export interface GenOperationDetail {
 
 /** Schema tag: a backend-registered tag with `kind: 'schema'`, used for navigation and filtering. */
 export interface GenSchemaTagSummary {
-  /** Tag name identifier (e.g. 'base', 'data', 'errors') */
+  /** Tag name identifier (e.g. 'data', 'embedded', 'errors') */
   name: string;
   /** What schemas this tag contains */
   description: string;

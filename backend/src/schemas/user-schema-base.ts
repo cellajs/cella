@@ -14,5 +14,5 @@ export const userBaseSchema = channelBaseSchema
     description:
       'The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.',
     example: mockUserBase(),
-    'x-tags': schemaTags('base', 'users', 'cella'),
+    'x-tags': schemaTags('embedded', 'users', 'cella'),
   });

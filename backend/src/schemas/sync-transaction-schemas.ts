@@ -19,7 +19,7 @@ export const stxBaseSchema = z
     description:
       'The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.',
     example: mockStxBase(),
-    'x-tags': schemaTags('base', 'cella'),
+    'x-tags': schemaTags('embedded', 'cella'),
   });
 
 export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
@@ -35,11 +35,10 @@ export const stxStoredSchema = stxBaseSchema
       .optional()
       .describe('The fields the last write changed, set by the server; absent after a create or a server-driven write'),
   })
-  .openapi('StxStored', {
+  .openapi({
     description:
       'The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.',
     example: mockStxStored(),
-    'x-tags': schemaTags('base', 'cella'),
   });
 
 export type StxStored = z.infer<typeof stxStoredSchema>;

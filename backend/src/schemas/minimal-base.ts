@@ -22,7 +22,7 @@ export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMini
   description:
     'The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.',
   example: mockUserMinimalBase(),
-  'x-tags': schemaTags('base', 'users', 'cella'),
+  'x-tags': schemaTags('embedded', 'users', 'cella'),
 });
 
 /**

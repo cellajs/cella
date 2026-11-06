@@ -53,7 +53,7 @@ Sign-in and sessions: [Authentication](./AUTHENTICATION.md). Machine access: [In
 
 ## OpenAPI & mocks
 
-- Register a named component (`.openapi('Name')`) only for a whole entity response or a crucial shared base type, in the module's `*-schema.ts` with a `description`, a `mockXResponse()` example and `x-tags` from `schemaTags(kind, module, owner)` (owner `'cella'` in the template, `'app'` in an app). Inline enums and request bodies, and share one schema when the shape is identical. A variant stays unnamed and overrides `description` and `example` when they no longer fit.
+- Register a named component (`.openapi('Name')`) only for a shape more than one operation returns whole, a shape other schemas embed, an app stream frame, or a concept a newcomer looks up by name (`Me`, `UploadToken`); a shape one operation alone returns stays inline and is documented on that operation. A name lives in the module's `*-schema.ts` with a `description`, a `mockXResponse()` example and `x-tags` from `schemaTags(kind, module, owner)`: the kind is its docs bucket (`data`, `embedded`, `stream` or `errors`), the owner `'cella'` in the template and `'app'` in an app. Inline enums and request bodies, and share one schema when the shape is identical. A variant stays unnamed and overrides `description` and `example` when they no longer fit.
 - A nullable named schema is `z.union([schema, z.null()])`, never `schema.nullable()`.
 - Each entity has an insert mock for tests and seeds and a deterministic response mock for OpenAPI examples. A mock that generates a unique value takes its enforcer from `mockUniqueEnforcer()`.
 
