@@ -18,7 +18,7 @@ import { findMfaRequired, findUserById, updateUserMfa } from '#/modules/user/use
 export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   const { user, session } = ctx.var;
 
-  const { factor, methods } = await readStepUp(session, 'account');
+  const { factor, methods } = await readStepUp(ctx, 'account');
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
   const { updatedUser, changed } = await mfaFactorRules.locked(user.id, async (txCtx) => {

@@ -234,7 +234,7 @@ interface TestSessionOpts {
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;
   expiresInMs?: number;
-  /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
+  /** Stamps the session stepped up by this proof at its creation, as an MFA completion does, with its step-up cookie. */
   steppedUpVia?: StepUpProof;
   /** The SSO connection a federation sign-in came through. */
   connectionId?: string;
@@ -249,6 +249,7 @@ export async function insertTestSession(
   { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
+  const stepUp = steppedUpVia ? newHashedToken() : null;
   const id = generateId();
   const createdAt = new Date(Date.now() - ageMs).toISOString();
 
@@ -263,9 +264,12 @@ export async function insertTestSession(
     connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
+    steppedUpSecret: stepUp?.hash ?? null,
   });
 
-  return { id, token, cookie: authCookie('session', token, 7 * 24 * 60 * 60) };
+  // A sign-in that starts stepped up also sets the step-up cookie its stamp counts with.
+  const cookies = [authCookie('session', token, 7 * 24 * 60 * 60), ...(stepUp ? [authCookie('session-step-up', stepUp.raw)] : [])];
+  return { id, token, cookie: cookies.join('; ') };
 }
 
 /** Inserts a session row and returns the cookie string for test requests. */

@@ -16,7 +16,7 @@ export async function revokeMySessionsOp(ctx: UserContext, ids: string[]) {
   const otherIds = ids.filter((id) => id !== currentSessionId);
   const ownIds = ids.filter((id) => id === currentSessionId);
 
-  if (otherIds.length) await requireStepUp(ctx.var.session, 'account');
+  if (otherIds.length) await requireStepUp(ctx, 'account');
 
   const [others, own] = await Promise.all([
     revokeSessions(ctx, { userId: user.id, sessionIds: otherIds, reason: 'other_session', by: user.id }),

@@ -9,6 +9,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
+import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
@@ -64,7 +65,7 @@ export function createInteractionsApp(provider: Provider): Hono<Env> {
     }
 
     // A grant hands a client lasting access: it needs a second factor proven on this session.
-    await requireStepUp(session, 'factor');
+    await requireStepUp({ var: { session, stepUpCookie: getAuthCookie(c, 'session-step-up') } }, 'factor');
 
     // The authorization server's session in this browser may name someone who consented here before: it ends, and
     // the resume signs this user in to a fresh one.

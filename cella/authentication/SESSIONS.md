@@ -33,6 +33,7 @@ Bumping `cookieVersion` renames every cookie and so signs everyone out. Outside 
 | Cookie | Holds | SameSite |
 | --- | --- | --- |
 | `session` | The session token | Strict |
+| `session-step-up` | The proof of the session's last step-up, which counts only with it | Strict |
 | `device-id` | The browser's device id | Lax |
 | `magic-requested` | The magic link this browser asked for | Lax |
 | `magic-pending` | A link opened here that waits for confirmation | Strict |

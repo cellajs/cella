@@ -26,6 +26,7 @@ const prefix = secure ? ('host' as const) : undefined;
 export type CookieName =
   | TokenType
   | 'session'
+  | 'session-step-up'
   | 'device-id'
   | 'totp-challenge'
   | 'passkey-challenge'

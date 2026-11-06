@@ -87,6 +87,8 @@ export type Env = {
     memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
     /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
     session: SessionFacts;
+    /** The content of this browser's step-up cookie (`userGuard` only): the session's step-up stamp counts only with it. */
+    stepUpCookie?: string;
     requestId: string;
     db: DbOrTx;
     tenantId: string;

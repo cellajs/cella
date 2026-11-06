@@ -2,6 +2,7 @@ import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
+import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 
@@ -26,6 +27,7 @@ export const userGuard = xMiddleware(
 
     ctx.set('user', user);
     ctx.set('session', session);
+    ctx.set('stepUpCookie', getAuthCookie(ctx, 'session-step-up'));
     ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
     ctx.set('db', baseDb);
 

@@ -61,7 +61,7 @@ Setting up a factor or connecting a provider sends a security mail to the accoun
 
 ## Step-up
 
-An account-security action needs more than a session: the session must have proven its user present within the last ten minutes. How much proof an action asks depends on what it does:
+An account-security action needs more than a session: the session must have proven its user present within the last ten minutes. A step-up also sets a cookie of its own, and only a browser holding it counts as stepped up, so a copy of the session cookie taken before the proof stays unproven. How much proof an action asks depends on what it does:
 
 | Action | Holds a passkey or TOTP | No factor, recent sign-in | No factor, older sign-in |
 | --- | --- | --- | --- |

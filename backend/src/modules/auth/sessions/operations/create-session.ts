@@ -12,6 +12,7 @@ import { collectSignInContext, type SignInContext } from '#/modules/auth/session
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import type { AuthStrategy, SessionType, StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/sessions/sessions-queries';
+import { stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
 import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
@@ -70,9 +71,9 @@ export interface SessionExtras {
 }
 
 /**
- * Stores a session for the user and returns what its cookie needs: the random token, which exists only there, since the
- * row keeps its hash. `strategy` is the method that started the sign-in; a second factor goes in `steppedUpVia`.
- * Database only, so it runs without a request.
+ * Stores a session for the user and returns what its cookies need: the random token, which exists only there, since the
+ * row keeps its hash, and for a session that starts stepped up the content of its step-up cookie. `strategy` is the
+ * method that started the sign-in; a second factor goes in `steppedUpVia`. Database only, so it runs without a request.
  */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
@@ -87,6 +88,7 @@ export const createSession = async (
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
   const { raw: sessionToken, hash: secret } = newHashedToken();
+  const stepUp = steppedUpVia ? newHashedToken() : null;
 
   const sessionId = generateId();
   const now = getIsoDate();
@@ -106,6 +108,7 @@ export const createSession = async (
     expiresAt: isoDateIn(sessionLifetime),
     steppedUpAt: steppedUpVia ? now : null,
     steppedUpVia,
+    steppedUpSecret: stepUp?.hash ?? null,
     connectionId,
   };
 
@@ -120,7 +123,7 @@ export const createSession = async (
 
   await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
-  return { sessionId, sessionToken, timeSpan: sessionLifetime, newDevice };
+  return { sessionId, sessionToken, stepUpCookie: stepUp?.raw, timeSpan: sessionLifetime, newDevice };
 };
 
 /**
@@ -138,9 +141,10 @@ export const setUserSession = async (
   if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
   const context = await collectSignInContext(ctx);
-  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, extras);
+  const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, type, extras);
 
   setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+  if (stepUpCookie) setAuthCookie(ctx, 'session-step-up', stepUpCookie, stepUpWindow);
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
 
