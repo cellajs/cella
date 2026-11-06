@@ -37,8 +37,9 @@ Each row names its answers per level ([Sync engine](../../../../cella/SYNC_ENGIN
 | A user has no preferences row | The defaults answer (`defaultPreferences`) | | |
 | A CDC message names an unknown event type | The API's message schema drops it (`cdcMessageSchema`) | | |
 | A mark read fails or diverges from the server | The mutation refetches the inbox when it settles (`useMarkNotificationsReadMutation`), and `notification.read` refetches it in every other tab. Open finding, a second answer in the tab that marked: its own `notification.read` refetches it again | | |
-| A push endpoint is gone, refused or rate-limited | Gone ones are deleted and a rate limit backs off (`sendNotificationPush`) | | |
+| A push endpoint is gone, refused or rate-limited | Gone ones are deleted; a push service that rate-limits gets no more of that notification's pushes, and none until its `Retry-After` ends, while the others go on (`sendNotificationPush`) | | |
 | A stored push endpoint names a host off the allowlist | Refused at registration and at send (`isPushServiceEndpoint`) | | |
+| Another user registers a push endpoint they learned | Refused unless the post carries the subscription's auth secret, which only the browser holding it has (`upsertPushSubscription`) | | |
 | A mail scanner or link preview opens an unsubscribe link | The link opens a page that confirms with a POST, and the GET changes nothing (`UnsubscribePage`, `setEmailCategoryOp`) | | |
 
 ## Files

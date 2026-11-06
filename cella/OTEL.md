@@ -87,6 +87,8 @@ Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts)
 
 A log record carries the fields of its log line as attributes, and the trace and span it was written in.
 
+No service serves a Prometheus scrape target: metrics leave over OTLP, and `/metrics/public` holds only the public counts the website shows.
+
 ## Redaction
 
 Tokens travel in request URLs: magic-link and invitation paths, unsubscribe links, OAuth callbacks. One function,
@@ -110,4 +112,4 @@ Every HTTP service answers `GET /health` with a shallow 204 for the agent behind
 | CDC | Its grade and reasons, replication and slot state, the socket to the API |
 | Yjs | Connection, document and client counts |
 
-A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on. A CDC worker that reads a failing change again is degraded at first, so a deploy that brings such a change warns and stays deployed; the worker turns unhealthy once it has not got past the change for a while. The jobs component only ever degrades.
+The diagnostics are a JSON body of the app's own, not the `application/health+json` format of the health-check draft. A component is `healthy`, `degraded` or `unhealthy`. Degraded is slow, not down: it warns and passes a deploy. Unhealthy needs a person and fails a deploy's smoke step. Each worker grades itself and the backend passes the grade on. A CDC worker that reads a failing change again is degraded at first, so a deploy that brings such a change warns and stays deployed; the worker turns unhealthy once it has not got past the change for a while. The jobs component only ever degrades.

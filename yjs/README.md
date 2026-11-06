@@ -32,6 +32,8 @@ Keystrokes merge at character level and reach peers as soon as they are durable.
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`. Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
 
+The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own, a document's seed generation and the confirmation of a saved update, numbered clear of those y-websocket uses. A stock y-websocket client therefore syncs, but skips the generation check and reports every confirmation as a message it cannot read.
+
 ## Vocabulary
 
 | Term | Meaning |
