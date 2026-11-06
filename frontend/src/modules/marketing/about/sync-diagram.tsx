@@ -567,9 +567,9 @@ export function SyncDiagram() {
                   boxRefs.current[key] = el;
                 }}
                 className={cn(
-                  'bg-background relative flex items-center justify-center rounded-xl border shadow-sm',
-                  key === 'api' && 'transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
-                  becomesVm ? 'border-foreground/40 h-14 w-24 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
+                  'bg-foreground/7 relative flex items-center justify-center rounded-xl',
+                  key === 'api' && 'transition-[width] ease-in-out motion-reduce:transition-none',
+                  becomesVm ? 'h-11 w-27 sm:h-14 sm:w-35 md:h-16 md:w-38' : 'size-11 sm:size-14 md:size-16',
                 )}
                 style={{ transitionDuration: `${foldTimeline.morph}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
               >
@@ -582,23 +582,21 @@ export function SyncDiagram() {
                 </motion.div>
                 {key === 'api' && (
                   <>
+                    {/* The workers run inside the API process, so they show as names: an icon would read as a line's endpoint. */}
                     <div
                       aria-hidden={!isVm}
-                      className="absolute inset-0 flex items-center justify-center gap-2 overflow-hidden rounded-xl sm:gap-2.5 md:gap-3"
+                      className="absolute inset-0 flex items-center justify-center gap-1 overflow-hidden rounded-xl sm:gap-1.5"
                     >
                       {vmWorkers.map((worker) => (
-                        <motion.div
+                        <motion.span
                           key={worker.key}
                           initial={false}
                           animate={{ opacity: isVm ? 1 : 0 }}
                           transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.fade } : { duration: 0.2 }}
-                          className="flex flex-col items-center gap-1"
+                          className="bg-foreground/9 text-2xs rounded-md px-1.5 py-1 leading-none font-medium sm:px-2 sm:py-1.5 sm:text-xs"
                         >
-                          <div className="flex size-6 items-center justify-center rounded-md border sm:size-7 md:size-8">
-                            <ServerIcon className="size-3.5 sm:size-4" />
-                          </div>
-                          <span className="text-2xs text-muted-foreground leading-none">{worker.label}</span>
-                        </motion.div>
+                          {worker.label}
+                        </motion.span>
                       ))}
                     </div>
                     <motion.span
@@ -606,7 +604,7 @@ export function SyncDiagram() {
                       initial={false}
                       animate={{ opacity: isVm ? 1 : 0 }}
                       transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.swap } : { duration: 0.2 }}
-                      className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 text-xs font-medium whitespace-nowrap"
+                      className="text-muted-foreground absolute bottom-full left-1/2 mb-2 -translate-x-1/2 text-xs whitespace-nowrap"
                     >
                       {t('about:sync_diagram.one_vm')}
                     </motion.span>

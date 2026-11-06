@@ -17,7 +17,7 @@ interface PanelDragHandleButtonProps {
   /** aria-label when the board is not reorderable */
   fallbackLabel?: string;
   className?: string;
-  icon?: ReactNode;
+  icon: ReactNode;
   /** Shown under the pointer while dragging */
   preview?: ReactNode;
   children?: ReactNode;
@@ -36,24 +36,22 @@ export function PanelDragHandleButton({ name, fallbackLabel, className, icon, pr
 
   const content = (
     <>
-      {(icon || panelDrag) && (
-        <span className="relative inline-flex shrink-0 items-center justify-center">
-          <span
-            className={cn(
-              'inline-flex',
-              panelDrag &&
-                'transition-[opacity,filter] group-hover/drag:opacity-30 group-hover/drag:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]',
-            )}
-          >
-            {icon}
-          </span>
-          {panelDrag && (
-            <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/drag:opacity-100 group-focus/drag:opacity-100">
-              <GripVerticalIcon className="size-4 shrink-0" />
-            </span>
+      <span className="relative inline-flex shrink-0 items-center justify-center">
+        <span
+          className={cn(
+            'inline-flex',
+            panelDrag &&
+              'transition-[opacity,filter] group-hover/drag:opacity-30 group-hover/drag:blur-[1px] group-focus/drag:opacity-30 group-focus/drag:blur-[1px]',
           )}
+        >
+          {icon}
         </span>
-      )}
+        {panelDrag && (
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/drag:opacity-100 group-focus/drag:opacity-100">
+            <GripVerticalIcon className="size-4 shrink-0" />
+          </span>
+        )}
+      </span>
       {children && <span className={cn('min-w-0 truncate', hintFadeOut)}>{children}</span>}
     </>
   );

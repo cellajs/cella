@@ -1,4 +1,4 @@
-import { KeyRoundIcon, TrashIcon } from 'lucide-react';
+import { FingerprintPatternIcon, TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { DeviceTile } from '~/modules/me/device-tile';
@@ -25,12 +25,8 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
     <DeviceTile
       value={passkey.id}
       device={passkey}
-      meta={
-        <>
-          <KeyRoundIcon className="mr-1.5 inline size-3 align-[-0.0625em]" />
-          {passkey.nameOnDevice}
-        </>
-      }
+      iconBadge={FingerprintPatternIcon}
+      meta={passkey.nameOnDevice}
       details={<ExpandableTileDetail label={t('c:created_at')}>{dateShort(passkey.createdAt)}</ExpandableTileDetail>}
       actions={
         <>
