@@ -2,7 +2,7 @@
 breaking: true
 clientCacheBump: true
 caughtBy: nothing
-grep: phase:, /:tenantId/:organizationId, ${tenantId}/${organizationId}, /memberships/pending, /memberships/members, /memberships/check, /unseen/counts, /notifications/preferences, /notifications/read, /system/invite, /system/newsletter, /users/users, /check-slug, /presigned-urls, /tenants/self, /me/mfa, /me/leave, getAttachments, deleteAttachments
+grep: phase:, /:tenantId/:organizationId, ${tenantId}/${organizationId}, {tenantId}/{organizationId}, /memberships/pending, /memberships/members, /memberships/check, /unseen/counts, /notifications/preferences, /notifications/read, /system/invite, /system/newsletter, /users/users, /check-slug, /presigned-urls, /tenants/self, /me/mfa, /me/leave, getAttachments, deleteAttachments
 ---
 
 # Resource routes follow aep.dev: new paths, PATCH and :verb custom methods
@@ -39,9 +39,10 @@ No script: manual.
 4. Fix each app route the load check names (`pnpm sdk` loads them): `put` becomes `patch`, a delete with a body becomes `post` at `/~batch-delete`, an action sub-path becomes `/~<verb>` with an operationId that leads with the verb.
 5. Name the id a route addresses `{<singular>Id}` with `tenantOrgParamSchema.extend({ <singular>Id: validIdSchema })`; `idInTenantOrgParamSchema`, `tenantIdParamSchema`, `entityIdParamSchema` and `relatableUserIdParamSchema` are gone.
 6. Rewrite hand-written URLs (fetch, `sendBeacon`, stories, tests) to the paths in `sdk/gen/openapi.json`, a custom method as `<resource>:<verb>`.
-7. Expect 201 from `createTenant`, `createConnection` and `createPushSubscription`, and 204 without a body from `deleteConnection` and `deleteConnectedApp`.
-8. In MCP clients and tests, call the tools by their new names (`listAttachments`, `batchDeleteAttachments`) with `attachmentId` in place of `id`.
-9. If `shared/config` sets its own `clientCacheVersion`, change its value.
+7. If the app has a `cella/pentest.app.ts`, spell each `skip` entry as `sdk/gen/openapi.json` does (`POST /tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete`) and rename its `params` keys to the new path params. The scan leaves out only an exact match, so an old entry lets it call a route that ends its session or deletes its data; `pnpm cella pentest` warns about an entry that matches no route.
+8. Expect 201 from `createTenant`, `createConnection` and `createPushSubscription`, and 204 without a body from `deleteConnection` and `deleteConnectedApp`.
+9. In MCP clients and tests, call the tools by their new names (`listAttachments`, `batchDeleteAttachments`) with `attachmentId` in place of `id`.
+10. If `shared/config` sets its own `clientCacheVersion`, change its value.
 
 ## Verify
 
