@@ -1,4 +1,4 @@
-import { and, count, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, gt, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type SeenTrackedProductType, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -21,33 +21,34 @@ export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL
 
 interface FindUnseenCountsByUserOpts {
   userId: string;
-  channelIds: string[];
+  /** The home channels to count, each with the moment after which its rows count. */
+  channels: { id: string; cutoff: string }[];
   productTypes: readonly SeenTrackedProductType[];
-  cutoff: string;
   /** Per-type collection read filter. An `undefined` value or an absent type counts unrestricted, so callers pre-drop types scoped `none`. */
   scopeWhereByType?: Partial<Record<SeenTrackedProductType, SQL | undefined>>;
 }
 
 /**
- * Counts readable, live, unseen rows in the recency window by home channel. Draft-lifecycle rows use publish time,
- * others creation time; `unseen-sync.ts` mirrors this.
+ * Counts readable, live, unseen rows by home channel, each channel's rows past its own cutoff. Draft-lifecycle rows use
+ * publish time, others creation time; `unseen-sync.ts` mirrors this.
  */
-export const findUnseenCountsByUser = async (
-  ctx: DbContext,
-  { userId, channelIds, productTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,
-) => {
+export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels, productTypes, scopeWhereByType }: FindUnseenCountsByUserOpts) => {
   const { db } = ctx.var;
   const rows: { channelId: string; productType: SeenTrackedProductType; unseenCount: number }[] = [];
+  // `or()` of no channels admits every row.
+  if (channels.length === 0) return rows;
+  // Channels that share a cutoff, mostly the window start, share one test.
+  const cutoffGroups = [...Map.groupBy(channels, ({ cutoff }) => cutoff)].map(([cutoff, group]) => ({ cutoff, ids: group.map(({ id }) => id) }));
 
   for (const productType of productTypes) {
     const entityTable = getEntityTable(productType);
     const orgTable = entityTable as OrgScopedEntityTable;
 
     const channelIdColumn = homeChannelIdSql(productType, entityTable);
+    const recency = seenRecencySql(orgTable);
 
     const filters = [
-      inArray(channelIdColumn, channelIds),
-      gt(seenRecencySql(orgTable), cutoff),
+      or(...cutoffGroups.map(({ cutoff, ids }) => and(inArray(channelIdColumn, ids), gt(recency, cutoff)))),
       sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.productId} = ${orgTable.id})`,
       hasDeletedAt(entityTable) ? isNull(entityTable.deletedAt) : undefined,
       // Feed parity: unpublished drafts are hidden from every feed, so they are never unseen.

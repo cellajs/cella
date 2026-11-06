@@ -82,8 +82,8 @@ export type Env = {
     /** `orgGuard` merges the config defaults under the row's sparse flags. */
     organization: OrganizationModel & { organizationFlags: OrganizationFlags; membership: MembershipBaseModel | null };
     organizationId: string;
-    /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
-    memberships: (MembershipBaseModel & { createdBy: string | null })[];
+    /** User-only sugar for `actor.bindings`, with the join time and the inviter's id; a service actor has no memberships. */
+    memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
     /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
     session: SessionFacts;
     requestId: string;
