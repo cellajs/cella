@@ -2,13 +2,12 @@ import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
-import babel from '@rolldown/plugin-babel';
 import { serwist } from '@serwist/vite';
 import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
-import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react';
 import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -139,6 +138,8 @@ const viteConfig = {
     ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
     // sdk/src stays unwatched (the generator churns temp folders and lock files there); a finished write to sdk/gen reloads.
     watch: { ignored: ['**/backend/**', '**/sdk/src/**'] },
+    // Transforms main.tsx's static import graph at startup, so the first page load after `pnpm dev` does not wait on it.
+    warmup: { clientFiles: ['./src/main.tsx'] },
     // The folders the app reads from outside this package; a file it imports, such as a repo doc, is served too. Vite's
     // default, the workspace root, serves any file in the checkout by path to whoever reaches the server, a tunnel included.
     fs: { allow: [import.meta.dirname, ...['shared', 'sdk', 'locales', 'json', 'node_modules'].map((dir) => path.join(repoRoot, dir))] },
@@ -325,7 +326,9 @@ const viteConfig = {
   },
   // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart.
   // react-scan is loaded on demand from the debug menu and stays out of the pre-bundle.
-  optimizeDeps: { exclude: ['sdk', 'react-scan'] },
+  // @serwist/window is imported only through virtual:serwist, which the dependency scan cannot follow: unlisted, the first
+  // load after a cache reset finds it at runtime, re-bundles every dependency mid-load and reloads the page.
+  optimizeDeps: { include: ['@serwist/window'], exclude: ['sdk', 'react-scan'] },
   clearScreen: false,
   plugins: [
     // The app answers only at `frontendUrl`: the loopback address the server binds is another origin to the API's absolute URLs.
@@ -390,20 +393,19 @@ const viteConfig = {
     // import; apps do (projectcampus renders its marketing art this way), so the plugin stays.
     svgr({ include: '**/*.svg?react' }),
     // Docs bodies are Fast Refresh boundaries: a body edit updates in place and stops at its own module.
-    react({ include: /\.(mdx?|[jt]sx?)$/ }),
-    // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.
+    // `compiler` loads oxc-transform-react, the native React Compiler; nothing imports that package by name.
     // A compiler bail is a hard error in dev and build alike; a function that must stay uncompiled states 'use no memo'
     // with its reason above the directive.
-    babel({ presets: [reactCompilerPreset({ panicThreshold: 'all_errors' })], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
+    react({ include: /\.(mdx?|[jt]sx?)$/, compiler: { panicThreshold: 'all_errors' } }),
     {
       name: 'react-compiler-compiled',
       apply: 'build',
-      // A babel include that stops matching files would switch the compiler off without any other signal.
+      // A react() include or compiler option that misses the app's files would switch the compiler off without any other signal.
       generateBundle(_options, bundle) {
         const compiled = Object.values(bundle).some(
           (output) => output.type === 'chunk' && output.moduleIds.some((id) => /[\\/]react[\\/]compiler-runtime\.js$/.test(id)),
         );
-        if (!compiled) this.error('React Compiler output is missing: no module imports react/compiler-runtime. Check the babel include.');
+        if (!compiled) this.error('React Compiler output is missing: no module imports react/compiler-runtime. Check react({ compiler }).');
       },
     } satisfies Plugin,
     tailwindcss(),
