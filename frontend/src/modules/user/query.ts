@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, type User, updateUser } from 'sdk';
+import { deleteUsers, type GetUsersData, getPendingSystemInvites, getUser, getUsers, type UpdateUserData, type User, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { useUpdateSelfMutation } from '~/modules/me/query';
@@ -41,6 +41,10 @@ export const usersListQueryOptions = (params: UsersListParams) => {
     refetchOnMount: true,
   });
 };
+
+/** How many addresses hold an unexpired system invitation. */
+export const pendingSystemInvitesQueryOptions = () =>
+  queryOptions({ queryKey: ['user', 'pendingSystemInvites'] as const, queryFn: () => getPendingSystemInvites() });
 
 const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();

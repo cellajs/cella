@@ -8397,6 +8397,54 @@
         }
       }
     },
+    "/system/invite/pending": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPendingSystemInvites",
+        "tags": ["system", "cella"],
+        "summary": "Count pending system invitations",
+        "description": "Returns how many addresses hold an unexpired system invitation, one sent outside any organization.",
+        "x-guard": ["userGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "responses": {
+          "200": {
+            "description": "Pending invitations",
+            "content": {
+              "application/json": {
+                "example": {
+                  "count": 3
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["count"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/system": {
       "delete": {
         "security": [

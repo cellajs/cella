@@ -149,6 +149,9 @@ import type {
   GetPendingMfaData,
   GetPendingMfaErrors,
   GetPendingMfaResponses,
+  GetPendingSystemInvitesData,
+  GetPendingSystemInvitesErrors,
+  GetPendingSystemInvitesResponses,
   GetPresignedUrlsData,
   GetPresignedUrlsErrors,
   GetPresignedUrlsResponses,
@@ -381,6 +384,7 @@ import {
   zGetPendingMagicLinkResponse,
   zGetPendingMembershipsResponse,
   zGetPendingMfaResponse,
+  zGetPendingSystemInvitesResponse,
   zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
@@ -1963,6 +1967,26 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Count pending system invitations
+ *
+ * Returns how many addresses hold an unexpired system invitation, one sent outside any organization.
+ *
+ * **GET /system/invite/pending** ·· [getPendingSystemInvites](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system/invite/pending) ·· _system · cella_
+ *
+ * @param {getPendingSystemInvitesData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 429
+ */
+export const getPendingSystemInvites = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPendingSystemInvitesData, ThrowOnError>,
+): RequestResult<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetPendingSystemInvitesResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/system/invite/pending',
+    ...options,
   });
 
 /**

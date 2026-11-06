@@ -1670,6 +1670,13 @@ export const zSystemInviteResponse = z.object({
   invitesSentCount: z.number(),
 });
 
+/**
+ * Pending invitations
+ */
+export const zGetPendingSystemInvitesResponse = z.object({
+  count: z.int(),
+});
+
 export const zDeleteUsersBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
 });
