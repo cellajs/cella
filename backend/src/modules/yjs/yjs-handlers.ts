@@ -15,7 +15,8 @@ const toBase64url = (bytes: Uint8Array) => Buffer.from(bytes.buffer, bytes.byteO
 
 app.openapi(yjsRoutes.getYjsToken, async (ctx) => {
   const data = await getYjsTokenOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+  // A token opens the document for minutes: no cache keeps it.
+  return ctx.json(data, 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(yjsRoutes.pullYjsDocument, async (ctx) => {
