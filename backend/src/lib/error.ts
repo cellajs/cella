@@ -77,7 +77,7 @@ interface ClientError {
   message: string;
   name: string;
   status: ContentfulStatusCode;
-  /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
+  /** Error key from `shared/locales/en/error.json` (or an app's `appError.json`). */
   type: ErrorKey;
   severity: Severity;
   entityType?: AppError['entityType'];

@@ -11,10 +11,10 @@
 
     "paths": {
       "~/*": ["./src/*"],
-      "#json/*": ["../json/*"],
+      "#json/*": ["../shared/json/*"],
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../shared/*", "../json/*", "../locales/*", "script", "vite/**/*"],
+  "include": ["src/**/*", "vite.config.ts", "../shared/*", "script", "vite/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

@@ -34,7 +34,7 @@ decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `
 - **The new module folders** (`backend/src/modules/<name>/`, `frontend/src/modules/<name>/`): both
   module files declare `owner: 'app'`, and the CLI never merges an app module. Where attachment
   writes `'cella'` in a route tag or a schema's `x-tags`, write `'app'`.
-- **App-owned, never merged**: `shared/config/` (hierarchy, config, permissions), `locales/*/app.json`,
+- **App-owned, never merged**: `shared/config/` (hierarchy, config, permissions), `shared/locales/*/app.json`,
   `backend/drizzle/`.
 - **Pinned registries**, where the app's copy always wins: `backend/src/db/channel-tables.ts`,
   `backend/src/db/product-tables.ts`, `backend/src/modules.ts`, `backend/src/mocks/app-product-mocks.ts`,
@@ -165,7 +165,7 @@ Run `pnpm sdk` first: the module imports its types, client functions and Zod sch
   route folder, like `frontend/src/routes/_app/$tenantId.$organizationSlug/organization/attachments.tsx`,
   with its `staticData.navTab`. A product shown inside another page (a panel, a sheet) needs no
   route: its `deepLinkParam` (step 6) opens it.
-- Locale keys in `locales/en/app.json` and each other language the app ships: `<name>`,
+- Locale keys in `shared/locales/en/app.json` and each other language the app ships: `<name>`,
   `<name>_other` and the texts its UI shows.
 
 ## 5. Channel entity
@@ -223,7 +223,7 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   components go in the module's `route-logic.ts` and `route-components.tsx`.
 - `frontend/src/entity-sync-queries.ts`: a `case '<name>'` that calls `addMembersQuery('<name>')`
   and pushes the canonical options of the products below it.
-- Locale keys in `locales/en/app.json`: `<name>`, `<name>_other`, `tab_<name>s.text` when it is a
+- Locale keys in `shared/locales/en/app.json`: `<name>`, `<name>_other`, `tab_<name>s.text` when it is a
   tab of its parent, and the texts of its pages.
 
 ### Moving a product under it
@@ -271,7 +271,7 @@ exist need a data migration that gives them the new id column.
   creates and runs them ([Jobs worker](../../JOBS.md)).
 - **A per-user client store** (recent picks): `idbKvStorage('<base>')` with `skipHydration: true`,
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
-- **Error types of its own**: `<type>` and `<type>.text` in `locales/en/appError.json`, thrown as
+- **Error types of its own**: `<type>` and `<type>.text` in `shared/locales/en/appError.json`, thrown as
   `new AppError(status, '<type>', severity)`.
 - **Accessibility audit and load tests**: the new pages and their states in `cella/a11y.app.ts`
   (the app's own), with a placeholder for the slug; bench rows through `registerBenchSeed` in

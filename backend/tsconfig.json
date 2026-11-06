@@ -21,9 +21,9 @@
 
     "paths": {
       "#/*": ["./src/*"],
-      "#json/*": ["../json/*"],
+      "#json/*": ["../shared/json/*"],
     },
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*", "tests", "scripts", "bench", "../cdc/src/**/*"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "tests", "scripts", "bench", "../cdc/src/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

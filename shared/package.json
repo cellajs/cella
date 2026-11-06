@@ -1,6 +1,6 @@
 {
   "name": "shared",
-  "description": "Shared config, permissions, types, and cross-package utilities",
+  "description": "Shared config, permissions, types, translations, and cross-package utilities",
   "type": "module",
   "scripts": {
     "ts": "cd .. && tsgo -p shared/tsconfig.json --pretty",

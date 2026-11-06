@@ -27,7 +27,6 @@ import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { insertUsers, updateUser } from '#/modules/user/user-queries';
 import { encodeBase32 } from '#/utils/base32';
 import { checkMark, startSpinner, succeedSpinner } from '#/utils/console';
-import showcaseJson from '#json/showcase.json';
 import { defaultAdminUser } from '../fixtures';
 import type { SeedScript } from '../types';
 import { initSeed } from './00-init.seed';
@@ -36,6 +35,7 @@ import { countersSeed } from './50-counters.seed';
 import { notificationsSeed } from './55-notifications.seed';
 import { textDocument } from './description-document';
 import { seedAssets } from './seed-assets';
+import showcaseJson from './showcase.json' with { type: 'json' };
 
 setMockContext('script');
 
@@ -43,7 +43,7 @@ const db = getSeedDb();
 const ctx = { var: { db } };
 const adminId = defaultAdminUser.id;
 
-/** `json/showcase.json`. An age is a duration before the run: 25min, 2h, 3d, 1w, 5mo or 2y. */
+/** `showcase.json`. An age is a duration before the run: 25min, 2h, 3d, 1w, 5mo or 2y. */
 interface Showcase {
   /** The account the screenshots sign in as, the init seed's admin under this name. */
   admin: { firstName: string; lastName: string; email: string; age: string };
@@ -84,7 +84,7 @@ const durations = new Map([
 const timeAgo = (ago: string) => {
   const [, amount, unit] = /^(\d+)([a-z]+)$/.exec(ago) ?? [];
   const ms = unit ? durations.get(unit) : undefined;
-  if (!ms) throw new Error(`json/showcase.json: "${ago}" is no duration (25min, 2h, 3d, 1w, 5mo or 2y)`);
+  if (!ms) throw new Error(`showcase.json: "${ago}" is no duration (25min, 2h, 3d, 1w, 5mo or 2y)`);
   return new Date(Date.now() - Number(amount) * ms).toISOString();
 };
 
@@ -94,7 +94,7 @@ const sinceThen = (from: string, recency = 1) =>
 
 const organizationRole = (role: string) => {
   const match = hierarchy.getRoles('organization').find((declared) => declared === role);
-  if (!match) throw new Error(`json/showcase.json: the organization declares no role "${role}"`);
+  if (!match) throw new Error(`showcase.json: the organization declares no role "${role}"`);
   return match;
 };
 
@@ -127,7 +127,7 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
     const openSeats = new Map(Object.entries(org.roles));
     const takeSeat = (role: string) => {
       const left = (openSeats.get(role) ?? 0) - 1;
-      if (left < 0) throw new Error(`json/showcase.json: ${org.name} names more "${role}" members than its roles count`);
+      if (left < 0) throw new Error(`showcase.json: ${org.name} names more "${role}" members than its roles count`);
       openSeats.set(role, left);
       return organizationRole(role);
     };
@@ -156,7 +156,7 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
 
     const people = (org.people ?? []).map(({ name, role, mfa, lastSeen }) => {
       const [firstName, ...rest] = name.split(' ');
-      if (!org.domain) throw new Error(`json/showcase.json: ${org.name} names people without a domain`);
+      if (!org.domain) throw new Error(`showcase.json: ${org.name} names people without a domain`);
       return newMember(
         { firstName, lastName: rest.join(' '), email: `${slug(firstName)}@${org.domain}`, mfaRequired: mfa },
         role,
@@ -227,7 +227,7 @@ const readAllBut = async (unread: number) => {
 };
 
 /**
- * Seeds the curated dataset of `json/showcase.json` that the marketing screenshots show, in place of the random seed:
+ * Seeds the curated dataset of `showcase.json` that the marketing screenshots show, in place of the random seed:
  * a dozen organizations, their members and attachments, the admin's menu, unseen counts and inbox, and MFA. Runs only
  * when named, on an empty throwaway database.
  */

@@ -12,7 +12,7 @@ export default defineProject({
   resolve: {
     alias: {
       '#': path.resolve(import.meta.dirname, '../backend/src'),
-      '#json': path.resolve(import.meta.dirname, '../json'),
+      '#json': path.resolve(import.meta.dirname, '../shared/json'),
     },
   },
   logLevel: 'error',

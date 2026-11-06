@@ -7,7 +7,7 @@ Every pass agent reads this first, then the group brief and the scout report. Re
 - Worktree (the only place you edit): `<worktree path>` on branch `<branch>`, branched from `<base branch>`.
 - Your shell cwd may be the main checkout, which other agents use and which may switch branches mid-session. Never edit, run pnpm in, or run git write commands in the main checkout. Address files by absolute path inside the worktree, and run tooling as `pnpm -C <worktree> ...` or `git -C <worktree> ...`.
 - Do not commit, stash or branch. Leave your changes in the working tree; the coordinator reviews and commits each pass.
-- Group scope: `<directories>`. Edit files outside the group only when the group brief grants it for a named lead. Never touch generated files, `locales/` (except to add a key the group brief allows), `routes/`, `sdk/`, `backend/`.
+- Group scope: `<directories>`. Edit files outside the group only when the group brief grants it for a named lead. Never touch generated files, `shared/locales/` (except to add a key the group brief allows), `routes/`, `sdk/`, `backend/`.
 
 ## Goal and order of priorities
 

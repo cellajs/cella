@@ -73,7 +73,7 @@ infra/Pulumi.*.exposure.yaml
 storybook-static
 .locales-cache
 # Written by frontend/vite/write-locale-types.ts on install, typecheck and every Vite start
-locales/resources.gen.d.ts
+shared/locales/resources.gen.d.ts
 .dev-session-cookie
 
 # GeoIP databases (downloaded at runtime, not committed)

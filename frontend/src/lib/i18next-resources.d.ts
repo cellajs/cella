@@ -1,4 +1,4 @@
-import type { LocaleResources } from '../../../locales/resources.gen';
+import type { LocaleResources } from '../../../shared/locales/resources.gen';
 
 declare module 'i18next' {
   interface CustomTypeOptions {

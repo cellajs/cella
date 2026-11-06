@@ -44,7 +44,7 @@ export const languageSchema = z.enum(appConfig.languages);
 
 const countryCodes = new Set(countries.map(({ code }) => code));
 
-/** An ISO 3166-1 alpha-2 code that `json/countries.json` lists, the codes the country field offers. */
+/** An ISO 3166-1 alpha-2 code that `shared/json/countries.json` lists, the codes the country field offers. */
 export const countryCodeSchema = z
   .string()
   .max(2)
