@@ -132,7 +132,8 @@ const roundTrip = { state: 'the-state', codeVerifier: 'a'.repeat(43), nonce: 'th
 describe('federation client', () => {
   beforeEach(() => forgetFederation(federation.key));
 
-  it('builds the authorization URL from the discovered endpoint: code flow, PKCE S256, nonce and the IdP pin', async () => {
+  // The step-up an asserted MFA grants is dated from `auth_time`, so the start asks for it as an essential claim.
+  it('builds the authorization URL from the discovered endpoint: code flow, PKCE S256, nonce, essential auth_time and the IdP pin', async () => {
     const server = federationServer({ nonce: roundTrip.nonce });
     const url = await createFederationAuthorizationUrl(federation, { ...roundTrip, loginHint: 'https://idp.hu.nl/a,https://idp.hu.nl/b' }, server);
 
@@ -149,6 +150,8 @@ describe('federation client', () => {
       login_hint: 'https://idp.hu.nl/a,https://idp.hu.nl/b',
     });
     expect(params.code_challenge).toHaveLength(43);
+    expect(JSON.parse(params.claims)).toEqual({ id_token: { auth_time: { essential: true } } });
+    expect(params.max_age).toBeUndefined();
   });
 
   // The step-up an SSO sign-in grants reads `acr` and `auth_time`: the id_token's, whatever userinfo answers.

@@ -94,7 +94,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
 /**
  * When the institution authenticated the person with a factor it asserts as MFA: the id_token's `auth_time`, never
  * later than now. Undefined unless that moment lies within the step-up window: an institution's session from hours ago
- * signs a returning person in without a login, and a token without `auth_time` does not date the factor at all.
+ * signs a returning person in without a login, and a token without the `auth_time` the start asked for dates no factor.
  */
 const assertedMfaAt = (federation: Federation, { acr, auth_time: authTime }: SsoClaims): string | undefined => {
   if (typeof acr !== 'string' || !federation.mfaAcr?.includes(acr) || typeof authTime !== 'number') return undefined;

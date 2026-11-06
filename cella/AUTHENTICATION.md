@@ -73,7 +73,7 @@ An account-security action needs more than a session: the session must have prov
 
 Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
-- **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA, within the window from the moment its token says the institution authenticated the person; a token that gives no such moment counts as no factor.
+- **Factor**: a passkey or TOTP the user holds, proven on this session within the window: by a step-up, by setting it up, or by the MFA or passkey sign-in that started the session. An SSO sign-in counts as a factor when the institution asserted MFA, within the window from the moment the institution authenticated the person, which the sign-in asks its token to state; a token that gives no such moment counts as no factor.
 - **Set up a factor**: the dialog offers to add a passkey or an authenticator app. Setting it up proves it on the session, so the action runs right after.
 - **Emailed code**: mailed to the account's address for the session that asked and typed into the same dialog, so it works when the mail is read on a phone or in another browser.
 - **A lost factor**: with MFA off the mailbox signs the account in anyway, so a user who lost their passkey or authenticator may set up a new one with an emailed code. The code opens nothing else. With MFA on the other factor replaces the lost one.

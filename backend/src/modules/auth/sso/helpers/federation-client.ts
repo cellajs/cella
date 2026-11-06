@@ -47,6 +47,9 @@ const discoverFederation = (federation: Federation, options: FederationClientOpt
 /** Drops the cached discovery of a federation: after a signature failure, or between tests. */
 export const forgetFederation = (key: string) => discovered.delete(key);
 
+/** `auth_time` asked as an essential id_token claim (OIDC Core §5.5), which makes it required: an asserted MFA's step-up is dated from it. */
+const essentialClaims = JSON.stringify({ id_token: { auth_time: { essential: true } } });
+
 interface AuthorizationUrlInput {
   state: string;
   codeVerifier: string;
@@ -55,7 +58,7 @@ interface AuthorizationUrlInput {
   loginHint?: string;
 }
 
-/** The federation's authorization URL for one round trip: code flow, PKCE S256, the nonce the id_token must echo. */
+/** The federation's authorization URL for one round trip: code flow, PKCE S256, the nonce the id_token must echo and an essential `auth_time`. */
 export const createFederationAuthorizationUrl = async (
   federation: Federation,
   { state, codeVerifier, nonce, loginHint }: AuthorizationUrlInput,
@@ -65,7 +68,9 @@ export const createFederationAuthorizationUrl = async (
   if (!as.authorization_endpoint) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy: federation.key } });
 
   const { clientId, redirectUri, scopes } = federation;
-  return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce, loginHint });
+  const url = await authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce, loginHint });
+  url.searchParams.set('claims', essentialClaims);
+  return url;
 };
 
 interface CodeExchangeInput extends AuthorizationResponse {
