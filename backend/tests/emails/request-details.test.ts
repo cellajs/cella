@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 const sendMagicLink = () =>
-  mailer.sendEmails(magicLinkEmail, { magicLinkUrl: 'https://app.example.test/magic', name: 'Emily', isNewUser: false }, [
+  mailer.sendEmails(magicLinkEmail, { magicLinkUrl: 'https://app.example.test/magic', name: 'Emily', isNewUser: false, invited: false }, [
     { email: 'emily@example.test', lng: 'en' },
   ]);
 

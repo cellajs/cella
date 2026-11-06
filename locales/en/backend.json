@@ -56,6 +56,7 @@
   "email.magic_link.signup.subject": "Finish signing up for {{appName}}",
   "email.magic_link.signup.text": "A link to finish creating your account on {{appName}} was requested for this address.",
   "email.magic_link.signup.title": "Sign up for {{appName}}",
+  "email.magic_link.signup_invited.text": "This link completes the invitation you followed: it creates your account on {{appName}} for this address.",
   "email.magic_link.subject": "Sign in to {{appName}}",
   "email.magic_link.text": "A link to sign in to {{appName}} was requested for this address.",
   "email.magic_link.title": "Sign in to {{appName}}",
