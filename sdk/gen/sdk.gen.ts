@@ -1466,6 +1466,28 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Respond to membership invitation
+ *
+ * Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.
+ *
+ * **POST /me/invitations/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{id}/{acceptOrReject}) ·· _me · cella_
+ *
+ * @param {handleMembershipInvitationData} options
+ * @param {string} options.path.id - `string`
+ * @param {enum} options.path.acceptOrReject - `enum`
+ * @returns Possible status codes: 200, 400, 401, 404, 409, 429
+ */
+export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<HandleMembershipInvitationData, ThrowOnError>,
+): RequestResult<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zHandleMembershipInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/me/invitations/{id}/{acceptOrReject}',
+    ...options,
+  });
+
+/**
  * Revoke sessions
  *
  * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).
@@ -2862,28 +2884,6 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Respond to membership invitation
- *
- * Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.
- *
- * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships · cella_
- *
- * @param {handleMembershipInvitationData} options
- * @param {string} options.path.id - `string`
- * @param {enum} options.path.acceptOrReject - `enum`
- * @returns Possible status codes: 200, 400, 401, 404, 409, 429
- */
-export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
-  options: Options<HandleMembershipInvitationData, ThrowOnError>,
-): RequestResult<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zHandleMembershipInvitationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}',
-    ...options,
   });
 
 /**

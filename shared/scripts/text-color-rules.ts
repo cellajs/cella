@@ -6,6 +6,7 @@ import { parseSource } from './source-comments.ts';
 const paletteExceptions: Record<string, string> = {
   'frontend/src/modules/docs/': 'syntax, HTTP method and status colors, which carry meaning the theme steps do not',
   'frontend/src/modules/common/json-viewer/theme.ts': 'syntax colors of the JSON viewer',
+  'frontend/src/modules/marketing/about/hero-stack.tsx': 'syntax colors of the code on the hero phone, an editor that stays dark in both modes',
 };
 
 const tokenModifier = /^text-[a-z-]*foreground(?:-soft)?\/[\w.[\]]+$/;

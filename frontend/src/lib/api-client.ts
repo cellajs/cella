@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
@@ -23,19 +24,41 @@ const failedResponseError = async (response: Response) => {
   return error;
 };
 
+/**
+ * A request without a response by then starts the connectivity probe, or fails when the app is offline already: a link
+ * that drops packets fails no request, it leaves them waiting.
+ */
+const responseWaitMs = 8000;
+
+/** One abort per request still waiting for its response. */
+const waitingRequests = new Set<AbortController>();
+
+/** Fails a waiting request as a network error: a write then pauses and is stored for replay, a read stops waiting. */
+const abortUnreachable = (controller: AbortController) => controller.abort(new TypeError('Failed to fetch: the API is unreachable'));
+
+onlineManager.subscribe((online) => {
+  if (!online) for (const controller of waitingRequests) abortUnreachable(controller);
+});
+
 /** The one way to the API: reports what each answer says about the service, whichever call made the request, and throws a failed response as an {@link ApiError}. */
 export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   // OTel FetchInstrumentation drops the init argument when the input is a Request, so credentials go on the Request.
   const request = new Request(input, { ...init, credentials: 'include' });
   request.headers.set('x-client-version', String(currentSchemaVersion));
+  const unreachable = new AbortController();
+  const slowResponse = setTimeout(() => (onlineManager.isOnline() ? void reportNetworkFailure() : abortUnreachable(unreachable)), responseWaitMs);
+  waitingRequests.add(unreachable);
   let response: Response;
 
   try {
-    response = await fetch(request);
+    response = await fetch(new Request(request, { signal: AbortSignal.any([request.signal, unreachable.signal]) }));
   } catch (error) {
     // Network-level failure (no HTTP response), probe actual connectivity
     if (error instanceof TypeError) void reportNetworkFailure();
     throw error;
+  } finally {
+    clearTimeout(slowResponse);
+    waitingRequests.delete(unreachable);
   }
   // A gateway answering for an absent API proves nothing, as the probe also reads it.
   if (!gatewayStatuses.has(response.status)) reportReachable();

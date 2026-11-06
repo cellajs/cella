@@ -6752,6 +6752,68 @@
         }
       }
     },
+    "/me/invitations/{id}/{acceptOrReject}": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "handleMembershipInvitation",
+        "tags": ["me", "cella"],
+        "summary": "Respond to membership invitation",
+        "description": "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["accept", "reject"]
+            },
+            "required": true,
+            "name": "acceptOrReject",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The invitation's organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelBase"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/me/sessions": {
       "delete": {
         "security": [
@@ -7398,7 +7460,30 @@
                           "actor": {
                             "anyOf": [
                               {
-                                "$ref": "#/components/schemas/UserMinimalBase"
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/UserMinimalBase"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "firstName": {
+                                        "type": ["string", "null"]
+                                      }
+                                    },
+                                    "required": ["firstName"]
+                                  }
+                                ],
+                                "description": "The user who caused a notification, with the first name its sentence prefers; null when the user never set one.",
+                                "example": {
+                                  "id": "8a2920be-f91b-4c46-a0df-ab1b4cf41f03",
+                                  "name": "Nina Kub",
+                                  "slug": "nina_kub12",
+                                  "thumbnailUrl": null,
+                                  "entityType": "user",
+                                  "firstName": "Nina"
+                                },
+                                "x-tags": ["base", "users", "cella"]
                               },
                               {
                                 "type": "null"
@@ -13408,68 +13493,6 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "handleMembershipInvitation",
-        "tags": ["memberships", "cella"],
-        "summary": "Respond to membership invitation",
-        "description": "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["accept", "reject"]
-            },
-            "required": true,
-            "name": "acceptOrReject",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The invitation's organization",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChannelBase"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

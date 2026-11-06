@@ -23,9 +23,9 @@ const attachmentDialogClassName = tw(
 );
 
 /**
- * Per-slide stage insets: a fitted image stays clear of the header (3rem) and, from `sm` up where the pan/zoom
- * viewer renders them, the zoom controls (3.25rem from the bottom). Zoomed-in content still slides under the
- * translucent chrome because overflow clips at the padding edge.
+ * Per-slide stage insets: a fitted image stays clear of the header (3rem) and, from `sm` up where the viewer shows
+ * them, the zoom controls (3.25rem from the bottom). Zoomed-in content still slides under the translucent chrome
+ * because overflow clips at the padding edge.
  */
 export const attachmentDialogStageClassName = tw('pt-12 sm:pb-14');
 

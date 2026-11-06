@@ -137,9 +137,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       className={cn('group/carousel size-full', isDialog && 'p-2')}
       setApi={handleSetApi}
     >
-      {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title */}
+      {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title.
+          touch-none: a pinch on the header would zoom the page with the dialog in it. */}
       {isDialog && (
-        <div className="bg-background/60 absolute top-0 left-0 z-20 w-full p-3 backdrop-blur-xs">
+        <div className="bg-background/60 absolute top-0 left-0 z-20 w-full touch-none p-3 backdrop-blur-xs">
           <div className="flex gap-2">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (

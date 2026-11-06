@@ -7,7 +7,7 @@ import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
 import { isPending } from '~/query/offline/mutation-queue';
-import { isReplayed, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
+import { hasStx, upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 import { onPageHide } from '~/utils/on-page-hide';
 
@@ -45,8 +45,8 @@ function storedState(state: DehydratedQuery['state']): DehydratedQuery['state'] 
 }
 
 /**
- * The state a queued mutation is stored with: a replay that runs is stored as the paused mutation it was, so a restore
- * resumes it, and as attempted, since its request may commit before the tab closes or the session ends.
+ * The state a queued mutation is stored with: a sync write that runs is stored paused, so a restore resumes it as a
+ * replay, and as attempted, since its request may commit before the tab closes or the session ends.
  */
 function storedMutationState(state: DehydratedMutation['state']): DehydratedMutation['state'] {
   if (state.isPaused) return state;
@@ -416,9 +416,9 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: Number.POSITIVE_INFINITY,
   dehydrateOptions: {
-    // Paused mutations persist, and a replay until it settles, so a tab closed or signed out while it runs replays it
-    // again; another active one may hold non-cloneable streaming data.
-    shouldDehydrateMutation: (mutation) => mutation.state.isPaused || (isPending(mutation) && isReplayed(mutation.state.variables)),
+    // Paused mutations persist, and a sync write until it settles, so a tab closed, reloaded or signed out before its
+    // response replays it (its optimistic rows are stored already); another active one may hold non-cloneable streaming data.
+    shouldDehydrateMutation: (mutation) => mutation.state.isPaused || (isPending(mutation) && hasStx(mutation.state.variables)),
     shouldDehydrateQuery: shouldPersistQuery,
   },
 };

@@ -45,7 +45,7 @@ export const WithAction: Story = {
     id: 'story-action',
     variant: 'info',
     icon: ShieldAlertIcon,
-    title: 'MFA is off' as TKey,
+    title: 'MFA is recommended' as TKey,
     children: "Multifactor authentication adds a second step at sign-in, so a stolen link or device alone can't open your account.",
     action: (
       <Button variant="info" soft size="sm" className="max-sm:w-full">

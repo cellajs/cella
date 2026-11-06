@@ -4,7 +4,7 @@ This document explains the basics of Cella.
 
 ### TL;DR
 
-Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**.
+Cella is a **full-stack TypeScript project template for collaborative web apps**.
 PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes and generates the typed SDK used by the React app. Shared hierarchy configuration drives permissions and tenant boundaries, while TanStack Query keeps data synced and available offline.
 
 ## Overview
