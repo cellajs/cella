@@ -65,9 +65,10 @@ jobs:
       - name: Check the committed SDK matches the routes
         run: pnpm sdk && git diff --exit-code -- sdk/gen
 
-  # Production frontend build. Cheap (~1 min): runs on every PR. Some breakage only surfaces at
-  # build time (a repo-doc import the MDX include regex refuses, a broken relative import in a
-  # docs wrapper) and would otherwise fail the release deploy, which builds the frontend from the tag.
+  # The frontend as the builder machine builds it at a deploy: the builder's own script (infra/lib/builder/builder-machine.ts), in the
+  # deployed mode, which generates the environment's OpenAPI spec from the example env first and then builds. Runs on every PR (~2 min),
+  # so a break only a deploy would meet (an env value a deployed mode requires that the example env lost, a repo-doc import the MDX
+  # include regex refuses, a broken relative import in a docs wrapper) fails here and not at the release deploy, which builds from the tag.
   # Apps keep their release-please CHANGELOG.md at the repo root, a path cella itself never builds.
   frontend-build:
     runs-on: ubuntu-latest
@@ -83,8 +84,12 @@ jobs:
       - name: Install the workspace
         uses: ./.github/actions/install-workspace
 
-      - name: Build frontend
-        run: pnpm --filter frontend build
+      - name: Build the frontend with the builder's script, in production mode
+        env:
+          APP_MODE: production
+        run: |
+          pnpm --silent --filter infra builder-script frontend > "$RUNNER_TEMP/builder-frontend.sh"
+          bash -eo pipefail "$RUNNER_TEMP/builder-frontend.sh"
 
   # Typecheck plus the three service bundles (backend, cdc, yjs), each booted once. Nothing else in CI typechecks (the
   # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built and started by the
