@@ -47,7 +47,11 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
   return (
     <div
       data-url={!!coverUrl}
-      className={cn('relative flex h-32 bg-cover bg-center', placeholderColorClass(id), 'min-h-40 data-[url=true]:h-[20vw] sm:min-w-52')}
+      className={cn(
+        'relative flex h-32 bg-cover bg-center',
+        placeholderColorClass(id),
+        'dark:data-[url=false]:before:bg-background/70 min-h-40 before:absolute before:inset-0 data-[url=true]:h-[20vw] sm:min-w-52',
+      )}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (
