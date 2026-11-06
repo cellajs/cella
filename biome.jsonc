@@ -26,6 +26,7 @@
       "infra/**",
       "cella/a11y*.ts",
       "cella/screenshots*.ts",
+      "cella/pentest*.ts",
       "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
@@ -174,9 +175,10 @@
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",
         "cella/cella.config.ts",
-        // `pnpm cella a11y` and `pnpm cella screenshots` load each adapter's default export.
+        // `pnpm cella a11y`, `pnpm cella screenshots` and `pnpm cella pentest` load each adapter's default export.
         "cella/a11y*.ts",
         "cella/screenshots*.ts",
+        "cella/pentest*.ts",
         "sdk/openapi-ts.config.ts",
         "frontend/.storybook/**",
         "frontend/src/content/mdx.d.ts",
