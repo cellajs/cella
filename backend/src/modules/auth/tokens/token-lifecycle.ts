@@ -121,6 +121,17 @@ export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { ty
 const expired = (token: TokenRecord) => new AppError(401, `${token.type}_expired`, 'warn', { meta: { tokenId: token.id } });
 
 /**
+ * The refusal of a redeemed link this browser does not hold. An invitation is refused as opened, not expired, while its
+ * own lifetime runs: the redemption shortened `expiresAt` to the single-use window, and a fresh link still works.
+ */
+const refuseRedeemed = (token: TokenRecord) => {
+  if (token.type !== 'invitation') return expired(token);
+  const lifetimeEnd = new Date(token.createdAt).getTime() + tokenPolicies.invitation.ttl.milliseconds();
+  if (Date.now() >= lifetimeEnd) return expired(token);
+  return new AppError(401, 'invitation_opened', 'warn', { meta: { tokenId: token.id } });
+};
+
+/**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
  * account belongs to the account holding its address by now (a new account when nobody does), except an invitation not
  * yet bound to a user: any signed-in account opens it, and only one holding its address accepts it.
@@ -169,8 +180,9 @@ interface InvokeTokenOpts {
  * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
  * its holder from `claimHolder`, committed with the redemption.
  * @returns The redeemed token.
- * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 409
- *   `user_mismatch` while signed in to another account, or what `claimHolder` throws.
+ * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 401
+ *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
+ *   to another account, or what `claimHolder` throws.
  */
 export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
@@ -180,13 +192,13 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
 
   await refuseOtherAccount(ctx, type, token);
 
-  if (isExpiredDate(token.expiresAt)) throw expired(token);
-
   if (token.invokedAt) {
     const held = await heldByThisBrowser(ctx, token);
-    if (!held) throw expired(token);
+    if (!held) throw refuseRedeemed(token);
     return held;
   }
+
+  if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const singleUse = newHashedToken();
@@ -211,7 +223,7 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
 
   // Lost the race: the token is usable only in the browser that won it.
   const held = await heldByThisBrowser(ctx, token);
-  if (!held) throw expired(token);
+  if (!held) throw refuseRedeemed(token);
   return held;
 };
 

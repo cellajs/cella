@@ -1509,6 +1509,8 @@ export interface LocaleResources {
     "invitation_limit_reached.text": "Your organization has sent as many invitations as it may in a day. Contact support to raise the limit.";
     "invitation_not_found": "Invitation link not valid";
     "invitation_not_found.text": "It was already used or doesn't exist. Sign in directly, or reply to the invitation email to ask for a new one.";
+    "invitation_opened": "Invitation link opened before";
+    "invitation_opened.text": "It was opened in another browser, or some time ago. Get a new link by email to continue here.";
     "last_admin": "An admin is needed";
     "last_admin.text": "An organization always keeps at least one admin. Make someone else an admin first.";
     "load_more_failed": "Could not load more data. Try reloading or come back later.";
