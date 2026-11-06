@@ -4,7 +4,7 @@ import { sealSessionCookie, sessionToken } from './seeds/session-auth';
 import { TOTAL_USERS } from './seeds/user-constants';
 
 /** The organization path every bench request starts with. */
-export const ORG_PATH = `/${TENANT_ID}/${ORG_ID}`;
+export const ORG_PATH = `/tenants/${TENANT_ID}/organizations/${ORG_ID}`;
 
 const cookies = new Map<number, string>();
 

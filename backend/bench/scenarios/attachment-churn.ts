@@ -31,13 +31,21 @@ export default defineScenario({
     const { cookie } = benchUser(vu.index);
     for (let i = 0; i < 5; i++) {
       const { create, remove } = churnBatch();
-      const created = await vu.http.post(`${ORG_PATH}/attachments`, { json: create, headers: { cookie }, name: 'POST /attachments' });
+      const created = await vu.http.post(`${ORG_PATH}/attachments:batch-create`, {
+        json: create,
+        headers: { cookie },
+        name: 'POST /attachments:batch-create',
+      });
       const inserted = created.ok ? (parseBatch(created.text()).data?.length ?? 0) : 0;
       if (inserted > 0) {
         vu.counter('bench.rows_written', inserted);
         vu.counter('bench.rows_created.attachment', inserted);
       }
-      const deleted = await vu.http.delete(`${ORG_PATH}/attachments`, { json: remove, headers: { cookie }, name: 'DELETE /attachments' });
+      const deleted = await vu.http.post(`${ORG_PATH}/attachments:batch-delete`, {
+        json: remove,
+        headers: { cookie },
+        name: 'POST /attachments:batch-delete',
+      });
       const removed = deleted.ok ? CHURN_BATCH_SIZE - (parseBatch(deleted.text()).rejectedIds?.length ?? 0) : 0;
       if (removed > 0) {
         vu.counter('bench.rows_written', removed);
