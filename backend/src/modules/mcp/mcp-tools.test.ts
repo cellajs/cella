@@ -89,6 +89,12 @@ describe('buildMcpTools', () => {
     await expect(list.call(ctx, { id: 'thing-1', limit: 'five' })).rejects.toBeInstanceOf(z.ZodError);
   });
 
+  it('must not run another route via a path param that is a dot segment or empty', async () => {
+    // `new URL` resolves `..` and `.`, and an empty segment collapses: each would reach a route other than the tool's.
+    const refuse = named('refuseThing');
+    for (const id of ['..', '.', '']) await expect(refuse.call(ctx, { id }), JSON.stringify(id)).rejects.toBeInstanceOf(z.ZodError);
+  });
+
   it('nests an array body under items and rebuilds the sync transaction per item', async () => {
     const create = named('createThings');
     expect(create.scope).toBe('attachment:write');
