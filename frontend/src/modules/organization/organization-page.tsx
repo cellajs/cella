@@ -39,14 +39,14 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
 
   const updateCover = (bannerUrl: string) => {
     mutate(
-      { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { bannerUrl } },
       { onSuccess: () => toaster.success(t('c:success.upload_cover')) },
     );
   };
 
   const deleteCover = () => {
     mutate(
-      { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl: null } },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { bannerUrl: null } },
       { onSuccess: () => toaster.success(t('c:success.delete_resource', { resource: t('c:cover') })) },
     );
   };

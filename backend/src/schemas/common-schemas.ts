@@ -67,21 +67,16 @@ export const timeZoneSchema = z
   .refine(isTimeZone, translatedError('error:invalid_timezone'))
   .openapi({ description: 'IANA time zone id.', example: 'Europe/Amsterdam' });
 
-export const entityIdParamSchema = z.object({ id: validIdSchema });
-
-export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: validIdSchema });
-
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
 /** Tenant- and organization-scoped params, for RLS-enabled routes. */
 export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
-export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
+/** The path of one user: cross-tenant, a relatability check or system admin access decides. */
+export const userIdParamSchema = z.object({ userId: validIdSchema });
 
-/** Cross-tenant routes with a relatability check. */
-export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSchema });
-
-export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
+/** A channel entity by type and id, as the membership routes name it in the query or the body. */
+export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
 const limitMax = 1000;
 

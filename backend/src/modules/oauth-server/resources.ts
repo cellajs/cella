@@ -5,18 +5,19 @@ import { escapeRegExp } from 'shared/utils/escape-regexp';
 export type { ResourceRef };
 
 /**
- * RFC 8707 resource identifiers are tenant-qualified, so a token never crosses tenants. The ids are percent-encoded:
- * a guard builds its challenge header from the ids of the request path, before anything checked them.
+ * RFC 8707 resource identifiers are tenant-qualified, so a token never crosses tenants. Each is the URL of its resource
+ * (the tenant, or an organization's MCP endpoint), so `resourceMetadataUrl` below it is a route. The ids are
+ * percent-encoded: a guard builds its challenge header from the ids of the request path, before anything checked them.
  */
 export function resourceUri(ref: ResourceRef): string {
   const tenantId = encodeURIComponent(ref.tenantId);
   return ref.face === 'mcp'
-    ? `${appConfig.mcpUrl}/${tenantId}/${encodeURIComponent(ref.organizationId)}/mcp`
-    : `${appConfig.backendUrl}/t/${tenantId}`;
+    ? `${appConfig.mcpUrl}/tenants/${tenantId}/organizations/${encodeURIComponent(ref.organizationId)}/mcp`
+    : `${appConfig.backendUrl}/tenants/${tenantId}`;
 }
 
-const mcpResource = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/([^/]+)/([^/]+)/mcp$`);
-const apiResource = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/t/([^/]+)$`);
+const mcpResource = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/tenants/([^/]+)/organizations/([^/]+)/mcp$`);
+const apiResource = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/tenants/([^/]+)$`);
 
 /** Null for anything that is not one of this deployment's resources. */
 export function parseResource(uri: string): ResourceRef | null {

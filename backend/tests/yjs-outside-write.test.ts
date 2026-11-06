@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { asc, eq, sql } from 'drizzle-orm';
 import pg from 'pg';
-import { deleteAttachments, updateAttachment } from 'sdk';
+import { batchDeleteAttachments, updateAttachment } from 'sdk';
 import { appConfig, type YjsDocScope } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { generateId } from 'shared/utils/entity-id';
@@ -126,7 +126,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
   const put = (entityId: string, written: string) =>
     call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: entityId },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: entityId },
       body: {
         ops: { description: written },
         stx: mockStxFor('description'),
@@ -137,7 +137,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
   /** A PUT of the name alone, which leaves the description to the row. */
   const putName = (entityId: string, name: string) =>
     call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: entityId },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: entityId },
       body: {
         ops: { name },
         stx: mockStxFor('name'),
@@ -386,7 +386,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     expect((await put(attachment.id, description(block('a', 'logged')))).response.status).toBe(200);
     expect((await stored(attachment.id)).rows).toHaveLength(1);
 
-    const { response } = await call(deleteAttachments, {
+    const { response } = await call(batchDeleteAttachments, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId },
       body: { ids: [attachment.id], stx: { mutationId: generateId(), sourceId: 'yjs-outside-write' } },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },

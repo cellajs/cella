@@ -71,7 +71,7 @@ function instrument(page, tab) {
       log(tab, 'range-fetch', { status: res.status(), url: u.slice(u.indexOf('?')), items });
     } else if (/\/yjs\/(token|pull|push)/.test(u)) {
       log(tab, 'relay-http', { status: res.status(), path: new URL(u).pathname.split('/').slice(-2).join('/') });
-    } else if (method === 'POST' && /\/attachments$/.test(u.split('?')[0])) {
+    } else if (method === 'POST' && /\/attachments:batch-create$/.test(u.split('?')[0])) {
       let ids = null;
       try {
         const body = await res.json();
@@ -79,9 +79,9 @@ function instrument(page, tab) {
       } catch {}
       createPosts.push({ tab, ids });
       log(tab, 'create-post', { status: res.status(), ids });
-    } else if (method === 'DELETE' && u.includes('/attachments')) {
+    } else if (method === 'POST' && u.includes('/attachments:batch-delete')) {
       log(tab, 'delete-req', { status: res.status(), url: u.slice(0, 200) });
-    } else if (method === 'PUT' || method === 'PATCH') {
+    } else if (method === 'PATCH') {
       if (u.includes('/attachments/')) log(tab, 'update-req', { status: res.status(), url: u.slice(-60) });
     }
   });

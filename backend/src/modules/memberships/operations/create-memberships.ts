@@ -20,10 +20,10 @@ import { sendInvitationMails } from '#/modules/memberships/operations/send-invit
 import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
-import type { entityWithTypeQuerySchema } from '#/schemas';
+import type { entityWithTypeSchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
-type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.infer<typeof entityWithTypeQuerySchema>;
+type CreateMembershipsInput = z.infer<typeof membershipCreateBodySchema> & z.infer<typeof entityWithTypeSchema>;
 
 type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { outcome: O }>;
 

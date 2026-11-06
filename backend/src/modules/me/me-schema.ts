@@ -8,7 +8,7 @@ import { federationRefSchema } from '#/modules/auth/sso/sso-schema';
 import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from '#/modules/me/me-mocks';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersSchema, userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
-import { validUuidSchema } from '#/schemas';
+import { validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 /** A session row as stored, secret and revoker omitted: what a revoke returns. */
@@ -91,6 +91,9 @@ export const updateMeBodySchema = userUpdateBodySchema.extend({ userFlags: userF
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
+/** The path of one of the caller's pending invitations, named by its own id. */
+export const myInvitationParamSchema = z.object({ invitationId: validIdSchema });
+
 export const mePendingInvitationSchema = z.object({
   entity: channelBaseSchema,
   inactiveMembership: inactiveMembershipSchema,
@@ -101,6 +104,9 @@ export const mePendingInvitationSchema = z.object({
 });
 
 /** A consent the user gave to an OAuth client, as the account page lists it. */
+/** The path of one connected app, named by its grant id. */
+export const connectedAppParamSchema = z.object({ connectedAppId: validIdSchema });
+
 export const connectedAppSchema = z
   .object({
     id: z.string(),

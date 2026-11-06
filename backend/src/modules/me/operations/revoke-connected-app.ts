@@ -13,5 +13,4 @@ export async function revokeConnectedAppOp(ctx: UserContext, grantId: string) {
   if (!grant) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connectedApp' } });
   await revokeGrant(ctx, { grantId });
   log.info('Connected app revoked', { grantId, userId: ctx.var.user.id });
-  return { data: [], rejectedIds: [] };
 }

@@ -17,7 +17,7 @@ export function PublishOrganizationForm({ organization, close }: PublishOrganiza
 
   const publish = () =>
     mutate(
-      { path: { tenantId: organization.tenantId, id: organization.id } },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id } },
       {
         onSuccess: ({ invitationsSent }) => {
           const description = invitationsSent ? t('c:invitations_sent', { count: invitationsSent }) : undefined;

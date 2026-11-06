@@ -12,40 +12,40 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(attachmentRoutes.getAttachments, async (ctx) => {
+app.openapi(attachmentRoutes.listAttachments, async (ctx) => {
   const result = await getAttachmentsOp(ctx, ctx.req.valid('query'));
   return ctx.json(result, 200);
 });
 
-app.openapi(attachmentRoutes.getPresignedUrls, async (ctx) => {
+app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => {
   const result = await getPresignedUrlsOp(ctx, ctx.req.valid('json'));
   return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const result = await getAttachmentOp(ctx, id);
+  const { attachmentId } = ctx.req.valid('param');
+  const result = await getAttachmentOp(ctx, attachmentId);
   return ctx.json(result, 200);
 });
 
-app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
+app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
   const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
   return ctx.json(result, created ? 201 : 200);
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'));
+  const { attachmentId } = ctx.req.valid('param');
+  const result = await updateAttachmentOp(ctx, attachmentId, ctx.req.valid('json'));
   return ctx.json(result, 200);
 });
 
 app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const result = await linkAttachmentKeysOp(ctx, id, ctx.req.valid('json'));
+  const { attachmentId } = ctx.req.valid('param');
+  const result = await linkAttachmentKeysOp(ctx, attachmentId, ctx.req.valid('json'));
   return ctx.json(result, 200);
 });
 
-app.openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
+app.openapi(attachmentRoutes.batchDeleteAttachments, async (ctx) => {
   const { ids, stx } = ctx.req.valid('json');
   const result = await deleteAttachmentsOp(ctx, ids, stx);
   return ctx.json(result, 200);

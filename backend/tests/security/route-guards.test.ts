@@ -59,7 +59,7 @@ const routesWithoutLimiter: Record<string, string> = {
   signOut: "ends only the caller's own session",
   markNotificationsRead: "one update of at most 200 of the caller's own rows, idempotent",
   updateNotificationPreferences: "one row of the caller's own",
-  deletePushSubscription: "deletes the caller's own row only",
+  removePushSubscription: "deletes the caller's own row only",
 };
 
 /** A route whose config switch is off is refused before any guard runs (`x-enabled-by`). */
@@ -108,8 +108,8 @@ describe('Route guards', async () => {
 
   it('reads the guard chain of every route from the document', () => {
     // An empty table would pass vacuously: the routes known to sit behind each guard must be in it.
-    expect(nonPublic.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getMe', 'getTenants']));
-    expect(sysAdminOnly.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getTenants']));
+    expect(nonPublic.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getMe', 'listTenants']));
+    expect(sysAdminOnly.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['listTenants']));
     expect(sysAdminOnly.length).toBeGreaterThanOrEqual(12);
   });
 
@@ -148,8 +148,11 @@ describe('Route guards', async () => {
   });
 
   it('must not list or read by another user without the guard that relates the caller to that user', () => {
-    const relatable = operations.filter(({ parameters }) => parameters.includes('relatableUserId'));
-    expect(relatable.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getUser', 'getOrganizations']));
+    // A system admin reads any user, so a route behind sysAdminGuard names one without the relation.
+    const relatable = operations.filter(
+      ({ parameters, guards }) => parameters.includes('relatableUserId') || (parameters.includes('userId') && !guards.includes('sysAdminGuard')),
+    );
+    expect(relatable.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getUser', 'listOrganizations']));
     for (const operation of relatable) expect(operation.guards, nameOf(operation)).toContain('relatableGuard');
   });
 

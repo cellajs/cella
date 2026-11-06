@@ -16,12 +16,12 @@ import {
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
 } from '#/modules/organization/organization-schema';
-import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
+import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
 
 const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
-  createOrganizations: xRoute({
+  batchCreateOrganizations: xRoute({
     method: 'post',
-    path: '/{tenantId}/organizations',
+    path: '/~batch-create',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [insertEntityLock, bulkPointsLimiter],
     summary: 'Create organizations',
@@ -29,50 +29,50 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     request: { params: tenantOnlyParamSchema, body: jsonBody(organizationCreateBodySchema) },
     responses: { 201: json('Organizations were created', batchResponseSchema(organizationWithMembershipSchema), mockBatchOrganizationsResponse()) },
   }),
-  getOrganizations: xRoute({
+  listOrganizations: xRoute({
     method: 'get',
-    path: '/organizations',
+    path: '/',
     xGuard: [userGuard, relatableGuard],
     summary: 'Get list of organizations',
-    description: 'Returns a list of organizations.',
+    description: 'Returns a list of organizations across tenants: the `-` tenant reads every tenant.',
     request: { query: organizationListQuerySchema },
     responses: { 200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()) },
   }),
   getOrganization: xRoute({
     method: 'get',
-    path: '/{tenantId}/organizations/{id}',
+    path: '/{organizationId}',
     xGuard: [actorGuard, tenantGuard],
     xScope: 'organization:read',
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
-    request: { params: tenantIdParamSchema, query: slugIncludeQuerySchema },
+    request: { params: tenantOrgParamSchema, query: slugIncludeQuerySchema },
     responses: { 200: json('Organization', organizationSchema), ...errors(404) },
   }),
   updateOrganization: xRoute({
-    method: 'put',
-    path: '/{tenantId}/organizations/{id}',
+    method: 'patch',
+    path: '/{organizationId}',
     xGuard: [actorGuard, tenantGuard],
     xScope: 'organization:write',
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update organization',
     description: 'Updates an organization within a tenant.',
-    request: { params: tenantIdParamSchema, body: jsonBody(organizationUpdateBodySchema, mockUpdateOrganizationBody()) },
+    request: { params: tenantOrgParamSchema, body: jsonBody(organizationUpdateBodySchema, mockUpdateOrganizationBody()) },
     responses: { 200: json('Organization was updated', organizationSchema), ...errors(404, 409) },
   }),
   publishOrganization: xRoute({
-    method: 'put',
-    path: '/{tenantId}/organizations/{id}/publish',
+    method: 'post',
+    path: '/{organizationId}/~publish',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Publish organization',
     description:
       'Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.',
-    request: { params: tenantIdParamSchema },
+    request: { params: tenantOrgParamSchema },
     responses: { 200: json('Organization was published', organizationPublishResponseSchema, mockOrganizationPublishResponse()), ...errors(404) },
   }),
-  deleteOrganizations: xRoute({
-    method: 'delete',
-    path: '/{tenantId}/organizations',
+  batchDeleteOrganizations: xRoute({
+    method: 'post',
+    path: '/~batch-delete',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete organizations',

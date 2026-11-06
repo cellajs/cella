@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { deleteOrganizations, getAttachments, getMyMemberships, getOrganization, getOrganizations, updateTenant } from 'sdk';
+import { batchDeleteOrganizations, getOrganization, listAttachments, listMyMemberships, listOrganizations, updateTenant } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb } from '#/db/db';
@@ -31,13 +31,13 @@ describe('Archived organizations', async () => {
     const member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'archived-member');
     const headers = { ...defaultHeaders, Cookie: member.sessionCookie };
     const organizationIds = async () => {
-      const memberships = (await call(getMyMemberships, { headers })).data as { items: { organizationId: string }[] };
-      const organizations = (await call(getOrganizations, { headers })).data as { items: { id: string }[] };
+      const memberships = (await call(listMyMemberships, { headers })).data as { items: { organizationId: string }[] };
+      const organizations = (await call(listOrganizations, { headers })).data as { items: { id: string }[] };
       return [...memberships.items.map((m) => m.organizationId), ...organizations.items.map((o) => o.id)];
     };
     expect(await organizationIds()).toContain(tenant.organization.id);
 
-    const deleted = await call(deleteOrganizations, {
+    const deleted = await call(batchDeleteOrganizations, {
       path: { tenantId: tenant.tenantId },
       body: { ids: [tenant.organization.id] },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -45,8 +45,8 @@ describe('Archived organizations', async () => {
     expect(deleted.response.status).toBe(200);
 
     expect(await organizationIds()).not.toContain(tenant.organization.id);
-    const read = await call(getOrganization, { path: { tenantId: tenant.tenantId, id: tenant.organization.id }, headers });
-    const attachments = await call(getAttachments, { path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id }, headers });
+    const read = await call(getOrganization, { path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id }, headers });
+    const attachments = await call(listAttachments, { path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id }, headers });
     expect(read.response.status).toBe(403);
     expect(attachments.response.status).toBe(403);
 
@@ -67,7 +67,7 @@ describe('Archived organizations', async () => {
     const memberStream = await openStream(member.id, session);
     const otherStream = await openStream(other.user.id, await insertSession(other.user));
 
-    const deleted = await call(deleteOrganizations, {
+    const deleted = await call(batchDeleteOrganizations, {
       path: { tenantId: tenant.tenantId },
       body: { ids: [tenant.organization.id] },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -85,7 +85,7 @@ describe('Archived organizations', async () => {
   it('archives the tenant also when the URL spells its id in capitals', async () => {
     const tenant = await createTestTenant(call, 'archived-capitals');
 
-    const deleted = await call(deleteOrganizations, {
+    const deleted = await call(batchDeleteOrganizations, {
       path: { tenantId: tenant.tenantId.toUpperCase() },
       body: { ids: [tenant.organization.id] },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },

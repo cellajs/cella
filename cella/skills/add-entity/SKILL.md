@@ -105,13 +105,15 @@ and the renderers.
   - **Single read** (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.
-- `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })`, every route with
+- `<name>-routes.ts`: `createXRoutes(['<name>s', 'app', 'product'], { … })` with attachment's paths
+  and methods (`/`, `/~batch-create`, `/~batch-delete`, `/{<name>Id}` with a `patch` update), the
+  path params from `tenantOrgParamSchema.extend({ <name>Id: validIdSchema })`, every route with
   `xGuard: [actorGuard, tenantGuard, orgGuard]` and attachment's limiters, and `...errors(…)` in
   `responses` for the statuses its handler throws beyond its guards and limiters, as attachment's
   routes list them. A route agents may call takes `xTool`, which implies its scope; any other route
   takes `xScope: '<name>:read'` or `'<name>:write'`.
 - `<name>-module.ts`: `defineBackendModule({ name: '<name>s', owner: 'app', scope: ['frontend', 'backend'],
-  description, productEntity: '<name>', routes: [{ path: '/:tenantId/:organizationId/<name>s', app, phase: 'tenant' }] })`,
+  description, productEntity: '<name>', routes: [{ path: '/tenants/:tenantId/organizations/:organizationId/<name>s', app }] })`,
   imported in `backend/src/modules.ts`.
 - The insert mock in `backend/src/mocks/app-product-mocks.ts`: the RLS, CDC and sequence suites seed
   every product through it.
@@ -186,11 +188,11 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 - `<name>-schema.ts`: `evolutionContract.channel('<name>', { createItem, updateBody })`. App counts
   on its `included.counts` go in `appChannelCountFields` in `backend/src/schemas/app-schemas.ts`; the
   operation that reads the channel fills them.
-- Routes (`organization-routes.ts`): create at `/{tenantId}/{organizationId}/<name>s` with
-  `[userGuard, tenantGuard, orgGuard]` and `insertEntityLock` before the limiter; read and update at
-  `/{tenantId}/{organizationId}/<name>s/{id}` with `[actorGuard, tenantGuard, orgGuard]` and
-  `xScope: '<name>:read'` or `'<name>:write'`; the user's list across organizations at `/<name>s`
-  with `[userGuard, relatableGuard]`. The module mounts its handlers at `/` with `phase: 'absolute'`.
+- Routes (`organization-routes.ts`): create at `/~batch-create` with `[userGuard, tenantGuard, orgGuard]`
+  and `insertEntityLock` before the limiter; read and update (`patch`) at `/{<name>Id}` with
+  `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
+  `/tenants/:tenantId/organizations/:organizationId/<name>s`; the user's list across organizations at `/`
+  with `[userGuard, relatableGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`.
 - **Create** (`create-organizations.ts`): normalize with `<name>Contract.normalizeBody`; check the
   slugs with `checkSlugsAvailable` and reject a taken one as `slug_exists` (where the server picks the
   slug, `generateUniqueSlugs(ctx, names, '<name>')`); apply the quota; for a parent below the

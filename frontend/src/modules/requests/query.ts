@@ -1,15 +1,15 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import {
+  batchDeleteRequests,
   type CreateRequestData,
   type CreateRequestResponse,
   createRequest,
-  deleteRequests,
-  type GetRequestsData,
-  getRequests,
+  type InviteUsersResponse,
+  inviteUsers,
+  type ListRequestsData,
+  listRequests,
   type Request,
-  type SystemInviteResponse,
-  systemInvite,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
@@ -18,7 +18,7 @@ import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
-type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
+type RequestFilters = Omit<NonNullable<ListRequestsData['query']>, 'limit' | 'offset'>;
 type RequestsListParams = RequestFilters & { limit?: number };
 
 const requestsKeys = {
@@ -38,7 +38,7 @@ const withDefaults = ({
 }: RequestFilters) => ({ q, sort, order });
 
 const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
-  getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
+  listRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
 
 export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.requests, ...params }: RequestsListParams) => {
   const filters = withDefaults(params);
@@ -66,9 +66,9 @@ export const useCreateRequestMutation = () => {
 
 /** Approves waitlist requests: each address gets an invitation email, and the cached rows read invited. */
 export const useSendApprovalInviteMutation = () => {
-  return useMutation<SystemInviteResponse, ApiError, Request[]>({
+  return useMutation<InviteUsersResponse, ApiError, Request[]>({
     mutationKey: requestsKeys.approve,
-    mutationFn: (requests) => systemInvite({ body: { emails: requests.map(({ email }) => email) } }),
+    mutationFn: (requests) => inviteUsers({ body: { emails: requests.map(({ email }) => email) } }),
     onSuccess: (_, requests) => {
       cacheUpdate(
         requestsKeys.table.base,
@@ -84,7 +84,7 @@ export const useDeleteRequestMutation = () => {
     mutationKey: requestsKeys.delete,
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
-      await deleteRequests({ body: { ids } });
+      await batchDeleteRequests({ body: { ids } });
     },
     onSuccess: (_, requests) => cacheRemove(requestsKeys.table.base, requests),
   });

@@ -34,12 +34,12 @@ describe('Membership updates', async () => {
     };
     const update = (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) =>
       call(updateMembership, {
-        path: { tenantId: org.tenantId, organizationId: org.id, id: membershipId },
+        path: { tenantId: org.tenantId, organizationId: org.id, membershipId },
         body: body as never,
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
     const updateRaw = (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) =>
-      rawJsonRequest(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, as.sessionCookie, { method: 'PUT', body });
+      rawJsonRequest(`/tenants/${org.tenantId}/organizations/${org.id}/memberships/${membershipId}`, as.sessionCookie, { method: 'PATCH', body });
     return { org, admin, member, membershipOf, update, updateRaw };
   }
 
@@ -59,8 +59,8 @@ describe('Membership updates', async () => {
     const { baseApp } = await import('#/routes');
     const { 'Content-Type': _json, ...headers } = defaultHeaders;
 
-    const response = await baseApp.request(`/${org.tenantId}/${org.id}/memberships/${target.id}`, {
-      method: 'PUT',
+    const response = await baseApp.request(`/tenants/${org.tenantId}/organizations/${org.id}/memberships/${target.id}`, {
+      method: 'PATCH',
       headers: { ...headers, Cookie: member.sessionCookie },
     });
     await expectRefusal(response, 400, 'invalid_request');

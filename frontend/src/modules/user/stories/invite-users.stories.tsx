@@ -66,10 +66,10 @@ const meta = {
 
       const known: Record<string, 'member' | 'remind'> = parameters.known;
       const outcomes = body.emails.map((email: string) => ({ email, outcome: known[email] ?? 'invite' }));
-      if (url.pathname.endsWith('/memberships/check')) return json({ outcomes });
+      if (url.pathname.endsWith('/memberships:check-invite')) return json({ outcomes });
 
       requests.push({ path: url.pathname, search: url.search, body });
-      if (url.pathname.endsWith('/system/invite')) return json({ data: [], rejectedIds: [], invitesSentCount: body.emails.length });
+      if (url.pathname.endsWith('/users:invite')) return json({ data: [], rejectedIds: [], invitesSentCount: body.emails.length });
       return json({ data: [], outcomes, held: false });
     });
     const success = spyOn(toaster, 'success');
@@ -183,7 +183,7 @@ export const ShouldSendSystemInvite: Story = {
     await waitFor(() => expect(toaster.success).toHaveBeenCalledTimes(1), { timeout: 5000 });
     await expect(requests).toEqual([
       expect.objectContaining({
-        path: expect.stringMatching(/\/system\/invite$/),
+        path: expect.stringMatching(/\/users:invite$/),
         body: expect.objectContaining({ emails: ['a@x.com', 'b@x.com'] }),
       }),
     ]);
@@ -210,7 +210,7 @@ export const ShouldSendMembershipInvite: Story = {
     await expect(toaster.success).not.toHaveBeenCalled();
     await expect(requests).toEqual([
       {
-        path: expect.stringMatching(/\/tenant-1\/org-1\/memberships$/),
+        path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/memberships:invite$/),
         search: '?entityId=org-1&entityType=organization',
         body: { emails: ['a@x.com', 'b@x.com'], role: hierarchy.getLeastPrivilegedRole('organization') },
       },
@@ -293,7 +293,7 @@ export const ShouldSendBulkInvite: Story = {
       await expect(canvas.getByText('and not-an-address')).toBeVisible();
       await expect(requests).toEqual([
         expect.objectContaining({
-          path: expect.stringMatching(/\/tenant-1\/org-1\/memberships$/),
+          path: expect.stringMatching(/\/tenants\/tenant-1\/organizations\/org-1\/memberships:invite$/),
           body: { emails: ['a@x.com', 'b@x.com'], role: hierarchy.getLeastPrivilegedRole('organization') },
         }),
       ]);

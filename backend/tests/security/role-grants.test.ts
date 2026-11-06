@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createApiKey, createServiceAccount, deleteMemberships, membershipInvite, updateMembership, updateServiceAccount } from 'sdk';
+import { batchDeleteMemberships, createApiKey, createServiceAccount, inviteMembers, updateMembership, updateServiceAccount } from 'sdk';
 import { type EntityRole, getEntityPolicies, getPolicyPermissions, type OrganizationRole, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -87,13 +87,13 @@ describe('Role grants above the actor', async () => {
     await createInvitation({ organization: org, email: invitee, createdBy: admin.id });
     const { serviceAccount: account, apiKey } = await serviceAccount(org, admin, adminRole);
     const { serviceAccount: disabled } = await serviceAccount(org, admin, adminRole);
-    const path = { tenantId: org.tenantId, organizationId: org.id, id: disabled.id };
+    const path = { tenantId: org.tenantId, organizationId: org.id, serviceAccountId: disabled.id };
     expect((await call(updateServiceAccount, { path, body: { status: 'disabled' }, headers: headers(admin) })).response.status).toBe(200);
     return { org, admin, otherAdmin, member, invitee, account: account.id, apiKey: apiKey.id, disabledAccount: disabled.id };
   };
 
   const invite = ({ org }: Fixture, actor: User, email: string, role: EntityRole) =>
-    call(membershipInvite, {
+    call(inviteMembers, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       query: { entityId: org.id, entityType: 'organization' },
       body: { emails: [email], role },
@@ -101,11 +101,11 @@ describe('Role grants above the actor', async () => {
     });
   const setRole = async ({ org }: Fixture, actor: User, target: User, role: EntityRole) =>
     call(updateMembership, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: (await membershipOf(target.id, org.id)).id },
+      path: { tenantId: org.tenantId, organizationId: org.id, membershipId: (await membershipOf(target.id, org.id)).id },
       body: { role },
       headers: headers(actor),
     });
-  const accountPath = ({ org }: Fixture, id: string) => ({ tenantId: org.tenantId, organizationId: org.id, id });
+  const accountPath = ({ org }: Fixture, serviceAccountId: string) => ({ tenantId: org.tenantId, organizationId: org.id, serviceAccountId });
 
   /** Every refusal names the rule, so a refusal by the action check before it fails the row. */
   const expectRoleRefusal = async ({ response, error }: TestResult) => {
@@ -142,7 +142,7 @@ describe('Role grants above the actor', async () => {
       {
         act: 'remove a holder of the top role',
         attempt: ({ org, otherAdmin }, actor) =>
-          call(deleteMemberships, {
+          call(batchDeleteMemberships, {
             path: { tenantId: org.tenantId, organizationId: org.id },
             query: { entityId: org.id, entityType: 'organization' },
             body: { ids: [otherAdmin.id] },

@@ -5,10 +5,10 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
-import type { entityWithTypeQuerySchema } from '#/schemas';
+import type { entityWithTypeSchema } from '#/schemas';
 import { log } from '#/utils/logger';
 
-type DeleteMembershipsInput = z.infer<typeof entityWithTypeQuerySchema> & { userIds: string[] };
+type DeleteMembershipsInput = z.infer<typeof entityWithTypeSchema> & { userIds: string[] };
 
 /**
  * Deletes the channel's memberships of these users, which needs `delete` on it; a user id without one comes back rejected.

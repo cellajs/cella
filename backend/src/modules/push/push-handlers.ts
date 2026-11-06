@@ -24,11 +24,11 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
       userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },
   });
-  return ctx.json(row, 200);
+  return ctx.json(row, 201);
 });
 
-app.openapi(pushRoutes.deletePushSubscription, async (ctx) => {
-  const { endpoint } = ctx.req.valid('query');
+app.openapi(pushRoutes.removePushSubscription, async (ctx) => {
+  const { endpoint } = ctx.req.valid('json');
   const deleted = await deletePushSubscription(ctx, { userId: ctx.var.user.id, endpoint });
   return ctx.json({ deleted }, 200);
 });

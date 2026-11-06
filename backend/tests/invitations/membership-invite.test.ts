@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { membershipInvite } from 'sdk';
+import { inviteMembers } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -48,7 +48,7 @@ describe('Membership Invitation', async () => {
   };
 
   const makeInviteRequest = async (tenantId: string, organizationId: string, inviteData: any, sessionCookie: string | null) => {
-    return await call(membershipInvite, {
+    return await call(inviteMembers, {
       path: { tenantId, organizationId },
       body: inviteData,
       query: { entityId: organizationId, entityType: 'organization' as const },

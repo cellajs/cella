@@ -7,7 +7,7 @@ import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-sch
 import { tenantOrgParamSchema, translatedError } from '#/schemas';
 
 /** Where the MCP endpoint is mounted, in the API process and the MCP worker alike: the path a token's audience names. */
-export const mcpMountPath = '/:tenantId/:organizationId/mcp';
+export const mcpMountPath = '/tenants/:tenantId/organizations/:organizationId/mcp';
 
 /** A JSON-RPC 2.0 error response: what one call outside the token's scopes answers with. */
 const jsonRpcErrorSchema = z.object({

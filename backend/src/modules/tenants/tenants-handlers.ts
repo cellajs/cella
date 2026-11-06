@@ -8,14 +8,14 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(tenantRoutes.getTenants, async (ctx) => {
+app.openapi(tenantRoutes.listTenants, async (ctx) => {
   const data = await getTenantsOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
 });
 
-app.openapi(tenantRoutes.selfCreateTenant, async (ctx) => {
+app.openapi(tenantRoutes.createTenant, async (ctx) => {
   const data = await selfCreateTenantOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(data, 201);
 });
 
 app.openapi(tenantRoutes.updateTenant, async (ctx) => {

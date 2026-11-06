@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createAttachments, handleMcp, updateAttachment } from 'sdk';
+import { batchCreateAttachments, handleMcp, updateAttachment } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -50,7 +50,7 @@ describe('Input exhaustion', async () => {
   const createAttachment = async (fields: Record<string, unknown>) => {
     const id = generateId();
     created.push(id);
-    const result = await call(createAttachments, {
+    const result = await call(batchCreateAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       body: [attachmentBody(id, plan, fields)],
       headers: headers(),
@@ -92,7 +92,7 @@ describe('Input exhaustion', async () => {
       .where(eq(attachmentsTable.id, id));
 
     const renamed = await call(updateAttachment, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id },
+      path: { tenantId: org.tenantId, organizationId: org.id, attachmentId: id },
       body: { ops: { name: 'Renamed' }, stx: mockStxFor('name') },
       headers: headers(),
     });

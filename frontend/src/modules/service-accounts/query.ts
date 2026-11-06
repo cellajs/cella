@@ -4,8 +4,8 @@ import {
   type CreateServiceAccountData,
   type CreateServiceAccountResponse,
   createServiceAccount,
-  getApiKeys,
-  getServiceAccounts,
+  listApiKeys,
+  listServiceAccounts,
   type RevokeApiKeyData,
   type RevokeApiKeyResponse,
   revokeApiKey,
@@ -28,13 +28,13 @@ const serviceAccountKeys = {
 export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
-    queryFn: () => getServiceAccounts({ path, query: { limit: appConfig.requestLimits.default } }),
+    queryFn: () => listServiceAccounts({ path, query: { limit: appConfig.requestLimits.default } }),
   });
 
 export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
   queryOptions({
     queryKey: serviceAccountKeys.apiKeys(path, accountId),
-    queryFn: () => getApiKeys({ path: { ...path, id: accountId } }),
+    queryFn: () => listApiKeys({ path: { ...path, serviceAccountId: accountId } }),
   });
 
 /** One-step "create API key": the account and its first key come back together; the secret is in the response once. */
@@ -66,7 +66,7 @@ export const useRevokeApiKeyMutation = () => {
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
-      queryClient.setQueryData(apiKeysQueryOptions(path, path.id).queryKey, (oldData) => {
+      queryClient.setQueryData(apiKeysQueryOptions(path, path.serviceAccountId).queryKey, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
       });

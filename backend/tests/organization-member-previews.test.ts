@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getOrganizations } from 'sdk';
+import { listOrganizations } from 'sdk';
 import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -27,8 +27,8 @@ describe('Organization member previews (include=members)', async () => {
   const extraAdminIds: string[] = [];
   let memberUserId: string;
 
-  const listOrganizations = async (query: Record<string, string | number> = {}) => {
-    const result = await call(getOrganizations, { query, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
+  const readOrganizations = async (query: Record<string, string | number> = {}) => {
+    const result = await call(listOrganizations, { query, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
     const data = result.data as { items: OrgListItem[]; total: number } | undefined;
     return { status: result.response.status, items: data?.items ?? [], total: data?.total ?? 0 };
   };
@@ -78,7 +78,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M1: returns at most 3 admin previews ordered by membership createdAt', async () => {
-    const result = await listOrganizations({ include: 'members' });
+    const result = await readOrganizations({ include: 'members' });
     expect(result.status).toBe(200);
 
     const org = result.items.find((item) => item.id === tenant.organization.id);
@@ -88,7 +88,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M2: previews carry only UserMinimalBase fields', async () => {
-    const result = await listOrganizations({ include: 'members' });
+    const result = await readOrganizations({ include: 'members' });
     const org = result.items.find((item) => item.id === tenant.organization.id);
 
     for (const preview of org?.included.members ?? []) {
@@ -98,7 +98,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M3: previews are grouped per organization', async () => {
-    const result = await listOrganizations({ include: 'members' });
+    const result = await readOrganizations({ include: 'members' });
     const secondOrg = result.items.find((item) => item.id === secondOrgId);
 
     // Only the caller is an admin of the second org; no bleed from the first org
@@ -106,7 +106,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M4: members is absent without the include flag', async () => {
-    const result = await listOrganizations();
+    const result = await readOrganizations();
     expect(result.status).toBe(200);
 
     for (const item of result.items) {
@@ -115,7 +115,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M5: an empty page preserves the total count', async () => {
-    const result = await listOrganizations({ limit: 1, offset: 2 });
+    const result = await readOrganizations({ limit: 1, offset: 2 });
 
     expect(result.status).toBe(200);
     expect(result.items).toEqual([]);

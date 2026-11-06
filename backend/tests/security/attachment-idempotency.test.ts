@@ -1,5 +1,5 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
-import { createAttachments, deleteAttachments } from 'sdk';
+import { batchCreateAttachments, batchDeleteAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
@@ -49,7 +49,7 @@ describe('Idempotent attachment creates and deletes', async () => {
     body: ReturnType<typeof bodyFor> | ReturnType<typeof bodyFor>[],
     home: { id: string; tenantId: string } = organization,
   ) => {
-    const { data, error, response } = await call(createAttachments, {
+    const { data, error, response } = await call(batchCreateAttachments, {
       path: { tenantId: home.tenantId, organizationId: home.id },
       body: (Array.isArray(body) ? body : [body]) as never,
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
@@ -60,7 +60,7 @@ describe('Idempotent attachment creates and deletes', async () => {
 
   /** A delete of `ids`, sent as the sync mutation `mutationId`. */
   const remove = async (as: { sessionCookie: string }, ids: string[], mutationId: string) => {
-    const { data, response } = await call(deleteAttachments, {
+    const { data, response } = await call(batchDeleteAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: { ids, stx: { mutationId, sourceId: 'idempotency-test' } },
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
@@ -223,7 +223,7 @@ describe('Idempotent attachment creates and deletes', async () => {
     // The stored row counts before the CDC worker (absent here) has counted it: 1 stored and 2 more pass a quota of 2.
     await limitAttachments(2);
 
-    const overQuota = await call(createAttachments, {
+    const overQuota = await call(batchCreateAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: [bodyFor(generateId(), generateId()), bodyFor(generateId(), generateId())] as never,
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },

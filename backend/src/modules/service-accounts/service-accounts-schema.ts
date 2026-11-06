@@ -5,7 +5,7 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from '#/modules/service-accounts/service-accounts-mocks';
-import { idInTenantOrgParamSchema, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
+import { paginationQuerySchema, tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
 import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
 
@@ -23,8 +23,11 @@ const roleBindingSchema = z.object({
 /** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
 export type RoleBinding = z.infer<typeof roleBindingSchema>;
 
-/** The route addresses one key of one account. */
-export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
+/** The path of one service account in its organization. */
+export const serviceAccountParamSchema = tenantOrgParamSchema.extend({ serviceAccountId: validIdSchema });
+
+/** The path of one API key of one service account. */
+export const apiKeyParamSchema = serviceAccountParamSchema.extend({ apiKeyId: validIdSchema });
 
 export const serviceAccountSchema = z
   .object({

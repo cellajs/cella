@@ -1,4 +1,4 @@
-import { getMembers } from 'sdk';
+import { listMembers } from 'sdk';
 import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -78,7 +78,7 @@ export async function createInvitation({
  */
 export async function readMembersAs(organization: { id: string; tenantId: string }, cookie: string) {
   const call = await createAppClient();
-  return call(getMembers, {
+  return call(listMembers, {
     path: { tenantId: organization.tenantId, organizationId: organization.id },
     query: { entityId: organization.id, entityType: 'organization' },
     headers: { ...defaultHeaders, Cookie: cookie },

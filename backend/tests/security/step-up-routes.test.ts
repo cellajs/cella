@@ -231,7 +231,7 @@ describe('account-security routes need a step-up', async () => {
           headers: session.headers,
         }),
       createKey: (session: TestSession, id: string) =>
-        call(createApiKey, { path: { ...path, id }, body: { name: 'second' }, headers: session.headers }),
+        call(createApiKey, { path: { ...path, serviceAccountId: id }, body: { name: 'second' }, headers: session.headers }),
       accounts: () => db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.tenantId, org.tenantId)),
       keys: () => db.select().from(apiKeysTable).where(eq(apiKeysTable.tenantId, org.tenantId)),
     };
@@ -287,7 +287,7 @@ describe('account-security routes need a step-up', async () => {
     const created = await minting.createAccount(factor);
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
     const setStatus = (session: TestSession, status: 'active' | 'disabled') =>
-      call(updateServiceAccount, { path: { ...minting.path, id: accountId }, body: { status }, headers: session.headers });
+      call(updateServiceAccount, { path: { ...minting.path, serviceAccountId: accountId }, body: { status }, headers: session.headers });
 
     // Disabling takes access away and needs no step-up; re-enabling gives the keys their access back.
     const stale = await insertStaleSession(minting.admin);

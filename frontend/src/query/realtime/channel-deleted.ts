@@ -1,4 +1,4 @@
-import type { GetMyMembershipsResponse, StreamSignal } from 'sdk';
+import type { ListMyMembershipsResponse, StreamSignal } from 'sdk';
 import { appConfig, hierarchy, isSeenTracked, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { meKeys } from '~/modules/me/query';
@@ -93,7 +93,7 @@ function refetchBelowDeletedChannels(): void {
 
   // A delete missed while away leaves the unseen recount and the memberships to the catchup that reported it.
   if (deletedIds.size > 0 && productTypes.some(isSeenTracked)) queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
-  const memberships = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships)?.items ?? [];
+  const memberships = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.items ?? [];
   if (memberships.some(({ channelId }) => deletedIds.has(channelId))) membershipOps.invalidateMemberships();
 }
 

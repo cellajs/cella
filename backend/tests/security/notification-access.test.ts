@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
+import { batchCreateAttachments, type ListNotificationsResponse, listNotifications } from 'sdk';
 import { publicReadGrants } from 'shared';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
@@ -77,9 +77,9 @@ describe('Notification access', async () => {
   };
 
   const inbox = async (as: { sessionCookie: string }) => {
-    const { data, response } = await call(getNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+    const { data, response } = await call(listNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
-    return data as GetNotificationsResponse;
+    return data as ListNotificationsResponse;
   };
 
   /** A digest run at noon UTC today, so the send hour has passed whenever the suite runs. */
@@ -96,7 +96,7 @@ describe('Notification access', async () => {
 
     const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     for (const user of [leaver, stayer]) await joinAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, home, user.id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       body: Object.values(attachmentIds).map((id) => attachmentBody(id, home)),
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -149,7 +149,7 @@ describe('Notification access', async () => {
     await clearSecurityTestData();
   });
 
-  it("must not show a left organization's notifications via getNotifications", async () => {
+  it("must not show a left organization's notifications via listNotifications", async () => {
     const { items, unreadCount } = await inbox(leaver);
     expect(items).toEqual([]);
     expect(unreadCount).toBe(0);

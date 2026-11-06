@@ -154,7 +154,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B1 Object-level access across every read path
 - **Gain:** cross-tenant read.
-- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `getUsers` search, activities, notifications, `relatableGuard`.
+- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `listUsers` search, activities, notifications, `relatableGuard`.
 - **Advisories:** none.
 - **Files:**
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
@@ -169,8 +169,8 @@ One class is one review iteration. The scout verifies every path below at the re
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
 - **Holds:**
   - `cross-tenant`: a user of tenant A listing or reading tenant B attachments and organization, or signing tenant A's attachment from B's session.
-  - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`getUsers` outside a shared org, a cache warmed on org A's path served on org B's.
-  - `defense-in-depth`: `getOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
+  - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`listUsers` outside a shared org, a cache warmed on org A's path served on org B's.
+  - `defense-in-depth`: `listOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
   - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; a grant below the organization or a row condition proving no catchup frontier.
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
   - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
@@ -192,7 +192,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
   - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
-  - Call sites: `deleteMyMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
+  - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
   - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
@@ -217,12 +217,12 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `firstName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
-  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `getMembers`; the field is absent without `include=mfa`.
-  - `member-personal-view`: another member's archive, mute and order in `getMembers`; pins that email is shown org-wide.
+  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
+  - `member-personal-view`: another member's archive, mute and order in `listMembers`; pins that email is shown org-wide.
   - `profile-image-urls`: an avatar or banner pointed at another host. `trace-redaction`: a token in a request span and in the request log line (D1).
   - `cdc/src/tests/secret-columns.test.ts`: a new column matching the secret pattern in neither map.
 - **Asks:** per update route the writable columns against its schema, read from the OpenAPI document as request-bodies.test does; per response schema the fields and the relation that may see them; the values `changedFields` carries.
-- **Not this class:** the role ceiling on `membershipInvite`, `createServiceAccount` and `updateMembership` belongs to B2. `welcomeText` and description media URLs (`assertBlockMediaUrls`) belong to C4. HLC `fieldTimestamps` and `replayed` in `stx` belong to C1. Row reach of getMembers, getUsers and getUser belongs to B1. Invitation-address takeover belongs to C7.
+- **Not this class:** the role ceiling on `inviteMembers`, `createServiceAccount` and `updateMembership` belongs to B2. `welcomeText` and description media URLs (`assertBlockMediaUrls`) belong to C4. HLC `fieldTimestamps` and `replayed` in `stx` belong to C1. Row reach of listMembers, listUsers and getUser belongs to B1. Invitation-address takeover belongs to C7.
 
 ### B4 Stream fan-out
 - **Gain:** cross-tenant read by fan-out, denial of service.
@@ -499,7 +499,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### D2 Enumeration and side channels
 - **Gain:** reconnaissance for A1 and E1.
-- **Merges:** account enumeration, the Refusals table of PERMISSIONS.md as the policy, timing-safe comparison of tokens and hashes, invited addresses, `getUsers` search by address, a 429 as an oracle, error `type` differences, response sizes.
+- **Merges:** account enumeration, the Refusals table of PERMISSIONS.md as the policy, timing-safe comparison of tokens and hashes, invited addresses, `listUsers` search by address, a 429 as an oracle, error `type` differences, response sizes.
 - **Advisories:** 1 (hono timing comparison).
 - **Files:**
   - `cella/PERMISSIONS.md` (the Refusals table).
@@ -515,7 +515,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `pending-invitations`: the pending list, resend, invite response and invite check telling an account from a new address.
   - `tenant-access`: missing, inactive and foreign tenants told apart; `checkSlug` 204/409.
   - `brute-force-limits`: mailing one address forever, the magic budget telling account from none, check-email lookups without end.
-  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`getUsers` outside a shared organization.
+  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`listUsers` outside a shared organization.
   - `unsubscribe-tokens`: the token is verified before the user lookup (401 first, 404 only after a valid HMAC).
 - **Asks:** every "does X exist" answer in the API as a table against the Refusals table; every comparison of a secret.
 - **Not this class:** invitation token takeover and invoke-token under a cross-site GET belong to C7. Cookie MAC forgery, session revocation and the device cap belong to A2 and A1. `sso_email_unproven` and SSO address trust belong to A4. Brute-force budgets of TOTP and step-up codes belong to A3. Mail content, who can mail whom and Brevo params belong to D3. Secrets at rest and in logs belong to D1. Relay tokens belong to B5.
@@ -563,7 +563,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tiers.test.ts`: failures counted in hourly and daily tiers, the 24 h tier holds, a failing store gives no 500 (attempt uncounted), error redirects counted.
   - `identifier-validation.test.ts`: no address in the clear in the key, IPv6 /64 and case share one bucket, an empty key refused. `points-cache.test.ts`: fast-path accounting. `limiter-scope.test.ts`: `chargeLimiter` outside a request refuses.
   - `tests/sign-in/session-cap`: the per-user session cap evicts the oldest sessions, counts MFA sessions.
-  - `tests/tenants` (a retry of `selfCreateTenant` reuses the orphan tenant).
+  - `tests/tenants` (a retry of `createTenant` reuses the orphan tenant).
 - **Asks:** route x limiter from the OpenAPI document, as route-guards.test does, with the reason each unlimited route is cheap; the store-down decision; budgets against code spaces.
 - **Not this class:** entropy and guessability of tokens belong to A1 and A5. The TOTP window and daily restart belong to A3. The stream cap belongs to B4. MCP tool charges belong to B6. Body and batch caps belong to C1. Invitation address takeover belongs to C7. Upload content and size belong to C6.
 

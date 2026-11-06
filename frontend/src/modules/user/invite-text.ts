@@ -1,8 +1,8 @@
 import type { ClipboardEvent } from 'react';
-import { zMembershipInviteBody } from 'sdk/zod.gen';
+import { zInviteMembersBody } from 'sdk/zod.gen';
 
 /** True for exactly the addresses an invite submit accepts, so everything added to the list passes the form. */
-export const isInviteEmail = (value: string) => zMembershipInviteBody.shape.emails.element.safeParse(value).success;
+export const isInviteEmail = (value: string) => zInviteMembersBody.shape.emails.element.safeParse(value).success;
 
 // Bounded on both sides, so a character no address may hold fails it whole: jöhn@x.com never reads as hn@x.com, nor a@x.xn--p1ai as a@x.xn.
 const addressPattern = /(?<![^\s<(:"[])[A-Z0-9._%+'-]+@[A-Z0-9.-]+\.[A-Z]{2,}(?![A-Z0-9_-])/gi;

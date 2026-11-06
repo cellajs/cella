@@ -11,6 +11,7 @@ import {
   includeQuerySchema,
   paginationQuerySchema,
   refineWithType,
+  tenantOrgParamSchema,
   validEmailSchema,
   validIdSchema,
   validUuidSchema,
@@ -101,6 +102,12 @@ export const membershipInviteResponseSchema = z.object({
   /** The channel is a draft and the role waits for its publish: the invitations are saved, their emails held. */
   held: z.boolean(),
 });
+
+/** The path of one membership in its organization. */
+export const membershipParamSchema = tenantOrgParamSchema.extend({ membershipId: validIdSchema });
+
+/** The path of one pending invitation, named by its own id, in its organization. */
+export const invitationParamSchema = tenantOrgParamSchema.extend({ invitationId: validIdSchema });
 
 export const membershipUpdateBodySchema = z
   .object({ role: entityRoleSchema.optional(), ...optionalPersonalView })

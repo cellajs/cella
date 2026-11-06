@@ -104,7 +104,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
       id: `delete-connection-${connection.id}`,
       title: <DeleteQuestion resource="c:connection" name={connection.displayName} />,
       resource: 'c:connection',
-      onConfirm: () => remove({ path: { tenantId: tenant.id, id: connection.id } }),
+      onConfirm: () => remove({ path: { tenantId: tenant.id, connectionId: connection.id } }),
     });
 
   const ssoConnections = (connections ?? []).filter((connection) => connection.kind === 'sso');
@@ -123,7 +123,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                 <Select
                   value={connection.status}
                   onValueChange={(status) =>
-                    update({ path: { tenantId: tenant.id, id: connection.id }, body: { status: status as Connection['status'] } })
+                    update({ path: { tenantId: tenant.id, connectionId: connection.id }, body: { status: status as Connection['status'] } })
                   }
                   items={statuses.map((status) => ({ value: status, label: t(`c:${status}`) }))}
                 >
@@ -151,7 +151,9 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
                 <Switch
                   id={`jit-provisioning-${connection.id}`}
                   checked={connection.jitProvisioning}
-                  onCheckedChange={(jitProvisioning) => update({ path: { tenantId: tenant.id, id: connection.id }, body: { jitProvisioning } })}
+                  onCheckedChange={(jitProvisioning) =>
+                    update({ path: { tenantId: tenant.id, connectionId: connection.id }, body: { jitProvisioning } })
+                  }
                 />
                 <HelpText content={t('c:jit_provisioning.text')}>
                   <Label htmlFor={`jit-provisioning-${connection.id}`}>{t('c:jit_provisioning')}</Label>

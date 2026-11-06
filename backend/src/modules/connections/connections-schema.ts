@@ -5,7 +5,7 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { federationKeySchema } from '#/modules/auth/sso/sso-schema';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
 import { mockConnectionResponse } from '#/modules/connections/connections-mocks';
-import { validDomainSchema, validNameSchema, validUrlSchema } from '#/schemas';
+import { tenantOnlyParamSchema, validDomainSchema, validIdSchema, validNameSchema, validUrlSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
 
 const idpEntityIdSchema = z.string().min(1).max(maxLength.field);
@@ -34,6 +34,9 @@ export const connectionSchema = z
     example: mockConnectionResponse(),
     'x-tags': schemaTags('data', 'connections', 'cella'),
   });
+
+/** The path of one connection of a tenant. */
+export const connectionParamSchema = tenantOnlyParamSchema.extend({ connectionId: validIdSchema });
 
 export const createConnectionBodySchema = z.object({
   issuer: federationKeySchema,

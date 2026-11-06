@@ -6,7 +6,7 @@ import { tenantOnlyParamSchema } from '#/schemas';
 const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
   getApiProtectedResourceMetadata: xRoute({
     method: 'get',
-    path: '/{tenantId}/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
     xEnabledBy: { service: 'oauth' },
     xGuard: [publicGuard],
     summary: 'Protected resource metadata (API)',

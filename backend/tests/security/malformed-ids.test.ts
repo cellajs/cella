@@ -30,13 +30,13 @@ describe('Malformed ids in a path', async () => {
   afterAll(async () => await clearSecurityTestData());
 
   it('must not reveal the failed query via a malformed organization id', async () => {
-    const { status, text } = await get(`/${organization.tenantId}/not-a-uuid/attachments`);
+    const { status, text } = await get(`/tenants/${organization.tenantId}/organizations/not-a-uuid/attachments`);
     await expectRefusal({ status, body: JSON.parse(text) }, 400, 'invalid_request');
     expect(text.toLowerCase()).not.toMatch(/select|invalid input syntax|from "/);
   });
 
   it('must not reveal the failed query via a malformed entity id', async () => {
-    const { status, text } = await get(`/${organization.tenantId}/${organization.id}/attachments/not-a-uuid`);
+    const { status, text } = await get(`/tenants/${organization.tenantId}/organizations/${organization.id}/attachments/not-a-uuid`);
     expect(status).toBe(400);
     expect(text.toLowerCase()).not.toMatch(/select|invalid input syntax|from "/);
   });
@@ -45,10 +45,10 @@ describe('Malformed ids in a path', async () => {
   it('must not answer a server error for a NUL character in an id of a path', async () => {
     const nul = encodeURIComponent('x\u0000y');
     const paths = [
-      `/${organization.tenantId}/${nul}/attachments`,
-      `/${organization.tenantId}/${organization.id}/attachments/${nul}`,
-      `/${nul}/${organization.id}/attachments`,
-      `/${organization.tenantId}/organizations/${nul}?slug=true`,
+      `/tenants/${organization.tenantId}/organizations/${nul}/attachments`,
+      `/tenants/${organization.tenantId}/organizations/${organization.id}/attachments/${nul}`,
+      `/tenants/${nul}/organizations/${organization.id}/attachments`,
+      `/tenants/${organization.tenantId}/organizations/${nul}?slug=true`,
     ];
     for (const path of paths) {
       const { status, text } = await get(path);
@@ -59,21 +59,23 @@ describe('Malformed ids in a path', async () => {
 
   it('must not answer a server error for a NUL character in an id of a delete batch or in a written value', async () => {
     const send = (method: string, path: string, body: unknown) =>
-      baseApp.request(`/${organization.tenantId}/${path}`, {
+      baseApp.request(`/tenants/${organization.tenantId}/${path}`, {
         method,
         headers: { ...defaultHeaders, Cookie: member.sessionCookie },
         body: JSON.stringify(body),
       });
 
-    const batch = await send('DELETE', `${organization.id}/attachments`, { ids: ['x\u0000y'] });
+    const batch = await send('POST', `organizations/${organization.id}/attachments:batch-delete`, { ids: ['x\u0000y'] });
     expect(batch.status).toBe(400);
 
-    const written = await send('PUT', `organizations/${organization.id}`, { name: 'Named\u0000' });
+    const written = await send('PATCH', `organizations/${organization.id}`, { name: 'Named\u0000' });
     expect(written.status).toBe(400);
   });
 
   it('answers a well-formed id that names nothing with 404 (positive control)', async () => {
-    const { status } = await get(`/${organization.tenantId}/${organization.id}/attachments/00000000-0000-4000-8000-000000000000`);
+    const { status } = await get(
+      `/tenants/${organization.tenantId}/organizations/${organization.id}/attachments/00000000-0000-4000-8000-000000000000`,
+    );
     expect(status).toBe(404);
   });
 });

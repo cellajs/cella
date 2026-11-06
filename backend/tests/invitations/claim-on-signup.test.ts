@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { membershipInvite } from 'sdk';
+import { inviteMembers } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -27,7 +27,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const admin = await createOrganizationAdminUser(`admin${index}@example.com`, organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
 
-    const { response } = await call(membershipInvite, {
+    const { response } = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: { emails: [invitedEmail], role: memberRole },
       query: { entityId: organization.id, entityType: 'organization' as const },

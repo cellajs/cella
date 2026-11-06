@@ -1,5 +1,5 @@
 import { defineScreenshotsBase, type Page } from '@cellajs/cli/screenshots';
-import { getMyMemberships, getOrganizations } from '../sdk/gen/index.ts';
+import { listMyMemberships, listOrganizations } from '../sdk/gen/index.ts';
 import { apiClient, finishOnboarding } from './a11y.ts';
 
 /**
@@ -99,8 +99,8 @@ export default defineScreenshotsBase({
     org: async (user) => {
       const client = apiClient(user);
       const [{ items: organizations }, { items: memberships }] = await Promise.all([
-        getOrganizations({ client, query: { limit: 50 } }),
-        getMyMemberships({ client }),
+        listOrganizations({ client, query: { limit: 50 } }),
+        listMyMemberships({ client }),
       ]);
       const published = organizations.filter(({ publishedAt }) => publishedAt);
       const organization =

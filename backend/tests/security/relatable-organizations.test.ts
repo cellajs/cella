@@ -1,4 +1,4 @@
-import { getOrganizations } from 'sdk';
+import { listOrganizations } from 'sdk';
 import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -33,7 +33,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
   let viewer: { id: string; email: string; sessionCookie: string };
 
   const listAs = (as: { sessionCookie: string }, relatableUserId: string) =>
-    call(getOrganizations, { query: { relatableUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+    call(listOrganizations, { query: { relatableUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
 
   beforeAll(async () => {
     shared = await createTestOrganization();
@@ -103,7 +103,9 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const { baseApp } = await import('#/routes');
     // Raw requests: the SDK validates the query itself and would throw before the server is reached.
     const listRaw = (as: { sessionCookie: string }, relatableUserId: string) =>
-      baseApp.request(`/organizations?${new URLSearchParams({ relatableUserId })}`, { headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+      baseApp.request(`/tenants/-/organizations?${new URLSearchParams({ relatableUserId })}`, {
+        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
+      });
 
     // Another user named by anything but a user id relates to nobody: the guard refuses before any query.
     const junk = await listRaw(viewer, 'not-a-user-id');
@@ -132,7 +134,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
-      call(getOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+      call(listOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     const idsOf = (data: unknown) => (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
 
     // The listed user's archive and role are not the viewer's to filter on: refused, never dropped.

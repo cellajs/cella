@@ -41,6 +41,9 @@ const forwardedHeaders = ['authorization', 'x-forwarded-for'];
 
 const isZodObject = (schema: unknown): schema is z.ZodObject<z.ZodRawShape> => schema instanceof z.ZodObject;
 
+/** The standard method a batch custom method (`/~batch-delete`) runs per item: its tool's hints follow that method. */
+const batchedMethods: Record<string, string> = { 'batch-create': 'POST', 'batch-update': 'PATCH', 'batch-delete': 'DELETE' };
+
 /**
  * The sync transaction (`stx`) is trusted server metadata, never model input: `modelSchema` leaves it out of what the
  * model sees, `withServerStx` puts a server-built one back before the route's own schema validates the body.
@@ -117,6 +120,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
   const paramKeys = Object.keys(params.shape);
   const queryKeys = Object.keys(query.shape);
   const method = route.method.toUpperCase();
+  const hintMethod = batchedMethods[/\/~([^/]+)$/.exec(route.path)?.[1] ?? ''] ?? method;
   const action = toolAction(method);
   const isRead = action === 'read';
   const scope = accessScopes.required(spec.entity, action);
@@ -130,7 +134,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
       name,
       description: spec.description,
       inputSchema: toInputSchema(inputSchema),
-      annotations: { readOnlyHint: isRead, destructiveHint: !isRead && method !== 'POST', idempotentHint: method !== 'POST' },
+      annotations: { readOnlyHint: isRead, destructiveHint: !isRead && hintMethod !== 'POST', idempotentHint: hintMethod !== 'POST' },
       _meta: { scope, approvalRequired: spec.approvalRequired },
     },
     call: async (ctx, args) => {

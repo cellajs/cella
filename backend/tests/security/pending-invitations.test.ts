@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { checkMembershipInvite, membershipInvite, resendPendingInvitation, withdrawPendingInvitation } from 'sdk';
+import { checkMembershipInvite, deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
@@ -35,13 +35,13 @@ describe('Pending invitations list', async () => {
 
   const listPending = async (as: { sessionCookie: string }) => {
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
-    const path = `/${organization.tenantId}/${organization.id}/memberships/pending?${query}`;
+    const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/invitations?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
     return { status, items: (body as { items: PendingRow[] }).items };
   };
 
   const invite = (emails: string[]) =>
-    call(membershipInvite, {
+    call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails, role: memberRole },
@@ -63,8 +63,8 @@ describe('Pending invitations list', async () => {
   };
 
   const resend = (id: string) =>
-    call(resendPendingInvitation, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id, id },
+    call(resendInvitation, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id, invitationId: id },
       headers: { ...defaultHeaders, Cookie: inviter.sessionCookie },
     });
 
@@ -102,7 +102,7 @@ describe('Pending invitations list', async () => {
     }
   });
 
-  it('must not tell an account from a new address via resendPendingInvitation', async () => {
+  it('must not tell an account from a new address via resendInvitation', async () => {
     const { items } = await listPending(inviter);
     const byEmail = new Map(items.map((item) => [item.email, item.id]));
 
@@ -121,7 +121,7 @@ describe('Pending invitations list', async () => {
     ).toEqual([accountAlternate, newcomer].sort());
   });
 
-  it('must not tell an account from a new address via the membershipInvite response', async () => {
+  it('must not tell an account from a new address via the inviteMembers response', async () => {
     const toAccount = await invite([accountPrimary]);
     const toNewcomer = await invite(['pending-newcomer-2@security-test.com']);
     expect(toAccount.response.status).toBe(200);
@@ -138,7 +138,7 @@ describe('Pending invitations list', async () => {
     expect(answer(forAccountHeld.data)).toEqual(answer(forAccount.data));
   });
 
-  it('must not link another address to a member via the membershipInvite response', async () => {
+  it('must not link another address to a member via the inviteMembers response', async () => {
     // A second address the member proved: the inviter knows members only by their listed address.
     const memberAlternate = 'pending-member-alternate@security-test.com';
     await db.insert(emailsTable).values({ email: memberAlternate, userId: member.id, verifiedAt: mockPastIsoDate() });
@@ -165,8 +165,8 @@ describe('Pending invitations list', async () => {
     await invite([address]);
     const target = (await listPending(inviter)).items.find((item) => item.email === address)!;
     const withdraw = (as: { sessionCookie: string }) =>
-      call(withdrawPendingInvitation, {
-        path: { tenantId: organization.tenantId, organizationId: organization.id, id: target.id },
+      call(deleteInvitation, {
+        path: { tenantId: organization.tenantId, organizationId: organization.id, invitationId: target.id },
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
 

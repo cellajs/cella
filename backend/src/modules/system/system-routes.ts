@@ -5,13 +5,12 @@ import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewar
 import { mockPendingSystemInvitesResponse, mockSystemInviteResponse } from '#/modules/system/system-mocks';
 import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema, systemUserUpdateBodySchema } from '#/modules/system/system-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBodySchema } from '#/schemas';
+import { batchResponseSchema, booleanTransformSchema, idsBodySchema, userIdParamSchema } from '#/schemas';
 
 const systemRoutes = createXRoutes(['system', 'cella'], {
-  createInvite: xRoute({
-    operationId: 'systemInvite',
+  inviteUsers: xRoute({
     method: 'post',
-    path: '/invite',
+    path: '/users/~invite',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     summary: 'Invite to system',
@@ -19,17 +18,17 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     request: { body: jsonBody(inviteBodySchema) },
     responses: { 200: json('Invitations are sent', systemInviteResponseSchema, mockSystemInviteResponse()) },
   }),
-  getPendingSystemInvites: xRoute({
+  countSystemInvitations: xRoute({
     method: 'get',
-    path: '/invite/pending',
+    path: '/system-invitations/~count',
     xGuard: [userGuard, sysAdminGuard],
     summary: 'Count pending system invitations',
     description: 'Returns how many addresses hold an unexpired system invitation, one sent outside any organization.',
     responses: { 200: json('Pending invitations', z.object({ count: z.number().int() }), mockPendingSystemInvitesResponse()) },
   }),
-  deleteUsers: xRoute({
-    method: 'delete',
-    path: '/',
+  batchDeleteUsers: xRoute({
+    method: 'post',
+    path: '/users/~batch-delete',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete users',
@@ -39,18 +38,18 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     responses: { 200: json('Success', batchResponseSchema()), ...errors(404, 409) },
   }),
   updateUser: xRoute({
-    method: 'put',
-    path: '/{id}',
+    method: 'patch',
+    path: '/users/{userId}',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update user',
     description: 'Updates a user identified by ID.',
-    request: { params: entityIdParamSchema, body: jsonBody(systemUserUpdateBodySchema) },
+    request: { params: userIdParamSchema, body: jsonBody(systemUserUpdateBodySchema) },
     responses: { 200: json('User', userSchema), ...errors(404, 409) },
   }),
   sendNewsletter: xRoute({
     method: 'post',
-    path: '/newsletter',
+    path: '/system/~send-newsletter',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Newsletter to members',

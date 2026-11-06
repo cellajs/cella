@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { BirdIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
-import { resendPendingInvitation } from 'sdk';
+import { resendInvitation } from 'sdk';
 import { lowercaseLabel } from 'shared/utils/i18n-text';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
@@ -42,8 +42,8 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
   const { tone, label, detail } = describe();
 
   const resend = async () => {
-    const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), id };
-    await resendPendingInvitation({ path });
+    const path = { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), invitationId: id };
+    await resendInvitation({ path });
     await onResent();
   };
 

@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteUsers, type GetUsersData, getPendingSystemInvites, getUser, getUsers, type UpdateUserData, type User, updateUser } from 'sdk';
+import { batchDeleteUsers, countSystemInvitations, getUser, type ListUsersData, listUsers, type UpdateUserData, type User, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { useUpdateSelfMutation } from '~/modules/me/query';
@@ -13,7 +13,7 @@ import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { MutationData } from '~/query/types';
 
-type UserFilters = Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'>;
+type UserFilters = Omit<NonNullable<ListUsersData['query']>, 'limit' | 'offset'>;
 type UsersListParams = UserFilters & { limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
@@ -26,7 +26,7 @@ export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
     // include=mfa: the profile header shows the MFA setting to whoever the API returns it to
-    queryFn: () => getUser({ path: { relatableUserId: id }, query: { include: 'mfa' } }),
+    queryFn: () => getUser({ path: { userId: id }, query: { include: 'mfa' } }),
     placeholderData: () => findUserInCache(id),
   });
 
@@ -37,14 +37,14 @@ export const usersListQueryOptions = (params: UsersListParams) => {
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) => getUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
+    ...offsetPaging(limit, (offset, signal) => listUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
     refetchOnMount: true,
   });
 };
 
 /** How many addresses hold an unexpired system invitation. */
 export const pendingSystemInvitesQueryOptions = () =>
-  queryOptions({ queryKey: ['user', 'pendingSystemInvites'] as const, queryFn: () => getPendingSystemInvites() });
+  queryOptions({ queryKey: ['user', 'pendingSystemInvites'] as const, queryFn: () => countSystemInvitations() });
 
 const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
@@ -71,7 +71,7 @@ export const useUpdateUser = (userId: string) => {
   const adminMutation = useUserUpdateMutation();
 
   const mutate = (body: UpdateUserData['body'], options?: { onSuccess?: (user: User) => void }) =>
-    isSelf ? selfMutation.mutate(body, options) : adminMutation.mutate({ path: { id: userId }, body }, options);
+    isSelf ? selfMutation.mutate(body, options) : adminMutation.mutate({ path: { userId }, body }, options);
 
   return { mutate, isPending: selfMutation.isPending || adminMutation.isPending };
 };
@@ -84,7 +84,7 @@ export const useUserDeleteMutation = () => {
     mutationKey: keys.delete,
     mutationFn: async (users) => {
       const ids = users.map(({ id }) => id);
-      await deleteUsers({ body: { ids } });
+      await batchDeleteUsers({ body: { ids } });
     },
     onSuccess: (_, users) => {
       cacheRemove(listKey, users);

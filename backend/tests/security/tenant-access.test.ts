@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { createOrganizations } from 'sdk';
+import { batchCreateOrganizations } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ describe('Tenant access', async () => {
 
   /** A route behind tenantGuard alone, so the guard is the only barrier. */
   const checkSlug = async (tenantId: string, sessionCookie: string) => {
-    const response = await baseApp.request(`/entities/${tenantId}/check-slug`, {
+    const response = await baseApp.request(`/tenants/${tenantId}:check-slug`, {
       method: 'POST',
       headers: { ...defaultHeaders, Cookie: sessionCookie },
       body: JSON.stringify({ slug: 'tenant-access-free-slug', entityType: 'organization' }),
@@ -94,7 +94,7 @@ describe('Tenant access', async () => {
     const tenant = await createdTenant(creator.id, false);
 
     expect((await checkSlug(tenant.id, sessionCookie)).status).toBe(204);
-    const { response } = await call(createOrganizations, {
+    const { response } = await call(batchCreateOrganizations, {
       path: { tenantId: tenant.id },
       body: [{ id: `temp-${generateId()}`, name: 'Founded', slug: 'tenant-access-founded' }],
       headers: { ...defaultHeaders, Cookie: sessionCookie },
@@ -107,7 +107,7 @@ describe('Tenant access', async () => {
     const sessionCookie = await createTestSession(creator);
     const tenant = await createdTenant(creator.id, false);
     const create = () =>
-      call(createOrganizations, {
+      call(batchCreateOrganizations, {
         path: { tenantId: tenant.id },
         body: [{ id: `temp-${generateId()}`, name: 'Interrupted', slug: 'tenant-access-interrupted' }],
         headers: { ...defaultHeaders, Cookie: sessionCookie },

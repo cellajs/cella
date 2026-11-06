@@ -173,7 +173,7 @@ class AttachmentUploadService {
 
     try {
       const attachment = await linkAttachmentKeys({
-        path: { tenantId, organizationId: blob.organizationId, id: blob.attachmentId },
+        path: { tenantId, organizationId: blob.organizationId, attachmentId: blob.attachmentId },
         body: { keys: blob.cloudKeys, convertedContentType: blob.cloudConvertedContentType ?? null },
       });
       await attachmentStorage.markKeysLinked(blob.id);

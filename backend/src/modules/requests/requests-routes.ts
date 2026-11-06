@@ -19,7 +19,7 @@ const requestRoutes = createXRoutes(['requests', 'cella'], {
     request: { body: jsonBody(requestCreateBodySchema) },
     responses: { 204: { description: 'Request received' } },
   }),
-  getRequests: xRoute({
+  listRequests: xRoute({
     method: 'get',
     path: '/',
     xGuard: [userGuard, sysAdminGuard],
@@ -28,9 +28,9 @@ const requestRoutes = createXRoutes(['requests', 'cella'], {
     request: { query: requestListQuerySchema },
     responses: { 200: json('Requests', paginationSchema(requestSchema), mockPaginatedRequestsResponse()) },
   }),
-  deleteRequests: xRoute({
-    method: 'delete',
-    path: '/',
+  batchDeleteRequests: xRoute({
+    method: 'post',
+    path: '/~batch-delete',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete requests',

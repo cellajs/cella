@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const session = vi.hoisted(() => ({ user: { id: 'user-1' } as { id: string } | null, isSystemAdmin: false }));
 vi.mock('~/modules/user/user-store', () => ({ useUserStore: (select: (state: typeof session) => unknown) => select(session) }));
 // Never answers: a test that seeds no memberships sees them loading.
-vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), getMyMemberships: () => new Promise(() => {}) }));
+vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), listMyMemberships: () => new Promise(() => {}) }));
 const checkAccess = vi.hoisted(() => vi.fn());
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();

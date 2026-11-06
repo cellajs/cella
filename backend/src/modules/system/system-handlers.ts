@@ -11,26 +11,26 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(systemRoutes.createInvite, async (ctx) => {
+app.openapi(systemRoutes.inviteUsers, async (ctx) => {
   const { emails } = ctx.req.valid('json');
   const data = await createInviteOp(ctx, emails);
   return ctx.json(data, 200);
 });
 
-app.openapi(systemRoutes.getPendingSystemInvites, async (ctx) => {
+app.openapi(systemRoutes.countSystemInvitations, async (ctx) => {
   const count = await countLiveSystemInvitations(ctx);
   return ctx.json({ count }, 200);
 });
 
-app.openapi(systemRoutes.deleteUsers, async (ctx) => {
+app.openapi(systemRoutes.batchDeleteUsers, async (ctx) => {
   const { ids } = ctx.req.valid('json');
   const data = await deleteUsersOp(ctx, ids);
   return ctx.json(data, 200);
 });
 
 app.openapi(systemRoutes.updateUser, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const data = await updateUserOp(ctx, id, ctx.req.valid('json'));
+  const { userId } = ctx.req.valid('param');
+  const data = await updateUserOp(ctx, userId, ctx.req.valid('json'));
   return ctx.json(data, 200);
 });
 

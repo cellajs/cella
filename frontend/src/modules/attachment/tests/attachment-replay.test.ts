@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The generated SDK is mocked so the test can read the request a replayed mutation sends.
 const { updateAttachment } = vi.hoisted(() => ({ updateAttachment: vi.fn(async (_req: unknown) => ({ id: 'att-1' })) }));
-vi.mock('sdk', () => ({ createAttachments: vi.fn(), updateAttachment, deleteAttachments: vi.fn(), getAttachment: vi.fn(), getAttachments: vi.fn() }));
+vi.mock('sdk', () => ({
+  batchCreateAttachments: vi.fn(),
+  updateAttachment,
+  batchDeleteAttachments: vi.fn(),
+  getAttachment: vi.fn(),
+  listAttachments: vi.fn(),
+}));
 
 import { updateAttachmentMutationFn } from '~/modules/attachment/query-mutations';
 

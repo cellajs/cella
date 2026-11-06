@@ -19,6 +19,10 @@ The OpenAPI contract and the generated SDK are the same for every caller; what d
 
 ## Face: REST API
 
+Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev). A path alternates literal collections and ids (`/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}`), and `-` stands for any parent: `/tenants/-/organizations` lists the organizations of every tenant the caller sees. An update is a `PATCH` with JSON Merge Patch semantics: an absent field stays, `null` clears it and an array is replaced, sent as `application/json` or `application/merge-patch+json`. An action is a custom method at `<resource>:<verb>`, a `POST`, or a `GET` when it changes nothing, such as `POST …/organizations/{organizationId}:publish`. A create answers 201 with the resource and a delete answers 204. The auth, OAuth and MCP routes, the app stream and the yjs routes follow the protocols they implement.
+
+Three choices depart from those conventions. Ids are UUID v7 the client mints, since an offline create needs its id before the server answers. A batch create or delete (`:batch-create`, `:batch-delete`) applies what it can and lists the ids it rejected, where an AEP batch would fail whole. The membership routes name their channel in `entityType` and `entityId`, since channel types are app config and one operation per action keeps a client independent of them.
+
 A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
 
 An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own, checked before the tenant row loads, so a key learns nothing about other tenants.

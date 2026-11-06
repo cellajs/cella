@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { createAttachments, type GetPresignedUrlsResponse, getPresignedUrls, getUploadToken, linkAttachmentKeys } from 'sdk';
+import { batchCreateAttachments, getUploadToken, linkAttachmentKeys, type PresignAttachmentUrlsResponse, presignAttachmentUrls } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -34,14 +34,14 @@ describe('Attachment storage keys', async () => {
     attachmentBody(id, attackerPlan, { keys, ...claims });
 
   const create = (body: Record<string, unknown>, headers: Record<string, string> = { ...defaultHeaders, Cookie: attacker.sessionCookie }) =>
-    call(createAttachments, {
+    call(batchCreateAttachments, {
       path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id },
       body: [body] as never,
       headers,
     });
 
   const presign = (attachmentId: string) =>
-    call(getPresignedUrls, {
+    call(presignAttachmentUrls, {
       path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id },
       body: { items: [{ attachmentId, variant: 'original' }] },
       headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
@@ -68,14 +68,14 @@ describe('Attachment storage keys', async () => {
 
   afterAll(async () => await clearSecurityTestData());
 
-  it("must not plant another tenant's storage key via createAttachments", async () => {
+  it("must not plant another tenant's storage key via batchCreateAttachments", async () => {
     const id = generateId();
     const { error, response } = await create(bodyFor(id, { original: keyOf(victim, 'contract.pdf') }));
     await expectRefusal({ response, error }, 400, 'invalid_request');
     expect(await rowExists(id)).toBe(false);
   });
 
-  it("must not register another member's upload via createAttachments", async () => {
+  it("must not register another member's upload via batchCreateAttachments", async () => {
     const coMember = await createOrgUser(call, attacker.tenantId, attacker.organization.id, 'storage-key-owner');
     const id = generateId();
     const { error, response } = await create(bodyFor(id, { original: `${attacker.organization.id}/${coMember.id}/payroll.pdf` }));
@@ -96,7 +96,7 @@ describe('Attachment storage keys', async () => {
     expect(await rowExists(variant)).toBe(false);
   });
 
-  it('must not reach outside the prefix behind a blob: prefix via createAttachments', async () => {
+  it('must not reach outside the prefix behind a blob: prefix via batchCreateAttachments', async () => {
     const vectors = [
       `blob:x/../${keyOf(victim, 'contract.pdf')}`,
       `blob:${attacker.organization.id}/../${keyOf(victim, 'contract.pdf')}`,
@@ -110,7 +110,7 @@ describe('Attachment storage keys', async () => {
     }
   });
 
-  it('must not sign a blob: key via getPresignedUrls', async () => {
+  it('must not sign a blob: key via presignAttachmentUrls', async () => {
     for (const planted of [`blob:/../${keyOf(victim, 'contract.pdf')}`, 'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c']) {
       const id = generateId();
       expect((await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }))).response.status).toBe(201);
@@ -121,7 +121,7 @@ describe('Attachment storage keys', async () => {
 
       const { data, response } = await presign(id);
       expect(response.status).toBe(200);
-      const result = data as GetPresignedUrlsResponse;
+      const result = data as PresignAttachmentUrlsResponse;
       expect(result.data, planted).toEqual([]);
       expect(result.rejectedIds, planted).toEqual([id]);
     }
@@ -134,7 +134,7 @@ describe('Attachment storage keys', async () => {
     expect(await rowExists(id)).toBe(true);
   });
 
-  it('must not name a bucket outside the app via createAttachments', async () => {
+  it('must not name a bucket outside the app via batchCreateAttachments', async () => {
     const id = generateId();
     const claims = { bucketName: 'another-apps-bucket' };
     const { response } = await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }, claims));
@@ -151,7 +151,7 @@ describe('Attachment storage keys', async () => {
     expect(await storageOf(id)).toEqual(privateStorage);
   });
 
-  it('must not sign a planted key already stored on a row via getPresignedUrls', async () => {
+  it('must not sign a planted key already stored on a row via presignAttachmentUrls', async () => {
     const id = generateId();
     expect((await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }))).response.status).toBe(201);
     // A row written before keys were checked: the presign boundary refuses it on its own.
@@ -164,7 +164,7 @@ describe('Attachment storage keys', async () => {
 
     const { data, response } = await presign(id);
     expect(response.status).toBe(200);
-    const result = data as GetPresignedUrlsResponse;
+    const result = data as PresignAttachmentUrlsResponse;
     expect(result.data).toEqual([]);
     expect(result.rejectedIds).toEqual([id]);
   });
@@ -177,7 +177,7 @@ describe('Attachment storage keys', async () => {
 
     const { data, response } = await presign(id);
     expect(response.status).toBe(200);
-    const result = data as GetPresignedUrlsResponse;
+    const result = data as PresignAttachmentUrlsResponse;
     expect(result.rejectedIds).toEqual([]);
     expect(result.data[0]?.url).toContain(key);
   });
@@ -218,7 +218,7 @@ describe('Attachment storage keys', async () => {
 
     const link = (id: string, keys: { original: string; preview?: string }, cookie = attacker.sessionCookie) =>
       call(linkAttachmentKeys, {
-        path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id, id },
+        path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id, attachmentId: id },
         body: { keys },
         headers: { ...defaultHeaders, Cookie: cookie },
       });

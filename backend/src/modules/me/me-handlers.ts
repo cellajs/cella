@@ -36,14 +36,20 @@ app.openapi(meRoutes.getMyAuth, async (ctx) => {
   return ctx.json(data, 200);
 });
 
-app.openapi(meRoutes.getMyInvitations, async (ctx) => {
+app.openapi(meRoutes.listMyInvitations, async (ctx) => {
   const data = await getMyInvitationsOp(ctx);
   return ctx.json(data, 200);
 });
 
-app.openapi(meRoutes.handleMembershipInvitation, async (ctx) => {
-  const { id: inactiveMembershipId, acceptOrReject } = ctx.req.valid('param');
-  const data = await handleMembershipInvitationOp(ctx, inactiveMembershipId, acceptOrReject);
+app.openapi(meRoutes.acceptInvitation, async (ctx) => {
+  const { invitationId } = ctx.req.valid('param');
+  const data = await handleMembershipInvitationOp(ctx, invitationId, 'accept');
+  return ctx.json(data, 200);
+});
+
+app.openapi(meRoutes.rejectInvitation, async (ctx) => {
+  const { invitationId } = ctx.req.valid('param');
+  const data = await handleMembershipInvitationOp(ctx, invitationId, 'reject');
   return ctx.json(data, 200);
 });
 
@@ -68,8 +74,8 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-app.openapi(meRoutes.deleteMyMembership, async (ctx) => {
-  const { entityType, entityId } = ctx.req.valid('query');
+app.openapi(meRoutes.leaveMembership, async (ctx) => {
+  const { entityType, entityId } = ctx.req.valid('json');
   await deleteMyMembershipOp(ctx, entityType, entityId);
   return ctx.body(null, 204);
 });
@@ -80,20 +86,20 @@ app.openapi(meRoutes.getUploadToken, async (ctx) => {
   return ctx.json(data, 200);
 });
 
-app.openapi(meRoutes.getMyMemberships, async (ctx) => {
+app.openapi(meRoutes.listMyMemberships, async (ctx) => {
   const items = ctx.var.memberships.map(toMembershipBase);
   return ctx.json({ items }, 200);
 });
 
-app.openapi(meRoutes.getConnectedApps, async (ctx) => {
+app.openapi(meRoutes.listConnectedApps, async (ctx) => {
   const data = await getConnectedAppsOp(ctx);
   return ctx.json(data, 200);
 });
 
-app.openapi(meRoutes.revokeConnectedApp, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const data = await revokeConnectedAppOp(ctx, id);
-  return ctx.json(data, 200);
+app.openapi(meRoutes.deleteConnectedApp, async (ctx) => {
+  const { connectedAppId } = ctx.req.valid('param');
+  await revokeConnectedAppOp(ctx, connectedAppId);
+  return ctx.body(null, 204);
 });
 
 export const meHandlers = app;

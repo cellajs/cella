@@ -11,7 +11,7 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(notificationRoutes.getNotifications, async (ctx) => {
+app.openapi(notificationRoutes.listNotifications, async (ctx) => {
   const { unread, limit, before } = ctx.req.valid('query');
   const data = await getNotificationsOp(ctx, { unreadOnly: unread, limit, before });
   return ctx.json(data, 200);

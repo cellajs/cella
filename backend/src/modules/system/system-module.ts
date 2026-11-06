@@ -7,5 +7,5 @@ defineBackendModule({
   scope: ['backend'],
   description: `System level endpoints for system admins: inviting users to the app by email, updating and deleting
     any user, and sending a newsletter to the members of chosen organizations.`,
-  routes: [{ path: '/system', app: systemHandlers }],
+  routes: [{ path: '/', app: systemHandlers }],
 });

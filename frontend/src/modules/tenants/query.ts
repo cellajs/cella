@@ -2,14 +2,14 @@ import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from 
 import {
   type Connection,
   type CreateConnectionData,
+  type CreateTenantData,
   createConnection,
+  createTenant,
   type DeleteConnectionData,
   deleteConnection,
-  type GetTenantsData,
-  getConnections,
-  getTenants,
-  type SelfCreateTenantData,
-  selfCreateTenant,
+  type ListTenantsData,
+  listConnections,
+  listTenants,
   type Tenant,
   type UpdateConnectionData,
   type UpdateTenantData,
@@ -22,7 +22,7 @@ import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import type { MutationData } from '~/query/types';
 
-type TenantFilters = Omit<NonNullable<GetTenantsData['query']>, 'limit' | 'offset'>;
+type TenantFilters = Omit<NonNullable<ListTenantsData['query']>, 'limit' | 'offset'>;
 type TenantsListParams = TenantFilters & { limit?: number };
 
 /** Tenants are resources, not entities, so their query keys are defined manually. */
@@ -45,7 +45,7 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) => getTenants({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
+    ...offsetPaging(limit, (offset, signal) => listTenants({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
     refetchOnMount: true,
   });
 };
@@ -54,9 +54,9 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
 export const useSelfCreateTenantMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Tenant, ApiError, SelfCreateTenantData['body']>({
+  return useMutation<Tenant, ApiError, CreateTenantData['body']>({
     mutationKey: tenantQueryKeys.selfCreate,
-    mutationFn: (body) => selfCreateTenant({ body }),
+    mutationFn: (body) => createTenant({ body }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
     },
@@ -84,7 +84,7 @@ const connectionQueryKeys = {
 
 /** The tenant's connections: the institutions whose members sign in through a federation. */
 export const connectionsQueryOptions = (tenantId: string) =>
-  queryOptions({ queryKey: connectionQueryKeys.list(tenantId), queryFn: () => getConnections({ path: { tenantId } }) });
+  queryOptions({ queryKey: connectionQueryKeys.list(tenantId), queryFn: () => listConnections({ path: { tenantId } }) });
 
 export const useConnectionCreateMutation = () => {
   const queryClient = useQueryClient();
@@ -113,9 +113,11 @@ export const useConnectionUpdateMutation = () => {
 export const useConnectionDeleteMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Connection, ApiError, MutationData<DeleteConnectionData>>({
+  return useMutation<void, ApiError, MutationData<DeleteConnectionData>>({
     mutationKey: connectionQueryKeys.delete,
-    mutationFn: ({ path }) => deleteConnection({ path }),
+    mutationFn: async ({ path }) => {
+      await deleteConnection({ path });
+    },
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: connectionQueryKeys.list(path.tenantId) });
     },
