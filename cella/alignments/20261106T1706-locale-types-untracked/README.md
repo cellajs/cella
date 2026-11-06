@@ -31,7 +31,7 @@ No script: manual.
 
 ## Manual steps
 
-1. In the root `package.json`, add `"locales:types": "node frontend/vite/write-locale-types.ts"` and `"postinstall": "[ ! -f frontend/vite/write-locale-types.ts ] || pnpm locales:types"`, and start `ts` and `check` with `pnpm locales:types &&`. The guard keeps an install that copies only some packages, such as an image build, passing.
+1. In the root `package.json`, add `"locales:types": "node frontend/vite/write-locale-types.ts"` and `"postinstall": "[ ! -e frontend/node_modules/shared ] || pnpm locales:types"`, and start `ts` and `check` with `pnpm locales:types &&`. The guard skips an install without the frontend's dependencies, such as an image build or a CI job that installs only some packages.
 2. Run `git rm --cached locales/resources.gen.d.ts` and commit.
 
 ## Verify
