@@ -1,6 +1,6 @@
 import { EmailLayout, EmailText } from '../components';
 import { formatMailTime } from '../frame';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
 interface TenantRemovedStatic {
@@ -16,8 +16,10 @@ interface TenantRemovedStatic {
 /** Tells the operator a tenant was removed after its archived period: the written record of a destruction. */
 export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
   translate(lng, statics) {
+    const subject = i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng, ...plainText });
     return {
-      subject: i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng }),
+      subject,
+      previewText: subject,
       headerHtml: i18n.t('backend:email.tenant_removed.title', { name: statics.tenantName, lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       ...statics,
@@ -25,9 +27,9 @@ export const tenantRemovedEmail = defineEmailTemplate<TenantRemovedStatic>()({
       removedAt: formatMailTime(statics.removedAt, lng),
     };
   },
-  component({ subject, headerHtml, supportText, tenantId, archivedAt, removedAt, counts, frame }) {
+  component({ previewText, headerHtml, supportText, tenantId, archivedAt, removedAt, counts, frame }) {
     return (
-      <EmailLayout frame={frame} previewText={subject} headerHtml={headerHtml} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={previewText} headerHtml={headerHtml} supportText={supportText}>
         <EmailText>Tenant: {tenantId}</EmailText>
         <EmailText>Archived: {archivedAt}</EmailText>
         <EmailText>Removed: {removedAt}, with its organization and the stored files it held. Backups expire on their own schedule.</EmailText>

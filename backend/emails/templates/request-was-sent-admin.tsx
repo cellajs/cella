@@ -15,15 +15,16 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
   translate(lng, { type, email, message, subject }) {
     return {
       subject,
+      previewText: subject,
       headerHtml: i18n.t('backend:email.received_request.title', { type, lng }),
       email,
       message,
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ subject, headerHtml, email, message, supportText, frame }) {
+  component({ previewText, headerHtml, email, message, supportText, frame }) {
     return (
-      <EmailLayout frame={frame} previewText={subject} headerHtml={headerHtml} supportText={supportText}>
+      <EmailLayout frame={frame} previewText={previewText} headerHtml={headerHtml} supportText={supportText}>
         <EmailText>Email: {email}</EmailText>
         {message && <EmailText>{message}</EmailText>}
       </EmailLayout>
