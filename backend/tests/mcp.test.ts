@@ -137,8 +137,8 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('showcase 1: a read token lists and reads attachments, and is stepped up on a write', async () => {
     const ctx = await serviceToken('attachment:read');
-    const init = await rpc(ctx, 'initialize', { protocolVersion: '2026-07-28' });
-    expect(init.rpc.result).toMatchObject({ protocolVersion: '2026-07-28', capabilities: { tools: {} } });
+    const init = await rpc(ctx, 'initialize', { protocolVersion: '2025-11-25' });
+    expect(init.rpc.result).toMatchObject({ protocolVersion: '2025-11-25', capabilities: { tools: {} } });
 
     const list = await rpc(ctx, 'tools/list');
     const tools = (list.rpc.result as { tools: { name: string; _meta: { scope: string } }[] }).tools;
@@ -181,6 +181,29 @@ describe('MCP on the substrate (Phase E)', async () => {
     // A message without a method keeps its id; a response the client posts back gets no answer.
     expect(invalid).toMatchObject({ id: 3, error: { code: -32600 } });
     expect(rest).toEqual([]);
+  });
+
+  it('refuses a revision it does not implement with a 400 an MCP client falls back on, and a page on another origin', async () => {
+    const ctx = await serviceToken('attachment:read');
+    const send = (headers: Record<string, string>) =>
+      call(handleMcp, {
+        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+        body: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+        headers: { ...bearerHeaders(ctx.jwt), ...headers },
+      });
+
+    // A client that tried the stateless revision reads a 400 without a JSON-RPC error as an older server and sends initialize.
+    const stateless = await send({ 'MCP-Protocol-Version': '2026-07-28' });
+    expect(stateless.response.status).toBe(400);
+    expect(stateless.error).toMatchObject({ reason: 'unsupported_protocol_version' });
+    expect(stateless.error).not.toHaveProperty('jsonrpc');
+
+    // DNS rebinding: a page on another origin that reached the endpoint with a token still gets nothing.
+    const foreign = await send({ Origin: 'https://evil.example' });
+    expect(foreign.response.status).toBe(403);
+
+    // Positive control: a revision it implements, and the app's own origin.
+    expect((await send({ 'MCP-Protocol-Version': '2025-06-18', Origin: new URL(appConfig.frontendUrl).origin })).response.status).toBe(200);
   });
 
   it('counts a tool call once against the burst limit, at the route it runs', async () => {

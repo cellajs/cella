@@ -5,7 +5,15 @@ import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
 import type { McpTool } from '#/modules/mcp/mcp-tools';
 
-const protocolVersion = '2026-07-28';
+/**
+ * The revisions this server implements, newest first: those that open with `initialize`. The stateless revision
+ * (2026-07-28) is not served, and the HTTP+SSE transport of 2024-11-05 is not either.
+ */
+export const protocolVersions = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
+
+/** Whether a revision a client names is one this server implements. */
+export const isProtocolVersion = (version: unknown): version is (typeof protocolVersions)[number] =>
+  protocolVersions.some((supported) => supported === version);
 
 export interface JsonRpcMessage {
   jsonrpc: '2.0';
@@ -69,9 +77,10 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
 
   switch (message.method) {
     case 'initialize': {
+      // The requested revision when this server implements it, else its newest, which the client may refuse.
       const requested = message.params?.protocolVersion;
       return respond({
-        protocolVersion: typeof requested === 'string' ? requested : protocolVersion,
+        protocolVersion: isProtocolVersion(requested) ? requested : protocolVersions[0],
         capabilities: { tools: { listChanged: false } },
         serverInfo,
         instructions:
