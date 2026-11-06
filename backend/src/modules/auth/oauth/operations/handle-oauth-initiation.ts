@@ -7,6 +7,9 @@ import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
+/** How long a round trip may stay at the provider: an account creation or an MFA enrollment there takes minutes. */
+const roundTripLifetime = new TimeSpan(15, 'm');
+
 /** One round trip a start hands over: the provider URL, and what the callback must find in the state cookie. */
 type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVerifier' | 'nonce' | 'connectionId'> & { url: URL };
 
@@ -42,7 +45,7 @@ export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, 
 
   const stringifiedContent = JSON.stringify(cookieContent);
 
-  setAuthCookie(ctx, 'oauth-state', stringifiedContent, new TimeSpan(5, 'm'));
+  setAuthCookie(ctx, 'oauth-state', stringifiedContent, roundTripLifetime);
 
   log.info('User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
