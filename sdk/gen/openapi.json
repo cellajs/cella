@@ -4435,42 +4435,6 @@
                 },
                 "required": ["ops", "stx"]
               }
-            },
-            "application/merge-patch+json": {
-              "example": {
-                "ops": {
-                  "name": "ick_thoroughly_coincide.text (final)"
-                },
-                "stx": {
-                  "mutationId": "2d5489ea-b24d-4bc1-9c6c-fe971f3cbca0",
-                  "sourceId": "ac22409c-2fdd-4048-852a-a3e79f546d91",
-                  "fieldTimestamps": {
-                    "name": "1735732800000:0001:yyln1"
-                  }
-                }
-              },
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ops": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "maxLength": 255
-                      },
-                      "description": {
-                        "type": "string",
-                        "maxLength": 1000000
-                      }
-                    }
-                  },
-                  "stx": {
-                    "$ref": "#/components/schemas/StxBase"
-                  }
-                },
-                "required": ["ops", "stx"]
-              }
             }
           }
         },

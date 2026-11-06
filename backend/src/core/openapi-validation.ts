@@ -52,14 +52,32 @@ const documentCustomMethods = (doc: OpenApiDocument) => {
 
 type RequestBodyNode = { content?: Record<string, unknown> };
 
+/** Update bodies of field operations with their timestamps (`{ ops, stx }`), which the sync engine merges field by field. */
+const fieldOperationBodies = new WeakSet<object>();
+
+/** Marks a product update body as field operations, so its route is not documented as taking a merge patch. */
+export const markFieldOperations = <S extends object>(schema: S): S => {
+  fieldOperationBodies.add(schema);
+  return schema;
+};
+
+/** The `operationId`s of patch routes whose body is field operations. */
+const fieldOperationUpdates = new Set<string>();
+
+export const recordPatchBody = (operationId: string, body: unknown) => {
+  if (typeof body === 'object' && body !== null && fieldOperationBodies.has(body)) fieldOperationUpdates.add(operationId);
+};
+
 /**
  * An update takes a JSON Merge Patch (RFC 7396): the JSON body validator accepts every `+json` media type, so a patch
- * route's `application/json` body is documented as `application/merge-patch+json` too.
+ * route's `application/json` body is documented as `application/merge-patch+json` too. A product update takes field
+ * operations (`markFieldOperations`) and is left as it is.
  */
 const documentMergePatch = (doc: OpenApiDocument) => {
-  const paths = (doc.paths ?? {}) as Record<string, { patch?: { requestBody?: RequestBodyNode } }>;
+  const paths = (doc.paths ?? {}) as Record<string, { patch?: { operationId?: string; requestBody?: RequestBodyNode } }>;
   for (const { patch } of Object.values(paths)) {
     const content = patch?.requestBody?.content;
+    if (patch?.operationId && fieldOperationUpdates.has(patch.operationId)) continue;
     if (content?.['application/json']) content['application/merge-patch+json'] = content['application/json'];
   }
 };

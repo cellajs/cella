@@ -14,7 +14,7 @@ import {
   type XRouteProps,
 } from '#/core/openapi-extensions';
 import { toKebabCase } from '#/core/openapi-helpers';
-import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors } from '#/core/openapi-validation';
+import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors, recordPatchBody } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -171,6 +171,8 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   if (checksAuthoringRules) assertRouteShape(route, config);
   const verb = /\/~([^/]+)$/.exec(config.path)?.[1];
   if (verb) recordCustomVerb(verb);
+  const patchMedia = config.method === 'patch' ? config.request?.body?.content['application/json'] : undefined;
+  if (patchMedia && 'schema' in patchMedia) recordPatchBody(config.operationId, patchMedia.schema);
   // A read declares a limiter only where its own budget differs from the read pace.
   const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
   const extensionMiddleware = collectExtensionMiddleware(limited);
