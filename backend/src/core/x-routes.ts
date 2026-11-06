@@ -123,13 +123,35 @@ const assertRouteShape = (route: string, { method, path, operationId, request }:
   }
 };
 
-/** Refuses at load a mount path whose literal segments are not lowercase kebab-case; a param is `:name`, `-` the wildcard parent. */
-export const assertMountPath = (path: string) => {
+const firstSegment = (path: string) => path.split('/').find(Boolean) ?? '';
+
+/**
+ * Refuses at load a mount whose paths would let a param shadow a static path, and a mount path whose literal segments
+ * are not lowercase kebab-case (a param is `:name`, `-` the wildcard parent). Mounts apply in registration order with
+ * no phases, and a path whose first segment is a param would answer every request meant for a module mounted after
+ * it: the mount path must start with a literal segment, and so must each route of an app mounted at `/`.
+ * @param routePaths - The mounted app's own route paths, in Hono syntax (`/:id`).
+ */
+export const assertMountPath = (path: string, routePaths: string[]) => {
+  const refuse = (problem: string): never => {
+    throw new Error(`[routes] The mount path ${path}: ${problem}`);
+  };
+  if (firstSegment(path).startsWith(':')) {
+    refuse(
+      'it starts with a param, which would answer for the paths of every module mounted after it. Start it with a literal segment, such as /tenants/:tenantId.',
+    );
+  }
+  if (firstSegment(path) === '') {
+    const shadowing = routePaths.find((routePath) => firstSegment(routePath).startsWith(':'));
+    if (shadowing) {
+      refuse(
+        `its route ${shadowing} starts with a param, which would answer for the paths of every module mounted after it. Give the route a literal first segment, or mount the module under one.`,
+      );
+    }
+  }
   for (const segment of path.split('/').filter(Boolean)) {
     if (segment.startsWith(':') || segment === '-' || kebabCase.test(segment)) continue;
-    throw new Error(
-      `[routes] The mount path ${path}: the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`,
-    );
+    refuse(`the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`);
   }
 };
 

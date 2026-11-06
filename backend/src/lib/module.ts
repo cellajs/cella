@@ -50,8 +50,8 @@ export type BackendRouteApp = Hono<Env, any, any>;
 
 /**
  * One handler app and where the API entrypoint mounts it. Mounts apply in registration order, and of two routes that
- * match one request the first registered answers. Every mount path starts with a literal segment, so a param segment can
- * shadow only a static sibling, such as the `-` wildcard parent of `/tenants/-/organizations`.
+ * match one request the first registered answers. Every mount path starts with a literal segment (`assertMountPath`),
+ * so a param segment can shadow only a static sibling, such as the `-` wildcard parent of `/tenants/-/organizations`.
  */
 export interface BackendRoute {
   /** Mount path, e.g. `/me` or `/tenants/:tenantId/organizations/:organizationId/attachments`. */

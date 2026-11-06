@@ -7,7 +7,11 @@ import { baseApp } from '#/server';
 import { emailPreviewHandlers } from '../emails/preview-route';
 
 for (const route of getBackendRoutes()) {
-  if (checksAuthoringRules) assertMountPath(route.path);
+  if (checksAuthoringRules)
+    assertMountPath(
+      route.path,
+      route.app.routes.map(({ path }) => path),
+    );
   baseApp.route(route.path, route.app);
 }
 
