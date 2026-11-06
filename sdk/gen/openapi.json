@@ -1230,33 +1230,7 @@
             ]
           },
           "stx": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StxBase"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "changedFields": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "maxLength": 64
-                    },
-                    "maxItems": 100,
-                    "description": "The fields the last write changed, set by the server; absent after a create or a server-driven write"
-                  }
-                }
-              }
-            ],
-            "description": "The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.",
-            "example": {
-              "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
-              "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
-              "fieldTimestamps": {},
-              "changedFields": ["name", "updatedAt"]
-            },
-            "x-tags": ["embedded", "cella"]
+            "$ref": "#/components/schemas/StxBase"
           },
           "description": {
             "type": ["string", "null"],
@@ -5600,6 +5574,9 @@
                           "enum": ["organization"]
                         },
                         "entityName": {
+                          "type": "string"
+                        },
+                        "organizationName": {
                           "type": "string"
                         },
                         "role": {

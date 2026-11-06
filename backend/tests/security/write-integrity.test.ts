@@ -120,7 +120,7 @@ describe('Write integrity', async () => {
     expect(await nameStampMillis(renamedOver.id)).toBeLessThanOrEqual(BigInt(Date.now() + maxClockSkewMs));
   });
 
-  it('must record a delete with its own stx and no changed fields', async () => {
+  it('must record a delete with its own stx', async () => {
     const [victimPlan] = plans;
     const withStx = await createIn(victim, victimPlan);
     const withoutStx = await createIn(victim, victimPlan);
@@ -136,6 +136,5 @@ describe('Write integrity', async () => {
     // A client that sends no stx (an API key) gets a server one, which no tab takes for its own.
     const { stx: serverStx } = await storedRow(withoutStx.id);
     expect(serverStx).toMatchObject({ sourceId: 'server' });
-    expect(serverStx).not.toHaveProperty('changedFields');
   });
 });

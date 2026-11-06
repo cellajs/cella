@@ -107,7 +107,7 @@ and the renderers.
     `projectTombstones('<name>', …)` after `withActorRefs`, so a deleted row carries no content, and
     the route declares the page with `productListResponseSchema('<name>', <name>Schema)`.
   - **Delete** (`delete-attachments.ts`): the soft delete stores the body's `stx` ids, or a
-    `createServerStx()` without one, through `stripChangedFields(<name>sTable.stx, stx)`.
+    `createServerStx()` without one, through `stxWithIds(<name>sTable.stx, stx)`.
   - **Single read** (`get-attachment.ts`).
 - `<name>-queries.ts`, `<name>-handlers.ts`, and `<name>-mocks.ts`: an insert mock, a response mock
   under `withFakerSeed`, and the request-body mocks the route examples use.

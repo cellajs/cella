@@ -6,6 +6,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
+import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { hasPendingInvitation } from '#/modules/auth/invitations/operations/may-sign-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
@@ -37,6 +38,8 @@ interface MagicLinkRequest extends Pick<SendMagicLinkOpts, 'assertedThrough'> {
   knowsAccount: boolean;
   /** The link's token id, drawn before the token is stored: this browser's marker names it. */
   tokenId: string;
+  /** The invitation to this address whose link this browser opened: the click accepts it on any device. */
+  followedInvitationId: string | null;
 }
 
 /**
@@ -50,6 +53,7 @@ interface MagicLinkRequest extends Pick<SendMagicLinkOpts, 'assertedThrough'> {
  */
 export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, assertedThrough }: SendMagicLinkOpts) => {
   const normalizedEmail = email.toLowerCase().trim();
+  const followed = await findFollowedInvitation(ctx);
   const request: MagicLinkRequest = {
     email: normalizedEmail,
     // Validated here and re-validated at invoke; invalid input degrades to the default path.
@@ -57,6 +61,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
     assertedThrough,
     knowsAccount: !!assertedThrough || (await isRecognizedBrowser(ctx, normalizedEmail)),
     tokenId: generateId(),
+    followedInvitationId: followed?.email.toLowerCase() === normalizedEmail ? followed.inactiveMembershipId : null,
   };
 
   // Only a caller that may hear `sso_required` waits for the account's half.
@@ -71,7 +76,7 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
  * The half of a request that depends on the address's account: the link, the institution's pointer or nothing.
  * @throws AppError 403 `sso_required` in place of the pointer mail, for a request that `knowsAccount`.
  */
-const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccount, tokenId }: MagicLinkRequest) => {
+const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccount, tokenId, followedInvitationId }: MagicLinkRequest) => {
   const existingUser = await findUserByEmail(dbCtx, { email });
   // Asked once: it decides whether the address may sign up and tells the sign-up mail it completes an invitation.
   const invited = !existingUser && (await hasPendingInvitation(dbCtx, { email }));
@@ -107,7 +112,8 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
   // A sign-up link names no user: asking for it proves nothing about the address, so the account is created when the
   // link is clicked (claimMagicLinkHolder).
   const userId = existingUser?.id ?? null;
-  const { rawToken } = await issueToken(dbCtx, { id: tokenId, type: 'magic', userId, email, createdBy: userId, redirectPath });
+  const magicToken = { id: tokenId, type: 'magic' as const, userId, email, createdBy: userId, redirectPath, followedInvitationId };
+  const { rawToken } = await issueToken(dbCtx, magicToken);
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 

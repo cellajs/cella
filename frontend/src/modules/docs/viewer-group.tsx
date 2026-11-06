@@ -25,8 +25,6 @@ interface ViewerGroupProps {
   example?: unknown;
   defaultInspectDepth?: number;
   defaultViewMode?: SchemaViewMode;
-  /** Hides the schema's descriptions behind a help toggle, which shows only when the schema has any. */
-  descriptionToggle?: boolean;
   renderRef?: (ref: string) => ReactNode;
 }
 
@@ -37,7 +35,6 @@ export function ViewerGroup({
   example,
   defaultInspectDepth = 5,
   defaultViewMode = 'format',
-  descriptionToggle,
   renderRef,
 }: ViewerGroupProps) {
   const { t } = useTranslation();
@@ -57,10 +54,10 @@ export function ViewerGroup({
     // Isolated: the controls' z-index orders them over the panel only, a pinned bar paints over both
     <div className="relative isolate">
       <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
-        {descriptionToggle && viewMode === 'format' && hasDescriptionKeyword(schema) && (
+        {viewMode === 'format' && hasDescriptionKeyword(schema) && (
           <HelpToggle open={descriptionsOpen} onToggle={() => setDescriptionsOpen(!descriptionsOpen)} className="size-7" />
         )}
-        {shownCode && <CodeCopyButton value={shownCode} />}
+        {shownCode && <CodeCopyButton value={shownCode} variant="ghost" />}
         <SegmentedControl value={viewMode} onValueChange={setViewMode} size="xs" className="border-transparent max-md:hidden">
           {toggleItems
             .filter((item) => item.show)
@@ -90,7 +87,7 @@ export function ViewerGroup({
                 rootName={false}
                 defaultInspectDepth={defaultInspectDepth}
                 indentWidth={3}
-                hideDescriptions={descriptionToggle && !descriptionsOpen}
+                hideDescriptions={!descriptionsOpen}
                 renderRef={renderRef}
                 renderDescription={renderSpecText}
               />

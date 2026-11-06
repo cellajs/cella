@@ -74,6 +74,7 @@ export default defineConfig({
       'frontend/src/styling/gradients.css',
       'backend/bench/seeds/attachment-home.ts',
       'json/text-blocks.json',
+      'json/showcase.json',
     ],
   },
 });

@@ -30,7 +30,6 @@ export const navItems = [
     type: 'base',
     icon: UserIcon,
     sheet: () => <AccountSheet />,
-    mirrorOnMobile: true,
     iconOverride: AccountNavIcon,
   },
 ] as const;

@@ -1,0 +1,78 @@
+{
+  "admin": { "firstName": "Mara", "lastName": "Visser", "email": "mara@northfield-robotics.eu", "age": "4y" },
+  "mfaShare": 0.4,
+  "unreadNotifications": 2,
+  "organizations": [
+    {
+      "name": "Northfield Robotics",
+      "age": "14mo",
+      "membership": { "role": "admin" },
+      "roles": { "admin": 3, "member": 21 },
+      "attachments": 26,
+      "unseen": 2,
+      "domain": "northfield-robotics.eu",
+      "people": [
+        { "name": "Lena Kraus", "role": "admin", "mfa": true, "lastSeen": "25min" },
+        { "name": "Tomás Ortega", "role": "member", "mfa": true, "lastSeen": "2h" },
+        { "name": "Priya Raman", "role": "admin", "mfa": true, "lastSeen": "5h" },
+        { "name": "Jonas Weber", "role": "member", "mfa": false, "lastSeen": "1d" },
+        { "name": "Amara Okafor", "role": "member", "mfa": true, "lastSeen": "8d" },
+        { "name": "Sven Lindqvist", "role": "member", "mfa": false, "lastSeen": "10d" },
+        { "name": "Chloé Martin", "role": "member", "mfa": true, "lastSeen": "2w" },
+        { "name": "Mateo Rossi", "role": "member", "mfa": false, "lastSeen": "3w" },
+        { "name": "Hana Novak", "role": "member", "mfa": true, "lastSeen": "5w" },
+        { "name": "Elif Demir", "role": "member", "mfa": false, "lastSeen": "2mo" },
+        { "name": "Oskar Nilsen", "role": "member", "mfa": true, "lastSeen": "3mo" },
+        { "name": "Inês Duarte", "role": "member", "mfa": false, "lastSeen": null }
+      ]
+    },
+    {
+      "name": "Tidewell Health",
+      "age": "8mo",
+      "membership": { "role": "admin" },
+      "roles": { "admin": 4, "member": 34 },
+      "attachments": 31,
+      "unseen": 1
+    },
+    {
+      "name": "Lumen & Lark",
+      "age": "5mo",
+      "membership": { "role": "member" },
+      "roles": { "admin": 2, "member": 7 },
+      "attachments": 12
+    },
+    {
+      "name": "Kestrel Logistics",
+      "age": "2y",
+      "membership": { "role": "admin" },
+      "roles": { "admin": 5, "member": 37 },
+      "attachments": 18
+    },
+    {
+      "name": "Oakhaven School",
+      "age": "11mo",
+      "membership": { "role": "member" },
+      "roles": { "admin": 2, "member": 14 },
+      "attachments": 7
+    },
+    {
+      "name": "Marlowe Architects",
+      "age": "3y",
+      "membership": { "role": "admin", "archived": true },
+      "roles": { "admin": 2, "member": 9 },
+      "attachments": 22
+    },
+    {
+      "name": "Ember Theatre Group",
+      "age": "20mo",
+      "membership": { "role": "member", "archived": true },
+      "roles": { "admin": 1, "member": 6 },
+      "attachments": 4
+    },
+    { "name": "Copperleaf Finance", "age": "3w", "roles": { "admin": 1, "member": 5 }, "attachments": 3 },
+    { "name": "Veldt Analytics", "age": "2mo", "roles": { "admin": 3, "member": 16 }, "attachments": 9 },
+    { "name": "Saffron Kitchen Co.", "age": "6mo", "roles": { "admin": 1, "member": 4 }, "attachments": 6 },
+    { "name": "Quayside Studio", "age": "9mo", "roles": { "admin": 2, "member": 11 }, "attachments": 15 },
+    { "name": "Brightmoor Foundation", "age": "16mo", "roles": { "admin": 3, "member": 24 }, "attachments": 11 }
+  ]
+}

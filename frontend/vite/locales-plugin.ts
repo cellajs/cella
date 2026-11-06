@@ -35,7 +35,7 @@ const writeIfChanged = async (file: string, content: string) => {
  * Writes `resources.gen.d.ts`: each runtime namespace typed as its English texts, so `t('c:accept')` types as
  * `"Accept"`. The JSON imports keep a key added since the last generation typed as `string`.
  */
-const writeTypes = async (srcDir: string) => {
+export const writeLocaleTypes = async (srcDir: string) => {
   const files = await readLanguage(srcDir, typesLanguage);
   const identifier = (file: string) => `${typesLanguage}${file.charAt(0).toUpperCase()}${file.slice(1)}`;
   const imports = Object.keys(files)
@@ -88,7 +88,7 @@ export function localesPlugin({ srcDir, cacheDir }: LocalesPluginOptions): Plugi
 
   return {
     name: 'locales',
-    buildStart: () => writeTypes(srcDir),
+    buildStart: () => writeLocaleTypes(srcDir),
     async configureServer(server) {
       await buildCache();
       server.watcher.add(srcDir);
@@ -96,7 +96,7 @@ export function localesPlugin({ srcDir, cacheDir }: LocalesPluginOptions): Plugi
         const [language, name, ...deeper] = path.relative(srcDir, file).split(path.sep);
         // Only `<lng>/<ns>.json`: the manifest is read once, at start
         if (language === '..' || !name?.endsWith('.json') || deeper.length > 0) return;
-        const updates = [syncLanguage(language), ...(language === typesLanguage ? [writeTypes(srcDir)] : [])];
+        const updates = [syncLanguage(language), ...(language === typesLanguage ? [writeLocaleTypes(srcDir)] : [])];
         Promise.all(updates).catch((error) => console.error('[locales] cache sync failed', error));
       });
     },

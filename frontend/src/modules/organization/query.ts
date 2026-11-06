@@ -87,6 +87,8 @@ export const useOrganizationCreateMutation = () => {
 
   return useMutation<BatchCreateOrganizationsResponse['data'][number], ApiError, MutationData<BatchCreateOrganizationsData>>({
     mutationKey: keys.create,
+    // The create form shows a taken handle on its field.
+    meta: { suppressGlobalErrorToast: (error) => error.type === 'slug_exists' },
     mutationFn: async ({ path, body }) => {
       const { data, rejectionReasons } = await batchCreateOrganizations({ path, body });
       // A tenant without a free slot is refused with a 403, so a single create comes back empty when its slug is taken.

@@ -11,7 +11,7 @@ import {
   maxLength,
   orderByQuerySchema,
   productListQuerySchema,
-  stxStoredSchema,
+  stxBaseSchema,
   tenantOrgParamSchema,
   validIdSchema,
   validUuidSchema,
@@ -43,7 +43,7 @@ export const attachmentSchema = z
     ...attachmentSelectSchema.shape,
     ...auditShape,
     ...tombstoneShape,
-    stx: stxStoredSchema,
+    stx: stxBaseSchema,
     viewCount: productViewCountSchema,
   })
   .openapi('Attachment', {

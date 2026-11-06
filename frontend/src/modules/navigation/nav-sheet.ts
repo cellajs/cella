@@ -27,7 +27,6 @@ const navSheetIdentity = (id: NavItemId, organization?: SheetOrganization) => ({
 interface OpenNavSheetOptions {
   /** The organization the menu sheet shows alone. */
   organization?: SheetOrganization;
-  side?: 'left' | 'right';
   /** Opens over the menu sheet, for layouts with no nav bar to open it from: no bar at all, or a floating-nav page. */
   stacked?: boolean;
 }
@@ -37,14 +36,14 @@ export function openNavSheet(
   id: NavItemId,
   content: ReactNode,
   triggerRef: RefObject<HTMLButtonElement | null>,
-  { organization, side = 'left', stacked = false }: OpenNavSheetOptions = {},
+  { organization, stacked = false }: OpenNavSheetOptions = {},
 ) {
   navigationStore.getState().setNavSheetOpen(id, organization?.id);
 
   const data: Omit<SheetData, 'id'> = {
     triggerRef,
     ...navSheetIdentity(id, organization),
-    side,
+    side: 'left',
     headerClassName: 'hidden',
     modal: 'trap-focus',
     className: navSheetClassName,

@@ -1,7 +1,6 @@
 import { and, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig, type ProductEntityType } from 'shared';
-import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
 import { cdcDb } from '../lib/db';
@@ -146,7 +145,6 @@ export async function gcOwnedEmbeddedRows(
             deletedBy: actorId,
             updatedAt: now,
             updatedBy: actorId,
-            stx: stripChangedFields(embeddedColumns.stx),
           })
           .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
           .returning({ id: embeddedColumns.id });

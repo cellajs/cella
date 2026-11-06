@@ -21,7 +21,7 @@ import { cn } from '~/utils/cn';
 import { dateFull } from '~/utils/date-full';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
-import { placeholderColorClass } from '~/utils/placeholder-color-class';
+import { placeholderCoverClass } from '~/utils/placeholder-color-class';
 
 const ChannelTileContext = createContext<ChannelTileEntity | null>(null);
 
@@ -97,7 +97,7 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
       <TileLink className="block">
         <div
           // A min height would transfer through the aspect ratio into a min width wider than a phone's column
-          className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderColorClass(entity.id))}
+          className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderCoverClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
@@ -211,7 +211,8 @@ export function ChannelTileMemberCount({ countRole }: ChannelTileMemberCountProp
   const memberCount = countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total;
 
   return (
-    <span className="text-muted-foreground ms-auto inline-flex items-center gap-2 text-xs whitespace-nowrap sm:text-sm">
+    // As tall as the joined button on its line, so a tile without that button keeps its height
+    <span className="text-muted-foreground ms-auto inline-flex min-h-9 items-center gap-2 text-xs whitespace-nowrap sm:text-sm">
       <TileCount icon={UsersIcon} count={memberCount} resource={t(`c:${countRole ?? 'member'}`, { count: memberCount })} />
       {isUnpublishedDraft(entity) && !!counts.membership.pending && (
         <>

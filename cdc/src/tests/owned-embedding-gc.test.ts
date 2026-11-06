@@ -110,8 +110,6 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates).toHaveLength(1);
     expect(updates[0].values).toMatchObject({ deletedBy: 'u1', updatedBy: 'u1' });
     expect(updates[0].values.deletedAt).toEqual(expect.any(String));
-    // The stx without changedFields, as every server-driven write stores it.
-    expect(updates[0].values.stx).toBeDefined();
     expect(updates[0].params).toContain('i2');
     expect(updates[0].params).not.toContain('i1');
     // A bound id list is a list, not an array: Postgres takes it after IN and refuses it after ANY or ALL.

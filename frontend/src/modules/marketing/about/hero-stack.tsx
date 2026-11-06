@@ -206,6 +206,7 @@ export function HeroStack({ shown, className }: HeroStackProps) {
             src={shot('hero-menu')}
             alt=""
             width={592}
+            draggable={false}
             height={1280}
             decoding="async"
             className={cn(

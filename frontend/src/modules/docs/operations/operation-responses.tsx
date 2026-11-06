@@ -131,7 +131,6 @@ function ErrorsItem({ responses, schemas, operationId, zodIndex, typesIndex }: E
                         zodCode={getZodCodeForResponse(zodIndex, operationId, response.status, response.name)}
                         typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                         example={response.example}
-                        descriptionToggle
                         renderRef={renderRef}
                       />
                     </div>
@@ -212,7 +211,6 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                   typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                   example={response.example}
                   defaultViewMode={examplesOnly ? 'example' : undefined}
-                  descriptionToggle
                   renderRef={renderRef}
                 />
               ) : (

@@ -19,8 +19,8 @@ export function AuthErrorPage() {
 
   const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
 
-  // Resending needs the expired invitation's token id: an address alone would tell anyone who was invited.
-  const resendTokenId = errorType === 'invitation_expired' ? tokenId : undefined;
+  // Resending needs the refused invitation's token id: an address alone would tell anyone who was invited.
+  const resendTokenId = errorType === 'invitation_expired' || errorType === 'invitation_opened' ? tokenId : undefined;
   // Any other refusal of an invitation round trip (a provider account on another address) resumes the invitation.
   const resumeTokenId = resendTokenId ? undefined : tokenId;
 

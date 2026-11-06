@@ -83,9 +83,9 @@ function createTabIndicator() {
       shown = shown.filter((item) => item !== marker);
       if (carried) place(true);
     },
-    // A bar's first tab is scrolled to at once: a bar that replaces another (a skeleton's) would replay the glide from the track's start
+    // The first reveal jumps, so a bar replacing a skeleton's replays no glide, and scrolls only into view, so a row that fits stays at its start
     reveal: (tab: HTMLElement) => {
-      tab.scrollIntoView({ behavior: revealed ? 'smooth' : 'instant', inline: 'center', block: 'nearest' });
+      tab.scrollIntoView({ behavior: revealed ? 'smooth' : 'instant', inline: revealed ? 'center' : 'nearest', block: 'nearest' });
       revealed = true;
     },
   };

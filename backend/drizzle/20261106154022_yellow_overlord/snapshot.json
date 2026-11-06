@@ -1,0 +1,134 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "27d65f22-3d72-4fa0-a505-7528be7981bf",
+  "prevIds": [
+    "b333058e-8547-4c34-be43-cf2fe09cde36"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "followed_invitation_id"
+      ],
+      "writes": [
+        "s|col|public.tokens.followed_invitation_id",
+        "n|col|public.tokens.followed_invitation_id",
+        "e|col|public.tokens.followed_invitation_id"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_followed_invitation_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_followed_invitation_id_idx",
+        "n|idx|public.tokens_followed_invitation_id_idx",
+        "e|idx|public.tokens_followed_invitation_id_idx",
+        "n|rel|public.tokens_followed_invitation_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.followed_invitation_id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "tokens"
+      ],
+      "writes": [
+        "s|fk|public.tokens.tokens_followed_invitation_id_inactive_memberships_id_fkey",
+        "n|fk|public.tokens.tokens_followed_invitation_id_inactive_memberships_id_fkey",
+        "e|fk|public.tokens.tokens_followed_invitation_id_inactive_memberships_id_fkey",
+        "n|con|public.tokens.tokens_followed_invitation_id_inactive_memberships_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|tbl|public.inactive_memberships",
+        "n|sch|public",
+        "n|col|public.tokens.followed_invitation_id",
+        "n|col|public.inactive_memberships.id",
+        "e|uniqueness|public.inactive_memberships.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "followed_invitation_id",
+        "type": "uuid",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_followed_invitation_id_idx",
+        "nameExplicit": true,
+        "columns": [
+          {
+            "value": "followed_invitation_id",
+            "isExpression": false,
+            "asc": true,
+            "nullsFirst": false,
+            "opclass": null
+          }
+        ],
+        "isUnique": false,
+        "where": "\"followed_invitation_id\" is not null",
+        "with": "",
+        "method": "btree",
+        "concurrently": false,
+        "entityType": "indexes"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "tokens",
+        "name": "tokens_followed_invitation_id_inactive_memberships_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "followed_invitation_id"
+        ],
+        "schemaTo": "public",
+        "tableTo": "inactive_memberships",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    }
+  ]
+}
