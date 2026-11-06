@@ -24,9 +24,17 @@ interface InsertTotpOpts {
   lastUsedStep: number;
 }
 
-/** Stores the account's authenticator app, its Base32 secret encrypted at rest. */
+/**
+ * Stores the account's authenticator app, its Base32 secret encrypted at rest.
+ * @returns The stored row's id; undefined when the account holds one already, as a concurrent setup may have stored it.
+ */
 export const insertTotp = async (ctx: DbContext, { userId, secret, lastUsedStep }: InsertTotpOpts) => {
-  await ctx.var.db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret), lastUsedStep });
+  const [stored] = await ctx.var.db
+    .insert(totpsTable)
+    .values({ userId, secret: encryptTotpSecret(secret), lastUsedStep })
+    .onConflictDoNothing({ target: totpsTable.userId })
+    .returning({ id: totpsTable.id });
+  return stored;
 };
 
 interface UpdateTotpLastUsedStepOpts {

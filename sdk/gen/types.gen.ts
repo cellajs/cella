@@ -2275,7 +2275,10 @@ export type GeneratePasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 
@@ -2938,7 +2941,10 @@ export type GetStepUpPasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 

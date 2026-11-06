@@ -117,7 +117,7 @@ describe('Account enumeration', async () => {
     const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: stranger }));
 
     expect(forAccount).toEqual(forStranger);
-    expect(forAccount).toEqual({ status: 200, credentialIds: [] });
+    expect(forAccount).toEqual({ status: 200, credentials: [] });
   });
 
   it('must not learn whether an address has an account via the passkey sign-in', async () => {

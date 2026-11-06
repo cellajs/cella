@@ -50,7 +50,9 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 
   // The confirming code's step is stored with the secret, so the same code cannot also answer a second factor.
   const lastUsedStep = await verifyTotp(ctx, { user, code, pendingSecret });
-  await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep });
+  if (!(await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep }))) {
+    throw new AppError(409, 'resource_already_exists', 'warn');
+  }
 
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');

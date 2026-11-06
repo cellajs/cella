@@ -1213,7 +1213,12 @@ export const zGeneratePasskeyChallengeBody = z.object({
  */
 export const zGeneratePasskeyChallengeResponse = z.object({
   challenge: z.string(),
-  credentialIds: z.array(z.string()),
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+    }),
+  ),
 });
 
 export const zSignInWithPasskeyBody = z.object({
@@ -1395,7 +1400,12 @@ export const zStepUpResponse = z.void();
  */
 export const zGetStepUpPasskeyChallengeResponse = z.object({
   challenge: z.string(),
-  credentialIds: z.array(z.string()),
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+    }),
+  ),
 });
 
 /**

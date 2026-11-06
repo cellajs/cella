@@ -6390,7 +6390,12 @@
               "application/json": {
                 "example": {
                   "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
-                  "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
+                  "credentials": [
+                    {
+                      "id": "3EQAejE9eLT26kT6iIsM52HWd5x3aKpV",
+                      "transports": ["hybrid", "internal"]
+                    }
+                  ]
                 },
                 "schema": {
                   "type": "object",
@@ -6398,14 +6403,27 @@
                     "challenge": {
                       "type": "string"
                     },
-                    "credentialIds": {
+                    "credentials": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                            }
+                          }
+                        },
+                        "required": ["id"]
                       }
                     }
                   },
-                  "required": ["challenge", "credentialIds"]
+                  "required": ["challenge", "credentials"]
                 }
               }
             }
@@ -7626,14 +7644,27 @@
                     "challenge": {
                       "type": "string"
                     },
-                    "credentialIds": {
+                    "credentials": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                            }
+                          }
+                        },
+                        "required": ["id"]
                       }
                     }
                   },
-                  "required": ["challenge", "credentialIds"]
+                  "required": ["challenge", "credentials"]
                 }
               }
             }

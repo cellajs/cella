@@ -4,16 +4,25 @@ import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challeng
 import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Every column but the credential id, public key and signature counter: what a response carries of a passkey. */
-const { credentialId: _credentialId, publicKey: _publicKey, counter: _counter, ...passkeyColumns } = getColumns(passkeysTable);
+/** Every column but the credential id, public key, signature counter and transports: what a response carries of a passkey. */
+const {
+  credentialId: _credentialId,
+  publicKey: _publicKey,
+  counter: _counter,
+  transports: _transports,
+  ...passkeyColumns
+} = getColumns(passkeysTable);
 
-interface FindCredentialIdsByUserOpts {
+interface FindPasskeyCredentialsByUserOpts {
   userId: string;
 }
 
-/** The credential ids of the user's passkeys, which an MFA or step-up challenge offers the browser. */
-export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCredentialIdsByUserOpts) => {
-  return ctx.var.db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, userId));
+/** The credential ids of the user's passkeys and their transports, which a challenge for the user names to the browser. */
+export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: FindPasskeyCredentialsByUserOpts) => {
+  return ctx.var.db
+    .select({ credentialId: passkeysTable.credentialId, transports: passkeysTable.transports })
+    .from(passkeysTable)
+    .where(eq(passkeysTable.userId, userId));
 };
 
 interface FindPasskeysByUserOpts {

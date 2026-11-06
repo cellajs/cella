@@ -122,6 +122,11 @@ describe('Passkey challenges', async () => {
     const fresh = await passkeyChallenge('authentication');
     expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 6 }), fresh.cookie)).response.status).toBe(204);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(6);
+
+    // The counter is unsigned 32-bit (WebAuthn §6.1): one past the signed range is stored too.
+    const wide = await passkeyChallenge('authentication');
+    expect((await passkeySignIn(passkey.assert(wide.challenge, { counter: 2 ** 31 }), wide.cookie)).response.status).toBe(204);
+    expect((await storedPasskey(passkey.credentialId)).counter).toBe(2 ** 31);
   });
 
   it('must not sign in via a copy of a passkey whose counter moved on during verification', async () => {

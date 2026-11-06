@@ -2,7 +2,10 @@ import { faker } from '@faker-js/faker';
 import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
-  withFakerSeed(key, () => ({ challenge: faker.string.alphanumeric(43), credentialIds: [faker.string.alphanumeric(32)] }));
+  withFakerSeed(key, () => ({
+    challenge: faker.string.alphanumeric(43),
+    credentials: [{ id: faker.string.alphanumeric(32), transports: ['hybrid' as const, 'internal' as const] }],
+  }));
 
 export const mockPasskeyResponse = (key = 'passkey:default') =>
   withFakerSeed(key, () => {

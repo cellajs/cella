@@ -21,11 +21,11 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
 
   const { attestation, nameOnDevice } = ctx.req.valid('json');
 
-  const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(ctx, attestation);
+  const { credentialId, publicKey, counter, transports } = await verifyPasskeyRegistration(ctx, attestation);
 
   // A credential id names one account: an authenticator presenting one that is registered already is refused.
   const newPasskey = await insertPasskey(ctx, {
-    values: { userId: user.id, credentialId, publicKey, counter, nameOnDevice, ...deviceColumns(deviceInfo(ctx)) },
+    values: { userId: user.id, credentialId, publicKey, counter, transports, nameOnDevice, ...deviceColumns(deviceInfo(ctx)) },
   });
   if (!newPasskey) throw new AppError(409, 'resource_already_exists', 'warn');
 

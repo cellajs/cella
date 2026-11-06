@@ -1,4 +1,4 @@
-import { bigint, index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -18,5 +18,6 @@ export const totpsTable = snakeCase.table(
     lastUsedStep: bigint({ mode: 'number' }),
     createdAt: timestampColumns.createdAt,
   },
-  (table) => [index('totps_user_id_idx').on(table.userId)],
+  // One authenticator app per account: of two setups confirmed at once, the second finds the first's row.
+  (table) => [uniqueIndex('totps_user_id_idx').on(table.userId)],
 );
