@@ -59,7 +59,6 @@ a11y/results/
 scripts/migration/
 
 # Other
-session.sh
 .netlify
 .wrangler
 frontend/stats
