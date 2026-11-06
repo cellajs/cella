@@ -1285,13 +1285,13 @@ export const zUpdateMeBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
   lastName: z
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1455,7 +1455,7 @@ export const zRevokeConnectedAppPath = z.object({
  * Consent was revoked
  */
 export const zRevokeConnectedAppResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1623,7 +1623,7 @@ export const zDeleteRequestsBody = z.object({
  * Success
  */
 export const zDeleteRequestsResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1670,7 +1670,7 @@ export const zSystemInviteBody = z.object({
  * Invitations are sent
  */
 export const zSystemInviteResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
@@ -1691,7 +1691,7 @@ export const zDeleteUsersBody = z.object({
  * Success
  */
 export const zDeleteUsersResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1703,13 +1703,13 @@ export const zUpdateUserBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
   lastName: z
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1775,7 +1775,7 @@ export const zSelfCreateTenantBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u),
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
 });
 
 /**
@@ -1788,7 +1788,7 @@ export const zUpdateTenantBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
   subscriptionId: z.string().max(255).nullish(),
@@ -1844,7 +1844,7 @@ export const zCreateConnectionBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u),
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   claimValues: z
     .array(
       z
@@ -1885,7 +1885,7 @@ export const zUpdateConnectionBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   claimValues: z
     .array(
@@ -1981,7 +1981,7 @@ export const zDeleteOrganizationsPath = z.object({
  * Success
  */
 export const zDeleteOrganizationsResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -1997,7 +1997,7 @@ export const zCreateOrganizationsBody = z
         .string()
         .min(1)
         .max(255)
-        .regex(/^[^\p{Cc}<>]+$/u),
+        .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
       slug: z
         .string()
         .min(2)
@@ -2107,13 +2107,13 @@ export const zUpdateOrganizationBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   shortName: z
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
   country: z
     .string()
@@ -2197,7 +2197,7 @@ export const zDeleteAttachmentsPath = z.object({
  * Success
  */
 export const zDeleteAttachmentsResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2395,7 +2395,7 @@ export const zDeleteMembershipsQuery = z.object({
  * Success
  */
 export const zDeleteMembershipsResponse = z.object({
-  data: z.array(z.unknown()),
+  data: z.array(z.unknown()).max(0),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -2679,7 +2679,7 @@ export const zCreateServiceAccountBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u),
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   role: z.enum(['admin', 'member']),
   key: z
     .object({
@@ -2687,7 +2687,7 @@ export const zCreateServiceAccountBody = z.object({
         .string()
         .min(1)
         .max(255)
-        .regex(/^[^\p{Cc}<>]+$/u),
+        .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
@@ -2722,7 +2722,7 @@ export const zUpdateServiceAccountBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u)
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
   status: z.enum(['active', 'disabled']).optional(),
 });
@@ -2756,7 +2756,7 @@ export const zCreateApiKeyBody = z.object({
     .string()
     .min(1)
     .max(255)
-    .regex(/^[^\p{Cc}<>]+$/u),
+    .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/),
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)

@@ -17,7 +17,7 @@ export const productListResponseSchema = <T extends z.ZodObject>(entityType: Pro
 /** Passing an item schema produces `data: T[]`; omitting it requires an empty data array. */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   z.object({
-    data: itemSchema ? z.array(itemSchema) : z.tuple([]).rest(z.never()),
+    data: itemSchema ? z.array(itemSchema) : z.array(z.unknown()).max(0),
     rejectedIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
     rejectionReasons: z.record(z.string(), z.array(z.string())).optional().describe('Map of reason code to rejected item IDs'),
   });

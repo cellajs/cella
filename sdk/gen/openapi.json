@@ -6305,13 +6305,13 @@
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "lastName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "language": {
                     "type": "string",
@@ -7261,7 +7261,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -8305,7 +8306,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -8443,7 +8445,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -8582,7 +8585,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -8674,13 +8678,13 @@
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "lastName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "language": {
                     "type": "string",
@@ -9058,7 +9062,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   }
                 },
                 "required": ["name"]
@@ -9130,7 +9134,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "status": {
                     "type": "string",
@@ -9365,7 +9369,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$",
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$",
                     "description": "The institution's name, as the federation's metadata lists it"
                   },
                   "claimValues": {
@@ -9488,7 +9492,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$",
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$",
                     "description": "The institution's name, as the federation's metadata lists it"
                   },
                   "claimValues": {
@@ -10017,7 +10021,7 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 255,
-                      "pattern": "^[^\\p{Cc}<>]+$"
+                      "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                     },
                     "slug": {
                       "type": "string",
@@ -10433,7 +10437,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -10914,13 +10919,13 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "shortName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "country": {
                     "type": ["string", "null"],
@@ -12010,7 +12015,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -13031,7 +13037,8 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {},
+                      "maxItems": 0
                     },
                     "rejectedIds": {
                       "type": "array",
@@ -14314,7 +14321,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "role": {
                     "type": "string",
@@ -14327,7 +14334,7 @@
                         "type": "string",
                         "minLength": 1,
                         "maxLength": 255,
-                        "pattern": "^[^\\p{Cc}<>]+$"
+                        "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                       },
                       "scopes": {
                         "type": ["array", "null"],
@@ -14694,7 +14701,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "status": {
                     "type": "string",
@@ -14891,7 +14898,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[^\\p{Cc}<>]+$"
+                    "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
                   "scopes": {
                     "type": ["array", "null"],

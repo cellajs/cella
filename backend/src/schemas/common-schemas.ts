@@ -260,8 +260,13 @@ export const validUrlSchema = z
   .startsWith('https://', translatedError('error:invalid_url'))
   .transform((str) => lowercaseSchemeAndHost(str.trim()));
 
-/** A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of markup. */
-const namePattern = /^[^\p{Cc}<>]+$/u;
+/**
+ * A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of
+ * markup. The control characters are the Unicode Cc ranges spelled as `\x` escapes, which every client's regex engine
+ * reads from the spec (Python's `re` refuses `\p{Cc}`, and Go's RE2 refuses `\u`).
+ */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the control characters are what the pattern refuses
+const namePattern = /^[^\x00-\x1F\x7F-\x9F<>]+$/;
 export const validNameSchema = z
   .string()
   .trim()
