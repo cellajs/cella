@@ -41,7 +41,10 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
  */
 export async function readMemberships(userId: string): Promise<{ version?: string; memberships: Env['Variables']['memberships'] }> {
   const rows = await baseDb
-    .select({ version: actorsTable.bindingsVersion, membership: { ...membershipBaseSelect, createdBy: membershipsTable.createdBy } })
+    .select({
+      version: actorsTable.bindingsVersion,
+      membership: { ...membershipBaseSelect, createdAt: membershipsTable.createdAt, createdBy: membershipsTable.createdBy },
+    })
     .from(actorsTable)
     .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), inUnarchivedTenant(membershipsTable.tenantId)))
     .where(eq(actorsTable.id, userId));
