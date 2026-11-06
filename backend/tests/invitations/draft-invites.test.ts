@@ -172,7 +172,7 @@ describe('Draft context invite deferral', async () => {
   });
 
   it.skipIf(!otherLanguage)("mails a held invitation in the organization's language at the publish", async () => {
-    const organization = await createTestOrganization({ publishedAt: null, defaultLanguage: otherLanguage });
+    const organization = await createTestOrganization({ publishedAt: null, defaultLanguageCode: otherLanguage });
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     await invite(organization, ['held@example.com'], memberRole, sessionCookie);

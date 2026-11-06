@@ -537,8 +537,8 @@ export const zOrganization = z.object({
   shortName: z.string().max(255).nullable(),
   regionCode: z.string().max(255).nullable(),
   timeZone: z.string().max(255).nullable(),
-  defaultLanguage: z.enum(['en', 'nl']),
-  languages: z.array(z.enum(['en', 'nl'])).min(1),
+  defaultLanguageCode: z.enum(['en', 'nl']),
+  languageCodes: z.array(z.enum(['en', 'nl'])).min(1),
   notificationEmail: z.string().max(255).nullable(),
   color: z.string().max(255).nullable(),
   logoUrl: z.string().max(2048).nullable(),
@@ -2280,8 +2280,8 @@ export const zUpdateOrganizationBody = z.object({
     .regex(/^[A-Z]{2}$/)
     .nullish(),
   timeZone: z.string().max(255).nullish(),
-  defaultLanguage: z.enum(['en', 'nl']).optional(),
-  languages: z
+  defaultLanguageCode: z.enum(['en', 'nl']).optional(),
+  languageCodes: z
     .array(z.enum(['en', 'nl']))
     .min(1)
     .max(64)

@@ -23,7 +23,7 @@ interface InvitationMailOpts {
   /** The invited channel and role; a system invitation names none. */
   channel?: { type: ChannelEntityType; id: string; tenantId: string; organizationId: string; name: string; role: EntityRole };
   /** Whose default language an address without an account reads; a mail about a channel below it names it. */
-  organization?: { defaultLanguage: string; name: string } | null;
+  organization?: { defaultLanguageCode: string; name: string } | null;
   /** Addresses invited: a pending invitation each. */
   invited: InvitedAddress[];
   /** Accounts made members at once. */
@@ -44,7 +44,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const userIds = [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : []));
   const accounts = await findAccountNamesAndLanguages(ctx, { userIds });
   const lng = (userId?: string | null) =>
-    (userId && accounts.get(userId)?.languageCode) || organization?.defaultLanguage || appConfig.defaultLanguage;
+    (userId && accounts.get(userId)?.languageCode) || organization?.defaultLanguageCode || appConfig.defaultLanguage;
   // An account removed after the invitation was planned leaves its address to name it.
   const accountHolder = ({ email, userId }: InvitedAddress) => ({
     email,

@@ -21,8 +21,8 @@ const organization = {
   entityType: 'organization',
   name: 'Analytical Engines',
   slug: 'engines',
-  languages: ['en'],
-  defaultLanguage: 'en',
+  languageCodes: ['en'],
+  defaultLanguageCode: 'en',
 } as Organization;
 const tenant = { id: 'tenant-1', name: 'Babbage', status: 'active' } as Tenant;
 

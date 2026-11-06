@@ -1,0 +1,65 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "b95d4552-c5d7-4bf6-84f4-95b8cfeabe4c",
+  "prevIds": [
+    "bfd1a082-9839-49f7-adf5-9a1770186fa6"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "default_language"
+      ],
+      "writes": [
+        "s|col|public.organizations.default_language",
+        "n|col|public.organizations.default_language",
+        "s|col|public.organizations.default_language_code",
+        "n|col|public.organizations.default_language_code"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "languages"
+      ],
+      "writes": [
+        "s|col|public.organizations.languages",
+        "n|col|public.organizations.languages",
+        "s|col|public.organizations.language_codes",
+        "n|col|public.organizations.language_codes"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"organizations\",\"default_language\"]",
+      "set": {
+        "name": "default_language_code"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"organizations\",\"languages\"]",
+      "set": {
+        "name": "language_codes"
+      }
+    }
+  ]
+}

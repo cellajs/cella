@@ -625,8 +625,8 @@ export type Organization = {
   shortName: string | null;
   regionCode: string | null;
   timeZone: string | null;
-  defaultLanguage: 'en' | 'nl';
-  languages: Array<'en' | 'nl'>;
+  defaultLanguageCode: 'en' | 'nl';
+  languageCodes: Array<'en' | 'nl'>;
   notificationEmail: string | null;
   color: string | null;
   logoUrl: string | null;
@@ -5184,8 +5184,8 @@ export type UpdateOrganizationData = {
      * IANA time zone id.
      */
     timeZone?: string | null;
-    defaultLanguage?: 'en' | 'nl';
-    languages?: Array<'en' | 'nl'>;
+    defaultLanguageCode?: 'en' | 'nl';
+    languageCodes?: Array<'en' | 'nl'>;
     notificationEmail?: string | null;
     color?: string | null;
     thumbnailUrl?: string | null;

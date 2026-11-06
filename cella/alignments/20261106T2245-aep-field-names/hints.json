@@ -3,5 +3,7 @@
   { "type": "rename", "kind": "column", "from": ["public", "users", "last_name"], "to": ["public", "users", "family_name"] },
   { "type": "rename", "kind": "column", "from": ["public", "users", "language"], "to": ["public", "users", "language_code"] },
   { "type": "rename", "kind": "column", "from": ["public", "organizations", "country"], "to": ["public", "organizations", "region_code"] },
-  { "type": "rename", "kind": "column", "from": ["public", "organizations", "timezone"], "to": ["public", "organizations", "time_zone"] }
+  { "type": "rename", "kind": "column", "from": ["public", "organizations", "timezone"], "to": ["public", "organizations", "time_zone"] },
+  { "type": "rename", "kind": "column", "from": ["public", "organizations", "default_language"], "to": ["public", "organizations", "default_language_code"] },
+  { "type": "rename", "kind": "column", "from": ["public", "organizations", "languages"], "to": ["public", "organizations", "language_codes"] }
 ]

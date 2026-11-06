@@ -2742,11 +2742,11 @@
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "defaultLanguage": {
+          "defaultLanguageCode": {
             "type": "string",
             "enum": ["en", "nl"]
           },
-          "languages": {
+          "languageCodes": {
             "type": "array",
             "items": {
               "type": "string",
@@ -2879,8 +2879,8 @@
           "shortName",
           "regionCode",
           "timeZone",
-          "defaultLanguage",
-          "languages",
+          "defaultLanguageCode",
+          "languageCodes",
           "notificationEmail",
           "color",
           "logoUrl",
@@ -2911,8 +2911,8 @@
           "shortName": "Spencer,",
           "regionCode": "TD",
           "timeZone": "Europe/Vaduz",
-          "defaultLanguage": "en",
-          "languages": ["en"],
+          "defaultLanguageCode": "en",
+          "languageCodes": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
           "logoUrl": null,
@@ -11719,8 +11719,8 @@
                       "shortName": "Anderson",
                       "regionCode": "BA",
                       "timeZone": "America/Moncton",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
                       "color": "#dfeb6e",
                       "logoUrl": null,
@@ -11783,8 +11783,8 @@
                       "shortName": "Wiegand,",
                       "regionCode": "AS",
                       "timeZone": "Europe/Gibraltar",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
                       "color": "#a3cb87",
                       "logoUrl": null,
@@ -11959,8 +11959,8 @@
                       "shortName": "Conroy,",
                       "regionCode": "SJ",
                       "timeZone": "Asia/Kuala_Lumpur",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
                       "color": "#dbcbc1",
                       "logoUrl": null,
@@ -12023,8 +12023,8 @@
                       "shortName": "Lemke,",
                       "regionCode": "NR",
                       "timeZone": "America/Aruba",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
                       "color": "#2ad39a",
                       "logoUrl": null,
@@ -12182,8 +12182,8 @@
                           "shortName": "Spencer,",
                           "regionCode": "TD",
                           "timeZone": "Europe/Vaduz",
-                          "defaultLanguage": "en",
-                          "languages": ["en"],
+                          "defaultLanguageCode": "en",
+                          "languageCodes": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                           "color": "#cda6af",
                           "logoUrl": null,
@@ -12498,11 +12498,11 @@
                     "description": "IANA time zone id.",
                     "example": "Europe/Amsterdam"
                   },
-                  "defaultLanguage": {
+                  "defaultLanguageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
-                  "languages": {
+                  "languageCodes": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -12639,11 +12639,11 @@
                     "description": "IANA time zone id.",
                     "example": "Europe/Amsterdam"
                   },
-                  "defaultLanguage": {
+                  "defaultLanguageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
-                  "languages": {
+                  "languageCodes": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -12856,8 +12856,8 @@
                     "shortName": "Spencer,",
                     "regionCode": "TD",
                     "timeZone": "Europe/Vaduz",
-                    "defaultLanguage": "en",
-                    "languages": ["en"],
+                    "defaultLanguageCode": "en",
+                    "languageCodes": ["en"],
                     "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                     "color": "#cda6af",
                     "logoUrl": null,
