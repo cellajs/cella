@@ -2,6 +2,7 @@ import type { ChannelEntityType, EntityActionType } from 'shared';
 import { buildSubjectFromEntity, checkAccess } from 'shared';
 import type { ActorBinding, DbContext, ScopeContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { checkPreconditions, type PreconditionContext } from '#/core/preconditions';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { type AccessContext, accessFrom } from '#/permissions/access';
 import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
@@ -52,11 +53,12 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
  * reads it but may not perform `action` (the refusal rules in PERMISSIONS.md). A draft reads as
  * missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
  * `membership` may be `null` while allowed: system admins and admins of a higher-level entity
- * (`permissions-config`) pass without one.
+ * (`permissions-config`) pass without one. A write's `If-Match` and `If-None-Match` are checked against the row its
+ * path names (`checkPreconditions`).
  * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType>(
-  ctx: DbContext & ScopeContext & AccessContext,
+  ctx: DbContext & ScopeContext & AccessContext & PreconditionContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
@@ -74,6 +76,7 @@ export const getValidChannel = async <T extends ChannelEntityType>(
 
   const { allowed, membership } = action === 'read' ? read : checkAccess(access, action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
+  checkPreconditions(ctx, entityType, entity);
 
   return { entity, membership };
 };

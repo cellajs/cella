@@ -532,7 +532,7 @@ export const presignAttachmentUrls = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.attachmentId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 304, 400, 401, 403, 404, 412, 429
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(
   options: Options<GetAttachmentData, ThrowOnError>,
@@ -557,7 +557,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.attachmentId - `string`
  * @param {object} options.body.ops - `object`
  * @param {StxBase} options.body.stx - `StxBase`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 413, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(
   options: Options<UpdateAttachmentData, ThrowOnError>,
@@ -612,7 +612,7 @@ export const batchCreateAttachments = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.attachmentId - `string`
  * @param {object} options.body.keys - `object`
  * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
  */
 export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
   options: Options<LinkAttachmentKeysData, ThrowOnError>,
@@ -2384,7 +2384,7 @@ export const batchCreateOrganizations = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 304, 400, 401, 403, 404, 412, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(
   options: Options<GetOrganizationData, ThrowOnError>,
@@ -2424,7 +2424,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {object=} options.body.organizationFlags - `object` (optional)
  * @param {object=} options.body.setupConfig - `object` (optional)
  * @param {object=} options.body.toolsConfig - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(
   options: Options<UpdateOrganizationData, ThrowOnError>,
@@ -2450,7 +2450,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  * @param {publishOrganizationData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 429
  */
 export const publishOrganization = <ThrowOnError extends boolean = true>(
   options: Options<PublishOrganizationData, ThrowOnError>,

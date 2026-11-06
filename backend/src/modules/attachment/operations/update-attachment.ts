@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import type { ActorContext } from '#/core/context';
+import { assertNoWriteBetween } from '#/core/preconditions';
 import { tenantContext } from '#/db/tenant-context';
 import { updateStamps } from '#/db/utils/stamps';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
@@ -37,6 +38,7 @@ export async function updateAttachmentOp(ctx: ActorContext, id: string, input: U
       stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
     };
     const updated = await updateAttachment(txCtx, { id, values });
+    if (!updated) assertNoWriteBetween(txCtx, 'attachment');
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
     await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;

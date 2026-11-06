@@ -171,6 +171,8 @@
   "passkey_registration_failed": "Passkey registration failed. Try again later.",
   "passkey_verification_failed": "Passkey verification failed",
   "passkey_verification_failed.text": "Try again or use another method.",
+  "precondition_failed": "Changed since it was read",
+  "precondition_failed.text": "Someone saved a change since this was read. Read it again, then retry.",
   "reorder_resource": "{{resource}} reorder failed.",
   "reported_try_later": "The error has been reported. Try again later.",
   "request_failed": "Request failed. Try again later.",

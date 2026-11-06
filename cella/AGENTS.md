@@ -26,6 +26,7 @@ The API is same-origin: it has no CORS middleware. Guards and their usual chains
 - Mount `actorGuard` only on routes whose operations take `ActorContext`: an API key or access token sets no `ctx.var.user`.
 - `orgGuard` runs after `tenantGuard`, both after the guard that sets the actor. Wrap guards, limiters and caches in `xMiddleware`; each declares the error statuses it refuses with (`errors`), and a guard its `security` and the context it `provides` and `requires`.
 - Product entity handlers use the tenant helpers in `backend/src/db/tenant-context.ts` (`tenantReadAs` on a route without `tenantGuard`); channel entity handlers use `ctx.var.db` ([Multi-tenancy](./MULTI_TENANCY.md)).
+- A route at `/{<entity>Id}` of a channel or product takes an `ETag` and `If-Match` from `createXRoute` ([REST API](./INTEROPERABILITY.md#face-rest-api)): its 200 is the entity, its operation reads the row through `getValidProduct` or `getValidChannel`, which check the preconditions, and its update query adds `preconditionWhere` and answers no row with `assertNoWriteBetween`.
 - Declare a secret column only in `backend/src/db/secret-columns.ts`: response schemas, log redaction and the CDC row image derive from it.
 
 ## Error handling

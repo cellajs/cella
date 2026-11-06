@@ -65,6 +65,15 @@ export const zConflictError = zApiError.and(
 );
 
 /**
+ * The resource changed since the caller read it: its entity tag is not one `If-Match` lists, or is one `If-None-Match` lists. Read it again for its current `ETag`, apply the change to what it now holds, and retry.
+ */
+export const zPreconditionFailedError = zApiError.and(
+  z.object({
+    status: z.literal(412).optional(),
+  }),
+);
+
+/**
  * The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.
  */
 export const zPayloadTooLargeError = zApiError.and(
@@ -873,6 +882,11 @@ export const zPresignAttachmentUrlsResponse = z.object({
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
+export const zGetAttachmentHeaders = z.object({
+  'If-None-Match': z.string().max(255).optional(),
+  'If-Match': z.string().max(255).optional(),
+});
+
 export const zGetAttachmentPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
@@ -890,6 +904,10 @@ export const zUpdateAttachmentBody = z.object({
     description: z.string().max(1000000).optional(),
   }),
   stx: zStxBase,
+});
+
+export const zUpdateAttachmentHeaders = z.object({
+  'If-Match': z.string().max(255).optional(),
 });
 
 export const zUpdateAttachmentPath = z.object({
@@ -951,6 +969,10 @@ export const zLinkAttachmentKeysBody = z.object({
     converted: z.string().max(2048).optional(),
   }),
   convertedContentType: z.string().max(255).nullish(),
+});
+
+export const zLinkAttachmentKeysHeaders = z.object({
+  'If-Match': z.string().max(255).optional(),
 });
 
 export const zLinkAttachmentKeysPath = z.object({
@@ -2140,6 +2162,11 @@ export const zBatchCreateOrganizationsResponse = z.object({
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
+export const zGetOrganizationHeaders = z.object({
+  'If-None-Match': z.string().max(255).optional(),
+  'If-Match': z.string().max(255).optional(),
+});
+
 export const zGetOrganizationPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
@@ -2217,6 +2244,10 @@ export const zUpdateOrganizationBody = z.object({
     .optional(),
 });
 
+export const zUpdateOrganizationHeaders = z.object({
+  'If-Match': z.string().max(255).optional(),
+});
+
 export const zUpdateOrganizationPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
@@ -2226,6 +2257,10 @@ export const zUpdateOrganizationPath = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = zOrganization;
+
+export const zPublishOrganizationHeaders = z.object({
+  'If-Match': z.string().max(255).optional(),
+});
 
 export const zPublishOrganizationPath = z.object({
   tenantId: z.string().max(50),

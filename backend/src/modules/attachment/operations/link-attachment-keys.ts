@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { hasCloudFile } from 'shared/utils/storage-key';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { assertNoWriteBetween } from '#/core/preconditions';
 import { tenantContext } from '#/db/tenant-context';
 import { updateStamps } from '#/db/utils/stamps';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
@@ -55,6 +56,7 @@ export async function linkAttachmentKeysOp(ctx: ActorContext, id: string, { keys
         stx: stripChangedFields(attachmentsTable.stx),
       },
     });
+    if (!updated) assertNoWriteBetween(txCtx, 'attachment');
     await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
     return updated;
   });

@@ -1,6 +1,7 @@
 import { buildSubjectFromEntity, checkAccess, draftVisibleTo, type EntityActionType, type ProductEntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { checkPreconditions } from '#/core/preconditions';
 import { baseDb } from '#/db/db';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { requestScope } from '#/db/utils/request-scope';
@@ -18,6 +19,8 @@ export interface ValidProductResult<K extends ProductEntityType> {
  * perform `action`. Every product carries `tenantId` and `organizationId`, and the row must match
  * the request scope set by the guard chain, so the answer is the same with RLS bypassed.
  * System-admin bypass sits inside `checkAccess` and never widens that scope.
+ *
+ * A write's `If-Match` and `If-None-Match` are checked against the row its path names (`checkPreconditions`).
  *
  * `forUpdate` locks the row until the caller's transaction ends. An update that merges its change with the stored row
  * (field timestamps, list deltas) reads it this way: without the lock two overlapping updates each merge with the row
@@ -55,6 +58,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   if (action !== 'read' && !checkAccess(access, action, subject).allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
+  checkPreconditions(ctx, entityType, entity);
 
   return { entity };
 };
