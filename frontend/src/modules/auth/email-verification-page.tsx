@@ -11,9 +11,7 @@ export function EmailVerificationPage() {
 
   return (
     <>
-      <AuthHeader title={t('c:almost_there')}>
-        <p>{t(`c:request_verification.${reason}.text`, { provider })}</p>
-      </AuthHeader>
+      <AuthHeader title={t('c:almost_there')} description={t(`c:request_verification.${reason}.text`, { provider })} />
 
       {reason === 'signup' && <LegalNotice mode="verify" />}
     </>

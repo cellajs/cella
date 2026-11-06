@@ -4,7 +4,7 @@ import { zCreateTotpBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { Button } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/input-otp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -19,9 +19,11 @@ interface TotpConfirmationFormProps {
   /** Disables the field and shows Confirm's spinner. */
   loading?: boolean;
   label?: string;
+  size?: ButtonProps['size'];
+  cancelVariant?: ButtonProps['variant'];
 }
 
-export function TotpConfirmationForm({ onSubmit, onCancel, loading, label }: TotpConfirmationFormProps) {
+export function TotpConfirmationForm({ onSubmit, onCancel, loading, label, size, cancelVariant = 'secondary' }: TotpConfirmationFormProps) {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { code: '' } });
@@ -70,11 +72,11 @@ export function TotpConfirmationForm({ onSubmit, onCancel, loading, label }: Tot
         />
 
         <div className="flex flex-col gap-2">
-          <SubmitButton disabled={!isValid} loading={loading}>
+          <SubmitButton disabled={!isValid} loading={loading} size={size}>
             {t('c:confirm')}
           </SubmitButton>
 
-          <Button type="reset" variant="secondary" onClick={clearOrCancel}>
+          <Button type="reset" variant={cancelVariant} size={size} onClick={clearOrCancel}>
             {isDirty ? t('c:clear') : t('c:cancel')}
           </Button>
         </div>

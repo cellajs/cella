@@ -5,12 +5,12 @@ import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { sendMagicLink } from 'sdk';
 import { isStrategyEnabled } from 'shared';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
-import type { TokenData } from '~/modules/auth/types';
+import type { TokenData, TokenInvitation } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -20,18 +20,19 @@ const magicLinkEnabled = isStrategyEnabled('magic');
 
 interface SignUpStepProps {
   tokenData?: TokenData;
+  invitation?: TokenInvitation;
 }
 
 /**
  * Sign-up from the neutral sign-in step, on the address typed there. An invitation in hand is answered on its own step
  * (`InvitationStep`); here it only matters when the visitor signs up on another address than the invited one.
  */
-export function SignUpStep({ tokenData }: SignUpStepProps) {
+export function SignUpStep({ tokenData, invitation }: SignUpStepProps) {
   const { t } = useTranslation();
 
   const email = useAuthStore((state) => state.email);
   const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
-  const { redirect, tokenId } = useSearch({ strict: false });
+  const { redirect, tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email } });
   const typedEmail = useWatch({ control: form.control, name: 'email' });
@@ -48,7 +49,7 @@ export function SignUpStep({ tokenData }: SignUpStepProps) {
 
   return (
     <Form {...form}>
-      <AuthHeader title={t('c:sign_up')} />
+      <AuthHeader image={invitation && <InvitationAvatar invitation={invitation} />} title={t('c:sign_up')} />
 
       <LegalNotice email={typedEmail} mode="signup" />
 
@@ -56,7 +57,7 @@ export function SignUpStep({ tokenData }: SignUpStepProps) {
         <form noValidate onSubmit={form.handleSubmit((body) => sendMagic(body.email), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} />
 
-          <SubmitButton loading={isPending} icon={<MailIcon />} className="w-full">
+          <SubmitButton loading={isPending} icon={<MailIcon />} size="block">
             {t('c:magic_link_send_signup')}
           </SubmitButton>
         </form>

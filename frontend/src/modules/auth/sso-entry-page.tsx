@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { ArrowLeftIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
-import { ssoStartUrl } from '~/modules/auth/sso-providers';
+import { ssoStartUrl } from '~/modules/auth/sso-strategy';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -32,14 +33,13 @@ export function SsoEntryPage() {
   return (
     <>
       <AuthHeader
-        image={image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        image={image && <img src={image} alt="" className="size-14 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:sso_entry', { organization: organizationName })}
-      >
-        <p className="text-muted-foreground text-sm">{t('c:sso_entry.text', { institution: institution.displayName })}</p>
-      </AuthHeader>
+        description={t('c:sso_entry.text', { institution: institution.displayName })}
+      />
 
       {status === 'active' ? (
-        <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
+        <Button size="block" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
           <span className="truncate">{t('c:continue_to_institution', { institution: institution.displayName })}</span>
           <span className="shrink-0 font-normal">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
         </Button>
@@ -53,7 +53,8 @@ export function SsoEntryPage() {
         </Alert>
       )}
 
-      <Button variant="link" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
+      <Button variant="ghost" className="self-center" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
+        <ArrowLeftIcon />
         {t('c:sign_in_another_way')}
       </Button>
     </>

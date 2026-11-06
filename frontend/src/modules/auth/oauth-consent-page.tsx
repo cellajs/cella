@@ -9,7 +9,8 @@ import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { Spinner } from '~/modules/common/spinner';
-import { Button } from '~/modules/ui/button';
+import { Button, glassClass } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 const refusalLabels: Record<NonNullable<ConsentDetails['refusal']>, TKey> = {
   not_a_member: 'c:oauth_refusal.not_a_member',
@@ -46,10 +47,10 @@ export function OAuthConsentPage() {
   return (
     <>
       <AuthHeader
-        image={client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        image={client.logoUri && <img src={client.logoUri} alt="" className="size-14 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:oauth_consent_header', { name: client.name })}
+        description={t('c:oauth_consent.text', { name: client.name })}
       >
-        <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name })}</p>
         {target.tenant && (
           <p className="text-sm">
             {target.organization
@@ -59,7 +60,7 @@ export function OAuthConsentPage() {
         )}
       </AuthHeader>
 
-      <div className="rounded-md border p-3">
+      <div className={cn(glassClass, 'rounded-xl border p-3')}>
         <ScopeBadges scopes={scopes} withLabels />
       </div>
 
@@ -69,12 +70,12 @@ export function OAuthConsentPage() {
         <p className="text-muted-foreground text-center text-xs">{t('c:oauth_consent_user.text', { name: data.user.name })}</p>
       )}
 
-      <div className="flex justify-center gap-3">
-        <Button variant="outline" loading={deciding} onClick={() => decide(false)}>
-          {t('c:cancel')}
-        </Button>
-        <Button loading={deciding} disabled={!!refusal} onClick={() => decide(true)}>
+      <div className="flex flex-col gap-2">
+        <Button size="block" loading={deciding} disabled={!!refusal} onClick={() => decide(true)}>
           {t('c:accept')}
+        </Button>
+        <Button variant="glass" size="block" loading={deciding} onClick={() => decide(false)}>
+          {t('c:cancel')}
         </Button>
       </div>
     </>

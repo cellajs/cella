@@ -2,9 +2,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { CheckIcon, InfoIcon, MailIcon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import type { TokenData } from '~/modules/auth/types';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useAcceptInvitationTokenMutation, useConfirmInvitationAddressMutation } from '~/modules/me/query';
 import type { MeUser } from '~/modules/me/types';
@@ -42,10 +41,8 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
   if (boundToOther) {
     return (
       <>
-        <AuthHeader title={t('error:user_mismatch')}>
-          <p className="font-light">{t('error:user_mismatch.text')}</p>
-        </AuthHeader>
-        <Button className="w-full" onClick={leave}>
+        <AuthHeader title={t('error:user_mismatch')} description={t('error:user_mismatch.text')} />
+        <Button size="block" onClick={leave}>
           {t('c:continue')}
         </Button>
       </>
@@ -55,10 +52,11 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
   if (linkSent) {
     return (
       <>
-        <AuthHeader title={t('c:invite_confirm_address_sent', { invitedEmail })}>
-          <p className="font-light">{t('c:invite_confirm_address_sent.text', { accountEmail })}</p>
-        </AuthHeader>
-        <Button className="w-full" onClick={leave}>
+        <AuthHeader
+          title={t('c:invite_confirm_address_sent', { invitedEmail })}
+          description={t('c:invite_confirm_address_sent.text', { accountEmail })}
+        />
+        <Button size="block" onClick={leave}>
           {t('c:continue')}
         </Button>
       </>
@@ -68,19 +66,17 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
   return (
     <>
       <AuthHeader
-        image={invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-14" />}
+        image={invitation && <InvitationAvatar invitation={invitation} />}
         title={t('c:invite_accept_as_account')}
-      >
-        {invitation && (
-          <p className="font-light">
-            {t('c:invite_accept_as_account.text', {
-              inviterName: invitation.inviterName,
-              entityName: invitation.entityName,
-              role: t(`c:${invitation.role}`),
-            })}
-          </p>
-        )}
-      </AuthHeader>
+        description={
+          invitation &&
+          t('c:invite_accept_as_account.text', {
+            inviterName: invitation.inviterName,
+            entityName: invitation.entityName,
+            role: t(`c:${invitation.role}`),
+          })
+        }
+      />
 
       {unproven ? (
         <Alert variant="warning">
@@ -106,15 +102,15 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
 
       <div className="flex flex-col gap-2">
         {unproven ? (
-          <SubmitButton loading={isSending} icon={<MailIcon />} className="w-full" onClick={() => sendLink()}>
+          <SubmitButton loading={isSending} icon={<MailIcon />} size="block" onClick={() => sendLink()}>
             {t('c:invite_send_link')}
           </SubmitButton>
         ) : (
-          <SubmitButton loading={isPending} icon={<CheckIcon />} className="w-full" onClick={() => accept(undefined, { onSuccess: leave })}>
+          <SubmitButton loading={isPending} icon={<CheckIcon />} size="block" onClick={() => accept(undefined, { onSuccess: leave })}>
             {t('c:accept')}
           </SubmitButton>
         )}
-        <Button variant="secondary" className="w-full" disabled={isPending || isSending} onClick={leave}>
+        <Button variant="glass" size="block" disabled={isPending || isSending} onClick={leave}>
           {t('c:decline')}
         </Button>
       </div>

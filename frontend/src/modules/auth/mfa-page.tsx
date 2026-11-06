@@ -1,16 +1,19 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { FingerprintPatternIcon, SmartphoneIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from 'sdk';
+import { AuthAlternatives } from '~/modules/auth/auth-alternatives';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { usePasskeySignIn } from '~/modules/auth/passkey-strategy';
 import { pendingMfaQueryOptions } from '~/modules/auth/query';
-import { TotpStrategy } from '~/modules/auth/totp-strategy';
+import { TotpSignInForm } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
 export function MfaPage() {
@@ -22,6 +25,7 @@ export function MfaPage() {
   const signedIn = useAuthStore((state) => state.signedIn);
 
   const [isTotpActive, setIsTotpActive] = useState(false);
+  const passkeySignIn = usePasskeySignIn('mfa');
 
   const handleCancelMfa = async () => {
     await signOut().then(
@@ -36,13 +40,24 @@ export function MfaPage() {
 
   return (
     <>
-      <AuthHeader title={t('c:mfa')}>
+      <AuthHeader title={t('c:mfa')} description={t('c:mfa_step.text')}>
         <AuthEmailButton email={challenge.email} onClick={handleCancelMfa} />
-        <p>{t('c:mfa_step.text')}</p>
       </AuthHeader>
 
-      {!isTotpActive && <PasskeyStrategy type="mfa" />}
-      <TotpStrategy active={isTotpActive} onActiveChange={setIsTotpActive} />
+      {isTotpActive ? (
+        <TotpSignInForm onCancel={() => setIsTotpActive(false)} />
+      ) : (
+        <>
+          <Button size="block" onClick={passkeySignIn}>
+            <FingerprintPatternIcon />
+            <span className="truncate">{t('c:passkey.sign_in')}</span>
+          </Button>
+          <AuthAlternatives
+            authStep="signIn"
+            items={[{ id: 'totp', icon: SmartphoneIcon, label: t('c:authenticator_app.sign_in'), onClick: () => setIsTotpActive(true) }]}
+          />
+        </>
+      )}
     </>
   );
 }

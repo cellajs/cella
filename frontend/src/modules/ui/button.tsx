@@ -3,6 +3,10 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircleIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
+
+/** The glass variant's surface, for fields and groups beside glass buttons. */
+export const glassClass = tw('border-foreground/15 bg-background/45 backdrop-blur-md');
 
 export const buttonVariants = cva(
   'focus-effect inline-flex items-center justify-center gap-2 rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50',
@@ -11,7 +15,7 @@ export const buttonVariants = cva(
       // default, secondary, outline, ghost and the solid hover follow shadcn's base-vega; the neutral hovers take the one
       // hover tint, which an opaque fill takes premixed. Outline keeps the input edge, rests flat and keeps its opaque page
       // fill in dark mode, so an edgeless scope, an open state and media behind it leave it intact; link stays underlined.
-      // The intents, `soft`, outline-ghost (over media), cell, input and row are additions.
+      // The intents, `soft`, outline-ghost and glass (over media), cell, input and row are additions.
       variant: {
         default: 'intent-primary',
         brand: 'intent-brand',
@@ -24,6 +28,7 @@ export const buttonVariants = cva(
         ghost: 'hover:bg-hover hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         link: 'link-inline text-primary',
         'outline-ghost': 'border-foreground/20 bg-background/20 hover:border-foreground/30 hover:bg-background/40 hover:text-foreground',
+        glass: [glassClass, 'hover:border-foreground/30 hover:bg-background/60'],
         cell: 'group/cell-button text-foreground-soft hover:text-foreground flex w-full justify-start font-normal focus-visible:ring-transparent focus-visible:ring-offset-transparent *:data-[slot=avatar]:transition-opacity hover:*:data-[slot=avatar]:opacity-100 sm:*:data-[slot=avatar]:opacity-80',
         input: 'border-input bg-background aria-invalid:border-destructive',
         // A list row in a DrawerRowGroup, as in the menu sheet
@@ -38,6 +43,7 @@ export const buttonVariants = cva(
         xs: 'h-8 gap-1.5 px-2',
         sm: 'h-9 gap-1.5 px-3',
         lg: 'h-11 px-4',
+        block: 'h-12 w-full rounded-xl px-4',
         xl: 'h-14 rounded-lg px-6 text-lg',
         icon: 'size-10',
         cell: 'h-full px-0 py-0',

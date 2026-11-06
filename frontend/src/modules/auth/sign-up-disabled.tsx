@@ -11,7 +11,7 @@ export function SignUpDisabled({ onRequest }: SignUpDisabledProps) {
   const { t } = useTranslation();
 
   return (
-    <p>
+    <>
       {t('c:sign_up_disabled.text')}
       {appConfig.has.waitlist && (
         <>
@@ -19,6 +19,6 @@ export function SignUpDisabled({ onRequest }: SignUpDisabledProps) {
           <Trans t={t} i18nKey="c:request_invitation.text" components={{ request_anchor: <InlineLinkButton onClick={onRequest} /> }} />
         </>
       )}
-    </p>
+    </>
   );
 }
