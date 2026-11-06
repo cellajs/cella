@@ -10,7 +10,10 @@ import {
 import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { log } from '#/utils/logger';
 
-/** The claims of one sign-in: the verified id_token claims with the userinfo claims over them. */
+/**
+ * The claims of one sign-in: the verified id_token claims with the userinfo claims over them, except the identity and
+ * the authentication event (`acr`, `auth_time`), which stay the id_token's.
+ */
 export type SsoClaims = Record<string, unknown> & { sub: string; iss: string };
 
 /** Tests hand in a fetch that serves the federation's documents and endpoints; production uses the global one. */
@@ -111,7 +114,7 @@ export const exchangeFederationCode = async (
     const userinfoResponse = await oauth.userInfoRequest(as, client, tokens.access_token, requestOptions(options));
     const userinfo = await oauth.processUserInfoResponse(as, client, idClaims.sub, userinfoResponse);
 
-    return { ...idClaims, ...userinfo, sub: idClaims.sub, iss: idClaims.iss };
+    return { ...idClaims, ...userinfo, sub: idClaims.sub, iss: idClaims.iss, acr: idClaims.acr, auth_time: idClaims.auth_time };
   } catch (error) {
     if (error instanceof AppError) throw error;
     if (isProviderRefusal(error)) {

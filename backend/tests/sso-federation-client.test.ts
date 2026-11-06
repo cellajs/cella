@@ -41,6 +41,9 @@ const jwk = { ...(await exportJWK(publicKey)), kid: 'key_2026_10_02', alg: 'RS25
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
+/** When the id_token says the institution authenticated the person: an hour before the sign-in. */
+const authTime = Math.floor(Date.now() / 1000) - 3600;
+
 /** An id_token the federation would mint for this client: signed with the key its JWKS publishes. */
 const idToken = (claims: Record<string, unknown>, { audience = federation.clientId, expiresAt }: { audience?: string; expiresAt?: number } = {}) =>
   new SignJWT(claims)
@@ -97,7 +100,7 @@ const federationServer = (options: {
         const body = new URLSearchParams(String(init?.body));
         if (body.get('grant_type') !== 'authorization_code' || body.get('code') !== 'the-code') return json({ error: 'invalid_grant' }, 400);
         const issued = await idToken(
-          { nonce: options.nonce, acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport' },
+          { nonce: options.nonce, acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport', auth_time: authTime },
           { audience: options.tokenAudience, expiresAt: options.expiresAt },
         );
         idTokens.push(issued);
@@ -114,6 +117,8 @@ const federationServer = (options: {
           given_name: 'Sanne',
           family_name: 'de Vries',
           eduperson_affiliation: ['student', 'member'],
+          acr: 'https://refeds.org/profile/mfa',
+          auth_time: Math.floor(Date.now() / 1000),
         });
       default:
         return new Response('not found', { status: 404 });
@@ -146,7 +151,8 @@ describe('federation client', () => {
     expect(params.code_challenge).toHaveLength(43);
   });
 
-  it('exchanges the code and returns the verified id_token claims with userinfo over them', async () => {
+  // The step-up an SSO sign-in grants reads `acr` and `auth_time`: the id_token's, whatever userinfo answers.
+  it("exchanges the code and returns the verified id_token claims with userinfo over them, the authentication event the id_token's", async () => {
     const server = federationServer({ nonce: roundTrip.nonce });
     const claims = await exchangeFederationCode(federation, { ...roundTrip, code: 'the-code' }, server);
 
@@ -154,6 +160,7 @@ describe('federation client', () => {
       iss: issuer,
       sub: '0dd64f5cf2a23bef04a1e2ec225e76ff3935cece',
       acr: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport',
+      auth_time: authTime,
       schac_home_organization: 'hu.nl',
       email: 's.devries@student.hu.nl',
       eduperson_affiliation: ['student', 'member'],

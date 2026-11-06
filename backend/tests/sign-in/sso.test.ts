@@ -233,15 +233,27 @@ describe('SSO sign-in through an institution', async () => {
     expect(await membershipsOf(user.id)).toHaveLength(1);
   });
 
-  it('must not start a session stepped up unless the institution asserts MFA', async () => {
+  it('must not start a session stepped up unless the institution asserts MFA within the step-up window', async () => {
     const { connection } = await seedConnection();
+    const mfa = 'https://refeds.org/profile/mfa';
+    const secondsAgo = (seconds: number) => Math.floor(Date.now() / 1000) - seconds;
+    const notSteppedUp = ['surfconext', 'regular', { connectionId: connection.id }];
 
-    await signInThrough(connection.id);
-    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id }]);
+    await signInThrough(connection.id, claimsOf({ auth_time: secondsAgo(60) }));
+    expect(lastSessionCall()).toEqual(notSteppedUp);
 
-    // Positive control: the federation lists this acr as multi-factor, so the session starts stepped up by it.
-    await signInThrough(connection.id, claimsOf({ acr: 'https://refeds.org/profile/mfa' }));
-    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id, steppedUpVia: 'sso' }]);
+    // The institution's session signs a returning person in without a login: an MFA from hours ago proves no presence
+    // now, and a token that does not date its authentication proves none either.
+    await signInThrough(connection.id, claimsOf({ acr: mfa, auth_time: secondsAgo(3 * 60 * 60) }));
+    expect(lastSessionCall()).toEqual(notSteppedUp);
+    await signInThrough(connection.id, claimsOf({ acr: mfa }));
+    expect(lastSessionCall()).toEqual(notSteppedUp);
+
+    // Positive control: a recent MFA steps the session up, its window counted from the authentication.
+    const authTime = secondsAgo(60);
+    await signInThrough(connection.id, claimsOf({ acr: mfa, auth_time: authTime }));
+    const steppedUpAt = new Date(authTime * 1000).toISOString();
+    expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id, steppedUpVia: 'sso', steppedUpAt }]);
   });
 
   it('refuses an account from an institution the connection does not accept, eduID included', async () => {
