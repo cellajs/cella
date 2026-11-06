@@ -139,7 +139,8 @@ describe('OAuth authorization server', async () => {
         resource,
         sessionCookie: user.sessionCookie,
       });
-      expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, refusal: null });
+      // The page names where the authorization goes, which the client's own host does not tell.
+      expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, redirectHost: 'localhost:9999', refusal: null });
       expect(result.status).toBe(200);
       const token = await verifyAccessToken(String(result.body.access_token), { tenantId: org.tenantId, organizationId: org.id });
       expect(token).toMatchObject({ kind: 'user', actorId: user.id, clientId, scopes: ['attachment:read'] });

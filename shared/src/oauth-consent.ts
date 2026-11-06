@@ -7,6 +7,8 @@ export type UserGrantRefusal = 'unknown_user' | 'not_a_member' | 'app_not_instal
 /** What the authorization server's interaction route reports about a pending consent to a signed-in user. */
 export interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
+  /** The host of the redirect URI the authorization goes to, shown beside the client: a client's name proves nothing about it. */
+  redirectHost: string;
   scopes: string[];
   resource: ResourceRef;
   /** The names of the tenant and, on the MCP face, the organization the grant reaches; null where the user is not a member. */

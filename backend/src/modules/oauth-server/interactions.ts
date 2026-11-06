@@ -129,6 +129,8 @@ async function loadInteraction(provider: Provider, c: Context<Env>) {
       clientKindOf(client) === 'unregistered'
         ? { id: clientId, name: new URL(clientId).host, logoUri: null, kind: 'cimd' }
         : { id: clientId, name: client.clientName ?? clientId, logoUri: client.logoUri ?? null, kind: 'registered' },
+    // The provider checked it against the client's registered URIs; a local program can still present another client's.
+    redirectHost: new URL(String(interaction.params.redirect_uri)).host,
     scopes: requested,
     resource,
     target,
