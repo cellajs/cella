@@ -16,7 +16,7 @@ const outlookHidden = { msoHide: 'all' };
  */
 export const EmailLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element => (
   <a
-    href={appConfig.aboutUrl}
+    href={`${appConfig.frontendUrl}${appConfig.aboutUrl}`}
     target="_blank"
     rel="noreferrer"
     style={{ display: 'inline-block', marginTop: '2rem', textDecoration: 'none', ...style }}
