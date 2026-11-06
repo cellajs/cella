@@ -75,6 +75,7 @@ export default defineConfig({
       'bench/src/seeds/attachment-home.ts',
       'cella/skills/screenshots/shots-config.mjs',
       'json/text-blocks.json',
+      'json/showcase.json',
     ],
   },
 });

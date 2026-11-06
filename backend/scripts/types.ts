@@ -54,4 +54,8 @@ export interface SeedScript {
   run: () => Promise<void>;
   /** Allows this seed to run in production. Defaults to false. */
   allowProduction?: boolean;
+  /** Runs only when named (`pnpm seed <name>`), never in a full seed. */
+  explicit?: boolean;
+  /** Throws to refuse the database, before the run migrates it. */
+  precheck?: () => void;
 }

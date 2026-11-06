@@ -18,8 +18,7 @@ state and judging the result is this skill's job, and the driver cannot do it: r
   writes both modes of every shot over the files the app ships, and prints each one's pixel and file size.
 - A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
 - One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
-- The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
-  table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.
+- The driver never seeds. It shoots whatever is in the database it reaches; the next section seeds the one to use.
 - `format` in `shots-config.mjs` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and
   the driver stops before the stack boots without it. It is written lossless, so the pixels are the screenshot's own;
   Chromium's own lossless WebP weighs about what the PNG does.
@@ -30,10 +29,14 @@ A development database that has been worked in fails the data check below: bench
 dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
 [A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
 `node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
-origin it shoots: it must be the shifted one. On that database the driver also turns MFA on for the shot user, with a
-passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
-(`pnpm --filter backend showcase:mfa`), so the account page and the member tables show both states. Nobody can sign in
-with those factors, so it leaves the database `backend/.env` names alone.
+origin it shoots: it must be the shifted one.
+
+Seed that database with `pnpm seed showcase` in place of `pnpm seed`, and export `ADMIN_EMAIL` as the admin address in
+`json/showcase.json`. The showcase is a curated dataset, the file the app owns to change what its shots show: a dozen
+organizations with their members and attachments, the admin's menu with a few unseen items, a short inbox, and MFA on
+for the admin (a passkey and an authenticator app nobody can sign in with) and a share of the members. Its names, ids
+and counts come out the same on every run; only the times move with the clock. It refuses the database
+`backend/.env` names, and any database that holds organizations already.
 
 That stack starts no relay, so a shot of a collaborative description reads "Connecting...": start `src/yjs-worker.ts` in
 `yjs/` through the same exports. An app's seed can be heavy and a second stack slows the first, so shoot one app at a

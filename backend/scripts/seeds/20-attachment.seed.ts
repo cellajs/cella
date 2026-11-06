@@ -4,13 +4,13 @@ import { deriveDocument } from 'shared/utils/derive-description-core';
 import { getSeedDb } from '#/db/db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { seedAttachmentPlacements } from '#/modules/attachment/attachment-placement';
+import { type AttachmentSeedPlacement, seedAttachmentPlacements } from '#/modules/attachment/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { defaultAdminUser } from '../fixtures';
 import type { SeedScript } from '../types';
 import { textDocument } from './description-document';
-import { seedAssets } from './seed-assets';
+import { type SeedAsset, seedAssets } from './seed-assets';
 
 // Seed scripts use admin connection for privileged operations
 const db = getSeedDb();
@@ -49,10 +49,44 @@ const warnWhenAssetsUnreachable = async () => {
   }
 };
 
+/** A public-bucket attachment row for a seed asset, which renders in any development environment without S3 credentials. */
+export const seedAttachmentRecord = (
+  asset: SeedAsset,
+  { tenantId, organizationId, placement }: AttachmentSeedPlacement,
+  createdAt: string,
+  createdBy: string,
+) => {
+  const extIndex = asset.filename.lastIndexOf('.');
+  const paragraphs = seedDescriptions[asset.filename];
+  const description = paragraphs ? textDocument(...paragraphs) : null;
+  return {
+    id: mockUuid(),
+    entityType: 'attachment' as const,
+    tenantId,
+    organizationId,
+    ...placement,
+    createdAt,
+    updatedAt: createdAt,
+    createdBy,
+    updatedBy: createdBy,
+    stx: mockStx(),
+    description,
+    // The update op derives keywords from the document; a row without one keeps filler search text.
+    keywords: description ? deriveDocument(description).keywords : faker.lorem.words(3),
+    filename: asset.filename,
+    name: extIndex > 0 ? asset.filename.slice(0, extIndex) : asset.filename,
+    contentType: asset.contentType,
+    convertedContentType: asset.convertedContentType,
+    size: asset.size,
+    keys: asset.keys,
+    publicBucket: true,
+    bucketName: appConfig.s3.publicBucket,
+  };
+};
+
 /**
  * Seeds one attachment row per published seed asset in each organization, dealt round-robin over
- * the placements the seam returns for it (one per organization by default). Every row is a
- * public-bucket row, so it renders in any development environment without S3 credentials.
+ * the placements the seam returns for it (one per organization by default).
  */
 export const attachmentsSeed = async () => {
   const spinner = startSpinner('Seeding attachments...');
@@ -83,36 +117,10 @@ export const attachmentsSeed = async () => {
 
   for (const [organizationId, homes] of Map.groupBy(placements, (home) => home.organizationId)) {
     const records = seedAssets.map((asset, i) => {
-      const { tenantId, placement } = homes[i % homes.length];
-      return withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
-        const createdAt = faker.date.recent({ days: 30 }).toISOString();
-        const extIndex = asset.filename.lastIndexOf('.');
-        const paragraphs = seedDescriptions[asset.filename];
-        const description = paragraphs ? textDocument(...paragraphs) : null;
-        return {
-          id: mockUuid(),
-          entityType: 'attachment' as const,
-          tenantId,
-          organizationId,
-          ...placement,
-          createdAt,
-          updatedAt: createdAt,
-          createdBy: defaultAdminUser.id,
-          updatedBy: defaultAdminUser.id,
-          stx: mockStx(),
-          description,
-          // The update op derives keywords from the document; a row without one keeps filler search text.
-          keywords: description ? deriveDocument(description).keywords : faker.lorem.words(3),
-          filename: asset.filename,
-          name: extIndex > 0 ? asset.filename.slice(0, extIndex) : asset.filename,
-          contentType: asset.contentType,
-          convertedContentType: asset.convertedContentType,
-          size: asset.size,
-          keys: asset.keys,
-          publicBucket: true,
-          bucketName: appConfig.s3.publicBucket,
-        };
-      });
+      const home = homes[i % homes.length];
+      return withFakerSeed(`attachment:seed:${organizationId}:${Object.values(home.placement).join(':')}:${i}`, () =>
+        seedAttachmentRecord(asset, home, faker.date.recent({ days: 30 }).toISOString(), defaultAdminUser.id),
+      );
     });
 
     await db.insert(attachmentsTable).values(records).onConflictDoNothing();
