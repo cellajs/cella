@@ -1,28 +1,36 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowRightIcon, ShieldAlertIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { hierarchy } from 'shared';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table/invitations-table';
+import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';
 
 const slot = 'home.sections';
+const organizationAdminRole = hierarchy.getMostPrivilegedRole('organization');
 
-/** The signed-in home: an MFA alert for a user without MFA, pending invitations, then the `home.sections` slot apps fill from their module config. */
+/** The signed-in home: an MFA alert for an organization admin without MFA, pending invitations, then the `home.sections` slot apps fill from their module config. */
 export function HomePage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
+  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
   const sections = resolvePlacementList(slot, getTools(slot));
+  const isOrganizationAdmin = !!myMemberships?.items.some(
+    ({ channelType, role }) => channelType === 'organization' && role === organizationAdminRole,
+  );
 
   return (
     <div className="container">
       <SimpleHeader heading="c:home" text="c:home.text" className="pt-4 md:pt-6" />
-      {!user.mfaRequired && (
+      {isOrganizationAdmin && !user.mfaRequired && (
         <AlertBanner
           id="enable_mfa"
           variant="info"
