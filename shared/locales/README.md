@@ -12,7 +12,7 @@
 
 ### i18n Ally (VSCode)
 
-Point the VSCode plugin `lokalise.i18n-ally` at the processed cache `.vscode/.locales-cache`, not at the raw `locales/` folder (no raw file maps to the merged `c` namespace). The frontend dev server rebuilds the cache: run `pnpm dev` once if annotations are missing. Edit `locales/<lng>/*.json`, never the generated cache.
+Point the VSCode plugin `lokalise.i18n-ally` at the processed cache `.vscode/.locales-cache`, not at the raw `shared/locales/` folder (no raw file maps to the merged `c` namespace). The frontend dev server rebuilds the cache: run `pnpm dev` once if annotations are missing. Edit `shared/locales/<lng>/*.json`, never the generated cache.
 
 Settings for `.vscode/settings.json` (gitignored, once per contributor):
 

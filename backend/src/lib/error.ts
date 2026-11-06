@@ -75,7 +75,7 @@ const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server
 
 /** What a client may see of a thrown value: type, title, status and a detail that never carries server internals. */
 interface ClientError {
-  /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
+  /** Error key from `shared/locales/en/error.json` (or an app's `appError.json`). */
   type: ErrorKey;
   title: string;
   status: ContentfulStatusCode;

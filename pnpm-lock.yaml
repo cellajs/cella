@@ -25,8 +25,8 @@ importers:
         specifier: ^2.6.4
         version: 2.6.4
       '@cellajs/cli':
-        specifier: ^0.6.5
-        version: 0.6.5(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.6.6
+        version: 0.6.6(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
         version: 7.0.0-dev.20260707.2
@@ -1354,8 +1354,8 @@ packages:
     resolution: {integrity: sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==}
     hasBin: true
 
-  '@cellajs/cli@0.6.5':
-    resolution: {integrity: sha512-qKmY/qjoLFAU5figxPx11gPRhg4UsGMWA9RmB0+q6xTOccuWGnAoREwfXXN7Z2R9EwU/UljSDvLoRXa76+nnkQ==}
+  '@cellajs/cli@0.6.6':
+    resolution: {integrity: sha512-JoyX/wGTVYoAn8uc2dR9vyw0PJmJyg44xxPCqL1dAQdWI+UBh4LuKhYCWYNOhRrqgzCc4GsXcoPq2TcDHcLh2w==}
     engines: {node: 26.x}
     hasBin: true
 
@@ -8711,7 +8711,7 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@cellajs/cli@0.6.5(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@cellajs/cli@0.6.6(@shikijs/themes@4.5.0)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@inquirer/core': 12.0.6(@types/node@26.6.6)
       '@inquirer/prompts': 8.7.5(@types/node@26.6.6)

@@ -3,8 +3,8 @@ import type { z } from '@hono/zod-openapi';
 import { i18n } from '#/lib/i18n';
 import type { apiErrorSchema, errorMemberValueSchema, ProblemMember } from '#/schemas/api-error-schemas';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
-import type enAppError from '../../../locales/en/appError.json';
-import type enError from '../../../locales/en/error.json';
+import type enAppError from '../../../shared/locales/en/appError.json';
+import type enError from '../../../shared/locales/en/error.json';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 /**

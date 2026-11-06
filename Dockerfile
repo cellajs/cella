@@ -102,10 +102,8 @@ COPY tsconfig.json ./
 COPY backend/ ./backend/
 COPY shared/ ./shared/
 COPY sdk/ ./sdk/
-COPY locales/ ./locales/
 COPY cdc/ ./cdc/
 COPY yjs/ ./yjs/
-COPY json/ ./json/
 
 WORKDIR /app/backend
 RUN pnpm build
@@ -122,9 +120,9 @@ COPY --from=backend-deps --chown=app:app /app/node_modules ./node_modules
 COPY --from=backend-deps --chown=app:app /app/backend/node_modules ./backend/node_modules
 
 # Runtime data. The bundle inlines the shared workspace into backend/dist, and the deps stage installs
-# the backend's own `dependencies` only, so neither shared's source nor its node_modules is here.
-COPY --from=backend-builder --chown=app:app /app/locales ./locales
-COPY --from=backend-builder --chown=app:app /app/json ./json
+# the backend's own `dependencies` only, so of shared only its translations and JSON data are here.
+COPY --from=backend-builder --chown=app:app /app/shared/locales ./shared/locales
+COPY --from=backend-builder --chown=app:app /app/shared/json ./shared/json
 
 # Drizzle migrations
 COPY --chown=app:app backend/drizzle ./backend/drizzle
@@ -169,7 +167,6 @@ COPY cdc/ ./cdc/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/
 COPY sdk/ ./sdk/
-COPY locales/ ./locales/
 
 WORKDIR /app/cdc
 RUN pnpm build
@@ -208,8 +205,6 @@ COPY tsconfig.json ./
 COPY yjs/ ./yjs/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/
-# AppError's messages bundle the backend translations
-COPY locales/ ./locales/
 
 WORKDIR /app/yjs
 RUN pnpm build

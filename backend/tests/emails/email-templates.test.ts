@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { appConfig, typedEntries } from 'shared';
 import { describe, expect, it } from 'vitest';
-import enBackend from '../../../locales/en/backend.json';
+import enBackend from '../../../shared/locales/en/backend.json';
 import { emailFrame } from '../../emails/frame';
 import { i18n } from '../../emails/i18n';
 import { type EmailPreview, emailPreviewList, emailPreviews, previewPath, previewRequestDetails } from '../../emails/preview-fixtures';

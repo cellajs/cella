@@ -1,6 +1,6 @@
 # shared
 
-Shared configuration, types, permissions, and utilities used by all packages.
+Shared configuration, types, permissions, translations, and utilities used by all packages.
 
 `config/config.default.ts` holds the full base config. Mode files (`config/config.development.ts`, etc.) provide partial overrides, derived from the default where they only vary it, merged via `mergeDeep` into the exported `appConfig`. To add a mode: add it to `ConfigMode` in `src/config-builder/types.ts`, create the config file in `shared/config/`, and register it in `app-config.ts`. `app-config.ts` refuses an invalid config while it builds `appConfig`, and `config-validation.ts` checks the config against the permission policies.
 
@@ -53,6 +53,8 @@ shared
 │   ├── hierarchy-config.ts        Entity hierarchy definition (builder pattern)
 │   ├── permissions-config.ts      Permission policies per entity type
 │   └── transloadit-config.ts      Transloadit upload templates
+├── json/                          Data files the services read: countries, the app's text blocks
+├── locales/                       Translations per language and the namespace manifest (locales/README.md)
 ├── scripts/                       The repo checks and the style rules (scripts/README.md)
 └── src/
     ├── config-builder/            Merges base + mode config → appConfig, service paths, entity hierarchy, load-time config checks
