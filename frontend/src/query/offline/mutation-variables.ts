@@ -78,6 +78,11 @@ export function withVariablesVersion(mutation: StoredMutation): StoredMutation {
   return mutation.meta?.variablesVersion === undefined ? stamped(mutation, variablesVersionOf(mutation.mutationKey)) : mutation;
 }
 
+/** Whether variables carry an stx: their mutation is a sync write, which the server arbitrates when it is sent again. */
+export function hasStx(variables: unknown): boolean {
+  return isRecord(variables) && isRecord(variables.stx);
+}
+
 /** Whether queued variables carry the `replayed` stx flag a pause sets: what their mutation sends is a replay. */
 export function isReplayed(variables: unknown): boolean {
   return isRecord(variables) && isRecord(variables.stx) && variables.stx.replayed === true;

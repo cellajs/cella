@@ -69,7 +69,7 @@ export function NotificationsSheet() {
 
 interface NotificationRowProps {
   notification: Notification;
-  /** The place line names the organization only for someone in more than one. */
+  /** A row homed in the organization marks it only for someone in more than one. */
   showOrganization: boolean;
   onOpen: (body: { ids?: string[] }) => void;
 }
@@ -89,48 +89,40 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
   };
 
   const { actor, channelName, subjectTitle } = notification;
-  // A subject homed in the organization names no channel: the place line names the organization where it helps
+  // A subject homed in the organization names no channel; the avatar's mark names the organization where it helps
   const hasChannel = notification.channelType !== 'organization';
+  const mark = hasChannel
+    ? { type: notification.channelType, id: notification.channelId, name: channelName, url: notification.channelThumbnailUrl }
+    : showOrganization && {
+        type: 'organization' as const,
+        id: notification.organizationId,
+        name: notification.organizationName,
+        url: notification.organizationThumbnailUrl,
+      };
   const content = (
     <>
       <span className={cn('relative shrink-0', notification.readAt && 'opacity-70')}>
         <EntityAvatar type="user" className="size-8" id={actor?.id ?? 'unknown'} name={actor?.name ?? ''} url={actor?.thumbnailUrl ?? null} />
-        {hasChannel && (
+        {mark && (
           <EntityAvatar
-            aria-hidden
-            type={notification.channelType}
-            id={notification.channelId}
-            name={channelName}
-            url={notification.channelThumbnailUrl}
+            aria-hidden={hasChannel}
+            {...mark}
             className={cn('absolute -right-1 -bottom-1 size-4 rounded-sm ring-2', notification.readAt ? 'ring-card' : 'ring-accent')}
           />
         )}
       </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        {/* One `c:notification.<type>` sentence per vocabulary type, and one without its channel; apps add theirs to app.json */}
-        <span className={cn('text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
-          {t(hasChannel ? `c:notification.${notification.type}` : `c:notification.${notification.type}.no_channel`, {
-            actor: actor?.name || t('c:someone'),
-            subject: subjectTitle || t('c:unknown'),
-            channel: channelName || t('c:unknown'),
-          })}
-        </span>
-        <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
-          <span className="shrink-0">{relativeDate}</span>
-          {showOrganization && (
-            <>
-              <span aria-hidden>·</span>
-              <EntityAvatar
-                aria-hidden
-                type="organization"
-                id={notification.organizationId}
-                name={notification.organizationName}
-                url={notification.organizationThumbnailUrl}
-                className="size-3.5 shrink-0 rounded-sm"
-              />
-              <span className="truncate">{notification.organizationName}</span>
-            </>
-          )}
+      {/* One `c:notification.<type>` sentence per vocabulary type, and one without its channel; apps add theirs to app.json */}
+      <span className={cn('min-w-0 text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
+        {t(hasChannel ? `c:notification.${notification.type}` : `c:notification.${notification.type}.no_channel`, {
+          actor: actor?.firstName || actor?.name || t('c:someone'),
+          subject: subjectTitle || t('c:unknown'),
+          channel: channelName || t('c:unknown'),
+        })}{' '}
+        <span className="text-muted-foreground text-xs whitespace-nowrap">
+          <span aria-hidden className="mr-1">
+            ·
+          </span>
+          {relativeDate}
         </span>
       </span>
     </>

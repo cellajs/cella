@@ -12,7 +12,7 @@
     "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsgo --noEmit --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production vite build",
-    "offline": "cross-env NODE_ENV=development vite build --mode development && cross-env NODE_ENV=development vite preview",
+    "offline": "cross-env APP_MODE=development NODE_ENV=production vite build --mode development && cross-env APP_MODE=development NODE_ENV=production vite preview --mode development",
     "stop": "tsx vite/stop-vite.ts",
     "storybook": "tsx .storybook/start-storybook.ts"
   },

@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -28,9 +27,7 @@ import {
   idsBodySchema,
   paginationSchema,
   tenantOrgParamSchema,
-  validIdSchema,
 } from '#/schemas';
-import { channelBaseSchema } from '#/schemas/entity-base';
 
 const membershipRoutes = createXRoutes(['memberships', 'cella'], {
   createMemberships: xRoute({
@@ -83,17 +80,6 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
       "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.",
     request: { params: idInTenantOrgParamSchema, body: jsonBody(membershipUpdateBodySchema) },
     responses: { 200: json('Membership updated', updatedMembershipSchema, mockMembershipResponse()), ...errors(409) },
-  }),
-  handleMembershipInvitation: xRoute({
-    method: 'post',
-    path: '/{id}/{acceptOrReject}',
-    xGuard: [userGuard],
-    xRateLimiter: [singlePointsLimiter],
-    summary: 'Respond to membership invitation',
-    description:
-      "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
-    request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
-    responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
   }),
   getMembers: xRoute({
     method: 'get',

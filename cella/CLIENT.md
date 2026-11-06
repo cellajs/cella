@@ -77,7 +77,7 @@ An attachment row is an ordinary product in the query cache, while its bytes liv
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten, and every stored query keeps its refetch mark. A query whose refetch got no response or a server error keeps its last data on disk, restored marked. Paused mutations are persisted too, and a replay until it settles: one cut off by a closed tab is sent again. A mutation without `stx` is never a replay, so it is not stored while it runs. Opt out with `meta: { persist: false }`.
+The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten, and every stored query keeps its refetch mark. A query whose refetch got no response or a server error keeps its last data on disk, restored marked. Paused mutations are persisted too, and a write with an `stx` until it settles: one cut off by a closed tab or a reload is sent again as a replay. A mutation without `stx` cannot be replayed, so it is not stored while it runs. Opt out with `meta: { persist: false }`.
 
 Every user works offline: all tabs share one cache that survives tab and browser restarts, and sign-out deletes it with the rest of the per-user database. Two version stamps guard every restore. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
 

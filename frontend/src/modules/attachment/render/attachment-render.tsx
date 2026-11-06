@@ -2,7 +2,6 @@ import { CloudOffIcon, DownloadIcon } from 'lucide-react';
 import { type MouseEvent, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDownloader } from '~/hooks/use-downloader';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
@@ -54,7 +53,6 @@ export function AttachmentRender({
   onBackdropClick,
 }: AttachmentRenderProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
   if (pendingUpload) {
@@ -94,8 +92,8 @@ export function AttachmentRender({
       <ErrorBoundary fallback={downloadPlaceholder} resetKeys={[url]}>
         <Suspense fallback={<Spinner size="lg" />}>
           {kind === 'image' &&
-            (imagePanZoom && !isMobile ? (
-              <RenderImage image={url} alt={alt} imageClassName={itemClassName} showButtons={showButtons} backdropDismiss={!!onBackdropClick} />
+            (imagePanZoom ? (
+              <RenderImage image={url} alt={alt} imageClassName={itemClassName} showButtons={showButtons} onBackdropClick={onBackdropClick} />
             ) : (
               <img src={url} alt={alt} className={cn(onBackdropClick ? 'max-h-full max-w-full' : 'size-full', itemClassName)} />
             ))}

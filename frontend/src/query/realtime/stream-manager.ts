@@ -11,7 +11,7 @@ import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
 import { subscribeLocalUserChange } from '~/query/local-user-db';
-import { reportReachable } from '~/query/offline/connectivity';
+import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
 import { queryClient } from '~/query/query-client';
 import { handleStreamChange } from '~/query/realtime/app-stream-handler';
 import { processAppCatchup } from '~/query/realtime/catchup-processor';
@@ -441,6 +441,8 @@ class StreamManager {
       const remaining = this.lastEventAt + streamSilenceMs - Date.now();
       if (remaining > 0) return this.watchForSilence(eventSource, remaining);
 
+      // A silent stream is also how a link that drops packets shows itself: the probe decides whether the app goes offline.
+      void reportNetworkFailure();
       this.handleStreamFailure(`No event for ${streamSilenceMs / 1000}s, closing the silent stream`);
     }, delay);
   }

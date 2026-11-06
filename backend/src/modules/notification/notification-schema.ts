@@ -2,13 +2,23 @@ import { z } from '@hono/zod-openapi';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { digestFrequencies, notificationsTable } from '#/modules/notification/notification-db';
 import { booleanTransformSchema, integerQuerySchema, translatedError, validIdSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
+import { userMinimalBaseSchema } from '#/schemas/minimal-base';
+
+const actorExample = mockUserMinimalBase('notification-actor');
+const nullableActorSchema = z.union([
+  userMinimalBaseSchema.extend({ firstName: z.string().nullable() }).openapi({
+    description: 'The user who caused a notification, with the first name its sentence prefers; null when the user never set one.',
+    example: { ...actorExample, firstName: actorExample.name.split(' ')[0] ?? null },
+  }),
+  z.null(),
+]);
 
 // Route params accept ids in place of slugs (beforeLoad rewrites), so `tenantId`, `organizationId` and `channelId`
 // deep-link without resolving slugs first.
 export const notificationSchema = createSelectSchema(notificationsTable).omit({ userId: true, activityId: true, emailedAt: true }).extend({
   /** Who caused it, for the card's avatar and sentence; null when the actor is no user or the user is gone. */
-  actor: nullableUserMinimalBaseSchema,
+  actor: nullableActorSchema,
   /** Display names for the card's sentence; empty when the subject is gone or the user may not read it. */
   channelName: z.string(),
   /** Null with no image, and when the subject is gone or the user may not read it. */

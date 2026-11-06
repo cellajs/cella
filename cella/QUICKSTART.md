@@ -8,7 +8,7 @@ One command creates your app and five more run it with seeded data. Sign in as t
 
 ## Create
 
-The [create-cella](https://github.com/cellajs/create-cella) CLI picks a template version, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later upgrades. Requirements: docker, Node.js 26, [pnpm 11](https://pnpm.io/installation). Recommended: [gh cli](https://cli.github.com/)
+The [create-cella](https://github.com/cellajs/create-cella) CLI allows you to pick a template version, ports and admin email. It initializes a git repo with cella upstream remote for later upgrades. Requirements: docker, Node.js 26, [pnpm 11](https://pnpm.io/installation). Recommended: [gh cli](https://cli.github.com/)
 
 ```bash
 pnpm create @cellajs/cella my-app

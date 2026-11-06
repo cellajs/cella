@@ -316,16 +316,22 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
     .orderBy(usersTable.id);
 }
 
-/** Minimal user objects for actors, keyed by id; an actor that is no user, or a deleted one, is absent. */
+/** Minimal user objects for actors with their first name, keyed by id; an actor that is no user, or a deleted one, is absent. */
 export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts) {
-  if (userIds.length === 0) return new Map<string, UserMinimalBase>();
+  if (userIds.length === 0) return new Map<string, UserMinimalBase & { firstName: string | null }>();
 
   const rows = await ctx.var.db
-    .select({ id: usersTable.id, name: usersTable.name, slug: usersTable.slug, thumbnailUrl: usersTable.thumbnailUrl })
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      slug: usersTable.slug,
+      thumbnailUrl: usersTable.thumbnailUrl,
+      firstName: usersTable.firstName,
+    })
     .from(usersTable)
     .where(inArray(usersTable.id, [...new Set(userIds)]));
 
-  return new Map(rows.map((row) => [row.id, toUserMinimalBase(row)]));
+  return new Map(rows.map((row) => [row.id, { ...toUserMinimalBase(row), firstName: row.firstName }]));
 }
 
 interface NotificationIdsOpts {

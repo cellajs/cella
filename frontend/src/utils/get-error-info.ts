@@ -2,6 +2,7 @@ import { SearchParamError } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { ApiError } from '~/lib/api';
 import { isTKey, type TKey } from '~/lib/i18n-locales';
+import { isNetworkError } from '~/query/offline/network-retry';
 
 /** What an error page or toast describes: a failed API call, any other thrown error, or nothing at all. */
 export type ErrorNoticeError = ApiError | Error | null;
@@ -30,7 +31,7 @@ function getErrorLocaleKeys(error?: ErrorNoticeError, errorFromQuery?: string): 
 
   if (error instanceof SearchParamError) return ['invalid_param'];
 
-  if (!(error instanceof ApiError)) return [error.name];
+  if (!(error instanceof ApiError)) return [isNetworkError(error) ? 'network_error' : error.name];
   if (!error.type) return [];
 
   return error.entityType ? [`resource_${error.type}`, error.type] : [error.type];

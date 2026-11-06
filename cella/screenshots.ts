@@ -3,6 +3,15 @@ import { getMyMemberships, getOrganizations } from '../sdk/gen/index.ts';
 import { apiClient, finishOnboarding } from './a11y.ts';
 
 /**
+ * Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
+ * its row out of the match, so the loop asks for the first one each time.
+ */
+const foldArchived = async (page: Page) => {
+  const unfolded = page.locator('#nav-sheet [data-archived-visible="true"][data-has-archived="true"] > div button');
+  while (await unfolded.count()) await unfolded.first().click();
+};
+
+/**
  * Opens the menu sheet, which the shots that show the organization list want standing open. The keyboard shortcut,
  * not the button: `#menu-nav` is the mobile bottom bar's, the sidebar's has no id, and a click leaves a hover state.
  */
@@ -20,11 +29,7 @@ export const openMenu = async (page: Page) => {
   if ((await keepOpen.getAttribute('aria-checked')) !== 'true') await keepOpen.click();
   await preferences.click();
   await keepOpen.waitFor({ state: 'hidden' });
-
-  // Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
-  // its row out of the match, so the loop asks for the first one each time.
-  const unfolded = page.locator('#nav-sheet [data-archived-visible="true"][data-has-archived="true"] > div button');
-  while (await unfolded.count()) await unfolded.first().click();
+  await foldArchived(page);
 };
 
 /**
@@ -75,6 +80,8 @@ export default defineScreenshotsBase({
     pcWide: { width: 1408, height: 792, scale: 2 }, // aspect-video
     tablet: { width: 768, height: 1024, scale: 2 }, // aspect-3/4
     mobile: { width: 375, height: 667, scale: 2 }, // aspect-9/16
+    // The /about hero's floating screen: no mockup frame, so the ratio of a current phone
+    phone: { width: 390, height: 844, scale: 2 }, // 9:19.5
   },
 
   // The dev banner and the first-visit menu hints of the public pages
@@ -162,6 +169,34 @@ export default defineScreenshotsBase({
         await page.locator('a[href="/docs/pages"]').evaluateAll((elements: HTMLElement[]) => {
           for (const element of elements) element.style.visibility = 'hidden';
         });
+        await hideDevUi(page);
+      },
+    },
+    {
+      id: 'hero-menu',
+      device: 'phone',
+      path: '{org}/organization/members',
+      out: `${marketing}/hero-menu`,
+      // On a phone the menu covers the page; it opens holding the current organization, with no keep-open preference.
+      // The table shows name and role only there, so `membersFilled` would wait for a column it never renders.
+      open: async (page) => {
+        await page.locator('.rdg-row').first().waitFor();
+        await tidyHeader(page);
+        await page.keyboard.press('Alt+M');
+        await page.locator('#nav-sheet').waitFor();
+        await foldArchived(page);
+        await hideDevUi(page);
+      },
+    },
+    {
+      // The page under `hero-menu`, which the hero's menu sheet slides in over
+      id: 'hero-page',
+      device: 'phone',
+      path: '{org}/organization/members',
+      out: `${marketing}/hero-page`,
+      open: async (page) => {
+        await page.locator('.rdg-row').first().waitFor();
+        await tidyHeader(page);
         await hideDevUi(page);
       },
     },

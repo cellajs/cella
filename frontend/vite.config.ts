@@ -498,7 +498,8 @@ if (appConfig.has.pwa && !isStorybook) {
       swSrc: 'src/lib/sw.ts',
       swDest: 'sw.js',
       globDirectory: path.resolve(import.meta.dirname, 'dist'),
-      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
+      // `mjs` holds the pdf.js worker, which renders a stored PDF attachment offline.
+      globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,woff2,webmanifest}'],
       // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
       // `gleap-*` (support chat) and `maps-*` (map tiles) need the network to do anything.
       // The `grammars-*` chunks are precached, so code blocks and the docs code view highlight offline.

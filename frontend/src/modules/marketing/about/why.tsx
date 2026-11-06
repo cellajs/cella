@@ -40,10 +40,11 @@ export function Why() {
       </div>
       <div className="w-full lg:w-8/12 lg:pl-12">
         {/* The laptop runs past the window's right edge so the shots draw larger: the column plus the margin beside the
-            max-w-7xl container (the section's px-4 up to 20rem) shows 86% of it, cutting 12% off the screen the pc frame
-            draws 94% wide: (97% - 86%) / 94%. Past a 1920px window the margin stops counting and the cut shrinks below that. */}
+            max-w-7xl container (the section's px-4 up to 20rem) shows 86% of it, 70% on a phone, cutting 12% (29%) off the
+            screen the pc frame draws 94% wide: (97% - 86%) / 94%. Past a 1920px window the margin stops counting and the cut
+            shrinks below that. */}
         <DeviceMockup
-          className="-top-2 w-[calc((100%+clamp(1rem,(100vw-80rem)/2,20rem))/0.86)] [--carousel-hidden-end:12%]"
+          className="-top-2 w-[calc((100%+clamp(1rem,(100vw-80rem)/2,20rem))/0.86)] [--carousel-hidden-end:12%] max-sm:w-[calc((100%+1rem)/0.7)] max-sm:[--carousel-hidden-end:29%]"
           type="pc"
           lightItems={whyLightSlides}
           darkItems={whyDarkSlides}
