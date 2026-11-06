@@ -5,12 +5,13 @@
   "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
-      // `pnpm cella align --run` runs each alignment's codemod by path, and `pnpm cella a11y` and `pnpm cella screenshots`
-      // load their adapters by path, so nothing imports them.
+      // `pnpm cella align --run` runs each alignment's codemod by path, and `pnpm cella a11y`, `pnpm cella screenshots` and
+      // `pnpm cella pentest` load their adapters by path, so nothing imports them.
       "entry": [
         "cella/cella.config.ts",
         "cella/a11y*.ts",
         "cella/screenshots*.ts",
+        "cella/pentest*.ts",
         "cella/skills/**/*.mjs",
         "cella/alignments/*/*.ts"
       ],
