@@ -4,12 +4,14 @@ import { appConfig } from 'shared';
 
 interface EmailPreviewArgs {
   name: string;
+  /** One of the template's preview variants; its default preview when absent. */
+  variant?: string;
   lng: string;
   placeholders: boolean;
 }
 
 /** Renders backend-generated email HTML through Storybook's same-origin `/api/dev/emails` proxy (`.storybook/main.ts`). */
-const EmailPreview = ({ name, lng, placeholders }: EmailPreviewArgs) => {
+const EmailPreview = ({ name, variant, lng, placeholders }: EmailPreviewArgs) => {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ const EmailPreview = ({ name, lng, placeholders }: EmailPreviewArgs) => {
     setHtml(null);
     setError(null);
 
-    const url = `/api/dev/emails/${name}?lng=${lng}&placeholders=${placeholders ? '1' : '0'}`;
+    const url = `/api/dev/emails/${name}?lng=${lng}&placeholders=${placeholders ? '1' : '0'}${variant ? `&variant=${variant}` : ''}`;
     fetch(url)
       .then(async (res) => {
         if (!res.ok) throw new Error(`Backend responded ${res.status}`);
@@ -30,7 +32,7 @@ const EmailPreview = ({ name, lng, placeholders }: EmailPreviewArgs) => {
     return () => {
       active = false;
     };
-  }, [name, lng, placeholders]);
+  }, [name, variant, lng, placeholders]);
 
   if (error) {
     return (
@@ -53,6 +55,7 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   argTypes: {
     name: { table: { disable: true } },
+    variant: { table: { disable: true } },
     lng: { options: appConfig.languages, control: { type: 'radio' } },
     placeholders: { control: 'boolean' },
   },
@@ -63,23 +66,30 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** One story per backend email template. The `name` is fixed; lng/placeholders stay as controls. */
-const makeEmailStory = (name: string): Story => ({ args: { name } });
+/** One story per backend email template and per preview variant. The `name` and `variant` are fixed; lng/placeholders stay as controls. */
+const makeEmailStory = (name: string, variant?: string): Story => ({ args: { name, variant } });
 
 export const Welcome = makeEmailStory('welcome');
 export const AccountSecurity = makeEmailStory('account-security');
 export const AccountExists = makeEmailStory('account-exists');
 export const OauthVerification = makeEmailStory('oauth-verification');
 export const MagicLink = makeEmailStory('magic-link');
+export const MagicLinkSignup = makeEmailStory('magic-link', 'signup');
+export const MagicLinkSignupInvited = makeEmailStory('magic-link', 'signup-invited');
 export const SsoRequired = makeEmailStory('sso-required');
 export const StepUp = makeEmailStory('step-up');
 export const SystemInvite = makeEmailStory('system-invite');
 export const MemberInvite = makeEmailStory('member-invite');
+export const MemberInviteInOrganization = makeEmailStory('member-invite', 'in-organization');
 export const MemberInviteWithToken = makeEmailStory('member-invite-with-token');
+export const MemberInviteWithTokenInOrganization = makeEmailStory('member-invite-with-token', 'in-organization');
 export const MemberAdded = makeEmailStory('member-added');
+export const MemberAddedInOrganization = makeEmailStory('member-added', 'in-organization');
 export const InvitationAddress = makeEmailStory('invitation-address');
 export const Newsletter = makeEmailStory('newsletter');
 export const RequestWasSent = makeEmailStory('request-was-sent');
+export const RequestWasSentWaitlist = makeEmailStory('request-was-sent', 'waitlist');
+export const RequestWasSentNewsletter = makeEmailStory('request-was-sent', 'newsletter');
 export const RequestWasSentAdmin = makeEmailStory('request-was-sent-admin');
 export const TenantRemoved = makeEmailStory('tenant-removed');
 export const Mention = makeEmailStory('mention');

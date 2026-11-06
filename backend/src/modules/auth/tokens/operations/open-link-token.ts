@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { assertSwitchOn } from '#/middlewares/config-switch';
+import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-link';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
@@ -24,12 +25,13 @@ const linkHandlers = {
     const held = await holdMagicLinkOutsideItsBrowser(ctx, rawToken);
     if (held) return held;
 
+    const followed = await findFollowedInvitation(ctx);
     // A sign-up link creates its account at this click, which proves the inbox.
     const token = await invokeToken(ctx, { type: 'magic', rawToken, claimHolder: claimMagicLinkHolder }).catch((err) =>
       explainOpenedMagicLink(err, rawToken),
     );
     forgetLinkRequest(ctx, 'magic');
-    return handleMagicLink(ctx, token);
+    return handleMagicLink(ctx, token, followed);
   },
   'oauth-verification': async (ctx, rawToken) => handleOAuthVerification(ctx, await invokeToken(ctx, { type: 'oauth-verification', rawToken })),
   invitation: async (ctx, rawToken) => {

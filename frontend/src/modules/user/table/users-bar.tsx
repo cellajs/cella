@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { TrashIcon, UserRoundPlusIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,7 @@ import { NamedText } from '~/modules/common/named-text';
 import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { openInviteDialog } from '~/modules/user/invite-users';
+import { pendingSystemInvitesQueryOptions } from '~/modules/user/query';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
@@ -19,6 +21,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
   const { t } = useTranslation();
 
   const total = useListQueryTotal(queryKey);
+  const pending = useQuery(pendingSystemInvitesQueryOptions()).data?.count ?? 0;
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const inviteContainerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +65,17 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       action={{ icon: UserRoundPlusIcon, label: t('c:invite'), onClick: openInvite }}
+      countExtra={
+        !barFilters.isFiltered &&
+        pending > 0 && (
+          <>
+            <span aria-hidden className="text-faint-foreground">
+              ·
+            </span>
+            <span className="text-muted-foreground shrink-0">{t('c:resource_count', { count: pending, resource: t('c:pending') })}</span>
+          </>
+        )
+      }
       searchFilters={searchFilters}
       selection={{
         count: selected.length,

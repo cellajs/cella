@@ -27,8 +27,8 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
 
 interface ResendInvitationOpts {
   invitation: { id: string; email: string };
-  /** The invitation's organization, whose default language an address without an account reads. */
-  organization: { defaultLanguage: string };
+  /** The invitation's organization, whose default language an address without an account reads and whose name the mail gives. */
+  organization: { defaultLanguage: string; name: string };
 }
 
 /**

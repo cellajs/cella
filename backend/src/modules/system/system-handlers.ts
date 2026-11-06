@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { countLiveSystemInvitations } from '#/modules/auth/tokens/tokens-queries';
 import { createInviteOp } from '#/modules/system/operations/create-invite';
 import { deleteUsersOp } from '#/modules/system/operations/delete-users';
 import { sendNewsletterOp } from '#/modules/system/operations/send-newsletter';
@@ -14,6 +15,11 @@ app.openapi(systemRoutes.createInvite, async (ctx) => {
   const { emails } = ctx.req.valid('json');
   const data = await createInviteOp(ctx, emails);
   return ctx.json(data, 200);
+});
+
+app.openapi(systemRoutes.getPendingSystemInvites, async (ctx) => {
+  const count = await countLiveSystemInvitations(ctx);
+  return ctx.json({ count }, 200);
 });
 
 app.openapi(systemRoutes.deleteUsers, async (ctx) => {

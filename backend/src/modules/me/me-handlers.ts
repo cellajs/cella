@@ -12,6 +12,7 @@ import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-a
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
 import { updateMeOp } from '#/modules/me/operations/update-me';
+import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
@@ -73,11 +74,7 @@ app.openapi(meRoutes.getUploadToken, async (ctx) => {
 });
 
 app.openapi(meRoutes.getMyMemberships, async (ctx) => {
-  const memberships = ctx.var.memberships;
-
-  // Strip createdBy; the rest already matches MembershipBaseModel.
-  const items = memberships.map(({ createdBy, ...rest }) => rest);
-
+  const items = ctx.var.memberships.map(toMembershipBase);
   return ctx.json({ items }, 200);
 });
 

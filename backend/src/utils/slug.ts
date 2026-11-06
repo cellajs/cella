@@ -12,3 +12,16 @@ export const slugFromName = (name: string) =>
 
 /** The slug of an address: the part before the `@`. */
 export const slugFromEmail = (email: string) => slugFromName(email.split('@')[0]);
+
+/**
+ * A name for an address whose holder gave none: the part before the `@` without a `+tag`, split into words on `.`, `_`
+ * and `-`, each capitalized ("jonas.peeters" gives "Jonas Peeters"). The part before the `@` as it is when it holds no word.
+ */
+export const displayNameFromEmail = (email: string) => {
+  const [localPart] = email.split('@');
+  const words = localPart
+    .split('+')[0]
+    .split(/[._-]+/)
+    .filter(Boolean);
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || localPart;
+};

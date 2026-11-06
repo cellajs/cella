@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
 import { emailFrame } from '../../emails/frame';
 import { i18n } from '../../emails/i18n';
-import { emailPreviewNames, emailPreviews, previewRequestDetails } from '../../emails/preview-fixtures';
+import { type EmailPreview, emailPreviewList, emailPreviews, previewPath, previewRequestDetails } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 import { accountSecurityEmail } from '../../emails/templates/account-security';
 
@@ -36,8 +36,10 @@ describe('email translation fallback', () => {
 
 /** Catches broken components, runtime errors, and keys missing from every language. */
 describe('email template rendering', () => {
-  for (const [name, def] of Object.entries(emailPreviews)) {
-    const { statics, recipient } = def.preview;
+  for (const preview of emailPreviewList) {
+    const def = emailPreviews[preview.name];
+    const { statics, recipient } = preview.data;
+    const name = previewPath(preview);
     for (const lng of appConfig.languages) {
       it(`${name} renders without error in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
@@ -57,12 +59,13 @@ describe('email template rendering', () => {
   }
 });
 
-// Storybook indexes stories from static exports, so each preview needs its own line in the stories file.
+// Storybook indexes stories from static exports, so each preview and each variant needs its own line in the stories file.
 describe('email storybook', () => {
   it('has a story for every preview', () => {
     const storiesUrl = new URL('../../../frontend/src/stories/email-templates.stories.tsx', import.meta.url);
     const stories = readFileSync(storiesUrl, 'utf8');
-    const missing = emailPreviewNames.filter((name) => !stories.includes(`makeEmailStory('${name}')`));
+    const storyCall = ({ name, variant }: EmailPreview) => (variant ? `makeEmailStory('${name}', '${variant}')` : `makeEmailStory('${name}')`);
+    const missing = emailPreviewList.filter((preview) => !stories.includes(storyCall(preview))).map(previewPath);
     expect(missing).toEqual([]);
   });
 });

@@ -5,7 +5,7 @@ import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { createAccount } from '#/modules/user/operations/create-account';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug';
+import { displayNameFromEmail, slugFromEmail } from '#/utils/slug';
 
 /**
  * The account a sign-up link signs in to, settled in the transaction that redeems it: the account that holds the
@@ -22,8 +22,9 @@ export const claimMagicLinkHolder = async (tx: Tx, token: TokenRecord): Promise<
 
   if (!(await maySignUp(txCtx, { email: token.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
-  const slug = slugFromEmail(token.email);
-  const user = await createAccount(txCtx, { newUser: { email: token.email, slug, name: slug, firstName: slug }, via: 'magic' });
+  const name = displayNameFromEmail(token.email);
+  const newUser = { email: token.email, slug: slugFromEmail(token.email), name, firstName: name.split(' ')[0] };
+  const user = await createAccount(txCtx, { newUser, via: 'magic' });
 
   log.info('User created via magic link sign-up', { userId: user.id });
   return user.id;

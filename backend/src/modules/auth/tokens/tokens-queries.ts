@@ -1,4 +1,4 @@
-import { and, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, countDistinct, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { type CodeTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
@@ -33,28 +33,34 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
   return token;
 };
 
+/**
+ * An unexpired system invitation: one with no membership row. A membership invitation's token counts for nothing here:
+ * its row decides, and its tokens go with the row.
+ */
+const liveSystemInvitation = () =>
+  and(eq(tokensTable.type, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
+
 interface HasLiveSystemInvitationTokenOpts {
   email: string;
 }
 
-/**
- * Whether an unexpired system invitation (no membership row) is addressed to `email`. A membership invitation's token
- * counts for nothing here: its row decides, and its tokens go with the row.
- */
+/** Whether an unexpired system invitation is addressed to `email`. */
 export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: HasLiveSystemInvitationTokenOpts) => {
   const [liveToken] = await ctx.var.db
     .select({ id: tokensTable.id })
     .from(tokensTable)
-    .where(
-      and(
-        eq(tokensTable.email, email),
-        eq(tokensTable.type, 'invitation'),
-        isNull(tokensTable.inactiveMembershipId),
-        gt(tokensTable.expiresAt, getIsoDate()),
-      ),
-    )
+    .where(and(eq(tokensTable.email, email), liveSystemInvitation()))
     .limit(1);
   return !!liveToken;
+};
+
+/** How many addresses an unexpired system invitation is addressed to. */
+export const countLiveSystemInvitations = async (ctx: DbContext) => {
+  const [row] = await ctx.var.db
+    .select({ count: countDistinct(tokensTable.email) })
+    .from(tokensTable)
+    .where(liveSystemInvitation());
+  return row.count;
 };
 
 interface FindSystemInvitationTokensOpts {

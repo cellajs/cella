@@ -6,14 +6,13 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
-import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
+import { hasPendingInvitation } from '#/modules/auth/invitations/operations/may-sign-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAddressGovernance } from '#/modules/connections/connections-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug';
 import { magicLinkEmail, ssoRequiredEmail } from '../../../../../emails';
 
 /** The account's half of a request may run after the answer, so it reads and writes on the base pool. */
@@ -74,6 +73,8 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, asse
  */
 const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccount, tokenId }: MagicLinkRequest) => {
   const existingUser = await findUserByEmail(dbCtx, { email });
+  // Asked once: it decides whether the address may sign up and tells the sign-up mail it completes an invitation.
+  const invited = !existingUser && (await hasPendingInvitation(dbCtx, { email }));
 
   // An address an institution proved inherits its tenant's sign-in policy: while that policy excludes magic links,
   // the address sends none and is pointed at the institution's entry. The user keeps every other method and address.
@@ -96,9 +97,9 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
       log.info('Magic link refused by the sign-in policy, institution entry mailed', { userId: existingUser.id, connectionId });
       return;
     }
-  } else if (!(await maySignUp(dbCtx, { email }))) {
-    // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
-    // as a real request, to prevent email enumeration.
+  } else if (!appConfig.has.selfRegistration && !invited) {
+    // Registration is closed to the public, but an invited address may still sign up (`maySignUp`). Anyone else gets the
+    // same 204 as a real request, to prevent email enumeration.
     log.info('Magic link requested for unknown email');
     return;
   }
@@ -110,7 +111,8 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 
-  const staticProps = { magicLinkUrl, name: existingUser?.name ?? slugFromEmail(email), isNewUser: !existingUser };
+  // Only an account holder is greeted: an address alone names nobody.
+  const staticProps = { magicLinkUrl, name: existingUser?.name ?? '', isNewUser: !existingUser, invited };
   const recipients = [{ email, lng: existingUser?.language ?? appConfig.defaultLanguage }];
 
   mailer.sendEmails(magicLinkEmail, staticProps, recipients).catch((err) => log.error('Failed to send magic link email', { err }));

@@ -924,6 +924,7 @@ export const zGetTokenDataResponse = z.object({
   userId: z.string().optional(),
   inactiveMembershipId: z.string().optional(),
   ssoConnectionId: z.string().optional(),
+  inviterName: z.string().optional(),
   invitation: z
     .object({
       entityType: z.enum(['organization']),
@@ -1369,6 +1370,7 @@ export const zGetMyInvitationsResponse = z.object({
     z.object({
       entity: zChannelBase,
       inactiveMembership: zInactiveMembership,
+      organizationName: z.string().nullable(),
     }),
   ),
   total: z.number(),
@@ -1667,6 +1669,13 @@ export const zSystemInviteResponse = z.object({
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
+});
+
+/**
+ * Pending invitations
+ */
+export const zGetPendingSystemInvitesResponse = z.object({
+  count: z.int(),
 });
 
 export const zDeleteUsersBody = z.object({

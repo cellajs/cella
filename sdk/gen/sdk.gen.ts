@@ -149,6 +149,9 @@ import type {
   GetPendingMfaData,
   GetPendingMfaErrors,
   GetPendingMfaResponses,
+  GetPendingSystemInvitesData,
+  GetPendingSystemInvitesErrors,
+  GetPendingSystemInvitesResponses,
   GetPresignedUrlsData,
   GetPresignedUrlsErrors,
   GetPresignedUrlsResponses,
@@ -381,6 +384,7 @@ import {
   zGetPendingMagicLinkResponse,
   zGetPendingMembershipsResponse,
   zGetPendingMfaResponse,
+  zGetPendingSystemInvitesResponse,
   zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
@@ -543,7 +547,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
 /**
  * Get token data
  *
- * Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.
+ * Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.
  *
  * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· _auth · cella_
  *
@@ -1963,6 +1967,26 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Count pending system invitations
+ *
+ * Returns how many addresses hold an unexpired system invitation, one sent outside any organization.
+ *
+ * **GET /system/invite/pending** ·· [getPendingSystemInvites](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system/invite/pending) ·· _system · cella_
+ *
+ * @param {getPendingSystemInvitesData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 429
+ */
+export const getPendingSystemInvites = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPendingSystemInvitesData, ThrowOnError>,
+): RequestResult<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetPendingSystemInvitesResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/system/invite/pending',
+    ...options,
   });
 
 /**

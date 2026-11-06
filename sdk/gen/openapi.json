@@ -4029,7 +4029,7 @@
         "operationId": "getTokenData",
         "tags": ["auth", "cella"],
         "summary": "Get token data",
-        "description": "Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.",
+        "description": "Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -4059,7 +4059,8 @@
               "application/json": {
                 "example": {
                   "email": "nola.becker-hickle@demo.local",
-                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c"
+                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c",
+                  "inviterName": "Shaun Crona"
                 },
                 "schema": {
                   "type": "object",
@@ -4076,6 +4077,10 @@
                     },
                     "ssoConnectionId": {
                       "type": "string"
+                    },
+                    "inviterName": {
+                      "type": "string",
+                      "description": "Name of the user who sent an invitation, for a system invitation too"
                     },
                     "invitation": {
                       "type": "object",
@@ -6664,7 +6669,8 @@
                         },
                         "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                         "tenantId": "i5coyr"
-                      }
+                      },
+                      "organizationName": null
                     },
                     {
                       "entity": {
@@ -6697,7 +6703,8 @@
                         },
                         "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                         "tenantId": "gwylqy"
-                      }
+                      },
+                      "organizationName": null
                     }
                   ],
                   "total": 2
@@ -6715,9 +6722,13 @@
                           },
                           "inactiveMembership": {
                             "$ref": "#/components/schemas/InactiveMembership"
+                          },
+                          "organizationName": {
+                            "type": ["string", "null"],
+                            "description": "The name of the organization the channel is in; null for an invitation to an organization."
                           }
                         },
-                        "required": ["entity", "inactiveMembership"]
+                        "required": ["entity", "inactiveMembership", "organizationName"]
                       }
                     },
                     "total": {
@@ -8384,6 +8395,54 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/system/invite/pending": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPendingSystemInvites",
+        "tags": ["system", "cella"],
+        "summary": "Count pending system invitations",
+        "description": "Returns how many addresses hold an unexpired system invitation, one sent outside any organization.",
+        "x-guard": ["userGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["readLimiter"],
+        "responses": {
+          "200": {
+            "description": "Pending invitations",
+            "content": {
+              "application/json": {
+                "example": {
+                  "count": 3
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["count"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
