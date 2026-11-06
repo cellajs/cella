@@ -315,7 +315,7 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
       id: usersTable.id,
       email: usersTable.email,
       name: usersTable.name,
-      language: usersTable.language,
+      languageCode: usersTable.languageCode,
       mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, ${defaultPreferences.mentionEmail})`,
       commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, ${defaultPreferences.commentEmail})`,
     })
@@ -326,9 +326,9 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
     .orderBy(usersTable.id);
 }
 
-/** Minimal user objects for actors with their first name, keyed by id; an actor that is no user, or a deleted one, is absent. */
+/** Minimal user objects for actors with their given name, keyed by id; an actor that is no user, or a deleted one, is absent. */
 export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts) {
-  if (userIds.length === 0) return new Map<string, UserMinimalBase & { firstName: string | null }>();
+  if (userIds.length === 0) return new Map<string, UserMinimalBase & { givenName: string | null }>();
 
   const rows = await ctx.var.db
     .select({
@@ -336,12 +336,12 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
       name: usersTable.name,
       slug: usersTable.slug,
       thumbnailUrl: usersTable.thumbnailUrl,
-      firstName: usersTable.firstName,
+      givenName: usersTable.givenName,
     })
     .from(usersTable)
     .where(inArray(usersTable.id, [...new Set(userIds)]));
 
-  return new Map(rows.map((row) => [row.id, { ...toUserMinimalBase(row), firstName: row.firstName }]));
+  return new Map(rows.map((row) => [row.id, { ...toUserMinimalBase(row), givenName: row.givenName }]));
 }
 
 interface NotificationIdsOpts {
@@ -401,7 +401,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart,
         windowStart,
         email: usersTable.email,
         name: usersTable.name,
-        language: usersTable.language,
+        languageCode: usersTable.languageCode,
       })
       .from(usersTable)
       // Verified addresses only; mailing dormant and never-activated accounts helps no one.

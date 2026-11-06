@@ -34,7 +34,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
     if (existingUser) {
       if (await mayMail(normalizedEmail)) {
         mailer
-          .sendEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.language }])
+          .sendEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.languageCode }])
           .catch((err) => log.error('Failed to send account-exists email', { err }));
       }
       return;

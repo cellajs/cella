@@ -46,7 +46,7 @@ const adminId = defaultAdminUser.id;
 /** `showcase.json`. An age is a duration before the run: 25min, 2h, 3d, 1w, 5mo or 2y. */
 interface Showcase {
   /** The account the screenshots sign in as, the init seed's admin under this name. */
-  admin: { firstName: string; lastName: string; email: string; age: string };
+  admin: { givenName: string; familyName: string; email: string; age: string };
   /** Share of the generated members with MFA on. */
   mfaShare: number;
   /** Mentions of the admin left unread. */
@@ -133,15 +133,15 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
     };
 
     const newMember = (
-      overrides: { firstName?: string; lastName?: string; email?: string; mfaRequired: boolean },
+      overrides: { givenName?: string; familyName?: string; email?: string; mfaRequired: boolean },
       role: string,
       lastSeenAt: string | null,
     ) => {
       const joinedAt = sinceThen(createdAt);
       const mock = { ...mockUser({ email: overrides.email }), ...overrides };
-      // First and last name only: faker's full names carry titles such as "Miss" or "PhD"
-      const name = [mock.firstName, mock.lastName].filter(Boolean).join(' ');
-      const user = { ...mock, name, slug: overrides.firstName ? slug(name) : mock.slug, id: mockUuid(), createdAt: joinedAt, updatedAt: joinedAt };
+      // Given and family name only: faker's full names carry titles such as "Miss" or "PhD"
+      const name = [mock.givenName, mock.familyName].filter(Boolean).join(' ');
+      const user = { ...mock, name, slug: overrides.givenName ? slug(name) : mock.slug, id: mockUuid(), createdAt: joinedAt, updatedAt: joinedAt };
       const membership = { ...mockChannelMembership('organization', channel, user), role: takeSeat(role), createdAt: joinedAt };
       return { user, membership, lastSeenAt };
     };
@@ -155,10 +155,10 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
     };
 
     const people = (org.people ?? []).map(({ name, role, mfa, lastSeen }) => {
-      const [firstName, ...rest] = name.split(' ');
+      const [givenName, ...rest] = name.split(' ');
       if (!org.domain) throw new Error(`showcase.json: ${org.name} names people without a domain`);
       return newMember(
-        { firstName, lastName: rest.join(' '), email: `${slug(firstName)}@${org.domain}`, mfaRequired: mfa },
+        { givenName, familyName: rest.join(' '), email: `${slug(givenName)}@${org.domain}`, mfaRequired: mfa },
         role,
         lastSeen && timeAgo(lastSeen),
       );
@@ -189,10 +189,10 @@ const planAttachments = (org: ShowcaseOrganization, homes: AttachmentSeedPlaceme
 
 /** The admin under the showcase name, with MFA on through a passkey and an authenticator app nobody can sign in with. */
 const finishAdmin = async () => {
-  const { firstName, lastName, age } = showcase.admin;
+  const { givenName, familyName, age } = showcase.admin;
   await updateUser(ctx, {
     id: adminId,
-    values: { firstName, lastName, name: `${firstName} ${lastName}`, mfaRequired: true, createdAt: timeAgo(age), ...updateStamps(adminId) },
+    values: { givenName, familyName, name: `${givenName} ${familyName}`, mfaRequired: true, createdAt: timeAgo(age), ...updateStamps(adminId) },
   });
 
   const randomKey = () => encodeBase32(getRandomValues(new Uint8Array(20)));

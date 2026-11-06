@@ -55,11 +55,11 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
   useBeforeUnload(form.isDirty);
 
-  const country = useWatch({ control: form.control, name: 'country' });
+  const regionCode = useWatch({ control: form.control, name: 'regionCode' });
   const fillSoleTimezone = (code: string) => {
-    if (!code || form.getValues('timezone')) return;
+    if (!code || form.getValues('timeZone')) return;
     const zone = soleTimeZone(code, i18n.language);
-    if (zone) form.setValue('timezone', zone, { shouldDirty: true });
+    if (zone) form.setValue('timeZone', zone, { shouldDirty: true });
   };
 
   const onSubmit = (body: FormValues) => {
@@ -133,8 +133,8 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         />
         <DefaultLanguageField form={form} />
 
-        <CountryFormField control={form.control} name="country" label={t('c:country')} onSelect={fillSoleTimezone} />
-        <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} country={country} />
+        <CountryFormField control={form.control} name="regionCode" label={t('c:region_code')} onSelect={fillSoleTimezone} />
+        <TimezoneFormField control={form.control} name="timeZone" label={t('c:time_zone')} country={regionCode} />
 
         <FormActions>
           <SubmitButton disabled={!form.isDirty} loading={isPending}>

@@ -114,7 +114,7 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
       {/* One `c:notification.<type>` sentence per vocabulary type, and one without its channel; apps add theirs to app.json */}
       <span className={cn('min-w-0 text-sm wrap-break-word', notification.readAt && 'text-muted-foreground')}>
         {t(hasChannel ? `c:notification.${notification.type}` : `c:notification.${notification.type}.no_channel`, {
-          actor: actor?.firstName || actor?.name || t('c:someone'),
+          actor: actor?.givenName || actor?.name || t('c:someone'),
           subject: subjectTitle || t('c:unknown'),
           channel: channelName || t('c:unknown'),
         })}{' '}

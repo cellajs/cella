@@ -14,7 +14,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 const { userStore } = await import('~/modules/user/user-store');
 const { getAndSetMe } = await import('~/modules/me/helpers');
 
-const person = (id: string, name: string) => ({ id, name, slug: id, thumbnailUrl: null, email: `${id}@example.test`, language: 'en' });
+const person = (id: string, name: string) => ({ id, name, slug: id, thumbnailUrl: null, email: `${id}@example.test`, languageCode: 'en' });
 const first = person('user-1', 'Ada First');
 const second = person('user-2', 'Uma Second');
 

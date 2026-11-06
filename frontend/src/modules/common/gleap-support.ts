@@ -29,7 +29,7 @@ if (onlineManager.isOnline()) initGleap();
 function setGleapUser(user: User) {
   if (!window.Gleap) return;
 
-  window.Gleap.setLanguage(user.language || 'en');
+  window.Gleap.setLanguage(user.languageCode || 'en');
 
   if (window.Gleap.isUserIdentified()) {
     window.Gleap.updateContact({ email: user.email, name: user.name || user.email });

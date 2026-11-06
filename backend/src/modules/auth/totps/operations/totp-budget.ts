@@ -7,7 +7,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import type { UserModel } from '#/modules/user/user-db';
 
 /** The account whose codes are checked; a lockout mails it. */
-export type TotpUser = Pick<UserModel, 'id' | 'email' | 'name' | 'language'>;
+export type TotpUser = Pick<UserModel, 'id' | 'email' | 'name' | 'languageCode'>;
 
 const hourly: BucketLimits = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
 

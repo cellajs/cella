@@ -16,14 +16,14 @@ import { findUserById, updateUser } from '#/modules/user/user-queries';
 export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   const user = ctx.var.user;
 
-  const { slug, firstName, lastName } = input;
+  const { slug, givenName, familyName } = input;
 
   if (slug && slug !== user.slug) {
     const slugAvailable = await checkSlugAvailable(ctx, slug, 'user');
     if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
   }
 
-  const values = { ...input, name: nameAfterUpdate(user, { firstName, lastName, slug }), ...updateStamps(user.id) };
+  const values = { ...input, name: nameAfterUpdate(user, { givenName, familyName, slug }), ...updateStamps(user.id) };
   await updateUser(ctx, { id: user.id, values });
   invalidateCache.user(user.id);
   await releaseReplacedImages({ holder: { userId: user.id }, before: user, after: input });

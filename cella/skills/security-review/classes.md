@@ -215,7 +215,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Every `*-schema.ts`.
   - Tests: `backend/tests/security/{mass-assignment,response-secrets,user-mfa-visibility,member-personal-view,profile-image-urls,trace-redaction}.test.ts`; `cdc/src/tests/secret-columns.test.ts`.
 - **Holds:**
-  - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `firstName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
+  - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `givenName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
   - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
   - `member-personal-view`: another member's archive, mute and order in `listMembers`; pins that email is shown org-wide.

@@ -9,8 +9,8 @@ export const organizationsTable = snakeCase.table(
   {
     ...channelColumns('organization'),
     shortName: varchar({ length: maxLength.field }),
-    country: varchar({ length: maxLength.field }),
-    timezone: varchar({ length: maxLength.field }),
+    regionCode: varchar({ length: maxLength.field }),
+    timeZone: varchar({ length: maxLength.field }),
     defaultLanguage: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
     languages: jsonb().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     notificationEmail: varchar({ length: maxLength.field }),

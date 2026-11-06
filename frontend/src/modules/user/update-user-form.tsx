@@ -74,8 +74,8 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
         <AvatarFormField form={form} label={children ? '' : t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
-            <InputFormField control={form.control} name="firstName" label={t('c:first_name')} autoComplete="given-name" />
-            <InputFormField control={form.control} name="lastName" label={t('c:last_name')} autoComplete="family-name" />
+            <InputFormField control={form.control} name="givenName" label={t('c:given_name')} autoComplete="given-name" />
+            <InputFormField control={form.control} name="familyName" label={t('c:family_name')} autoComplete="family-name" />
           </div>
         )}
 
@@ -98,10 +98,10 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
 
                 <FormField
                   control={form.control}
-                  name="language"
+                  name="languageCode"
                   render={({ field }) => (
-                    <FormItem name="language">
-                      <FormLabel required>{t('c:language')}</FormLabel>
+                    <FormItem name="languageCode">
+                      <FormLabel required>{t('c:language_code')}</FormLabel>
                       <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
                       <FormMessage />
                     </FormItem>

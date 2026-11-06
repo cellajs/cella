@@ -327,7 +327,7 @@ describe('Draft context invite deferral', async () => {
     // The invitee signs up before the context is published: the proven inbox binds the held invitation and ends its link.
     const account = await createAccount(
       { var: { db } },
-      { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', firstName: 'New', lastName: 'Comer' }, via: 'magic' },
+      { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', givenName: 'New', familyName: 'Comer' }, via: 'magic' },
     );
     const [bound] = await getInactiveRows(organization.id);
     expect(bound.userId).toBe(account.id);
