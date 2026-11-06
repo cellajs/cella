@@ -137,10 +137,11 @@ export const shots = [
     out: 'frontend/public/static/marketing/screenshots/settings',
     // The page opens on General, a short form, and the sessions card below it gains an "Unnamed device" row with every
     // driver run: the sign-in methods fill the frame, the same on any database. `block: 'start'` puts the card's top
-    // at the frame's top, less the scroll margin, which also ends the frame above the next card's empty state.
+    // at the frame's top, less the scroll margin. With MFA on the card holds a passkey and an authenticator app, and this
+    // margin ends the frame below the next card's description, above its empty state.
     open: async (page) => {
       await page.locator('#spy-authentication-anchor-wrap').evaluate((element) => {
-        element.style.scrollMarginTop = '3rem';
+        element.style.scrollMarginTop = '1.5rem';
         element.scrollIntoView({ block: 'start' });
       });
       await hideDevUi(page);

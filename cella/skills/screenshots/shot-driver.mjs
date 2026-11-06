@@ -113,6 +113,14 @@ const { base, api } = session;
 const slug = session.cookie.name.replace(/^__Host-/, '').replace(/-session-v\d+$/, '');
 log('target', { base, api, email: EMAIL, out: OUT_DIR ?? '(the files the app ships)' });
 
+// MFA on for the shot user and a share of their members, so the account page and member tables show both states. Only
+// on a throwaway database: nobody can sign in with the factors it adds, which locks a developer's own account out.
+if (process.env.DATABASE_ADMIN_URL && process.env.DATABASE_ADMIN_URL !== fileEnv.DATABASE_ADMIN_URL) {
+  const showcase = spawnSync('pnpm', ['--silent', '--filter', 'backend', 'showcase:mfa', EMAIL], { encoding: 'utf8' });
+  if (showcase.status !== 0) throw new Error(`showcase:mfa failed:\n${showcase.stdout}\n${showcase.stderr}`);
+  log('mfa', showcase.stdout.trim());
+} else log('mfa', 'left off: this run shoots the database backend/.env names');
+
 /**
  * Writes a screenshot to `path` in the app's format. WebP is lossless, so the pixels are the screenshot's own, at the
  * encoder's slowest and smallest setting: a third of the PNG for a page of flat color and text.
