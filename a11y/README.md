@@ -14,11 +14,9 @@ run. The audit itself takes three to four minutes; every run also builds the fro
 - **Docker**, for the audit's own database. It is apart from the dev database, so a run never changes your data.
 - **Chromium** for Playwright, once: `pnpm --filter a11y exec playwright install chromium`.
 
-`pnpm a11y:run` does the rest: it starts the database (`db_a11y` in `backend/compose.yaml`, port 5470), seeds it on
-the first run, serves the backend, the Yjs relay (when the app runs one) and a built frontend 70 ports above the
-checkout's dev ports, runs the audit and stops what it started. It sets the database URLs and the system admin
-allowlist for that stack itself, so `backend/.env` stays as it is. Every checkout's run uses the same `db_a11y`, so one
-audit stack runs per machine at a time.
+`pnpm a11y:run` does the rest: it runs the audit on a testbed (`pnpm cella testbed`), a seeded copy of the app with
+a built frontend on a database and ports of its own, and stops the testbed afterwards. A testbed you hold yourself
+stays up instead, and every `pnpm a11y:run` reuses it. Either way `backend/.env` stays as it is.
 
 The audit signs in as the seeded admin with a minted session ([verify](../cella/skills/verify/SKILL.md#drive-browser)),
 so it runs in development only, and signs it out when it ends.
@@ -34,10 +32,10 @@ against.
 
 | Command | Description |
 | --- | --- |
-| `pnpm a11y:run` | Start the audit stack, run the full audit, stop the stack |
-| `pnpm a11y:run --keep` | The same, and leave the stack up to rerun states while fixing; `--stop` ends it |
-| `pnpm a11y` | Full audit against a running stack: axe, browser probes and code checks |
-| `pnpm a11y --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger. On a kept stack, prefix the `DEV_PORT_OFFSET` the run printed |
+| `pnpm a11y:run` | Run the full audit on a testbed: axe, browser probes and code checks |
+| `pnpm a11y:run --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger |
+| `pnpm cella testbed` | Hold a testbed while fixing, so partial runs skip the start; ctrl-c stops it |
+| `pnpm a11y` | The audit against a stack you started yourself |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
 | `pnpm -C a11y report --publish` | Put the report where the app serves it and print what the statement needs; refuses a draft |

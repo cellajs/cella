@@ -649,10 +649,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
   - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
   - `shared/README.md` (dev ports).
-  - `backend/compose.yaml` (services `db`, `db_test`, `db_a11y`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
+  - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
-  - `a11y/src/run.ts` (ports shifted by 70, its own database `DB_A11Y_PORT`), `bench/src/config.ts` (default admin URL).
+  - `pnpm cella testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DB_TESTBED_PORT`), `bench/src/config.ts` (default admin URL).
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.

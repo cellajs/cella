@@ -478,8 +478,7 @@
         "frontend/vite.config.ts",
         "cdc/src/env.ts",
         "yjs/src/env.ts",
-        "a11y/src/audit.ts",
-        "a11y/src/run.ts"
+        "a11y/src/audit.ts"
       ],
       "linter": {
         "rules": {

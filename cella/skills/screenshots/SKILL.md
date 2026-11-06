@@ -27,9 +27,8 @@ state and judging the result is this skill's job, and the driver cannot do it: r
 ## A clean database
 
 A development database that has been worked in fails the data check below: bench users, test rows, your own address,
-dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
-[A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
-`node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
+dozens of sessions. Reseeding it costs you that data, so shoot from a testbed:
+`pnpm cella testbed -- node cella/skills/screenshots/shot-driver.mjs`. The driver's first line prints the
 origin it shoots: it must be the shifted one. On that database the driver also turns MFA on for the shot user, with a
 passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
 (`pnpm --filter backend showcase:mfa`), so the account page and the member tables show both states. Nobody can sign in

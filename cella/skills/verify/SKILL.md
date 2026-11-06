@@ -29,7 +29,9 @@ docker ps --format '{{.Names}}  {{.Ports}}'
 
 ## A throwaway database
 
-Clean seeded data, or a branch with migrations, beside the stack you already run. Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free, and a second throwaway stack takes offset 60, port 5450 and a container name of its own: `pnpm a11y:run` takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
+Clean seeded data, or a branch with migrations, beside the stack you already run. `pnpm cella testbed` is the short way: the whole app with a built frontend, the workers and the relay, on its own database that every start migrates. `pnpm cella testbed -- <command>` runs a command against it and stops it after. One testbed runs per app on a machine. The stack below is for a Vite dev server, or a database of a worktree's own.
+
+Variables in the environment win over `backend/.env`, so nothing in the checkout changes. Offset 50 and port 5440 are free, and a second throwaway stack takes offset 60, port 5450 and a container name of its own: the testbed takes 70 and 5470, and linked worktrees take the hundreds. Offset 40 puts a service on port 4045, which `fetch` refuses, so the config will not build.
 
 ```sh
 # The image `pnpm docker` built (`docker images | grep db`), with the `-c` flags of `db` in backend/compose.yaml

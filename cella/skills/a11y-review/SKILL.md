@@ -9,7 +9,7 @@ description: Run the WCAG audit, fix what it finds, check each fix in the runnin
 
 ## Run
 
-Run `pnpm a11y:run --keep` for the fix loop, so the stack stays up between partial runs.
+Hold a testbed for the fix loop (`pnpm cella testbed`, attached to your session), so partial runs skip its start.
 
 - A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. Read the visit's `failure-<mode>.png` and `.json` first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
 - A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
@@ -29,7 +29,7 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 
 1. Read the failures in `a11y/results/manual-pass.md` and `a11y/results/axe.json` (every failing element per rule and state).
 2. Fix the cause in the component, not the instance: a token, a primitive in `frontend/src/modules/ui`, a shared form field.
-3. Check the fix in the running app before trusting it. Drive the kept stack with a short Playwright script: `startSession` (`a11y/src/session.ts`) signs in, `openState(session, '<id>')` (`a11y/src/drive.ts`) opens a state of the scope, also as a phone, a zoomed desktop or with motion allowed. Run it with the kept stack's `DEV_PORT_OFFSET` and `NODE_ENV=development`. Check the state the fix is about and one neighbor that shares the component.
+3. Check the fix in the running app before trusting it. Drive the testbed with a short Playwright script: `startSession` (`a11y/src/session.ts`) signs in, `openState(session, '<id>')` (`a11y/src/drive.ts`) opens a state of the scope, also as a phone, a zoomed desktop or with motion allowed. Run it through `pnpm cella testbed -- <command>`, which hands it the testbed's ports and database. Check the state the fix is about and one neighbor that shares the component.
 4. Changes that alter data (a reorder, a mute) are put back before the next run: the audit opens the first organization the audit user administers, and a changed order changes which one that is.
 5. Rerun the full audit. Rows the audit decides move by themselves.
 6. A row a reviewer decided keeps its decision and its remark, which now describes the old code: decide it again once step 3 showed the fix holds.
