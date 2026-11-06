@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { deleteConnectedApp, listAttachments, listConnectedApps, updateOrganization } from 'sdk';
+import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
@@ -71,6 +72,14 @@ describe('OAuth authorization server', async () => {
 
     const token = await verifyAccessToken(String(body.access_token), { tenantId: client.org.tenantId });
     expect(token).toMatchObject({ kind: 'service', actorId: client.clientId, tenantId: client.org.tenantId, scopes: ['attachment:read'] });
+
+    // Scheme, host and tenant id in capitals name the same resource, and the token carries the audience the guards build.
+    const shouted = `${appConfig.backendUrl.replace(/^[^/]+\/\/[^/]+/, (origin) => origin.toUpperCase())}/tenants/${client.org.tenantId.toUpperCase()}`;
+    const capitals = await clientCredentials(client, { scope: 'attachment:read', resource: shouted });
+    expect(capitals.status).toBe(200);
+    await expect(verifyAccessToken(String(capitals.body.access_token), { tenantId: client.org.tenantId })).resolves.toMatchObject({
+      kind: 'service',
+    });
   });
 
   it('refuses a wrong client secret and a resource outside this deployment', async () => {

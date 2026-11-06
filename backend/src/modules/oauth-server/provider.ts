@@ -12,7 +12,7 @@ import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { findGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
-import { parseResource } from '#/modules/oauth-server/resources';
+import { parseResource, resourceUri } from '#/modules/oauth-server/resources';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { apiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
 import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
@@ -158,7 +158,8 @@ export async function createProvider(): Promise<Provider> {
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
           const scope = grantableScopes(ctx, client).join(' ');
-          return { scope, audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: hour };
+          // The audience is the resource as the guards spell it, whatever case its origin and tenant id were sent in.
+          return { scope, audience: resourceUri(resource), accessTokenFormat: 'jwt', accessTokenTTL: hour };
         },
       },
     },

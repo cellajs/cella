@@ -16,14 +16,18 @@ export function resourceUri(ref: ResourceRef): string {
     : `${appConfig.backendUrl}/tenants/${tenantId}`;
 }
 
-const mcpResource = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/tenants/([^/]+)/organizations/([^/]+)/mcp$`);
-const apiResource = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/tenants/([^/]+)$`);
+/** The URI with its scheme and host lowercased, which compare case-insensitively (RFC 3986 §6.2.2.1); the path stays as written. */
+const withLowercaseOrigin = (uri: string) => uri.replace(/^[^:/?#]+:\/\/[^/?#]*/, (origin) => origin.toLowerCase());
 
-/** Null for anything that is not one of this deployment's resources. */
+const mcpResource = new RegExp(`^${escapeRegExp(withLowercaseOrigin(appConfig.mcpUrl))}/tenants/([^/]+)/organizations/([^/]+)/mcp$`);
+const apiResource = new RegExp(`^${escapeRegExp(withLowercaseOrigin(appConfig.backendUrl))}/tenants/([^/]+)$`);
+
+/** Null for anything that is not one of this deployment's resources. The tenant id reads lowercased, as `routeTarget` reads it. */
 export function parseResource(uri: string): ResourceRef | null {
-  const mcp = mcpResource.exec(uri);
+  const canonical = withLowercaseOrigin(uri);
+  const mcp = mcpResource.exec(canonical);
   if (mcp) return { face: 'mcp', tenantId: mcp[1].toLowerCase(), organizationId: mcp[2] };
-  const api = apiResource.exec(uri);
+  const api = apiResource.exec(canonical);
   if (api) return { face: 'api', tenantId: api[1].toLowerCase() };
   return null;
 }
