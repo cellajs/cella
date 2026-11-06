@@ -6,11 +6,10 @@ Development and build scripts for the backend.
 
 - **generate.ts** - Runs `drizzle-kit generate` (schema diff), then collects raw-SQL side-effects (RLS, CDC, triggers) into one combined migration
 - **generate-openapi.ts** - Writes the OpenAPI spec to `openapi.cache.json`
-- **seeds.ts** - Runs migrations, then the seed scripts from config
+- **seeds.ts** - Runs migrations, then the seed scripts from config. `pnpm seed <name>` runs one; `pnpm seed showcase` writes the curated dataset of `json/showcase.json` that the marketing screenshots show, and runs only when named, on an empty throwaway database
 - **upload-seed-assets.ts** (`pnpm seed:assets`) - Publishes `seeds/assets/` to the public bucket under an immutable version prefix and writes `seeds/seed-assets.json`, the manifest the attachment seed reads. Needs `S3_ACCESS_KEY_ID`; `--check` verifies the published set anonymously and needs nothing
 - **set-bucket-cors.ts** (`pnpm s3:cors [origins]`) - Adds the frontend origin, or a comma-separated list, to browser CORS on the shared development buckets. It keeps the origins already allowed and prints the full list after the run
 - **mint-session.ts** (`pnpm session:mint <email> [hours]`) - Mints a session for a local user and prints its signed cookie and a curl line, for driving the app without signing in. The user's sessions list names it `session:mint`, and each run deletes the ended mints of earlier runs. Development and test mode only; a hand-built cookie never authenticates, since every mode signs cookies
-- **showcase-mfa.ts** (`pnpm showcase:mfa <email>`) - Turns MFA on for a user, with a passkey and an authenticator app that only show, and for a share of the members of their organizations, so the marketing screenshots show both MFA states. Nobody can sign in with those factors, so it refuses the database `backend/.env` names: the screenshots driver runs it on a throwaway one
 
 ## Folders
 

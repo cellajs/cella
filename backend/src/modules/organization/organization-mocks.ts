@@ -43,10 +43,16 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
   };
 };
 
-export const mockOrganization = (): InsertOrganizationModel => {
-  const name = organizationName.enforce(() => faker.company.name());
-  return generateOrganizationBase(mockUuid(), mockTenantId(), name, mockPastIsoDate());
-};
+export const mockOrganization = ({
+  id = mockUuid(),
+  name,
+  createdAt,
+}: {
+  id?: string;
+  name?: string;
+  createdAt?: string;
+} = {}): InsertOrganizationModel =>
+  generateOrganizationBase(id, mockTenantId(), name ?? organizationName.enforce(() => faker.company.name()), createdAt ?? mockPastIsoDate());
 
 /** Adds API-only fields (writer references, included.membership, included.counts) to the base mock. */
 export const mockOrganizationResponse = (key = 'organization:default') =>
