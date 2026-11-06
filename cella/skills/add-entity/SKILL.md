@@ -273,8 +273,8 @@ exist need a data migration that gives them the new id column.
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
 - **Error types of its own**: `<type>` and `<type>.text` in `locales/en/appError.json`, thrown as
   `new AppError(status, '<type>', severity)`.
-- **Accessibility audit and load tests**: the new pages and their states in `a11y/scope-config.ts`
-  (pinned), with a placeholder for the slug; bench rows through `registerBenchSeed` in
+- **Accessibility audit and load tests**: the new pages and their states in `cella/a11y.app.ts`
+  (the app's own), with a placeholder for the slug; bench rows through `registerBenchSeed` in
   `backend/bench/seeds/` with an `order` after the rows they reference.
 
 ## 7. Verify

@@ -1,0 +1,20 @@
+- button "Skip to content"
+- main:
+  - heading "Sign in or sign up" [level=1]
+  - text: Email
+  - textbox "Email":
+    - /placeholder: Your email address
+  - button "Continue"
+  - text: Or
+  - button "Continue with GitHub"
+- link "Go to about page":
+  - /url: /about
+  - img "Go to about page"
+- list:
+  - listitem:
+    - link "About":
+      - /url: /about
+  - listitem:
+    - button "Contact"
+- button "Back to start"
+- region "Notifications"

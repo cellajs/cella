@@ -1,0 +1,42 @@
+[
+  {
+    "name": "button \"Skip to content\"",
+    "x": 12,
+    "y": 12
+  },
+  {
+    "name": "button \"Menu35\"",
+    "x": 4,
+    "y": 4
+  },
+  {
+    "name": "button \"Search\"",
+    "x": 4,
+    "y": 64
+  },
+  {
+    "name": "button \"Notifications13\"",
+    "x": 4,
+    "y": 124
+  },
+  {
+    "name": "button \"Admin UserAUAccount\"",
+    "x": 4,
+    "y": 184
+  },
+  {
+    "name": "a \"Set up MFA\"",
+    "x": 1079,
+    "y": 108
+  },
+  {
+    "name": "button \"Close\"",
+    "x": 1211,
+    "y": 108
+  },
+  {
+    "name": "button \"Back to start\"",
+    "x": 581,
+    "y": 844
+  }
+]

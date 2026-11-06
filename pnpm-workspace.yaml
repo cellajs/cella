@@ -42,7 +42,6 @@ packages:
   - infra
   - sdk
   - yjs
-  - a11y
 updateConfig:
   # Packages that `pnpm outdated`, `pnpm update --latest` and `pnpm cella audit` leave out. `pnpm audit` still checks them.
   ignoreDependencies:

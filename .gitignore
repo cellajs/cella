@@ -51,7 +51,6 @@ sdk/src/.spec-hash
 .pnpm-store
 .worktrees
 
-a11y/results/
 
 # Migration scripts
 scripts/migration/

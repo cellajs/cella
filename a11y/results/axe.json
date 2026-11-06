@@ -1,0 +1,279 @@
+{
+  "rules": {
+    "color-contrast": {
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+      "criteria": [
+        "1.4.3"
+      ],
+      "failed": {},
+      "review": [
+        "sign-in (light)",
+        "sign-in (dark)"
+      ]
+    },
+    "aria-allowed-attr": {
+      "help": "Elements must only use supported ARIA attributes",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-allowed-attr?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-conditional-attr": {
+      "help": "ARIA attributes must be used as specified for the element's role",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-conditional-attr?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-deprecated-role": {
+      "help": "Deprecated ARIA roles must not be used",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-deprecated-role?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-hidden-body": {
+      "help": "aria-hidden=\"true\" must not be present on the document body",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-hidden-body?application=playwright",
+      "criteria": [
+        "1.3.1",
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-hidden-focus": {
+      "help": "ARIA hidden element must not be focusable or contain focusable elements",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-hidden-focus?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-prohibited-attr": {
+      "help": "Elements must only use permitted ARIA attributes",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-prohibited-attr?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-required-attr": {
+      "help": "Required ARIA attributes must be provided",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-required-attr?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-roles": {
+      "help": "ARIA roles used must conform to valid values",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-roles?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-valid-attr-value": {
+      "help": "ARIA attributes must conform to valid values",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-valid-attr-value?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "aria-valid-attr": {
+      "help": "ARIA attributes must conform to valid names",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-valid-attr?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "autocomplete-valid": {
+      "help": "autocomplete attribute must be used correctly",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/autocomplete-valid?application=playwright",
+      "criteria": [
+        "1.3.5"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "button-name": {
+      "help": "Buttons must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/button-name?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "bypass": {
+      "help": "Page must have means to bypass repeated blocks",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/bypass?application=playwright",
+      "criteria": [
+        "2.4.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "document-title": {
+      "help": "Documents must have <title> element to aid in navigation",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/document-title?application=playwright",
+      "criteria": [
+        "2.4.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "duplicate-id-aria": {
+      "help": "IDs used in ARIA and labels must be unique",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/duplicate-id-aria?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "form-field-multiple-labels": {
+      "help": "Form field must not have multiple label elements",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/form-field-multiple-labels?application=playwright",
+      "criteria": [
+        "3.3.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "html-has-lang": {
+      "help": "<html> element must have a lang attribute",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/html-has-lang?application=playwright",
+      "criteria": [
+        "3.1.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "html-lang-valid": {
+      "help": "<html> element must have a valid value for the lang attribute",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/html-lang-valid?application=playwright",
+      "criteria": [
+        "3.1.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "image-alt": {
+      "help": "Images must have alternative text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=playwright",
+      "criteria": [
+        "1.1.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "label": {
+      "help": "Form elements must have labels",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/label?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "link-name": {
+      "help": "Links must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/link-name?application=playwright",
+      "criteria": [
+        "2.4.4",
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "list": {
+      "help": "<ul> and <ol> must only directly contain <li>, <script> or <template> elements",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/list?application=playwright",
+      "criteria": [
+        "1.3.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "listitem": {
+      "help": "<li> elements must be contained in a <ul> or <ol>",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/listitem?application=playwright",
+      "criteria": [
+        "1.3.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "meta-viewport": {
+      "help": "Zooming and scaling must not be disabled",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/meta-viewport?application=playwright",
+      "criteria": [
+        "1.4.4"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "nested-interactive": {
+      "help": "Interactive controls must not be nested",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/nested-interactive?application=playwright",
+      "criteria": [
+        "4.1.2"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "role-img-alt": {
+      "help": "[role=\"img\"] and [role=\"image\"] elements must have alternative text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/role-img-alt?application=playwright",
+      "criteria": [
+        "1.1.1"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "target-size": {
+      "help": "All touch targets must be 24px large, or leave sufficient space",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/target-size?application=playwright",
+      "criteria": [
+        "2.5.8"
+      ],
+      "failed": {},
+      "review": []
+    },
+    "avoid-inline-spacing": {
+      "help": "Inline text spacing must be adjustable with custom stylesheets",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/avoid-inline-spacing?application=playwright",
+      "criteria": [
+        "1.4.12"
+      ],
+      "failed": {},
+      "review": []
+    }
+  },
+  "advisories": {
+    "region": {
+      "help": "All page content should be contained by landmarks",
+      "where": [
+        "sign-in (light)"
+      ]
+    }
+  },
+  "errors": {}
+}

@@ -1,0 +1,21 @@
+- button "Skip to content"
+- list:
+  - listitem:
+    - button "Menu 35"
+  - listitem:
+    - button "Search"
+  - listitem:
+    - button "Notifications 13"
+  - listitem:
+    - button "Admin User Account"
+- list
+- main:
+  - heading "Home" [level=1]
+  - paragraph: An overview of your activity on Cella DEVELOPMENT
+  - alert:
+    - text: MFA is off Multifactor authentication adds a second step at sign-in, so a leaked password alone can't open your account.
+    - link "Set up MFA":
+      - /url: /account#authentication
+    - button "Close"
+- button "Back to start"
+- region "Notifications"
