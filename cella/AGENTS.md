@@ -134,6 +134,6 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 - `pnpm check`: `sdk`, typecheck, `lens:check` and `lint:fix` (Biome, then the style check `pnpm cella style`, which takes paths to check a few files).
 - `pnpm generate`: Drizzle migrations from schema changes. `pnpm sdk`: the OpenAPI spec and the SDK.
 - `pnpm seed`: test data. `pnpm test`: the full suite with summary coverage.
-- `pnpm infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm bench`: load tests ([Load testing](../bench/README.md)).
+- `pnpm infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm cella bench`: load tests ([Load testing](../backend/bench/README.md)).
 - `pnpm cella testbed`: a seeded copy of the app on a database and ports of its own, beside `pnpm dev`; `pnpm cella testbed -- <command>` runs a command against it, and ctrl-c or `pnpm cella testbed stop` ends it.
 - `pnpm cella`: template upgrades and more (`@cellajs/cli`). `pnpm story`: Storybook. `pnpm studio`: Drizzle Studio.

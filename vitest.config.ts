@@ -20,7 +20,6 @@ export default defineConfig({
     // of this run by itself.
     projects: [
       'backend',
-      'bench',
       'shared',
       'yjs',
       'cdc',
@@ -37,7 +36,7 @@ export default defineConfig({
       reporter: coverageReporters,
       include: [
         'backend/src/**/*.ts',
-        'bench/src/**/*.ts',
+        'backend/bench/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',

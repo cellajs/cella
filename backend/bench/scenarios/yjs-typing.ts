@@ -1,13 +1,13 @@
-import { defineScenario } from '../src/runner';
-import { formatYjsTypingReport, runYjsTyping, YJS_HISTOGRAMS, yjsTypingOptions } from '../src/yjs-typing';
+import { defineScenario } from '@cellajs/cli/bench';
+import { formatYjsTypingReport, runYjsTyping, YJS_HISTOGRAMS, yjsTypingOptions } from '../yjs-typing';
 
 const sumOf = (counters: Record<string, number>, prefix: string) =>
   Object.entries(counters).reduce((sum, [name, n]) => (name.startsWith(prefix) ? sum + n : sum), 0);
 
 /**
- * Real y-websocket clients type into bench attachments (`src/yjs-typing.ts`): each document has a few typing clients and
- * an idle viewer, while other bench users watch the SSE stream. `YJS_TYPING` in `src/config.ts` lists the `YJS_*`
- * variables that shape a run, as in `YJS_DOCS=40 YJS_DURATION_S=60 pnpm bench yjs-typing`. The full report prints at the
+ * Real y-websocket clients type into bench attachments (`yjs-typing.ts`): each document has a few typing clients and
+ * an idle viewer, while other bench users watch the SSE stream. `YJS_TYPING` in `config.ts` lists the `YJS_*`
+ * variables that shape a run, as in `YJS_DOCS=40 YJS_DURATION_S=60 pnpm cella bench yjs-typing`. The full report prints at the
  * end and goes to the log under `yjs-typing`. The relay writes a document's last state `yjsCleanupDelayMs` after its last
  * client leaves: wait that long before a run whose activity count must be exact.
  */

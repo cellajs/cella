@@ -72,7 +72,7 @@ export default defineConfig({
       'frontend/src/entity-sync-queries.ts',
       'frontend/src/styling/gradients.css',
       'a11y/scope-config.ts',
-      'bench/src/seeds/attachment-home.ts',
+      'backend/bench/seeds/attachment-home.ts',
       'cella/skills/screenshots/shots-config.mjs',
       'json/text-blocks.json',
     ],

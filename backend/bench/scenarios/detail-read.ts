@@ -1,6 +1,6 @@
-import { benchUser, ORG_PATH } from '../src/bench-user';
-import { defineScenario } from '../src/runner';
-import { attachmentId } from '../src/seeds/ids';
+import { defineScenario } from '@cellajs/cli/bench';
+import { benchUser, ORG_PATH } from '../bench-user';
+import { attachmentId } from '../seeds/ids';
 
 /**
  * Many signed-in readers of one row at once, as when a link is opened by many at once. Each

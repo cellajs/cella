@@ -57,7 +57,6 @@
     "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc-worker dev & pnpm --filter frontend offline",
     "story": "pnpm --filter frontend storybook",
     "studio": "pnpm --filter backend studio",
-    "bench": "pnpm -C bench bench",
     "a11y": "pnpm -C a11y a11y",
     "a11y:run": "cella testbed -- pnpm a11y",
     "deps:bundle:analyze": "cross-env ANALYZE=true pnpm --filter frontend build",

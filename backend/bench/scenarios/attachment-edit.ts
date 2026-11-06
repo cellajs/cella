@@ -1,6 +1,6 @@
-import { attachmentEdit } from '../src/attachment-requests';
-import { benchUser } from '../src/bench-user';
-import { defineScenario } from '../src/runner';
+import { defineScenario } from '@cellajs/cli/bench';
+import { attachmentEdit } from '../attachment-requests';
+import { benchUser } from '../bench-user';
 
 /**
  * How many edits per second the mutation path takes (guard chain, RLS transaction, per-field merge). Each VU edits its

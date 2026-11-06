@@ -1,5 +1,5 @@
-import { benchUser, ORG_PATH } from '../src/bench-user';
-import { defineScenario } from '../src/runner';
+import { defineScenario } from '@cellajs/cli/bench';
+import { benchUser, ORG_PATH } from '../bench-user';
 
 /**
  * How the read path holds when every visitor also reads data: the attachment page is a product read in an RLS

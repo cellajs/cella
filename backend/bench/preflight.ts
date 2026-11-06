@@ -56,7 +56,7 @@ async function isInfrastructureReady(): Promise<boolean> {
  * on the same ports runs its own schema, so a caller that tests this checkout compares the two before it runs.
  */
 async function getSchemaVersions(): Promise<{ applied: string | null; checkout: string | null }> {
-  const entries = readdirSync(new URL('../../backend/drizzle/', import.meta.url), { withFileTypes: true });
+  const entries = readdirSync(new URL('../drizzle/', import.meta.url), { withFileTypes: true });
   const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   const checkout = folders.sort().at(-1) ?? null;
 
