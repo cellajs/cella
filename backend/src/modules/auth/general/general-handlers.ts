@@ -38,7 +38,7 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
 app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
   // Reads only: the challenge stays open for its second factor.
   const { email } = await readBoundToken(ctx, 'confirm-mfa');
-  return ctx.json({ email }, 200);
+  return ctx.json({ email }, 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
@@ -55,7 +55,7 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   // The browser holds a token of this type, not the one the URL names: the same answer as holding none.
   if (tokenRecord.id !== tokenId) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
-  return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
+  return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {

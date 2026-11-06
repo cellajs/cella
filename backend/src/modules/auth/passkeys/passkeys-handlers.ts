@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -34,7 +35,7 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   await stampStepUp(ctx, 'passkey');
   sendAccountSecurityEmail(user, 'passkey-added', { passkeyName: newPasskey.nameOnDevice });
 
-  return ctx.json(newPasskey, 201);
+  return ctx.json(newPasskey, 201, { Location: `${appConfig.backendAuthUrl}/passkey/${newPasskey.id}` });
 });
 
 app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {

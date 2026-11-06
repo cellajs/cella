@@ -6238,6 +6238,14 @@
         "responses": {
           "201": {
             "description": "Passkey created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            },
             "content": {
               "application/json": {
                 "example": {

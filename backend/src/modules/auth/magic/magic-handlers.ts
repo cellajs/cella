@@ -21,7 +21,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 app.openapi(authMagicLinkRoutes.getPendingMagicLink, async (ctx) => {
   const token = await findOpenableMagicLink(readHeldMagicLink(ctx));
   // The full address: a masked one looks alike for two accounts on one domain, so a planted link would pass unnoticed.
-  return ctx.json({ email: token.email }, 200);
+  return ctx.json({ email: token.email }, 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
