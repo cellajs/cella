@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { openImageUpload } from '~/modules/common/uploader/open-image-upload';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { placeholderColorClass } from '~/utils/placeholder-color-class';
+import { placeholderCoverClass } from '~/utils/placeholder-color-class';
 
 export interface PageCoverProps {
   id: string;
@@ -47,7 +47,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate, onCo
   return (
     <div
       data-url={!!coverUrl}
-      className={cn('relative flex h-32 min-h-40 bg-cover bg-center data-[url=true]:h-[20vw] sm:min-w-52', placeholderColorClass(id))}
+      className={cn('relative flex h-32 min-h-40 bg-cover bg-center data-[url=true]:h-[20vw] sm:min-w-52', !coverUrl && placeholderCoverClass(id))}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (

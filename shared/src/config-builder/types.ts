@@ -361,7 +361,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   pushServiceHosts: readonly string[];
 
   theme: ThemeConfig;
-  /** Background classes for an avatar or cover without an image, picked per id; each entry also sets its dark mode fill, dark enough for white initials. */
+  /** Background classes for an avatar or cover without an image, picked per id. */
   placeholderColors: readonly string[];
 
   defaultLanguage: string;
