@@ -52,12 +52,13 @@ describe('Deleted rows in range reads', async () => {
         ?.$ref?.split('/')
         .pop() ?? '';
     const tombstone = variants.find((variant) => !variant.$ref);
+    const entityType = appConfig.productEntityTypes.find((type) => type === schemas[fullName]?.properties?.entityType?.enum?.[0]);
     return [
       {
         operationId: String(operation.operationId),
-        entityType: appConfig.productEntityTypes.find((type) => type === schemas[fullName]?.properties?.entityType?.enum?.[0]),
+        entityType,
         path,
-        hasDetail: !!paths[`${path}/{id}`]?.get,
+        hasDetail: !!entityType && !!paths[`${path}/{${appConfig.entityIdColumnKeys[entityType]}}`]?.get,
         declaredKeys: Object.keys(tombstone?.properties ?? {}),
       },
     ];
