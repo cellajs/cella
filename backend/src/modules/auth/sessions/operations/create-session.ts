@@ -9,6 +9,7 @@ import { type NewDevice, notifySignIn } from '#/modules/auth/devices/operations/
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceColumns } from '#/modules/auth/sessions/helpers/device-info';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
+import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import type { AuthStrategy, SessionType, StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { findLiveSessionsHeldByUser, insertSession } from '#/modules/auth/sessions/sessions-queries';
@@ -127,7 +128,8 @@ export const createSession = async (
 };
 
 /**
- * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices.
+ * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session this
+ * browser held before ends, another account's too, since the new cookie overwrites the one that carried it.
  */
 export const setUserSession = async (
   ctx: Context<Env>,
@@ -141,7 +143,11 @@ export const setUserSession = async (
   if (isSystemAdmin && !isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
 
   const context = await collectSignInContext(ctx);
+  const presented = await findSession(ctx);
   const { sessionToken, stepUpCookie, timeSpan, newDevice } = await createSession(user, context, strategy, type, extras);
+  if (presented) {
+    await revokeSessions(dbCtx, { userId: presented.session.userId, sessionIds: [presented.session.id], reason: 'replaced', by: null });
+  }
 
   setAuthCookie(ctx, 'session', sessionToken, timeSpan);
   if (stepUpCookie) setAuthCookie(ctx, 'session-step-up', stepUpCookie, stepUpWindow);

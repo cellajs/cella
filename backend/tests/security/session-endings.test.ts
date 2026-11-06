@@ -21,7 +21,7 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, insertPasskey } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 import {
   asSession,
   cancelOpenStreams,
@@ -199,6 +199,23 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       expectStillOpen(user.id, elsewhereStream);
       await warmSession(elsewhere);
       await warmSession(later);
+    });
+
+    it("must not keep another account's session live once a sign-in in its browser overwrites its cookie", async () => {
+      const walkedAway = await createTestUser('walked-away@security-test.com');
+      const next = await createTestUser('next-at-browser@security-test.com');
+      const passkey = await insertPasskey(next);
+      const left = await insertSession(walkedAway);
+      await warmSession(left);
+
+      // The next person at a shared computer signs in, and the browser still presents the first account's cookie.
+      const issued = await passkeyChallenge('authentication');
+      const { response } = await passkeySignIn(passkey.assert(issued.challenge), `${left.cookie}; ${issued.cookie}`);
+      expect(response.status).toBe(204);
+
+      await expectSignedOut(left.cookie, 'session_revoked');
+      expect(await sessionRow(left.id)).toMatchObject({ revocationReason: 'replaced', revokedBy: null });
+      await warmSession(await sessionSetBy(response));
     });
   });
 
