@@ -1001,6 +1001,8 @@
   "waitlist": "Waitlist",
   "waitlist_request": "Join waitlist",
   "waitlist_request.text": "Get early access to {{appName}}. We will not send marketing mails.",
+  "waitlist_request_sent": "Request received",
+  "waitlist_request_sent.text": "We sent a confirmation to <strong>{{email}}</strong>.",
   "warning": "Warning",
   "website_url": "Website url",
   "welcome": "Welcome",

@@ -1,7 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
@@ -9,6 +8,8 @@ import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { NamedText } from '~/modules/common/named-text';
+import { SuccessCheckmark } from '~/modules/common/success-checkmark';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import type { ButtonProps } from '~/modules/ui/button';
@@ -41,7 +42,8 @@ interface WaitlistFormProps {
 
 export function WaitlistForm({ email, inputClassName, buttonContent, buttonSize, dialog: isDialog, callback, className }: WaitlistFormProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  // Set once a page form is sent; a dialog form closes and toasts.
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
@@ -55,14 +57,26 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonSize,
     // Every submission gets the same answer; an address with an account hears it by email.
     createRequest(body, {
       onSuccess: () => {
-        navigate({ to: '/about', replace: true });
-        toaster.success(t('c:success.waitlist_request'));
-
-        if (isDialog) dialoger.getState().remove(waitlistDialogId);
+        if (isDialog) {
+          toaster.success(t('c:success.waitlist_request'));
+          dialoger.getState().remove(waitlistDialogId);
+        } else setSentTo(body.email);
         callback?.({ status: 'success' });
       },
     });
   };
+
+  if (sentTo) {
+    return (
+      <div role="status" className="flex flex-col items-center gap-2 text-center">
+        <SuccessCheckmark className="mb-2" />
+        <h2 className="text-foreground text-lg font-medium">{t('c:waitlist_request_sent')}</h2>
+        <p className="text-muted-foreground">
+          <NamedText i18nKey="c:waitlist_request_sent.text" values={{ email: sentTo }} />
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
