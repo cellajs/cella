@@ -4,12 +4,12 @@ import { relatableGuard, userGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { mockMemberUserResponse, mockPaginatedUsersResponse } from '#/modules/user/user-mocks';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
-import { paginationSchema, relatableUserIdParamSchema, slugIncludeQuerySchema } from '#/schemas';
+import { paginationSchema, slugIncludeQuerySchema, userIdParamSchema } from '#/schemas';
 
 const userRoutes = createXRoutes(['users', 'cella'], {
-  getUsers: xRoute({
+  listUsers: xRoute({
     method: 'get',
-    path: '/users',
+    path: '/',
     xGuard: [userGuard],
     summary: 'Get list of users',
     description: 'Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.',
@@ -30,12 +30,12 @@ const userRoutes = createXRoutes(['users', 'cella'], {
   }),
   getUser: xRoute({
     method: 'get',
-    path: '/users/{relatableUserId}',
+    path: '/{userId}',
     xGuard: [userGuard, relatableGuard],
     summary: 'Get user',
     description:
       'Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.',
-    request: { params: relatableUserIdParamSchema, query: slugIncludeQuerySchema },
+    request: { params: userIdParamSchema, query: slugIncludeQuerySchema },
     responses: {
       200: json('User', memberUserSchema.extend({ mfaRequired: z.boolean().optional() }), mockMemberUserResponse()),
       ...errors(404),

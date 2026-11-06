@@ -126,7 +126,7 @@ describe('Unsubscribe links', () => {
     const admin = await createSystemAdminUser('newsletter-sender@example.test');
     const { baseApp } = await import('#/routes');
 
-    const response = await baseApp.request('/system/newsletter?toSelf=false', {
+    const response = await baseApp.request('/system:send-newsletter?toSelf=false', {
       method: 'POST',
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
       body: JSON.stringify({ organizationIds: [organization.id], roles: [memberRole], subject: 'News', content: '<p>News</p>' }),

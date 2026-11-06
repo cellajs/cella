@@ -1,37 +1,37 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type {
+  AcceptInvitationResponse,
   AcceptInvitationTokenResponse,
   CreateTotpData,
   CreateTotpResponses,
+  DeleteConnectedAppData,
+  DeleteConnectedAppResponse,
   DeleteMeResponse,
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
-  HandleMembershipInvitationData,
-  HandleMembershipInvitationResponse,
-  RevokeConnectedAppData,
-  RevokeConnectedAppResponse,
   RevokeMySessionsResponse,
   ToggleMfaData,
   UpdateMeData,
   User,
 } from 'sdk';
 import {
+  acceptInvitation,
   acceptInvitationToken,
   confirmInvitationAddress,
   createPasskey,
   createTotp,
+  deleteConnectedApp,
   deleteMe,
   deletePasskey,
   deleteTotp,
   generateTotpKey,
-  getConnectedApps,
   getMyAuth,
-  getMyInvitations,
-  getMyMemberships,
-  handleMembershipInvitation,
-  revokeConnectedApp,
+  listConnectedApps,
+  listMyInvitations,
+  listMyMemberships,
+  rejectInvitation,
   revokeMySessions,
   toggleMfa,
   updateMe,
@@ -77,9 +77,9 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
 
 export const meConnectedAppsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps(), refetchOnMount: true });
+  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => listConnectedApps(), refetchOnMount: true });
 
-export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => listMyInvitations() });
 
 /** A new authenticator key with its QR code; once confirmed it is the second factor, so it is never persisted and leaves with the setup. */
 export const totpKeyQueryOptions = () =>
@@ -213,7 +213,7 @@ const applyUpdatedSelf = (updatedUser: User) => {
  * Source of truth for the current user's memberships in the frontend. Read without an abort signal: the read belongs to
  * the whole app, and catchup awaits it, so a screen that unmounts must not cancel it.
  */
-export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: () => getMyMemberships() });
+export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: () => listMyMemberships() });
 
 /**
  * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,
@@ -239,10 +239,10 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
 
 /** Answers an invitation listed in-app, by its id. */
 export const useHandleInvitationMutation = () =>
-  useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
+  useMutation<AcceptInvitationResponse, ApiError, { invitationId: string; action: 'accept' | 'reject' }>({
     mutationKey: meKeys.handleInvitation,
-    mutationFn: ({ path }) => handleMembershipInvitation({ path }),
-    onSuccess: (_organization, { path: { id, acceptOrReject } }) => applySettledInvitation(id, acceptOrReject),
+    mutationFn: ({ invitationId, action }) => (action === 'accept' ? acceptInvitation : rejectInvitation)({ path: { invitationId } }),
+    onSuccess: (_organization, { invitationId, action }) => applySettledInvitation(invitationId, action),
   });
 
 /**
@@ -268,13 +268,13 @@ export const useConfirmInvitationAddressMutation = () =>
 
 /** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */
 export const useRevokeConnectedAppMutation = () =>
-  useMutation<RevokeConnectedAppResponse, ApiError, MutationData<RevokeConnectedAppData>>({
+  useMutation<DeleteConnectedAppResponse, ApiError, MutationData<DeleteConnectedAppData>>({
     mutationKey: meKeys.delete.connectedApp,
-    mutationFn: ({ path }) => revokeConnectedApp({ path }),
-    onSuccess: (_data, { path: { id } }) => {
+    mutationFn: ({ path }) => deleteConnectedApp({ path }),
+    onSuccess: (_data, { path: { connectedAppId } }) => {
       queryClient.setQueryData(meConnectedAppsQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
-        return { ...oldData, items: oldData.items.filter((item) => item.id !== id) };
+        return { ...oldData, items: oldData.items.filter((item) => item.id !== connectedAppId) };
       });
       toaster.success(t('c:success.revoke_resource', { resource: t('c:connected_app') }));
     },

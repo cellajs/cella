@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import type { GetNotificationsResponse } from 'sdk';
+import type { ListNotificationsResponse } from 'sdk';
 import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 import type { NotificationPushPayload } from 'shared/push-payload';
 import { escapeRegExp } from 'shared/utils/escape-regexp';
@@ -70,7 +70,7 @@ async function updateUnreadBadge(): Promise<void> {
   try {
     const response = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
     if (!response.ok) return;
-    const { unreadCount }: Pick<GetNotificationsResponse, 'unreadCount'> = await response.json();
+    const { unreadCount }: Pick<ListNotificationsResponse, 'unreadCount'> = await response.json();
     await (unreadCount > 0 ? self.navigator.setAppBadge(unreadCount) : self.navigator.clearAppBadge());
   } catch {
     // Network error or expired auth: leave the badge unchanged.

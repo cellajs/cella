@@ -4,7 +4,7 @@ This document covers the MCP worker: the app's **Model Context Protocol endpoint
 
 ### TL;DR
 
-An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `xTool`; their input comes from the route's request schema and a call runs the route itself, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
+An AI client connects to `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `xTool`; their input comes from the route's request schema and a call runs the route itself, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
 
 ## How it fits
 
@@ -12,7 +12,7 @@ An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from
 AI client (Claude Desktop, VS Code, a CI job)
         │  JSON-RPC over HTTP, Bearer access token
         ▼
-MCP endpoint  /<tenant>/<org>/mcp
+MCP endpoint  /tenants/<tenant>/organizations/<org>/mcp
   ├─ tokenGuard → tenantGuard → orgGuard
   ├─ tools/list: every route that carries xTool
   └─ tools/call: scope check, input validation, the route in-process

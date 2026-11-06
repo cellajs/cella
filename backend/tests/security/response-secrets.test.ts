@@ -78,7 +78,7 @@ describe('Secret columns in responses', async () => {
   let apiKeyId: string;
   let rolledKeyId: string;
 
-  const serviceAccounts = () => `/${organization.tenantId}/${organization.id}/service-accounts`;
+  const serviceAccounts = () => `/tenants/${organization.tenantId}/organizations/${organization.id}/service-accounts`;
 
   /** A raw request as the admin that hands its body to `keep`, which stores the ids a later case needs. */
   const sendAndKeep = async (path: string, init: { method: string; body?: unknown }, keep: (body: Record<string, unknown>) => void) => {
@@ -123,9 +123,9 @@ describe('Secret columns in responses', async () => {
       shows: () => [invitee.otherSessionId],
     },
     {
-      route: 'DELETE /me/sessions',
+      route: 'POST /me/sessions:revoke',
       tables: ['sessions'],
-      send: () => rawJsonRequest('/me/sessions', invitee.sessionCookie, { method: 'DELETE', body: { ids: [invitee.otherSessionId] } }),
+      send: () => rawJsonRequest('/me/sessions:revoke', invitee.sessionCookie, { method: 'POST', body: { ids: [invitee.otherSessionId] } }),
       status: 200,
       shows: () => [invitee.otherSessionId],
     },
@@ -145,26 +145,26 @@ describe('Secret columns in responses', async () => {
       shows: () => [serviceAccountId, apiKeyId],
     },
     {
-      route: 'GET service-accounts/{id}/keys',
+      route: 'GET service-accounts/{serviceAccountId}/api-keys',
       tables: ['api_keys'],
-      send: () => rawJsonRequest(`${serviceAccounts()}/${serviceAccountId}/keys`, admin.sessionCookie),
+      send: () => rawJsonRequest(`${serviceAccounts()}/${serviceAccountId}/api-keys`, admin.sessionCookie),
       status: 200,
       shows: () => [apiKeyId],
     },
     {
-      route: 'POST service-accounts/{id}/keys',
+      route: 'POST service-accounts/{serviceAccountId}/api-keys',
       tables: ['api_keys'],
       send: () =>
-        sendAndKeep(`${serviceAccounts()}/${serviceAccountId}/keys`, { method: 'POST', body: { name: 'rolled', rollFrom: apiKeyId } }, (body) => {
+        sendAndKeep(`${serviceAccounts()}/${serviceAccountId}/api-keys`, { method: 'POST', body: { name: 'rolled', rollFrom: apiKeyId } }, (body) => {
           rolledKeyId = body.id as string;
         }),
       status: 201,
       shows: () => [rolledKeyId],
     },
     {
-      route: 'DELETE service-accounts/{id}/keys/{keyId}',
+      route: 'POST service-accounts/{serviceAccountId}/api-keys/{apiKeyId}:revoke',
       tables: ['api_keys'],
-      send: () => rawJsonRequest(`${serviceAccounts()}/${serviceAccountId}/keys/${apiKeyId}`, admin.sessionCookie, { method: 'DELETE' }),
+      send: () => rawJsonRequest(`${serviceAccounts()}/${serviceAccountId}/api-keys/${apiKeyId}:revoke`, admin.sessionCookie, { method: 'POST' }),
       status: 200,
       shows: () => [apiKeyId],
     },

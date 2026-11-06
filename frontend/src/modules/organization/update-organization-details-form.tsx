@@ -52,7 +52,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
 
   const onSubmit = (body: FormValues) => {
     mutate(
-      { path: { tenantId: organization.tenantId, id: organization.id }, body },
+      { path: { tenantId: organization.tenantId, organizationId: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
           form.reset(body);

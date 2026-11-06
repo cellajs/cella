@@ -21,7 +21,7 @@ describe("A member's personal view in the members list", async () => {
 
   const listMembers = async (as: { sessionCookie: string }) => {
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
-    const path = `/${organization.tenantId}/${organization.id}/memberships/members?${query}`;
+    const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/members?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
     expect(status).toBe(200);
     return (body as { items: MemberRow[] }).items;

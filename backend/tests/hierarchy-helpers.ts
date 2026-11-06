@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { CreateAttachmentsData } from 'sdk';
+import type { BatchCreateAttachmentsData } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -116,7 +116,7 @@ export const attachmentBody = (
   id: string,
   plan: TestEntityHierarchyPlan,
   fields: Record<string, unknown> = {},
-): CreateAttachmentsData['body'][number] =>
+): BatchCreateAttachmentsData['body'][number] =>
   ({
     id,
     filename: 'file.pdf',
@@ -126,7 +126,7 @@ export const attachmentBody = (
     ...homeColumns(plan),
     stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },
     ...fields,
-  }) as CreateAttachmentsData['body'][number];
+  }) as BatchCreateAttachmentsData['body'][number];
 
 /** Inserts an attachment row `buildInsertableProduct` built, on the admin connection. */
 export const insertAttachmentRow = (row: Record<string, unknown>) =>

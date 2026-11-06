@@ -1,4 +1,4 @@
-import { createAttachments } from 'sdk';
+import { batchCreateAttachments } from 'sdk';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -31,7 +31,7 @@ describe('Product existence (getValidProduct)', async () => {
   let readOnlyKey: string;
   const attachmentId = generateId();
 
-  const attachmentUrl = (id: string) => `/${organization.tenantId}/${organization.id}/attachments/${id}`;
+  const attachmentUrl = (id: string) => `/tenants/${organization.tenantId}/organizations/${organization.id}/attachments/${id}`;
 
   const read = async (id: string, headers: Record<string, string>) => {
     const response = await baseApp.request(attachmentUrl(id), { headers });
@@ -41,7 +41,7 @@ describe('Product existence (getValidProduct)', async () => {
   const rename = async (id: string, headers: Record<string, string>) => {
     const stx = mockStxFor('name');
     const response = await baseApp.request(attachmentUrl(id), {
-      method: 'PUT',
+      method: 'PATCH',
       headers,
       body: JSON.stringify({ ops: { name: 'Renamed' }, stx }),
     });
@@ -60,7 +60,7 @@ describe('Product existence (getValidProduct)', async () => {
 
     const home = await seedAttachmentHome(organization, admin.id);
     await joinAttachmentHome(organization, home, member.id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: [attachmentBody(attachmentId, home)],
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },

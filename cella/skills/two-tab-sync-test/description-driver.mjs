@@ -205,7 +205,10 @@ const a = await user('A', cookies.a);
 const b = await user('B', cookies.b);
 // The peer's session calls the API for server truth, the outside write and the delete; the origin header passes the CSRF check.
 const api = (path, options = {}) =>
-  b.context.request.fetch(`${BASE}/api/${TENANT}/${b.seen.organizationId}/attachments${path}`, { ...options, headers: { origin: BASE } });
+  b.context.request.fetch(`${BASE}/api/tenants/${TENANT}/organizations/${b.seen.organizationId}/attachments${path}`, {
+    ...options,
+    headers: { origin: BASE },
+  });
 const serverDescription = async (id) => String((await (await api(`/${id}`)).json()).description ?? '');
 const stx = (fields) => ({ mutationId: randomUUID(), sourceId: randomUUID(), ...(fields && { fieldTimestamps: fields }) });
 
@@ -295,7 +298,7 @@ try {
     blocks.push({ id: randomUUID(), type: 'paragraph', props: {}, content: [{ type: 'text', text: lastMarker, styles: {} }], children: [] });
     // A scalar op needs its field timestamp, an HLC: <ms>:<counter>:<5 chars of source>
     const data = { ops: { description: JSON.stringify(blocks) }, stx: stx({ description: `${Date.now()}:0000:probe` }) };
-    const res = await api(`/${rowId}`, { method: 'PUT', data });
+    const res = await api(`/${rowId}`, { method: 'PATCH', data });
     const inA = await pollFor(async () => (await editorText(editor)).includes(lastMarker), 10_000, 100);
     const inB = await pollFor(async () => (await editorText(peer.editor)).includes(lastMarker), 10_000, 100);
     check('outside: the write shows in both open editors', res.ok() && inA.ok && inB.ok, { status: res.status(), a: inA.afterMs, b: inB.afterMs });
@@ -459,7 +462,7 @@ try {
     await me.page.waitForTimeout(1000);
     await typeAtEnd(me.page, editor, ` ${marker('doomed')}`);
     await me.page.waitForTimeout(1500);
-    const res = await api('', { method: 'DELETE', data: { ids: [doomedId], stx: stx() } });
+    const res = await api(':batch-delete', { method: 'POST', data: { ids: [doomedId], stx: stx() } });
     log('B', 'action', { did: 'delete', name: DELETE_ROW, status: res.status() });
     await me.page.waitForTimeout(3000);
     await blockRelayHttp(me.page, false);

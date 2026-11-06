@@ -4,7 +4,7 @@ import { xMiddleware } from '#/core/x-middleware';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { validUuidSchema } from '#/schemas/common-schemas';
 
-/** Requires a shared organization with `relatableUserId` from path or query; skips absent/self, allows sysadmins. */
+/** Requires a shared organization with the `userId` path param or the `relatableUserId` query param; skips absent/self, allows sysadmins. */
 export const relatableGuard = xMiddleware(
   {
     functionName: 'relatableGuard',
@@ -15,7 +15,7 @@ export const relatableGuard = xMiddleware(
     description: 'Requires sharing an organization with the user named in the request. System admins also pass.',
   },
   async (ctx, next) => {
-    const targetUserId = ctx.req.param('relatableUserId') ?? ctx.req.query('relatableUserId');
+    const targetUserId = ctx.req.param('userId') ?? ctx.req.query('relatableUserId');
 
     const user = ctx.var.user;
     const isSystemAdmin = ctx.var.isSystemAdmin;

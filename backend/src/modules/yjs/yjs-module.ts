@@ -61,6 +61,6 @@ defineBackendModule({
     worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's
     materialize route, which writes a compacted collaborative document to its entity, is served on the internal
     listener only.`,
-  routes: [{ path: '/:tenantId/:organizationId/yjs', app: yjsHandlers, phase: 'tenant' }],
+  routes: [{ path: '/tenants/:tenantId/organizations/:organizationId/yjs', app: yjsHandlers }],
   onMutation,
 });

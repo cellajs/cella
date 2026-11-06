@@ -42,7 +42,7 @@ export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(moc
 
 export const mockBatchAttachmentsResponse = (count = 2) => mockBatchResponse(mockAttachmentResponse, count);
 
-/** One signed download URL as `getPresignedUrls` returns it. The signature is truncated, and the ungenerated variant resolves to the original key. */
+/** One signed download URL as `presignAttachmentUrls` returns it. The signature is truncated, and the ungenerated variant resolves to the original key. */
 const mockPresignedUrlItem = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
   return {

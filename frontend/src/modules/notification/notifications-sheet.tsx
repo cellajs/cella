@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { BellIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GetNotificationsResponse } from 'sdk';
+import type { ListNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -20,7 +20,7 @@ import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-type Notification = GetNotificationsResponse['items'][number];
+type Notification = ListNotificationsResponse['items'][number];
 
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {

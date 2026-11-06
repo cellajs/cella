@@ -1,6 +1,6 @@
 import { auditContrast, defineA11yBase, type Page, type SignedIn, settle } from '@cellajs/cli/a11y';
 import { type Client, createClient, createConfig } from '../sdk/gen/client/index.ts';
-import { getMe, getMyMemberships, getOrganizations, updateMe } from '../sdk/gen/index.ts';
+import { getMe, listMyMemberships, listOrganizations, updateMe } from '../sdk/gen/index.ts';
 
 /** The SDK as the signed-in user: its functions check each response against the spec, and a failed one names its request. */
 export const apiClient = ({ backendUrl, cookie }: SignedIn) => {
@@ -51,8 +51,8 @@ export default defineA11yBase({
     org: async (user) => {
       const client = apiClient(user);
       const [{ items: organizations }, { items: memberships }] = await Promise.all([
-        getOrganizations({ client, query: { limit: 50 } }),
-        getMyMemberships({ client }),
+        listOrganizations({ client, query: { limit: 50 } }),
+        listMyMemberships({ client }),
       ]);
       const [administered] = memberships
         .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)

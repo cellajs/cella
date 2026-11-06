@@ -13,5 +13,5 @@ defineBackendModule({
   productEntity: 'attachment',
   yjsMaterializer: updateAttachmentOp,
   notifications: true,
-  routes: [{ path: '/:tenantId/:organizationId/attachments', app: attachmentHandlers, phase: 'tenant' }],
+  routes: [{ path: '/tenants/:tenantId/organizations/:organizationId/attachments', app: attachmentHandlers }],
 });

@@ -19,12 +19,12 @@ app.openapi(requestRoutes.createRequest, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-app.openapi(requestRoutes.getRequests, async (ctx) => {
+app.openapi(requestRoutes.listRequests, async (ctx) => {
   const data = await getRequestsOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
 });
 
-app.openapi(requestRoutes.deleteRequests, async (ctx) => {
+app.openapi(requestRoutes.batchDeleteRequests, async (ctx) => {
   const { ids } = ctx.req.valid('json');
   const data = await deleteRequestsOp(ctx, ids);
   return ctx.json(data, 200);

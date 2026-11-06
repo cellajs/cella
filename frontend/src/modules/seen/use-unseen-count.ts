@@ -8,7 +8,7 @@ const sumCounts = (counts: Record<string, number> | undefined) => {
   return total;
 };
 
-/** The unseen count across channel ids in a `/unseen/counts` response. */
+/** The unseen count across channel ids in a `/me/unseen-counts` response. */
 export const sumUnseenCounts = (raw: Record<string, Record<string, number>>, channelIds: string[]) => {
   let total = 0;
   for (const id of channelIds) total += sumCounts(raw[id]);

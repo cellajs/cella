@@ -1,4 +1,4 @@
-import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
+import type { ListMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
@@ -202,7 +202,7 @@ function settleOpaqueHint(organizationId: string, { embeddedProduct, update, unt
 
 /** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */
 function membershipChannelKeys(): Set<string> {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
   return new Set((data?.items ?? []).map((membership) => `${membership.organizationId}:${membership.channelId}`));
 }
 

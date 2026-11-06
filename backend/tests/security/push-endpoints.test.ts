@@ -86,12 +86,12 @@ describe('Push subscription endpoints', async () => {
     const { user, headers } = await userWithSession();
     const other = await userWithSession();
     const otherEndpoint = `${realEndpoints[0]}-other`;
-    expect((await call(createPushSubscription, { body: { endpoint: otherEndpoint, keys }, headers: other.headers })).response.status).toBe(200);
+    expect((await call(createPushSubscription, { body: { endpoint: otherEndpoint, keys }, headers: other.headers })).response.status).toBe(201);
     const endpoints = Array.from({ length: 25 }, (_, n) => `https://fcm.googleapis.com/fcm/send/flood-${n}`);
 
     for (const endpoint of endpoints) {
       const { response } = await call(createPushSubscription, { body: { endpoint, keys }, headers });
-      expect(response.status, endpoint).toBe(200);
+      expect(response.status, endpoint).toBe(201);
     }
 
     // The newest registrations stay, a new device among them; another user's subscription is untouched.
@@ -104,13 +104,13 @@ describe('Push subscription endpoints', async () => {
     const register = (n: number) =>
       call(createPushSubscription, { body: { endpoint: `https://fcm.googleapis.com/fcm/send/paced-${n}`, keys }, headers });
 
-    for (let n = 0; n < 30; n++) expect((await register(n)).response.status).toBe(200);
+    for (let n = 0; n < 30; n++) expect((await register(n)).response.status).toBe(201);
     await expectRefusal(await register(30), 429, 'too_many_requests');
 
     // Another user's budget is their own (positive control).
     const other = await userWithSession();
     const { response } = await call(createPushSubscription, { body: { endpoint: realEndpoints[0], keys }, headers: other.headers });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
   });
 
   it('registers subscriptions on known push services (positive control)', async () => {
@@ -118,7 +118,7 @@ describe('Push subscription endpoints', async () => {
 
     for (const endpoint of realEndpoints) {
       const { response } = await call(createPushSubscription, { body: { endpoint, keys }, headers });
-      expect(response.status, endpoint).toBe(200);
+      expect(response.status, endpoint).toBe(201);
     }
     expect((await endpointsOf(user.id)).sort()).toEqual([...realEndpoints].sort());
   });

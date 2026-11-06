@@ -73,7 +73,7 @@ describe("the tenant's sign-in policy", async () => {
 
   it('binds a member who holds an identity through the connection, in whatever way they signed in; leaves externals alone', async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
-    const path = { tenantId: organization.tenantId, id: organization.id };
+    const path = { tenantId: organization.tenantId, organizationId: organization.id };
 
     const student = await createOrganizationAdminUser(`student-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);
     await linkIdentity(student, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
@@ -114,7 +114,7 @@ describe("the tenant's sign-in policy", async () => {
   it('must refuse a member of an SSO-only tenant who signs in through another connection', async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
     const other = await seed({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'], config: { idpEntityIds: ['https://idp.uu.nl'] } });
-    const path = { tenantId: organization.tenantId, id: organization.id };
+    const path = { tenantId: organization.tenantId, organizationId: organization.id };
 
     // Offboarded at the tenant's institution, the member also holds an account at another connected one.
     const member = await createOrganizationAdminUser(`member-${suffix()}@hu.nl`, organization.id, memberRole, organization.tenantId);

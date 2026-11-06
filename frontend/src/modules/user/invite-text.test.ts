@@ -1,4 +1,4 @@
-import { zMembershipInviteBody, zSystemInviteBody } from 'sdk/zod.gen';
+import { zInviteMembersBody, zInviteUsersBody } from 'sdk/zod.gen';
 import { describe, expect, it } from 'vitest';
 import { parseInviteText } from '~/modules/user/invite-text';
 
@@ -66,7 +66,7 @@ const rejected = [
 ];
 
 const submits = (email: string) =>
-  zSystemInviteBody.safeParse({ emails: [email] }).success && zMembershipInviteBody.shape.emails.safeParse([email]).success;
+  zInviteUsersBody.safeParse({ emails: [email] }).success && zInviteMembersBody.shape.emails.safeParse([email]).success;
 
 // The form and the submit answer alike: what parses as an address is what a submit accepts.
 describe('parseInviteText against the submit rule', () => {

@@ -7,7 +7,7 @@ import { tenantOrgParamSchema } from '#/schemas';
 const seenRoutes = createXRoutes(['seen', 'cella'], {
   markSeen: xRoute({
     method: 'post',
-    path: '/',
+    path: '/~mark-seen',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Mark entities as seen',
@@ -18,7 +18,7 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
   }),
   getUnseenCounts: xRoute({
     method: 'get',
-    path: '/counts',
+    path: '/unseen-counts',
     xGuard: [userGuard],
     summary: 'Get unseen counts',
     description:

@@ -41,7 +41,7 @@ interface SeenStoreState {
   reset: () => void;
 }
 
-/** Seen entities queued from IntersectionObserver, batch-flushed to POST /:tenantId/:organizationId/seen; pending IDs stay in memory, confirmed IDs persist. */
+/** Seen entities queued from IntersectionObserver, batch-flushed to `markSeen`; pending IDs stay in memory, confirmed IDs persist. */
 export const seenStore = createStore<SeenStoreState>()(
   devtools(
     persist(
@@ -149,7 +149,10 @@ export function setupSeenBeaconFlush() {
   const handler = () => {
     for (const batch of pending.values()) {
       const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType } satisfies MarkSeenData['body']);
-      navigator.sendBeacon(`/api/${batch.tenantId}/${batch.organizationId}/seen`, new Blob([body], { type: 'application/json' }));
+      navigator.sendBeacon(
+        `/api/tenants/${batch.tenantId}/organizations/${batch.organizationId}:mark-seen`,
+        new Blob([body], { type: 'application/json' }),
+      );
     }
   };
   window.addEventListener('beforeunload', handler);

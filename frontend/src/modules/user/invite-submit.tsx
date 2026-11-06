@@ -3,8 +3,8 @@ import { ClockIcon, SendIcon } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
-import { systemInvite as baseSystemInvite } from 'sdk';
-import { zMembershipInviteBody } from 'sdk/zod.gen';
+import { inviteUsers as baseSystemInvite } from 'sdk';
+import { zInviteMembersBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
 import { z } from 'zod';
 import type { TKey } from '~/lib/i18n-locales';
@@ -35,8 +35,8 @@ export const inviteDialogId = 'invite-users';
  * the text on its way in (what the email field holds, and a paste nobody asked to check yet) and who an address was
  * picked as, so a restored draft still shows the person.
  */
-const inviteFormSchema = zMembershipInviteBody.extend({
-  emails: z.array(zMembershipInviteBody.shape.emails.element).min(1),
+const inviteFormSchema = zInviteMembersBody.extend({
+  emails: z.array(zInviteMembersBody.shape.emails.element).min(1),
   unparsed: z.array(z.string()),
   typed: z.string().optional(),
   pasted: z.string().optional(),
@@ -99,14 +99,14 @@ export function useInviteSubmit({ channel, onSent, onResult, onClose }: UseInvit
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
-  const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
+  const { mutate: inviteUsers, isPending: isSystemInvitePending } = useMutation({
     mutationFn: ({ emails }: { emails: string[] }) => sendInBatches(emails, (batch) => baseSystemInvite({ body: { emails: batch } })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: pendingSystemInvitesQueryOptions().queryKey }),
   });
 
   const onSubmit = ({ unparsed, typed: _typed, pasted: _pasted, people: _people, ...body }: InviteFormValues) => {
     if (!channel) {
-      return systemInvite(body, {
+      return inviteUsers(body, {
         onSuccess: ({ results, unsent }) => {
           const rejected = results.flatMap(({ rejectedIds }) => rejectedIds);
           const outcomes = body.emails

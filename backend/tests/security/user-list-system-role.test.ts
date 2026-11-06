@@ -21,7 +21,7 @@ describe('System roles in the user list', async () => {
   let sysAdmin: { id: string; sessionCookie: string };
 
   const listUsers = async (as: { sessionCookie: string }, query: Record<string, string> = {}) => {
-    const { status, body } = await rawJsonRequest(`/users/users?${new URLSearchParams(query)}`, as.sessionCookie);
+    const { status, body } = await rawJsonRequest(`/users?${new URLSearchParams(query)}`, as.sessionCookie);
     return { status, body: body as { items: UserRow[] } & ErrorResponse };
   };
 

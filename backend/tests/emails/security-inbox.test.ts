@@ -1,4 +1,4 @@
-import { getRequests, getTenants } from 'sdk';
+import { listRequests, listTenants } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,7 +30,7 @@ describe('security inbox mails', async () => {
 
   it('reports a refused system admin route; the time comes with the request details', async () => {
     const user = await createTestUser(signUpUser.email);
-    const { response } = await call(getRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
+    const { response } = await call(listRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
 
     expect(response.status).toBe(403);
     expect(inboxMails()).toEqual([
@@ -47,7 +47,7 @@ describe('security inbox mails', async () => {
     const user = await createTestUser(signUpUser.email);
     const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
 
-    const refusals = [await call(getRequests, { headers }), await call(getTenants, { headers }), await call(getRequests, { headers })];
+    const refusals = [await call(listRequests, { headers }), await call(listTenants, { headers }), await call(listRequests, { headers })];
 
     // Every call is refused and logged; the inbox hears of the user once.
     expect(refusals.map(({ response }) => response.status)).toEqual([403, 403, 403]);
@@ -57,7 +57,7 @@ describe('security inbox mails', async () => {
   it('must not mail the security inbox past its hourly ceiling, however many accounts are refused', async () => {
     for (let index = 0; index <= 20; index++) {
       const user = await createTestUser(`ceiling-${index}@example.com`);
-      const { response } = await call(getRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
+      const { response } = await call(listRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
       expect(response.status).toBe(403);
     }
 

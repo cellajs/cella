@@ -2,19 +2,19 @@ import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import {
   type ChannelBase,
   checkMembershipInvite,
-  type GetMembersData,
-  type GetPendingMembershipsData,
-  getMembers,
-  getPendingMemberships,
   type InviteOutcome,
+  type ListInvitationsData,
+  type ListMembersData,
+  listInvitations,
+  listMembers,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
 
-type PendingMembershipsParams = Pick<GetPendingMembershipsData['query'], 'entityId' | 'entityType'> & GetPendingMembershipsData['path'];
-type MembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
+type PendingMembershipsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
+type MembersParams = Omit<ListMembersData['query'], 'limit' | 'offset'> & ListMembersData['path'];
 type PendingMembershipsListParams = PendingMembershipsParams & { limit?: number };
 type MembersListParams = MembersParams & { limit?: number };
 
@@ -113,19 +113,19 @@ export const pendingMembershipsQueryOptions = (params: PendingMembershipsListPar
   return infiniteQueryOptions({
     queryKey: keys.list.pending({ entityId, entityType, tenantId, organizationId }),
     ...offsetPaging(limit, (offset, signal) =>
-      getPendingMemberships({ query: { ...query, ...pageQuery(limit, offset) }, path: { tenantId, organizationId }, signal }),
+      listInvitations({ query: { ...query, ...pageQuery(limit, offset) }, path: { tenantId, organizationId }, signal }),
     ),
     refetchOnMount: true,
   });
 };
 
 const fetchMembersPage = (
-  query: Omit<GetMembersData['query'], 'limit' | 'offset'>,
-  path: GetMembersData['path'],
+  query: Omit<ListMembersData['query'], 'limit' | 'offset'>,
+  path: ListMembersData['path'],
   limit: number,
   offset: number,
   signal?: AbortSignal,
-) => getMembers({ query: { ...query, ...pageQuery(limit, offset) }, path, signal });
+) => listMembers({ query: { ...query, ...pageQuery(limit, offset) }, path, signal });
 
 /** Fetch members for table export. Bypasses cache; items carry their counts and MFA setting, as in the members table. */
 export const fetchMembersForExport = async (params: MembersParams & { limit: number; offset?: number }) => {

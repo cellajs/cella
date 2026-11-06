@@ -13,7 +13,7 @@ import {
   type XMiddlewareHandler,
   type XRouteProps,
 } from '#/core/openapi-extensions';
-import { checksAuthoringRules, recordDocumentedErrors } from '#/core/openapi-validation';
+import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -66,6 +66,78 @@ const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => 
   }
 };
 
+/** A literal path segment, and a custom verb: lowercase kebab-case. */
+const kebabCase = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+const toKebabCase = (text: string) =>
+  text
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+
+const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+
+/** Whether `operationId` leads with the verb's first word and holds its other words after it, in order: `mark-read` in `markNotificationsRead`. */
+const namesVerb = (operationId: string, verb: string) => {
+  const [first, ...rest] = verb.split('-');
+  let from = first.length;
+  return (
+    operationId.startsWith(first) &&
+    rest.every((word) => {
+      const at = operationId.indexOf(capitalize(word), from);
+      from = at + word.length;
+      return at >= 0;
+    })
+  );
+};
+
+/**
+ * Refuses at load a route that breaks the resource conventions of the API (aep.dev): an update is a `patch`, never a
+ * `put`; a `get` or `delete` takes no body; a literal segment is lowercase kebab-case (the `-` wildcard parent and
+ * `.well-known` aside); a custom method is the last segment `/~verb`, a kebab-case verb on a `post` or a bodiless `get`,
+ * and its operationId leads with the verb.
+ */
+const assertRouteShape = (route: string, { method, path, operationId, request }: RouteOptions) => {
+  const refuse = (problem: string): never => {
+    throw new Error(`[routes] ${route}: ${problem}`);
+  };
+  if (method === 'put')
+    refuse('put replaces a whole resource, which no route offers. Make it a patch, or a post custom method (/~verb) for an action.');
+  if ((method === 'get' || method === 'delete') && request?.body) {
+    refuse(`a ${method} carries no request body. Move its input into the query, or make it a post custom method (/~verb).`);
+  }
+  const segments = path.split('/').filter(Boolean);
+  for (const [index, segment] of segments.entries()) {
+    if (/^\{\w+\}$/.test(segment) || segment === '-' || segment === '.well-known') continue;
+    if (segment.startsWith('~')) {
+      const verb = segment.slice(1);
+      if (index < segments.length - 1) refuse(`the custom method ${segment} is not the last segment. End the path with it.`);
+      if (!kebabCase.test(verb)) refuse(`the custom verb "${verb}" is not lowercase kebab-case. Rename it, such as ~${toKebabCase(verb)}.`);
+      if (method !== 'post' && method !== 'get') refuse(`the custom method ${segment} is a ${method}. Make it a post, or a get when it is safe.`);
+      if (!namesVerb(operationId, verb)) {
+        refuse(
+          `the operationId does not lead with the verb of ${segment}. Rename the route key to start with "${verb.split('-')[0]}" and hold the verb's other words in order, as ~batch-delete takes batchDeleteOrganizations.`,
+        );
+      }
+      continue;
+    }
+    if (segment.includes(':'))
+      refuse(`the segment "${segment}" holds a colon. Declare a custom method as the last segment /~verb: the server routes :verb there.`);
+    if (!kebabCase.test(segment)) refuse(`the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`);
+  }
+};
+
+/** Refuses at load a mount path whose literal segments are not lowercase kebab-case; a param is `:name`, `-` the wildcard parent. */
+export const assertMountPath = (path: string) => {
+  for (const segment of path.split('/').filter(Boolean)) {
+    if (segment.startsWith(':') || segment === '-' || kebabCase.test(segment)) continue;
+    throw new Error(
+      `[routes] The mount path ${path}: the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`,
+    );
+  }
+};
+
 /** The shared error responses of `codes`, keyed by status. */
 const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
   Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
@@ -102,6 +174,9 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const route = `${config.operationId} (${config.method} ${config.path})`;
+  if (checksAuthoringRules) assertRouteShape(route, config);
+  const verb = /\/~([^/]+)$/.exec(config.path)?.[1];
+  if (verb) recordCustomVerb(verb);
   // A read declares a limiter only where its own budget differs from the read pace.
   const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
   const extensionMiddleware = collectExtensionMiddleware(limited);

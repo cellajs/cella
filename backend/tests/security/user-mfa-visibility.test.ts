@@ -1,4 +1,4 @@
-import { getMembers, getUser } from 'sdk';
+import { getUser, listMembers } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
@@ -36,13 +36,13 @@ describe('The MFA setting of other users', async () => {
   // `include: null` sends no include at all; a default parameter would turn `undefined` back into 'mfa'.
   const readUser = async (as: Session, id = target.id, include: string | null = 'mfa') => {
     const query = include ? { include } : {};
-    const { data, response } = await call(getUser, { path: { relatableUserId: id }, query, headers: headers(as) });
+    const { data, response } = await call(getUser, { path: { userId: id }, query, headers: headers(as) });
     expect(response.status).toBe(200);
     return data as UserRow;
   };
 
-  const listMembers = async (as: Session, include: string | null = 'mfa') => {
-    const { data, response } = await call(getMembers, {
+  const readMembers = async (as: Session, include: string | null = 'mfa') => {
+    const { data, response } = await call(listMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization', ...(include && { include }) },
       headers: headers(as),
@@ -115,7 +115,7 @@ describe('The MFA setting of other users', async () => {
   describe('on the members list', () => {
     it('must not reveal the MFA setting to a member, nor to an admin of another organization', async () => {
       for (const caller of [coMember, adminElsewhere]) {
-        const members = await listMembers(caller);
+        const members = await readMembers(caller);
         expect(members.map((member) => member.id)).toContain(target.id);
         for (const member of members) expect(member).not.toHaveProperty('mfaRequired');
       }
@@ -123,7 +123,7 @@ describe('The MFA setting of other users', async () => {
 
     it("returns each member's MFA setting to an admin of the organization and to a system admin", async () => {
       for (const caller of [admin, sysAdmin]) {
-        const members = await listMembers(caller);
+        const members = await readMembers(caller);
         const mfaOf = (id: string) => members.find((member) => member.id === id)?.mfaRequired;
         expect(mfaOf(target.id)).toBe(true);
         expect(mfaOf(withoutMfa.id)).toBe(false);
@@ -131,8 +131,8 @@ describe('The MFA setting of other users', async () => {
     });
 
     it('leaves the MFA setting out unless include=mfa asks for it', async () => {
-      for (const member of await listMembers(admin, null)) expect(member).not.toHaveProperty('mfaRequired');
-      for (const member of await listMembers(admin, 'counts')) expect(member).not.toHaveProperty('mfaRequired');
+      for (const member of await readMembers(admin, null)) expect(member).not.toHaveProperty('mfaRequired');
+      for (const member of await readMembers(admin, 'counts')) expect(member).not.toHaveProperty('mfaRequired');
     });
   });
 });

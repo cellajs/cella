@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { deleteMe, deleteMemberships, deleteMyMembership, deleteOrganizations, updateMembership } from 'sdk';
+import { batchDeleteMemberships, batchDeleteOrganizations, deleteMe, leaveMembership, updateMembership } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db, openDedicatedConnection } from '#/db/db';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
@@ -46,7 +46,7 @@ describe('last organization admin', async () => {
 
     await expectLastAdmin(
       await call(updateMembership, {
-        path: { tenantId: org.tenantId, organizationId: org.id, id: own.id },
+        path: { tenantId: org.tenantId, organizationId: org.id, membershipId: own.id },
         body: { role: memberRole } as never,
         headers: headers(admin),
       }),
@@ -59,7 +59,7 @@ describe('last organization admin', async () => {
 
     // This route names members by user id.
     await expectLastAdmin(
-      await call(deleteMemberships, {
+      await call(batchDeleteMemberships, {
         path: { tenantId: org.tenantId, organizationId: org.id },
         query: { entityId: org.id, entityType: 'organization' },
         body: { ids: [admin.id] },
@@ -72,7 +72,7 @@ describe('last organization admin', async () => {
   it('must not leave an organization without an admin via its only admin leaving', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
 
-    await expectLastAdmin(await call(deleteMyMembership, { query: { entityId: org.id, entityType: 'organization' }, headers: headers(admin) }));
+    await expectLastAdmin(await call(leaveMembership, { body: { entityId: org.id, entityType: 'organization' }, headers: headers(admin) }));
     expect(await membershipOf(admin.id)).toBeDefined();
   });
 
@@ -121,20 +121,20 @@ describe('last organization admin', async () => {
     const own = await membershipOf(admin.id);
 
     const promoted = await call(updateMembership, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: theirs.id },
+      path: { tenantId: org.tenantId, organizationId: org.id, membershipId: theirs.id },
       body: { role: adminRole } as never,
       headers: headers(admin),
     });
     expect(promoted.response.status).toBe(200);
 
     const steppedDown = await call(updateMembership, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: own.id },
+      path: { tenantId: org.tenantId, organizationId: org.id, membershipId: own.id },
       body: { role: memberRole } as never,
       headers: headers(admin),
     });
     expect(steppedDown.response.status).toBe(200);
 
-    const deleted = await call(deleteOrganizations, {
+    const deleted = await call(batchDeleteOrganizations, {
       path: { tenantId: org.tenantId },
       body: { ids: [org.id] },
       headers: headers(member),

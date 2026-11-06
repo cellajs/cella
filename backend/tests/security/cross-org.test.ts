@@ -1,18 +1,18 @@
 import { and, eq } from 'drizzle-orm';
 import {
-  createAttachments,
-  deleteAttachments,
-  deleteMemberships,
-  deleteOrganizations,
+  batchCreateAttachments,
+  batchDeleteAttachments,
+  batchDeleteMemberships,
+  batchDeleteOrganizations,
   getAttachment,
-  getAttachments,
-  getMembers,
   getOrganization,
-  getPendingMemberships,
   getUser,
-  getUsers,
-  membershipInvite,
-  resendPendingInvitation,
+  inviteMembers,
+  listAttachments,
+  listInvitations,
+  listMembers,
+  listUsers,
+  resendInvitation,
   updateAttachment,
   updateMembership,
   updateOrganization,
@@ -106,7 +106,7 @@ describe('Cross-organization API isolation', async () => {
     });
 
     const attachmentId = generateId();
-    const created = await call(createAttachments, {
+    const created = await call(batchCreateAttachments, {
       path: { tenantId: orgB.tenantId, organizationId: orgB.id },
       body: [attachmentBody(attachmentId, planB)],
       headers: headers(userB),
@@ -128,13 +128,13 @@ describe('Cross-organization API isolation', async () => {
   /** Org B's ids on tenant A's path, on every route that takes one. */
   const rows: Row[] = [
     {
-      route: 'getAttachments',
-      attempt: (as) => call(getAttachments, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
+      route: 'listAttachments',
+      attempt: (as) => call(listAttachments, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
     },
     {
-      route: 'createAttachments',
+      route: 'batchCreateAttachments',
       attempt: (as) =>
-        call(createAttachments, {
+        call(batchCreateAttachments, {
           path: { tenantId: tenant.tenantId, organizationId: orgB.id },
           body: [attachmentBody(generateId(), planB)],
           headers: headers(as),
@@ -142,18 +142,18 @@ describe('Cross-organization API isolation', async () => {
     },
     {
       route: 'getOrganization',
-      attempt: (as) => call(getOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, headers: headers(as) }),
+      attempt: (as) => call(getOrganization, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
     },
     {
       route: 'updateOrganization',
       attempt: (as) =>
-        call(updateOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, body: { name: 'Hijacked' }, headers: headers(as) }),
+        call(updateOrganization, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, body: { name: 'Hijacked' }, headers: headers(as) }),
       unchanged: async () => expect((await organizationRow(orgB.id)).name).toBe(orgB.name),
     },
     {
-      route: 'deleteOrganizations',
+      route: 'batchDeleteOrganizations',
       attempt: (as) =>
-        call(deleteOrganizations, {
+        call(batchDeleteOrganizations, {
           path: { tenantId: tenant.tenantId },
           body: { ids: [orgB.id] },
           headers: headers(as),
@@ -166,7 +166,7 @@ describe('Cross-organization API isolation', async () => {
       route: 'getAttachment',
       attempt: (as) =>
         call(getAttachment, {
-          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, attachmentId: attachmentB.id },
           headers: headers(as),
         }),
     },
@@ -174,16 +174,16 @@ describe('Cross-organization API isolation', async () => {
       route: 'updateAttachment',
       attempt: (as) =>
         call(updateAttachment, {
-          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, attachmentId: attachmentB.id },
           body: { ops: { name: 'Hijacked' }, stx: renameStx() },
           headers: headers(as),
         }),
       unchanged: async () => expect((await attachmentRow(attachmentB.id)).name).toBe(attachmentB.name),
     },
     {
-      route: 'deleteAttachments',
+      route: 'batchDeleteAttachments',
       attempt: (as) =>
-        call(deleteAttachments, {
+        call(batchDeleteAttachments, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           body: { ids: [attachmentB.id], stx: { mutationId: generateId(), sourceId: 'cross-org' } },
           headers: headers(as),
@@ -192,18 +192,18 @@ describe('Cross-organization API isolation', async () => {
       unchanged: async () => expect((await attachmentRow(attachmentB.id)).deletedAt).toBeNull(),
     },
     {
-      route: 'getMembers',
+      route: 'listMembers',
       attempt: (as) =>
-        call(getMembers, {
+        call(listMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           query: { entityId: orgB.id, entityType: 'organization' },
           headers: headers(as),
         }),
     },
     {
-      route: 'getPendingMemberships',
+      route: 'listInvitations',
       attempt: (as) =>
-        call(getPendingMemberships, {
+        call(listInvitations, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           query: { entityId: orgB.id, entityType: 'organization' },
           headers: headers(as),
@@ -213,16 +213,16 @@ describe('Cross-organization API isolation', async () => {
       route: 'updateMembership',
       attempt: (as) =>
         call(updateMembership, {
-          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: membershipB.id },
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, membershipId: membershipB.id },
           body: { role: memberRole } as never,
           headers: headers(as),
         }),
       unchanged: async () => expect((await membershipRow(membershipB.id)).role).toBe(adminRole),
     },
     {
-      route: 'deleteMemberships',
+      route: 'batchDeleteMemberships',
       attempt: (as) =>
-        call(deleteMemberships, {
+        call(batchDeleteMemberships, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           query: { entityId: orgB.id, entityType: 'organization' },
           body: { ids: [userB.id] },
@@ -231,9 +231,9 @@ describe('Cross-organization API isolation', async () => {
       unchanged: async () => expect(await membershipRow(membershipB.id)).toBeDefined(),
     },
     {
-      route: 'membershipInvite',
+      route: 'inviteMembers',
       attempt: (as) =>
-        call(membershipInvite, {
+        call(inviteMembers, {
           path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
           query: { entityId: orgB.id, entityType: 'organization' },
           body: { emails: [invitedByAttacker], role: memberRole },
@@ -243,10 +243,10 @@ describe('Cross-organization API isolation', async () => {
         expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, invitedByAttacker))).toHaveLength(0),
     },
     {
-      route: 'resendPendingInvitation',
+      route: 'resendInvitation',
       attempt: (as) =>
-        call(resendPendingInvitation, {
-          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: invitationB.id },
+        call(resendInvitation, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, invitationId: invitationB.id },
           headers: headers(as),
         }),
       unchanged: async () => expect(mailer.sendEmails).not.toHaveBeenCalled(),
@@ -262,14 +262,14 @@ describe('Cross-organization API isolation', async () => {
   it("must not delete org B's attachment via a batch on tenant A's path that also names the caller's own", async () => {
     for (const attacker of [tenant, insider]) {
       const own = generateId();
-      const created = await call(createAttachments, {
+      const created = await call(batchCreateAttachments, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
         body: [attachmentBody(own, plan)],
         headers: headers(attacker),
       });
       expect(created.response.status).toBe(201);
 
-      const { data, response } = await call(deleteAttachments, {
+      const { data, response } = await call(batchDeleteAttachments, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
         body: { ids: [own, attachmentB.id], stx: { mutationId: generateId(), sourceId: 'cross-org' } },
         headers: headers(attacker),
@@ -281,31 +281,31 @@ describe('Cross-organization API isolation', async () => {
     }
   });
 
-  it('must not reach a user outside a shared organization via getUser or getUsers', async () => {
-    const one = await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(tenant) });
+  it('must not reach a user outside a shared organization via getUser or listUsers', async () => {
+    const one = await call(getUser, { path: { userId: userB.id }, headers: headers(tenant) });
     await expectRefusal(one, 403, 'forbidden');
     const listedFor = async (as: Session) => {
-      const { data, response } = await call(getUsers, { headers: headers(as) });
+      const { data, response } = await call(listUsers, { headers: headers(as) });
       expect(response.status).toBe(200);
       return (data as { items: { id: string }[] }).items.map((user) => user.id);
     };
     expect(await listedFor(tenant)).not.toContain(userB.id);
 
     // Positive control: the member of both organizations shares one with user B.
-    expect((await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(insider) })).response.status).toBe(200);
+    expect((await call(getUser, { path: { userId: userB.id }, headers: headers(insider) })).response.status).toBe(200);
     expect(await listedFor(insider)).toContain(userB.id);
   });
 
   it("must not serve org B's attachment on tenant A's path from a cache its own path warmed", async () => {
     // The member of both organizations reads it on its own path, which caches it.
     const own = await call(getAttachment, {
-      path: { tenantId: orgB.tenantId, organizationId: orgB.id, id: attachmentB.id },
+      path: { tenantId: orgB.tenantId, organizationId: orgB.id, attachmentId: attachmentB.id },
       headers: headers(insider),
     });
     expect(own.response.status).toBe(200);
 
     const { response, error } = await call(getAttachment, {
-      path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+      path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, attachmentId: attachmentB.id },
       headers: headers(insider),
     });
     await expectRefusal({ response, error }, 404, 'not_found');
@@ -316,9 +316,9 @@ describe('Cross-organization API isolation', async () => {
       { tenantId: orgB.tenantId, organizationId: orgB.id },
       { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
     ]) {
-      expect((await call(getAttachments, { path, headers: headers(insider) })).response.status).toBe(200);
+      expect((await call(listAttachments, { path, headers: headers(insider) })).response.status).toBe(200);
     }
-    const { response } = await call(getOrganization, { path: { tenantId: orgB.tenantId, id: orgB.id }, headers: headers(userB) });
+    const { response } = await call(getOrganization, { path: { tenantId: orgB.tenantId, organizationId: orgB.id }, headers: headers(userB) });
     expect(response.status).toBe(200);
   });
 });

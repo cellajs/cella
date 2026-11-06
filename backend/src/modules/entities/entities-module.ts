@@ -12,7 +12,7 @@ defineBackendModule({
     which tell a signed-in client about changes to the entities it may read and send it signals about the rest.`,
   // Hourly, at the three-quarter offset clear of the digest's tick.
   jobs: [{ name: 'deleted-storage-cleanup', cron: '45 * * * *', run: () => clearDeletedStorage() }],
-  routes: [{ path: '/entities', app: entityHandlers }],
+  routes: [{ path: '/', app: entityHandlers }],
   // Sent by the entities stream listeners when a channel below the organization is deleted (`versionedSignalsOf`).
   signals: [{ type: 'channel.deleted', audiences: ['readers'] }],
 });

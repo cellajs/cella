@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-import { zCreateOrganizationsBody } from 'sdk/zod.gen';
+import { zBatchCreateOrganizationsBody } from 'sdk/zod.gen';
 import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
@@ -35,7 +35,7 @@ interface CreateOrganizationFormProps {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-const formSchema = zCreateOrganizationsBody.element.omit({ id: true });
+const formSchema = zBatchCreateOrganizationsBody.element.omit({ id: true });
 
 type FormValues = z.infer<typeof formSchema>;
 

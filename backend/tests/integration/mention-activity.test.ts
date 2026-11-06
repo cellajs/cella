@@ -89,7 +89,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
 
   it('stores an edit that adds a mention as one updated activity and mentions the member', async () => {
     const result = await call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachmentId },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId },
       body: {
         ops: { description: mentionDocument(member.id) },
         stx: mockStxFor('description'),

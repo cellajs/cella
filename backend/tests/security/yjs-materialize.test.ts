@@ -103,7 +103,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   /** An outside write of the description, as the REST API takes it: it appends a server-origin row to the log. */
   const writeOutside = (entityId: string, text: string) =>
     call(updateAttachment, {
-      path: { organizationId: owner.organization.id, tenantId: owner.tenantId, id: entityId },
+      path: { organizationId: owner.organization.id, tenantId: owner.tenantId, attachmentId: entityId },
       body: {
         ops: { description: paragraph(text) },
         stx: mockStxFor('description'),

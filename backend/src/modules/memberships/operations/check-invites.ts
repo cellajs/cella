@@ -3,9 +3,9 @@ import type { UserContext } from '#/core/context';
 import type { membershipCheckBodySchema } from '#/modules/memberships/memberships-schema';
 import { planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { getValidChannel } from '#/permissions/get-valid-channel';
-import type { entityWithTypeQuerySchema } from '#/schemas';
+import type { entityWithTypeSchema } from '#/schemas';
 
-type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof entityWithTypeQuerySchema>;
+type CheckInvitesInput = z.infer<typeof membershipCheckBodySchema> & z.infer<typeof entityWithTypeSchema>;
 
 /**
  * What an invite would do with each address, for the invite form to show as addresses are added; nothing is written

@@ -20,7 +20,7 @@ export function ConnectedAppsList() {
 
   const handleRevoke = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    revoke({ path: { id } });
+    revoke({ path: { connectedAppId: id } });
   };
 
   if (!items.length)
@@ -48,7 +48,7 @@ export function ConnectedAppsList() {
               variant="secondary"
               size="sm"
               className="max-sm:w-full"
-              loading={isPending && variables?.path.id === app.id}
+              loading={isPending && variables?.path.connectedAppId === app.id}
               onClick={() => handleRevoke(app.id)}
             >
               <UnplugIcon />

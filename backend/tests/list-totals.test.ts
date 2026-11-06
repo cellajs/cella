@@ -1,4 +1,4 @@
-import { getPendingMemberships, getUsers } from 'sdk';
+import { listInvitations, listUsers } from 'sdk';
 import { afterAll, describe, expect, it } from 'vitest';
 import { adminRole, defaultHeaders } from './fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestOrganization, createTestSession, createTestUser } from './helpers';
@@ -28,7 +28,7 @@ describe('List totals', async () => {
       { limit: 1, offset: 0 },
       { limit: 1, offset: 2 },
     ]) {
-      const { data } = await call(getUsers, { query, headers });
+      const { data } = await call(listUsers, { query, headers });
       expect(data as Page).toMatchObject({ items: [expect.anything()], total: 3 });
     }
   });
@@ -48,7 +48,7 @@ describe('List totals', async () => {
       { limit: 1, offset: 2 },
     ]) {
       const query = { entityId: organization.id, entityType: 'organization' as const, ...page };
-      const { data } = await call(getPendingMemberships, { path, query, headers });
+      const { data } = await call(listInvitations, { path, query, headers });
       expect(data as Page).toMatchObject({ items: [expect.anything()], total: 3 });
     }
   });

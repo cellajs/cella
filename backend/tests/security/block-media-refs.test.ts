@@ -57,7 +57,7 @@ describe('Block media references', async () => {
 
   const putDescription = (description: string) =>
     call(updateAttachment, {
-      path: { tenantId: owner.tenantId, organizationId: owner.organization.id, id: attachmentId },
+      path: { tenantId: owner.tenantId, organizationId: owner.organization.id, attachmentId },
       body: {
         ops: { description },
         stx: mockStxFor('description'),
@@ -85,7 +85,7 @@ describe('Block media references', async () => {
 
   const putWelcomeText = (welcomeText: string) =>
     call(updateOrganization, {
-      path: { tenantId: owner.tenantId, id: owner.organization.id },
+      path: { tenantId: owner.tenantId, organizationId: owner.organization.id },
       body: { welcomeText },
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });

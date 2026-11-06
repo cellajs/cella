@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { acceptInvitationToken, handleMembershipInvitation, membershipInvite, withdrawPendingInvitation } from 'sdk';
+import { acceptInvitation, acceptInvitationToken, deleteInvitation, inviteMembers, rejectInvitation } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -29,8 +29,11 @@ describe('Rejected invitations', async () => {
 
   afterEach(async () => await clearSecurityTestData());
 
-  const respond = (id: string, acceptOrReject: 'accept' | 'reject', sessionCookie: string) =>
-    call(handleMembershipInvitation, { path: { id, acceptOrReject }, headers: { ...defaultHeaders, Cookie: sessionCookie } });
+  const respond = (invitationId: string, action: 'accept' | 'reject', sessionCookie: string) =>
+    call(action === 'accept' ? acceptInvitation : rejectInvitation, {
+      path: { invitationId },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
 
   const membershipsIn = (userId: string, organizationId: string) =>
     db
@@ -46,7 +49,7 @@ describe('Rejected invitations', async () => {
   const markRejected = (id: string, rejectedAt = getIsoDate()) =>
     db.update(inactiveMembershipsTable).set({ rejectedAt }).where(eq(inactiveMembershipsTable.id, id));
 
-  it('must not accept a rejected invitation via handleMembershipInvitation', async () => {
+  it('must not accept a rejected invitation via acceptInvitation', async () => {
     const organization = await createTestOrganization();
     const invitee = await createTestUser('rejected-invitee@security-test.com');
     const sessionCookie = await createTestSession(invitee);
@@ -122,7 +125,7 @@ describe('Rejected invitations', async () => {
     await markRejected(declined.inactiveMembership.id, isoDateAgo(new TimeSpan(appConfig.retention.declinedInvitationHoldDays + 1, 'd')));
     const mailsBefore = mailsTo(email).length;
 
-    const invited = await call(membershipInvite, {
+    const invited = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: [email], role: memberRole },
@@ -153,7 +156,7 @@ describe('Rejected invitations', async () => {
     const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
 
     // Inviting again tells the inviter of the decline and leaves it standing, mailing nothing.
-    const invited = await call(membershipInvite, {
+    const invited = await call(inviteMembers, {
       path,
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: [email], role: memberRole },
@@ -165,7 +168,7 @@ describe('Rejected invitations', async () => {
     expect(await rejectedAtOf(declined.inactiveMembership.id)).not.toBeNull();
 
     // Withdrawing the declined row, which would let the next invite start a fresh one, is refused.
-    const withdrawn = await call(withdrawPendingInvitation, { path: { ...path, id: declined.inactiveMembership.id }, headers });
+    const withdrawn = await call(deleteInvitation, { path: { ...path, invitationId: declined.inactiveMembership.id }, headers });
     await expectRefusal(withdrawn, 404, 'not_found');
     expect(await rejectedAtOf(declined.inactiveMembership.id)).not.toBeNull();
   });
@@ -184,7 +187,7 @@ describe('Rejected invitations', async () => {
     await createInvitation({ organization, email: 'pending-address@security-test.com', createdBy: admin.id });
 
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
-    const listed = await baseApp.request(`/${organization.tenantId}/${organization.id}/memberships/pending?${query}`, {
+    const listed = await baseApp.request(`/tenants/${organization.tenantId}/organizations/${organization.id}/invitations?${query}`, {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(listed.status).toBe(200);
@@ -192,7 +195,7 @@ describe('Rejected invitations', async () => {
     expect(items.map((item) => item.email)).toEqual(['pending-address@security-test.com']);
     expect(total).toBe(1);
 
-    const invited = await call(membershipInvite, {
+    const invited = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: ['one-more@security-test.com'], role: memberRole },
@@ -201,7 +204,7 @@ describe('Rejected invitations', async () => {
     expect(invited.response.status).toBe(200);
     expect(invited.data).toMatchObject({ outcomes: [{ outcome: 'invite' }] });
 
-    const overQuota = await call(membershipInvite, {
+    const overQuota = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: ['past-the-quota@security-test.com'], role: memberRole },
@@ -210,7 +213,7 @@ describe('Rejected invitations', async () => {
     await expectRefusal(overQuota, 403, 'restrict_by_org');
 
     // A reminder takes no seat: the pending address is invited again with the quota full.
-    const reminded = await call(membershipInvite, {
+    const reminded = await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: ['pending-address@security-test.com'], role: memberRole },

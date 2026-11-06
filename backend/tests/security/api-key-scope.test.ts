@@ -50,7 +50,7 @@ describe('API key scopes at the token endpoint', async () => {
     expect(token.scopes).toEqual(['attachment:read']);
 
     const write = await call(updateOrganization, {
-      path: { tenantId: account.org.tenantId, id: account.org.id },
+      path: { tenantId: account.org.tenantId, organizationId: account.org.id },
       body: { name: 'Taken over' },
       headers: bearerHeaders(jwt),
     });
@@ -74,7 +74,7 @@ describe('API key scopes at the token endpoint', async () => {
     expect((await verifyAccessToken(jwt, { tenantId: account.org.tenantId })).scopes).toEqual(['organization:write']);
 
     const write = await call(updateOrganization, {
-      path: { tenantId: account.org.tenantId, id: account.org.id },
+      path: { tenantId: account.org.tenantId, organizationId: account.org.id },
       body: { name: 'Renamed' },
       headers: bearerHeaders(jwt),
     });

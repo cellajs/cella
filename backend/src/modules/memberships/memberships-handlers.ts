@@ -13,7 +13,7 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(membershipRoutes.createMemberships, async (ctx) => {
+app.openapi(membershipRoutes.inviteMembers, async (ctx) => {
   const { emails, role } = ctx.req.valid('json');
   const { entityId, entityType } = ctx.req.valid('query');
   const data = await createMembershipsOp(ctx, { emails, role, entityId, entityType });
@@ -27,7 +27,7 @@ app.openapi(membershipRoutes.checkMembershipInvite, async (ctx) => {
   return ctx.json(data, 200);
 });
 
-app.openapi(membershipRoutes.deleteMemberships, async (ctx) => {
+app.openapi(membershipRoutes.batchDeleteMemberships, async (ctx) => {
   const { entityType, entityId } = ctx.req.valid('query');
   const { ids } = ctx.req.valid('json');
   const data = await deleteMembershipsOp(ctx, { userIds: ids, entityId, entityType });
@@ -35,31 +35,31 @@ app.openapi(membershipRoutes.deleteMemberships, async (ctx) => {
 });
 
 app.openapi(membershipRoutes.updateMembership, async (ctx) => {
-  const { id: membershipId } = ctx.req.valid('param');
+  const { membershipId } = ctx.req.valid('param');
   const updates = ctx.req.valid('json');
   const data = await updateMembershipOp(ctx, membershipId, updates);
   return ctx.json(data, 200);
 });
 
-app.openapi(membershipRoutes.getMembers, async (ctx) => {
+app.openapi(membershipRoutes.listMembers, async (ctx) => {
   const data = await getMembersOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
 });
 
-app.openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
+app.openapi(membershipRoutes.listInvitations, async (ctx) => {
   const data = await getPendingMembershipsOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
 });
 
-app.openapi(membershipRoutes.resendPendingInvitation, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  await resendPendingInvitationOp(ctx, id);
+app.openapi(membershipRoutes.resendInvitation, async (ctx) => {
+  const { invitationId } = ctx.req.valid('param');
+  await resendPendingInvitationOp(ctx, invitationId);
   return ctx.body(null, 204);
 });
 
-app.openapi(membershipRoutes.withdrawPendingInvitation, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  await withdrawPendingInvitationOp(ctx, id);
+app.openapi(membershipRoutes.deleteInvitation, async (ctx) => {
+  const { invitationId } = ctx.req.valid('param');
+  await withdrawPendingInvitationOp(ctx, invitationId);
   return ctx.body(null, 204);
 });
 

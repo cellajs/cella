@@ -4,10 +4,12 @@ import { stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockConnectedApp, mockPaginatedInvitationsResponse } from '#/modules/me/me-mocks';
 import {
+  connectedAppParamSchema,
   connectedAppSchema,
   meAuthDataSchema,
   mePendingInvitationSchema,
   meSchema,
+  myInvitationParamSchema,
   sessionBaseSchema,
   toggleMfaBodySchema,
   updateMeBodySchema,
@@ -16,7 +18,7 @@ import {
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, entityIdParamSchema, entityWithTypeQuerySchema, idsBodySchema, paginationSchema, validIdSchema } from '#/schemas';
+import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, paginationSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
 const meRoutes = createXRoutes(['me', 'cella'], {
@@ -28,7 +30,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     description: 'Returns the current user.',
     responses: { 200: json('User', meSchema) },
   }),
-  getMyInvitations: xRoute({
+  listMyInvitations: xRoute({
     method: 'get',
     path: '/invitations',
     xGuard: [userGuard],
@@ -36,19 +38,29 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     description: 'Returns a list of pending memberships with entity data.',
     responses: { 200: json('Invitations pending', paginationSchema(mePendingInvitationSchema), mockPaginatedInvitationsResponse()) },
   }),
-  handleMembershipInvitation: xRoute({
+  acceptInvitation: xRoute({
     method: 'post',
-    path: '/invitations/{id}/{acceptOrReject}',
+    path: '/invitations/{invitationId}/~accept',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    summary: 'Respond to membership invitation',
+    summary: 'Accept membership invitation',
     description:
-      "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
-    request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+      "Makes the caller a member of the invited channel, or leaves a membership they hold as it is. Returns the invitation's organization.",
+    request: { params: myInvitationParamSchema },
+    responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
+  }),
+  rejectInvitation: xRoute({
+    method: 'post',
+    path: '/invitations/{invitationId}/~reject',
+    xGuard: [userGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Reject membership invitation',
+    description: "Declines the invitation, and its emailed link stops working. Returns the invitation's organization.",
+    request: { params: myInvitationParamSchema },
     responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
   }),
   updateMe: xRoute({
-    method: 'put',
+    method: 'patch',
     path: '/',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
@@ -76,8 +88,8 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     responses: { 200: json('Sign-in methods and sessions', meAuthDataSchema) },
   }),
   revokeMySessions: xRoute({
-    method: 'delete',
-    path: '/sessions',
+    method: 'post',
+    path: '/sessions/~revoke',
     xGuard: [userGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Revoke sessions',
@@ -86,14 +98,14 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     request: { body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Sessions were revoked', batchResponseSchema(sessionBaseSchema)), ...errors(403) },
   }),
-  deleteMyMembership: xRoute({
-    method: 'delete',
-    path: '/leave',
+  leaveMembership: xRoute({
+    method: 'post',
+    path: '/memberships/~leave',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Leave channel',
     description: 'Removes the current user from a channel entity they are a member of.',
-    request: { query: entityWithTypeQuerySchema },
+    request: { body: jsonBody(entityWithTypeSchema) },
     responses: { 204: { description: 'Membership removed' }, ...errors(404, 409) },
   }),
   getUploadToken: xRoute({
@@ -114,8 +126,8 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     },
   }),
   toggleMfa: xRoute({
-    method: 'put',
-    path: '/mfa',
+    method: 'post',
+    path: '/~toggle-mfa',
     xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Toggle MFA',
@@ -123,7 +135,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     request: { body: jsonBody(toggleMfaBodySchema) },
     responses: { 200: json('User', userSchema) },
   }),
-  getMyMemberships: xRoute({
+  listMyMemberships: xRoute({
     method: 'get',
     path: '/memberships',
     xGuard: [userGuard],
@@ -131,7 +143,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     description: 'Returns all memberships for the current user across all channel entities.',
     responses: { 200: json('User memberships', z.object({ items: z.array(membershipBaseSchema) })) },
   }),
-  getConnectedApps: xRoute({
+  listConnectedApps: xRoute({
     method: 'get',
     path: '/connected-apps',
     xGuard: [userGuard],
@@ -141,15 +153,15 @@ const meRoutes = createXRoutes(['me', 'cella'], {
       200: json('Connected apps', z.object({ items: z.array(connectedAppSchema) }), { items: [mockConnectedApp()] }),
     },
   }),
-  revokeConnectedApp: xRoute({
+  deleteConnectedApp: xRoute({
     method: 'delete',
-    path: '/connected-apps/{id}',
+    path: '/connected-apps/{connectedAppId}',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Revoke connected app',
     description: 'Revokes a consent: the grant and every token issued under it are deleted.',
-    request: { params: entityIdParamSchema },
-    responses: { 200: json('Consent was revoked', batchResponseSchema()), ...errors(404) },
+    request: { params: connectedAppParamSchema },
+    responses: { 204: { description: 'Consent revoked' }, ...errors(404) },
   }),
 });
 

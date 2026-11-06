@@ -62,7 +62,7 @@ describe('Columns outside the body pick', async () => {
       route: 'updateOrganization',
       send: () =>
         call(updateOrganization, {
-          path: { tenantId: organization.tenantId, id: organization.id },
+          path: { tenantId: organization.tenantId, organizationId: organization.id },
           body: { name: 'Renamed', tenantId: otherTenantId, createdBy: admin.id } as never,
           headers: headers(),
         }),
@@ -92,7 +92,7 @@ describe('Columns outside the body pick', async () => {
     const foreign = await createTestOrganization();
     const binding = { channelType: 'organization', channelId: foreign.id, organizationId: foreign.id, role: adminRole };
     const { response } = await call(updateServiceAccount, {
-      path: { ...path, id },
+      path: { ...path, serviceAccountId: id },
       body: { name: 'Renamed', bindings: [binding] } as never,
       headers: factorHeaders,
     });

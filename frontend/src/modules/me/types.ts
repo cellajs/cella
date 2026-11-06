@@ -1,4 +1,4 @@
-import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, MembershipBase, User } from 'sdk';
+import type { GetUploadTokenData, ListMyInvitationsResponse, MeAuthData, MembershipBase, User } from 'sdk';
 import type { MenuSection } from 'shared';
 import type { EnrichedChannel } from '~/modules/entities/types';
 
@@ -16,4 +16,4 @@ export type UserMenuItem = EnrichedChannel & { membership: MembershipBase; subme
 
 export type UploadTokenQuery = GetUploadTokenData['query'];
 
-export type Invitation = GetMyInvitationsResponse['items'][number];
+export type Invitation = ListMyInvitationsResponse['items'][number];

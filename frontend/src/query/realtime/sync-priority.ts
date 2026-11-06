@@ -1,4 +1,4 @@
-import type { GetMyMembershipsResponse } from 'sdk';
+import type { ListMyMembershipsResponse } from 'sdk';
 import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
@@ -40,7 +40,7 @@ export function resolveQueryOrgTenantIds(cached: OrgTenantIdSource | undefined, 
 
 /** The tenant of an organization the user belongs to, from the cached memberships; null before they load. */
 export function getTenantIdForOrg(organizationId: string): string | null {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
   return data?.items.find((item) => item.organizationId === organizationId)?.tenantId ?? null;
 }
 
@@ -64,7 +64,7 @@ export function isViewingChannel(organizationId: string, channelId: string | nul
 
 /** Membership `muted`/`archived` = the user declared "not urgent" for this scope. */
 function isMutedOrArchived(organizationId: string, channelId: string | null): boolean {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
   if (!data?.items) return false;
   const targetId = channelId ?? organizationId;
   const membership = data.items.find((item) => item.channelId === targetId);

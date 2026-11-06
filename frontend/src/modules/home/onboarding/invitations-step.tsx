@@ -27,7 +27,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
     previousCountRef.current = invitations.length;
   }, [invitations.length]);
 
-  const answer = (id: string, acceptOrReject: 'accept' | 'reject') => handleInvitation({ path: { id, acceptOrReject } });
+  const answer = (invitationId: string, action: 'accept' | 'reject') => handleInvitation({ invitationId, action });
 
   return (
     <div className="flex flex-col gap-4">

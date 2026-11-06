@@ -8,7 +8,7 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 // The list endpoints answer an empty page; each case reads the request the fetcher sent.
 vi.mock('sdk', async (importOriginal) => {
   const page = () => vi.fn(async () => ({ items: [], total: 0 }));
-  return { ...(await importOriginal<typeof import('sdk')>()), getOrganizations: page(), getMembers: page() };
+  return { ...(await importOriginal<typeof import('sdk')>()), listOrganizations: page(), listMembers: page() };
 });
 
 const sdk = await import('sdk');
@@ -40,7 +40,7 @@ describe('export fetchers', () => {
     await fetchOrganizationsForExport({ limit: 1000 });
     await fetchMembersForExport({ ...channel, role: memberRole, limit: 1000 });
 
-    expect(vi.mocked(sdk.getOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,membership' } });
-    expect(vi.mocked(sdk.getMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
+    expect(vi.mocked(sdk.listOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,membership' } });
+    expect(vi.mocked(sdk.listMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
   });
 });

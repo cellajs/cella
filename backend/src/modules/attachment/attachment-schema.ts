@@ -6,7 +6,15 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
-import { batchResponseSchema, maxLength, productListQuerySchema, stxStoredSchema, validUuidSchema } from '#/schemas';
+import {
+  batchResponseSchema,
+  maxLength,
+  productListQuerySchema,
+  stxStoredSchema,
+  tenantOrgParamSchema,
+  validIdSchema,
+  validUuidSchema,
+} from '#/schemas';
 import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 
 /** The single place the storage-key variant set is enumerated. `original` is always present. */
@@ -96,6 +104,9 @@ export const attachmentLinkKeysBodySchema = z.object({
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
+
+/** The path of one attachment in its organization. */
+export const attachmentParamSchema = tenantOrgParamSchema.extend({ attachmentId: validIdSchema });
 
 export const attachmentListQuerySchema = productListQuerySchema({
   sort: attachmentSortKeys.default('createdAt'),

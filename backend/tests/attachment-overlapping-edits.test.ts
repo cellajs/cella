@@ -39,7 +39,7 @@ describe('Overlapping edits of one attachment', async () => {
 
   const edit = (id: string, field: 'name' | 'description', value: string) =>
     call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: id },
       body: {
         ops: { [field]: value },
         stx: mockStxFor(field),

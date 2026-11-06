@@ -49,19 +49,14 @@ export interface BackendQueue extends Omit<Queue, 'name' | 'notify'> {
 export type BackendRouteApp = Hono<Env, any, any>;
 
 /**
- * Mount phases, applied in this order by the API entrypoint: static paths, then apps mounted at
- * `/` with absolute `/:tenantId/...` routes, then `/:tenantId/:organizationId/...` mounts. Param
- * segments therefore never shadow a static path. Within a phase, mounts follow registration order.
+ * One handler app and where the API entrypoint mounts it. Mounts apply in registration order, and of two routes that
+ * match one request the first registered answers. Every mount path starts with a literal segment, so a param segment can
+ * shadow only a static sibling, such as the `-` wildcard parent of `/tenants/-/organizations`.
  */
-export type BackendRoutePhase = 'static' | 'absolute' | 'tenant';
-
-/** One handler app and where the API entrypoint mounts it. */
 export interface BackendRoute {
-  /** Mount path, e.g. `/me` or `/:tenantId/:organizationId/attachments`. */
+  /** Mount path, e.g. `/me` or `/tenants/:tenantId/organizations/:organizationId/attachments`. */
   path: string;
   app: BackendRouteApp;
-  /** Defaults to `static`. */
-  phase?: BackendRoutePhase;
 }
 
 /** A subject row as the notification machinery needs it; modules return their own rows widened to this. */
@@ -139,7 +134,7 @@ export interface BackendModule extends ModuleConfig {
   notifications?: true | ModuleNotifications;
   /** Signals this module sends on the app stream (indexed by the stream's signal registry). */
   signals?: StreamSignalDeclaration[];
-  /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
+  /** Handler apps the API entrypoint mounts (see {@link BackendRoute}); the composition root is the mount list. */
   routes?: BackendRoute[];
 }
 
@@ -171,7 +166,7 @@ export function defineBackendModule(module: BackendModule): void {
   for (const listener of listeners) listener(module);
 }
 
-/** Route mounts from every module definition, in registration order; the entrypoint applies them per phase. */
+/** Route mounts from every module definition, in registration order, the order the entrypoint applies them in. */
 export function getBackendRoutes(): readonly BackendRoute[] {
   return backendRoutes;
 }

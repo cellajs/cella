@@ -142,15 +142,15 @@ describe('MCP on the substrate (Phase E)', async () => {
     const list = await rpc(ctx, 'tools/list');
     const tools = (list.rpc.result as { tools: { name: string; _meta: { scope: string } }[] }).tools;
     expect(tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(['getAttachments', 'getAttachment', 'updateAttachment', 'deleteAttachments']),
+      expect.arrayContaining(['listAttachments', 'getAttachment', 'updateAttachment', 'batchDeleteAttachments']),
     );
 
     // An integer query param takes a number; the call writes it into the query string.
-    const read = await toolCall(ctx, 'getAttachments', { limit: 5 });
+    const read = await toolCall(ctx, 'listAttachments', { limit: 5 });
     expect(read.response.status).toBe(200);
     expect(toolResult(read).structuredContent).toMatchObject({ items: [], total: 0 });
 
-    const write = await toolCall(ctx, 'updateAttachment', { id: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
+    const write = await toolCall(ctx, 'updateAttachment', { attachmentId: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
     expect(write.response.status).toBe(403);
     expect(write.response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
     expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
@@ -158,11 +158,11 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('answers each call of a batch, one outside the token scopes with its own error', async () => {
     const ctx = await serviceToken('attachment:read');
-    const write = { name: 'updateAttachment', arguments: { id: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } } };
+    const write = { name: 'updateAttachment', arguments: { attachmentId: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } } };
     const { response, data } = await call(handleMcp, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
       body: [
-        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'getAttachments', arguments: {} } },
+        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'listAttachments', arguments: {} } },
         { jsonrpc: '2.0', id: 2, method: 'tools/call', params: write },
         { jsonrpc: '2.0', id: 3 },
         { jsonrpc: '2.0', id: 4, result: {} },
@@ -190,7 +190,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 1 });
 
     // The route charges what a REST request with the same token is charged: the burst once, plus its own limiters.
-    expect((await toolCall(ctx, 'getAttachments', {})).response.status).toBe(200);
+    expect((await toolCall(ctx, 'listAttachments', {})).response.status).toBe(200);
     expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 2, serviceBurst: 1, read: 1 });
   });
 
@@ -201,14 +201,14 @@ describe('MCP on the substrate (Phase E)', async () => {
     const provenance = async () => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
 
     // `write` implies `read` (D2).
-    const read = await toolCall(ctx, 'getAttachment', { id });
+    const read = await toolCall(ctx, 'getAttachment', { attachmentId: id });
     expect(toolResult(read).structuredContent).toMatchObject({ id, name: 'Build log' });
 
-    const renamed = await toolCall(ctx, 'updateAttachment', { id, ops: { name: 'Build log (main)' } });
+    const renamed = await toolCall(ctx, 'updateAttachment', { attachmentId: id, ops: { name: 'Build log (main)' } });
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Build log (main)' });
     expect((await provenance()).updatedBy).toBe(ctx.accountId);
 
-    const deleted = await toolCall(ctx, 'deleteAttachments', { ids: [id] });
+    const deleted = await toolCall(ctx, 'batchDeleteAttachments', { ids: [id] });
     expect(toolResult(deleted).structuredContent).toMatchObject({ rejectedIds: [] });
     const row = await provenance();
     expect(row.deletedAt).not.toBeNull();
@@ -223,22 +223,22 @@ describe('MCP on the substrate (Phase E)', async () => {
     const thesisId = await insertAttachment(seed, 'Thesis', seed.user.id);
 
     // The reader is in another tenant: the token's audience refuses this organization outright.
-    const wrongTenant = await toolCall({ org: seed.org, jwt: reader.jwt }, 'getAttachments', {});
+    const wrongTenant = await toolCall({ org: seed.org, jwt: reader.jwt }, 'listAttachments', {});
     expect(wrongTenant.response.status).toBe(401);
 
-    const list = await toolCall(reader, 'getAttachments', {});
+    const list = await toolCall(reader, 'listAttachments', {});
     expect(list.response.status).toBe(200);
 
-    const refused = await toolCall(reader, 'updateAttachment', { id: thesisId, ops: { name: 'Thesis v2' } });
+    const refused = await toolCall(reader, 'updateAttachment', { attachmentId: thesisId, ops: { name: 'Thesis v2' } });
     expect(refused.response.status).toBe(403);
     expect(refused.response.headers.get('www-authenticate')).toContain('scope="attachment:write"');
 
     // Step up: the same person consents again with the write scope; the grant widens, the write lands as them.
     const writer = await userToken('attachment:read attachment:write', reader);
-    const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: thesisId });
+    const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { attachmentId: thesisId });
     expect(moved.response.status).toBe(200);
     const draftId = await insertAttachment(writer, 'Draft', writer.user.id);
-    const renamed = await toolCall(writer, 'updateAttachment', { id: draftId, ops: { name: 'Draft v2' } });
+    const renamed = await toolCall(writer, 'updateAttachment', { attachmentId: draftId, ops: { name: 'Draft v2' } });
     expect(renamed.response.status).toBe(200);
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Draft v2' });
     const [row] = await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, draftId));

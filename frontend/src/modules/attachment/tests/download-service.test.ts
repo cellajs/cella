@@ -2,11 +2,11 @@ import 'fake-indexeddb/auto';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { callHook, mutationsOf, resetMutationHooks } from '~/query/tests/mutation-hooks-kit';
 
-const { deleteAttachments } = vi.hoisted(() => ({
-  deleteAttachments: vi.fn(async (): Promise<{ rejectedIds: string[] }> => ({ rejectedIds: [] })),
+const { batchDeleteAttachments } = vi.hoisted(() => ({
+  batchDeleteAttachments: vi.fn(async (): Promise<{ rejectedIds: string[] }> => ({ rejectedIds: [] })),
 }));
 
-vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), deleteAttachments }));
+vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), batchDeleteAttachments }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
 // The content-type filters the tier cases assert, whatever an app configures.
 vi.mock('shared', async (importOriginal) => {
@@ -83,7 +83,7 @@ describe('download service', () => {
       expect(await attachmentsDb.blobs.where('attachmentId').equals('att-1').count()).toBe(0);
       expect(await attachmentsDb.downloadQueue.get('att-1')).toBeUndefined();
     });
-    expect(deleteAttachments).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ ids: ['att-1'] }) }));
+    expect(batchDeleteAttachments).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ ids: ['att-1'] }) }));
   });
 
   it("removes the stored file of an attachment a move took out of this reader's reach", async () => {

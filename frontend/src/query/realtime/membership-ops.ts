@@ -58,7 +58,7 @@ export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }
 
-/** `query` deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
+/** `query` deduplicates against an in-flight listMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
   // A catchup within the stale time of the route loader's read fetches nothing.
   return queryClient.query({ ...myMembershipsQueryOptions(), staleTime: defaultStaleTime });

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getMyInvitations, getPendingMemberships, membershipInvite, publishOrganization, resendPendingInvitation } from 'sdk';
+import { inviteMembers, listInvitations, listMyInvitations, publishOrganization, resendInvitation } from 'sdk';
 import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -50,12 +50,12 @@ describe('Draft context invite deferral', async () => {
 
   const publish = (organization: { id: string; tenantId: string }, sessionCookie: string) =>
     call(publishOrganization, {
-      path: { tenantId: organization.tenantId, id: organization.id },
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
 
   const invite = async (organization: { id: string; tenantId: string }, emails: string[], role: EntityRole, sessionCookie: string) => {
-    return await call(membershipInvite, {
+    return await call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: { emails, role },
       query: { entityId: organization.id, entityType: 'organization' as const },
@@ -106,7 +106,7 @@ describe('Draft context invite deferral', async () => {
 
     await invite(organization, [coAdmin.email], adminRole, sessionCookie);
 
-    const { data } = await call(getMyInvitations, { headers: { ...defaultHeaders, Cookie: await createTestSession(coAdmin) } });
+    const { data } = await call(listMyInvitations, { headers: { ...defaultHeaders, Cookie: await createTestSession(coAdmin) } });
     expect((data as { items: unknown[] }).items).toHaveLength(1);
   });
 
@@ -130,7 +130,7 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, [invitee.email], memberRole, sessionCookie);
 
     const inviteeCookie = await createTestSession(invitee);
-    const myInvitations = () => call(getMyInvitations, { headers: { ...defaultHeaders, Cookie: inviteeCookie } });
+    const myInvitations = () => call(listMyInvitations, { headers: { ...defaultHeaders, Cookie: inviteeCookie } });
 
     const before = await myInvitations();
     expect(before.response.status).toBe(200);
@@ -148,8 +148,8 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, ['held@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
 
-    const { response } = await call(resendPendingInvitation, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id, id: held.id },
+    const { response } = await call(resendInvitation, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id, invitationId: held.id },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     expect(response.status).toBe(204);
@@ -264,15 +264,15 @@ describe('Draft context invite deferral', async () => {
     await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization });
     const [dispatchedLink] = await linksOf(held.id);
 
-    await call(resendPendingInvitation, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id, id: held.id },
+    await call(resendInvitation, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id, invitationId: held.id },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     const links = await linksOf(held.id);
     expect(links).toHaveLength(1);
     expect(links[0].id).not.toBe(dispatchedLink.id);
 
-    const { data } = await call(getPendingMemberships, {
+    const { data } = await call(listInvitations, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
