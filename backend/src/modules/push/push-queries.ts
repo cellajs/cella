@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, notInArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray, or } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { pushSubscriptionsTable } from '#/modules/push/push-subscription-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -20,9 +20,12 @@ interface UpsertPushSubscriptionOpts {
 const pushSubscriptionsPerUser = 20;
 
 /**
- * Upsert by the unique endpoint. A rotated or re-registered subscription reclaims its row even
- * when the browser profile changed users, so the previous user stops receiving pushes for it.
- * The user's rows beyond `pushSubscriptionsPerUser` go in the same transaction, so a new device is never refused.
+ * Upsert by the unique endpoint. The user's own endpoint takes the posted keys. Another user's endpoint moves to the
+ * caller only with its stored auth secret, which the browser holding the subscription hands out and the server never
+ * does: a browser profile that changed users stops pushing to its previous user, and an endpoint learned alone takes
+ * nothing over. The user's rows beyond `pushSubscriptionsPerUser` go in the same transaction, so a new device is never
+ * refused.
+ * @returns The stored row, or null when the endpoint stays with another user.
  */
 export async function upsertPushSubscription(ctx: DbContext, { values }: UpsertPushSubscriptionOpts) {
   const lastSeenAt = getIsoDate();
@@ -30,8 +33,13 @@ export async function upsertPushSubscription(ctx: DbContext, { values }: UpsertP
     const [row] = await tx
       .insert(pushSubscriptionsTable)
       .values({ ...values, lastSeenAt })
-      .onConflictDoUpdate({ target: pushSubscriptionsTable.endpoint, set: { ...values, lastSeenAt } })
+      .onConflictDoUpdate({
+        target: pushSubscriptionsTable.endpoint,
+        set: { ...values, lastSeenAt },
+        setWhere: or(eq(pushSubscriptionsTable.userId, values.userId), eq(pushSubscriptionsTable.auth, values.auth)),
+      })
       .returning({ id: pushSubscriptionsTable.id, endpoint: pushSubscriptionsTable.endpoint });
+    if (!row) return null;
 
     const kept = tx
       .select({ id: pushSubscriptionsTable.id })

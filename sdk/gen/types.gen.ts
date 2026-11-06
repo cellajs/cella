@@ -5447,6 +5447,10 @@ export type CreatePushSubscriptionErrors = {
    */
   401: UnauthorizedError;
   /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
    * Payload too large
    */
   413: PayloadTooLargeError;

@@ -81,6 +81,7 @@
   "invalid_param": "Invalid parameters",
   "invalid_param.text": "If you copied a URL, please check if it is correct and complete.",
   "invalid_push_endpoint": "The subscription does not come from a known push service",
+  "invalid_push_keys": "The subscription's keys are not valid",
   "invalid_request": "Something's missing or wrong",
   "invalid_request.text": "Check what you entered and try again.",
   "invalid_role": "Not allowed",

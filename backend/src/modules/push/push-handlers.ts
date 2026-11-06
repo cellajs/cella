@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
 import { deletePushSubscription, upsertPushSubscription } from '#/modules/push/push-queries';
 import { pushRoutes } from '#/modules/push/push-routes';
@@ -24,6 +25,7 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
       userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },
   });
+  if (!row) throw new AppError(403, 'forbidden', 'warn');
   return ctx.json(row, 201);
 });
 

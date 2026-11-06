@@ -2373,8 +2373,8 @@ export const zCreatePushSubscriptionBody = z.object({
   endpoint: z.url().max(2048),
   expirationTime: z.number().nullish(),
   keys: z.object({
-    p256dh: z.string().min(1).max(512),
-    auth: z.string().min(1).max(512),
+    p256dh: z.string().max(512),
+    auth: z.string().max(512),
   }),
 });
 

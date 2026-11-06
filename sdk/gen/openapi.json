@@ -13102,7 +13102,7 @@
         "operationId": "createPushSubscription",
         "tags": ["push", "cella"],
         "summary": "Register a Web Push subscription",
-        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
+        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. An endpoint another user registered moves to the caller only with that subscription's auth secret, as the browser holding it sends. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pushSubscriptionLimiter"],
         "requestBody": {
@@ -13125,12 +13125,10 @@
                     "properties": {
                       "p256dh": {
                         "type": "string",
-                        "minLength": 1,
                         "maxLength": 512
                       },
                       "auth": {
                         "type": "string",
-                        "minLength": 1,
                         "maxLength": 512
                       }
                     },
@@ -13167,6 +13165,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
