@@ -5,7 +5,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import { BASE_URL, COOKIE_SECRET, DB_URL, SESSION_COOKIE_NAME } from './config';
-import { benchSignInStatus, isPostgresReady, isServiceHealthy, SERVICES, unreadyReason } from './preflight';
+import { benchSignInStatus, isPostgresReady, isServiceHealthy, SERVICES } from './preflight';
 import { booksFindings, type PipelineSnapshot, pipelineFindings, settlePipeline } from './verify';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -101,4 +101,4 @@ async function afterEach({ counters, checks, short }: RunOutcome, before: Pipeli
   return { checks: results, columns: written === undefined ? {} : { 'CDC +s': (caughtUpMs / 1000).toFixed(1) } };
 }
 
-await runBench({ target: BASE_URL, unready: unreadyReason, preflight, seed, beforeAll, beforeEach, afterEach });
+await runBench({ target: BASE_URL, preflight, seed, beforeAll, beforeEach, afterEach });

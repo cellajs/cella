@@ -1,4 +1,3 @@
-import { readdirSync } from 'node:fs';
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { benchCookie } from './bench-user';
@@ -40,43 +39,4 @@ export async function benchSignInStatus(): Promise<number | null> {
   } catch {
     return null;
   }
-}
-
-/** One-shot readiness probe of Postgres and every enabled service: never polls or exits, returning `false` so callers can skip. */
-async function isInfrastructureReady(): Promise<boolean> {
-  if (!(await isPostgresReady())) return false;
-  for (const url of Object.values(SERVICES)) {
-    if (!(await isServiceHealthy(url))) return false;
-  }
-  return true;
-}
-
-/**
- * The newest migration the database has applied and the newest one this checkout ships. Another checkout's `pnpm dev`
- * on the same ports runs its own schema, so a caller that tests this checkout compares the two before it runs.
- */
-async function getSchemaVersions(): Promise<{ applied: string | null; checkout: string | null }> {
-  const entries = readdirSync(new URL('../drizzle/', import.meta.url), { withFileTypes: true });
-  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  const checkout = folders.sort().at(-1) ?? null;
-
-  // Migration folder names start with their timestamp, so the highest name is the newest. Schema as in backend `migrateConfig`.
-  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
-  try {
-    const { rows } = await pool.query<{ name: string | null }>('SELECT max(name) AS name FROM "drizzle-backend".__drizzle_migrations');
-    return { applied: rows[0]?.name ?? null, checkout };
-  } catch {
-    return { applied: null, checkout };
-  } finally {
-    await pool.end();
-  }
-}
-
-/** Why this checkout has no stack to run against, or null when it has one: nothing reachable, or a stack on another checkout's schema. */
-export async function unreadyReason(): Promise<string | null> {
-  if (!(await isInfrastructureReady())) return 'local stack not reachable (run `pnpm dev` to enable)';
-
-  const { applied, checkout } = await getSchemaVersions();
-  if (applied === checkout) return null;
-  return `the running stack's database is on migration ${applied ?? 'none'}, this checkout on ${checkout} (run \`pnpm dev\` from this checkout to enable)`;
 }
