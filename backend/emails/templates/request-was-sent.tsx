@@ -16,19 +16,21 @@ interface RequestResponseStatic {
  */
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
   translate(lng, { type }) {
+    const subject = i18n.t('backend:email.request.subject', { lng, requestType: type, ...plainText });
     return {
-      subject: i18n.t('backend:email.request.subject', { lng, requestType: type, ...plainText }),
+      subject,
+      previewText: subject,
       headerHtml: i18n.t(`backend:email.${type}_request.title`, { lng }),
       bodyHtml: i18n.t(`backend:email.${type}_request.text`, { lng }),
       endingHtml: endingFor(lng, 'reply'),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ subject, headerHtml, bodyHtml, endingHtml, supportText, frame }) {
+  component({ previewText, headerHtml, bodyHtml, endingHtml, supportText, frame }) {
     return (
       <EmailMessage
         frame={frame}
-        previewText={subject}
+        previewText={previewText}
         headerHtml={headerHtml}
         bodyHtml={bodyHtml}
         endingHtml={endingHtml}
