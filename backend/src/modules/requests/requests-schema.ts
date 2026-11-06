@@ -3,7 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { requestsTable, requestTypeEnum } from '#/modules/requests/requests-db';
 import { mockRequestResponse } from '#/modules/requests/requests-mocks';
-import { paginationQuerySchema, validEmailSchema } from '#/schemas';
+import { listQuerySchema, orderByQuerySchema, validEmailSchema } from '#/schemas';
 
 export const requestSchema = createSelectSchema(requestsTable)
   .omit({ invitedAt: true })
@@ -22,4 +22,4 @@ export const requestCreateBodySchema = z.object({
   message: z.string().max(5000).nullable(),
 });
 
-export const requestListQuerySchema = paginationQuerySchema.extend({ sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt') });
+export const requestListQuerySchema = listQuerySchema.extend({ orderBy: orderByQuerySchema(['id', 'email', 'type', 'createdAt'], 'createdAt desc') });

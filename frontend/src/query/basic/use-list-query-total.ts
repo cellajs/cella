@@ -22,9 +22,9 @@ export function useListQueryTotal(queryKey: QueryKey) {
 
       if ('pages' in queryState.data) {
         const { pages } = queryState.data;
-        return pages.length ? pages[pages.length - 1].total : null;
+        return pages.length ? pages[pages.length - 1].totalSize : null;
       }
-      return queryState.data.total;
+      return queryState.data.totalSize;
     },
   );
 }

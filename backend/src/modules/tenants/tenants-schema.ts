@@ -6,7 +6,7 @@ import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { quotaKeys } from '#/modules/tenants/tenant-restrictions';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockTenantResponse } from '#/modules/tenants/tenants-mocks';
-import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
+import { listQuerySchema, minimalBaseSchema, orderByQuerySchema, validNameSchema } from '#/schemas';
 import { auditShape } from '#/schemas/entity-base';
 
 const tenantStatusSchema = z.enum(tenantStatusValues);
@@ -82,7 +82,7 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   .partial()
   .extend({ restrictions: partialRestrictionsSchema.optional() });
 
-export const tenantListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['createdAt', 'name']).default('createdAt'),
+export const tenantListQuerySchema = listQuerySchema.extend({
+  orderBy: orderByQuerySchema(['createdAt', 'name'], 'createdAt desc'),
   status: tenantStatusSchema.optional().describe('Filter by status'),
 });

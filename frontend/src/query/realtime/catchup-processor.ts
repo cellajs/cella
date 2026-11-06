@@ -203,7 +203,7 @@ function settleOpaqueHint(organizationId: string, { embeddedProduct, update, unt
 /** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */
 function membershipChannelKeys(): Set<string> {
   const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
-  return new Set((data?.items ?? []).map((membership) => `${membership.organizationId}:${membership.channelId}`));
+  return new Set((data?.results ?? []).map((membership) => `${membership.organizationId}:${membership.channelId}`));
 }
 
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached, a range fetch has nothing to patch. */

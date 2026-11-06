@@ -25,7 +25,7 @@ export const insertRequest = async (ctx: DbContext, { email, type, message }: In
   return created;
 };
 
-interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuerySchema>, 'sort' | 'order'> {
+interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches the address. */
   q?: string;
   limit: number;

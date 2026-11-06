@@ -16,7 +16,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
   const { nextStep } = useStepper();
 
   const { data } = useQuery(meInvitationsQueryOptions());
-  const invitations = data?.items ?? [];
+  const invitations = data?.results ?? [];
 
   const { mutate: handleInvitation, isPending } = useHandleInvitationMutation();
 

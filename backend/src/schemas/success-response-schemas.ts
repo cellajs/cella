@@ -2,8 +2,19 @@ import { z } from '@hono/zod-openapi';
 import type { ProductEntityType } from 'shared';
 import { tombstoneKeys } from '#/utils/seq-range';
 
-/** A page of a list: its `items` and the `total` the list holds. */
-export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) => z.object({ items: z.array(schema), total: z.number() });
+/** The `totalSize` of a list page; a list whose count is no exact count describes its own. */
+const totalSizeSchema = z.int().min(0).describe('Results across all pages, after filters: an exact count.');
+
+/**
+ * A page of a list (AEP-132, AEP-158): its `results`, a `nextPageToken` while more results follow, and the `totalSize`
+ * across all pages.
+ */
+export const paginationSchema = <O, I>(schema: z.ZodType<O, I>, totalSize = totalSizeSchema) =>
+  z.object({
+    results: z.array(schema),
+    nextPageToken: z.string().optional().describe('Pass as `pageToken` to read the next page. Absent on the last page.'),
+    totalSize,
+  });
 
 /** A page of a product list, whose range reads return soft-deleted rows as tombstones (`projectTombstones`). */
 export const productListResponseSchema = <T extends z.ZodObject>(entityType: ProductEntityType, schema: T) => {
@@ -11,7 +22,10 @@ export const productListResponseSchema = <T extends z.ZodObject>(entityType: Pro
   const tombstone = z
     .object({ ...Object.fromEntries(Object.entries(schema.shape).filter(([key]) => kept.has(key))), deletedAt: z.string() })
     .describe('A soft-deleted row: the fields that place it, without its content.');
-  return paginationSchema(z.union([schema, tombstone]));
+  const totalSize = totalSizeSchema.describe(
+    "Results across all pages, after filters. Exact, except an organization-wide read without a search, which counts from the organization's counter and can trail a write by moments. A range read counts its own results.",
+  );
+  return paginationSchema(z.union([schema, tombstone]), totalSize);
 };
 
 /** Passing an item schema produces `data: T[]`; omitting it requires an empty data array. */

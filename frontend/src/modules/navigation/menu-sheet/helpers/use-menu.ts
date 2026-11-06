@@ -16,7 +16,7 @@ export function useMenu(userId: string | undefined) {
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
   const itemsByType = new Map<ChannelEntityType, UserMenuItem[]>(menuEntityTypes.map((entityType) => [entityType, []]));
-  for (const list of lists) itemsByType.set(list.entityType, menuItemsFromList(list.query.data, myMemberships?.items ?? []));
+  for (const list of lists) itemsByType.set(list.entityType, menuItemsFromList(list.query.data, myMemberships?.results ?? []));
   const menu = buildMenu(itemsByType, appConfig.menuStructure);
 
   const isLoading = lists.some(({ query }) => query.isPending);

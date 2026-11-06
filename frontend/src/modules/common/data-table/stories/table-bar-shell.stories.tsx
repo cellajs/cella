@@ -27,7 +27,7 @@ const rows = [
 const attachmentIds = hierarchy.ancestorIdsHomedAt('attachment', 'organization', { id: 'org-1' });
 const attachmentRows = rows.map((row) => ({ ...row, entityType: 'attachment', ...attachmentIds }));
 const memberships = {
-  items: [{ channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: hierarchy.getMostPrivilegedRole('organization') }],
+  results: [{ channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: hierarchy.getMostPrivilegedRole('organization') }],
 };
 // A stand-in channel with the fields the bars read; the cast skips the rest of the enriched row.
 const channel = {
@@ -102,7 +102,7 @@ const meta = {
   parameters: {
     app: {
       queryData: [
-        [listKey, { items: rows, total: 2 }],
+        [listKey, { results: rows, totalSize: 2 }],
         [meKeys.memberships, memberships],
         [pendingSystemInvitesQueryOptions().queryKey, { count: 0 }],
       ],

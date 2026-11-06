@@ -16,6 +16,7 @@ import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage, windowOf } from '#/utils/list-page';
 import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -37,8 +38,8 @@ app.openapi(meRoutes.getMyAuth, async (ctx) => {
 });
 
 app.openapi(meRoutes.listMyInvitations, async (ctx) => {
-  const data = await getMyInvitationsOp(ctx);
-  return ctx.json(data, 200);
+  const invitations = await getMyInvitationsOp(ctx);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(invitations, page)), 200);
 });
 
 app.openapi(meRoutes.acceptInvitation, async (ctx) => {
@@ -87,13 +88,13 @@ app.openapi(meRoutes.getUploadToken, async (ctx) => {
 });
 
 app.openapi(meRoutes.listMyMemberships, async (ctx) => {
-  const items = ctx.var.memberships.map(toMembershipBase);
-  return ctx.json({ items }, 200);
+  const memberships = ctx.var.memberships.map(toMembershipBase);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(memberships, page)), 200);
 });
 
 app.openapi(meRoutes.listConnectedApps, async (ctx) => {
-  const data = await getConnectedAppsOp(ctx);
-  return ctx.json(data, 200);
+  const connectedApps = await getConnectedAppsOp(ctx);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(connectedApps, page)), 200);
 });
 
 app.openapi(meRoutes.deleteConnectedApp, async (ctx) => {

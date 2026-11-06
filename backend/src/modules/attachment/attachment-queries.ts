@@ -85,7 +85,7 @@ export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttac
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
 };
 
-interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>, 'sort' | 'order'> {
+interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
   /** The caller's request scope and read scope, from guarded context and the permission layer. */
   filters: SQL[];

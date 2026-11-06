@@ -320,10 +320,10 @@ describe('Attachment mentions (template notification source)', async () => {
   });
 
   it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {
-    const result = await call(listNotifications, { query: { limit: 10 }, headers: { ...defaultHeaders, Cookie: member.sessionCookie } });
+    const result = await call(listNotifications, { query: { maxPageSize: 10 }, headers: { ...defaultHeaders, Cookie: member.sessionCookie } });
     expect(result.response.status).toBe(200);
     // The test client types the body loosely; the SDK response type names the fields under test.
-    const items = (result.data as ListNotificationsResponse | undefined)?.items ?? [];
+    const items = (result.data as ListNotificationsResponse | undefined)?.results ?? [];
     const row = items.find((item) => item.subjectId === attachmentId);
     expect(row).toMatchObject({ type: 'mention', subjectId: attachmentId, entityType: 'attachment' });
     expect(row?.actor?.id).toBe(tenant.user.id);
@@ -351,8 +351,8 @@ describe('Attachment mentions (template notification source)', async () => {
     await db.insert(notificationsTable).values(Array.from({ length: 30 }, () => rowAt(anHourAgo)));
     const [newest] = await db.insert(notificationsTable).values(rowAt(new Date())).returning({ id: notificationsTable.id });
 
-    const result = await call(listNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: reader.sessionCookie } });
-    const items = (result.data as ListNotificationsResponse | undefined)?.items ?? [];
+    const result = await call(listNotifications, { query: { maxPageSize: 30 }, headers: { ...defaultHeaders, Cookie: reader.sessionCookie } });
+    const items = (result.data as ListNotificationsResponse | undefined)?.results ?? [];
     expect(items).toHaveLength(30);
     expect(items[0]?.id).toBe(newest.id);
   });

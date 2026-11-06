@@ -29,7 +29,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
 
   const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
-  const membership = findMembership(myMemberships?.items ?? [], organization.id);
+  const membership = findMembership(myMemberships?.results ?? [], organization.id);
 
   const can = useCan();
   const canUpdate = can('update', 'organization', organization);

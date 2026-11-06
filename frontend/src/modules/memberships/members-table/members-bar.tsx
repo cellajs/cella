@@ -18,6 +18,7 @@ import { PendingMembershipsCount } from '~/modules/memberships/pending-membershi
 import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { openInviteDialog } from '~/modules/user/invite-users';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 interface MembersTableBarProps extends MembersTableProps, BaseTableBarProps<Member, MembersRouteSearchParams> {
@@ -83,19 +84,20 @@ export function MembersTableBar({
     openInviteDialog({ channel, description, triggerRef, containerRef: inviteContainerRef });
   };
 
-  const fetchExport = (limit: number, offset: number) =>
-    fetchMembersForExport({
-      limit,
-      offset,
-      q,
-      sort,
-      order,
-      role,
-      entityId: channel.id,
-      entityType: channel.entityType,
-      tenantId: channel.tenantId,
-      organizationId,
-    });
+  const fetchExport = (page: PageRequest) =>
+    fetchMembersForExport(
+      {
+        q,
+        sort,
+        order,
+        role,
+        entityId: channel.id,
+        entityType: channel.entityType,
+        tenantId: channel.tenantId,
+        organizationId,
+      },
+      page,
+    );
 
   return (
     <TableBarShell

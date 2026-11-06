@@ -52,8 +52,7 @@ describe('connections, managed per tenant by system admins', async () => {
     });
 
     const listed = await call(listConnections, { path: { tenantId: organization.tenantId }, headers });
-    expect(listed.data).toHaveLength(1);
-    expect((listed.data as Connection[])[0].id).toBe((data as Connection).id);
+    expect((listed.data as { results: Connection[] }).results.map(({ id }) => id)).toEqual([(data as Connection).id]);
   });
 
   it('refuses a second SSO connection for the same tenant, and a domain another connection accepts', async () => {

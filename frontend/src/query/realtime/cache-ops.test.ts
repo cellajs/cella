@@ -46,41 +46,41 @@ describe('realtime cache ops', () => {
   it('removes tombstone rows returned by seq range fetch', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [{ id: 'attachment-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' }],
-      total: 1,
+      results: [{ id: 'attachment-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' }],
+      totalSize: 1,
     }));
 
     queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1' });
     queryClient.setQueryData(keys.list.home('org-1'), {
-      items: [{ id: 'attachment-1', organizationId: 'org-1' }],
-      total: 1,
+      results: [{ id: 'attachment-1', organizationId: 'org-1' }],
+      totalSize: 1,
     });
 
     const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
 
     expect(status).toBe('ok');
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
-    expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual({ items: [], total: 0 });
+    expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual({ results: [], totalSize: 0 });
   });
 
   it('a new row lands only in the list of its home channel: its deepest non-null ancestor, else the organization', async () => {
     const keys = createEntityKeys<Record<string, never>>(TASK);
     registerEntityQueryKeys(TASK, keys, async () => ({
-      items: [
+      results: [
         { id: 'task-1', organizationId: 'org-1', projectId: 'project-1', name: 'project level' },
         { id: 'task-2', organizationId: 'org-1', projectId: null, name: 'org level' },
       ],
-      total: 2,
+      totalSize: 2,
     }));
 
-    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [], total: 0 });
-    queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
-    queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { results: [], totalSize: 0 });
+    queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { results: [], totalSize: 0 });
+    queryClient.setQueryData(keys.list.home('org-1'), { results: [], totalSize: 0 });
 
     const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 4 }, keys);
 
     expect(status).toBe('ok');
-    const ids = (key: readonly unknown[]) => queryClient.getQueryData<{ items: { id: string }[] }>(key)?.items.map((item) => item.id);
+    const ids = (key: readonly unknown[]) => queryClient.getQueryData<{ results: { id: string }[] }>(key)?.results.map((item) => item.id);
     expect(ids(keys.list.home('org-1', 'project-1'))).toEqual(['task-1']);
     expect(ids(keys.list.home('org-1'))).toEqual(['task-2']);
     // A sibling channel's list holds rows homed elsewhere: no splice.
@@ -97,46 +97,49 @@ describe('realtime cache ops', () => {
       ...extra,
     });
     registerEntityQueryKeys(TASK, keys, async () => ({
-      items: [
+      results: [
         task('task-1', 5, { name: 'renamed' }),
         task('task-2', 6, { deletedAt: '2026-06-16T20:00:00.000Z' }),
         task('task-3', 7, { projectId: 'project-2' }),
         task('task-4', 8),
         task('task-5', 9),
       ],
-      total: 5,
+      totalSize: 5,
     }));
-    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [task('task-1', 1), task('task-2', 2), task('task-3', 3)], total: 3 });
-    queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), {
+      results: [task('task-1', 1), task('task-2', 2), task('task-3', 3)],
+      totalSize: 3,
+    });
+    queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { results: [], totalSize: 0 });
 
     await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 9 }, keys);
 
     const list = (projectId: string) =>
-      queryClient.getQueryData<{ items: { id: string; name?: string }[]; total: number }>(keys.list.home('org-1', projectId));
-    expect(list('project-1')?.items.map(({ id }) => id)).toEqual(['task-5', 'task-4', 'task-1']);
-    expect(list('project-1')?.items[2]?.name).toBe('renamed');
-    expect(list('project-1')?.total).toBe(3);
-    expect(list('project-2')).toMatchObject({ items: [{ id: 'task-3' }], total: 1 });
+      queryClient.getQueryData<{ results: { id: string; name?: string }[]; totalSize: number }>(keys.list.home('org-1', projectId));
+    expect(list('project-1')?.results.map(({ id }) => id)).toEqual(['task-5', 'task-4', 'task-1']);
+    expect(list('project-1')?.results[2]?.name).toBe('renamed');
+    expect(list('project-1')?.totalSize).toBe(3);
+    expect(list('project-2')).toMatchObject({ results: [{ id: 'task-3' }], totalSize: 1 });
   });
 
   it('updates a cached row in place without invalidating filtered lists', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed' }],
-      total: 1,
+      results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed' }],
+      totalSize: 1,
     }));
 
     const filteredKey = [...keys.list.org('org-1'), { q: '', sort: 'createdAt', order: 'desc' }];
     queryClient.setQueryData(filteredKey, {
-      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }],
-      total: 1,
+      results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }],
+      totalSize: 1,
     });
 
     await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 7, untilSeq: 8 }, keys);
 
-    const filtered = queryClient.getQueryData<{ items: { id: string; name: string }[]; total: number }>(filteredKey);
-    expect(filtered?.items[0]?.name).toBe('renamed');
-    expect(filtered?.total).toBe(1);
+    const filtered = queryClient.getQueryData<{ results: { id: string; name: string }[]; totalSize: number }>(filteredKey);
+    expect(filtered?.results[0]?.name).toBe('renamed');
+    expect(filtered?.totalSize).toBe(1);
     expect(queryClient.getQueryState(filteredKey)?.isInvalidated).toBe(false);
   });
 
@@ -149,12 +152,12 @@ describe('realtime cache ops', () => {
       'a full chunk, which may stop short of the range',
       { afterSeq: 0, untilSeq: 1500 },
       async () => ({
-        items: Array.from({ length: syncChunkSize }, (_, i) => renamed(`attachment-${i + 1}`, i + 1)),
-        total: 1500,
+        results: Array.from({ length: syncChunkSize }, (_, i) => renamed(`attachment-${i + 1}`, i + 1)),
+        totalSize: 1500,
       }),
     ],
-    ['unsupported', 'a row at afterSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ items: [renamed('attachment-1', 4)], total: 1 })],
-    ['unsupported', 'a row past untilSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ items: [renamed('attachment-1', 8)], total: 1 })],
+    ['unsupported', 'a row at afterSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ results: [renamed('attachment-1', 4)], totalSize: 1 })],
+    ['unsupported', 'a row past untilSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ results: [renamed('attachment-1', 8)], totalSize: 1 })],
     [
       'error',
       'a rejected fetch',
@@ -167,7 +170,7 @@ describe('realtime cache ops', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, rangeFetch);
-    const cached = { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }], total: 1 };
+    const cached = { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }], totalSize: 1 };
     queryClient.setQueryData(keys.list.home('org-1'), cached);
 
     const result = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', range, keys);
@@ -214,13 +217,13 @@ describe('filtered list refetch for a new row', () => {
 
   // Comment lists are declared to hold only rows whose itemId equals the filter's.
   function registerComments(items: { id: string; organizationId: string; itemId?: string }[]) {
-    registerEntityQueryKeys(comment, commentKeys, async () => ({ items, total: items.length }));
+    registerEntityQueryKeys(comment, commentKeys, async () => ({ results: items, totalSize: items.length }));
     registerEqualityFilterKeys(comment, ['itemId']);
   }
 
   function seedLists(filtersByName: Record<string, Record<string, unknown>>) {
     for (const filters of Object.values(filtersByName)) {
-      queryClient.setQueryData(listKey(filters), { items: [], total: 0 });
+      queryClient.setQueryData(listKey(filters), { results: [], totalSize: 0 });
     }
   }
 
@@ -263,11 +266,11 @@ describe('filtered list refetch for a new row', () => {
 
     const taskKeys = createEntityKeys<Record<string, never>>(TASK);
     registerEntityQueryKeys(TASK, taskKeys, async () => ({
-      items: [{ id: 'task-9', organizationId: 'org-1', projectId: 'project-1', itemId: 'item-1' }],
-      total: 1,
+      results: [{ id: 'task-9', organizationId: 'org-1', projectId: 'project-1', itemId: 'item-1' }],
+      totalSize: 1,
     }));
     const otherItemTaskKey = [...taskKeys.list.org('org-1'), { itemId: 'item-2' }];
-    queryClient.setQueryData(otherItemTaskKey, { items: [], total: 0 });
+    queryClient.setQueryData(otherItemTaskKey, { results: [], totalSize: 0 });
     await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, taskKeys);
     expect(queryClient.getQueryState(otherItemTaskKey)?.isInvalidated).toBe(true);
   });

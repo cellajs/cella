@@ -9,7 +9,7 @@ const { batchCreateAttachments, updateAttachment, batchDeleteAttachments, listAt
   batchCreateAttachments: vi.fn(async (_req: Req): Promise<{ data: unknown[]; rejectedIds: string[] }> => ({ data: [], rejectedIds: [] })),
   updateAttachment: vi.fn(async (_req: Req): Promise<unknown> => ({})),
   batchDeleteAttachments: vi.fn(async (_req: Req): Promise<unknown> => ({ data: [], rejectedIds: [] })),
-  listAttachments: vi.fn(async (_req: unknown): Promise<unknown> => ({ items: [], total: 0 })),
+  listAttachments: vi.fn(async (_req: unknown): Promise<unknown> => ({ results: [], totalSize: 0 })),
 }));
 
 vi.mock('sdk', async (importOriginal) => ({
@@ -49,8 +49,8 @@ const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
   }) as Attachment;
 const [att1, att2, att3] = ['01970000-0000-7000-8000-000000000001', '01970000-0000-7000-8000-000000000002', '01970000-0000-7000-8000-000000000003'];
 
-const seedHomeList = (items: Attachment[] = []) => queryClient.setQueryData(homeKey, { items, total: items.length });
-const homeList = () => queryClient.getQueryData<{ items: Attachment[] }>(homeKey)?.items ?? [];
+const seedHomeList = (items: Attachment[] = []) => queryClient.setQueryData(homeKey, { results: items, totalSize: items.length });
+const homeList = () => queryClient.getQueryData<{ results: Attachment[] }>(homeKey)?.results ?? [];
 const queued = (operation: 'create' | 'update' | 'delete') => mutationsOf('attachment', operation).filter(({ state }) => state.isPaused);
 const settled = async (operation: 'create' | 'update' | 'delete') =>
   vi.waitFor(() => expect(mutationsOf('attachment', operation).every(({ state }) => state.status === 'success')).toBe(true));
@@ -155,7 +155,7 @@ describe('a remote change of a row with a pending mutation', () => {
     expect(homeList().map(({ id }) => id)).toEqual([att2]);
 
     // Catchup after a reconnect reads the row: the server still holds it, since the queued delete has not been sent.
-    listAttachments.mockResolvedValue({ items: [attachment(att1, { name: 'Renamed elsewhere' })], total: 1 });
+    listAttachments.mockResolvedValue({ results: [attachment(att1, { name: 'Renamed elsewhere' })], totalSize: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
     expect(homeList().map(({ id }) => id)).toEqual([att2]);
 
@@ -170,7 +170,7 @@ describe('a remote change of a row with a pending mutation', () => {
   it('reads the list again after the server refuses a delete: the row put back missed what arrived while it was pending', async () => {
     // The home list, or a filtered key where attachments also live below the organization.
     const canonical = attachmentsCanonicalOptions(ctx);
-    queryClient.setQueryData(canonical.queryKey, { items: [attachment(att1), attachment(att2)], total: 2 });
+    queryClient.setQueryData(canonical.queryKey, { results: [attachment(att1), attachment(att2)], totalSize: 2 });
     // A screen shows the list, so the read the refusal starts runs at once.
     onTestFinished(new QueryObserver(queryClient, canonical).subscribe(() => {}));
     goOffline(batchDeleteAttachments);
@@ -179,18 +179,18 @@ describe('a remote change of a row with a pending mutation', () => {
 
     // A rename from elsewhere arrives while the delete waits, and is kept from the cache.
     const renamed = attachment(att1, { name: 'Renamed elsewhere', deletedAt: null });
-    listAttachments.mockResolvedValue({ items: [renamed], total: 1 });
+    listAttachments.mockResolvedValue({ results: [renamed], totalSize: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     batchDeleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [att1] }));
     // The list read answers the stored rows, live ones only (`liveItems`).
-    listAttachments.mockResolvedValue({ items: [renamed, attachment(att2, { deletedAt: null })], total: 2 });
+    listAttachments.mockResolvedValue({ results: [renamed, attachment(att2, { deletedAt: null })], totalSize: 2 });
     await goOnline();
     await settled('delete');
 
     // The row put back is read again once the delete has settled, with the rename it missed.
     await vi.waitFor(() => expect(queryClient.getQueryState(canonical.queryKey)).toMatchObject({ isInvalidated: false, fetchStatus: 'idle' }));
-    expect(queryClient.getQueryData(canonical.queryKey)?.items).toMatchObject([{ id: att1, name: 'Renamed elsewhere' }, { id: att2 }]);
+    expect(queryClient.getQueryData(canonical.queryKey)?.results).toMatchObject([{ id: att1, name: 'Renamed elsewhere' }, { id: att2 }]);
   });
 
   // The settle took only the fields the edit changed, so the remote edit of another field was gone for good.
@@ -200,7 +200,7 @@ describe('a remote change of a row with a pending mutation', () => {
     hooks().update.mutate({ id: att1, ops: { name: 'Renamed offline' } });
     await vi.waitFor(() => expect(queued('update')).toHaveLength(1));
 
-    listAttachments.mockResolvedValue({ items: [attachment(att1, { contentType: 'application/pdf' })], total: 1 });
+    listAttachments.mockResolvedValue({ results: [attachment(att1, { contentType: 'application/pdf' })], totalSize: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
     expect(homeList()).toMatchObject([{ name: 'Renamed offline', contentType: 'image/png' }]);
 
@@ -220,7 +220,7 @@ describe('a remote change of a row with a pending mutation', () => {
     hooks().create.mutate([attachment(att1, { name: 'Typed offline' })] as never);
     await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
 
-    listAttachments.mockResolvedValue({ items: [attachment(att1, { name: 'From the server' })], total: 1 });
+    listAttachments.mockResolvedValue({ results: [attachment(att1, { name: 'From the server' })], totalSize: 1 });
     await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: att1, name: 'Typed offline' }]);

@@ -23,13 +23,15 @@ Resource routes follow the resource-oriented conventions of [aep.dev](https://ae
 
 A single channel or product answers `GET` and `PATCH` with a strong `ETag` that versions its own fields, not its `included` data or counts. Send it back in `If-Match` on a `PATCH` or a custom method and the write applies only while nothing changed the resource since, else it answers 412 `precondition_failed`; a `GET` with `If-None-Match` answers 304 while the tag holds.
 
+A list answers a page: its `results`, the `totalSize` of the list and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` with every other param unchanged; only `maxPageSize` (absent or 0 for the default, above the maximum read as the maximum) and `skip` may change, and a token is opaque, bound to its list and refused as `invalid_page_token` when it was altered or the params changed. `skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`, a field optionally followed by `asc` or `desc`.
+
 Three choices depart from those conventions. Ids are UUID v7 the client mints, since an offline create needs its id before the server answers. A batch create or delete (`:batch-create`, `:batch-delete`) applies what it can and lists the ids it rejected, where an AEP batch would fail whole. The membership routes name their channel in `entityType` and `entityId`, since channel types are app config and one operation per action keeps a client independent of them.
 
 A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
 
 An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own, checked before the tenant row loads, so a key learns nothing about other tenants.
 
-A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing.
+A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing. A range read is a sync chunk, not a page: it takes no `pageToken` or `skip`, and the next chunk starts after the last position received.
 
 ## Face: OAuth
 

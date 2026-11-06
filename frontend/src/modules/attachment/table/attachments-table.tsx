@@ -22,10 +22,10 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
 /** Default-view rows from the canonical query in the server's default order; outside the component, so the getter stays stable. */
-function selectDefaultViewRows({ items }: { items: Attachment[] }) {
+function selectDefaultViewRows({ results }: { results: Attachment[] }) {
   const { sort, order } = attachmentsSearchDefaults;
   const direction = order === 'asc' ? 1 : -1;
-  return [...items].sort((a, b) => (a[sort] < b[sort] ? -direction : a[sort] > b[sort] ? direction : 0));
+  return [...results].sort((a, b) => (a[sort] < b[sort] ? -direction : a[sort] > b[sort] ? direction : 0));
 }
 
 export interface AttachmentsTableProps {

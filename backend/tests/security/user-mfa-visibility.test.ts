@@ -48,7 +48,7 @@ describe('The MFA setting of other users', async () => {
       headers: headers(as),
     });
     expect(response.status).toBe(200);
-    return (data as { items: UserRow[] }).items;
+    return (data as { results: UserRow[] }).results;
   };
 
   beforeAll(async () => {

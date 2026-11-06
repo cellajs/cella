@@ -821,13 +821,16 @@ export const zListAttachmentsPath = z.object({
 });
 
 export const zListAttachmentsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['name', 'createdAt', 'contentType']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
   afterSeq: z.int().gte(0).optional(),
   untilSeq: z.int().gte(0).optional(),
+  orderBy: z
+    .enum(['name', 'name asc', 'name desc', 'createdAt', 'createdAt asc', 'createdAt desc', 'contentType', 'contentType asc', 'contentType desc'])
+    .optional()
+    .default('createdAt desc'),
   channelId: z.uuid().optional(),
 });
 
@@ -835,7 +838,7 @@ export const zListAttachmentsQuery = z.object({
  * Attachments
  */
 export const zListAttachmentsResponse = z.object({
-  items: z.array(
+  results: z.array(
     z.union([
       zAttachment,
       z.object({
@@ -847,7 +850,8 @@ export const zListAttachmentsResponse = z.object({
       }),
     ]),
   ),
-  total: z.number(),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zPresignAttachmentUrlsBody = z.object({
@@ -1546,11 +1550,17 @@ export const zToggleMfaResponse = zUser;
  */
 export const zGetMyAuthResponse = zMeAuthData;
 
+export const zListMyInvitationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
 /**
  * Invitations pending
  */
 export const zListMyInvitationsResponse = z.object({
-  items: z.array(
+  results: z.array(
     z.object({
       entity: zChannelBase,
       inactiveMembership: z.object({
@@ -1570,7 +1580,8 @@ export const zListMyInvitationsResponse = z.object({
       organizationName: z.string().nullable(),
     }),
   ),
-  total: z.number(),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zAcceptInvitationPath = z.object({
@@ -1649,18 +1660,32 @@ export const zGetUploadTokenQuery = z.object({
  */
 export const zGetUploadTokenResponse = zUploadToken;
 
+export const zListMyMembershipsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
 /**
  * User memberships
  */
 export const zListMyMembershipsResponse = z.object({
-  items: z.array(zMembershipBase),
+  results: z.array(zMembershipBase),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
+
+export const zListConnectedAppsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
 });
 
 /**
  * Connected apps
  */
 export const zListConnectedAppsResponse = z.object({
-  items: z.array(
+  results: z.array(
     z.object({
       id: z.string(),
       clientId: z.string(),
@@ -1671,6 +1696,8 @@ export const zListConnectedAppsResponse = z.object({
       expiresAt: z.string().nullable(),
     }),
   ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zDeleteConnectedAppPath = z.object({
@@ -1847,13 +1874,38 @@ export const zListMembersPath = z.object({
 });
 
 export const zListMembersQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).optional().default('lastSeenAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
+  orderBy: z
+    .enum([
+      'id',
+      'id asc',
+      'id desc',
+      'name',
+      'name asc',
+      'name desc',
+      'email',
+      'email asc',
+      'email desc',
+      'role',
+      'role asc',
+      'role desc',
+      'createdAt',
+      'createdAt asc',
+      'createdAt desc',
+      'lastSeenAt',
+      'lastSeenAt asc',
+      'lastSeenAt desc',
+      'lastPostedAt',
+      'lastPostedAt asc',
+      'lastPostedAt desc',
+    ])
+    .optional()
+    .default('lastSeenAt desc'),
   role: z.enum(['admin', 'member']).optional(),
   include: z.string().max(2048).optional(),
   userIds: z.string().max(2048).optional(),
@@ -1863,7 +1915,7 @@ export const zListMembersQuery = z.object({
  * Members
  */
 export const zListMembersResponse = z.object({
-  items: z.array(
+  results: z.array(
     zUserBase.and(
       z.object({
         lastSeenAt: z.string().nullable(),
@@ -1894,7 +1946,8 @@ export const zListMembersResponse = z.object({
       }),
     ),
   ),
-  total: z.number(),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zListInvitationsPath = z.object({
@@ -1903,20 +1956,19 @@ export const zListInvitationsPath = z.object({
 });
 
 export const zListInvitationsQuery = z.object({
-  q: z.string().max(255).optional(),
-  sort: z.enum(['createdAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc']).optional().default('createdAt desc'),
 });
 
 /**
  * Pending memberships
  */
 export const zListInvitationsResponse = z.object({
-  items: z.array(
+  results: z.array(
     z.object({
       id: z.string(),
       email: z.email(),
@@ -1927,7 +1979,8 @@ export const zListInvitationsResponse = z.object({
       createdBy: zActorRef,
     }),
   ),
-  total: z.number(),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zResendInvitationPath = z.object({
@@ -1961,19 +2014,20 @@ export const zGetPublicCountsResponse = z.object({
 });
 
 export const zListNotificationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   unread: z
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),
-  limit: z.int().gte(1).lte(100).optional().default(30),
-  before: z.iso.datetime().max(64).optional(),
 });
 
 /**
  * Notifications and unread count
  */
 export const zListNotificationsResponse = z.object({
-  items: z.array(
+  results: z.array(
     z.object({
       id: z.uuid(),
       createdAt: z.string(),
@@ -2001,6 +2055,8 @@ export const zListNotificationsResponse = z.object({
       subjectTitle: z.string(),
     }),
   ),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
   unreadCount: z.int().gte(0),
 });
 
@@ -2071,11 +2127,27 @@ export const zResubscribeNotificationsQuery = z.object({
 export const zResubscribeNotificationsResponse = z.void();
 
 export const zListOrganizationsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).optional().default('displayOrder'),
-  order: z.enum(['asc', 'desc']).optional().default('asc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
+  orderBy: z
+    .enum([
+      'id',
+      'id asc',
+      'id desc',
+      'name',
+      'name asc',
+      'name desc',
+      'createdAt',
+      'createdAt asc',
+      'createdAt desc',
+      'displayOrder',
+      'displayOrder asc',
+      'displayOrder desc',
+    ])
+    .optional()
+    .default('displayOrder asc'),
   relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z
@@ -2089,8 +2161,9 @@ export const zListOrganizationsQuery = z.object({
  * Organizations
  */
 export const zListOrganizationsResponse = z.object({
-  items: z.array(zOrganization),
-  total: z.number(),
+  results: z.array(zOrganization),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zBatchCreateOrganizationsBody = z
@@ -2330,19 +2403,36 @@ export const zRemovePushSubscriptionResponse = z.object({
 });
 
 export const zListRequestsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'email', 'type', 'createdAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
+  orderBy: z
+    .enum([
+      'id',
+      'id asc',
+      'id desc',
+      'email',
+      'email asc',
+      'email desc',
+      'type',
+      'type asc',
+      'type desc',
+      'createdAt',
+      'createdAt asc',
+      'createdAt desc',
+    ])
+    .optional()
+    .default('createdAt desc'),
 });
 
 /**
  * Requests
  */
 export const zListRequestsResponse = z.object({
-  items: z.array(zRequest),
-  total: z.number(),
+  results: z.array(zRequest),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zCreateRequestBody = z.object({
@@ -2399,17 +2489,19 @@ export const zListServiceAccountsPath = z.object({
 });
 
 export const zListServiceAccountsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
 });
 
 /**
  * Service accounts
  */
 export const zListServiceAccountsResponse = z.object({
-  items: z.array(zServiceAccount),
-  total: z.number(),
+  results: z.array(zServiceAccount),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zCreateServiceAccountBody = z.object({
@@ -2482,11 +2574,19 @@ export const zListApiKeysPath = z.object({
   serviceAccountId: z.string().max(50),
 });
 
+export const zListApiKeysQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
 /**
  * API keys
  */
 export const zListApiKeysResponse = z.object({
-  items: z.array(zApiKey),
+  results: z.array(zApiKey),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zCreateApiKeyBody = z.object({
@@ -2646,11 +2746,11 @@ export const zSendNewsletterQuery = z.object({
 export const zSendNewsletterResponse = z.void();
 
 export const zListTenantsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['createdAt', 'name']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
+  orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc', 'name', 'name asc', 'name desc']).optional().default('createdAt desc'),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
 });
 
@@ -2658,8 +2758,9 @@ export const zListTenantsQuery = z.object({
  * Tenants list
  */
 export const zListTenantsResponse = z.object({
-  items: z.array(zTenant),
-  total: z.number(),
+  results: z.array(zTenant),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zCreateTenantBody = z.object({
@@ -2725,10 +2826,20 @@ export const zListConnectionsPath = z.object({
   tenantId: z.string().max(50),
 });
 
+export const zListConnectionsQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
+});
+
 /**
  * Connections
  */
-export const zListConnectionsResponse = z.array(zConnection);
+export const zListConnectionsResponse = z.object({
+  results: z.array(zConnection),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
+});
 
 export const zCreateConnectionBody = z.object({
   issuer: z.enum(['surfconext']),
@@ -2807,11 +2918,33 @@ export const zUpdateConnectionPath = z.object({
 export const zUpdateConnectionResponse = zConnection;
 
 export const zListUsersQuery = z.object({
+  pageToken: z.string().max(2048).optional(),
+  maxPageSize: z.int().gte(0).optional(),
+  skip: z.int().gte(0).optional().default(0),
   q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.int().gte(0).optional().default(0),
-  limit: z.int().gte(1).lte(1000).optional().default(40),
+  orderBy: z
+    .enum([
+      'id',
+      'id asc',
+      'id desc',
+      'name',
+      'name asc',
+      'name desc',
+      'email',
+      'email asc',
+      'email desc',
+      'role',
+      'role asc',
+      'role desc',
+      'createdAt',
+      'createdAt asc',
+      'createdAt desc',
+      'lastSeenAt',
+      'lastSeenAt asc',
+      'lastSeenAt desc',
+    ])
+    .optional()
+    .default('createdAt desc'),
   role: z.enum(['admin']).optional(),
 });
 
@@ -2819,7 +2952,7 @@ export const zListUsersQuery = z.object({
  * Users
  */
 export const zListUsersResponse = z.object({
-  items: z.array(
+  results: z.array(
     zUserBase.and(
       z.object({
         lastSeenAt: z.string().nullable(),
@@ -2827,7 +2960,8 @@ export const zListUsersResponse = z.object({
       }),
     ),
   ),
-  total: z.number(),
+  nextPageToken: z.string().optional(),
+  totalSize: z.int().gte(0),
 });
 
 export const zGetYjsTokenPath = z.object({

@@ -45,7 +45,8 @@ import { getAndSetMe } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
 import { userStore } from '~/modules/user/user-store';
-import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { getEntityQueryKeys, syncChunkSize } from '~/query/basic/entity-query-registry';
+import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
 
@@ -77,9 +78,14 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth(), refetchOnMount: true });
 
 export const meConnectedAppsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => listConnectedApps(), refetchOnMount: true });
+  queryOptions({
+    queryKey: meKeys.connectedApps,
+    queryFn: () => fetchAllPages((page) => listConnectedApps({ query: page }), syncChunkSize),
+    refetchOnMount: true,
+  });
 
-export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => listMyInvitations() });
+export const meInvitationsQueryOptions = () =>
+  queryOptions({ queryKey: meKeys.invites, queryFn: () => fetchAllPages((page) => listMyInvitations({ query: page }), syncChunkSize) });
 
 /** A new authenticator key with its QR code; once confirmed it is the second factor, so it is never persisted and leaves with the setup. */
 export const totpKeyQueryOptions = () =>
@@ -213,7 +219,8 @@ const applyUpdatedSelf = (updatedUser: User) => {
  * Source of truth for the current user's memberships in the frontend. Read without an abort signal: the read belongs to
  * the whole app, and catchup awaits it, so a screen that unmounts must not cancel it.
  */
-export const myMembershipsQueryOptions = () => queryOptions({ queryKey: meKeys.memberships, queryFn: () => listMyMemberships() });
+export const myMembershipsQueryOptions = () =>
+  queryOptions({ queryKey: meKeys.memberships, queryFn: () => fetchAllPages((page) => listMyMemberships({ query: page }), syncChunkSize) });
 
 /**
  * Once an invitation is answered: refresh memberships so the menu rebuilds, and after an accept the organization list,
@@ -228,7 +235,8 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
   if (inactiveMembershipId) {
     queryClient.setQueryData(meInvitationsQueryOptions().queryKey, (oldData) => {
       if (!oldData) return oldData;
-      return { ...oldData, items: oldData.items.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId) };
+      const results = oldData.results.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId);
+      return { ...oldData, results, totalSize: oldData.totalSize - (oldData.results.length - results.length) };
     });
   } else {
     queryClient.invalidateQueries({ queryKey: meKeys.invites });
@@ -274,7 +282,8 @@ export const useRevokeConnectedAppMutation = () =>
     onSuccess: (_data, { path: { connectedAppId } }) => {
       queryClient.setQueryData(meConnectedAppsQueryOptions().queryKey, (oldData) => {
         if (!oldData) return oldData;
-        return { ...oldData, items: oldData.items.filter((item) => item.id !== connectedAppId) };
+        const results = oldData.results.filter((item) => item.id !== connectedAppId);
+        return { ...oldData, results, totalSize: oldData.totalSize - (oldData.results.length - results.length) };
       });
       toaster.success(t('c:success.revoke_resource', { resource: t('c:connected_app') }));
     },

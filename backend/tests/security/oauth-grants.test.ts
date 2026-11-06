@@ -343,7 +343,7 @@ describe('OAuth grants', async () => {
       expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
 
       const listed = await call(listConnectedApps, { headers: memberHeaders });
-      const [app] = (listed.data as { items: { id: string }[] }).items;
+      const [app] = (listed.data as { results: { id: string }[] }).results;
       // Someone else who knows the grant's id, the organization's admin here, finds no connected app of theirs.
       const notTheirs = await call(deleteConnectedApp, { path: { connectedAppId: app.id }, headers: ctx.adminHeaders });
       expect(notTheirs.response.status).toBe(404);

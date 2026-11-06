@@ -107,7 +107,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
       onConfirm: () => remove({ path: { tenantId: tenant.id, connectionId: connection.id } }),
     });
 
-  const ssoConnections = (connections ?? []).filter((connection) => connection.kind === 'sso');
+  const ssoConnections = (connections?.results ?? []).filter((connection) => connection.kind === 'sso');
 
   return (
     <ToolCard label="c:connection_other" description={t('c:connections.text')} unsaved id={formContainerId} className={className}>

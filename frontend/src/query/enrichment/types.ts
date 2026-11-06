@@ -4,5 +4,5 @@ import type { ChannelEnrichment } from '~/modules/entities/types';
 export type EnrichableChannel = { id: string; slug: string } & ChannelEnrichment;
 
 export interface EnrichableListData {
-  pages: { items: EnrichableChannel[] }[];
+  pages: { results: EnrichableChannel[] }[];
 }

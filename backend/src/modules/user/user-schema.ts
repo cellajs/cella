@@ -6,7 +6,7 @@ import { memberCountsSchema } from '#/modules/memberships/helpers/member-counts'
 import { memberMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUserResponse } from '#/modules/user/user-mocks';
-import { languageSchema, maxLength, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
+import { languageSchema, listQuerySchema, maxLength, orderByQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProviders);
@@ -70,7 +70,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   })
   .partial();
 
-export const userListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt'),
+export const userListQuerySchema = listQuerySchema.extend({
+  orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'], 'createdAt desc'),
   role: z.enum(appConfig.systemRoles).optional(),
 });

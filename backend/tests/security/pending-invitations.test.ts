@@ -37,7 +37,7 @@ describe('Pending invitations list', async () => {
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
     const path = `/tenants/${organization.tenantId}/organizations/${organization.id}/invitations?${query}`;
     const { status, body } = await rawJsonRequest(path, as.sessionCookie);
-    return { status, items: (body as { items: PendingRow[] }).items };
+    return { status, items: (body as { results: PendingRow[] }).results };
   };
 
   const invite = (emails: string[]) =>

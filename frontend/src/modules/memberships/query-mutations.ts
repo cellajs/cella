@@ -22,6 +22,7 @@ import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers
 import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import { findMembership, getCachedMemberships } from '~/query/enrichment/helpers';
 import { queryClient } from '~/query/query-client';
+import type { QueryData } from '~/query/types';
 
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
   [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
@@ -36,9 +37,10 @@ export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembersh
 
 /** Writes to myMemberships, which every membership reader looks up. An uncached list starts empty unless `onlyIfCached`. */
 const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[], onlyIfCached = false) => {
-  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
-    if (!oldData) return onlyIfCached ? oldData : { items: write([]) };
-    return { ...oldData, items: write(oldData.items) };
+  queryClient.setQueryData<QueryData<MembershipBase>>(meKeys.memberships, (oldData) => {
+    const results = write(oldData?.results ?? []);
+    if (!oldData) return onlyIfCached ? oldData : { results, totalSize: results.length };
+    return { ...oldData, results, totalSize: results.length };
   });
 };
 
@@ -67,7 +69,7 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
     const next = mapListItems(data, mapItems, mapItems(items).length - items.length);
     // A paged list emptied by the write collapses to one empty first page.
     const emptied = isInfiniteQueryData(next) && !getQueryItems(next).length;
-    const emptyPage = { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0, offset: 0 }] };
+    const emptyPage = { pages: [{ results: [], totalSize: 0 }], pageParams: [''] };
     queryClient.setQueryData(queryKey, emptied ? emptyPage : next);
     previous.push([queryKey, data]);
   });

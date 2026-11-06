@@ -9,11 +9,11 @@ import { useUserStore } from '~/modules/user/user-store';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
-import type { MutationData } from '~/query/types';
+import type { ListFilters, MutationData } from '~/query/types';
 
-type UserFilters = Omit<NonNullable<ListUsersData['query']>, 'limit' | 'offset'>;
+type UserFilters = ListFilters<NonNullable<ListUsersData['query']>>;
 type UsersListParams = UserFilters & { limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
@@ -37,7 +37,9 @@ export const usersListQueryOptions = (params: UsersListParams) => {
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) => listUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
+    ...tokenPaging((pageToken, signal) =>
+      listUsers({ query: { q, role, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
+    ),
     refetchOnMount: true,
   });
 };

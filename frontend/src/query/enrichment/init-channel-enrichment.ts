@@ -34,7 +34,7 @@ function enrichListData(
 
   const newPages = data.pages.map((page) => {
     let pageChanged = false;
-    const newItems = page.items.map((item) => {
+    const results = page.results.map((item) => {
       const enriched = enrichWithAncestorSlugs(item, memberships, ancestors, slugIndex);
       if (enriched !== item) pageChanged = true;
       return enriched;
@@ -42,7 +42,7 @@ function enrichListData(
 
     if (!pageChanged) return page;
     dataChanged = true;
-    return { ...page, items: newItems };
+    return { ...page, results };
   });
 
   return dataChanged ? { ...data, pages: newPages } : data;
@@ -54,7 +54,7 @@ function buildSlugMap(entityType: ChannelEntityType): Map<string, string> {
     const data = query.state.data;
     if (!isInfiniteQueryData<EnrichableChannel>(data)) continue;
     for (const page of data.pages) {
-      for (const item of page.items) slugMap.set(item.id, item.slug);
+      for (const item of page.results) slugMap.set(item.id, item.slug);
     }
   }
   return slugMap;

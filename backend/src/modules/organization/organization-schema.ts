@@ -11,10 +11,10 @@ import {
   countryCodeSchema,
   includeQuerySchema,
   languageSchema,
+  listQuerySchema,
   maxLength,
   noDuplicateSlugsRefine,
-  orderSchema,
-  paginationQuerySchema,
+  orderByQuerySchema,
   timeZoneSchema,
   translatedError,
   validCDNUrlSchema,
@@ -125,9 +125,8 @@ export const organizationCreateBodySchema = organizationContract.createItemSchem
 
 export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 
-export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
-  order: orderSchema.default('asc'),
+export const organizationListQuerySchema = listQuerySchema.extend({
+  orderBy: orderByQuerySchema(['id', 'name', 'createdAt', 'displayOrder'], 'displayOrder asc'),
   relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: booleanTransformSchema,

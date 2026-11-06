@@ -3,7 +3,7 @@ import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { listMyMemberships } = vi.hoisted(() => ({
-  listMyMemberships: vi.fn(async (): Promise<{ items: unknown[] }> => ({ items: [] })),
+  listMyMemberships: vi.fn(async (): Promise<{ results: unknown[] }> => ({ results: [] })),
 }));
 vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), listMyMemberships }));
 vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => ({ isSystemAdmin: false, user: { id: 'user-1' } }) } }));
@@ -28,18 +28,18 @@ describe('requireEntityAction', () => {
   });
 
   it('lets an admin through on a cold load: it fetches the memberships first', async () => {
-    listMyMemberships.mockResolvedValue({ items: [membership(adminRole)] });
+    listMyMemberships.mockResolvedValue({ results: [membership(adminRole)] });
 
     await expect(settingsGate()).resolves.toBeUndefined();
     expect(listMyMemberships).toHaveBeenCalledTimes(1);
   });
 
   it('redirects a member whose memberships hold no update, and one who holds it on another organization only', async () => {
-    listMyMemberships.mockResolvedValue({ items: [membership(memberRole)] });
+    listMyMemberships.mockResolvedValue({ results: [membership(memberRole)] });
     await expect(settingsGate()).rejects.toEqual(redirected);
 
     queryClient.clear();
-    listMyMemberships.mockResolvedValue({ items: [membership(adminRole, 'org-2')] });
+    listMyMemberships.mockResolvedValue({ results: [membership(adminRole, 'org-2')] });
     await expect(settingsGate()).rejects.toEqual(redirected);
   });
 

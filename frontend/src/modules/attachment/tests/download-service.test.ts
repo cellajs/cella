@@ -34,7 +34,7 @@ const cachedRow = (id: string, overrides: Record<string, unknown> = {}) =>
   makeAttachment({ id, ...ctx, createdAt: '2026-11-01T00:00:00.000Z', keys: storedKeys(id), ...overrides });
 /** Writes the organization's list, as sync or a key link does. */
 const cacheRows = (...rows: ReturnType<typeof cachedRow>[]) =>
-  queryClient.setQueryData(attachmentQueryKeys.list.home(ctx.organizationId), { items: rows, total: rows.length });
+  queryClient.setQueryData(attachmentQueryKeys.list.home(ctx.organizationId), { results: rows, totalSize: rows.length });
 const storedVariants = async (id: string) =>
   (await attachmentsDb.blobs.where('attachmentId').equals(id).toArray()).map((blob) => blob.variant).sort();
 const statusOf = async (id: string) => (await attachmentsDb.downloadQueue.get(id))?.status;

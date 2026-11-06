@@ -36,7 +36,7 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
 }
 
 export function makeInfiniteData(items: { id: string; slug?: string; organizationId?: string }[]) {
-  return { pages: [{ items }], pageParams: [undefined] };
+  return { pages: [{ results: items }], pageParams: [undefined] };
 }
 
 /** Real builder from the shared wide fixture: the deep-path import stays unmocked when tests vi.mock('shared'), so traversal runs the real class. */

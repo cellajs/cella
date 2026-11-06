@@ -299,7 +299,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C1 Resource exhaustion by input shape
 - **Gain:** denial of service.
-- **Merges:** unbounded collections (the trigger), a chunked request against `bodyLimit`, JSON depth, compressed JWE, ReDoS (zod 2023, sanitize-html, jspdf, ws), nanoid sizes, and every own cap: pagination `limit`, `include` lists, search terms, Yjs update size, uploads (`max_size`, `max_number_of_files`), SSE subscribers, pg-boss payloads, CDC batches, mail batches.
+- **Merges:** unbounded collections (the trigger), a chunked request against `bodyLimit`, JSON depth, compressed JWE, ReDoS (zod 2023, sanitize-html, jspdf, ws), nanoid sizes, and every own cap: `maxPageSize` and `skip`, `include` lists, search terms, Yjs update size, uploads (`max_size`, `max_number_of_files`), SSE subscribers, pg-boss payloads, CDC batches, mail batches.
 - **Advisories:** 30 (zod, hono chunked body limit, jose JWE, ws fragments and header count, yaml nesting, node-server aborted handshake, otel baggage).
 - **Files:**
   - `backend/src/middlewares/body-limit.ts`, `backend/src/schemas/common-schemas.ts`, `backend/src/middlewares/rate-limiter/` (`core.ts`, `helpers.ts`, `limiters.ts`, `points-cache.ts`, `tests/`), `backend/src/lib/transloadit.ts`.
@@ -311,7 +311,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - pg-boss is cron-only: `backend/src/lib/pg-boss.ts`, `jobs-worker.ts`; no `boss.send` with request data.
 - **Holds:**
   - `request-bodies`: an array or record schema in the OpenAPI document without `maxItems` or `maxProperties` (zod collection exhaustion).
-  - `backend/src/schemas/common-schemas.test.ts`: `limit` 0, 1001, 2^53 and malformed `offset`.
+  - `backend/src/schemas/common-schemas.test.ts`: `maxPageSize` 0, 1001, 2^53 and negative, malformed `skip`, an `orderBy` outside its fields.
   - `backend/tests/yjs-http.test.ts`: a Yjs push chunk over 512 KB (400) and a body over 1 MB (413 `body_too_large`), with a full chunk as positive control.
   - `backend/src/modules/yjs/operations/append-yjs-update.test.ts`: an update over `yjsMaxUpdateBytes`. `yjs/src/tests/upgrade-handler.test.ts`: `yjsPendingQueueCap`.
   - `backend/src/middlewares/rate-limiter/tests/` and `brute-force-limits`: the limiters' budgets (policy per route belongs to E1).
@@ -355,7 +355,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/utils/order-column.test.ts`: the sort lookup and fallback. `backend/src/db/utils/path-column.test.ts`: the SQL path expression equals the TS path.
   - In code: the idAlphabet check (`tenant-transaction-opening.ts`); the `isProduct` gate before dynamic table names (`yjs-queries.ts`, `yjs/src/data/permissions.ts`); signed-token binding of `entityType` (`yjs/src/server/upgrade.ts`); `escapeLikePattern` (`utils/sql.ts`); `jsonbIntRaw` quote doubling.
 - **Asks:** a table of every raw argument's origin (config enum, hierarchy column, request); the escape helper and its callers; a search term with `%`.
-- **Not this class:** RLS policy semantics around `current_setting` belong to B1. `q` and `limit` size caps and `boundedRecord` belong to C1. `lastPostedAtOrder` (memberships `sort=lastPostedAt`) is a sort expression in a column map and enters this table if it holds raw text. Whether a refused tenant id answers 400 or 500 is error handling (E3).
+- **Not this class:** RLS policy semantics around `current_setting` belong to B1. `q` and `maxPageSize` caps and `boundedRecord` belong to C1. `lastPostedAtOrder` (memberships `orderBy=lastPostedAt`) is a sort expression in a column map and enters this table if it holds raw text. Whether a refused tenant id answers 400 or 500 is error handling (E3).
 
 ### C4 Output encoding: HTML, PDF, email, CSS
 - **Gain:** code execution in a browser on the app origin.
@@ -481,7 +481,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/redact-keys.ts`; `backend/src/lib/pino.ts` (adds `req.headers.authorization` and `req.headers.cookie`); `cdc/src/lib/pino.ts` and `yjs/src/lib/pino.ts` reuse `redactPaths`.
   - `shared/src/tracing/redacting-span-processor.ts` (scrubs every span), `shared/src/utils/scrub-url.ts` (key list), `shared/src/otel.ts` (http, undici, pg instrumentations).
   - `backend/src/lib/error.ts` (`exposesServerMessages`, `hideIfServerError`, `appErrorHandler`).
-  - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`.
+  - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`, `utils/list-page.ts` (page tokens, a purpose per list and params).
   - `backend/src/utils/hash-pii.ts`, `hash-token.ts`.
   - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
   - CDC strip: `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
@@ -491,6 +491,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `response-secrets`: seeds real secrets, requests routes, fails when a stored secret value or a secret-named key appears in any body at any depth.
   - `trace-redaction`: a magic, invitation, unsubscribe or OAuth-callback token in a URL must not reach an exported span or the request log line.
   - `failed-query-redaction`: a request value in a failed query must not reach a log, a span or a colliding database `detail`.
+  - `page-tokens`: a page token holds no readable position, and an altered or forged one, or one replayed with other params or on another list, answers 400 `invalid_page_token`.
   - `server-error-messages`: a failed query must not show in a 5xx outside development (development is the control).
   - `backend/src/env.test.ts`: a worker mode boots without secrets of other modes; the API refuses to boot without the Yjs key; short or empty cookie and unsubscribe secrets refuse to boot; a rotated cookie list boots.
   - `tests/emails/security-inbox`, `request-details`. `cdc/src/tests/secret-columns.test.ts`: a column matching the pattern outside both maps fails.
@@ -579,7 +580,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `attachment-idempotency`: user B sending A's mutationId with a new id gets only its own row, stored `createdBy` is B; B sending A's row id gets nothing (`rejectedIds`); the same user with the same ids on another tenant's path gets nothing of the first tenant; a deleted row is not revived; partial and concurrent replays; quota with replays.
   - `attachment-overlapping-edits`: field timestamps of two edits while the row is held.
-  - `attachment-seq-reads`: seq order, tombstones, a limit above 1000 refused, `afterSeq` exclusive and `untilSeq` inclusive, `channelId` narrowing.
+  - `attachment-seq-reads`: seq order, tombstones, a page size above 1000 read as 1000 and a negative one refused, `afterSeq` exclusive and `untilSeq` inclusive, `channelId` narrowing, a range read with a page token or skip refused.
   - `recalculate-sequence` (counters), `filter-existing-product-ids` (embeddings), `catchup-propagation` (no unreadable row named).
   - `rls-security`: every immutable column, memberships, append-only activities.
   - Lenses: `shared/src/schema-evolution/tests/engine.test.ts` (normalize), `lens-seam.test.ts` (alias accepted, missing HLC refused, an alias cannot replace canonical absence).

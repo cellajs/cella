@@ -16,4 +16,4 @@ export type UserMenuItem = EnrichedChannel & { membership: MembershipBase; subme
 
 export type UploadTokenQuery = GetUploadTokenData['query'];
 
-export type Invitation = ListMyInvitationsResponse['items'][number];
+export type Invitation = ListMyInvitationsResponse['results'][number];

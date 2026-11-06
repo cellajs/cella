@@ -107,7 +107,7 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, [coAdmin.email], adminRole, sessionCookie);
 
     const { data } = await call(listMyInvitations, { headers: { ...defaultHeaders, Cookie: await createTestSession(coAdmin) } });
-    expect((data as { items: unknown[] }).items).toHaveLength(1);
+    expect((data as { results: unknown[] }).results).toHaveLength(1);
   });
 
   it('refuses a member who publishes, leaving the draft and its held invitations as they were', async () => {
@@ -134,13 +134,13 @@ describe('Draft context invite deferral', async () => {
 
     const before = await myInvitations();
     expect(before.response.status).toBe(200);
-    expect((before.data as { items: unknown[] }).items).toHaveLength(0);
+    expect((before.data as { results: unknown[] }).results).toHaveLength(0);
 
     const { data: published } = await publish(organization, sessionCookie);
     expect(published).toMatchObject({ invitationsSent: 1, organization: { id: organization.id, publishedAt: expect.any(String) } });
 
     const after = await myInvitations();
-    expect((after.data as { items: unknown[] }).items).toHaveLength(1);
+    expect((after.data as { results: unknown[] }).results).toHaveLength(1);
   });
 
   it('keeps a held invitation held when it is resent, and sends it at the publish', async () => {
@@ -277,7 +277,7 @@ describe('Draft context invite deferral', async () => {
       query: { entityId: organization.id, entityType: 'organization' },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
-    const listed = (data as { items: { id: string; email: string }[] }).items;
+    const listed = (data as { results: { id: string; email: string }[] }).results;
     expect(listed.filter((item) => item.id === held.id)).toEqual([expect.objectContaining({ email: 'deferred@example.com' })]);
   });
 

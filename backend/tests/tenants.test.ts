@@ -48,7 +48,7 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     // The SDK validates the response: a missing field fails the whole list, as it does in the frontend.
     expect(error).toBeUndefined();
     expect(response.status).toBe(200);
-    const { items } = data as { items: { id: string; restrictions: Restrictions }[] };
+    const { results: items } = data as { results: { id: string; restrictions: Restrictions }[] };
     expect(items.map(({ id }) => id)).toEqual([tenant.id]);
     expect(items[0].restrictions).toEqual(defaultRestrictions());
   });
@@ -100,7 +100,7 @@ describe('tenant responses with the organization the tenant holds', async () => 
     expect(updated.error).toBeUndefined();
     expect(listed.error).toBeUndefined();
     expect((updated.data as Tenant).organization).toEqual(expected);
-    expect((listed.data as { items: Tenant[] }).items.map((tenant) => tenant.organization)).toEqual([expected]);
+    expect((listed.data as { results: Tenant[] }).results.map((tenant) => tenant.organization)).toEqual([expected]);
   });
 
   it('answers a self-created tenant without an organization', async () => {

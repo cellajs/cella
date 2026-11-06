@@ -9,16 +9,18 @@ import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-
 import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
 import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
+import type { PageWindow } from '#/utils/list-page';
 
 /**
  * A page of the caller's organizations, or with `relatableUserId` of that user's, limited to the ones the caller shares
  * unless the caller is a system admin. Without `relatableUserId` a system admin lists every organization.
  * @throws 403 `forbidden` when `role` or `excludeArchived` filters another user's list.
  */
-export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>) {
+export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>, { offset, limit }: PageWindow) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
-  const { q, sort, order, offset, limit, relatableUserId, role, excludeArchived, include } = input;
+  const { q, orderBy, relatableUserId, role, excludeArchived, include } = input;
+  const { sort, order } = orderBy;
 
   const entityType = 'organization';
   const isSystemAdmin = ctx.var.isSystemAdmin && !relatableUserId;

@@ -1,40 +1,34 @@
-import { isInfiniteQueryData } from '~/query/basic/mutate-query';
-import type { PageParams, QueryData } from '~/query/types';
+import { getQueryItems, isInfiniteQueryData } from '~/query/basic/mutate-query';
+import type { PageParam, QueryData, SortOrder } from '~/query/types';
 
-/** The rows the server sent for a page, the ones it hides included, which offsets into the server's list count. */
-const sentCount = (page: QueryData<unknown>) => page.items.length + (page.hiddenIds?.length ?? 0);
-
-/** Pages any `{ items, total }` response until all are fetched. staleTime is omitted so it inherits the global default from query-client.ts. */
+/** Pages a list by the `nextPageToken` each page names, until one names none. staleTime is omitted so it inherits the global default from query-client.ts. */
 export const baseInfiniteQueryOptions = {
-  initialPageParam: { page: 0, offset: 0 },
-  getNextPageParam: (lastPage: QueryData<unknown>, allPages: QueryData<unknown>[]): PageParams | undefined => {
-    // An empty page ends the list whatever `total` claims, so a drifted total cannot re-request one offset in a loop.
-    if (sentCount(lastPage) === 0) return undefined;
-    const fetchedCount = allPages.reduce((count, page) => count + sentCount(page), 0);
-    if (fetchedCount >= lastPage.total) return undefined;
-    return { page: allPages.length, offset: fetchedCount };
-  },
+  initialPageParam: '',
+  getNextPageParam: (lastPage: QueryData<unknown>): PageParam | undefined => lastPage.nextPageToken,
 };
 
-export function pageQuery(limit: number, offset: number) {
-  return { limit, offset };
+/** The paging params of one page read; the first page sends no token. */
+export function pageQuery(maxPageSize: number, pageToken: PageParam) {
+  return pageToken ? { maxPageSize, pageToken } : { maxPageSize };
 }
 
-/** Offset paging over an `{ items, total }` endpoint: the queryFn fetches the page starting at the page param's offset. */
-export function offsetPaging<TPage extends QueryData<unknown>>(limit: number, fetchPage: (offset: number, signal: AbortSignal) => Promise<TPage>) {
+/** Token paging over a list endpoint: the queryFn reads the page the page param's token names. */
+export function tokenPaging<TPage extends QueryData<unknown>>(fetchPage: (pageToken: PageParam, signal: AbortSignal) => Promise<TPage>) {
   return {
-    queryFn: ({ pageParam: { page, offset }, signal }: { pageParam: PageParams; signal: AbortSignal }) =>
-      fetchPage(offset ?? (page ?? 0) * limit, signal),
+    queryFn: ({ pageParam, signal }: { pageParam: PageParam; signal: AbortSignal }) => fetchPage(pageParam, signal),
     ...baseInfiniteQueryOptions,
   };
 }
 
+/** A list's `orderBy` param from the sort and order a cache key holds. */
+export const orderByParam = <TSort extends string>(sort: TSort, order: SortOrder): `${TSort} ${SortOrder}` => `${sort} ${order}`;
+
 type Live<T> = Exclude<T, { deletedAt: string }>;
 
 /** A product list page outside a range read, which returns no tombstones: the filter drops none and narrows the row type. */
-export const liveItems = <T extends { deletedAt: string | null }>({ items, total }: QueryData<T>): QueryData<Live<T>> => ({
-  items: items.filter((item): item is Live<T> => item.deletedAt === null),
-  total,
+export const liveItems = <T extends { deletedAt: string | null }>({ results, ...page }: QueryData<T>): QueryData<Live<T>> => ({
+  ...page,
+  results: results.filter((item): item is Live<T> => item.deletedAt === null),
 });
 
 /** Parts whose absence on a row means the list was fetched without asking for them. */
@@ -50,7 +44,7 @@ export function refetchOnMountForIncluded(include: string | undefined) {
   if (!wanted.length) return true;
   return ({ state }: { state: { data?: unknown } }): boolean | 'always' => {
     const firstRow = isInfiniteQueryData<{ included?: Record<string, unknown>; counts?: unknown }>(state.data)
-      ? state.data.pages[0]?.items[0]
+      ? getQueryItems(state.data)[0]
       : undefined;
     return firstRow && wanted.some((part) => firstRow.included?.[part] === undefined && (part !== 'counts' || firstRow.counts === undefined))
       ? 'always'

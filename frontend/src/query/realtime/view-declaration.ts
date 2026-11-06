@@ -24,7 +24,7 @@ export function declareViewsFromMemberships(): void {
   if (!data) return;
 
   const store = syncStore.getState();
-  const memberOrganizationIds = new Set(data.items.map((membership) => membership.organizationId));
+  const memberOrganizationIds = new Set(data.results.map((membership) => membership.organizationId));
   for (const organizationId of Object.keys(syncStore.getState().orgs)) {
     if (!memberOrganizationIds.has(organizationId)) store.removeOrg(organizationId);
   }

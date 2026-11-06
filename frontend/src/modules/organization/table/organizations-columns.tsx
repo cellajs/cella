@@ -43,7 +43,7 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   // A role picked in the table shows until the save settles, then the caller's membership.
-  const roleOf = (row: OrganizationRow) => row.role ?? asOrganizationRole(findMembership(myMemberships?.items ?? [], row.id)?.role);
+  const roleOf = (row: OrganizationRow) => row.role ?? asOrganizationRole(findMembership(myMemberships?.results ?? [], row.id)?.role);
 
   const columns: ColumnOrColumnGroup<OrganizationRow>[] = [
     CheckboxColumn,

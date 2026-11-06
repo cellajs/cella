@@ -155,7 +155,7 @@ describe('OAuth authorization server', async () => {
 
     const listed = await call(listConnectedApps, { headers });
     expect(listed.response.status).toBe(200);
-    const { items } = listed.data as { items: { id: string; scopes: string[]; resources: string[] }[] };
+    const { results: items } = listed.data as { results: { id: string; scopes: string[]; resources: string[] }[] };
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ id: grantId, resources: [resource] });
     expect(items[0].scopes.sort()).toEqual(['attachment:read', 'attachment:write']);

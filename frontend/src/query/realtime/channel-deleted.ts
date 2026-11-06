@@ -93,7 +93,7 @@ function refetchBelowDeletedChannels(): void {
 
   // A delete missed while away leaves the unseen recount and the memberships to the catchup that reported it.
   if (deletedIds.size > 0 && productTypes.some(isSeenTracked)) queryClient.invalidateQueries({ queryKey: seenKeys.unseenCounts });
-  const memberships = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.items ?? [];
+  const memberships = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships)?.results ?? [];
   if (memberships.some(({ channelId }) => deletedIds.has(channelId))) membershipOps.invalidateMemberships();
 }
 

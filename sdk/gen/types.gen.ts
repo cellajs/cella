@@ -920,13 +920,21 @@ export type ListAttachmentsData = {
   };
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'name' | 'createdAt' | 'contentType';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
     /**
      * Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.
      */
@@ -935,6 +943,19 @@ export type ListAttachmentsData = {
      * Range read for sync: the last sequence position to return. Requires afterSeq.
      */
     untilSeq?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'contentType'
+      | 'contentType asc'
+      | 'contentType desc';
     channelId?: string;
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/attachments';
@@ -970,7 +991,7 @@ export type ListAttachmentsResponses = {
    * Attachments
    */
   200: {
-    items: Array<
+    results: Array<
       | Attachment
       | {
           id: string;
@@ -980,7 +1001,14 @@ export type ListAttachmentsResponses = {
           deletedAt: string;
         }
     >;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters. Exact, except an organization-wide read without a search, which counts from the organization's counter and can trail a write by moments. A range read counts its own results.
+     */
+    totalSize: number;
   };
 };
 
@@ -3419,7 +3447,20 @@ export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
 export type ListMyInvitationsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/invitations';
 };
 
@@ -3445,7 +3486,7 @@ export type ListMyInvitationsResponses = {
    * Invitations pending
    */
   200: {
-    items: Array<{
+    results: Array<{
       entity: ChannelBase;
       /**
        * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
@@ -3469,7 +3510,14 @@ export type ListMyInvitationsResponses = {
        */
       organizationName: string | null;
     }>;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -3734,7 +3782,20 @@ export type GetUploadTokenResponse = GetUploadTokenResponses[keyof GetUploadToke
 export type ListMyMembershipsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/memberships';
 };
 
@@ -3760,7 +3821,15 @@ export type ListMyMembershipsResponses = {
    * User memberships
    */
   200: {
-    items: Array<MembershipBase>;
+    results: Array<MembershipBase>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -3769,7 +3838,20 @@ export type ListMyMembershipsResponse = ListMyMembershipsResponses[keyof ListMyM
 export type ListConnectedAppsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/connected-apps';
 };
 
@@ -3795,7 +3877,7 @@ export type ListConnectedAppsResponses = {
    * Connected apps
    */
   200: {
-    items: Array<{
+    results: Array<{
       id: string;
       clientId: string;
       clientName: string;
@@ -3804,6 +3886,14 @@ export type ListConnectedAppsResponses = {
       createdAt: string;
       expiresAt: string | null;
     }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -4193,15 +4283,48 @@ export type ListMembersData = {
   };
   query: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'lastPostedAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
     entityId: string;
     entityType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'role'
+      | 'role asc'
+      | 'role desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'lastSeenAt'
+      | 'lastSeenAt asc'
+      | 'lastSeenAt desc'
+      | 'lastPostedAt'
+      | 'lastPostedAt asc'
+      | 'lastPostedAt desc';
     role?: 'admin' | 'member';
     /**
      * Comma-separated values
@@ -4248,7 +4371,7 @@ export type ListMembersResponses = {
     /**
      * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
-    items: Array<
+    results: Array<
       UserBase & {
         lastSeenAt: string | null;
         membership: {
@@ -4277,7 +4400,14 @@ export type ListMembersResponses = {
         mfaRequired?: boolean;
       }
     >;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -4291,15 +4421,23 @@ export type ListInvitationsData = {
   };
   query: {
     /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
      */
-    q?: string;
-    sort?: 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
     entityId: string;
     entityType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/invitations';
 };
@@ -4334,7 +4472,7 @@ export type ListInvitationsResponses = {
    * Pending memberships
    */
   200: {
-    items: Array<{
+    results: Array<{
       id: string;
       /**
        * The primary email address, shown to every user who shares an organization with this one.
@@ -4346,7 +4484,14 @@ export type ListInvitationsResponses = {
       linkExpiresAt: string | null;
       createdBy: ActorRef;
     }>;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -4479,14 +4624,21 @@ export type ListNotificationsData = {
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 100 reads 100. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Return only unread notifications
      */
     unread?: 'true' | 'false' | boolean;
-    limit?: number;
-    /**
-     * createdAt of the last row of the previous page
-     */
-    before?: string;
   };
   url: '/notifications';
 };
@@ -4513,7 +4665,7 @@ export type ListNotificationsResponses = {
    * Notifications and unread count
    */
   200: {
-    items: Array<{
+    results: Array<{
       id: string;
       createdAt: string;
       actorId: string | null;
@@ -4537,6 +4689,14 @@ export type ListNotificationsResponses = {
       organizationThumbnailUrl: string | null;
       subjectTitle: string;
     }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
     unreadCount: number;
   };
 };
@@ -4775,13 +4935,37 @@ export type ListOrganizationsData = {
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'displayOrder'
+      | 'displayOrder asc'
+      | 'displayOrder desc';
     relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false' | boolean;
@@ -4819,8 +5003,15 @@ export type ListOrganizationsResponses = {
    * Organizations
    */
   200: {
-    items: Array<Organization>;
-    total: number;
+    results: Array<Organization>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -5330,13 +5521,37 @@ export type ListRequestsData = {
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'email' | 'type' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'type'
+      | 'type asc'
+      | 'type desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc';
   };
   url: '/requests';
 };
@@ -5367,8 +5582,15 @@ export type ListRequestsResponses = {
    * Requests
    */
   200: {
-    items: Array<Request>;
-    total: number;
+    results: Array<Request>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -5575,11 +5797,21 @@ export type ListServiceAccountsData = {
   };
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    offset?: number;
-    limit?: number;
   };
   url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts';
 };
@@ -5614,8 +5846,15 @@ export type ListServiceAccountsResponses = {
    * Service accounts
    */
   200: {
-    items: Array<ServiceAccount>;
-    total: number;
+    results: Array<ServiceAccount>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -5747,7 +5986,20 @@ export type ListApiKeysData = {
     organizationId: string;
     serviceAccountId: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys';
 };
 
@@ -5781,7 +6033,15 @@ export type ListApiKeysResponses = {
    * API keys
    */
   200: {
-    items: Array<ApiKey>;
+    results: Array<ApiKey>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -6216,13 +6476,25 @@ export type ListTenantsData = {
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'createdAt' | 'name';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc' | 'name' | 'name asc' | 'name desc';
     /**
      * Filter by status
      */
@@ -6257,8 +6529,15 @@ export type ListTenantsResponses = {
    * Tenants list
    */
   200: {
-    items: Array<Tenant>;
-    total: number;
+    results: Array<Tenant>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
@@ -6392,7 +6671,20 @@ export type ListConnectionsData = {
   path: {
     tenantId: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/tenants/{tenantId}/connections';
 };
 
@@ -6421,7 +6713,17 @@ export type ListConnectionsResponses = {
   /**
    * Connections
    */
-  200: Array<Connection>;
+  200: {
+    results: Array<Connection>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
 };
 
 export type ListConnectionsResponse = ListConnectionsResponses[keyof ListConnectionsResponses];
@@ -6610,13 +6912,43 @@ export type ListUsersData = {
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'role'
+      | 'role asc'
+      | 'role desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'lastSeenAt'
+      | 'lastSeenAt asc'
+      | 'lastSeenAt desc';
     role?: 'admin';
   };
   url: '/users';
@@ -6651,13 +6983,20 @@ export type ListUsersResponses = {
     /**
      * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
-    items: Array<
+    results: Array<
       UserBase & {
         lastSeenAt: string | null;
         role?: 'admin' | null;
       }
     >;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 

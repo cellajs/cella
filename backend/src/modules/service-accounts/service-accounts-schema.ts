@@ -5,7 +5,7 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from '#/modules/service-accounts/service-accounts-mocks';
-import { paginationQuerySchema, tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
+import { listQuerySchema, tenantOrgParamSchema, validIdSchema, validNameSchema } from '#/schemas';
 import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { auditShape } from '#/schemas/entity-base';
 
@@ -88,9 +88,7 @@ export const updateServiceAccountBodySchema = z.object({ name: validNameSchema.o
 
 export const createServiceAccountResponseSchema = z.object({ serviceAccount: serviceAccountSchema, apiKey: createdApiKeySchema.optional() });
 
-export const apiKeysResponseSchema = z.object({ items: z.array(apiKeySchema) });
-
-export const serviceAccountListQuerySchema = paginationQuerySchema.pick({ q: true, offset: true, limit: true });
+export const serviceAccountListQuerySchema = listQuerySchema;
 
 export type CreateServiceAccountInput = z.infer<typeof createServiceAccountBodySchema>;
 export type UpdateServiceAccountInput = z.infer<typeof updateServiceAccountBodySchema>;

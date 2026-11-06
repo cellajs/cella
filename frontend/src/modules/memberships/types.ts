@@ -7,8 +7,8 @@ import type { BaseQueryResponse, MutationData } from '~/query/types';
 
 export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSchema>;
 
-export type Member = ListMembersResponse['items'][number];
-export type PendingMembership = ListInvitationsResponse['items'][number];
+export type Member = ListMembersResponse['results'][number];
+export type PendingMembership = ListInvitationsResponse['results'][number];
 
 export type MemberListSnapshot = BaseQueryResponse<Member>;
 

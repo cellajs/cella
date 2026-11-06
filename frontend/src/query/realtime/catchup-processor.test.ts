@@ -94,7 +94,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
   organizationId: 'org-1',
   tenantId: 'tenant-1',
   channelId: undefined,
-  query: { afterSeq, untilSeq, limit: syncChunkSize },
+  query: { afterSeq, untilSeq, maxPageSize: syncChunkSize },
 });
 
 /** Views-contract response with one org view answer for attachment. */
@@ -106,7 +106,7 @@ const okViewResponse = (frontier: number): PostAppCatchupResponse => ({
 
 /** The org-1 list mounted, as on screen, counting the list requests it sends. */
 const observeList = (queryKey: readonly unknown[]) => {
-  const listFetch = vi.fn(async () => ({ items: [], total: 0 }));
+  const listFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
   const unsubscribe = new QueryObserver(queryClient, { queryKey, queryFn: listFetch, staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
   return { listFetch, unsubscribe };
 };
@@ -121,11 +121,11 @@ describe('catchup processor (view-driven)', () => {
   it('fetches the gap of the tab that processes the answer: a follower behind the leader reads from its own cursor', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => ({
-      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }],
-      total: 1,
+      results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }],
+      totalSize: 1,
     }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
-    const staleList = { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 };
+    const staleList = { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], totalSize: 1 };
     const answer = okViewResponse(6);
 
     // The leader was at 5 when it sent the request this answers.
@@ -141,16 +141,16 @@ describe('catchup processor (view-driven)', () => {
 
     expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(2, 6));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
-    expect(queryClient.getQueryData(keys.list.org('org-1'))).toMatchObject({ items: [{ id: 'attachment-1', name: 'fresh' }] });
+    expect(queryClient.getQueryData(keys.list.org('org-1'))).toMatchObject({ results: [{ id: 'attachment-1', name: 'fresh' }] });
   });
 
   // A cascaded delete stamps no seq, so a read of the range never reaches a frontier row that left with its channel.
   it('must not hold the cursor at a frontier no fetch can deliver: the next catchup fetches nothing', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-6', organizationId: 'org-1', seq: 6 }], total: 1 }));
+    const rangeFetch = vi.fn(async () => ({ results: [{ id: 'attachment-6', organizationId: 'org-1', seq: 6 }], totalSize: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
     await processAppCatchup(okViewResponse(9));
     await processAppCatchup(okViewResponse(9));
@@ -162,11 +162,11 @@ describe('catchup processor (view-driven)', () => {
 
   it('a first connection refetches a list that was read before its stream was live and stores the frontier, from which the next one reads', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed', seq: 43 }], total: 1 }));
+    const rangeFetch = vi.fn(async () => ({ results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed', seq: 43 }], totalSize: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     // A fresh profile. The route loader was first: its rows are from before the subscription, so the frontier cannot vouch for them.
     syncStore.getState().reset();
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], total: 1 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], totalSize: 1 });
 
     await processAppCatchup(okViewResponse(42));
 
@@ -185,11 +185,11 @@ describe('catchup processor (view-driven)', () => {
 
   it('an opaque view falls back to invalidation of cached lists, no numbers consumed', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    const rangeFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     await processAppCatchup({ organizations: {}, views: [{ organizationId: 'org-1', entityType: 'attachment', status: 'opaque' }], generation: 1 });
@@ -210,8 +210,8 @@ describe('catchup processor (view-driven)', () => {
     syncStore.getState().setOrgSeq('org-1', label, 4);
     // What the cache held before: the host's copy of the label and the label's detail, both from before the rename.
     queryClient.setQueryData(attachmentKeys.list.org('org-1'), {
-      items: [{ id: 'att-1', organizationId: 'org-1', labels: [{ id: 'label-1', name: 'old' }] }],
-      total: 1,
+      results: [{ id: 'att-1', organizationId: 'org-1', labels: [{ id: 'label-1', name: 'old' }] }],
+      totalSize: 1,
     });
     queryClient.setQueryData(labelKeys.detail.byId('label-1'), { id: 'label-1', name: 'old' });
 
@@ -242,12 +242,12 @@ describe('catchup after the server rebuilt its sync books', () => {
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    const rangeFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], totalSize: 1 });
     queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', name: 'stale' });
     return { keys, rangeFetch, ...observeList(keys.list.org('org-1')) };
   };
@@ -298,12 +298,12 @@ describe('catchup after the device was away longer than the activity window', ()
   it('must not fetch a range from its old cursor: it refetches what is cached once, at once, and takes the frontier as its baseline', async () => {
     vi.useFakeTimers();
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    const rangeFetch = vi.fn(async () => ({ results: [], totalSize: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     syncStore.getState().markCaughtUp();
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], totalSize: 1 });
     const { listFetch, unsubscribe } = observeList(keys.list.org('org-1'));
 
     vi.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000);
@@ -331,11 +331,11 @@ describe('catchup → fetch prioritizer fold', () => {
     vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    const rangeFetch = vi.fn(async () => ({ results: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], totalSize: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
     const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
@@ -357,11 +357,11 @@ describe('catchup → fetch prioritizer fold', () => {
     vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    const rangeFetch = vi.fn(async () => ({ results: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], totalSize: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(keys.list.org('org-1'), { results: [], totalSize: 0 });
 
     const hint = { embeddedProduct: 'attachment', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), organizations: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;

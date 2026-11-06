@@ -29,7 +29,7 @@ describe('Defense-in-depth data isolation', async () => {
     ]) {
       const { data, response } = await call(listOrganizations, { headers: { ...defaultHeaders, Cookie: own.sessionCookie } });
       expect(response.status).toBe(200);
-      const orgIds = (data as { items: { id: string }[] }).items.map((o) => o.id);
+      const orgIds = (data as { results: { id: string }[] }).results.map((o) => o.id);
       expect(orgIds).toContain(own.organization.id);
       expect(orgIds).not.toContain(other.organization.id);
     }

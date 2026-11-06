@@ -45,7 +45,7 @@ export default defineScenario({
         const rangeFetch = async (from: number, until: number) => {
           const started = performance.now();
           try {
-            const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&limit=1000`, {
+            const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&maxPageSize=1000`, {
               headers: { cookie },
               name: 'GET /attachments (range)',
             });

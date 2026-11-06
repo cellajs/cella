@@ -152,7 +152,7 @@ describe('Service accounts and API keys', async () => {
     const { org, headers, account, key } = await issueKey();
     const list = await call(listServiceAccounts, { path: { tenantId: org.tenantId, organizationId: org.id }, headers });
     expect(list.response.status).toBe(200);
-    expect((list.data as { items: { id: string }[] }).items.map((item) => item.id)).toContain(account.id);
+    expect((list.data as { results: { id: string }[] }).results.map((item) => item.id)).toContain(account.id);
 
     const keys = await call(listApiKeys, { path: { tenantId: org.tenantId, organizationId: org.id, serviceAccountId: account.id }, headers });
     expect(keys.response.status).toBe(200);
@@ -166,7 +166,7 @@ describe('Service accounts and API keys', async () => {
     expect(apiKey.createdBy).toMatchObject({ id: user.id, kind: 'user' });
 
     const keys = await call(listApiKeys, { path: { tenantId: org.tenantId, organizationId: org.id, serviceAccountId: account.id }, headers });
-    const [listed] = (keys.data as { items: { createdBy: { id: string } | null }[] }).items;
+    const [listed] = (keys.data as { results: { createdBy: { id: string } | null }[] }).results;
     expect(listed.createdBy).toMatchObject({ id: user.id, kind: 'user' });
   });
 
@@ -181,7 +181,7 @@ describe('Service accounts and API keys', async () => {
     // The guard does not wait for the write, so it can land after the response.
     await vi.waitFor(async () => {
       const list = await call(listServiceAccounts, { path, headers });
-      const items = (list.data as { items: { id: string; lastSeenAt: string | null }[] }).items;
+      const items = (list.data as { results: { id: string; lastSeenAt: string | null }[] }).results;
       expect(items.find((item) => item.id === account.id)?.lastSeenAt).not.toBeNull();
     });
   });

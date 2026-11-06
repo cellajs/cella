@@ -58,7 +58,7 @@ const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
-interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>, 'sort' | 'order'> {
+interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches the name. */
   q?: string;
   status?: TenantModel['status'];

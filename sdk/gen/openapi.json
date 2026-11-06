@@ -3919,53 +3919,46 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["name", "createdAt", "contentType"],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "default": 0
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
             },
             "required": false,
-            "name": "offset",
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
             },
             "required": false,
-            "name": "limit",
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+            },
+            "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "name": "q",
             "in": "query"
           },
           {
@@ -3993,6 +3986,29 @@
           {
             "schema": {
               "type": "string",
+              "enum": [
+                "name",
+                "name asc",
+                "name desc",
+                "createdAt",
+                "createdAt asc",
+                "createdAt desc",
+                "contentType",
+                "contentType asc",
+                "contentType desc"
+              ],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "format": "uuid"
             },
             "required": false,
@@ -4006,7 +4022,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "createdAt": "2024-06-13T07:35:15.527Z",
                       "id": "1b17b41e-e456-4f6f-829b-747a897a617f",
@@ -4096,12 +4112,12 @@
                       "organizationId": "4859fc3d-4ffc-4d93-bda6-f4757fd00cc2"
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "anyOf": [
@@ -4137,11 +4153,17 @@
                         ]
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters. Exact, except an organization-wide read without a search, which counts from the organization's counter and can trail a write by moments. A range read counts its own results."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -8459,13 +8481,49 @@
         "description": "Returns a list of pending memberships with entity data.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Invitations pending",
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "entity": {
                         "id": "21706e63-57b3-4215-a579-fd75f58d0366",
@@ -8535,12 +8593,12 @@
                       "organizationName": null
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -8640,11 +8698,17 @@
                         "required": ["entity", "inactiveMembership", "organizationName"]
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -9089,9 +9153,45 @@
         "operationId": "listMyMemberships",
         "tags": ["me", "cella"],
         "summary": "Get my memberships",
-        "description": "Returns all memberships for the current user across all channel entities.",
+        "description": "Returns the memberships of the current user across all channel entities.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "User memberships",
@@ -9100,14 +9200,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/MembershipBase"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -9137,13 +9246,49 @@
         "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["readLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Connected apps",
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
                       "clientId": "https://vscode.dev/oauth/client-metadata.json",
@@ -9153,12 +9298,13 @@
                       "createdAt": "2026-09-22T10:00:00.000Z",
                       "expiresAt": "2026-10-22T10:00:00.000Z"
                     }
-                  ]
+                  ],
+                  "totalSize": 1
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -9203,9 +9349,18 @@
                           "expiresAt": "2026-10-22T10:00:00.000Z"
                         }
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -10117,53 +10272,46 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt", "lastPostedAt"],
-              "default": "lastSeenAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "default": 0
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
             },
             "required": false,
-            "name": "offset",
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
             },
             "required": false,
-            "name": "limit",
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+            },
+            "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "name": "q",
             "in": "query"
           },
           {
@@ -10182,6 +10330,41 @@
             },
             "required": true,
             "name": "entityType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "id",
+                "id asc",
+                "id desc",
+                "name",
+                "name asc",
+                "name desc",
+                "email",
+                "email asc",
+                "email desc",
+                "role",
+                "role asc",
+                "role desc",
+                "createdAt",
+                "createdAt asc",
+                "createdAt desc",
+                "lastSeenAt",
+                "lastSeenAt asc",
+                "lastSeenAt desc",
+                "lastPostedAt",
+                "lastPostedAt asc",
+                "lastPostedAt desc"
+              ],
+              "default": "lastSeenAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "lastSeenAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           },
           {
@@ -10222,7 +10405,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
                       "createdAt": "2024-09-01T15:27:58.824Z",
@@ -10274,12 +10457,12 @@
                       }
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "allOf": [
@@ -10388,11 +10571,17 @@
                         "x-tags": ["embedded", "users", "cella"]
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -10450,53 +10639,35 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["createdAt"],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "default": 0
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
             },
             "required": false,
-            "name": "offset",
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
             },
             "required": false,
-            "name": "limit",
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
             "in": "query"
           },
           {
@@ -10516,6 +10687,19 @@
             "required": true,
             "name": "entityType",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "createdAt asc", "createdAt desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
+            },
+            "required": false,
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
+            "in": "query"
           }
         ],
         "responses": {
@@ -10524,7 +10708,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
                       "email": "doug_larkin@hotmail.com",
@@ -10556,12 +10740,12 @@
                       }
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -10594,11 +10778,17 @@
                         "required": ["id", "email", "role", "createdAt", "remindedAt", "linkExpiresAt", "createdBy"]
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -10807,6 +10997,40 @@
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 100 reads 100. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 100 reads 100. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
               "anyOf": [
                 {
                   "type": "string",
@@ -10823,29 +11047,6 @@
             "description": "Return only unread notifications",
             "name": "unread",
             "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 30
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 64,
-              "format": "date-time",
-              "description": "createdAt of the last row of the previous page"
-            },
-            "required": false,
-            "description": "createdAt of the last row of the previous page",
-            "name": "before",
-            "in": "query"
           }
         ],
         "responses": {
@@ -10856,7 +11057,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -10978,12 +11179,21 @@
                         ]
                       }
                     },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    },
                     "unreadCount": {
                       "type": "integer",
                       "minimum": 0
                     }
                   },
-                  "required": ["items", "unreadCount"]
+                  "required": ["results", "totalSize", "unreadCount"]
                 }
               }
             }
@@ -11391,6 +11601,40 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255,
               "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
@@ -11402,42 +11646,27 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["id", "name", "createdAt", "displayOrder"],
-              "default": "displayOrder"
+              "enum": [
+                "id",
+                "id asc",
+                "id desc",
+                "name",
+                "name asc",
+                "name desc",
+                "createdAt",
+                "createdAt asc",
+                "createdAt desc",
+                "displayOrder",
+                "displayOrder asc",
+                "displayOrder desc"
+              ],
+              "default": "displayOrder asc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "displayOrder asc"
             },
             "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
-            },
-            "required": false,
-            "name": "limit",
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           },
           {
@@ -11493,7 +11722,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
@@ -11623,22 +11852,28 @@
                       }
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Organization"
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -13084,6 +13319,40 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255,
               "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
@@ -13095,42 +13364,27 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["id", "email", "type", "createdAt"],
-              "default": "createdAt"
+              "enum": [
+                "id",
+                "id asc",
+                "id desc",
+                "email",
+                "email asc",
+                "email desc",
+                "type",
+                "type asc",
+                "type desc",
+                "createdAt",
+                "createdAt asc",
+                "createdAt desc"
+              ],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
             },
             "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
-            },
-            "required": false,
-            "name": "limit",
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           }
         ],
@@ -13140,7 +13394,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
                       "email": "marielle_donnelly-bashirian18@gmail.com",
@@ -13158,22 +13412,28 @@
                       "wasInvited": false
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Request"
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -13667,33 +13927,46 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 255,
-              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
             },
             "required": false,
-            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
-            "name": "q",
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "default": 0
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
             },
             "required": false,
-            "name": "offset",
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
             "in": "query"
           },
           {
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
             },
             "required": false,
-            "name": "limit",
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
+            },
+            "required": false,
+            "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase.",
+            "name": "q",
             "in": "query"
           }
         ],
@@ -13703,7 +13976,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
                       "tenantId": "yx645y",
@@ -13759,22 +14032,28 @@
                       "updatedBy": null
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/ServiceAccount"
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -13950,6 +14229,40 @@
             "required": true,
             "name": "serviceAccountId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
           }
         ],
         "responses": {
@@ -13958,7 +14271,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
                       "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
@@ -13978,19 +14291,29 @@
                         "thumbnailUrl": null
                       }
                     }
-                  ]
+                  ],
+                  "totalSize": 1
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/ApiKey"
                       }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -14889,6 +15212,40 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255,
               "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
@@ -14900,42 +15257,14 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["createdAt", "name"],
-              "default": "createdAt"
+              "enum": ["createdAt", "createdAt asc", "createdAt desc", "name", "name asc", "name desc"],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
             },
             "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
-            },
-            "required": false,
-            "name": "limit",
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           },
           {
@@ -14956,7 +15285,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "jbtqtl",
                       "name": "Predovic, Bahringer and Morar",
@@ -15040,22 +15369,28 @@
                       }
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/Tenant"
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -15394,6 +15729,40 @@
             "required": true,
             "name": "tenantId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
           }
         ],
         "responses": {
@@ -15401,36 +15770,54 @@
             "description": "Connections",
             "content": {
               "application/json": {
-                "example": [
-                  {
-                    "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
-                    "tenantId": "gc9llm",
-                    "kind": "sso",
-                    "issuer": "surfconext",
-                    "claimValues": ["uu.nl"],
-                    "displayName": "Utrecht University",
-                    "status": "active",
-                    "jitProvisioning": true,
-                    "config": {
-                      "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
-                    },
-                    "createdBy": {
-                      "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
-                      "kind": "user",
-                      "name": "Celestino Cummings",
-                      "slug": "celestino.cummings",
-                      "thumbnailUrl": null
-                    },
-                    "updatedBy": null,
-                    "createdAt": "2024-07-21T08:06:37.235Z",
-                    "updatedAt": "2024-07-22T16:57:00.257Z"
-                  }
-                ],
+                "example": {
+                  "results": [
+                    {
+                      "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+                      "tenantId": "gc9llm",
+                      "kind": "sso",
+                      "issuer": "surfconext",
+                      "claimValues": ["uu.nl"],
+                      "displayName": "Utrecht University",
+                      "status": "active",
+                      "jitProvisioning": true,
+                      "config": {
+                        "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+                      },
+                      "createdBy": {
+                        "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+                        "kind": "user",
+                        "name": "Celestino Cummings",
+                        "slug": "celestino.cummings",
+                        "thumbnailUrl": null
+                      },
+                      "updatedBy": null,
+                      "createdAt": "2024-07-21T08:06:37.235Z",
+                      "updatedAt": "2024-07-22T16:57:00.257Z"
+                    }
+                  ],
+                  "totalSize": 1
+                },
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Connection"
-                  }
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Connection"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
+                    }
+                  },
+                  "required": ["results", "totalSize"]
                 }
               }
             }
@@ -15814,6 +16201,40 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048,
+              "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."
+            },
+            "required": false,
+            "description": "The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.",
+            "name": "pageToken",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer."
+            },
+            "required": false,
+            "description": "Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.",
+            "name": "maxPageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Results to pass over after the page token's position, or from the start without a token."
+            },
+            "required": false,
+            "description": "Results to pass over after the page token's position, or from the start without a token.",
+            "name": "skip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255,
               "description": "Search, case- and accent-insensitive. Every word must appear in a searched field; \"quotes\" keep a phrase together and a leading - leaves out items holding that whole word or phrase."
             },
@@ -15825,42 +16246,33 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"],
-              "default": "createdAt"
+              "enum": [
+                "id",
+                "id asc",
+                "id desc",
+                "name",
+                "name asc",
+                "name desc",
+                "email",
+                "email asc",
+                "email desc",
+                "role",
+                "role asc",
+                "role desc",
+                "createdAt",
+                "createdAt asc",
+                "createdAt desc",
+                "lastSeenAt",
+                "lastSeenAt asc",
+                "lastSeenAt desc"
+              ],
+              "default": "createdAt desc",
+              "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+              "example": "createdAt desc"
             },
             "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 1000,
-              "default": 40
-            },
-            "required": false,
-            "name": "limit",
+            "description": "A field to order by, then `asc` or `desc`; ascending when left out.",
+            "name": "orderBy",
             "in": "query"
           },
           {
@@ -15879,7 +16291,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "items": [
+                  "results": [
                     {
                       "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
                       "createdAt": "2024-09-01T15:27:58.824Z",
@@ -15907,12 +16319,12 @@
                       "lastSeenAt": "2024-11-05T16:38:04.981Z"
                     }
                   ],
-                  "total": 2
+                  "totalSize": 2
                 },
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
+                    "results": {
                       "type": "array",
                       "items": {
                         "allOf": [
@@ -15949,11 +16361,17 @@
                         "x-tags": ["embedded", "users", "cella"]
                       }
                     },
-                    "total": {
-                      "type": "number"
+                    "nextPageToken": {
+                      "type": "string",
+                      "description": "Pass as `pageToken` to read the next page. Absent on the last page."
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Results across all pages, after filters: an exact count."
                     }
                   },
-                  "required": ["items", "total"]
+                  "required": ["results", "totalSize"]
                 }
               }
             }

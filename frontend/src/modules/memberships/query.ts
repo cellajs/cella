@@ -11,10 +11,13 @@ import {
 import { appConfig } from 'shared';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
-import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
+import { orderByParam, pageQuery, refetchOnMountForIncluded, tokenPaging } from '~/query/basic/infinite-query-options';
+import type { ListFilters } from '~/query/types';
 
 type PendingMembershipsParams = Pick<ListInvitationsData['query'], 'entityId' | 'entityType'> & ListInvitationsData['path'];
-type MembersParams = Omit<ListMembersData['query'], 'limit' | 'offset'> & ListMembersData['path'];
+type MemberFilters = ListFilters<ListMembersData['query']>;
+type MembersParams = MemberFilters & ListMembersData['path'];
 type PendingMembershipsListParams = PendingMembershipsParams & { limit?: number };
 type MembersListParams = MembersParams & { limit?: number };
 
@@ -101,7 +104,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
-    ...offsetPaging(limit, (offset, signal) => fetchMembersPage(query, { tenantId, organizationId }, limit, offset, signal)),
+    ...tokenPaging((pageToken, signal) => fetchMembersPage(query, { tenantId, organizationId }, pageQuery(limit, pageToken), signal)),
     refetchOnMount: refetchOnMountForIncluded(include),
   });
 };
@@ -112,25 +115,22 @@ export const pendingMembershipsQueryOptions = (params: PendingMembershipsListPar
 
   return infiniteQueryOptions({
     queryKey: keys.list.pending({ entityId, entityType, tenantId, organizationId }),
-    ...offsetPaging(limit, (offset, signal) =>
-      listInvitations({ query: { ...query, ...pageQuery(limit, offset) }, path: { tenantId, organizationId }, signal }),
+    ...tokenPaging((pageToken, signal) =>
+      listInvitations({ query: { ...query, ...pageQuery(limit, pageToken) }, path: { tenantId, organizationId }, signal }),
     ),
     refetchOnMount: true,
   });
 };
 
 const fetchMembersPage = (
-  query: Omit<ListMembersData['query'], 'limit' | 'offset'>,
+  { sort = membersSearchDefaults.sort, order = membersSearchDefaults.order, ...query }: MemberFilters,
   path: ListMembersData['path'],
-  limit: number,
-  offset: number,
+  page: PageRequest,
   signal?: AbortSignal,
-) => listMembers({ query: { ...query, ...pageQuery(limit, offset) }, path, signal });
+) => listMembers({ query: { ...query, orderBy: orderByParam(sort, order), ...page }, path, signal });
 
-/** Fetch members for table export. Bypasses cache; items carry their counts and MFA setting, as in the members table. */
-export const fetchMembersForExport = async (params: MembersParams & { limit: number; offset?: number }) => {
-  const { limit, offset = 0, tenantId, organizationId, q, role, entityId, entityType } = params;
-  const { sort = membersSearchDefaults.sort, order = membersSearchDefaults.order } = params;
-  const query = { q, sort, order, role, entityId, entityType, include: 'counts,mfa' };
-  return (await fetchMembersPage(query, { tenantId, organizationId }, limit, offset)).items;
+/** A page of members for a table export. Bypasses cache; rows carry their counts and MFA setting, as in the members table. */
+export const fetchMembersForExport = (params: MembersParams, page: PageRequest) => {
+  const { tenantId, organizationId, q, sort, order, role, entityId, entityType } = params;
+  return fetchMembersPage({ q, sort, order, role, entityId, entityType, include: 'counts,mfa' }, { tenantId, organizationId }, page);
 };

@@ -6,12 +6,13 @@ import { deleteConnectionOp } from '#/modules/connections/operations/delete-conn
 import { getConnectionsOp } from '#/modules/connections/operations/get-connections';
 import { updateConnectionOp } from '#/modules/connections/operations/update-connection';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage, windowOf } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(connectionRoutes.listConnections, async (ctx) => {
-  const data = await getConnectionsOp(ctx);
-  return ctx.json(data, 200);
+  const connections = await getConnectionsOp(ctx);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(connections, page)), 200);
 });
 
 app.openapi(connectionRoutes.createConnection, async (ctx) => {

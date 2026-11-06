@@ -9,6 +9,7 @@ import { placementFieldsSchema, validatePlacement } from '#/permissions/product-
 import {
   batchResponseSchema,
   maxLength,
+  orderByQuerySchema,
   productListQuerySchema,
   stxStoredSchema,
   tenantOrgParamSchema,
@@ -109,7 +110,7 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 export const attachmentParamSchema = tenantOrgParamSchema.extend({ attachmentId: validIdSchema });
 
 export const attachmentListQuerySchema = productListQuerySchema({
-  sort: attachmentSortKeys.default('createdAt'),
+  orderBy: orderByQuerySchema(attachmentSortKeys.options, 'createdAt desc'),
   /** Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide. */
   channelId: validUuidSchema.optional(),
 });
