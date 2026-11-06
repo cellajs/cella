@@ -200,7 +200,7 @@ export const sharedDataTypes: SharedDataType[] = [
 ];
 
 /**
- * Accessibility review results the statement shows, nothing is claimed before a review. `pnpm -C a11y report --publish`
+ * Accessibility review results the statement shows, nothing is claimed before a review. `pnpm cella a11y report --publish`
  * prints them from the ledger; the descriptions are shortened here for the statement's reader.
  */
 export const accessibilityReview: AccessibilityReview = {

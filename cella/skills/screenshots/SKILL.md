@@ -8,40 +8,37 @@ description: Re-shoot the marketing screenshots this app ships: the device mocku
 The images in `frontend/public/static/marketing/` are shipped files, not generated ones: they show the app as it looked
 the day someone shot them. Re-shoot when the UI they show has moved: navigation, tables, the settings page, the theme.
 
-`shots-config.mjs` lists what this app shoots and is yours to edit; `shot-driver.mjs` handles the mechanics. Picking the
-state and judging the result is this skill's job, and the driver cannot do it: run it, then **look at every image**.
+`cella/screenshots.ts` lists what the template shoots, and `cella/screenshots.app.ts` what an app adds, removes or
+overrides; `pnpm cella screenshots` handles the mechanics. Picking the state and judging the result is this skill's job,
+and the command cannot do it: run it, then **look at every image**.
 
 ## Run
 
-- From the app's repo root: `node cella/skills/screenshots/shot-driver.mjs`. It attaches to this checkout's running
-  stack (launch it first: the [verify](../verify/SKILL.md) skill owns stack setup), mints a session for `ADMIN_EMAIL`,
-  writes both modes of every shot over the files the app ships, and prints each one's pixel and file size.
-- A trial run that leaves the working tree alone: `OUT_DIR=/tmp/shots node cella/skills/screenshots/shot-driver.mjs`.
-- One shot at a time, which is what the review loop uses: `node cella/skills/screenshots/shot-driver.mjs settings`.
-- The driver never seeds. It shoots whatever is in the database `backend/.env` names, so run `pnpm seed` first if a
-  table looks thin. Faker is unseeded, so every re-shoot swaps the names and dates: expect a full binary diff.
-- `format` in `shots-config.mjs` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and
-  the driver stops before the stack boots without it. It is written lossless, so the pixels are the screenshot's own;
-  Chromium's own lossless WebP weighs about what the PNG does.
+- `pnpm cella screenshots` shoots on a testbed: this checkout's running one, else one it starts and stops after. It
+  signs in as `ADMIN_EMAIL`, writes both modes of every shot over the files the app ships, and prints each one's pixel
+  and file size. Hold a testbed (`pnpm cella testbed`) through a review loop, so a re-shoot skips its start.
+- A trial run that leaves the working tree alone: `pnpm cella screenshots --out <dir>`.
+- One shot at a time, which is what the review loop uses: `pnpm cella screenshots settings`.
+- The testbed's database is seeded once and kept. Faker is unseeded, so a fresh one (`pnpm cella testbed --fresh`)
+  swaps the names and dates: expect a full binary diff.
+- `format` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and the command stops before
+  the testbed starts without it. It is written lossless, so the pixels are the screenshot's own; Chromium's own lossless
+  WebP weighs about what the PNG does.
 
-## A clean database
+## The database
 
 A development database that has been worked in fails the data check below: bench users, test rows, your own address,
-dozens of sessions. Reseeding it costs you that data, so shoot from a throwaway one: start the stack of
-[A throwaway database](../verify/SKILL.md#a-throwaway-database) in the verify skill and run
-`node cella/skills/screenshots/shot-driver.mjs` through the same exports. The driver's first line prints the
-origin it shoots: it must be the shifted one. On that database the driver also turns MFA on for the shot user, with a
-passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
+dozens of sessions. That is why the shots come from a testbed. On it the command also turns MFA on for the shot user,
+with a passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
 (`pnpm --filter backend showcase:mfa`), so the account page and the member tables show both states. Nobody can sign in
-with those factors, so it leaves the database `backend/.env` names alone.
+with those factors, which is why it never runs on the database `backend/.env` names.
 
-That stack starts no relay, so a shot of a collaborative description reads "Connecting...": start `src/yjs-worker.ts` in
-`yjs/` through the same exports. An app's seed can be heavy and a second stack slows the first, so shoot one app at a
-time, and shoot its tables with a wait for what they fill in last (`membersFilled`, `tidyTable`).
+An app's seed can be heavy, so shoot one app at a time, and shoot its tables with a wait for what they fill in last
+(`membersFilled`, `tidyTable`).
 
 ## Look at every image before you keep it
 
-Read each PNG. The driver reports sizes, not whether a shot is worth shipping.
+Read each image. The command reports sizes, not whether a shot is worth shipping.
 
 1. **Fill**: the shot matches its frame's ratio (`pc` and `pcWide` 16:9, `tablet` 3:4, `mobile` 9:16, `phone` 9:19.5). A
    slide renders `object-contain`, so a mismatch is letterboxed inside the mockup.
@@ -55,7 +52,7 @@ Read each PNG. The driver reports sizes, not whether a shot is worth shipping.
 6. **Crop**: a bottom row may be cut, which reads as "more below"; a header, a tab or a control may not.
 7. **Text**: English, no raw `about:...` translation keys, no truncation that reads as broken.
 8. **Weight**: at scale 2 a WebP shot weighs 50-120 KB, a PNG about three times that. Heavier than that wants a
-   smaller `scale` in `shots-config.mjs`; say so rather than shipping it quietly.
+   smaller `scale` for its device; say so rather than shipping it quietly.
 9. **Pair**: the light and dark shot show the same page, the same rows and the same scroll.
 
 Then fix the shot's `open` or the data and re-shoot that one id. Marketing images are what a first-time visitor judges
@@ -71,9 +68,12 @@ the product by: a half-loaded table or a stray tooltip is worth another run.
 
 ## In an app built on cella
 
-The driver and this file come from the template; `shots-config.mjs` is pinned to the app, so it keeps your routes and
-your output paths through a sync. The driver reads the app's own URL, ports and slug at runtime, so an app with its own
-slug and a linked worktree both work with no configuration.
+`cella/screenshots.ts` and this file come with an upgrade. The app's own shots, devices and format go in
+`cella/screenshots.app.ts` (`defineScreenshotsApp` from `@cellajs/cli/screenshots`), which no upgrade touches: a shot
+with a base id replaces it, `remove` drops base shots the app does not ship. Reuse the base's helpers (`openMenu`,
+`tidyHeader`, `hideDevUi`, `membersFilled`) rather than copies of them, so a template UI change reaches the app's shots
+too. Without the file the app shoots the template's list. The command reads the app's own URL, ports and slug at
+runtime, so an app with its own slug and a linked worktree both work with no configuration.
 
 cella's About page also shows **raak** on a phone (`showcases/raak-*.webp`). Those are another product's pixels: run
 this skill inside the raak checkout, whose shot list writes the four files to its gitignored `.temp/showcases/`
@@ -95,9 +95,9 @@ this skill inside the raak checkout, whose shot list writes the four files to it
 - While the sheet is open the page behind it is out of the accessibility tree: `getByRole` finds nothing there and
   reports no error. Reach for the page with a CSS or text locator.
 - A development build prints the entity id after the crumbs of a page header, and an admin gets an "Upload cover"
-  button over an entity without a cover. `tidyHeader` in `shots-config.mjs` hides both.
+  button over an entity without a cover. `tidyHeader` in `cella/screenshots.ts` hides both.
 - A Base UI switch keeps a 1x1 off-screen checkbox, and that is what carries the `id`. Clicking `#keepNavOpen` fails
   with "element is outside of the viewport" after 30 seconds; reach for `getByRole('switch', { name })`.
-- Every run mints a session ([verify](../verify/SKILL.md#drive-browser)), which the account page then lists as another
-  "Unnamed device". That is why `settings` frames the authentication card and not the sessions card above it.
+- Every run mints a session and signs it out at the end, and the account page lists it as another "Unnamed device"
+  while it runs. That is why `settings` frames the authentication card and not the sessions card above it.
 - To drive the app beyond a screenshot (breakpoints, scroll behavior), the `verify` skill has the rest.

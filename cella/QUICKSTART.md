@@ -77,10 +77,10 @@ Sets up and deploys a full stack on Scaleway ([infra guide](../infra/README.md))
 pnpm infra
 ```
 
-## Bench CLI
+## Load tests
 
-Load tests against the dev stack ([bench guide](../bench/README.md)).
+Load tests against the dev stack ([bench guide](../backend/bench/README.md)).
 
 ```bash
-pnpm bench
+pnpm cella bench
 ```

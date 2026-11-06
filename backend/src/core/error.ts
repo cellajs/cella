@@ -1,8 +1,9 @@
 import type { z } from '@hono/zod-openapi';
 import { i18n } from '#/lib/i18n';
-import type { locales } from '#/lib/i18n-locales';
 import type { apiErrorSchema } from '#/schemas/api-error-schemas';
 import type { ErrorCode } from '#/schemas/error-response-schemas';
+import type enAppError from '../../../locales/en/appError.json';
+import type enError from '../../../locales/en/error.json';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 /**
@@ -14,9 +15,8 @@ type ErrorMeta = NonNullable<ErrorSchemaType['meta']> & {
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
   tokenId?: string;
 };
-type ErrorTexts = (typeof locales)['en'];
 /** An error type: a key of `error.json`, or of `appError.json` for a type the app adds. */
-export type ErrorKey = Exclude<keyof ErrorTexts['error'] | keyof ErrorTexts['appError'], `${string}.text`>;
+export type ErrorKey = Exclude<keyof typeof enError | keyof typeof enAppError, `${string}.text`>;
 
 type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];
@@ -40,7 +40,7 @@ export class AppError extends Error {
   meta?: ErrorMeta;
 
   constructor(status: AppErrorStatus, type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
-    const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
+    const i18nOpts = { ns: ['appError', 'error'] as const, defaultValue: opts?.name ?? 'Unknown error' };
     // Passed to `super`, the cause stays non-enumerable as on a native error, so a log line never copies a library's plain-object cause.
     super(opts?.message ?? i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: i18n.t(type, i18nOpts) }), { cause: opts?.originalError?.cause });
 

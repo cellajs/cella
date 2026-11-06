@@ -46,7 +46,7 @@ jobs:
         run: pnpm biome check --write --unsafe --error-on-warnings && git diff --exit-code
 
       - name: Run style checks (terminology / docs / comments / frontend)
-        run: pnpm style
+        run: pnpm cella style
 
       - name: Run lens checks (append-only / collision / expand-before-contract / purity / wire completeness)
         run: pnpm --filter shared lens:check

@@ -230,7 +230,7 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
 
 Products often move into the new channel (`attachment` from `organization` to `project`). Change the
 product's `parent` in the hierarchy, then the pinned seed homes (`attachment-placement.ts`,
-`bench/src/seeds/attachment-home.ts`) and `attachmentUploadTargets` in the config. Rows that already
+`backend/bench/seeds/attachment-home.ts`) and `attachmentUploadTargets` in the config. Rows that already
 exist need a data migration that gives them the new id column.
 
 ## 6. Optional capabilities
@@ -273,9 +273,9 @@ exist need a data migration that gives them the new id column.
   registered in `frontend/src/query/extra-local-user-stores.ts` (pinned).
 - **Error types of its own**: `<type>` and `<type>.text` in `locales/en/appError.json`, thrown as
   `new AppError(status, '<type>', severity)`.
-- **Accessibility audit and load tests**: the new pages and their states in `a11y/scope-config.ts`
-  (pinned), with a placeholder for the slug; bench rows through `registerBenchSeed` in
-  `bench/src/seeds/` with an `order` after the rows they reference.
+- **Accessibility audit and load tests**: the new pages and their states in `cella/a11y.app.ts`
+  (the app's own), with a placeholder for the slug; bench rows through `registerBenchSeed` in
+  `backend/bench/seeds/` with an `order` after the rows they reference.
 
 ## 7. Verify
 

@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
-import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
+import { loadPlaywright, mintSession, signOut } from '@cellajs/cli/drive';
 
 const { values: args } = parseArgs({
   options: {
@@ -26,8 +26,9 @@ const adb = (command) => execSync(`${ADB} ${command}`, { encoding: 'buffer', max
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 mkdirSync(args.out, { recursive: true });
 
+const { chromium } = await loadPlaywright();
 const session = mintSession(args.email);
-const port = new URL(session.base).port;
+const port = new URL(session.frontendUrl).port;
 adb(`reverse tcp:${port} tcp:${port}`);
 adb('forward tcp:9222 localabstract:chrome_devtools_remote');
 
@@ -62,7 +63,7 @@ const tapPoint = async (x, y) => {
   adb(`shell input tap ${Math.round(x * dpr)} ${Math.round(pageBottom - (height - y) * dpr)}`);
 };
 
-await page.goto(new URL(args.path, session.base).href, { waitUntil: 'domcontentloaded' });
+await page.goto(new URL(args.path, session.frontendUrl).href, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector(args.tap[0] ?? args.editor);
 await sleep(3000);
 
@@ -169,7 +170,7 @@ const tapSelector = async (selector) => {
 const finish = async (code) => {
   writeFileSync(join(args.out, 'rows.json'), JSON.stringify(rows, null, 1));
   await browser.close();
-  await endSession(session);
+  await signOut(session);
   process.exit(code);
 };
 

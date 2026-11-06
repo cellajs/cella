@@ -17,7 +17,7 @@ export function WelcomeText({ invitations, organizations, onStart }: WelcomeText
   // An invited or joined user is greeted with what they came for, not with the pitch for starting something new.
   const [firstInvitation] = invitations;
   const [firstOrganization] = organizations;
-  let text = t('c:onboarding_welcome.text');
+  let text: string = t('c:onboarding_welcome.text');
   if (invitations.length > 1) text = t('c:onboarding_welcome_invitations.text', { count: invitations.length });
   else if (firstInvitation) {
     const { entity, organizationName } = firstInvitation;

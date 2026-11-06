@@ -1,13 +1,27 @@
 // Boot smoke for a checkout or a new app: starts the dev stack, waits for it, signs in as the seeded admin and opens the first pages. See SKILL.md.
 // Usage, from the app's repo root: [START='pnpm dev'] [EMAIL=<admin email>] [OUT_DIR=<dir>] node <cella>/cella/skills/verify/smoke-driver.mjs
 // START= (empty) attaches to a stack that already answers at the app's URLs.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, openSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 import { parseEnv } from 'node:util';
-import { chromium, endSession, mintSession } from './session-lib.mjs';
+
+// create-cella's nightly runs this file from a cella clone it never installs, against an app whose `@cellajs/cli` may
+// predate its drive library, so Playwright and the session come from the app under test, not from `@cellajs/cli/drive`.
+const { chromium } = createRequire(join(process.cwd(), 'frontend/package.json'))('playwright');
+
+/** A two-hour session for `email`; the mint prints the cookie and a curl line with the API URL of this checkout's config. */
+function mintSession(email) {
+  const minted = spawnSync('pnpm', ['--silent', '--filter', 'backend', 'session:mint', email, '2'], { encoding: 'utf8' });
+  const cookieMatch = /^([\w-]+-session-v\d+)=(\S+)$/m.exec(minted.stdout);
+  const apiMatch = /^curl (\S+)\/me /m.exec(minted.stdout);
+  if (!cookieMatch || !apiMatch) throw new Error(`Could not mint a session for ${email}:\n${minted.stdout}\n${minted.stderr}`);
+  const base = new URL(apiMatch[1]).origin;
+  return { base, api: apiMatch[1], cookie: { name: cookieMatch[1], value: cookieMatch[2], url: base, httpOnly: true, sameSite: 'Strict' } };
+}
 
 const OUT = process.env.OUT_DIR ?? join(tmpdir(), 'cella-smoke');
 mkdirSync(join(OUT, 'shots'), { recursive: true });
@@ -213,7 +227,9 @@ try {
   check(error instanceof Error ? error.message : String(error), false);
 } finally {
   await browser?.close();
-  await endSession(session);
+  // A JSON content type passes the CSRF check without an Origin header
+  const headers = { cookie: `${session.cookie.name}=${session.cookie.value}`, 'content-type': 'application/json' };
+  await fetch(`${api}/auth/sign-out`, { method: 'POST', headers }).catch(() => {});
   stop();
   writeFileSync(join(OUT, 'evidence.json'), JSON.stringify({ checks, evidence }, null, 2));
   const failed = checks.filter((entry) => !entry.ok).length;

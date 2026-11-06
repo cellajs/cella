@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { chromium, endSession, mintSession } from '../../verify/session-lib.mjs';
+import { loadPlaywright, mintSession, signOut } from '@cellajs/cli/drive';
 import { classSources, printHeader, repoRoot } from './lib.mjs';
 
 // Flips every class the frontend sets on body or html and reports how many elements each flip restyles: the check behind the
@@ -40,6 +40,7 @@ async function restyledElements(cdp, page, flip) {
 }
 
 printHeader();
+const { chromium } = await loadPlaywright();
 const session = email ? mintSession(email) : undefined;
 const browser = await chromium.launch();
 try {
@@ -71,5 +72,5 @@ try {
   }
 } finally {
   await browser.close();
-  await endSession(session);
+  await signOut(session);
 }

@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { config } from '../config/config.default.ts';
 import { localDatabasePort } from '../src/local-database.ts';
-import { repoRoot, withRestoredPaths } from './repo-files.ts';
 import { applyLeaves, appShapeDefaultOnlyLeaves, appShapeLeaves, appShapePermissionsEdit } from './write-template-config.ts';
 
 const mode = process.argv[2];
@@ -17,6 +16,7 @@ if (mode !== 'template' && mode !== 'app') {
 const { slug } = config;
 const testDatabaseEnv = { ...process.env, DB_TEST_PORT: String(localDatabasePort('test')) };
 
+const repoRoot = join(import.meta.dirname, '..', '..');
 const configDir = join(repoRoot, 'shared/config');
 const templatePath = join(configDir, 'config.template.ts');
 
@@ -28,6 +28,30 @@ if (!existsSync(templatePath)) {
 }
 
 let failed = false;
+
+/**
+ * Runs `run`, which may rewrite files under `paths`, and restores those paths from git afterwards: also when `run`
+ * throws, and when the process is interrupted while a command of `run` is under way. Exits 1 without running when
+ * a path holds uncommitted changes, since the restore would discard them.
+ */
+function withRestoredPaths(paths: string[], run: () => void): void {
+  const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  if (git(['status', '--porcelain', '--', ...paths]).trim()) {
+    console.error(`Commit the changes under ${paths.join(' and ')} first: the check restores them from git.`);
+    process.exit(1);
+  }
+  // With a handler set, an interrupt ends the running command and its error reaches the `finally` below.
+  const interrupted = () => process.exit(130);
+  process.once('SIGINT', interrupted);
+  process.once('SIGTERM', interrupted);
+  try {
+    run();
+  } finally {
+    git(['checkout', '--', ...paths]);
+    process.off('SIGINT', interrupted);
+    process.off('SIGTERM', interrupted);
+  }
+}
 
 /** Typechecks the repo as a new app has it; `--tests` adds the sign-in, connections and SSO federation client suites. */
 const checkTemplateShape = () => {
