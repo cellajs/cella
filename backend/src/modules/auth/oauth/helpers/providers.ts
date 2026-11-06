@@ -11,8 +11,8 @@ export class OAuthCodeExchangeError extends Error {
   }
 }
 
-/** Per-flow values minted at initiation and echoed back on the callback via the state cookie. */
-export type OAuthFlowContext = { codeVerifier?: string; nonce?: string };
+/** Per-flow values minted at initiation and echoed back on the callback via the state cookie; only an OIDC provider takes a nonce. */
+export type OAuthFlowContext = { codeVerifier: string; nonce?: string };
 
 type ProviderSetup = {
   as: oauth.AuthorizationServer & { authorization_endpoint: string };
@@ -52,30 +52,26 @@ const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, r
   return {
     /** False without a client id and secret in the environment: the provider would refuse the round trip. */
     configured: Boolean(clientId && clientSecret),
+    /** An OIDC provider: its round trip carries a nonce, which the id_token must echo. */
+    oidc,
 
-    /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
-    createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
+    /** Builds the provider authorization URL with state, scopes, the PKCE challenge and, for an OIDC provider, the nonce. */
+    createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext): Promise<URL> {
       return authorizationUrl(as.authorization_endpoint, { clientId, redirectUri, scopes, state, codeVerifier, nonce });
     },
 
     /**
-     * Exchanges the authorization code for tokens, enforcing PKCE when a `codeVerifier` is given. OIDC providers also get
-     * id_token claim validation, `nonce` binding, and a signature check against the provider JWKS.
+     * Exchanges the authorization code for tokens with the PKCE verifier. OIDC providers also get id_token claim
+     * validation, `nonce` binding, and a signature check against the provider JWKS.
      */
-    async validateAuthorizationCode(code: string, state: string, { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<{ accessToken: string }> {
+    async validateAuthorizationCode(code: string, state: string, { codeVerifier, nonce }: OAuthFlowContext): Promise<{ accessToken: string }> {
       try {
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
         const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
-        const response = await oauth.authorizationCodeGrantRequest(
-          as,
-          client,
-          clientAuth,
-          callbackParams,
-          redirectUri,
-          codeVerifier ?? oauth.nopkce,
-          { signal: providerDeadline() },
-        );
+        const response = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier, {
+          signal: providerDeadline(),
+        });
 
         const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(response, as) : as;
         const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, response, {
