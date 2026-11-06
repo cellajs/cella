@@ -32,7 +32,6 @@ export interface LocaleResources {
     "cella_approach_point_3": "Lock-in or framework constraints should be avoided";
     "community.text": "Cella is open-source and wants to work together with other OS projects & teams.";
     "community.title": "Faster together";
-    "continue_below_fold": "Read more about Cella";
     "faq.text": "Frequently asked questions. Is your question not included? Please reach out to us.";
     "faq.title": "FAQs";
     "features.accessibility": "Accessibility (WCAG 2.2 AA)";
@@ -186,7 +185,6 @@ export interface LocaleResources {
     "features.yjs_collaboration.text": "Real-time co-editing with live presence, powered by Yjs. While connected, concurrent edits merge cleanly with no conflicts.";
     "features.zero_downtime": "Zero-downtime deploys";
     "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.";
-    "github_star": "View on GitHub";
     "hero.text": "A <strong>TypeScript template</strong> to build your own EU-hosted app with offline & real-time sync features.";
     "hero.title": "Ship modern web apps. Use a classic REST API.";
     "how.concept_1": "Sync processes don't compete, they complement the REST API";
@@ -728,6 +726,7 @@ export interface LocaleResources {
     "invite": "Invite";
     "invite_accept_as_account": "Accept invitation?";
     "invite_accept_as_account.text": "{{inviterName}} invited you to join {{entityName}} as {{role, lowercase}}.";
+    "invite_accept_as_account_in_organization.text": "{{inviterName}} invited you to join {{entityName}} at {{organizationName}} as {{role, lowercase}}.";
     "invite_address_confirmed": "You join as {{accountEmail}}. {{invitedEmail}} is not added to your account.";
     "invite_already_listed": "{{address}} is already in the list.";
     "invite_and_remind": "Invite and remind";
@@ -750,6 +749,7 @@ export interface LocaleResources {
     "invite_hint_search": "Only people you are connected with in {{appName}} show up. A pick moves below and stays checked here, and a second press removes it.";
     "invite_join": "Join {{name}}";
     "invite_join.text": "{{inviterName}} invited you as {{role, lowercase}}.";
+    "invite_join_in_organization.text": "{{inviterName}} invited you to {{entityName}} at {{organizationName}} as {{role, lowercase}}.";
     "invite_join_system.text": "{{inviterName}} invited you to join {{appName}}.";
     "invite_link_spent": "This invitation link has expired or was already used. Open the link in your newest invitation email, or ask for a new invitation.";
     "invite_members.text": "Invite others to join <strong>{{name}}</strong>.";

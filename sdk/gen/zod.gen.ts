@@ -865,6 +865,7 @@ export const zGetTokenDataResponse = z.object({
     .object({
       entityType: z.enum(['organization']),
       entityName: z.string(),
+      organizationName: z.string().optional(),
       role: z.enum(['admin', 'member']),
       inviterName: z.string(),
     })

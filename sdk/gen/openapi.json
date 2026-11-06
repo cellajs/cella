@@ -3861,6 +3861,9 @@
                         "entityName": {
                           "type": "string"
                         },
+                        "organizationName": {
+                          "type": "string"
+                        },
                         "role": {
                           "type": "string",
                           "enum": ["admin", "member"]

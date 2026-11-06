@@ -28,8 +28,10 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
 
   const inactiveMembership = await findInactiveMembershipById(ctx, { id: tokenRecord.inactiveMembershipId });
   if (inactiveMembership) {
-    const [entity, inviter, connection] = await Promise.all([
-      resolveEntity(ctx, { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId }),
+    const { channelType, channelId, organizationId } = inactiveMembership;
+    const [entity, organization, inviter, connection] = await Promise.all([
+      resolveEntity(ctx, { entityType: channelType, identifier: channelId }),
+      channelType === 'organization' ? null : resolveEntity(ctx, { entityType: 'organization', identifier: organizationId }),
       findUserById(ctx, { id: inactiveMembership.createdBy }),
       findSsoConnectionByTenant(ctx, { tenantId: inactiveMembership.tenantId }),
     ]);
@@ -39,8 +41,9 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     }
     if (entity) {
       tokenData.invitation = {
-        entityType: inactiveMembership.channelType,
+        entityType: channelType,
         entityName: entity.name,
+        organizationName: organization?.name,
         role: inactiveMembership.role,
         inviterName: inviter?.name ?? '',
       };
