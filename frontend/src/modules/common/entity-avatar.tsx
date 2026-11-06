@@ -35,13 +35,19 @@ export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: I
     <Avatar {...props} data-type={type} className={cn('rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} className="transition-[filter]" />}
       {/* The fallback is the container, so the letters scale with the avatar; a user's two letters at every size, bolder below size-6 and a step smaller above it */}
-      <AvatarFallback className={cn('@container transition-colors', avatarBackground)}>
+      {/* The letters inherit their color: set on the letters, the dark contrast step would outrank the resting-avatar rule */}
+      <AvatarFallback
+        className={cn(
+          'more-contrast:text-black/85 dark:more-contrast:text-white/90 @container text-black/50 transition-colors dark:text-white/60',
+          avatarBackground,
+        )}
+      >
         <span className="sr-only">{name}</span>
         {/* Trimmed to cap height and baseline, so the fallback centers the letters: Inter's line box sits them about 1px high */}
         <div
           aria-hidden
           className={cn(
-            'more-contrast:text-black/85 text-[50cqi] leading-none font-semibold text-black/50 transition-colors [text-box:trim-both_cap_alphabetic]',
+            'text-[50cqi] leading-none font-semibold transition-colors [text-box:trim-both_cap_alphabetic]',
             isUser && '@max-[1.5rem]:font-bold @min-[calc(1.5rem+1px)]:text-[40cqi]',
           )}
         >
