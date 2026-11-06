@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.37.0](https://github.com/cellajs/cella/compare/0.36.0...0.37.0) (2026-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* newcomer journey wave two: accept on the link path, admin-only MFA banner, unseen from the join ([#1722](https://github.com/cellajs/cella/issues/1722))
+* **infra:** the main job's schedule replaces the runner ([#1718](https://github.com/cellajs/cella/issues/1718))
+* notifications show their organization, held invitations mail in its language, and editor, board and menu tuning ([#1715](https://github.com/cellajs/cella/issues/1715))
+
+### 🎉 New features
+
+* about page laptop runs past the window, passkey tiles take a fingerprint badge ([#1719](https://github.com/cellajs/cella/issues/1719)) ([da14065](https://github.com/cellajs/cella/commit/da1406530ae7753568137db6bfe88dbd782f85e5))
+* **infra:** the main job's schedule replaces the runner ([#1718](https://github.com/cellajs/cella/issues/1718)) ([dc20b31](https://github.com/cellajs/cella/commit/dc20b31a0ac6ec509e09fda924259c692db565e8))
+* newcomer journey wave two: accept on the link path, admin-only MFA banner, unseen from the join ([#1722](https://github.com/cellajs/cella/issues/1722)) ([31b2085](https://github.com/cellajs/cella/commit/31b2085893296779f9c3e9451919d3b549cd021f))
+* notifications show their organization, held invitations mail in its language, and editor, board and menu tuning ([#1715](https://github.com/cellajs/cella/issues/1715)) ([4466cb0](https://github.com/cellajs/cella/commit/4466cb08d4038d5012758ca723932970a7b245a9))
+* sign-in alternatives group on glass, the React Compiler runs through oxc, and marketing shots are re-shot ([#1721](https://github.com/cellajs/cella/issues/1721)) ([bcee692](https://github.com/cellajs/cella/commit/bcee6920b96933b6cf982bd2354db4c6853fd047))
+
+
+### 🐞 Bug fixes
+
+* **infra:** the runner reads the registry, which a start of the engine image takes ([#1713](https://github.com/cellajs/cella/issues/1713)) ([8b5748c](https://github.com/cellajs/cella/commit/8b5748ccaa3c8ef5f0528112a2ba2cb617a4d81d))
+* newcomer journey findings from raak ([#1720](https://github.com/cellajs/cella/issues/1720)) ([6c738f7](https://github.com/cellajs/cella/commit/6c738f7ba7edd1e4a6f4991424d1ffc8dc86ecaa))
+
+
+### 🏗️ Build & deps
+
+* one install action, storybook in the test matrix, a fresh-SDK check, and privileged-changes in the merge gate ([#1712](https://github.com/cellajs/cella/issues/1712)) ([865446e](https://github.com/cellajs/cella/commit/865446e20853c6762f63a4c152380aebf872ecab))
+* the frontend-build job runs the builder's script; status probes enabled services only ([#1717](https://github.com/cellajs/cella/issues/1717)) ([5ced2d1](https://github.com/cellajs/cella/commit/5ced2d131beea0766cd9956b690b80c6e978eee5))
+
+
+### 🧹 Chores
+
+* **infra:** the production stack file loses the legacy-servers key ([#1716](https://github.com/cellajs/cella/issues/1716)) ([b250e35](https://github.com/cellajs/cella/commit/b250e35562a152212041b49232b0ec694e6b7fca))
+
 ## [0.36.0](https://github.com/cellajs/cella/compare/0.35.0...0.36.0) (2026-11-04)
 
 
