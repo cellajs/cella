@@ -368,7 +368,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   await provisionBaseInfra(ctx, operatorSecrets);
   if (firstSetup) {
     console.info(
-      `\n${checkMark} ${environment} is provisioned. The first release is deployed like every other: \`${actionCommand('runner-identity')}\` and \`${actionCommand('runner-replace')}\` set up the runner, which starts it, or \`${actionCommand('start-deploy')}\` starts it now.`,
+      `\n${checkMark} ${environment} is provisioned. The first release is deployed like every other: the next scheduled run of the main job starts it, or \`${actionCommand('start-deploy')}\` starts it now.`,
     );
     console.info(`  ${pc.dim(`Commit infra/Pulumi.${environment}.yaml, so other checkouts see the stack set up; deploys do not need it.`)}`);
   }

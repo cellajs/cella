@@ -17,6 +17,8 @@ export interface LeaseOptions {
   waitMs?: number;
   /** Poll cadence while waiting. */
   pollMs?: number;
+  /** Take over a lock held under `owner` itself, as a child takes the lease its parent handed it. */
+  adopt?: boolean;
   /** Called on every poll while waiting, with the holder and the time left before giving up. */
   onWait?: (held: LockInfo, remainingMs: number) => void;
   /** Called when a renewal fails (network) or finds the lock taken by someone else. */
@@ -47,7 +49,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
   const now = opts.now ?? Date.now;
   const sleep = opts.sleep ?? defaultSleep;
   const deadline = now() + (opts.waitMs ?? 0);
-  const lockOpts = { owner: opts.owner, operation: opts.operation, ttlMs };
+  const lockOpts = { owner: opts.owner, operation: opts.operation, ttlMs, adopt: opts.adopt };
 
   let result = await acquireLock(opts.s3, opts.bucket, opts.key, { ...lockOpts, now: now() });
   while (!result.acquired) {

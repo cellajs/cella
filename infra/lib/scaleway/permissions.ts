@@ -71,14 +71,6 @@ export const OBSERVER_PROJECT_PERMISSION_SETS = [
 /** Org-scoped observer set: IAM reads, so `status` and the identity plan can name what exists. */
 export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-/**
- * Project-scoped sets for the runner (`<app>-runner`), in each environment it serves: starting and reading the main job's runs. Scaleway has
- * no set that starts a run and cannot edit a definition, so the runner reaches what its jobs reference. A start of a definition whose image
- * lives in the project's registry, as the engine image does, also takes read on the namespace and the image: without the registry set the
- * start answers 403. Its one rule carries the condition of its reserved address.
- */
-export const RUNNER_PROJECT_PERMISSION_SETS = ['ServerlessJobsFullAccess', 'ContainerRegistryReadOnly'] as const;
-
 // Operators (`<app>-operator`, `<app>-operators`): the principals a person runs privileged actions as, one set per app
 
 /**

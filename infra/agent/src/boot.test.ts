@@ -120,7 +120,7 @@ describe('boot', () => {
     const cookieSecret = 'ck-8888bbbbdd';
     const sinkKey = 'ik-9999ccccee';
     writePlan();
-    // The host boot log, mounted into the runner: cloud-init's script and earlier output, a secret among it without its name.
+    // The host boot log, mounted into the agent: cloud-init's script and earlier output, a secret among it without its name.
     files.set('/var/log/infra-boot.log', `::cella:: boot start\nlauncher saw ${cookieSecret}\nDATABASE_URL=${dsn}\n`);
     const sent = stubNetwork({ env: `DATABASE_URL=${dsn}\nCOOKIE_SECRET=${cookieSecret}\nSINK_INGEST_KEY=${sinkKey}\n` });
     const printed: string[] = [];

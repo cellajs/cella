@@ -181,10 +181,33 @@ export function stateBackendUrl(bucket: string, region: string): string {
   return `s3://${bucket}?endpoint=s3.${region}.scw.cloud&region=${region}`;
 }
 
-/** Identifies the writer in `updatedBy` and the lease: a main job run (its target) or a local operator. */
+/** Identifies the writer in `updatedBy`, and an operator action's lease: a main job run (its target) or a local operator. */
 export function controlActor(): string {
   if (process.env.TARGET_SHA) return `job:${process.env.TARGET_SHA.slice(0, 10)}`;
   return `operator:${process.env.USER ?? process.env.LOGNAME ?? 'unknown'}`;
+}
+
+/** The lease owner a run holds the lease as: its id, which a scheduled run that finds the lease held names. */
+export function leaseOwnerOfRun(run: string): string {
+  return `run:${run}`;
+}
+
+/** The lease's operation while a run deploys, the one that makes and deletes machines; a scheduled run that only looks holds another. */
+export const DEPLOY_OPERATION = 'deploy';
+
+/** True for a lease a deploy holds: a run's, under the deploy operation. */
+export function leaseDeploys(info: { owner?: string; operation?: string }): boolean {
+  return Boolean(info.owner?.startsWith('run:') && info.operation === DEPLOY_OPERATION);
+}
+
+/** True while a deploy holds a live lease under this run: its record that says running is deploying, and interrupted otherwise. */
+export function leaseHeldByRun(lock: { owner?: string; operation?: string; expiresAt?: string } | undefined, run: string, now = Date.now()): boolean {
+  return lock?.owner === leaseOwnerOfRun(run) && lock.operation === DEPLOY_OPERATION && Date.parse(lock.expiresAt ?? '') > now;
+}
+
+/** Who holds a lease, as a person reads it: `run <id>` for a deploy, else the holder and its operation. */
+export function leaseHolder(info: Pick<LockInfo, 'owner' | 'operation'>): string {
+  return info.owner.startsWith('run:') ? `run ${info.owner.slice('run:'.length)}` : `${info.owner} (${info.operation})`;
 }
 
 /** Metadata for the conditional-write lock that serializes changes to an environment. */
@@ -224,12 +247,15 @@ export async function peekLock(s3: S3Like, bucket: string, key: string): Promise
   return (await readLock(s3, bucket, key)).info;
 }
 
-/** Acquire the lock. Returns `{acquired:false, held}` when a live lock is held by someone else; breaks and takes an expired lock. */
+/**
+ * Acquire the lock. Returns `{acquired:false, held}` when a live lock is held by someone else; breaks and takes an expired lock. With
+ * `adopt`, a lock held under the same owner is taken over: a process hands its lease to the child it starts, under the child's run.
+ */
 export async function acquireLock(
   s3: S3Like,
   bucket: string,
   key: string,
-  opts: { owner: string; operation: string; ttlMs: number; now?: number },
+  opts: { owner: string; operation: string; ttlMs: number; now?: number; adopt?: boolean },
 ): Promise<AcquireResult> {
   const now = opts.now ?? Date.now();
   const info: LockInfo = {
@@ -246,7 +272,7 @@ export async function acquireLock(
   }
   // A lock object exists; break it only if it has expired.
   const { info: held, etag } = await readLock(s3, bucket, key);
-  if (held && Date.parse(held.expiresAt) > now) return { acquired: false, held };
+  if (held && Date.parse(held.expiresAt) > now && !(opts.adopt && held.owner === opts.owner)) return { acquired: false, held };
   try {
     await putLock(s3, bucket, key, info, conditionOn(etag));
     return { acquired: true, info };
@@ -282,6 +308,33 @@ export async function renewLock(s3: S3Like, bucket: string, key: string, owner: 
     if (!isPreconditionFailed(err)) throw err;
     const { info: raced } = await readLock(s3, bucket, key);
     return { renewed: false, held: raced };
+  }
+}
+
+/**
+ * Give our own lock to another owner and operation under `If-Match`, with a fresh expiry: false when it is no longer ours, or was replaced
+ * between read and write.
+ */
+export async function handOverLock(
+  s3: S3Like,
+  bucket: string,
+  key: string,
+  opts: { from: string; to: string; operation: string; ttlMs: number; now?: number },
+): Promise<boolean> {
+  const { info, etag } = await readLock(s3, bucket, key);
+  if (!info || info.owner !== opts.from) return false;
+  const next: LockInfo = {
+    ...info,
+    owner: opts.to,
+    operation: opts.operation,
+    expiresAt: new Date((opts.now ?? Date.now()) + opts.ttlMs).toISOString(),
+  };
+  try {
+    await putLock(s3, bucket, key, next, conditionOn(etag));
+    return true;
+  } catch (err) {
+    if (isPreconditionFailed(err)) return false;
+    throw err;
   }
 }
 

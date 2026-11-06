@@ -17,7 +17,7 @@ export function operatorReach(mode: string, projectId: string, others: ReadonlyM
 
 /**
  * Write the app's operators with an Owner key the caller holds: the operator application, the operators group and a policy for each, over
- * `reach` and every project the operator policy reaches today (the runner's among them, which no environment file on this machine names).
+ * `reach` and every project the operator policy reaches today, one that no environment file on this machine names included.
  */
 async function writeOperators(
   context: InfraContext,

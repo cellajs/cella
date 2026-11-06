@@ -141,8 +141,8 @@ export async function deleteMachine(auth: ScwAuth, zone: string, serverId: strin
 }
 
 /**
- * Delete every machine of a project whose name starts with `prefix`, with its root volume: builders, before and after a build and at a
- * teardown, and the runner, when it is replaced. Returns the names deleted.
+ * Delete every machine of a project whose name starts with `prefix`, with its root volume: builders, before and after a build, and at a
+ * teardown. Returns the names deleted.
  */
 export async function removeMachines(opts: { secretKey: string; projectId: string; zone: string; prefix: string }): Promise<string[]> {
   const auth = { secretKey: opts.secretKey };

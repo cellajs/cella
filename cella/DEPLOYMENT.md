@@ -6,7 +6,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 
 Publishing a release starts an automatic deployment: it creates new machines for that exact version,
 waits until the load balancer sees them healthy, then drains and removes the old machines.
-[Pulumi](https://www.pulumi.com/) manages the foundation (network, load balancer, database, buckets), a deploy makes and deletes the machines itself, and a runner inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
+[Pulumi](https://www.pulumi.com/) manages the foundation (network, load balancer, database, buckets), a deploy makes and deletes the machines itself, and a schedule inside the Scaleway organization starts each deploy, so GitHub holds the code and no key.
 Every deploy runs the engine the last apply published, and a release that describes the app otherwise waits for an apply.
 Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), with only the permissions they need, and the machines hold none: they fetch the release and their secrets through links that end within minutes.
 
@@ -61,7 +61,7 @@ Resources and traffic flow:
 
 ## Deploys
 
-Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. The [runner](#the-runner) starts one when the target moves; a rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
+Every deploy is a run of the environment's [main job](#the-main-job) for its **target**, the commit the environment should run. A [scheduled run](#the-schedule) deploys it once the target moves; a rotation, an action that clears a block and `pnpm infra start-deploy` start one too.
 
 ### What a deploy deploys
 
@@ -80,9 +80,9 @@ A target is one of:
 - A release tag, such as `0.18.0`.
 - A full commit id.
 
-An environment that follows the releases, as production does, takes `releases` or a release tag only: merging a line is not publishing a release. A line holds its environment until it is removed, also when a newer release is published. Raising the retry counter asks for the same target once more. The runner reads the file at the head of the default branch, so a change takes effect about a minute after its merge, and a file it cannot read starts nothing.
+An environment that follows the releases, as production does, takes `releases` or a release tag only: merging a line is not publishing a release. A line holds its environment until it is removed, also when a newer release is published. Raising the retry counter asks for the same target once more. A scheduled run reads the file at the head of the default branch, so a change takes effect at the first scheduled run after its merge, and a file it cannot read starts nothing.
 
-**Pausing staging.** Removing staging's line stops its deploys, not its cost: its machines keep running. To stop the cost, tear staging down (`pnpm infra teardown --mode staging`), drop it from `infra/runner.json` and **Replace the runner**.
+**Pausing staging.** Removing staging's line stops its deploys, not its cost: its machines keep running. To stop the cost, tear staging down (`pnpm infra teardown --mode staging`).
 
 **Rollback.** No old machine is kept to switch back to: pin the environment to the earlier release, or commit a revert. The deploy takes the same forward path and reuses the earlier build, as a build is kept by its commit. It runs the applied engine, so an earlier release whose description of the app differs ends **apply needed** until an apply from a checkout at that release publishes its engine. A release older than the applied engine reports no description and cannot be deployed: roll forward then.
 
@@ -90,7 +90,7 @@ An environment that follows the releases, as production does, takes `releases` o
 
 ### The main job
 
-Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy, and the **engine image** its runs start from, by digest. The image carries the engine and the **applied description**: the app as the checkout the apply ran from describes it to the engine ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A run fetches and installs nothing: the image starts its deploy with the target, the retry counter, the deploy key and the project, and no other value a start sets. A deploy reads no Pulumi state and no passphrase.
+Each environment has a Serverless Jobs definition, `<slug>-main`, and every run of it deploys at most one target. The definition is privileged: an apply makes it, because it names the secret its runs read, the deploy key's copy, the **engine image** its runs start from, by digest, and the [schedule](#the-schedule) that starts them. The image carries the engine and the **applied description**: the app as the checkout the apply ran from describes it to the engine ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A run installs nothing: the image starts its deploy with the target, the retry counter, the deploy key and the project, and no other value a start sets. A deploy reads no Pulumi state and no passphrase.
 
 The target's code never runs beside the deploy key. The builder evaluates the target's own description from its checkout, in a container that holds no key, and reports its hash beside the archives' digests. Before the deploy reads a runtime value, it holds that hash against the image's, and a release that describes the app otherwise ends **apply needed**.
 
@@ -102,25 +102,25 @@ A run ends in one of five outcomes:
 - **Apply needed:** the target describes the app otherwise than the applied engine, or the run did not start from an engine image; nothing was composed or booted ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)). The apply from a checkout at the target starts it again.
 - **Failed:** every role it did not switch keeps its machine, and the target waits for a change in git or a start by hand.
 
-`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`; the runner reads the default branch's. The run's log is in Cockpit under Serverless Jobs.
+`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`; a scheduled run reads the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
 **Releases only.** In an environment that follows the releases, as production does, the engine refuses a target that no release tag names, before the deploy starts. It reads the rule from the environment its image was built for, so no value a start sets turns the check off or moves the run elsewhere: it catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, which gets past that check: Show runs flags such a run.
 
 The rule is as strong as who may push a tag: `99.0.0` pushed on any commit is the newest release. So an app sets a ruleset that restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
-### The runner
+### The schedule
 
-One small machine per app starts its deploys. Once a minute, for every environment it serves, it finds the target and starts a run of the main job when that target and retry counter have none. Scaleway's list of runs is its memory, so it starts each target once: a failed one waits for a change in git, and a blocked one for an operator to clear the block.
+Scaleway starts a run of the main job every minute in production and every five minutes in staging: the cadence is each environment's to set, as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts), and a release waits at most that long for its deploy. A scheduled run takes the lease before it reads anything, so one run looks at a time; when a deploy or an operator action holds the lease, it ends at once and the next one looks again. It then finds the environment's target and looks for a run record of that target and retry counter: with one it ends within seconds and names the run it found, without one it opens the target's record and deploys the target itself. The records are the schedule's memory, so it deploys each target once: a failed one waits for a change in git, a blocked one for an operator to clear the block, and a deploy that died before it finished leaves a record that reads as interrupted.
 
-`infra/runner.json` is committed: the runner's project, the release its program runs from and the environments it serves. **Set up the runner** adds an environment ([Fresh installation](./deployment/FRESH_INSTALLATION.md)), and **Replace the runner** (`pnpm infra runner-replace`) gives the machine the file's release and environments: run it after the file changes. Nothing reaches the machine from outside; its log is on its serial console.
+The schedule is part of the definition, so an apply writes it and nothing else is set up for the deploys to start. A scheduled run that starts nothing leaves no record; **Show status** names a schedule that stopped, one missing from the definition or whose runs fail, and Show runs says when the last scheduled run started.
 
 ### Run records
 
-Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every new machine also uploads a **boot account** at the end of its first boot, through its link: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed switch's record names each new machine's account.
+Every deploy writes one record to the environment's boot-diag bucket, updated after every step: the target and its retry counter, each step with its duration, the failed step with its error, and the outcome, beside the deploy's log. Every new machine also uploads a **boot account** at the end of its first boot, through its link: its boot log and a crashed container's output. Both are scrubbed of secrets before upload, and a failed switch's record names each new machine's account.
 
-**Show runs** (`pnpm infra runs`, observer key) lists the last ten runs and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
+**Show runs** (`pnpm infra runs`, observer key) lists the last ten deploys, below one sentence on the last scheduled run, and shows one in full: a failed machine's boot error, then the end of the run's log. `--machines` shows each service's newest boot account, `--sha <sha>` every account of one release with the builder's report.
 
-Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs reads a record by its first version: each later version counts only where it grows the one before (the same steps with the same outcomes, then more steps or the end; the log likewise only grows), and the first version that does not is named as a rewrite, as only the deploy key or a stolen copy writes there; the run is shown as it stood before it, and `status` reports a rewrite of the newest record. Show runs also flags a record that disagrees with Scaleway's job run, which no key of the engine writes, and a job run started with values or a command the engine never sets. A record that cannot be written does not fail the deploy.
+Records, boot accounts and Scaleway's job runs are kept for 60 days, and the bucket keeps versions, so the deploy key cannot erase one. Show runs reads a record by its first version: each later version counts only where it grows the one before (the same steps with the same outcomes, then more steps or the end; the log likewise only grows), and the first version that does not is named as a rewrite, as only the deploy key or a stolen copy writes there; the run is shown as it stood before it, and `status` reports a rewrite of the newest record. Show runs also reads a record that still says running as interrupted unless a deploy holds the lease under its run, and flags a job run started with values or a command the engine never sets. A record a deploy cannot write does not fail it; the record a scheduled run opens must be written before it deploys.
 
 ### The builder
 
@@ -129,7 +129,7 @@ When the boot-diag bucket lacks the release's manifest, or an archive the manife
 ## Deploy flow
 
 ```
-The runner sees a new target and starts a run of the main job
+A scheduled run finds a target without a run, and deploys it
         ↓
 The lease, then the live record: every role that serves the
 target already is left as it is (all of them: unchanged)
@@ -191,5 +191,5 @@ All tunable infra config lives in committed, type-checked files under [config/](
 | File | Owns | Applied by |
 | --- | --- | --- |
 | [config/services.config.ts](../infra/config/services.config.ts) | Per service: machine size, replacement strategy, drain, load balancer route, env. `appConfig.services.<name>.enabled` decides which exist | **Review & apply changes**, then the deploys make machines as it says |
-| [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention | **Review & apply changes** (privileged) |
+| [config/general.config.ts](../infra/config/general.config.ts) | Database node and volume, asset retention, the schedule's cadence | **Review & apply changes** (privileged) |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | **Review & apply changes** (privileged) |

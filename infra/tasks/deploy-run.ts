@@ -6,7 +6,7 @@ import { APPLY_NEEDED, ApplyNeededError, descriptionMismatch, type EngineStamp, 
 import { type DeployTarget, type LiveRecord, rolesToReplace } from '../lib/deploy/live-record';
 import { MAIN_JOB_EXIT } from '../lib/deploy/main-job';
 import { parseReleaseManifest, type ReleaseManifest } from '../lib/deploy/release-archives';
-import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
+import { type RunBootAccount, type RunRecord, RunRecorder, runId, runLogKey, runRecordKey, runStartedAt } from '../lib/deploy/run-record';
 import type { MachineRole } from '../lib/machine-roles';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
@@ -30,7 +30,7 @@ export interface DeployOptions {
   sha: string;
   /** The retry counter of the environment's line: a raised one deploys the target again, onto new machines. */
   retry: number;
-  /** The run's id in its record; a new one (start time and target) when not given. */
+  /** The run's id in its record and on the lease, a scheduled run's that opened both; a new one (start time and target) when not given. */
   run?: string;
 }
 
@@ -60,8 +60,11 @@ export interface DeployEffects {
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** A file a task wrote for the steps after it. */
   readFile(path: string): Promise<string>;
-  /** Hold the environment's lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
-  lease(stack: string, operation: 'deploy'): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
+  /**
+   * Hold the environment's lease for the run, under the run's id (renewed in-process, released on exit or signal); throws when another
+   * holder keeps it.
+   */
+  lease(stack: string, operation: 'deploy', run: string): Promise<{ release(): Promise<void>; readonly lost: boolean }>;
   /** The environment's machine roles, the live record and the rotation counter. */
   readLive(stack: string): Promise<{ roles: MachineRole[]; record: LiveRecord; rotation: number }>;
   /** The stamp of the engine image the run started from; undefined outside one. */
@@ -129,7 +132,13 @@ export async function runDeploy(
   const stack = env.stack;
 
   // One run, one record: written at the start, after every step and at the end, so a run killed at the job's limit still shows how far it came.
-  const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
+  const recorder = new RunRecorder({
+    run: opts.run ?? runId(opts.sha),
+    environment: opts.mode,
+    target: opts.sha,
+    retry: opts.retry,
+    now: opts.run ? runStartedAt(opts.run) : undefined,
+  });
   const say = (message: string) => {
     recorder.line(message);
     fx.info(message);
@@ -192,7 +201,7 @@ export async function runDeploy(
   let failure: unknown;
   try {
     await step('Acquire the lease', async () => {
-      lease = await fx.lease(stack, 'deploy');
+      lease = await fx.lease(stack, 'deploy', recorder.record().run);
     });
     // The live record decides what this run does: every role that serves the target, under the same retry counter and rotation, is left
     // as it is, so running the same deploy twice changes nothing.
@@ -374,16 +383,11 @@ async function writeRunRecordToBucket(opts: { bucket: string; region: string; re
   const { PutObjectCommand } = await import('@aws-sdk/client-s3');
   const { accessKey, secretKey } = deployS3Key();
   const s3 = await makeS3Client(opts.region, accessKey, secretKey);
-  const { run } = opts.record;
+  const { putRunRecord } = await import('../lib/deploy/run-store');
+  await putRunRecord(s3, opts.bucket, opts.record);
   await s3.send(
-    new PutObjectCommand({
-      Bucket: opts.bucket,
-      Key: runRecordKey(run),
-      Body: JSON.stringify(opts.record, null, 2),
-      ContentType: 'application/json',
-    }),
+    new PutObjectCommand({ Bucket: opts.bucket, Key: runLogKey(opts.record.run), Body: opts.log, ContentType: 'text/plain; charset=utf-8' }),
   );
-  await s3.send(new PutObjectCommand({ Bucket: opts.bucket, Key: runLogKey(run), Body: opts.log, ContentType: 'text/plain; charset=utf-8' }));
 }
 
 async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
@@ -463,8 +467,8 @@ function createRealEffects(): DeployEffects {
     },
     task: (name, argv = []) => taskRunners[name](argv),
     readFile: (path) => readFile(path, 'utf8'),
-    async lease(stack, operation) {
-      const [{ controlActor, lockKey }, { acquireLease, installSignalRelease }, { engineConfig }, { deriveInfra }] = await Promise.all([
+    async lease(stack, operation, run) {
+      const [{ leaseOwnerOfRun, lockKey }, { acquireLease, installSignalRelease }, { engineConfig }, { deriveInfra }] = await Promise.all([
         import('../lib/stack/control-store'),
         import('../lib/stack/stack-lease'),
         import('../config/engine-config'),
@@ -476,8 +480,10 @@ function createRealEffects(): DeployEffects {
         s3: await controlClient(region),
         bucket: naming.bootDiagBucket,
         key: lockKey(stack),
-        owner: controlActor(),
+        owner: leaseOwnerOfRun(run),
         operation,
+        // A scheduled run hands its lease to this deploy under the deploy's run.
+        adopt: true,
         ttlMs: 5 * 60_000,
         renewEveryMs: 60_000,
         waitMs: 10 * 60_000,

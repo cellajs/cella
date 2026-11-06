@@ -1,5 +1,5 @@
 /**
- * The digests of the `node` images a key or a link meets: the runner machine (the runner key), the builder (its links), and the bases
+ * The digests of the `node` images a key or a link meets: the engine image (the deploy key), the builder (its links), and the bases
  * of the images the builder bakes, which run beside the services' runtime secrets and the host Docker socket. Whoever controls a tag on
  * Docker Hub can move it; a digest names one image. A Node bump at the root `engines.node` adds its digests here, each the index digest
  * `docker buildx imagetools inspect node:<version>-<variant>` prints.
@@ -18,8 +18,8 @@ const nodeImageDigests: Record<string, Record<NodeImageVariant, string>> = {
 };
 
 /**
- * `alpine` is the service images' base, `bookworm-slim` the builder's and the boot image's; `bookworm` has git and curl (the runner fetches
- * with it).
+ * `alpine` is the service images' base, `bookworm-slim` the builder's and the boot image's; `bookworm` has git and curl (the engine image
+ * fetches with it).
  */
 export type NodeImageVariant = 'alpine' | 'bookworm' | 'bookworm-slim';
 

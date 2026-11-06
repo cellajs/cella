@@ -48,7 +48,7 @@ export interface HttpResponse {
   body: string;
 }
 
-/** Performs a single HTTP GET. Injectable so the runner can be unit-tested. */
+/** Performs a single HTTP GET. Injectable so the smoke checks can be unit-tested. */
 export type HttpGet = (url: string) => Promise<HttpResponse>;
 
 /** One enabled service as deploy-env's enabled_services_json lists it. */

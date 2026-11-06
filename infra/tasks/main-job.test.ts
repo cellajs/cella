@@ -25,6 +25,9 @@ function effects(opts: { stamp?: EngineStamp; codes?: Record<string, number>; re
       if (opts.refs instanceof Error) throw opts.refs;
       return opts.refs ?? REFS;
     },
+    scheduledEffects: async () => {
+      throw new Error('a run started by hand reads no schedule');
+    },
     run: (script, args, runEnv) => {
       calls.push({ line: `${script} ${args.join(' ')}`, env: runEnv });
       return opts.codes?.[script] ?? 0;
@@ -47,7 +50,7 @@ describe('a main job run', () => {
     expect(calls[0]?.env).not.toHaveProperty('DEPLOY_KEY_JSON');
   });
 
-  it('ends as the deploy did: 0 deployed, 2 blocked (the runner and the apply read it so), anything else failed', async () => {
+  it('ends as the deploy did: 0 deployed, 2 blocked (the apply and Show runs read it so), anything else failed', async () => {
     for (const [code, ended] of [
       [2, 2],
       [1, 1],

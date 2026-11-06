@@ -5,6 +5,7 @@ import type { EnvironmentsFacts } from './providers/environments';
 import type { InventoryFacts } from './providers/inventory';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { RunsFacts } from './providers/runs';
+import type { ScheduleFacts } from './providers/schedule';
 import type { IdentityFacts } from './providers/stack';
 import { assembleReport, statusProviders } from './registry';
 import type { Check, ProbeSession, ScalewayFacts } from './types';
@@ -18,6 +19,7 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
 interface Facts {
   identity?: IdentityFacts;
   runs?: RunsFacts;
+  schedule?: ScheduleFacts;
   inventory?: InventoryFacts;
   state?: ScalewayFacts;
   secrets?: string[];
@@ -32,8 +34,18 @@ interface Facts {
 function base(overrides: Partial<Facts> = {}): Facts {
   return {
     identity: { observerAppId: 'app-1', keyAges: [] },
-    runs: { last: { id: 'r1', state: 'succeeded', environment_variables: { TARGET_SHA: 'abc123def456' } } },
-    inventory: { applications: [], groups: [], apiKeys: [], policies: [], machines: [], liveMachines: {}, roles: [], organizationId: 'org-1' },
+    runs: { runs: [{ id: 'r1', state: 'succeeded', environment_variables: { TARGET_SHA: 'abc123def456' } }] },
+    schedule: { mainJob: true, startedAt: new Date().toISOString(), everyMinutes: 1 },
+    inventory: {
+      applications: [],
+      groups: [],
+      apiKeys: [],
+      policies: [],
+      machines: [],
+      liveMachines: {},
+      roles: [],
+      organizationId: 'org-1',
+    },
     state: { stateBucketExists: true, lock: { held: false } },
     secrets: [],
     live: [
@@ -66,6 +78,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
   const factsByDomain: Record<string, unknown> = {
     config: {},
     runs: facts.runs,
+    schedule: facts.schedule,
     identity: facts.identity,
     inventory: facts.inventory,
     state: facts.state,
@@ -133,12 +146,22 @@ describe('DNS', () => {
 describe('the last deploy', () => {
   it('points a blocked run and a failed one at Show runs: a blocked run’s record names the apply or the secret it waits for', () => {
     const blocked = find(
-      reportFor(base({ runs: { last: { id: 'r2', state: 'failed', exit_code: 2, environment_variables: { TARGET_SHA: 'abc' } } } })).checks,
+      reportFor(base({ runs: { runs: [{ id: 'r2', state: 'failed', exit_code: 2, environment_variables: { TARGET_SHA: 'abc' } }] } })).checks,
       'runs.last',
     );
     expect(blocked?.status).toBe('warn');
     expect(blocked?.nextAction?.command).toContain('runs');
-    const failed = find(reportFor(base({ runs: { last: { id: 'r3', state: 'failed', exit_code: 1 } } })).checks, 'runs.last');
+    // A deploy a scheduled run started: its job run sets no target, its record names it.
+    const newest = {
+      run: 'r3',
+      environment: 'staging',
+      target: 'c'.repeat(40),
+      startedAt: '2026-11-06T12:00:05Z',
+      outcome: 'failed' as const,
+      steps: [],
+    };
+    const scheduled = { id: 'r3', state: 'failed', exit_code: 1, created_at: '2026-11-06T12:00:00Z', terminated_at: '2026-11-06T12:09:00Z' };
+    const failed = find(reportFor(base({ runs: { runs: [scheduled], record: { newest } } })).checks, 'runs.last');
     expect(failed?.status).toBe('error');
     expect(failed?.nextAction?.command).toContain('runs');
   });

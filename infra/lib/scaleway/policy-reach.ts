@@ -1,6 +1,5 @@
 import { IAM_BASE, type IamAuth } from './iam-client';
-import type { PolicyRule } from './scaleway-iam';
-import { scwFetch, scwSend } from './scw-fetch';
+import { scwFetch } from './scw-fetch';
 
 /** A rule as IAM returns it. */
 export interface LiveRule {
@@ -50,30 +49,4 @@ export async function readPolicy(auth: IamAuth, organizationId: string, policyNa
   const { rules = [] } = await scwFetch<{ rules?: LiveRule[] }>(auth, 'GET', `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`);
   const { name: _name, ...rest } = policy;
   return { ...rest, rules };
-}
-
-/**
- * Add projects, or a declared set its rules lack, to a policy in place: its rules are rewritten with every project they already cover, the
- * new ones, and the condition they share, so the keys it grants keep working and nothing else changes. Needs IAM write: an Owner key.
- * `absent` when the organization has no such policy; `unchanged` when it covers the projects already and holds every one of `projectSets`.
- */
-export async function extendPolicyReach(opts: {
-  auth: IamAuth;
-  organizationId: string;
-  policyName: string;
-  /** The sets whose rules name the projects. */
-  projectSets: readonly string[];
-  projectIds: readonly string[];
-  /** The policy's rules for a reach. */
-  rules: (reach: PolicyReach) => PolicyRule[] | Promise<PolicyRule[]>;
-}): Promise<'extended' | 'unchanged' | 'absent'> {
-  const policy = await readPolicy(opts.auth, opts.organizationId, opts.policyName);
-  if (!policy) return 'absent';
-  const current = policyReach(policy.rules, opts.projectSets);
-  const held = new Set(policy.rules.flatMap((rule) => rule.permission_set_names ?? []));
-  const covered = opts.projectIds.every((id) => current.projectIds.includes(id));
-  if (covered && opts.projectSets.every((set) => held.has(set))) return 'unchanged';
-  const projectIds = [...new Set([...current.projectIds, ...opts.projectIds])];
-  await scwSend(opts.auth, 'PUT', `${IAM_BASE}/rules`, { policy_id: policy.id, rules: await opts.rules({ ...current, projectIds }) });
-  return 'extended';
 }

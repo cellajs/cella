@@ -43,7 +43,9 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(`\n  ${pc.dim('Releases are deployed by the runner, as runs of the main job; start-deploy starts one now.')}`);
+  console.info(
+    `\n  ${pc.dim("Releases deploy by themselves: the main job's schedule starts a run every few minutes; start-deploy starts one now.")}`,
+  );
 }
 
 /**

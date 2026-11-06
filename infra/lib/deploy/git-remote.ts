@@ -6,14 +6,18 @@ export function gitKeyOptions(key: string | undefined): string[] {
   return key ? ['-c', `http.extraHeader=Authorization: Basic ${Buffer.from(`x-access-token:${key}`).toString('base64')}`] : [];
 }
 
+/**
+ * Run one git command with the read key as a header and no prompt.
+ * @returns its output
+ * @throws with git's error output when it fails
+ */
+export function git(key: string | undefined, args: string[]): string {
+  const result = spawnSync('git', [...gitKeyOptions(key), ...args], { encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+  if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${result.stderr.trim()}`);
+  return result.stdout;
+}
+
 /** The repository's refs matching `patterns`, with `git ls-remote` and the read key when there is one: how a target is found. */
 export function listRemoteRefs(repository: string, key: string | undefined) {
-  return async (patterns: string[]): Promise<RemoteRef[]> => {
-    const listed = spawnSync('git', [...gitKeyOptions(key), 'ls-remote', repository, ...patterns], {
-      encoding: 'utf8',
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
-    });
-    if (listed.status !== 0) throw new Error(`git ls-remote ${repository} failed: ${listed.stderr.trim()}`);
-    return parseLsRemote(listed.stdout);
-  };
+  return async (patterns: string[]): Promise<RemoteRef[]> => parseLsRemote(git(key, ['ls-remote', repository, ...patterns]));
 }

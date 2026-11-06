@@ -5,13 +5,14 @@ import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, star
 import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
 import { repositoryUrl } from '../../lib/deploy/repository-key';
+import { bucketRunStore } from '../../lib/deploy/run-store';
 import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
-import { stateKeyOf } from '../../lib/scaleway/s3-client';
-import { makeControlClient } from '../../lib/stack/control-store';
+import { makeS3Client, stateKeyOf } from '../../lib/scaleway/s3-client';
+import { leaseDeploys, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -22,8 +23,8 @@ const POLL_MS = 10_000;
 
 /**
  * Start one run of the environment's main job by hand, on the operator key, for the environment's target as the environments file of this
- * checkout says it, and follow the run until it ends: deployed (or already serving), blocked (a runtime value is owed) or failed. The runner does the
- * same by itself; this is the operator's way when it is not there or must not wait.
+ * checkout says it, and follow the run until it ends: deployed (or already serving), blocked (a runtime value is owed) or failed. A scheduled
+ * run does the same by itself at the environment's cadence; this is the operator's way for a target the schedule does not start again.
  */
 export async function runStartDeploy(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
@@ -122,8 +123,8 @@ async function liveCommit(context: InfraContext, key: KeyPair): Promise<string |
 /**
  * End a rotation on the operator key: deploy the live commit again, which the rotation's counter makes replace every machine, as the live
  * record names the counter each machine was booted under, then start
- * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and the runner starts
- * a run only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
+ * the environment's target when it is another commit. The running machines hold keys or values the rotation replaced, and a scheduled run
+ * deploys only when the target moves; a deploy of the live commit, a release that deployed before, puts them on the rotated ones whatever
  * becomes of the target. The live run is followed to its end, as the target's run would wait on the lease behind it, and when it does
  * not deploy the target is left for the action that clears the block or `start-deploy`. Before the first deploy there is no live commit,
  * and when the live record cannot be read there is none known: the target alone is started.
@@ -171,20 +172,39 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
 }
 
 /**
- * Start the environment's main job again for the target whose last run ended blocked, on the operator key: the apply, or Manage runtime
- * secrets for a missing secret, does it at its end, as the runner holds rights over jobs only and cannot see either. Nothing when the last
- * run ended otherwise or runs still; a target that moved on since is the runner's.
+ * Start the environment's main job again for the target whose last deploy ended blocked or apply needed, on the operator key: the apply,
+ * or Manage runtime secrets for a missing secret, does it at its end, as a scheduled run never starts a target and retry counter that have
+ * a record. The last deploy is the newest record, or a newer job run started by hand that exited blocked and wrote no record. Nothing while a
+ * deploy holds the lease, or when the last deploy ended otherwise; a target that moved on since is the schedule's. The lease decides, not
+ * the run list: a scheduled run looks for seconds every cadence and deploys nothing. A start by hand still queued holds no lease, so the
+ * target can deploy twice, and the second deploy ends unchanged.
  */
-export async function startBlockedTarget(context: InfraContext, key: { secretKey: string }): Promise<void> {
+export async function startBlockedTarget(context: InfraContext, key: KeyPair): Promise<void> {
   const auth = { secretKey: key.secretKey };
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
   if (!definitionId) return;
-  const [last] = await listJobRuns(auth, { region, projectId: context.projectId, definitionId });
-  const sha = last?.environment_variables?.TARGET_SHA;
-  if (!last || !sha || !runEnded(last) || mainJobOutcome(last) !== 'blocked') return;
-  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: sha, RETRY: last.environment_variables?.RETRY ?? '0' } });
+  const state = stateKeyOf(key, context.projectId);
+  const held = await peekLock(
+    await makeControlClient(context.appConfig.s3.region, state.accessKey, state.secretKey),
+    naming.bootDiagBucket,
+    lockKey(context.environment),
+  );
+  if (held && Date.parse(held.expiresAt) > Date.now() && leaseDeploys(held)) return;
+  const store = bucketRunStore(await makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey), naming.bootDiagBucket);
+  const [newest] = await store.listRuns(1);
+  const record = newest ? await store.currentRecord(newest) : undefined;
+  const ended = (await listJobRuns(auth, { region, projectId: context.projectId, definitionId })).find(runEnded);
+  const sha = ended?.environment_variables?.TARGET_SHA;
+  const unrecorded = ended && sha && mainJobOutcome(ended) === 'blocked' && (!record || (ended.created_at ?? '') > record.startedAt);
+  const last = unrecorded
+    ? { target: sha, retry: ended.environment_variables?.RETRY ?? '0', outcome: 'blocked' }
+    : record && (record.outcome === 'blocked' || record.outcome === 'apply needed')
+      ? { target: record.target, retry: String(record.retry ?? 0), outcome: record.outcome }
+      : undefined;
+  if (!last) return;
+  const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: last.target, RETRY: last.retry } });
   console.info(
-    `${checkMark} The last run was blocked: run ${run.id} deploys ${sha.slice(0, 10)} again (\`${actionCommand('runs')}\` shows how it ends).`,
+    `${checkMark} The last deploy was ${last.outcome}: run ${run.id} deploys ${last.target.slice(0, 10)} again (\`${actionCommand('runs')}\` shows how it ends).`,
   );
 }

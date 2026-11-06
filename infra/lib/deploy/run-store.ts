@@ -1,4 +1,4 @@
-import { GetObjectCommand, ListObjectsV2Command, ListObjectVersionsCommand, type S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, ListObjectsV2Command, ListObjectVersionsCommand, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
 import { BOOT_ACCOUNTS_PREFIX } from './boot-accounts';
 import {
   type Growth,
@@ -19,6 +19,8 @@ export interface RunStore {
   listRuns(limit: number): Promise<string[]>;
   /** A run's record read by its first version, with the version that broke its growth when one did. */
   readRecord(run: string): Promise<Growth<RunRecord> | undefined>;
+  /** A run's record as it stands, read without its versions: what a key that reads no version (the deploy key) sees. */
+  currentRecord(run: string): Promise<RunRecord | undefined>;
   /** A run's log read the same way. */
   readLog(run: string): Promise<Growth<string> | undefined>;
   /** A machine's boot account a record names, by its key under the boot accounts' prefix. */
@@ -35,7 +37,10 @@ function parseRecord(text: string): RunRecord | undefined {
   }
 }
 
-/** A run store on the diagnostics bucket, read with any key the bucket admits to list and read versions (the observer's). */
+/**
+ * A run store on the diagnostics bucket. Reading a record or a log by its versions takes a key the bucket admits to list and read versions
+ * (the observer's); the current record, one that lists and reads objects (the deploy key's).
+ */
 export function bucketRunStore(s3: Pick<S3Client, 'send'>, bucket: string): RunStore {
   const read = async (key: string, versionId?: string) => {
     try {
@@ -96,7 +101,25 @@ export function bucketRunStore(s3: Pick<S3Client, 'send'>, bucket: string): RunS
       return runs.sort().reverse().slice(0, limit);
     },
     readRecord: (run) => readByGrowth(records(run), recordGrows, 'the record'),
+    currentRecord: async (run) => {
+      const body = await read(runRecordKey(run));
+      return body === undefined ? undefined : parseRecord(body);
+    },
     readLog: (run) => readByGrowth(versions(runLogKey(run)), logGrows, 'the log'),
     readBootAccount: (key) => read(`${BOOT_ACCOUNTS_PREFIX}${key}`),
   };
+}
+
+/** The current records of the runs that deployed a commit, found by the commit each run's id ends with (`runId`). */
+export async function commitRecords(store: Pick<RunStore, 'listRuns' | 'currentRecord'>, sha: string): Promise<RunRecord[]> {
+  const runs = (await store.listRuns(Number.POSITIVE_INFINITY)).filter((run) => run.endsWith(`-${sha.slice(0, 10)}`));
+  const records = await Promise.all(runs.map((run) => store.currentRecord(run)));
+  return records.filter((record): record is RunRecord => record !== undefined);
+}
+
+/** Write a run's record, as the deploy writes it after every step and a scheduled run when it opens the record of the deploy it starts. */
+export async function putRunRecord(s3: Pick<S3Client, 'send'>, bucket: string, record: RunRecord): Promise<void> {
+  await s3.send(
+    new PutObjectCommand({ Bucket: bucket, Key: runRecordKey(record.run), Body: JSON.stringify(record, null, 2), ContentType: 'application/json' }),
+  );
 }

@@ -22,7 +22,7 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 /**
  * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
  * - `observer`: `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` from infra/.env.<mode>, the observer application's key: read-only.
- * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI runner, a shell export): shown in diagnostics, never written to the env file.
+ * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI job, a shell export): shown in diagnostics, never written to the env file.
  * A privileged key is not among them: the operator key and an Owner API key are typed at the prompt and never read from the environment.
  */
 export interface OperatorIdentity {

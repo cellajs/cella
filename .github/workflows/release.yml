@@ -5,9 +5,10 @@ name: Release
 # and publishes the GitHub Release.
 #
 # The tag is the release: an environment that follows the releases (production, by
-# default) deploys it when the runner sees it, about a minute later. Nothing in
-# this file deploys, and GitHub holds no Scaleway key. A normal feature merge to
-# main refreshes the release PR, and an environment that follows main deploys it.
+# default) deploys it at the main job's next scheduled run, within a minute by
+# default. Nothing in this file deploys, and GitHub holds no Scaleway key. A normal
+# feature merge to main refreshes the release PR, and an environment that follows
+# main deploys it.
 #
 # Add a new releasable package by adding an entry to .github/release-please-config.json
 # and .github/release-please-manifest.json. No workflow changes needed.

@@ -1,7 +1,7 @@
 /**
  * Backend module composition root: importing this file runs every module's `defineBackendModule`
  * call, so the mutation bus, yjs materializers, and shared module metadata are populated. Imported
- * once per entrypoint that reaches those registries (app `routes.ts`, MCP worker, seed runner).
+ * once per entrypoint that reaches those registries (app `routes.ts`, MCP worker, seed script).
  */
 import '#/modules/activities/activities-module';
 import '#/modules/actors/actors-module';

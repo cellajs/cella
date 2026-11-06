@@ -55,14 +55,14 @@ describe('the inventory', () => {
       ],
       machines: [
         { id: 'm1', name: 'app-backend-a' },
-        { id: 'm0', name: 'app-backend-b' },
+        { id: 'm0', name: 'app-backend-b', createdAt: '2026-10-14T10:30:00Z' },
         { id: 'b1', name: 'app-builder-abc' },
         { id: 'x1', name: 'mallory' },
         { id: 'x2', name: 'app-backend-1f2e3d4c' },
       ],
       liveMachines: { backend: 'm1' },
       roles: ['backend', 'frontend'],
-      mainJob: { running: false, env: {} },
+      mainJob: { env: {} },
       organizationId: 'o',
     };
     expect(inventoryFindings(facts, expect_, Date.parse('2026-10-14T12:00:00Z'))).toEqual({
@@ -71,32 +71,35 @@ describe('the inventory', () => {
       operatorKeys: ['app-operator holds a key that outlives a day: SCWOPDURABLE (forever)'],
       policies: ['boot-extra on app-staging-boot, beside the declared app-vm-boot-policy'],
       machines: [
-        'app-backend-b: a machine the live record does not name, and no deploy runs (a failed run left it, or someone named it so)',
-        'app-builder-abc: a builder, and no deploy runs (a failed run left it, or someone named it so)',
+        'app-backend-b: a machine the live record does not name, older than a deploy runs (a failed run left it, or someone named it so)',
+        'app-builder-abc: a builder, older than a deploy runs (a failed run left it, or someone named it so)',
         'mallory: not made by the engine',
         'app-backend-1f2e3d4c: not made by the engine',
       ],
       passing: [],
     });
-    const deploying = inventoryFindings({ ...facts, mainJob: { running: true, env: {} } }, expect_);
+    // The age is the Instance API's: a lease in the bucket, which the deploy key writes, excuses nothing.
+    const young = facts.machines?.map((machine) => ({ ...machine, createdAt: '2026-10-14T11:20:00Z' }));
+    const deploying = inventoryFindings({ ...facts, machines: young }, expect_, Date.parse('2026-10-14T12:00:00Z'));
     expect(deploying.machines).toEqual(['mallory: not made by the engine', 'app-backend-1f2e3d4c: not made by the engine']);
     expect(deploying.passing).toEqual([
-      'app-backend-b: a machine the live record does not name, while a deploy runs',
-      'app-builder-abc: a builder, while a deploy runs',
+      'app-backend-b: a machine the live record does not name, a machine a deploy may be making',
+      'app-builder-abc: a builder, a machine a deploy may be making',
     ]);
   });
 
-  it("finds a main job edited to read the database's password and to run another image (D-b): the runner key may edit a definition", () => {
+  it("finds a main job edited to read the database's password and to run another image (D-b): a key that starts runs may edit a definition", () => {
     const mainJob = declaredMainJob({
       projectId: 'p-staging',
       organizationId: 'o',
       image: `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`,
+      everyMinutes: 1,
     });
     const engine = mainJob.secretFolder;
     const live = {
-      running: false,
       imageUri: 'rg.nl-ams.scw.cloud/app/infra-engine:latest',
       command: mainJob.startupCommands.join('\n'),
+      cron: mainJob.cron,
       env: { ...mainJob.env, NODE_OPTIONS: '--import=data:text/javascript,0' },
       secretReferences: [
         { env: 'DEPLOY_KEY_JSON', secretId: 's1', name: 'deploy-key', path: engine },
@@ -111,5 +114,21 @@ describe('the inventory', () => {
       'an extra secret reference PULUMI_CONFIG_PASSPHRASE (pulumi-passphrase)',
       'an extra secret reference DB_PASSWORD (database-admin-password)',
     ]);
+  });
+
+  it("declares the environment's cadence as its schedule and finds a main job without it, which deploys nothing by itself", () => {
+    const image = `rg.nl-ams.scw.cloud/app/infra-engine@sha256:${'1'.repeat(64)}`;
+    expect(declaredMainJob({ projectId: 'p', organizationId: 'o', image, everyMinutes: 5 }).cron).toEqual({
+      schedule: '*/5 * * * *',
+      timezone: 'Etc/UTC',
+    });
+    const mainJob = declaredMainJob({ projectId: 'p', organizationId: 'o', image, everyMinutes: 1 });
+    expect(mainJob.cron).toEqual({ schedule: '* * * * *', timezone: 'Etc/UTC' });
+    const live = { imageUri: mainJob.imageUri, command: mainJob.startupCommands.join('\n'), env: mainJob.env };
+    expect(mainJobDifferences(live, mainJob)).toEqual(['no schedule']);
+    expect(mainJobDifferences({ ...live, cron: { schedule: '0 * * * *', timezone: 'Etc/UTC' } }, mainJob)).toEqual([
+      "schedule '0 * * * *' (Etc/UTC)",
+    ]);
+    expect(mainJobDifferences({ ...live, cron: mainJob.cron }, mainJob)).toEqual([]);
   });
 });

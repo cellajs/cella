@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineImageRef, engineImageRepository, readAppliedEngine } from '../lib/deploy/applied-engine';
 import { findJobDefinition } from '../lib/deploy/job-runs';
-import { declaredMainJob } from '../lib/deploy/main-job';
+import { declaredMainJob, MAIN_JOB_TIME_LIMIT_HOURS, scheduleEveryMinutes } from '../lib/deploy/main-job';
 import { actionCommand } from '../lib/operator-actions';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
@@ -24,7 +24,7 @@ async function engineImage(): Promise<string | undefined> {
 }
 
 const image = await engineImage();
-const declared = image ? declaredMainJob({ projectId, organizationId, image }) : undefined;
+const declared = image ? declaredMainJob({ projectId, organizationId, image, everyMinutes: scheduleEveryMinutes(mode) }) : undefined;
 // Its key is referenced, never copied, and found with this run's own key, as the provider has no lookup that answers "not there": a stack
 // whose deploy key has no copy yet gets the definition after its next rotation of keys, and a warning until then.
 const secrets = createSecretManagerClient({ secretKey: process.env.SCW_SECRET_KEY ?? '', region, projectId });
@@ -41,7 +41,7 @@ const references = declared
 const missing = references.filter((reference) => !reference.optional && !reference.secret).map((reference) => reference.name);
 
 if (!declared) {
-  // An `up` that knows no engine would delete a definition the stack holds, which the runner starts: only a first apply goes without one.
+  // An `up` that knows no engine would delete a definition the stack holds, which deploys every target: only a first apply goes without one.
   const name = naming.resource('main');
   if (await findJobDefinition({ secretKey: process.env.SCW_SECRET_KEY ?? '' }, { region, projectId, name })) {
     throw new Error(`${name} runs the engine image an apply publishes, and none is recorded yet: \`${actionCommand('apply')}\` builds it first.`);
@@ -54,7 +54,7 @@ if (!declared) {
 } else {
   new scaleway.job.Definition('main-job', {
     name: naming.resource('main'),
-    description: 'One deploy of a target per run, on the engine image the last apply published',
+    description: 'On its schedule: deploys the target when it has no run, on the engine image the last apply published',
     region,
     projectId,
     imageUri: declared.imageUri,
@@ -62,7 +62,8 @@ if (!declared) {
     cpuLimit: 2000,
     memoryLimit: 4096,
     localStorageCapacity: 10000,
-    timeout: '1h',
+    timeout: `${MAIN_JOB_TIME_LIMIT_HOURS}h`,
+    cron: declared.cron,
     env: declared.env,
     secretReferences: references.flatMap(({ environment, optional, secret }) =>
       secret && (!optional || secret.version_count) ? [{ secretId: secret.id, secretVersion: 'latest', environment }] : [],

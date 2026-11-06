@@ -40,7 +40,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the deploy key, the uploads key and, where the runner serves this environment, the runner key and machine; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
+      'Replace the deploy key and the uploads key; then deploy the live release again, so no machine keeps a deleted key, and start the target.',
   },
   'rotate-secrets': {
     label: 'Rotate secrets',
@@ -66,22 +66,11 @@ export const OPERATOR_ACTIONS = {
     description:
       "Start one run of the environment's main job for its target (the environments file's line, or production's newest release) and follow it until it is deployed, blocked or failed.",
   },
-  'runner-identity': {
-    label: 'Set up the runner',
-    key: 'owner',
-    description:
-      "Make the app's runner (its project, reserved address, application and key), let the operator reach it, and add this environment to the ones it starts deploys for in infra/runner.json. Rotate keys replaces its key.",
-  },
-  'runner-replace': {
-    label: 'Replace the runner',
-    key: 'operator',
-    description: "Replace the runner's machine with one that runs the release and serves the environments infra/runner.json names.",
-  },
   'repository-key': {
     label: 'Set repository read key',
     key: 'operator',
     description:
-      "Store, replace or remove the read-only GitHub key a private repository needs: the builder fetches a release's commit with it. A repository anyone may read needs none.",
+      "Store, replace or remove the read-only GitHub key a private repository needs: a scheduled run reads the environments file and the release tags with it, the builder fetches a release's commit. A repository anyone may read needs none.",
   },
   secrets: {
     label: 'Manage runtime secrets',
@@ -158,8 +147,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `repository-key`, `start-deploy`, `runner-identity`, `runner-replace`, `state-prune`)
- * runs only by its command.
+ * An action no row lists (`preview`, `repository-key`, `start-deploy`, `state-prune`) runs only by its command.
  */
 export const MENU_ROWS = {
   status: {

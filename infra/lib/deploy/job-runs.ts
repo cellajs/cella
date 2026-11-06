@@ -58,19 +58,28 @@ export interface JobDefinitionFacts {
   /** What it executes, as {@link commandOf} reads it. */
   command?: string;
   env: Record<string, string>;
+  /** When Scaleway starts a run by itself; undefined for a definition without a schedule. */
+  cron?: { schedule: string; timezone: string };
   /** When the definition last changed: a run started before it may have run other values or another command. */
   updatedAt?: string;
 }
 
-/** What a job definition runs, as Scaleway holds it: the image, the command and its arguments, the env and when it last changed. */
+/** What a job definition runs, as Scaleway holds it: the image, the command and its arguments, the env, the schedule and when it last changed. */
 export async function readJobDefinition(auth: ScwAuth, opts: { region: string; definitionId: string }): Promise<JobDefinitionFacts> {
   const definition = await scwFetch<
-    CommandFields & { image_uri?: string; environment_variables?: Record<string, string> | null; updated_at?: string | null }
+    CommandFields & {
+      image_uri?: string;
+      environment_variables?: Record<string, string> | null;
+      cron_schedule?: { schedule?: string; timezone?: string } | null;
+      updated_at?: string | null;
+    }
   >(auth, 'GET', `${base(opts.region)}/job-definitions/${opts.definitionId}`);
+  const cron = definition.cron_schedule;
   return {
     imageUri: definition.image_uri,
     command: commandOf(definition),
     env: definition.environment_variables ?? {},
+    ...(cron?.schedule ? { cron: { schedule: cron.schedule, timezone: cron.timezone ?? '' } } : {}),
     updatedAt: definition.updated_at ?? undefined,
   };
 }
@@ -96,20 +105,27 @@ export async function readJobDefinitionSecrets(auth: ScwAuth, opts: { region: st
 }
 
 /**
- * Every run of a definition Scaleway still keeps (60 days), newest first. Each run's `environment_variables` holds the definition's values
- * and its start call's, so a run names the target it was started for.
+ * The newest runs of a definition, newest first: one page of 100, as a schedule fills the 60 days Scaleway keeps. Each run's
+ * `environment_variables` holds the definition's values and its start call's, so a run started by hand names its target, and a scheduled
+ * run sets none.
  */
 export async function listJobRuns(auth: ScwAuth, opts: { region: string; projectId: string; definitionId: string }): Promise<JobRun[]> {
-  const runs: JobRun[] = [];
-  for (let page = 1; ; page++) {
-    const { job_runs = [], total_count = 0 } = await scwFetch<{ job_runs?: JobRun[]; total_count?: number }>(
-      auth,
-      'GET',
-      `${base(opts.region)}/job-runs?project_id=${opts.projectId}&job_definition_id=${opts.definitionId}&order_by=created_at_desc&page=${page}&page_size=100`,
-    );
-    runs.push(...job_runs);
-    if (page * 100 >= total_count || job_runs.length === 0) return runs;
-  }
+  const { job_runs = [] } = await scwFetch<{ job_runs?: JobRun[] }>(
+    auth,
+    'GET',
+    `${base(opts.region)}/job-runs?project_id=${opts.projectId}&job_definition_id=${opts.definitionId}&order_by=created_at_desc&page=1&page_size=100`,
+  );
+  return job_runs;
+}
+
+/** True for a run its definition's schedule started: a start by hand sets `TARGET_SHA`, a scheduled run finds its target itself. */
+export function isScheduledRun(run: Pick<JobRun, 'environment_variables'>): boolean {
+  return !run.environment_variables?.TARGET_SHA;
+}
+
+/** The newest scheduled run that did not fail, one that runs still included: the schedule's last sign of life among the runs given. */
+export function lastScheduledRun(runs: readonly JobRun[]): JobRun | undefined {
+  return runs.find((run) => isScheduledRun(run) && (!runEnded(run) || run.state === 'succeeded'));
 }
 
 /**

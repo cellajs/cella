@@ -1,7 +1,7 @@
 /**
  * What an environment deploys: production the newest release, any other environment only what its line in the repository's environments
  * file names. A line also pins a release or a commit, or raises the retry counter; an environment that follows the releases takes `releases`
- * or a release tag only. The runner reads this, as data, once a minute.
+ * or a release tag only. Every scheduled run of the main job reads this, as data.
  */
 
 /** Where the environments file lives in the repository, relative to its root. */
@@ -105,6 +105,9 @@ function releaseTags(refs: readonly RemoteRef[]): string[] {
   return [...new Set(refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag)))];
 }
 
+/** An environment that follows the releases, in a repository that has published none yet: it has nothing to deploy. */
+export class NoReleaseError extends Error {}
+
 interface TargetQuery {
   environment: string;
   line?: EnvironmentLine;
@@ -114,6 +117,7 @@ interface TargetQuery {
 /**
  * Find an environment's target from its line, or production's default, and the repository's refs: none for an environment other than
  * production without a line.
+ * @throws NoReleaseError when the environment follows the releases and the repository has none
  */
 export function resolveTarget(opts: TargetQuery & { line: EnvironmentLine }): Promise<Target>;
 export function resolveTarget(opts: TargetQuery): Promise<Target | undefined>;
@@ -131,7 +135,7 @@ export async function resolveTarget(opts: TargetQuery): Promise<Target | undefin
     const refs = await opts.listRemote(['refs/tags/*']);
     const newest = releaseTags(refs).reduce<string | undefined>((best, tag) => (best === undefined || newer(tag, best) ? tag : best), undefined);
     const sha = newest ? tagCommit(refs, newest) : undefined;
-    if (!newest || !sha) throw new Error(`${opts.environment} follows the releases, and the repository has none`);
+    if (!newest || !sha) throw new NoReleaseError(`${opts.environment} follows the releases, and the repository has none`);
     return of(sha, `release ${newest}`);
   }
   if (COMMIT.test(rule.ref)) return of(rule.ref, `pinned commit ${rule.ref.slice(0, 10)}`);

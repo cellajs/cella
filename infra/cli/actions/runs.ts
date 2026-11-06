@@ -7,8 +7,16 @@ import {
   releaseAccounts,
   serviceAccountKeys,
 } from '../../lib/deploy/boot-accounts';
-import { findJobDefinition, type JobDefinitionFacts, type JobRun, listJobRuns, readJobDefinition, runEnded } from '../../lib/deploy/job-runs';
-import { mainJobOutcome } from '../../lib/deploy/main-job';
+import {
+  findJobDefinition,
+  isScheduledRun,
+  type JobDefinitionFacts,
+  type JobRun,
+  lastScheduledRun,
+  listJobRuns,
+  readJobDefinition,
+  runEnded,
+} from '../../lib/deploy/job-runs';
 import { type Growth, type RunRecord, rewriteNote, runSummaryLine } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { deriveInfra } from '../../lib/naming';
@@ -16,6 +24,7 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deployedServices } from '../../lib/services';
+import { type LockInfo, leaseHeldByRun, lockKey, makeControlClient, peekLock } from '../../lib/stack/control-store';
 import { runOverrides } from '../../lib/status/providers/runs';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -75,8 +84,8 @@ async function runDetailLines(reading: Growth<RunRecord>, store: RunStore): Prom
 }
 
 /**
- * A job run that left no record, by Scaleway's state, exit code and message: one that runs still, or one that ended before the engine
- * could write its record (in the fetch or the install).
+ * A run started by hand that left no record, by Scaleway's state, exit code and message: one that runs still, or one that ended before the
+ * engine could write its record.
  */
 function runWithoutRecordLine(run: JobRun, environment: string): string {
   const sha = run.environment_variables?.TARGET_SHA?.slice(0, 10) ?? '?';
@@ -86,22 +95,17 @@ function runWithoutRecordLine(run: JobRun, environment: string): string {
   return `${when}  ${environment}  ${sha}  ${run.state}${code}, no record${run.error_message ? `: ${run.error_message.replace(/\s+/g, ' ').slice(0, 100)}` : ''}`;
 }
 
-/** True when the record was written by that job run: the same target, started while the run ran. */
+/** True when a run started by hand wrote the record: the same target, started while the run ran. */
 function wroteRecord(run: JobRun, record: RunRecord): boolean {
   if (record.target !== run.environment_variables?.TARGET_SHA) return false;
   return record.startedAt >= (run.created_at ?? '') && (!run.terminated_at || record.startedAt <= run.terminated_at);
 }
 
-/**
- * What Scaleway says of the job run that wrote a record, when that differs from the record: a record cut short by the job's time limit, or one
- * a key that may write the bucket changed. Scaleway's list of runs is written by no key of the engine.
- */
-function disagreement(record: RunRecord, run: JobRun | undefined): string {
-  if (!run || !runEnded(run)) return '';
-  const outcome = mainJobOutcome(run);
-  // A run that found the target serving exits as a deploy does, one that needs an apply as a blocked one.
-  const recorded = record.outcome === 'unchanged' ? 'deployed' : record.outcome === 'apply needed' ? 'blocked' : record.outcome;
-  return outcome === recorded ? '' : `  ${warningMark} the job run ended ${outcome} (${run.state})`;
+/** A record that says running while no deploy holds the lease under its run: its deploy died, or the job's time limit ended it. */
+function interrupted(record: RunRecord, lock: LockInfo | undefined): string {
+  return record.outcome === 'running' && !leaseHeldByRun(lock, record.run)
+    ? `  ${warningMark} interrupted: no deploy holds the lease under this run`
+    : '';
 }
 
 /** A run started with values or a command of its own, which no start of the engine sets (D-b): flagged, as only a key holder's start does it. */
@@ -110,15 +114,32 @@ function ownValues(run: JobRun | undefined, definition: JobDefinitionFacts | und
   return own.length > 0 ? `  ${warningMark} started with its own values: ${own.join(', ')}` : '';
 }
 
+/** When the last scheduled run that did not fail started, as the sentence above the list says it. */
+function scheduleSentence(jobRuns: readonly JobRun[], now: number): string {
+  const last = lastScheduledRun(jobRuns);
+  if (!last?.created_at) return `scheduled runs: none among the main job's newest runs; \`${actionCommand('apply')}\` writes the schedule`;
+  return `scheduled runs: last ${Math.floor((now - Date.parse(last.created_at)) / 60_000)} min ago`;
+}
+
 /**
  * List the last runs and show one: the newest record, or the one picked when a person is at the prompt. A record is read by its first
- * version, and one whose versions stopped growing is flagged as rewritten. The environment's job runs that left no record are listed beside
- * the records, so a run is never missing from the list. With the main job's definition, a run started with values or a command of its
- * own is flagged.
+ * version, one whose versions stopped growing is flagged as rewritten, and one left running without the lease as interrupted. A run started
+ * by hand that left no record is listed beside the records, so a deploy is never missing from the list; a scheduled run that started nothing
+ * left none, and one sentence above the list says when the last one ran. With the main job's definition, a run of the newest page started
+ * with values or a command of its own is listed and flagged.
  */
 export async function showRuns(
   store: RunStore,
-  opts: { pick: boolean; print?: (line: string) => void; jobRuns?: readonly JobRun[]; definition?: JobDefinitionFacts; environment?: string },
+  opts: {
+    pick: boolean;
+    print?: (line: string) => void;
+    jobRuns?: readonly JobRun[];
+    definition?: JobDefinitionFacts;
+    environment?: string;
+    /** The environment's lease, which tells a record that runs from one that was interrupted. */
+    lock?: LockInfo;
+    now?: number;
+  },
 ): Promise<void> {
   const print = opts.print ?? ((line: string) => console.info(line));
   const readings = (await Promise.all((await store.listRuns(LIST_LENGTH)).map((run) => store.readRecord(run)))).filter(
@@ -126,14 +147,18 @@ export async function showRuns(
   );
   const records = readings.map((reading) => reading.newest);
   const jobRuns = opts.jobRuns ?? [];
+  if (opts.definition) print(scheduleSentence(jobRuns, opts.now ?? Date.now()));
   // A full list's oldest record bounds the job runs: an older run's record is past the list, not missing.
   const since = records.length === LIST_LENGTH ? (records.at(-1)?.startedAt ?? '') : '';
-  const unrecorded = jobRuns.filter((run) => (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record)));
+  const unrecorded = jobRuns.filter(
+    (run) =>
+      (!isScheduledRun(run) && (run.created_at ?? '') >= since && !records.some((record) => wroteRecord(run, record))) ||
+      ownValues(run, opts.definition) !== '',
+  );
   const rows = [
     ...readings.map(({ newest: record, rewrite }) => {
-      const run = jobRuns.find((candidate) => wroteRecord(candidate, record));
       const rewritten = rewrite ? `  ${warningMark} ${rewriteNote(rewrite)}` : '';
-      return { at: record.startedAt, line: `${runSummaryLine(record)}${rewritten}${disagreement(record, run)}${ownValues(run, opts.definition)}` };
+      return { at: record.startedAt, line: `${runSummaryLine(record)}${rewritten}${interrupted(record, opts.lock)}` };
     }),
     ...unrecorded.map((run) => ({
       at: run.created_at ?? '',
@@ -227,11 +252,14 @@ export async function runRuns(context: InfraContext): Promise<void> {
     console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
     return { jobRuns: [] };
   });
+  const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
+  const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);
   console.info(pc.dim(`\n${actionLabel('runs')} of ${context.environment}, newest first:\n`));
   await showRuns(bucketRunStore(s3, naming.bootDiagBucket), {
     pick: Boolean(process.stdin.isTTY) && !autoAcceptDefaults(),
     jobRuns,
     definition,
     environment: context.environment,
+    lock,
   });
 }

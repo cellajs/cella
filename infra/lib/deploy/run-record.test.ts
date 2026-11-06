@@ -8,11 +8,21 @@ import {
   runId,
   runLogKey,
   runRecordKey,
+  runStartedAt,
   runSummaryLine,
   type StoredVersion,
 } from './run-record';
 
 describe('a run record', () => {
+  it("must not read as rewritten when a deploy takes over the record its scheduled run opened: the deploy starts it at its id's second", () => {
+    const started = new Date('2026-11-06T12:00:07.000Z');
+    const run = runId('a'.repeat(40), started);
+    const opened = new RunRecorder({ run, environment: 'production', target: 'a'.repeat(40), retry: 1, now: started }).record();
+    const deploy = new RunRecorder({ run, environment: 'production', target: 'a'.repeat(40), retry: 1, now: runStartedAt(run) });
+    deploy.step('Acquire the lease', 1, 'ok');
+    expect(recordGrows(opened, deploy.record())).toBeUndefined();
+  });
+
   it('has an id that sorts by time and names its target', () => {
     const id = runId('21bae33f7cec7ba8fc3446a771e94e9b3f141b84', new Date('2026-10-15T00:20:05.123Z'));
     expect(id).toBe('20261015T002005Z-21bae33f7c');
@@ -21,7 +31,7 @@ describe('a run record', () => {
   });
 
   it('keeps the first failed step, and scrubs secret-bearing lines from its log and its error', () => {
-    const recorder = new RunRecorder({ run: 'r', environment: 'staging', target: 'a'.repeat(40), now: new Date('2026-10-15T00:00:00Z') });
+    const recorder = new RunRecorder({ run: 'r', environment: 'staging', target: 'a'.repeat(40), retry: 0, now: new Date('2026-10-15T00:00:00Z') });
     recorder.step('Build the release', 120, 'ok');
     recorder.step('Switch machines', 30, 'error');
     recorder.step('Reap', 1, 'error');

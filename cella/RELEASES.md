@@ -11,7 +11,7 @@ both, and merging it tags the release, which production then deploys. Never set 
 
 1. Merge into `main` with Conventional Commit messages. While cella is on `0.x`, `fix:` and `feat:` bump the patch and a breaking change (`feat!:`) the minor, so an upgrading app can tell a breaking release apart.
 2. On every merge, release-please updates the open **release PR** with the next version and the [Changelog](./CHANGELOG.md).
-3. Merging the release PR tags the version and publishes the GitHub Release; the runner deploys it about a minute later ([Deploys](./DEPLOYMENT.md#deploys)).
+3. Merging the release PR tags the version and publishes the GitHub Release; the next scheduled run of the main job deploys it, within a minute in production ([Deploys](./DEPLOYMENT.md#deploys)).
 
 ## Gating
 
