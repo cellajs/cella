@@ -182,6 +182,8 @@ export interface GoogleUserProps {
   family_name: string;
   email: string;
   email_verified: boolean;
+  /** The Google Workspace domain of the account; absent for a consumer account. */
+  hd?: string;
 }
 
 export interface MicrosoftUserProps {

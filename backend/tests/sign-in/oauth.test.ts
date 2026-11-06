@@ -713,22 +713,35 @@ describe('OAuth Authentication', async () => {
     const providerEmail = 'github-user@example.com';
 
     /** An invitation to `email` whose link this browser opened, and an invite round trip started here. */
-    const openedInvitation = async (email: string) => {
+    const openedInvitation = async (email: string, provider: 'github' | 'google' = 'github') => {
       const organization = await createTestOrganization();
       const inviter = await createUser('inviter@example.com');
       const invitation = await createInvitation({ organization, email, createdBy: inviter.id, token: 'invoked' });
       // The cookie mock keeps plain values: this browser's single-use cookie for the opened link.
       mockCookieStore.set('invitation', invitation.rawSingleUseToken);
-      mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', type: 'invite', codeVerifier: 'verifier' }));
+      mockCookieStore.set('oauth-state', JSON.stringify({ state, provider, type: 'invite', codeVerifier: 'verifier' }));
       return { ...invitation, organization };
     };
 
-    const inviteCallback = () => call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+    const inviteCallback = (fn: typeof githubCallback | typeof googleCallback = githubCallback) =>
+      call(fn, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+
+    /** The verified claims of a Google sign-in, read by the real transform, so its rule of which addresses Google hosts runs. */
+    const googleAsserts = async (claims: Record<string, unknown>) => {
+      type TransformModule = typeof import('#/modules/auth/oauth/helpers/transform-user-data');
+      const { transformSocialUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
+      const actual = await vi.importActual<TransformModule>('#/modules/auth/oauth/helpers/transform-user-data');
+      vi.mocked(transformSocialUserData).mockImplementationOnce(actual.transformSocialUserData);
+      const profile = { sub: 'google-user-id', name: 'Test User', given_name: 'Test', family_name: 'User', email_verified: true };
+      vi.mocked(googleAuth.validateAuthorizationCode).mockResolvedValueOnce({ accessToken: 'mock-access-token', claims: { ...profile, ...claims } });
+    };
 
     it('creates the account verified, accepts the invitation and signs in, with no second verification mail', async () => {
-      const { inactiveMembership, organization } = await openedInvitation(providerEmail);
+      // A Google Workspace account: Google hosts the address, so the sign-in proves the inbox.
+      const { inactiveMembership, organization } = await openedInvitation(providerEmail, 'google');
+      await googleAsserts({ email: providerEmail, hd: 'example.com' });
 
-      const { response: res } = await inviteCallback();
+      const { response: res } = await inviteCallback(googleCallback);
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).not.toContain('/auth/email-verification');
       expect(cookieChange(res, 'session')).toBe('set');
@@ -738,9 +751,9 @@ describe('OAuth Authentication', async () => {
       // The account starts with the provider's names. Its avatar is not taken over: avatars come from the app's CDN only.
       expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
-      expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
+      expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'google' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
-      expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
+      expect(identity).toMatchObject({ issuer: 'google', subject: 'google-user-id', verified: true });
 
       // The invitation of the opened link is accepted with the sign-up, as at a magic-link sign-in.
       expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toEqual([]);
@@ -779,6 +792,30 @@ describe('OAuth Authentication', async () => {
           pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
         }),
       ]);
+    });
+
+    // A verified flag can date from before the address changed hands: a former holder who opens a forwarded invitation
+    // link first must not get the account on the invitee's address (pre-account takeover).
+    it.each([
+      { name: 'a GitHub address, verified once', provider: 'github' as const, fn: githubCallback, signIn: async () => {} },
+      {
+        name: 'a Google address outside Gmail and Workspace',
+        provider: 'google' as const,
+        fn: googleCallback,
+        signIn: () => googleAsserts({ email: providerEmail }),
+      },
+    ])('must not create an account on the invited address via $name', async ({ provider, fn, signIn }) => {
+      await openedInvitation(providerEmail, provider);
+      await signIn();
+
+      const { response: res } = await inviteCallback(fn);
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification/signup');
+      expect(cookieChange(res, 'session')).toBeUndefined();
+      expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+      // The sign-up waits on the mail to the invited address, as any provider sign-up does.
+      expect(mailsTo(providerEmail)).toHaveLength(1);
     });
 
     it('must not create an account via an invite round trip in a browser that did not open the invitation', async () => {
