@@ -9,16 +9,6 @@ import { seedScripts } from './scripts-discovery';
 const isProduction = appConfig.mode === 'production';
 const startedAt = performance.now();
 
-const migrationDb = getAdminDb('migrations');
-
-// Create db roles first
-await createDbRoles();
-
-// Migrate db using admin connection (applies RLS grants)
-const migrateStartedAt = performance.now();
-await migrate(migrationDb, migrateConfig);
-console.info(`${checkMark} Migrations applied${durationSuffix(migrateStartedAt)}`);
-
 // Run all seeds, or a specific one if a target is provided (eg `pnpm seed user`)
 const target = process.argv[2];
 const seedNames = seedScripts.map((s) => s.name);
@@ -28,7 +18,27 @@ if (target && !seedNames.includes(target)) {
   process.exit(1);
 }
 
-const toRun = target ? seedScripts.filter((s) => s.name === target) : seedScripts;
+const toRun = target ? seedScripts.filter((s) => s.name === target) : seedScripts.filter((s) => !s.explicit);
+
+// Before anything writes: a seed that refuses this database stops the run before the migrations touch it
+for (const seed of toRun) {
+  try {
+    seed.precheck?.();
+  } catch (error) {
+    console.error(`Refusing seed "${seed.name}": ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
+}
+
+const migrationDb = getAdminDb('migrations');
+
+// Create db roles first
+await createDbRoles();
+
+// Migrate db using admin connection (applies RLS grants)
+const migrateStartedAt = performance.now();
+await migrate(migrationDb, migrateConfig);
+console.info(`${checkMark} Migrations applied${durationSuffix(migrateStartedAt)}`);
 
 for (const seed of toRun) {
   if (isProduction && !seed.allowProduction) {

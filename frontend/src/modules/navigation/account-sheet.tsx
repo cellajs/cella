@@ -22,7 +22,7 @@ import { useUpdateUser } from '~/modules/user/query';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
-import { placeholderColorClass } from '~/utils/placeholder-color-class';
+import { placeholderCoverClass } from '~/utils/placeholder-color-class';
 
 /** The app runs installed, in its own window without browser controls. */
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
@@ -96,7 +96,7 @@ export function AccountSheet() {
           tabIndex={-1}
           aria-label={profileLabel}
           onClick={openProfile}
-          className={cn('block h-40 w-full bg-cover bg-center transition-colors duration-300', !user.bannerUrl && placeholderColorClass(user.id))}
+          className={cn('block h-40 w-full bg-cover bg-center transition-colors duration-300', !user.bannerUrl && placeholderCoverClass(user.id))}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         />
         {/* Cover and bar line up with a page header without an uploaded cover */}

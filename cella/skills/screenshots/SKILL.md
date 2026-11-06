@@ -14,24 +14,28 @@ and the command cannot do it: run it, then **look at every image**.
 
 ## Run
 
-- `pnpm cella screenshots` shoots on a testbed: this checkout's running one, else one it starts and stops after. It
-  signs in as `ADMIN_EMAIL`, writes both modes of every shot over the files the app ships, and prints each one's pixel
-  and file size. Hold a testbed (`pnpm cella testbed`) through a review loop, so a re-shoot skips its start.
+- `pnpm cella screenshots` shoots on a testbed seeded with the app's showcase: this checkout's running one, else one it
+  starts and stops after. It signs in as the showcase's admin, writes both modes of every shot over the files the app
+  ships, and prints each one's pixel and file size. Hold one (`pnpm cella testbed --showcase`) through a review loop, so
+  a re-shoot skips its start.
 - A trial run that leaves the working tree alone: `pnpm cella screenshots --out <dir>`.
 - One shot at a time, which is what the review loop uses: `pnpm cella screenshots settings`.
-- The testbed's database is seeded once and kept. Faker is unseeded, so a fresh one (`pnpm cella testbed --fresh`)
-  swaps the names and dates: expect a full binary diff.
 - `format` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and the command stops before
   the testbed starts without it. It is written lossless, so the pixels are the screenshot's own; Chromium's own lossless
   WebP weighs about what the PNG does.
 
 ## The database
 
-A development database that has been worked in fails the data check below: bench users, test rows, your own address,
-dozens of sessions. That is why the shots come from a testbed. On it the command also turns MFA on for the shot user,
-with a passkey and an authenticator app that exist only to be shown, and for a share of their organizations' members
-(`pnpm --filter backend showcase:mfa`), so the account page and the member tables show both states. Nobody can sign in
-with those factors, which is why it never runs on the database `backend/.env` names.
+The shots show the showcase: `json/showcase.json`, the curated dataset the app owns for its marketing images, seeded by
+`pnpm seed showcase`. A dozen organizations with their members and attachments, the admin's menu with a few unseen
+items, a short inbox, and MFA on for the admin (a passkey and an authenticator app nobody can sign in with) and a share
+of the members. Its names, ids and counts come out the same on every run; only the times move with the clock, so a
+re-shoot changes the pixels the UI changed and the dates. To change what the shots show, edit that file.
+
+The app's own seed, faker data and bench rows serve development and the other testbed tools, and never reach the shots:
+a testbed that switches between the seed and the showcase seeds a new database, and one that holds the showcase serves
+no other tool. The showcase seed refuses the database `backend/.env` names, since its admin's factors would lock that
+account out.
 
 An app's seed can be heavy, so shoot one app at a time, and shoot its tables with a wait for what they fill in last
 (`membersFilled`, `tidyTable`).

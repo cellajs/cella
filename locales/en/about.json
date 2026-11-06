@@ -175,7 +175,7 @@
   "features.zero_downtime": "Zero-downtime deploys",
   "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.",
   "hero.menu_toggle": "Open or close the menu in the app preview",
-  "hero.text": "Cella is a <strong>TypeScript template</strong> to build your own EU-hosted app. Have offline & real-time sync features on day one.",
+  "hero.text": "Cella is a <strong>TypeScript template</strong> to build & deploy web apps with offline & real-time sync features on day one.",
   "hero.title": "Ship modern web apps. Use a classic REST API.",
   "how.concept_1": "Sync processes don't compete, they complement the REST API",
   "how.concept_2": "Synced data should be shaped & treated like non-synced data",
