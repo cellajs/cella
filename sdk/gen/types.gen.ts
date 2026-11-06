@@ -343,6 +343,7 @@ export type StreamError = {
  */
 export type ProtectedResourceMetadata = {
   resource: string;
+  resource_name: string;
   authorization_servers: Array<string>;
   scopes_supported: Array<string>;
   bearer_methods_supported: Array<string>;
@@ -3201,9 +3202,9 @@ export type HandleMcpErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Insufficient scope
+   * Forbidden
    *
-   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
+   * A call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.
    */
   403: {
     jsonrpc: '2.0';

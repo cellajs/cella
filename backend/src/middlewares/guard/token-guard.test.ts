@@ -40,13 +40,14 @@ interface Forgery {
   issuer?: string;
   audience?: string;
   expiresAt?: number | string;
+  typ?: string;
 }
 
 /** A token signed under the server's `kid`, well-formed for this route unless a forgery says otherwise. */
-const signed = async ({ key, alg = 'RS256', issuer = appConfig.oauthUrl, audience = resource, expiresAt = '1h' }: Forgery = {}) => {
+const signed = async ({ key, alg = 'RS256', issuer = appConfig.oauthUrl, audience = resource, expiresAt = '1h', typ = 'at+jwt' }: Forgery = {}) => {
   const [signingJwk] = (await loadSigningJwks()).keys;
   return new SignJWT(claims)
-    .setProtectedHeader({ alg, kid: signingJwk.kid, typ: 'at+jwt' })
+    .setProtectedHeader({ alg, kid: signingJwk.kid, typ })
     .setSubject('user1')
     .setIssuer(issuer)
     .setAudience(audience)
@@ -82,15 +83,20 @@ describe('tokenGuard', () => {
     expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
   });
 
-  it('treats an opaque API key as no token: the MCP face takes only access tokens', async () => {
-    const ctx = mockCtx('Bearer cella_sk_test_notajwt');
+  it('must not set an actor via an API key, and says the proof was refused: the MCP face takes only access tokens', async () => {
+    const ctx = mockCtx(`Bearer ${appConfig.slug}_sk_test_notajwt`);
     expect((await runExpectingError(ctx)).status).toBe(401);
-    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
+    expect(ctx.set).not.toHaveBeenCalled();
+    // RFC 6750 §3.1: a request that carried a proof hears `invalid_token`, so the client knows to get a token.
+    expect(ctx.header).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      `Bearer error="invalid_token", error_description="access_token_required", resource_metadata="${metadata}", scope="${mcpInitialScope}"`,
+    );
   });
 
   /**
-   * The verifier pins the signature to the server's keys, and the token to this issuer, this route's resource and its
-   * expiry. A token that fails any of these never reaches the grant policy or the database: the challenge names the
+   * The verifier pins the signature to the server's keys, and the token to its type, this issuer, this route's resource
+   * and its expiry. A token that fails any of these never reaches the grant policy or the database: the challenge names the
    * verifier's reason, and no actor is set.
    */
   const forgeries: [vector: string, forge: () => Promise<string>, reason: string][] = [
@@ -102,6 +108,7 @@ describe('tokenGuard', () => {
       'invalid_token',
     ],
     ['an unsigned token (`alg: none`)', unsigned, 'invalid_token'],
+    ["the server's signature on a JWT that is no access token (`typ: JWT`)", () => signed({ typ: 'JWT' }), 'invalid_token'],
     ["an HS256 token keyed with the server's public key", async () => signed({ alg: 'HS256', key: await publicKeyBytes() }), 'invalid_token'],
     ["an attacker's key under the server's `kid`", async () => signed({ key: (await generateKeyPair('RS256')).privateKey }), 'invalid_token'],
   ];

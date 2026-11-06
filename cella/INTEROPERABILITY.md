@@ -53,11 +53,13 @@ Only a key's hash is stored, with its prefix and last four characters for displa
 
 ### Access scopes
 
-The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else. An unknown scope fails closed; a session, and a key issued without scopes, are unmasked. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
+The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else. An unknown scope fails closed; a session, and a key issued without scopes, are unmasked. A REST call outside the token's scopes answers as the request would for an actor without that permission, with no `insufficient_scope` challenge; the MCP face names the scope to step up to. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
 
 ### Tokens
 
-Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, which its tools run through, and a tenant's API token works at the MCP endpoint. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request.
+Access tokens are signed JWTs, each for one tenant's resource: the REST API of that tenant, or one organization's MCP endpoint, so a token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, which its tools run through, and a tenant's API token works at the MCP endpoint. A guard verifies one locally, with no call to the authorization server, and reads what it rests on at every request: revoking a grant or a key, or changing a membership, counts at the next request. An MCP tool call runs its REST route in the same process with the caller's token, which is valid there, so the token never travels to another resource server.
+
+A machine request the REST API refuses, with no proof or with a key or token that does not hold, names the tenant's metadata in its challenge. The REST API's resource identifier is the tenant URL, so its metadata names a prefix of the request URL, not the request URL itself.
 
 ### Quotas and limits
 

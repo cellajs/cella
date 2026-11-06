@@ -10,6 +10,7 @@ import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { loggerMiddleware } from '#/middlewares/logger';
+import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
 
@@ -54,11 +55,13 @@ app.use('*', loggerMiddleware);
 
 // No CORS middleware: the API is same-origin under /api, so other origins get no grant and the browser blocks them.
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
-// request that carries an API key skips it (the service guard rejects browser origins itself), and so does a mail
-// provider's one-click unsubscribe (RFC 8058): a form post with no Origin, authorized by the token in its URL alone.
+// request that carries an API key (the service guard rejects browser origins itself) or an access token skips it: a
+// page on another origin cannot add either header without that grant. So does a mail provider's one-click unsubscribe
+// (RFC 8058): a form post with no Origin, authorized by the token in its URL alone.
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
 const isOneClickUnsubscribe = (ctx: Context<Env>) => ctx.req.method === 'POST' && ctx.req.path.endsWith('/notifications/unsubscribe');
-app.use('*', (ctx, next) => (hasApiKeyHeader(ctx) || isOneClickUnsubscribe(ctx) ? next() : csrfMiddleware(ctx, next)));
+const carriesMachineProof = (ctx: Context<Env>) => hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) !== null;
+app.use('*', (ctx, next) => (carriesMachineProof(ctx) || isOneClickUnsubscribe(ctx) ? next() : csrfMiddleware(ctx, next)));
 
 app.use('*', clientVersionMiddleware);
 

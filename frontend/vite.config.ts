@@ -106,6 +106,15 @@ const gitSha = (() => {
   }
 })();
 
+/**
+ * OAuth metadata asked for at its RFC 8414 or RFC 9728 location (the well-known name before the issuer or resource
+ * path), proxied to the path its service publishes it at. Production redirects there (`infra/caddy/Caddyfile`).
+ */
+const metadataProxy = (name: 'oauth-authorization-server' | 'oauth-protected-resource', prefix: string, port: number) => {
+  const location = `/.well-known/${name}`;
+  return { [`${location}${prefix}`]: { target: `http://localhost:${port}`, rewrite: (url: string) => `${url.slice(location.length)}${location}` } };
+};
+
 const viteConfig = {
   logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
@@ -132,6 +141,9 @@ const viteConfig = {
       [servicePaths.yjs]: { target: `ws://localhost:${appConfig.services.yjs.port}`, ws: true },
       [servicePaths.mcp]: { target: `http://localhost:${appConfig.services.mcp.port}` },
       [servicePaths.oauth]: { target: `http://localhost:${appConfig.services.oauth.port}` },
+      ...metadataProxy('oauth-authorization-server', servicePaths.oauth, appConfig.services.oauth.port),
+      ...metadataProxy('oauth-protected-resource', servicePaths.backend, appConfig.services.backend.port),
+      ...metadataProxy('oauth-protected-resource', servicePaths.mcp, appConfig.services.mcp.port),
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.

@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { deleteConnectedApp, listAttachments, listConnectedApps, updateOrganization } from 'sdk';
+import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
-import { resourceUri } from '#/modules/oauth-server/resources';
+import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { adminRole, defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
@@ -54,6 +55,8 @@ describe('OAuth authorization server', async () => {
     expect(metadata.grant_types_supported).toEqual(expect.arrayContaining(['authorization_code', 'refresh_token', 'client_credentials']));
     expect(metadata.code_challenge_methods_supported).toEqual(['S256']);
     expect(metadata.client_id_metadata_document_supported).toBe(true);
+    // A DPoP-bound token would pass a guard as a bearer token, with no proof checked.
+    expect(metadata.dpop_signing_alg_values_supported).toBeUndefined();
 
     const jwks = await fetch(`${oauth.issuer}/jwks`).then((r) => r.json() as Promise<{ keys: { kid: string; d?: string }[] }>);
     expect(jwks.keys.length).toBeGreaterThanOrEqual(2);
@@ -69,6 +72,14 @@ describe('OAuth authorization server', async () => {
 
     const token = await verifyAccessToken(String(body.access_token), { tenantId: client.org.tenantId });
     expect(token).toMatchObject({ kind: 'service', actorId: client.clientId, tenantId: client.org.tenantId, scopes: ['attachment:read'] });
+
+    // Scheme, host and tenant id in capitals name the same resource, and the token carries the audience the guards build.
+    const shouted = `${appConfig.backendUrl.replace(/^[^/]+\/\/[^/]+/, (origin) => origin.toUpperCase())}/tenants/${client.org.tenantId.toUpperCase()}`;
+    const capitals = await clientCredentials(client, { scope: 'attachment:read', resource: shouted });
+    expect(capitals.status).toBe(200);
+    await expect(verifyAccessToken(String(capitals.body.access_token), { tenantId: client.org.tenantId })).resolves.toMatchObject({
+      kind: 'service',
+    });
   });
 
   it('refuses a wrong client secret and a resource outside this deployment', async () => {
@@ -106,6 +117,31 @@ describe('OAuth authorization server', async () => {
     expect(otherTenant.response.status).toBe(401);
   });
 
+  it('answers every machine 401 at the API with a challenge that names the tenant metadata (RFC 9728 §5.1)', async () => {
+    const client = await serviceAccountClient();
+    const { body } = await clientCredentials(client, {
+      scope: 'attachment:read',
+      resource: resourceUri({ face: 'api', tenantId: client.org.tenantId }),
+    });
+    const challenge = async (tenantId: string, headers: Record<string, string>) => {
+      const { response } = await call(listAttachments, { path: { tenantId, organizationId: client.org.id }, headers });
+      expect(response.status).toBe(401);
+      return response.headers.get('www-authenticate');
+    };
+    const metadata = (tenantId: string) => resourceMetadataUrl({ face: 'api', tenantId });
+
+    // No proof: where to get a token, with no error, since nothing was refused.
+    const tenantId = client.org.tenantId;
+    expect(await challenge(tenantId, { 'Content-Type': 'application/json' })).toBe(`Bearer resource_metadata="${metadata(tenantId)}"`);
+    // A refused key or token: `invalid_token` and why, so the client knows to get a new one.
+    expect(await challenge(tenantId, bearerHeaders(`${client.clientSecret}x`))).toBe(
+      `Bearer error="invalid_token", error_description="invalid_api_key", resource_metadata="${metadata(tenantId)}"`,
+    );
+    expect(await challenge('other01', bearerHeaders(String(body.access_token)))).toBe(
+      `Bearer error="invalid_token", error_description="invalid_token", resource_metadata="${metadata('other01')}"`,
+    );
+  });
+
   it('takes a client identified by its metadata document through consent to a token', async () => {
     const clientId = 'https://mcp-client.example/metadata.json';
     const redirectUri = 'http://localhost:9999/callback';
@@ -128,7 +164,8 @@ describe('OAuth authorization server', async () => {
         resource,
         sessionCookie: user.sessionCookie,
       });
-      expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, refusal: null });
+      // The page names where the authorization goes, which the client's own host does not tell.
+      expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, redirectHost: 'localhost:9999', refusal: null });
       expect(result.status).toBe(200);
       const token = await verifyAccessToken(String(result.body.access_token), { tenantId: org.tenantId, organizationId: org.id });
       expect(token).toMatchObject({ kind: 'user', actorId: user.id, clientId, scopes: ['attachment:read'] });

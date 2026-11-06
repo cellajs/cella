@@ -511,6 +511,12 @@
             "schema": {
               "type": "string"
             }
+          },
+          "WWW-Authenticate": {
+            "description": "On a route that takes an API key or access token, unless the request carries a session cookie: a `Bearer` challenge naming where the resource publishes its metadata (RFC 9728) and, for a refused key or token, `error=\"invalid_token\"` with the reason.",
+            "schema": {
+              "type": "string"
+            }
           }
         },
         "content": {
@@ -1720,6 +1726,9 @@
           "resource": {
             "type": "string"
           },
+          "resource_name": {
+            "type": "string"
+          },
           "authorization_servers": {
             "type": "array",
             "items": {
@@ -1742,10 +1751,11 @@
             "type": "string"
           }
         },
-        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "required": ["resource", "resource_name", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
         "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
         "example": {
           "resource": "http://localhost:3000/api/tenants/m5jfjs",
+          "resource_name": "Cella DEVELOPMENT API",
           "authorization_servers": ["http://localhost:3000/oauth"],
           "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
           "bearer_methods_supported": ["header"],
@@ -8011,8 +8021,9 @@
               "application/json": {
                 "example": {
                   "resource": "http://localhost:3000/mcp/tenants/5pooo8/organizations/8c598ff2-1070-4bfe-af42-de4764db5aba/mcp",
+                  "resource_name": "Cella DEVELOPMENT MCP",
                   "authorization_servers": ["http://localhost:3000/oauth"],
-                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "scopes_supported": ["organization:read", "attachment:read"],
                   "bearer_methods_supported": ["header"],
                   "resource_documentation": "http://localhost:3000/docs"
                 },
@@ -8044,7 +8055,7 @@
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.",
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint, for the revisions that open with initialize. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata, and an invalid token or an API key adds invalid_token. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge. A browser Origin other than the app answers 403, and an MCP-Protocol-Version this server does not implement answers 400. GET and DELETE answer 405: the endpoint opens no stream and holds no session.",
         "x-enabled-by": {
           "service": "mcp"
         },
@@ -8106,15 +8117,15 @@
             "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
-            "description": "Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.",
+            "description": "Forbidden\n\nA call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.",
             "headers": {
               "WWW-Authenticate": {
                 "schema": {
                   "type": "string",
-                  "description": "The scope to step up to, and where to find the authorization server's metadata."
+                  "description": "On a call outside the token scopes: the scope to step up to, and where to find the authorization server's metadata."
                 },
-                "required": true,
-                "description": "The scope to step up to, and where to find the authorization server's metadata."
+                "required": false,
+                "description": "On a call outside the token scopes: the scope to step up to, and where to find the authorization server's metadata."
               }
             },
             "content": {
@@ -8154,6 +8165,11 @@
                     }
                   },
                   "required": ["jsonrpc", "id", "error"]
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenError"
                 }
               }
             }

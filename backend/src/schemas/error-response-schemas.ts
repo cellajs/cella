@@ -14,6 +14,14 @@ const requestIdHeader = {
   'X-Request-Id': { description: 'The request id, also `instance` in the body; quote it when reporting a failure.', schema: { type: 'string' } },
 } satisfies Record<string, HeaderDoc>;
 
+const challengeHeader = {
+  'WWW-Authenticate': {
+    description:
+      'On a route that takes an API key or access token, unless the request carries a session cookie: a `Bearer` challenge naming where the resource publishes its metadata (RFC 9728) and, for a refused key or token, `error="invalid_token"` with the reason.',
+    schema: { type: 'string' },
+  },
+} satisfies Record<string, HeaderDoc>;
+
 const retryAfterHeader = {
   'Retry-After': { description: 'Seconds to wait before trying again, at least 1.', schema: { type: 'integer', minimum: 1 } },
 } satisfies Record<string, HeaderDoc>;
@@ -31,6 +39,7 @@ const errorResponseOptions = [
     name: 'UnauthorizedError',
     description: 'Unauthorized',
     schemaDescription: 'The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.',
+    headers: challengeHeader,
   },
   {
     code: 403,

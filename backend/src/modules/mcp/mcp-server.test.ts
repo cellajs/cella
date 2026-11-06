@@ -7,7 +7,7 @@ import { AppError } from '#/core/error';
 import { createXRoutes, errors, json, xRoute } from '#/core/x-routes';
 import { baseDb } from '#/db/db';
 import { publicGuard } from '#/middlewares/guard';
-import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage } from '#/modules/mcp/mcp-server';
+import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage, protocolVersions } from '#/modules/mcp/mcp-server';
 import { buildMcpTools, type McpToolDescriptor } from '#/modules/mcp/mcp-tools';
 import { createBaseApp } from '#/server';
 import { defaultHook } from '#/utils/default-hook';
@@ -34,10 +34,30 @@ describe('mcp-server', () => {
     expect(result.serverInfo).toHaveProperty('name');
   });
 
-  it('echoes the client requested protocol version on initialize', async () => {
-    const res = await handle(null, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05' } });
-    const result = res?.result as Record<string, unknown>;
-    expect(result.protocolVersion).toBe('2024-11-05');
+  // MCP lifecycle: the requested revision when the server implements it, else another it does; never one it does not.
+  it.each([
+    ['2025-06-18', '2025-06-18'],
+    ['2026-07-28', protocolVersions[0]],
+    ['2099-01-01', protocolVersions[0]],
+    [undefined, protocolVersions[0]],
+  ])('answers initialize asking for %s with %s', async (requested, answered) => {
+    const res = await handle(null, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: requested } });
+    expect(res?.result).toMatchObject({ protocolVersion: answered });
+  });
+
+  it('answers a request with a null id as invalid, never as a notification', async () => {
+    const res = await handle(null, { jsonrpc: '2.0', id: null, method: 'tools/list' });
+    expect(res).toEqual({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid Request' } });
+  });
+
+  it('answers GET and DELETE with 405 and the method it allows, so a client opens no stream and ends no session', async () => {
+    // An MCP client sends its token on both, and a DELETE carries no body.
+    const headers = { Authorization: 'Bearer header.payload.signature' };
+    for (const method of ['GET', 'DELETE']) {
+      const response = await baseApp.request('/tenants/tenant-1/organizations/org-1/mcp', { method, headers });
+      expect(response.status, method).toBe(405);
+      expect(response.headers.get('allow')).toBe('POST');
+    }
   });
 
   it('lists the attachment tools with scope, annotations and a strict input schema', async () => {
