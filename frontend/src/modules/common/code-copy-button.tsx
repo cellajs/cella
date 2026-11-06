@@ -4,15 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { announce } from '~/modules/common/announce';
 import { CopiedIcon } from '~/modules/common/copied-icon';
-import { Button } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 
 interface CodeCopyButtonProps {
   /** A getter for text that exists only once rendered. */
   value: string | (() => string);
+  variant?: Extract<ButtonProps['variant'], 'outline' | 'ghost'>;
 }
 
 /** Copies code and reads the result out to a screen reader. */
-export function CodeCopyButton({ value }: CodeCopyButtonProps) {
+export function CodeCopyButton({ value, variant = 'outline' }: CodeCopyButtonProps) {
   const { t } = useTranslation();
   const { copied, copyToClipboard } = useCopyToClipboard();
 
@@ -22,7 +23,7 @@ export function CodeCopyButton({ value }: CodeCopyButtonProps) {
   };
 
   return (
-    <Button variant="outline" size="micro" aria-label={t('c:copy')} className="size-7 p-0" onClick={handleCopy}>
+    <Button variant={variant} size="micro" aria-label={t('c:copy')} className="size-7 p-0" onClick={handleCopy}>
       <CopiedIcon copied={copied} icon={CopyIcon} />
     </Button>
   );

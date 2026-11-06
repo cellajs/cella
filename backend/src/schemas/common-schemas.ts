@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
-import type { ErrorKey } from '#/core/error';
+import type { TemplateErrorKey } from '#/core/error';
 import { maxLength } from '#/db/utils/constraints';
 import countries from '#json/countries.json';
 
@@ -29,7 +29,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * @param key - Translation key, e.g. 'error:invalid_offset'.
  * @param options - Interpolation values.
  */
-export const translatedError = (key: `error:${ErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
+export const translatedError = (key: `error:${TemplateErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
 
 export const validIdSchema = z.string().max(maxLength.id);
 
@@ -207,7 +207,7 @@ export const locationSchema = z.object({ Location: z.string() });
  * @param errorType - Translation key, e.g. 'invalid_slug'.
  */
 export const refineWithType =
-  <T>(check: (val: T) => boolean, errorType: ErrorKey) =>
+  <T>(check: (val: T) => boolean, errorType: TemplateErrorKey) =>
   (val: T, ctx: z.RefinementCtx) => {
     if (!check(val)) {
       ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });

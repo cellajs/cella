@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { faker } from '@faker-js/faker';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
-import { appConfig, hierarchy, seenWindowMs } from 'shared';
+import { appConfig, hierarchy, isSeenTracked, seenWindowMs } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
 import slugify from 'slugify';
 import { getSeedDb } from '#/db/db';
@@ -263,14 +263,14 @@ export const showcaseSeed = async () => {
     await db.insert(attachmentsTable).values(records);
 
     // The newest attachments stay unseen in the admin's menu; the window's others count as seen
-    if (adminMembership) {
+    const productType = 'attachment';
+    if (adminMembership && isSeenTracked(productType)) {
       const seen = records
         .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
         .slice(adminMembership.archived ? 0 : (org.unseen ?? 0))
         .filter(({ createdAt }) => createdAt > seenFrom)
         .map(({ id }) => id);
-      if (seen.length)
-        await db.transaction((tx) => insertSeenBy({ var: { db: tx } }, { userId: adminId, productType: 'attachment', productIds: seen }));
+      if (seen.length) await db.transaction((tx) => insertSeenBy({ var: { db: tx } }, { userId: adminId, productType, productIds: seen }));
     }
 
     people += members.length;

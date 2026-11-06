@@ -54,23 +54,28 @@ const wheel = async (img: HTMLElement, deltaY: number, init: WheelEventInit = {}
   await frame();
 };
 
+/** The mouse's pointer event at `at`: Chrome's mouse is the active pointer 1, so a drag can capture it. */
+const mousePointer = (type: string, at: { clientX: number; clientY: number }) =>
+  new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, ...at });
+
 const drag = async (img: HTMLElement, dx: number, dy: number) => {
   const rect = img.getBoundingClientRect();
   const start = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
-  img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+  img.dispatchEvent(mousePointer('pointerdown', start));
   await frame();
   const end = { clientX: start.clientX + dx, clientY: start.clientY + dy };
-  img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...end }));
+  img.dispatchEvent(mousePointer('pointermove', end));
   await frame();
-  img.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, ...end }));
+  img.dispatchEvent(mousePointer('pointerup', end));
   await frame();
 };
 
-/** A press and release in place, `dx`/`dy` from the viewport centre. */
+/** A mouse click in place, `dx`/`dy` from the viewport centre. */
 const press = async (img: HTMLElement, dx: number, dy: number) => {
   const at = fromCentre(img, dx, dy);
-  img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...at }));
-  img.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, ...at }));
+  img.dispatchEvent(mousePointer('pointerdown', at));
+  img.dispatchEvent(mousePointer('pointerup', at));
+  img.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...at }));
   await frame();
 };
 
@@ -141,7 +146,8 @@ export const Viewer: Story = {
 
     await step('at fit or below, a drag or a click leaves the image in place', async () => {
       await drag(img, 40, 25);
-      await press(img, 50, 20);
+      // Away from the click of the next steps, which would otherwise read as the second tap of a double tap
+      await press(img, -50, -20);
       await expect(panLayerOf(img)).toMatchObject({ x: 0, y: 0 });
     });
 
@@ -171,15 +177,15 @@ export const Viewer: Story = {
       await userEvent.click(zoomIn);
       // From the viewport's centre, where a press that never moves leaves the offset at 0
       const start = fromCentre(img);
-      img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+      img.dispatchEvent(mousePointer('pointerdown', start));
       await frame();
-      // The button comes up outside the viewport, which never sees that mouseup
-      document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      // The button comes up outside the viewport, which sees the pointer leave and never its pointerup
+      img.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, pointerId: 1, pointerType: 'mouse', relatedTarget: document.body }));
       await frame();
 
       // Back over the image with no button held, the pointer moves without dragging the image along
       const back = { clientX: start.clientX + 40, clientY: start.clientY + 25 };
-      img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...back }));
+      img.dispatchEvent(mousePointer('pointermove', back));
       await new Promise((resolve) => setTimeout(resolve, 100));
       await expect(panLayerOf(img)).toMatchObject({ x: 0, y: 0 });
     });
@@ -219,10 +225,10 @@ export const BackdropDismiss: Story = {
     await userEvent.click(img);
     await expect(onBackdropClick).not.toHaveBeenCalled();
 
-    // The letterbox beside the image belongs to the stage, not to the pan layers above it
+    // The letterbox beside the image belongs to the pan layer, whose click off the image dismisses
     const rect = stage.getBoundingClientRect();
     const letterbox = document.elementFromPoint(rect.left + 5, rect.top + 5) as HTMLElement;
-    await expect(letterbox).toBe(stage);
+    await expect(img.contains(letterbox)).toBe(false);
     await userEvent.click(letterbox);
     await expect(onBackdropClick).toHaveBeenCalledTimes(1);
   },
