@@ -1,8 +1,8 @@
 ---
 breaking: true
 clientCacheBump: true
-caughtBy: compiler
-grep: limit=, offset=, sort=, order=, .items, .total, offsetPaging, paginationQuerySchema, PageParams, hiddenIds, invalid_limit, invalid_offset
+caughtBy: nothing
+grep: limit=, offset=, sort=, order=, .items, .total, offsetPaging, paginationQuerySchema, PageParams, hiddenIds, invalid_limit, invalid_offset, listMyMemberships, listMyInvitations, listConnectedApps, listConnections, listApiKeys
 ---
 
 # Lists page by token (aep.dev): pageToken, maxPageSize, skip, orderBy and results
@@ -10,7 +10,9 @@ grep: limit=, offset=, sort=, order=, .items, .total, offsetPaging, paginationQu
 Every list takes `pageToken`, `maxPageSize`, `skip` and, where it orders, `orderBy` in place of `limit`, `offset`,
 `sort` and `order`, and answers `{ results, nextPageToken, totalSize }` in place of `{ items, total }`. An app moves
 its own list routes onto `listQuerySchema` and `readListPage`, its list query options onto `tokenPaging`, and every
-read of a list's `items` or `total` to `results` and `totalSize`.
+read of a list's `items` or `total` to `results` and `totalSize`. Lists that answered whole (`listMyMemberships`,
+`listMyInvitations`, `listConnectedApps`, `listConnections`, `listApiKeys`) now answer their first page, 40 rows by
+default: a call that reads one whole goes through `fetchAllPages`, which no compiler or test asks for.
 
 ## What & why
 
@@ -36,8 +38,9 @@ No script: manual.
 3. Declare the list response with `paginationSchema(schema)` or `productListResponseSchema(type, schema)`, and build mocks with `mockPaginated`.
 4. Run `pnpm sdk`, then fix what typecheck flags in the frontend: `.items` to `.results`, `.total` to `.totalSize`, `offsetPaging(limit, fetch)` to `tokenPaging((pageToken, signal) => fetch(pageQuery(limit, pageToken), signal))`, list filters typed with `ListFilters<…>`, and `sort`, `order` sent as `orderBy: orderByParam(sort, order)`.
 5. Read a list that must be whole through `fetchAllPages(fetchPage, maxPageSize)`, and pass export fetchers a `PageRequest`.
-6. Rewrite hand-written list URLs and test requests: `limit` to `maxPageSize`, `offset` to `skip`, `sort` and `order` to `orderBy`.
-7. If `shared/config` sets its own `clientCacheVersion`, change its value.
+6. Find the app's calls of `listMyMemberships`, `listMyInvitations`, `listConnectedApps`, `listConnections` and `listApiKeys` (SDK, MCP tools, scripts): each still compiles and gets one page, so read it through `fetchAllPages` or loop on `nextPageToken`.
+7. Rewrite hand-written list URLs and test requests: `limit` to `maxPageSize`, `offset` to `skip`, `sort` and `order` to `orderBy`.
+8. If `shared/config` sets its own `clientCacheVersion`, change its value.
 
 ## Verify
 
@@ -46,3 +49,5 @@ pnpm sdk
 pnpm check
 pnpm test
 ```
+
+For each list the app reads whole, seed more rows than one page holds (41) and check that every row arrives.
