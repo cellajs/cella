@@ -71,6 +71,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
                         )}
                         {id === 'organization' && !organization && (
                           <CreateOrganizationForm
+                            onboarding
                             callback={(args) => {
                               if (args.status === 'success') setOrganization(args.data);
                             }}

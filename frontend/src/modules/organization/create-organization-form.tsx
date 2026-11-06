@@ -29,6 +29,8 @@ import { formResolver } from '~/utils/form-resolver';
 interface CreateOrganizationFormProps {
   /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
+  /** Rendered in the onboarding stepper: a first organization starts published, so the draft switch is left out. */
+  onboarding?: boolean;
   children?: ReactNode;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
@@ -39,7 +41,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const formContainerId = 'create-organization';
 
-export function CreateOrganizationForm({ dialog: isDialog, children, callback }: CreateOrganizationFormProps) {
+export function CreateOrganizationForm({ dialog: isDialog, onboarding: isOnboarding, children, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -76,7 +78,10 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
       return;
     }
 
-    createMutation.mutate({ path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] }, { onSuccess, onError });
+    createMutation.mutate(
+      { path: { tenantId }, body: [{ ...values, draft: isOnboarding ? false : values.draft, id: `temp-${generateId()}` }] },
+      { onSuccess, onError },
+    );
   };
 
   return (
@@ -98,7 +103,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           nameValue={name}
           prefix="/~/"
         />
-        {hierarchy.canDraft('organization') && (
+        {!isOnboarding && hierarchy.canDraft('organization') && (
           <FormField
             control={form.control}
             name="draft"
