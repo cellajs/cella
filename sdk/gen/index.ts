@@ -527,6 +527,7 @@ export type {
   PostAppCatchupErrors,
   PostAppCatchupResponse,
   PostAppCatchupResponses,
+  PreconditionFailedError,
   PresignAttachmentUrlsData,
   PresignAttachmentUrlsError,
   PresignAttachmentUrlsErrors,

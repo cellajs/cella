@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { assertNoWriteBetween } from '#/core/preconditions';
 import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -38,6 +39,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
 
   const values = { ...input, ...updateStamps(actorId) };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
+  if (!updatedRecord) assertNoWriteBetween(ctx, 'organization');
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });

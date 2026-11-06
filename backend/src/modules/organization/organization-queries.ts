@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
+import { preconditionWhere } from '#/core/preconditions';
 import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
@@ -52,7 +53,10 @@ interface UpdateOrganizationOpts {
   values: Partial<InsertOrganizationModel>;
 }
 
-/** Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. */
+/**
+ * Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. Undefined when no row matched, as
+ * when a write moved the row past the request's preconditions (`preconditionWhere`).
+ */
 export const updateOrganization = async (ctx: ActorContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
   const { organizationFlags, setupConfig, toolsConfig, ...rest } = values;
@@ -68,7 +72,7 @@ export const updateOrganization = async (ctx: ActorContext, { id, values }: Upda
   const [updated] = await db
     .update(organizationsTable)
     .set(updateData)
-    .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId)))
+    .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId), preconditionWhere(ctx, organizationsTable)))
     .returning();
   return updated;
 };
@@ -77,14 +81,24 @@ interface PublishOrganizationOpts {
   id: string;
 }
 
-/** Stamps a draft organization published. Undefined when it was not a draft, also when another call published it first. */
+/**
+ * Stamps a draft organization published. Undefined when it was not a draft, when another call published it first, or
+ * when a write moved it past the request's preconditions.
+ */
 export const publishOrganization = async (ctx: UserContext, { id }: PublishOrganizationOpts) => {
   const { db, tenantId, user } = ctx.var;
   const at = getIsoDate();
   const [published] = await db
     .update(organizationsTable)
     .set({ publishedAt: at, ...updateStamps(user.id, at) })
-    .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId), isNull(organizationsTable.publishedAt)))
+    .where(
+      and(
+        eq(organizationsTable.id, id),
+        eq(organizationsTable.tenantId, tenantId),
+        isNull(organizationsTable.publishedAt),
+        preconditionWhere(ctx, organizationsTable),
+      ),
+    )
     .returning();
   return published;
 };

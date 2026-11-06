@@ -6,7 +6,7 @@ import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type AppErrorStatus, type ErrorKey, errorTitle } from '#/core/error';
-import { checksAuthoringRules, undocumentedErrorStatus } from '#/core/openapi-validation';
+import { checksAuthoringRules, clientPath, undocumentedErrorStatus } from '#/core/openapi-validation';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
 import { problemJsonType } from '#/schemas/error-response-schemas';
@@ -192,8 +192,9 @@ export function toClientError(
 
 /** Global error handler for Hono API routes. */
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
-  // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`
-  const safePath = scrubUrl(ctx.req.path);
+  // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`.
+  // A custom method shows as the client sent it (`:verb`), not at its routable path.
+  const safePath = scrubUrl(clientPath(ctx.req.path));
   const answered = toClientError(err, {
     path: safePath,
     method: ctx.req.method,

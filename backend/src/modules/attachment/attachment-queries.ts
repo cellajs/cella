@@ -3,6 +3,7 @@ import { and, count, eq, getColumns, getTableName, inArray, isNull, type SQL, sq
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { appConfig, entityIdColumnName } from 'shared';
 import type { ActorContext, DbContext } from '#/core/context';
+import { preconditionWhere } from '#/core/preconditions';
 import { channelTables } from '#/db/channel-tables';
 import { imageColumns } from '#/db/storage-columns';
 import type { ActorId } from '#/db/utils/ids';
@@ -39,13 +40,16 @@ interface UpdateAttachmentOpts {
   values: PgUpdateSetSource<typeof attachmentsTable>;
 }
 
-/** Writes `values` to the attachment within the request's tenant and organization; undefined when no such row exists. */
+/**
+ * Writes `values` to the attachment within the request's tenant and organization; undefined when no such row exists,
+ * or when a write moved it past the request's preconditions (`preconditionWhere`).
+ */
 export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
   const { db } = ctx.var;
   const [updated] = await db
     .update(attachmentsTable)
     .set(values)
-    .where(and(eq(attachmentsTable.id, id), requestScopeWhere(ctx, attachmentsTable)))
+    .where(and(eq(attachmentsTable.id, id), requestScopeWhere(ctx, attachmentsTable), preconditionWhere(ctx, attachmentsTable)))
     .returning();
   return updated;
 };

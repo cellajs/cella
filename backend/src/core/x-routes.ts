@@ -15,6 +15,7 @@ import {
 } from '#/core/openapi-extensions';
 import { toKebabCase } from '#/core/openapi-helpers';
 import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors, recordPatchBody } from '#/core/openapi-validation';
+import { preconditionHeaders, preconditionResponses, preconditionsMiddleware, preconditionTarget } from '#/core/preconditions';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -139,9 +140,10 @@ const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof shared
 /**
  * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
  * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service, 400 for
- * a sign-in method), and what each marked middleware declares in `errors`.
+ * a sign-in method), the preconditions of a route for one channel or product (400, 412), and what each marked
+ * middleware declares in `errors`.
  */
-const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): Map<ErrorCode, string> => {
+const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
   const claim = (code: ErrorCode, owner: string) => {
     if (!owners.has(code)) owners.set(code, owner);
@@ -149,6 +151,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
   if (config.request) claim(400, 'request validation');
   if (config.request?.body) claim(413, 'the body limit');
   if (config.xEnabledBy) claim('service' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
+  if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
   return owners;
 };
@@ -156,6 +159,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
  * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
+ * preconditions of a route for one channel or product (`preconditionTarget`: entity tags and `If-Match`), the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
  * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
@@ -177,12 +181,14 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
   const extensionMiddleware = collectExtensionMiddleware(limited);
   const existing = [config.middleware ?? []].flat();
+  const target = preconditionTarget(config);
 
   // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
   const operation = checksAuthoringRules ? [operationMiddleware(config.operationId)] : [];
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
-  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
+  const preconditions = target ? [preconditionsMiddleware(target)] : [];
+  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...preconditions, ...existing];
 
   // Each marked middleware, then the limiters a guard runs itself, so the document lists them and their errors.
   const xMiddlewares = middleware
@@ -193,7 +199,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  const owners = chainErrors(config, xMiddlewares);
+  const owners = chainErrors(config, xMiddlewares, !!target);
   if (checksAuthoringRules) {
     for (const [code, owner] of owners) {
       if (config.responses[code] === sharedErrorResponses[code]) {
@@ -201,7 +207,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
       }
     }
   }
-  const responses = { ...pickShared(owners.keys()), ...config.responses };
+  const responses = { ...pickShared(owners.keys()), ...config.responses, ...(target && preconditionResponses(target, config.responses[200])) };
   recordDocumentedErrors(
     config.operationId,
     Object.keys(responses)
@@ -226,7 +232,8 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
   const { xGuard: _guard, xRateLimiter: _rateLimiter, xTool: _tool, xEnabledBy: _enabledBy, xScope: _scope, ...routeConfig } = config;
-  const cleanConfig = { ...routeConfig, ...createMetadataExtensions(config) };
+  const parameters = target ? { parameters: [...(config.parameters ?? []), ...preconditionHeaders(target)] } : {};
+  const cleanConfig = { ...routeConfig, ...parameters, ...createMetadataExtensions(config) };
 
   return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };

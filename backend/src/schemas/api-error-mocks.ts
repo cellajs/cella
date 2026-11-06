@@ -5,6 +5,11 @@ const errorTexts = {
   403: { type: 'forbidden', title: 'No access', detail: "You don't have permission to do this." },
   404: { type: 'not_found', title: 'Not found', detail: 'This resource does not exist or has been deleted.' },
   409: { type: 'user_mismatch', title: 'Signed in as someone else', detail: 'This link is for another account. Sign out, then open it again.' },
+  412: {
+    type: 'precondition_failed',
+    title: 'Changed since it was read',
+    detail: 'Someone saved a change since this was read. Read it again, then retry.',
+  },
   413: { type: 'body_too_large', title: 'Too large to save', detail: 'Shorten it or split it up.' },
   429: { type: 'too_many_requests', title: 'Too many attempts', detail: 'Wait a moment, then try again.', retryAfter: 30 },
 };

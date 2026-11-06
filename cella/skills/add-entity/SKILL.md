@@ -90,7 +90,10 @@ and the renderers.
     lock, and shares one `tenantContext` with `dispatchMutation(txCtx, '<name>.created', { after })`.
     The answer holds the rows and `rejectedIds`, and is 201 only when this request inserted a row.
   - **Update**: `getValidProduct(txCtx, id, '<name>', 'update', { forUpdate: true })` inside the write
-    transaction, so the merge starts from a locked row; `assertBlockFields` on the ops.
+    transaction, so the merge starts from a locked row; `assertBlockFields` on the ops. The `/{<name>Id}` routes
+    take an `ETag` and `If-Match` from `createXRoute` and the read checks it, so the update query adds
+    `preconditionWhere(ctx, <name>sTable)` to its WHERE and the operation answers a row it did not write with
+    `assertNoWriteBetween`, as attachment's do.
   - **List** (`get-attachments.ts`): the query schema is `productListQuerySchema({ …own params })`.
     `seqRangeOf(input)` tells a range read, which reads through `tenantReadIncludingDeleted`, AND-s
     the `where` of `seqRangeRead(<name>sTable, range)` and orders by its `orderBy`; a normal read
@@ -193,6 +196,7 @@ table stays outside RLS: its handlers use `ctx.var.db`, and no `seq`, `stx` or o
   `[actorGuard, tenantGuard, orgGuard]` and `xScope: '<name>:read'` or `'<name>:write'`, all mounted at
   `/tenants/:tenantId/organizations/:organizationId/<name>s`; the user's list across organizations at `/`
   with `[userGuard, relatableGuard]`, mounted at the wildcard parents `/tenants/-/organizations/-/<name>s`.
+  The update query adds `preconditionWhere` and its operation `assertNoWriteBetween`, as `updateOrganization` does.
 - **Create** (`create-organizations.ts`): normalize with `<name>Contract.normalizeBody`; check the
   slugs with `checkSlugsAvailable` and reject a taken one as `slug_exists` (where the server picks the
   slug, `generateUniqueSlugs(ctx, names, '<name>')`); apply the quota; for a parent below the

@@ -566,6 +566,24 @@
           }
         }
       },
+      "PreconditionFailedError": {
+        "description": "Precondition failed",
+        "headers": {
+          "X-Request-Id": {
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/PreconditionFailedError"
+            }
+          }
+        }
+      },
       "PayloadTooLargeError": {
         "description": "Payload too large",
         "headers": {
@@ -930,6 +948,55 @@
           "title": "Signed in as someone else",
           "status": 409,
           "detail": "This link is for another account. Sign out, then open it again.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
+          "severity": "warn",
+          "timestamp": "2025-01-01T12:00:00.000Z"
+        },
+        "x-tags": ["errors", "cella"]
+      },
+      "PreconditionFailedError": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "enum": [412]
+              }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ],
+        "description": "The resource changed since the caller read it: its entity tag is not one `If-Match` lists, or is one `If-None-Match` lists. Read it again for its current `ETag`, apply the change to what it now holds, and retry.",
+        "example": {
+          "type": "precondition_failed",
+          "title": "Changed since it was read",
+          "status": 412,
+          "detail": "Someone saved a change since this was read. Read it again, then retry.",
           "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
@@ -4281,14 +4348,25 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
         "description": "Returns a single attachment by ID.",
-        "x-tool": {
-          "description": "Read one attachment: its metadata and the description as text.",
-          "approvalRequired": false,
-          "entity": "attachment"
-        },
-        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -4317,13 +4395,39 @@
             "in": "path"
           }
         ],
+        "x-tool": {
+          "description": "Read one attachment: its metadata and the description as text.",
+          "approvalRequired": false,
+          "entity": "attachment"
+        },
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "responses": {
           "200": {
             "description": "Attachment",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified\n\nThe resource still has an entity tag `If-None-Match` lists.",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4339,6 +4443,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -4361,14 +4468,16 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",
         "description": "Renames an attachment or replaces its description.",
-        "x-tool": {
-          "description": "Rename an attachment or replace its description.",
-          "approvalRequired": true,
-          "entity": "attachment"
-        },
-        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -4397,6 +4506,13 @@
             "in": "path"
           }
         ],
+        "x-tool": {
+          "description": "Rename an attachment or replace its description.",
+          "approvalRequired": true,
+          "entity": "attachment"
+        },
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4441,6 +4557,14 @@
         "responses": {
           "200": {
             "description": "Attachment was updated",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -4460,6 +4584,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -4897,9 +5024,16 @@
         "tags": ["attachments", "cella", "product"],
         "summary": "Link attachment keys",
         "description": "Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.",
-        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -4928,6 +5062,8 @@
             "in": "path"
           }
         ],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "requestBody": {
           "required": true,
           "content": {
@@ -4999,6 +5135,9 @@
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
@@ -11940,9 +12079,25 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get organization",
         "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
-        "x-guard": ["actorGuard", "tenantGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -11990,13 +12145,34 @@
             "in": "query"
           }
         ],
+        "x-guard": ["actorGuard", "tenantGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "readLimiter"],
         "responses": {
           "200": {
             "description": "Organization",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified\n\nThe resource still has an entity tag `If-None-Match` lists.",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -12012,6 +12188,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -12034,9 +12213,16 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Update organization",
         "description": "Updates an organization within a tenant.",
-        "x-guard": ["actorGuard", "tenantGuard"],
-        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "parameters": [
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -12056,6 +12242,8 @@
             "in": "path"
           }
         ],
+        "x-guard": ["actorGuard", "tenantGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
         "requestBody": {
           "required": true,
           "content": {
@@ -12346,6 +12534,14 @@
         "responses": {
           "200": {
             "description": "Organization was updated",
+            "headers": {
+              "ETag": {
+                "description": "The entity tag of this version: send it in `If-Match` to write only while nothing changed, or in `If-None-Match` to skip an unchanged read. It versions the resource's own fields, not its `included` data or counts.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -12369,6 +12565,9 @@
           "409": {
             "$ref": "#/components/responses/ConflictError"
           },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
+          },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
           },
@@ -12389,9 +12588,16 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Publish organization",
         "description": "Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.",
-        "x-guard": ["userGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
           {
             "schema": {
               "type": "string",
@@ -12411,6 +12617,8 @@
             "in": "path"
           }
         ],
+        "x-guard": ["userGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "responses": {
           "200": {
             "description": "Organization was published",
@@ -12511,6 +12719,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailedError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"

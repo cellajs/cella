@@ -92,6 +92,14 @@ export type ConflictError = ApiError & {
 };
 
 /**
+ * The resource changed since the caller read it: its entity tag is not one `If-Match` lists, or is one `If-None-Match` lists. Read it again for its current `ETag`, apply the change to what it now holds, and retry.
+ */
+export type PreconditionFailedError = ApiError & {
+  status?: 412;
+  [key: string]: number | string | Array<string> | boolean | null | 412 | undefined;
+};
+
+/**
  * The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.
  */
 export type PayloadTooLargeError = ApiError & {
@@ -1049,6 +1057,16 @@ export type PresignAttachmentUrlsResponse = PresignAttachmentUrlsResponses[keyof
 
 export type GetAttachmentData = {
   body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.
+     */
+    'If-None-Match'?: string;
+    /**
+     * Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.
+     */
+    'If-Match'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;
@@ -1076,6 +1094,10 @@ export type GetAttachmentErrors = {
    */
   404: NotFoundError;
   /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
@@ -1099,6 +1121,12 @@ export type UpdateAttachmentData = {
       description?: string;
     };
     stx: StxBase;
+  };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
   };
   path: {
     tenantId: string;
@@ -1126,6 +1154,10 @@ export type UpdateAttachmentErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
   /**
    * Payload too large
    */
@@ -1259,6 +1291,12 @@ export type LinkAttachmentKeysData = {
     };
     convertedContentType?: string | null;
   };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;
@@ -1289,6 +1327,10 @@ export type LinkAttachmentKeysErrors = {
    * Conflict
    */
   409: ConflictError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
   /**
    * Payload too large
    */
@@ -4883,6 +4925,16 @@ export type BatchCreateOrganizationsResponse = BatchCreateOrganizationsResponses
 
 export type GetOrganizationData = {
   body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.
+     */
+    'If-None-Match'?: string;
+    /**
+     * Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.
+     */
+    'If-Match'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;
@@ -4914,6 +4966,10 @@ export type GetOrganizationErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
   /**
    * Too many requests
    */
@@ -4971,6 +5027,12 @@ export type UpdateOrganizationData = {
       };
     };
   };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;
@@ -5001,6 +5063,10 @@ export type UpdateOrganizationErrors = {
    */
   409: ConflictError;
   /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
    * Payload too large
    */
   413: PayloadTooLargeError;
@@ -5023,6 +5089,12 @@ export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof Updat
 
 export type PublishOrganizationData = {
   body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
   path: {
     tenantId: string;
     organizationId: string;
@@ -5048,6 +5120,10 @@ export type PublishOrganizationErrors = {
    * Not found
    */
   404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
   /**
    * Too many requests
    */

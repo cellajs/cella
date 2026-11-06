@@ -44,10 +44,13 @@ export const routablePath = (path: string): string | undefined => {
   return match && customVerbs.has(match[1]) ? `${path.slice(0, match.index)}/~${match[1]}` : undefined;
 };
 
-/** The paths of the document as clients send them: a custom method's `/~verb` as `:verb`. */
+/** A path as clients send it: a custom method's routable `/~verb` as `:verb`. */
+export const clientPath = (path: string) => path.replace(/\/~([a-z][a-z0-9-]*)$/, ':$1');
+
+/** The paths of the document as clients send them. */
 const documentCustomMethods = (doc: OpenApiDocument) => {
   if (!doc.paths) return;
-  doc.paths = Object.fromEntries(Object.entries(doc.paths).map(([path, item]) => [path.replace(/\/~([a-z][a-z0-9-]*)$/, ':$1'), item]));
+  doc.paths = Object.fromEntries(Object.entries(doc.paths).map(([path, item]) => [clientPath(path), item]));
 };
 
 type RequestBodyNode = { content?: Record<string, unknown> };

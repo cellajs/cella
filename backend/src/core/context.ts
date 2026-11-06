@@ -1,5 +1,6 @@
 import type { HttpBindings } from '@hono/node-server';
 import type { AccessScope, OrganizationFlags } from 'shared';
+import type { WritePreconditions } from '#/core/preconditions';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { AuthStrategy, SessionFacts } from '#/modules/auth/sessions/sessions-db';
@@ -53,7 +54,7 @@ export type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'o
  * The organization fields are present only behind `orgGuard`; operations that need them take `OrgContext`.
  */
 export type ActorContext = {
-  var: Pick<Env['Variables'], 'actor' | 'isSystemAdmin' | 'db' | 'tenantId' | 'tenant'> &
+  var: Pick<Env['Variables'], 'actor' | 'isSystemAdmin' | 'db' | 'tenantId' | 'tenant' | 'preconditions'> &
     Partial<Pick<Env['Variables'], 'organization' | 'organizationId'>>;
 };
 
@@ -96,6 +97,8 @@ export type Env = {
     errorPagePath?: string;
     /** The `operationId` of the matched route where authoring rules are checked, set before anything can refuse the request; the error handler's documented-status check reads it. */
     operationId?: string;
+    /** A write's `If-Match` and `If-None-Match` on a route for one channel or product, for the read of its row. */
+    preconditions?: WritePreconditions;
   };
   /** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */
   Bindings: HttpBindings;

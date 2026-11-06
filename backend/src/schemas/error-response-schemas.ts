@@ -54,6 +54,13 @@ const errorResponseOptions = [
       'The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.',
   },
   {
+    code: 412,
+    name: 'PreconditionFailedError',
+    description: 'Precondition failed',
+    schemaDescription:
+      'The resource changed since the caller read it: its entity tag is not one `If-Match` lists, or is one `If-None-Match` lists. Read it again for its current `ETag`, apply the change to what it now holds, and retry.',
+  },
+  {
     code: 413,
     name: 'PayloadTooLargeError',
     description: 'Payload too large',
