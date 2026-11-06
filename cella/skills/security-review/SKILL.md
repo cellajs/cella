@@ -15,6 +15,7 @@ The unit of a review is a **vector class**, never an advisory or a file: every a
 - **A periodic pass.** Rank classes by commits since their last reviewed commit touched their files (`git log --since` over each class's file list) and run the top batch.
 - **An app after a new entity or module.** Run B1, B2, B3 and E2 over the app's own entities: the briefs are the template's, the attacks are against the app's hierarchy and roles.
 - **A new boundary.** Code that parses, signs, fetches, renders or stores for the first time gets its class before it ships.
+- **Before a release.** `pnpm cella pentest` runs the cross-tenant access probe, Nuclei and ZAP against a throwaway testbed of the app, and `pnpm cella pentest report --json` hands the last run's findings to a scout ([CLI README](https://github.com/cellajs/cella-cli#pentest)). A probe finding is a B1 lead; a scanner finding files into its class by the same rules as an advisory, by its CWE.
 
 ## The pipeline per class
 
