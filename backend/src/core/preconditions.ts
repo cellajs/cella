@@ -216,7 +216,8 @@ const unsupportedHeaders = ['If-Modified-Since', 'If-Unmodified-Since'];
  * Conditional requests (RFC 9110 section 13) on one channel or product. A read answers 412 or 304 from the entity tag
  * of the entity it returns; a write leaves its preconditions for the read that authorizes it (`checkPreconditions`).
  * A 200 that is the entity carries its `ETag`, and `no-store`: its body holds counts and membership the tag does not
- * version, so a browser cache revalidating it would serve them stale, across sign-ins too.
+ * version, so a browser cache revalidating it would serve them stale, across sign-ins too. `no-transform` keeps the
+ * compression middleware off it, which would weaken the tag to `W/` and so fail every `If-Match` it is sent back in.
  */
 export const preconditionsMiddleware =
   ({ entityType, param, write, representation }: PreconditionTarget): MiddlewareHandler<Env> =>
@@ -256,7 +257,7 @@ export const preconditionsMiddleware =
     }
     const tag = entityTag(entityType, version.id, version.updatedAt);
     if (!write && ifMatch && !strongMatch(ifMatch, tag)) throw preconditionFailed(entityType);
-    const headers = { ETag: tag, 'Cache-Control': 'no-store' };
+    const headers = { ETag: tag, 'Cache-Control': 'no-store, no-transform' };
     if (!write && ifNoneMatch && weakMatch(ifNoneMatch, tag)) ctx.res = new Response(null, { status: 304, headers });
     else for (const [name, value] of Object.entries(headers)) ctx.header(name, value);
   };

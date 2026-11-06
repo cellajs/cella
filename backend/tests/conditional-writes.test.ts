@@ -74,6 +74,18 @@ describe('Conditional writes', async () => {
     expect(written.response.headers.get('etag')).not.toBe(current);
   });
 
+  it('sends a gzip client the strong tag, which its If-Match then matches', async () => {
+    const { baseApp } = await import('#/routes');
+    const read = await baseApp.request(`/tenants/${tenant.tenantId}/organizations/${tenant.organization.id}`, {
+      headers: { ...headers(), 'Accept-Encoding': 'gzip' },
+    });
+    expect(read.status).toBe(200);
+    const tag = read.headers.get('etag') ?? '';
+    expect(tag).toMatch(/^"/);
+
+    expect((await renameOrganization('zipped', tag)).response.status).toBe(200);
+  });
+
   it('refuses an organization update when a write lands between its check and its update', async () => {
     const tag = await readOrganizationTag();
 
