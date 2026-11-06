@@ -29,12 +29,13 @@ The code is in `backend/src/modules/mcp/`: the JSON-RPC server, the routes and t
 
 | Request | Response |
 | --- | --- |
-| The protected-resource metadata (`…/mcp/.well-known/oauth-protected-resource`) | The resource identifier, the authorization server and the scopes it supports (RFC 9728) |
+| The protected-resource metadata (`…/mcp/.well-known/oauth-protected-resource`, or the RFC 9728 location under the origin root) | The resource identifier, the authorization server and the read scopes a client starts with (RFC 9728) |
 | A call without a token | 401 with a challenge that says where the metadata lives |
+| An invalid token, or an API key | 401 with the same challenge, naming `invalid_token` and why |
 | A token for another tenant or another organization's endpoint | 401: the audience must be this endpoint or the tenant's REST API |
 | `tools/call` outside the token's scopes | 403 with a challenge and a JSON-RPC error, both naming the scope to step up to |
 
-A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries; a 403 step-up works the same way. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
+A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries; a 403 step-up works the same way. A step-up challenge names the scope the call lacks, never the scopes the token already holds; a client asks for both when it consents again. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
 
 ## MCP tools are routes
 
@@ -59,13 +60,13 @@ The OpenAPI spec shows it under `x-tool`, and the rest of a tool is derived from
 | Scope, also in `_meta.scope` | `entity` with the method: `GET` needs `<entity>:read`, anything else `<entity>:write` |
 | `annotations` | Read-only, destructive and idempotent hints from the method |
 
-`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas and runs the route with the caller's token; its JSON answer is the result. A permission or domain error from the route comes back as a tool result, which a model can act on; only transport-level faults are JSON-RPC errors.
+`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas and runs the route with the caller's token; its JSON answer is the result. A permission or domain error from the route comes back as a tool result, which a model can act on. Arguments the route's schemas refuse, and an unknown MCP tool, answer a JSON-RPC invalid-params error listing the issues, which a client may keep from its model.
 
 The template registers the five attachment routes (list, get, create, update, delete). An app adds `xTool` to any organization route that answers JSON. "Every operation is a tool" is not the default on purpose.
 
 ## Transport
 
-JSON-RPC 2.0 over Streamable HTTP with JSON responses. Batches are accepted. Results carry both a `text` content block and `structuredContent`. There is no server-initiated stream, no sessions, no resources or prompts yet.
+JSON-RPC 2.0 over Streamable HTTP with JSON responses, in the protocol revisions that open with `initialize`; the stateless revision is not served. `initialize` answers with the client's revision when the server implements it, else with its newest, and a request whose protocol version header names another revision is refused. A GET or DELETE is not allowed, and a request from a browser page on another origin is refused. Batches are accepted. Results carry both a `text` content block and `structuredContent`. There is no server-initiated stream, no sessions, no resources or prompts yet.
 
 ## Operational constraints
 
