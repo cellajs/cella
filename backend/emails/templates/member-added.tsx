@@ -1,7 +1,7 @@
 import { type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { senderEndingFor, senderHtml } from '../shared-texts';
+import { organizationScope, senderEndingFor, senderHtml } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface MemberAddedStatic {
@@ -9,21 +9,24 @@ interface MemberAddedStatic {
   /** The address of whoever added the member, which replies reach; shown beside the name. */
   senderEmail?: string;
   entityName: string;
+  organizationName?: string;
   role: EntityRole;
 }
 
 type MemberAddedRecipient = EmailRecipient & { name: string; entityLink: string };
 
 export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAddedRecipient>()({
-  translate(lng, { senderName, senderEmail, entityName, role }, param = plainParam) {
+  translate(lng, { senderName, senderEmail, entityName, organizationName, role }, param = plainParam) {
+    const scope = organizationScope(organizationName);
     return {
-      subject: i18n.t('backend:email.member_added.subject', { lng, senderName, entityName, ...plainText }),
+      subject: i18n.t(`backend:email.member_added.subject${scope}`, { lng, senderName, entityName, organizationName, ...plainText }),
       previewText: i18n.t('backend:email.member_added.preview', { lng, entityName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_added.title', { lng, entityName }),
       hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
-      bodyHtml: i18n.t('backend:email.member_added.text', {
+      bodyHtml: i18n.t(`backend:email.member_added.text${scope}`, {
         lng,
         entityName,
+        organizationName,
         sender: senderHtml(lng, senderName, senderEmail),
         role: i18n.t(`c:${role}`, { lng }),
       }),

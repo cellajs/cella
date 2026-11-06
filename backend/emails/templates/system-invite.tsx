@@ -1,6 +1,6 @@
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
+import { invitePreviewText, linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 interface SystemInviteStatic {
@@ -16,7 +16,7 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
   translate(lng, { senderName, senderEmail }) {
     return {
       subject: i18n.t('backend:email.system_invite.subject', { lng, senderName, ...plainText }),
-      previewText: i18n.t('backend:email.system_invite.preview', { lng, ...plainText }),
+      previewText: invitePreviewText(lng),
       headerHtml: i18n.t('backend:email.system_invite.title', { lng }),
       bodyHtml: i18n.t('backend:email.system_invite.text', { lng, sender: senderHtml(lng, senderName, senderEmail) }),
       expiresText: linkExpiresText(lng, 'invitation'),

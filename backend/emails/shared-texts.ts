@@ -19,6 +19,16 @@ export const durationText = (lng: string, seconds: number) => {
 export const linkExpiresText = (lng: string, type: LinkTokenType) =>
   i18n.t('backend:email.link_expires', { lng, duration: spanText(lng, tokenPolicies[type].ttl), ...plainText });
 
+/** The preview of an invitation to an address without an account: how signing in goes, and how long the link works. */
+export const invitePreviewText = (lng: string) =>
+  i18n.t('backend:email.invite_preview', { lng, duration: spanText(lng, tokenPolicies.invitation.ttl), ...plainText });
+
+/**
+ * The key suffix of a mail about a channel below its organization, which names the organization beside the channel:
+ * `_in_organization`, or none for a mail about an organization itself, whose `organizationName` the sender leaves out.
+ */
+export const organizationScope = (organizationName?: string) => (organizationName ? '_in_organization' : '');
+
 /**
  * What a reader does when the mail was not their doing: `ignore` a link nothing happens without, `no_change` a request
  * that changed nothing, `secure` an account someone acted in, `reply` to say so. Translated HTML for the end of the body panel.

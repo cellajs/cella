@@ -21,8 +21,8 @@ interface InvitationMailOpts {
   sender?: { name: string; email?: string };
   /** The invited channel and role; a system invitation names none. */
   channel?: { type: ChannelEntityType; slug: string; name: string; role: EntityRole };
-  /** Whose default language an address without an account reads. */
-  organization?: { defaultLanguage: string } | null;
+  /** Whose default language an address without an account reads; a mail about a channel below it names it. */
+  organization?: { defaultLanguage: string; name: string } | null;
   /** Addresses invited: a pending invitation each. */
   invited: InvitedAddress[];
   /** Accounts made members at once. */
@@ -64,7 +64,8 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
     return sent;
   }
 
-  const statics = { ...senderProps, entityName: channel.name, role: channel.role };
+  const organizationName = channel.type === 'organization' ? undefined : organization?.name;
+  const statics = { ...senderProps, entityName: channel.name, organizationName, role: channel.role };
   const page = `${appConfig.frontendUrl}/${channel.type}/${channel.slug}`;
   const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...accountHolder(address), memberInviteLink: page }]));
   const addedRecipients = added.map((address) => ({ ...accountHolder(address), entityLink: page }));

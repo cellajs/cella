@@ -1,7 +1,7 @@
 import { type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
+import { invitePreviewText, linkExpiresText, organizationScope, senderEndingFor, senderHtml } from '../shared-texts';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 interface MemberInviteWithTokenStatic {
@@ -9,6 +9,7 @@ interface MemberInviteWithTokenStatic {
   /** The inviter's address, which replies reach; shown beside the name. */
   senderEmail?: string;
   entityName: string;
+  organizationName?: string;
   role: EntityRole;
 }
 
@@ -16,14 +17,16 @@ type MemberInviteWithTokenRecipient = EmailRecipient & { inviteLink: string };
 
 /** For an address without an account, which needs the token and is greeted by no name; an account gets member-invite. */
 export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTokenStatic, MemberInviteWithTokenRecipient>()({
-  translate(lng, { senderName, senderEmail, entityName, role }) {
+  translate(lng, { senderName, senderEmail, entityName, organizationName, role }) {
+    const scope = organizationScope(organizationName);
     return {
-      subject: i18n.t('backend:email.member_invite.subject', { lng, senderName, entityName, ...plainText }),
-      previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, ...plainText }),
+      subject: i18n.t(`backend:email.member_invite.subject${scope}`, { lng, senderName, entityName, organizationName, ...plainText }),
+      previewText: invitePreviewText(lng),
       headerHtml: i18n.t('backend:email.member_invite.title', { lng, entityName }),
-      bodyHtml: i18n.t('backend:email.member_invite.text', {
+      bodyHtml: i18n.t(`backend:email.member_invite.text${scope}`, {
         lng,
         entityName,
+        organizationName,
         sender: senderHtml(lng, senderName, senderEmail),
         role: i18n.t(`c:${role}`, { lng }),
       }),
