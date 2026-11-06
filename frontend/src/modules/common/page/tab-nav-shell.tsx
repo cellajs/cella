@@ -48,7 +48,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
     <StickyBox
       publishVar="--sticky-stack-nav"
       className={cn(
-        'group/sticky bg-background after:bg-border @container z-80 grid grid-cols-[0_auto_1fr] pb-px after:absolute after:inset-x-3 after:bottom-0 after:h-px sm:grid-cols-[1fr_auto_1fr]',
+        'group/sticky bg-background after:bg-border @container z-80 grid grid-cols-[0_auto_1fr] pb-px after:absolute after:inset-x-0 after:bottom-0 after:h-px sm:grid-cols-[1fr_auto_1fr] sm:after:inset-x-3',
         className,
       )}
     >

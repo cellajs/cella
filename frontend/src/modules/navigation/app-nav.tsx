@@ -61,7 +61,7 @@ export function AppNav() {
 
   const openItemSheet = (navItem: NavItem, triggerRef: RefObject<HTMLButtonElement | null>, organization?: UserMenuItem) => {
     if (!navItem.sheet) return;
-    openNavSheet(navItem.id, navItem.sheet(), triggerRef, { organization, side: isMobile && navItem.mirrorOnMobile ? 'right' : 'left' });
+    openNavSheet(navItem.id, navItem.sheet(), triggerRef, { organization });
   };
 
   const triggerNavItem: TriggerNavItemFn = (id, ref) => {

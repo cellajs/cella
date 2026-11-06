@@ -15,8 +15,10 @@ type ErrorMeta = NonNullable<ErrorSchemaType['meta']> & {
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
   tokenId?: string;
 };
+/** A key of `error.json`, the only namespace an `error:` key resolves in. */
+export type TemplateErrorKey = Exclude<keyof typeof enError, `${string}.text`>;
 /** An error type: a key of `error.json`, or of `appError.json` for a type the app adds. */
-export type ErrorKey = Exclude<keyof typeof enError | keyof typeof enAppError, `${string}.text`>;
+export type ErrorKey = TemplateErrorKey | Exclude<keyof typeof enAppError, `${string}.text`>;
 
 type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];

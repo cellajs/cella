@@ -28,7 +28,6 @@ export type NavItem = {
   sheet?: () => ReactNode;
   action?: (ref: RefObject<HTMLButtonElement | null>) => void;
   href?: string;
-  mirrorOnMobile?: boolean;
   /** Replaces the default `icon` rendering (e.g. avatar, loader); receives the base icon classes and the item's `icon`. */
   iconOverride?: ComponentType<{ className?: string; icon: IconComponent }>;
   /** Renders over the button (e.g. an unseen counter). */

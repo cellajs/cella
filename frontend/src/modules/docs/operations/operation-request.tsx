@@ -27,7 +27,6 @@ export function OperationRequest({ detail }: OperationRequestProps) {
           zodCode={getZodCodeForRequest(zodIndex, detail.operationId)}
           typeCode={getTypeCodeForRequest(typesIndex, detail.operationId)}
           example={example}
-          descriptionToggle
           renderRef={renderRef}
         />
       </div>
