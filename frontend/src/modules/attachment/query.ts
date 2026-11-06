@@ -98,13 +98,14 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   const filters = { q, sort, order };
   const query = { q, orderBy: orderByParam(sort, order) };
 
+  const paging = tokenPaging((pageToken, signal) =>
+    listAttachments({ path: { tenantId, organizationId }, query: { ...query, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
+  );
   return syncedListOptions(
     infiniteQueryOptions({
       queryKey: keys.list.filtered(organizationId, filters),
-      ...tokenPaging((pageToken, signal) =>
-        listAttachments({ path: { tenantId, organizationId }, query: { ...query, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
-      ),
-      meta: { persist: false },
+      ...paging,
+      meta: { ...paging.meta, persist: false },
       staleTime: syncStaleTime,
     }),
   );
