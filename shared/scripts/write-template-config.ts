@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { repoRoot } from './repo-files.ts';
 
 /**
  * One leaf of `config.default.ts` the scaffolder's template sets differently: `value` is the TypeScript source of the
@@ -183,7 +182,7 @@ export const appShapePermissionsEdit = {
 } as const;
 
 if (import.meta.main) {
-  const configDir = join(repoRoot, 'shared/config');
+  const configDir = join(import.meta.dirname, '..', 'config');
   const templatePath = join(configDir, 'config.template.ts');
   // An app has consumed its template; only the template repo keeps one current.
   if (existsSync(templatePath)) {

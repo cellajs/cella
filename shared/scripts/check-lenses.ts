@@ -4,8 +4,8 @@ import { join, relative } from 'node:path';
 import { appConfig } from '../index.ts';
 import { deltaRenameMap } from '../src/schema-evolution/define.ts';
 import { lenses } from '../src/schema-evolution/lens-list.ts';
-import { repoRoot } from './repo-files.ts';
 
+const repoRoot = join(import.meta.dirname, '..', '..');
 const lensDir = join(repoRoot, 'shared/src/schema-evolution');
 
 const datedLensFile = /^\d{4}-\d{2}-\d{2}-.+\.ts$/;

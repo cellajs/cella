@@ -70,7 +70,7 @@ checks ran and none of them is manual. Everything else stays open until a review
 
 Contrast is measured, in both color modes. axe decides most text. Text it cannot decide (over a gradient, an image or a
 pseudo-element, or too short) is measured from the pixels ([probes/contrast.ts](src/probes/contrast.ts)), and so is
-the edge of form controls against what surrounds them. One more check needs no browser and runs in `pnpm style`: the color tokens of the theme stylesheet
+the edge of form controls against what surrounds them. One more check needs no browser and runs in `pnpm cella style`: the color tokens of the theme stylesheet
 must carry their text and read as text on the page in both modes, so a changed brand color that breaks contrast fails
 before any page is opened.
 

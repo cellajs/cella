@@ -131,7 +131,7 @@ A deploy that never serves its new version almost always hit a boot-time crash, 
 
 - `pnpm dev`: dev servers for every package; start PostgreSQL first with `pnpm docker`. A linked git worktree runs on ports of its own: never pass `--port` ([Dev ports](../shared/README.md#dev-ports)).
 - `pnpm killports`: ends every listener on this checkout's dev ports; the database container stays. The configured ports are the developer's, in the main checkout too: use the stack that answers there, ask the developer to start it, or run your own with `DEV_PORT_OFFSET=50 pnpm dev`, attached to your session (never `nohup`), and end it with `DEV_PORT_OFFSET=50 pnpm killports`. A stack left behind blocks the developer's `pnpm dev` and holds the CDC replication slot.
-- `pnpm check`: `sdk`, typecheck, `lens:check` and `lint:fix` (style and doc checks included).
+- `pnpm check`: `sdk`, typecheck, `lens:check` and `lint:fix` (Biome, then the style check `pnpm cella style`, which takes paths to check a few files).
 - `pnpm generate`: Drizzle migrations from schema changes. `pnpm sdk`: the OpenAPI spec and the SDK.
 - `pnpm seed`: test data. `pnpm test`: the full suite with summary coverage.
 - `pnpm infra`: the deployment CLI ([Infra CLI](../infra/README.md)). `pnpm bench`: load tests ([Load testing](../bench/README.md)).

@@ -75,7 +75,7 @@
       "preset": "recommended",
       "correctness": {
         // Its missing-dependency half cannot be switched off, and with the React compiler that advice is wrong;
-        // memo-dependency-unread in shared/scripts covers the unnecessary half (112 diagnostics measured 2026-11-03).
+        // memo-dependency-unread in `pnpm cella style` covers the unnecessary half (112 diagnostics measured 2026-11-03).
         "useExhaustiveDependencies": "off",
         "noUnusedVariables": "off",
         // A hook-rule violation makes the React compiler bail out, which fails the production build.

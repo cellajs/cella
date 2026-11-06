@@ -34,7 +34,7 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 5. Rerun the full audit. Rows the audit decides move by themselves.
 6. A row a reviewer decided keeps its decision and its remark, which now describes the old code: decide it again once step 3 showed the fix holds.
 
-Do not script what the tools already measure: contrast the audit takes from the pixels and token contrast in `pnpm style` ([How a row is decided](../../../a11y/README.md#how-a-row-is-decided)).
+Do not script what the tools already measure: contrast the audit takes from the pixels and token contrast in `pnpm cella style` ([How a row is decided](../../../a11y/README.md#how-a-row-is-decided)).
 
 # Reviewing the open criteria
 
