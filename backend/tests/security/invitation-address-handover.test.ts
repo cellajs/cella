@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { defaultHeaders } from '../fixtures';
-import { CookieJar, createTestOrganization, createTestSession, createTestUser, expectRefusal, mailedLink } from '../helpers';
+import { CookieJar, createTestOrganization, createTestSession, createTestUser, expectRefusal, mailedLink, openHeldLink } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -35,8 +35,7 @@ describe('invitation address handover', async () => {
     const victim = await createTestUser(address('victim'));
     const victimBrowser = new CookieJar([await createTestSession(victim)]);
     const asVictim = () => ({ headers: { ...defaultHeaders, Cookie: victimBrowser.header() } });
-    const openInvitation = async (token: string) =>
-      victimBrowser.absorb((await call(invokeToken, { path: { type: 'invitation', token }, ...asVictim() })).response);
+    const openInvitation = (token: string) => openHeldLink('invitation', token, victimBrowser);
 
     // The victim opens the attacker's link, is asked to confirm the address and has a link sent there.
     await openInvitation(rawToken);

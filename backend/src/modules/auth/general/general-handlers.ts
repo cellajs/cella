@@ -13,7 +13,7 @@ import { resendInvitationByTokenOp } from '#/modules/auth/invitations/operations
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
 import { listSignInFederations } from '#/modules/auth/sso/operations/list-sign-in-federations';
 import '#/modules/auth/sessions/session-listeners';
-import { openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
+import { confirmHeldLink, openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 
@@ -38,12 +38,17 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
 app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
   // Reads only: the challenge stays open for its second factor.
   const { email } = await readBoundToken(ctx, 'confirm-mfa');
-  return ctx.json({ email }, 200);
+  return ctx.json({ email }, 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
   return openLinkToken(ctx, tokenType, token);
+});
+
+app.openapi(authGeneralRoutes.redeemLinkToken, async (ctx) => {
+  const redirectTo = await confirmHeldLink(ctx, ctx.req.valid('param').type);
+  return ctx.json({ redirectTo }, 200);
 });
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
@@ -53,7 +58,7 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   // The browser holds a token of this type, not the one the URL names: the same answer as holding none.
   if (tokenRecord.id !== tokenId) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
-  return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
+  return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {

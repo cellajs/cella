@@ -1,0 +1,102 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "7da73976-d2c5-4ed1-9e4a-f305f8ceaf24",
+  "prevIds": [
+    "befac8cf-6bfb-4e0d-b831-e97dfc0e3666"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "transports"
+      ],
+      "writes": [
+        "s|col|public.passkeys.transports",
+        "n|col|public.passkeys.transports",
+        "e|col|public.passkeys.transports"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "alter_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "passkeys",
+        "counter"
+      ],
+      "writes": [
+        "s|colprop|public.passkeys.counter.type",
+        "s|colprop|public.passkeys.counter.default"
+      ],
+      "reads": [
+        "n|tbl|public.passkeys",
+        "n|sch|public",
+        "n|col|public.passkeys.counter"
+      ],
+      "sqlHash": "ad90b6c2c6741965"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "totps",
+        "totps_user_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.totps_user_id_idx",
+        "n|idx|public.totps_user_id_idx",
+        "e|idx|public.totps_user_id_idx",
+        "n|rel|public.totps_user_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.totps",
+        "n|sch|public",
+        "n|col|public.totps.user_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "6389a69605f730e3"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "passkeys",
+        "name": "transports",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 1,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "columns\u0000[\"public\",\"passkeys\",\"counter\"]",
+      "set": {
+        "type": "bigint"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"totps_user_id_idx\"]",
+      "set": {
+        "isUnique": true
+      }
+    }
+  ]
+}

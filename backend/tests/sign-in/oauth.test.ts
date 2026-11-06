@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
+import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -27,6 +27,7 @@ import {
   mailedLink,
   mailsTo,
   membersOf,
+  openHeldLink,
   setCookieOf,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -852,9 +853,8 @@ describe('OAuth Authentication', async () => {
       return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
-    /** Opens the verification link in a signed-out browser, which keeps its single-use cookie. */
-    const openVerificationLink = (rawToken: string) =>
-      call(invokeToken, { path: { type: 'oauth-verification', token: rawToken }, headers: defaultHeaders });
+    /** Opens the verification link in a signed-out browser and confirms it on its page; the browser keeps its single-use cookie. */
+    const openVerificationLink = (rawToken: string) => openHeldLink('oauth-verification', rawToken);
 
     /** The provider's callback for the verify round trip, in the browser that opened the link. */
     const verifyCallback = () => {
@@ -893,8 +893,8 @@ describe('OAuth Authentication', async () => {
       const { url, token } = mailedLink('verificationLink');
       expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/oauth-verification/${token}`);
       const opened = await openVerificationLink(token);
-      expect(opened.response.status).toBe(302);
-      const verifyStart = new URL(opened.response.headers.get('location') ?? '');
+      expect(opened.response.status).toBe(200);
+      const verifyStart = new URL(opened.redirectTo ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
       expect(verifyStart.searchParams.get('type')).toBe('verify');
       expect(await accountsFor(providerEmail)).toHaveLength(0);

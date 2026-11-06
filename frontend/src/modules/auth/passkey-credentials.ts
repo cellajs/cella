@@ -9,19 +9,24 @@ import {
 } from '@simplewebauthn/browser';
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
-import type { PasskeyChallengeBody, PasskeyVerifyType } from '~/modules/auth/types';
+import { passkeyAlgorithms } from 'shared/passkeys';
+import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyType } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
 const isDevelopment = appConfig.mode === 'development';
 // The host the app is served on, as the backend verifies it: a passkey never crosses hosts.
 const relyingPartyId = () => new URL(appConfig.frontendUrl).hostname;
 
+/** The passkeys a challenge names, as WebAuthn descriptors: a passkey without transports lets the browser try every one. */
+const descriptors = (credentials: PasskeyCredential[] = []) =>
+  credentials.map(({ id, transports }) => ({ id, type: 'public-key' as const, transports }));
+
 /** WebAuthn request options for a challenge, limited to the listed passkeys when there are any. */
-const requestOptions = (challenge: string, credentialIds: string[] = []): PublicKeyCredentialRequestOptionsJSON => ({
+const requestOptions = (challenge: string, credentials?: PasskeyCredential[]): PublicKeyCredentialRequestOptionsJSON => ({
   challenge,
   rpId: relyingPartyId(),
   userVerification: 'required',
-  allowCredentials: credentialIds.map((id) => ({ id, type: 'public-key', transports: ['internal'] })),
+  allowCredentials: descriptors(credentials),
 });
 
 /** True when the browser can show passkey suggestions in its autofill UI (conditional mediation). */
@@ -47,7 +52,8 @@ export type ConditionalMediationResult = { assertion: AuthenticationResponseJSON
 
 /** Runs WebAuthn registration and returns the attestation as base64url JSON for the backend. */
 export const getPasskeyRegistrationCredential = async () => {
-  const { challenge } = await getChallenge({ type: 'registration' });
+  // The user's passkeys, so an authenticator that holds one already refuses to register a second.
+  const { challenge, credentials } = await getChallenge({ type: 'registration' });
 
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
@@ -60,12 +66,15 @@ export const getPasskeyRegistrationCredential = async () => {
       challenge,
       user: { id: userHandle, name: nameOnDevice, displayName: nameOnDevice },
       rp: { id: relyingPartyId(), name: appConfig.name },
-      pubKeyCredParams: [
-        { type: 'public-key', alg: -7 }, // ES256
-        { type: 'public-key', alg: -257 }, // RS256
-      ],
+      pubKeyCredParams: passkeyAlgorithms.map((alg) => ({ type: 'public-key', alg })),
+      excludeCredentials: descriptors(credentials),
       attestation: 'none',
-      authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'required', userVerification: 'required' },
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        residentKey: 'required',
+        requireResidentKey: true,
+        userVerification: 'required',
+      },
     },
   });
 
@@ -77,18 +86,18 @@ export const getPasskeyRegistrationCredential = async () => {
  * passkeys; otherwise the browser offers its discoverable ones.
  */
 export const getPasskeyVerifyCredential = async ({ type }: { type: PasskeyVerifyType }) => {
-  const { challenge, credentialIds } = await getChallenge({ type });
+  const { challenge, credentials } = await getChallenge({ type });
 
-  const assertion = await startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
+  const assertion = await startAuthentication({ optionsJSON: requestOptions(challenge, credentials) });
 
   return { assertion, type };
 };
 
 /** A passkey assertion for a step-up of the signed-in session: its challenge is bound to the account. */
 export const getPasskeyStepUpCredential = async () => {
-  const { challenge, credentialIds } = await getStepUpPasskeyChallenge();
+  const { challenge, credentials } = await getStepUpPasskeyChallenge();
 
-  return startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
+  return startAuthentication({ optionsJSON: requestOptions(challenge, credentials) });
 };
 
 /** A base64url challenge from the backend, which the WebAuthn options JSON takes as is. */

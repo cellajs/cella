@@ -22,6 +22,7 @@ import {
   failNextMailSend,
   insertTestToken,
   mailedLink,
+  openHeldLink,
   sentMails,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -93,9 +94,9 @@ describe('Resend an invitation', async () => {
     const rawFresh = mailedRawToken();
     expect(fresh.secret).toBe(hashToken(rawFresh));
 
-    const opened = await invoke(rawFresh);
-    expect(opened.response.status).toBe(302);
-    expect(opened.response.headers.get('location')).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
+    const opened = await openHeldLink('invitation', rawFresh);
+    expect(opened.response.status).toBe(200);
+    expect(opened.redirectTo).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
 
     const old = await invoke(rawToken);
     await expectRefusal(old, 401, 'invitation_not_found');

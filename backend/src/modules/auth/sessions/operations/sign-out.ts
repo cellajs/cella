@@ -9,10 +9,18 @@ import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { log } from '#/utils/logger';
 
 /**
- * What a sign-out clears from this browser besides its session cookie: what it holds of a sign-in in progress, and an
- * opened invitation, which would show the next person here its address and organization.
+ * What a sign-out clears from this browser besides its session cookie: its step-up, what it holds of a sign-in in
+ * progress, and an opened or held invitation, which would show the next person here its address and organization.
  */
-const signedOutCookies = ['magic', 'magic-pending', 'confirm-mfa', 'invitation'] as const satisfies CookieName[];
+const signedOutCookies = [
+  'session-step-up',
+  'magic',
+  'magic-pending',
+  'oauth-verification-pending',
+  'confirm-mfa',
+  'invitation',
+  'invitation-pending',
+] as const satisfies CookieName[];
 
 const deleteSignedOutCookies = (ctx: Context<Env>) => {
   deleteAuthCookie(ctx, 'session');

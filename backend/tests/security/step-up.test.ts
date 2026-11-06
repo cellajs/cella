@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { getStepUp, getStepUpPasskeyChallenge, sendStepUpCode, stepUp } from 'sdk';
+import { getStepUp, getStepUpPasskeyChallenge, revokeMySessions, sendStepUpCode, stepUp } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -21,7 +21,7 @@ import {
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
-import { askStepUpCode, insertStaleSession, type TestSession } from './session-helpers';
+import { askStepUpCode, asSession, insertStaleSession, keepCookiesOf, type TestSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
@@ -78,9 +78,31 @@ describe('step-up', async () => {
     await expectRefusal({ response, error }, 401, 'invalid_token');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
-    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(204);
+    const stepped = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
+    expect(stepped.response.status).toBe(204);
     expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
-    expect(await stateOf(session)).toEqual({ steppedUp: true, methods: ['totp'] });
+    expect(await stateOf(keepCookiesOf(session, stepped.response))).toEqual({ steppedUp: true, methods: ['totp'] });
+  });
+
+  it('must not step up a copy of the session cookie made before the step-up', async () => {
+    const user = await createTotpUser('copied-before-step-up@security-test.com');
+    const [owner, otherDevice] = [await insertStaleSession(user), await insertStaleSession(user)];
+    // The copy an infostealer or a synced profile took: the session cookie as the owner's browser held it then.
+    const copy = asSession(owner.id, owner.cookie);
+    const endOtherDevice = (session: TestSession) => call(revokeMySessions, { body: { ids: [otherDevice.id] }, headers: session.headers });
+
+    const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: owner.headers });
+    expect(response.status).toBe(204);
+    keepCookiesOf(owner, response);
+
+    // The copy names the stamped session row but lacks the step-up cookie the stamp went out with.
+    expect(await stateOf(copy)).toEqual({ steppedUp: false, methods: ['totp'] });
+    await expectRefusal(await endOtherDevice(copy), 403, 'step_up_required');
+    expect((await sessionRow(otherDevice.id)).revokedAt).toBeNull();
+
+    // Positive control: the owner's browser holds the step-up cookie and passes the guard.
+    expect((await endOtherDevice(owner)).response.status).toBe(200);
+    expect(await sessionRow(otherDevice.id)).toMatchObject({ revocationReason: 'other_session' });
   });
 
   it('offers the emailed code to a user without a second factor while other accounts hold factors (positive control)', async () => {
@@ -105,9 +127,10 @@ describe('step-up', async () => {
     await expectRefusal(elsewhere, 401, 'invalid_credentials');
     expect((await sessionRow(other.id)).steppedUpAt).toBeNull();
 
-    expect((await call(stepUp, { body: { emailCode: code }, headers: asking.headers })).response.status).toBe(204);
+    const stepped = await call(stepUp, { body: { emailCode: code }, headers: asking.headers });
+    expect(stepped.response.status).toBe(204);
     expect(await sessionRow(asking.id)).toMatchObject({ steppedUpVia: 'email' });
-    expect(await stateOf(asking)).toEqual({ steppedUp: true, methods: ['email'] });
+    expect(await stateOf(keepCookiesOf(asking, stepped.response))).toEqual({ steppedUp: true, methods: ['email'] });
 
     // The code opened its step-up and is gone.
     await expectRefusal(await call(stepUp, { body: { emailCode: code }, headers: asking.headers }), 401, 'invalid_credentials');

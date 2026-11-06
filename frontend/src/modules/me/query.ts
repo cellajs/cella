@@ -1,3 +1,4 @@
+import { WebAuthnError } from '@simplewebauthn/browser';
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type {
@@ -133,7 +134,7 @@ export const useUpdateSelfFlagsMutation = () =>
   });
 
 export const useCreatePasskeyMutation = () =>
-  useMutation<Passkey, ApiError, void>({
+  useMutation<Passkey, ApiError | Error, void>({
     mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
       // Stepped up before the ceremony, so the authenticator prompts once.
@@ -153,6 +154,9 @@ export const useCreatePasskeyMutation = () =>
     onError(error) {
       // The global handler toasts the server's refusals; a failure in the browser, a cancelled prompt included, gets this toast.
       if (error instanceof StepUpDismissedError || error instanceof ApiError) return;
+      if (error instanceof WebAuthnError && error.code === 'ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED') {
+        return toaster.info(t('error:passkey_already_registered'));
+      }
       console.error('Error during passkey registration:', error);
       toaster.error(t('error:passkey_registration_failed'));
     },

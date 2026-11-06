@@ -13,7 +13,7 @@ export const secretColumns = {
   api_keys: ['hash'],
   oauth_clients: ['secretHash'],
   passkey_challenges: ['challengeHash'],
-  sessions: ['secret'],
+  sessions: ['secret', 'steppedUpSecret'],
   signing_keys: ['privateJwk'],
   tokens: ['secret', 'singleUseToken'],
   totps: ['secret'],

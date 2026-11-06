@@ -1,5 +1,14 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
-import { type GetTokenDataData, getAuthHealth, getPendingMagicLink, getPendingMfa, getSsoEntry, getTokenData } from 'sdk';
+import {
+  type GetTokenDataData,
+  getAuthHealth,
+  getPendingMagicLink,
+  getPendingMfa,
+  getSsoEntry,
+  getTokenData,
+  type RedeemLinkTokenData,
+  redeemLinkToken,
+} from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
@@ -13,6 +22,7 @@ const authKeys = {
   pendingMfa: ['auth', 'mfa', 'pending'] as const,
   ssoEntry: (connectionId?: string) => ['auth', 'sso-entry', connectionId] as const,
   consent: { details: (uid: string) => ['auth', 'consent', uid] as const, decide: ['auth', 'consent', 'decide'] as const },
+  redeemLink: ['auth', 'redeem-link'] as const,
 };
 
 // Abort at the timeout, so a down backend never hangs on the browser default.
@@ -77,4 +87,13 @@ export const useDecideConsentMutation = (uid: string) =>
     mutationKey: authKeys.consent.decide,
     mutationFn: (accept: boolean) => (accept ? withStepUp(() => decideConsent(uid, true)) : decideConsent(uid, false)),
     onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
+  });
+
+/** Redeems the link this browser holds; the server answers where the browser goes next, which a full navigation follows. */
+export const useRedeemHeldLinkMutation = () =>
+  useMutation({
+    mutationKey: authKeys.redeemLink,
+    mutationFn: (type: RedeemLinkTokenData['path']['type']) => redeemLinkToken({ path: { type } }),
+    onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
+    meta: { suppressGlobalErrorToast: true },
   });

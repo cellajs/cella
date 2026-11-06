@@ -1,5 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq, like } from 'drizzle-orm';
+import { invokeToken, redeemLinkToken } from 'sdk';
 import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -11,6 +12,7 @@ import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import type { HeldLinkType } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -28,6 +30,7 @@ import { apiErrorSchema } from '#/schemas';
 import { decodeBase32 } from '#/utils/base32';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
+import { createAppClient } from './test-client';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
@@ -234,7 +237,7 @@ interface TestSessionOpts {
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;
   expiresInMs?: number;
-  /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
+  /** Stamps the session stepped up by this proof at its creation, as an MFA completion does, with its step-up cookie. */
   steppedUpVia?: StepUpProof;
   /** The SSO connection a federation sign-in came through. */
   connectionId?: string;
@@ -249,6 +252,7 @@ export async function insertTestSession(
   { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, steppedUpVia, connectionId }: TestSessionOpts = {},
 ) {
   const { raw: token, hash: secret } = newHashedToken();
+  const stepUp = steppedUpVia ? newHashedToken() : null;
   const id = generateId();
   const createdAt = new Date(Date.now() - ageMs).toISOString();
 
@@ -263,9 +267,12 @@ export async function insertTestSession(
     connectionId,
     steppedUpAt: steppedUpVia ? createdAt : null,
     steppedUpVia: steppedUpVia ?? null,
+    steppedUpSecret: stepUp?.hash ?? null,
   });
 
-  return { id, token, cookie: authCookie('session', token, 7 * 24 * 60 * 60) };
+  // A sign-in that starts stepped up also sets the step-up cookie its stamp counts with.
+  const cookies = [authCookie('session', token, 7 * 24 * 60 * 60), ...(stepUp ? [authCookie('session-step-up', stepUp.raw)] : [])];
+  return { id, token, cookie: cookies.join('; ') };
 }
 
 /** Inserts a session row and returns the cookie string for test requests. */
@@ -392,6 +399,23 @@ export class CookieJar {
 
 /** The `Cookie` header a browser holding `cookieHeader` sends after `response`. */
 export const cookiesAfter = (cookieHeader: string, response: Response) => new CookieJar([cookieHeader]).absorb(response).header();
+
+/**
+ * Opens an invitation or verification link as a browser does: the GET holds it, and its confirm page's POST redeems
+ * it. `browser` keeps the cookies both answers set. Returns the last answer and where it sends the browser: the POST's
+ * `redirectTo`, or the GET's `Location` when the GET held nothing.
+ */
+export async function openHeldLink(type: HeldLinkType, token: string, browser = new CookieJar()) {
+  const call = await createAppClient();
+  const inBrowser = () => ({ ...defaultHeaders, Cookie: browser.header() });
+  const opened = await call(invokeToken, { path: { type, token }, headers: inBrowser() });
+  browser.absorb(opened.response);
+  if (cookieChange(opened.response, `${type}-pending`) !== 'set') return { ...opened, redirectTo: opened.response.headers.get('location') };
+
+  const redeemed = await call(redeemLinkToken, { path: { type }, headers: inBrowser() });
+  browser.absorb(redeemed.response);
+  return { ...redeemed, redirectTo: (redeemed.data as { redirectTo?: string } | undefined)?.redirectTo ?? null };
+}
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
 export async function linkIdentity(user: { id: string; email: string }, overrides: Partial<InsertIdentityModel> = {}) {

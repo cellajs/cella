@@ -1,12 +1,16 @@
 import { isStrategyEnabled } from 'shared';
+import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { getStepUpFacts } from '#/modules/auth/sessions/sessions-queries';
 import { type StepUpMethod, type StepUpState, type StepUpTier, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
+import { hashToken } from '#/utils/hash-token';
 import { isoDateAgo } from '#/utils/iso-date';
 
 const dbCtx = { var: { db: baseDb } };
+
+/** A session as one request presents it: its facts, and the step-up cookie this browser holds. */
+type StepUpContext = { var: Pick<Env['Variables'], 'session' | 'stepUpCookie'> };
 
 const factorMethods = ['passkey', 'totp'] as const;
 
@@ -18,9 +22,15 @@ const factorMethods = ['passkey', 'totp'] as const;
  * emailed code. An app with no factor method on reads `factor` as `account`, since nobody could set one up. Read fresh
  * from the database, so a stamp set in another process counts at once.
  */
-export const readStepUp = async (session: SessionFacts, tier: StepUpTier): Promise<StepUpState> => {
+export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
+  const { session, stepUpCookie } = ctx.var;
   const refused: StepUpState = { steppedUp: false, methods: [], factor: null };
-  const row = await getStepUpFacts(dbCtx, { sessionId: session.id, userId: session.userId, since: isoDateAgo(stepUpWindow) });
+  const row = await getStepUpFacts(dbCtx, {
+    sessionId: session.id,
+    userId: session.userId,
+    since: isoDateAgo(stepUpWindow),
+    presentedSecret: stepUpCookie ? hashToken(stepUpCookie) : undefined,
+  });
   if (!row) return refused;
 
   const canEnroll = factorMethods.some((method) => isStrategyEnabled(method));
@@ -51,8 +61,8 @@ export const readStepUp = async (session: SessionFacts, tier: StepUpTier): Promi
  * @returns The step-up state, with the factor that proves the session.
  * @throws AppError 403 `step_up_required` with what the user can offer in `meta.methods`.
  */
-export const requireStepUp = async (session: SessionFacts, tier: StepUpTier): Promise<StepUpState> => {
-  const state = await readStepUp(session, tier);
+export const requireStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
+  const state = await readStepUp(ctx, tier);
   if (!state.steppedUp) throw new AppError(403, 'step_up_required', 'info', { meta: { methods: state.methods } });
   return state;
 };

@@ -20,7 +20,6 @@ import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
-import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -63,7 +62,7 @@ import {
 } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createFactorOrgUser } from './helpers';
-import { insertStaleSession } from './session-helpers';
+import { insertStaleSession, stampSteppedUp } from './session-helpers';
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
 const APP_ID = 'grant-policy-portfolio';
@@ -964,13 +963,17 @@ describe('OAuth grants', async () => {
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
 
       // An emailed code proves presence, not the second factor a grant needs.
-      await updateSessionSteppedUp({ var: { db } }, { id: stale.id, userId: ctx.member.id, via: 'email' });
-      const viaMail = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
+      const viaMail = await authorizationCode(oauth.issuer, {
+        ...authorization(ctx),
+        sessionCookie: (await stampSteppedUp(ctx.member, stale, 'email')).cookie,
+      });
       expect(viaMail.failure).toMatchObject({ status: 403, body: { type: 'step_up_required' } });
 
       // Positive control: the same session once stepped up with the member's passkey gets its code.
-      await updateSessionSteppedUp({ var: { db } }, { id: stale.id, userId: ctx.member.id, via: 'passkey' });
-      const granted = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
+      const granted = await authorizationCode(oauth.issuer, {
+        ...authorization(ctx),
+        sessionCookie: (await stampSteppedUp(ctx.member, stale, 'passkey')).cookie,
+      });
       expect(granted.code).toBeTruthy();
     });
   });

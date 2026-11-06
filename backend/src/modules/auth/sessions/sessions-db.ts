@@ -84,6 +84,8 @@ export const sessionsTable = snakeCase.table(
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
     steppedUpAt: isoTimestamp(),
     steppedUpVia: varchar({ enum: stepUpProofs }),
+    /** The hash of the step-up cookie the stamp went out with: the stamp counts only for a browser presenting that cookie. */
+    steppedUpSecret: varchar({ length: maxLength.field }),
   },
   (table) => [
     index('sessions_secret_idx').on(table.secret),
@@ -94,16 +96,16 @@ export const sessionsTable = snakeCase.table(
   ],
 );
 
-const { secret: _secret, ...safeColumns } = getColumns(sessionsTable);
-/** Every column but the secret: what any response may carry. */
+const { secret: _secret, steppedUpSecret: _steppedUpSecret, ...safeColumns } = getColumns(sessionsTable);
+/** Every column but the secrets: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
 const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt } = safeColumns;
 /** The columns of {@link SessionFacts}. */
 export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt };
 
-/** A session row without its secret. */
-export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret'>;
+/** A session row without its secrets. */
+export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret' | 'steppedUpSecret'>;
 
 /** What the guards know about a session: fixed when it was created, so the auth cache may hold them until it ends. */
 export type SessionFacts = Pick<SessionModel, keyof typeof sessionFactColumns>;

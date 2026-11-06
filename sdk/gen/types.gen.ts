@@ -1606,6 +1606,49 @@ export type InvokeTokenErrors = {
 
 export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 
+export type RedeemLinkTokenData = {
+  body?: never;
+  path: {
+    type: 'oauth-verification' | 'invitation';
+  };
+  query?: never;
+  url: '/auth/invoke-token/{type}';
+};
+
+export type RedeemLinkTokenErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RedeemLinkTokenError = RedeemLinkTokenErrors[keyof RedeemLinkTokenErrors];
+
+export type RedeemLinkTokenResponses = {
+  /**
+   * Link redeemed
+   *
+   * Where the browser goes next: the app with the token session, or the provider for a verification.
+   */
+  200: {
+    redirectTo: string;
+  };
+};
+
+export type RedeemLinkTokenResponse = RedeemLinkTokenResponses[keyof RedeemLinkTokenResponses];
+
 export type GetTokenDataData = {
   body?: never;
   path: {
@@ -2246,7 +2289,10 @@ export type GeneratePasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 
@@ -2913,7 +2959,10 @@ export type GetStepUpPasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 

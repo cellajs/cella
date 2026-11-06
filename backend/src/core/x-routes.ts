@@ -21,9 +21,9 @@ import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
 
 /**
- * A route that answers 302 is a browser navigation: whatever refuses the request, the switch gate, a guard, a limiter
- * or the handler, answers with a redirect to the error page (`appErrorHandler`). Set before anything can refuse; a
- * handler may point it elsewhere.
+ * A route that answers 302 or 303 is a browser navigation: whatever refuses the request, the switch gate, a guard, a
+ * limiter or the handler, answers with a redirect to the error page (`appErrorHandler`). Set before anything can
+ * refuse; a handler may point it elsewhere.
  */
 const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   ctx.set('errorPagePath', '/auth/error');
@@ -180,7 +180,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
- * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
+ * order: the error page (a 302 or 303 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
  * preconditions of a route for one channel or product (`preconditionTarget`: entity tags and `If-Match`), the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
@@ -207,7 +207,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
   // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
   const operation = checksAuthoringRules ? [operationMiddleware(config.operationId)] : [];
-  const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
+  const errorPage = '302' in config.responses || '303' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
   const preconditions = target ? [preconditionsMiddleware(target)] : [];
   const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...preconditions, ...existing];

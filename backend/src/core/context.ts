@@ -87,13 +87,15 @@ export type Env = {
     memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
     /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
     session: SessionFacts;
+    /** The content of this browser's step-up cookie (`userGuard` only): the session's step-up stamp counts only with it. */
+    stepUpCookie?: string;
     requestId: string;
     db: DbOrTx;
     tenantId: string;
     tenant: TenantModel;
     /** Status of the error `appErrorHandler` answered, also when it answered with a redirect; the rate limiters read it. */
     errorStatus?: number;
-    /** Where a refusal of this request redirects to: set for a route that answers 302, a handler may point it elsewhere. */
+    /** Where a refusal of this request redirects to: set for a route that answers 302 or 303, a handler may point it elsewhere. */
     errorPagePath?: string;
     /** The `operationId` of the matched route where authoring rules are checked, set before anything can refuse the request; the error handler's documented-status check reads it. */
     operationId?: string;

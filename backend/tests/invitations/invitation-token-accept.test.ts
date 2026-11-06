@@ -11,14 +11,15 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
+  CookieJar,
   createOrganizationAdminUser,
   createTestOrganization,
   createTestSession,
   createTestUser,
   insertTestToken,
   mailedLink,
+  openHeldLink,
   sentMails,
-  setCookiePair,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -87,13 +88,11 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const sessionCookie = await createTestSession(me);
     await call(confirmInvitationAddress, { headers: { ...defaultHeaders, Cookie: [sessionCookie, invitationCookie].join('; ') } });
 
-    const opened = await call(invokeToken, {
-      path: { type: 'invitation', token: mailedLink('confirmUrl').token },
-      headers: { ...defaultHeaders, Cookie: sessionCookie },
-    });
-    expect(opened.response.status).toBe(302);
+    const browser = new CookieJar([sessionCookie]);
+    const opened = await openHeldLink('invitation', mailedLink('confirmUrl').token, browser);
+    expect(opened.response.status).toBe(200);
 
-    const { response } = await accept([sessionCookie, setCookiePair(opened.response, 'invitation')]);
+    const { response } = await accept([browser.header()]);
     expect(response.status).toBe(200);
     expect((await membershipsOf(me.id)).map(({ organizationId }) => organizationId)).toEqual([organization.id]);
     expect(await db.select().from(emailsTable).where(eq(emailsTable.email, invitedEmail))).toEqual([]);
@@ -238,19 +237,16 @@ describe('Opening a token link while signed in', async () => {
     const me = await createTestUser('my-account@example.com');
     const { rawToken: raw } = await freshInvitation({ email: invitedEmail });
 
-    const { response } = await call(invokeToken, {
-      path: { type: 'invitation', token: raw },
-      headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
-    });
+    const { response, redirectTo } = await openHeldLink('invitation', raw, new CookieJar([await createTestSession(me)]));
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get('location')).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
+    expect(response.status).toBe(200);
+    expect(redirectTo).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
   });
 
   it('keeps an opened invitation usable long enough to sign in to another account', async () => {
     const { rawToken, token } = await freshInvitation({ email: invitedEmail });
 
-    await call(invokeToken, { path: { type: 'invitation', token: rawToken }, headers: defaultHeaders });
+    await openHeldLink('invitation', rawToken);
 
     const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.id, token.id));
     const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;

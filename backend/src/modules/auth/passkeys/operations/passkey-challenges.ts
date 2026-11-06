@@ -7,6 +7,7 @@ import {
 } from '@simplewebauthn/server';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import { passkeyAlgorithms } from 'shared/passkeys';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -15,12 +16,17 @@ import type { PasskeyChallengePurpose } from '#/modules/auth/passkeys/passkey-ch
 import {
   deletePasskeyChallenge,
   deleteStalePasskeyChallenges,
-  findCredentialIdsByUser,
   findPasskeyByCredentialId,
+  findPasskeyCredentialsByUser,
   insertPasskeyChallenge,
   updatePasskeyCounter,
 } from '#/modules/auth/passkeys/passkeys-queries';
-import type { WebAuthnAssertion, WebAuthnAttestation } from '#/modules/auth/passkeys/passkeys-schema';
+import {
+  type PasskeyTransport,
+  passkeyTransportSchema,
+  type WebAuthnAssertion,
+  type WebAuthnAttestation,
+} from '#/modules/auth/passkeys/passkeys-schema';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
@@ -33,8 +39,14 @@ const expectedOrigin = appConfig.frontendUrl;
 /** Challenges and passkeys are read and written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
-/** How long a challenge can be answered; its cookie and its row expire together. */
-const challengeLifetime = new TimeSpan(5, 'm');
+/**
+ * How long a challenge can be answered; its cookie and its row expire together. Ten minutes, the upper end of the
+ * ceremony timeouts WebAuthn recommends (§13.4.3), so an autofill ceremony left open a while still answers in time.
+ */
+const challengeLifetime = new TimeSpan(10, 'm');
+
+/** WebAuthn §7.1 step 25: a registration with a longer credential id fails. */
+const maxCredentialIdBytes = 1023;
 
 /** A response that does not verify is a failed sign-in: a 401 the sign-in limiter counts, never a server error. */
 const verificationFailed = (error?: unknown) =>
@@ -46,15 +58,20 @@ const registrationFailed = (error?: unknown) =>
 
 interface IssuePasskeyChallengeOpts {
   purpose: PasskeyChallengePurpose;
-  /** For an mfa or step-up challenge: the account whose passkey must answer it, and whose passkeys are offered. */
+  /**
+   * The account whose passkey must answer the challenge, and whose passkeys it names: offered for an mfa or step-up
+   * challenge, excluded for a registration.
+   */
   userId?: string;
 }
+
+const isPasskeyTransport = (transport: string): transport is PasskeyTransport => passkeyTransportSchema.safeParse(transport).success;
 
 /**
  * Hands this browser a new challenge for `purpose`: its row stores the hash, the challenge itself travels in a signed
  * cookie and in the response. The challenge the browser held before is dropped, and so are expired ones.
  * @returns The challenge response: the challenge, 32 random bytes as base64url (the value the WebAuthn options take as
- *   they are), and the credential ids of `userId`'s passkeys, none without one.
+ *   they are), and `userId`'s passkeys with the transports their registration reported, none without one.
  */
 export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId }: IssuePasskeyChallengeOpts) => {
   const previous = getAuthCookie(ctx, 'passkey-challenge');
@@ -66,8 +83,12 @@ export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId
   });
   setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
 
-  const passkeys = userId ? await findCredentialIdsByUser(dbCtx, { userId }) : [];
-  return { challenge, credentialIds: passkeys.map((passkey) => passkey.credentialId) };
+  const passkeys = userId ? await findPasskeyCredentialsByUser(dbCtx, { userId }) : [];
+  const credentials = passkeys.map(({ credentialId, transports }) => {
+    const known = transports?.filter(isPasskeyTransport) ?? [];
+    return known.length ? { id: credentialId, transports: known } : { id: credentialId };
+  });
+  return { challenge, credentials };
 };
 
 /**
@@ -90,14 +111,15 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
 };
 
 /**
- * Verifies a passkey (WebAuthn) registration response against the registration challenge this browser holds:
- * attestation, relying party, origin, challenge and user verification.
- * @returns The credential to store: its id, COSE public key (base64url) and signature counter.
+ * Verifies a passkey (WebAuthn) registration response against the registration challenge this browser holds for
+ * `userId`: attestation, relying party, origin, challenge, user verification, algorithm and credential id length.
+ * @returns The credential to store: its id, COSE public key (base64url), signature counter and the transports the
+ *   browser reported, null for none.
  * @throws AppError 401 `passkey_verification_failed` without a live registration challenge, 400
  *   `passkey_registration_failed` for a response that does not verify.
  */
-export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation) => {
-  const challenge = await consumeChallenge(ctx, 'registration');
+export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation, userId: string) => {
+  const challenge = await consumeChallenge(ctx, 'registration', userId);
 
   const { verified, registrationInfo } = await verifyRegistrationResponse({
     // The request schema types `clientExtensionResults` as unknown, the library as extension outputs it never reads.
@@ -106,6 +128,7 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
     expectedOrigin,
     expectedRPID: relyingPartyId,
     requireUserVerification: true,
+    supportedAlgorithmIDs: [...passkeyAlgorithms],
   }).catch((error: unknown) => {
     throw registrationFailed(error);
   });
@@ -113,7 +136,14 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
   if (!verified || !registrationInfo) throw registrationFailed();
 
   const { credential } = registrationInfo;
-  return { credentialId: credential.id, publicKey: Buffer.from(credential.publicKey).toString('base64url'), counter: credential.counter };
+  if (Buffer.from(credential.id, 'base64url').byteLength > maxCredentialIdBytes) throw registrationFailed();
+
+  return {
+    credentialId: credential.id,
+    publicKey: Buffer.from(credential.publicKey).toString('base64url'),
+    counter: credential.counter,
+    transports: credential.transports?.length ? credential.transports : null,
+  };
 };
 
 interface VerifyPasskeyAssertionOpts {

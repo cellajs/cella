@@ -1,0 +1,47 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "befac8cf-6bfb-4e0d-b831-e97dfc0e3666",
+  "prevIds": [
+    "27d65f22-3d72-4fa0-a505-7528be7981bf"
+  ],
+  "footprints": [
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "stepped_up_secret"
+      ],
+      "writes": [
+        "s|col|public.sessions.stepped_up_secret",
+        "n|col|public.sessions.stepped_up_secret",
+        "e|col|public.sessions.stepped_up_secret"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sessions",
+        "name": "stepped_up_secret",
+        "type": "varchar(255)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    }
+  ]
+}

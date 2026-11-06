@@ -9,7 +9,7 @@ const webAuthnBlobLength = 16_384;
 const passkeyTypeSchema = z.enum(['authentication', 'mfa']);
 const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration']);
 
-export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true, counter: true });
+export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true, counter: true, transports: true });
 
 /** WebAuthn registration response (`RegistrationResponseJSON`); binary fields are base64url strings. */
 const webAuthnAttestationSchema = z.object({
@@ -50,7 +50,18 @@ export const passkeyCreateBodySchema = z.object({ attestation: webAuthnAttestati
 
 export const passkeyChallengeBodySchema = z.object({ type: challengeTypeSchema });
 
-/** `credentialIds` lists the account's passkeys for an MFA or step-up challenge; empty for a sign-in or registration challenge. */
-export const passkeyChallengeSchema = z.object({ challenge: z.string(), credentialIds: z.array(z.string()) });
+/** The transports WebAuthn names (§5.8.4). A browser ignores any other, so a challenge offers only these. */
+export const passkeyTransportSchema = z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']);
+export type PasskeyTransport = z.infer<typeof passkeyTransportSchema>;
+
+/**
+ * `credentials` lists the account's passkeys, each with the transports its registration reported (none when it
+ * reported none): for an MFA or step-up challenge to allow, for a registration challenge of a signed-in user to
+ * exclude. Empty for a sign-in challenge.
+ */
+export const passkeyChallengeSchema = z.object({
+  challenge: z.string(),
+  credentials: z.array(z.object({ id: z.string(), transports: z.array(passkeyTransportSchema).optional() })),
+});
 
 export const passkeyVerificationBodySchema = z.object({ assertion: webAuthnAssertionSchema, type: passkeyTypeSchema });
