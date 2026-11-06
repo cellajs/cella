@@ -122,7 +122,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     );
 
     if (adds.length) {
-      const channel = { type: entityType, slug: entity.slug, name: entity.name, role };
+      const channel = { type: entityType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };
       await sendInvitationMails(ctx, { sender: user, channel, organization, invited: [], added: adds });
     }
   }

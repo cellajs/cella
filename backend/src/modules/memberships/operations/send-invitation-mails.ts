@@ -1,4 +1,5 @@
 import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
+import { buildNotificationLink } from 'shared/utils/notification-link';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
@@ -20,7 +21,7 @@ interface InvitationMailOpts {
   /** The inviter: named in the mail, and replies reach them. Without one the mail comes from the system. */
   sender?: { name: string; email?: string };
   /** The invited channel and role; a system invitation names none. */
-  channel?: { type: ChannelEntityType; slug: string; name: string; role: EntityRole };
+  channel?: { type: ChannelEntityType; id: string; tenantId: string; organizationId: string; name: string; role: EntityRole };
   /** Whose default language an address without an account reads; a mail about a channel below it names it. */
   organization?: { defaultLanguage: string; name: string } | null;
   /** Addresses invited: a pending invitation each. */
@@ -31,8 +32,9 @@ interface InvitationMailOpts {
 
 /**
  * Sends the invitation mails, built in one place. The link is the invitation token's for an address without an
- * account, else the invited channel's page. The language is the account's own when the address has one, else the
- * organization's default, else the app's. A mail greets an account by its name, and an address without one by none.
+ * account, home for an account (which answers the invitation there), and the channel for an account added at once.
+ * The language is the account's own when the address has one, else the organization's default, else the app's. A mail
+ * greets an account by its name, and an address without one by none.
  * @returns Whether every mail went out. A failed send is logged, since every caller stored its rows before the mail and
  *   records the mail only once it went out; a failed render still throws.
  */
@@ -66,8 +68,10 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
 
   const organizationName = channel.type === 'organization' ? undefined : organization?.name;
   const statics = { ...senderProps, entityName: channel.name, organizationName, role: channel.role };
-  const page = `${appConfig.frontendUrl}/${channel.type}/${channel.slug}`;
-  const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...accountHolder(address), memberInviteLink: page }]));
+  const home = `${appConfig.frontendUrl}${appConfig.defaultRedirectPath}`;
+  const { id: channelId, type: channelType, tenantId, organizationId } = channel;
+  const page = buildNotificationLink(appConfig.frontendUrl, { tenantId, organizationId, channelId, channelType });
+  const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...accountHolder(address), memberInviteLink: home }]));
   const addedRecipients = added.map((address) => ({ ...accountHolder(address), entityLink: page }));
 
   if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email).catch(logFailure);

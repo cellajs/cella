@@ -14,7 +14,8 @@ const dbCtx = { var: { db: baseDb } };
 
 /**
  * Signs in the user a redeemed magic link names, records that the click proved their inbox, and accepts the invitation
- * whose link this browser opened (`findFollowedInvitation`, read before the magic link was redeemed).
+ * whose link this browser opened (`findFollowedInvitation`, read before the magic link was redeemed), else the one the
+ * browser that asked for the link had opened.
  */
 export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, followed: FollowedInvitation | null) => {
   if (!token.userId) throw new AppError(500, 'server_error', 'error');
@@ -26,7 +27,8 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenRecord, fol
   const verified = await markEmailVerified(dbCtx, { userId: user.id, email: token.email, via: 'magic' });
   if (!verified) log.error('Magic link address is not on the account', { userId: user.id });
 
-  await acceptFollowedInvitation(user, { provenEmail: token.email, followed });
+  const asked = token.followedInvitationId ? { inactiveMembershipId: token.followedInvitationId, email: token.email } : null;
+  await acceptFollowedInvitation(user, { provenEmail: token.email, followed: followed ?? asked });
 
   return finishSignIn(ctx, user, 'magic', token.redirectPath);
 };

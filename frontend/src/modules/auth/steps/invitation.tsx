@@ -77,7 +77,10 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
         title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
         description={
           invitation
-            ? t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })
+            ? t(invitation.organizationName ? 'c:invite_join_in_organization.text' : 'c:invite_join.text', {
+                ...invitation,
+                role: t(`c:${invitation.role}`),
+              })
             : inviterName && t('c:invite_join_system.text', { inviterName })
         }
       />

@@ -22,6 +22,13 @@ export const tokenWithDataSchema = z.object({
   inviterName: z.string().optional().describe('Name of the user who sent an invitation, for a system invitation too'),
   /** What the invitation grants, so a signed-in visitor can confirm it before accepting as their own account. */
   invitation: z
-    .object({ entityType: z.enum(appConfig.channelEntityTypes), entityName: z.string(), role: z.enum(roles.all), inviterName: z.string() })
+    .object({
+      entityType: z.enum(appConfig.channelEntityTypes),
+      entityName: z.string(),
+      /** The organization of a channel below it; absent for an organization. */
+      organizationName: z.string().optional(),
+      role: z.enum(roles.all),
+      inviterName: z.string(),
+    })
     .optional(),
 });

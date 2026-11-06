@@ -176,7 +176,7 @@ describe('invokeToken', () => {
     const [winner, loser] = first.status === 200 ? [first, second] : [second, first];
     expect(winner.status).toBe(200);
     expect(loser.status).toBe(401);
-    expect(await loser.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
+    expect(await loser.json()).toEqual({ type: 'invitation_opened', tokenId: token.id });
     expect(cookieChange(loser, 'invitation')).toBeUndefined();
 
     const opened = await rowOf(token.id);
@@ -192,7 +192,7 @@ describe('invokeToken', () => {
     const otherCookie = setCookiePair(await request(`/invoke/invitation/${otherLink.rawToken}`), 'invitation');
     const replay = await request(`/invoke/invitation/${rawToken}`, [otherCookie]);
     expect(replay.status).toBe(401);
-    expect(await replay.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
+    expect(await replay.json()).toEqual({ type: 'invitation_opened', tokenId: token.id });
   });
 
   it('refuses an unknown or expired link', async () => {

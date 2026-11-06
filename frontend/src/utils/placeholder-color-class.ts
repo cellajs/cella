@@ -11,6 +11,6 @@ function toColorIndex(id: string) {
 
 /** Deterministic placeholder color class for an id; gray when the id is empty or has no alphanumeric character. */
 export const placeholderColorClass = (id?: string) => {
-  if (!id) return 'bg-gray-300';
+  if (!id) return 'bg-gray-300 dark:bg-gray-700';
   return appConfig.placeholderColors[toColorIndex(id) ?? 0];
 };

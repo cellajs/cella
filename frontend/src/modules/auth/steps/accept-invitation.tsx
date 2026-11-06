@@ -70,9 +70,8 @@ export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepPr
         title={t('c:invite_accept_as_account')}
         description={
           invitation &&
-          t('c:invite_accept_as_account.text', {
-            inviterName: invitation.inviterName,
-            entityName: invitation.entityName,
+          t(invitation.organizationName ? 'c:invite_accept_as_account_in_organization.text' : 'c:invite_accept_as_account.text', {
+            ...invitation,
             role: t(`c:${invitation.role}`),
           })
         }
