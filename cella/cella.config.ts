@@ -74,6 +74,7 @@ export default defineConfig({
       'a11y/scope-config.ts',
       'bench/src/seeds/attachment-home.ts',
       'cella/skills/screenshots/shots-config.mjs',
+      'cella/pentest.app.ts',
       'json/text-blocks.json',
     ],
   },
