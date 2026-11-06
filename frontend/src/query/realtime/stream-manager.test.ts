@@ -73,7 +73,7 @@ class FakeEventSource {
   url: string;
   readyState = FakeEventSource.OPEN;
   onopen: (() => void) | null = null;
-  onerror: (() => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
   private listeners = new Map<string, Array<(e: MessageEvent) => void>>();
 
   constructor(url: string) {
@@ -91,10 +91,11 @@ class FakeEventSource {
     for (const fn of this.listeners.get(type) ?? []) fn({ data } as MessageEvent);
   }
 
-  /** The server's typed `error` event, which the browser delivers as a MessageEvent (a transport failure is a bare Event). */
+  /** The server's typed `error` event, a MessageEvent the browser hands to the `error` listeners and then to `onerror` (a transport failure is a bare Event). */
   emitServerError(code: string) {
     const event = new MessageEvent('error', { data: JSON.stringify({ code, message: code }) });
     for (const fn of this.listeners.get('error') ?? []) fn(event);
+    this.onerror?.(event);
   }
 
   close() {
@@ -277,7 +278,7 @@ describe('the gate that paused writes wait on', () => {
 
   // A server error frame reconnected without counting a failure, so a server that kept ending the stream that way held the gate for good.
   it.each([
-    ['in transport', (stream?: FakeEventSource) => stream?.onerror?.()],
+    ['in transport', (stream?: FakeEventSource) => stream?.onerror?.(new Event('error'))],
     ['by a server error frame', (stream?: FakeEventSource) => stream?.emitServerError('access_changed')],
   ])('opens once a stream that keeps failing %s gives up, and stays closed while it reconnects', async (_how, fail) => {
     vi.useFakeTimers();
