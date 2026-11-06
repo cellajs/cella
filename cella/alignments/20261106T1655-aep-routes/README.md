@@ -23,9 +23,9 @@ resource URIs move under `/tenants/` with the routes.
 
 ## Blast radius
 
-Every app that adds routes, calls the SDK or writes API URLs by hand. No database change. `clientCacheVersion` moves to
-`v34-aep-routes`. MCP tool names follow the operationIds, and access tokens for the old resource URIs stop working,
-so MCP clients and integrations authorize again.
+Every app that adds routes, calls the SDK or writes API URLs by hand. No database change. `clientCacheVersion` moves.
+MCP tool names follow the operationIds, and access tokens for the old resource URIs stop working, so MCP clients and
+integrations authorize again.
 
 ## Run
 

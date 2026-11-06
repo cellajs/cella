@@ -26,7 +26,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 /**
  * A zod error param translated when a value fails. Schemas are built while the routes import, before the server
  * initializes i18n, so a message translated at build time would stay zod's default.
- * @param key - Translation key, e.g. 'error:invalid_offset'.
+ * @param key - Translation key, e.g. 'error:invalid_skip'.
  * @param options - Interpolation values.
  */
 export const translatedError = (key: `error:${ErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
@@ -82,16 +82,11 @@ export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityTy
 const pageSizeCap = 1000;
 
 /**
- * An integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`, `-1` and `1.5`
- * fail; `z.coerce` would turn `''` and null into 0.
+ * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,
+ * `-1` and `1.5` fail with `error`; `z.coerce` would turn `''` and null into 0.
  */
-export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?: number; error?: ReturnType<typeof translatedError> } = {}) => {
-  const integer = z.int(error).min(min, error);
-  return z.preprocess(
-    (value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value),
-    max === undefined ? integer : integer.max(max, error),
-  );
-};
+export const integerQuerySchema = (error?: ReturnType<typeof translatedError>) =>
+  z.preprocess((value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value), z.int(error).min(0, error));
 
 /** A list's sort direction. */
 export const orderSchema = z.enum(['asc', 'desc']);
@@ -104,7 +99,7 @@ export type OrderDirection = z.infer<typeof orderSchema>;
  */
 export const maxPageSizeSchema = (max: number) => {
   const fallback = Math.min(appConfig.requestLimits.default, max);
-  return integerQuerySchema({ error: translatedError('error:invalid_page_size') })
+  return integerQuerySchema(translatedError('error:invalid_page_size'))
     .optional()
     .transform((size) => Math.min(size || fallback, max))
     .describe(`Most results one page holds. Absent or 0 reads ${fallback}; above ${max} reads ${max}. A page may hold fewer.`);
@@ -118,7 +113,7 @@ export const pageQuerySchema = z.object({
     .optional()
     .describe("The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."),
   maxPageSize: maxPageSizeSchema(pageSizeCap),
-  skip: integerQuerySchema({ error: translatedError('error:invalid_skip') })
+  skip: integerQuerySchema(translatedError('error:invalid_skip'))
     .default(0)
     .describe("Results to pass over after the page token's position, or from the start without a token."),
 });

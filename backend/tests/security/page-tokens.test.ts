@@ -46,12 +46,21 @@ describe('Page tokens', async () => {
   });
 
   it('holds no position a client can read', async () => {
-    const { token } = await firstPage();
-    const decoded = token
-      .split(':')
-      .map((part) => Buffer.from(part, 'base64url').toString('utf8'))
-      .join(':');
-    expect(decoded).not.toContain('offset');
+    const { first, token } = await firstPage();
+    // The token seals the next offset and the ids of the page's last rows; neither shows as text, decoded or in hex.
+    const parts = token.split(/[^\w-]+/).filter(Boolean);
+    const readings = [
+      token,
+      ...parts.flatMap((part) => (['utf8', 'hex'] as const).map((encoding) => Buffer.from(part, 'base64url').toString(encoding))),
+    ];
+    const idForms = first.results.flatMap(({ id }) => {
+      const bytes = Buffer.from(id.replaceAll('-', ''), 'hex');
+      return [id, id.replaceAll('-', ''), bytes.toString('base64'), bytes.toString('base64url')];
+    });
+    for (const reading of readings) {
+      expect(reading).not.toMatch(/offset|anchors/);
+      for (const form of idForms) expect(reading).not.toContain(form);
+    }
   });
 
   it('must not open when altered', async () => {

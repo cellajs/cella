@@ -55,7 +55,9 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
 
 /**
  * Serves custom methods (`<resource>:<verb>`) by redispatching each request for one through the app at the path its
- * route declares (`routablePath`), before the global middlewares, so they run once, on the redispatch.
+ * route declares (`routablePath`), before the global middlewares, so they run once, on the redispatch. A request for
+ * that routable path itself (`…/~verb`) reaches the route as sent, through the same middlewares and guards: the MCP
+ * tools call it there.
  */
 function routeCustomMethods(app: OpenAPIHono<Env>) {
   app.use('*', async (ctx, next) => {
