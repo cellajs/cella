@@ -18,5 +18,5 @@ export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
     onComplete();
   };
 
-  return <ConfirmForm variant="destructive" icon={RedoIcon} label={t('c:skip')} pending={false} allowOffline onConfirm={skip} />;
+  return <ConfirmForm icon={RedoIcon} label={t('c:skip')} pending={false} allowOffline onConfirm={skip} />;
 }

@@ -25,8 +25,8 @@ export interface LocaleResources {
     "cards.scaleway.text": "Scaleway offers compute, object storage, managed postgres, generative API.";
     "cards.transloadit.purpose": "File handling";
     "cards.transloadit.text": "Transloadit is a file handling service that helps you with uploading, transforming and storing files.";
-    "cella_approach_fit": "Cella has its own selective sync engine. It's a better fit if:";
-    "cella_approach_intro": "Sync frameworks and sync databases require you to hand over control of schemas, queries, and storage. They do work that you likely have to do again by yourself: counting items effectively, generating an audit trail.";
+    "cella_approach_fit": "Cella has its own sync engine. It's a better fit if:";
+    "cella_approach_intro": "Existing sync frameworks and sync databases require you to hand over control of schemas, queries, and storage. They do work that you likely have to do again by yourself: counting items effectively, generating an audit trail.";
     "cella_approach_point_1": "Only selected data models need sync";
     "cella_approach_point_2": "Every write should go through your own REST API";
     "cella_approach_point_3": "Lock-in or framework constraints should be avoided";
@@ -185,13 +185,14 @@ export interface LocaleResources {
     "features.yjs_collaboration.text": "Real-time co-editing with live presence, powered by Yjs. While connected, concurrent edits merge cleanly with no conflicts.";
     "features.zero_downtime": "Zero-downtime deploys";
     "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.";
-    "hero.text": "A <strong>TypeScript template</strong> to build your own EU-hosted app with offline & real-time sync features.";
+    "hero.menu_toggle": "Open or close the menu in the app preview";
+    "hero.text": "Cella is a <strong>TypeScript template</strong> to build your own EU-hosted app. Have offline & real-time sync features on day one.";
     "hero.title": "Ship modern web apps. Use a classic REST API.";
     "how.concept_1": "Sync processes don't compete, they complement the REST API";
     "how.concept_2": "Synced data should be shaped & treated like non-synced data";
     "how.title": "Sync architecture";
     "install_copied": "copied! bon voyage 🚀";
-    "integrations.text": "Powerful integrations to reduce time-to-market.";
+    "integrations.text": "Reduce time-to-market with these integrations.";
     "integrations.title": "Integrations";
     "prerelease": "Prerelease";
     "pricing.plan_1.1": "Member of CellaJS community";
@@ -240,7 +241,7 @@ export interface LocaleResources {
     "stack.pulumi.text": "Infrastructure as code for repeatable setup and deploys.";
     "stack.react": "react & tanstack";
     "stack.react.text": "React with Tanstack Router. Tanstack Query for fetching and caching.";
-    "stack.text": "Best-in-class open-source tools that work well together. Not hidden behind a framework.";
+    "stack.text": "Open-source tools that work well together. Not hidden behind a framework.";
     "stack.title": "A proven stack";
     "stack.vite": "vite & pnpm";
     "stack.vite.text": "A straightforward and fast monorepo setup. PWA support with Serwist.";
@@ -1090,7 +1091,7 @@ export interface LocaleResources {
     "request_type": "Request type";
     "request_verification.connect.text": "We sent you an email to connect your {{provider}} account. Open the link in it to verify your email address.";
     "request_verification.signup.text": "We sent you an email to finish signing up. Open the link in it to verify your email address.";
-    "require_mfa": "MFA is off";
+    "require_mfa": "MFA is recommended";
     "require_mfa.text": "Multifactor authentication adds a second step at sign-in, so a stolen link or device alone can't open your account.";
     "resend": "Resend";
     "resend_invitation.text": "Receive a new invitation by email with a new expiration date.";
@@ -1193,7 +1194,7 @@ export interface LocaleResources {
     "size": "Size";
     "skip": "Skip";
     "skip_org_creation": "Skip creating an organization?";
-    "skip_org_creation.text": "You can create an organization later from the menu, or join one when someone invites you.";
+    "skip_org_creation.text": "Continue without an organization? You can create one later from the menu, or join one when someone invites you.";
     "slide": "Slide";
     "slide_number": "Slide {{number}}";
     "slug": "Slug";
@@ -1536,6 +1537,8 @@ export interface LocaleResources {
     "mfa_schema_requirement": "Email is required for login and must be omitted for MFA";
     "missing_ancestor": "Missing ancestor";
     "missing_ancestor.text": "Request is missing a required ancestor channel id.";
+    "network_error": "No connection";
+    "network_error.text": "The server could not be reached. Pages you opened before stay available offline.";
     "newsletter_sign_up": "Your email address could not be submitted. Try again later.";
     "no_email_found": "No email found";
     "no_email_found.text": "No email address could be found on the resource.";
