@@ -33,17 +33,17 @@
         // Unused by cella itself; apps import it to derive search keywords from descriptions.
         "src/utils/extract-keywords.ts",
         // Opt-in draft lifecycle: no cella table declares `publishedAt`, apps add the column with this helper.
-        "src/db/utils/published-column.ts"
+        "src/db/utils/published-column.ts",
+        // `pnpm cella bench` runs bench/run.ts, which imports every scenarios/*.ts; data-setup imports every *.bench.ts.
+        "bench/run.ts",
+        "bench/scenarios/*.ts",
+        "bench/seeds/*.bench.ts"
       ],
       // The service image installs only `dependencies` (shared/src/keep-on-disk.ts). shared/src imports these, and the
       // bundle loads them from disk or by name (pino transports), so they are listed here without an import in this workspace.
       "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"],
       // `pnpm tunnel` runs the ngrok CLI, installed with `brew install ngrok`.
       "ignoreBinaries": ["ngrok"]
-    },
-    "bench": {
-      // The CLI imports every scenarios/*.ts; data-setup imports every *.bench.ts.
-      "entry": ["scenarios/*.ts", "src/seeds/*.bench.ts"]
     },
     "cdc": {
       "entry": ["src/**/*.type-check.ts"],

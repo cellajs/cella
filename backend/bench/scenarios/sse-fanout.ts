@@ -1,8 +1,8 @@
+import { defineScenario } from '@cellajs/cli/bench';
 import type { StreamChange } from '#/schemas/stream-schemas';
-import { attachmentEdit } from '../src/attachment-requests';
-import { benchUser, ORG_PATH } from '../src/bench-user';
-import { SSE_HOLD_MS, SSE_SYNC_MODE } from '../src/config';
-import { defineScenario } from '../src/runner';
+import { attachmentEdit } from '../attachment-requests';
+import { benchUser, ORG_PATH } from '../bench-user';
+import { SSE_HOLD_MS, SSE_SYNC_MODE } from '../config';
 
 const DEFAULT_WINDOW_MS = 15_000;
 /** Bench tier: no floor (the spread itself is measured), ceiling like the background tier. */

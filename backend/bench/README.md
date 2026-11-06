@@ -1,6 +1,6 @@
-# @cellajs/bench
+# Bench
 
-The bench package: load testing for the backend, cdc, and yjs services with a runner of its own, driven by the **bench CLI**.
+Load testing for the backend, cdc, and yjs services: the app's scenarios and checks, run by `pnpm cella bench`.
 
 ### TL;DR
 
@@ -11,24 +11,24 @@ and compared with the previous run: read them as trends, not absolutes.
 
 ## Prerequisites
 
-Start these first:
-
-- **Postgres** seeded with app data (`pnpm docker` + `pnpm seed`)
-- **Services** running via `pnpm dev`
+A run measures the stack this checkout runs: Postgres seeded with app data (`pnpm docker` + `pnpm seed`) and the
+services of `pnpm dev`. With `--isolated` it needs neither: it runs on a testbed, a copy of the app on a database and
+ports of its own (`pnpm cella testbed`), started for the run and stopped after.
 
 ## Commands
 
 | Command | Description |
 | --- | --- |
-| `pnpm bench` | Interactive scenario picker |
-| `pnpm bench <name>` | Run one scenario non-interactively |
-| `pnpm bench --all` | Run every scenario in sequence |
-| `pnpm bench --all --short` | Smoke run of every scenario: one VU per role, no thresholds, no baselines |
-| `pnpm bench help` | List scenarios |
-| `pnpm db:seed` | Seed test data (idempotent, cleans first) |
-| `pnpm db:teardown` | Remove all bench data (baselines are kept) |
+| `pnpm cella bench` | Pick a scenario from a list |
+| `pnpm cella bench <name>` | Run one scenario |
+| `pnpm cella bench --all` | Run every scenario in turn, with a table at the end |
+| `pnpm cella bench --all --short` | Smoke run of every scenario: one VU per role, no thresholds, no baselines |
+| `pnpm cella bench <name> --isolated` | Run on a testbed, beside `pnpm dev` |
+| `pnpm cella bench --help` | The other flags |
+| `pnpm --filter backend bench:seed` | Seed the bench data (idempotent, cleans first) |
+| `pnpm --filter backend bench:teardown` | Remove all bench data (baselines are kept) |
 
-One run holds a stack at a time: a second `pnpm bench` against the same stack stops and names the run that holds it.
+One run holds a stack at a time: a second run against the same stack stops and names the run that holds it.
 
 ## Scenarios
 
@@ -49,9 +49,9 @@ Each scenario asks one question of the stack, as a TypeScript module in `scenari
 A scenario declares its load as phases and what one virtual user (VU) does. New VUs arrive on schedule whether or not earlier ones are done, as visitors do.
 
 ```ts
-import { attachmentEdit } from '../src/attachment-requests';
-import { benchUser } from '../src/bench-user';
-import { defineScenario } from '../src/runner';
+import { defineScenario } from '@cellajs/cli/bench';
+import { attachmentEdit } from '../attachment-requests';
+import { benchUser } from '../bench-user';
 
 export default defineScenario({
   description: 'Attachment edit: the write path under a step-up, one rename per request.',
@@ -75,8 +75,16 @@ export default defineScenario({
 
 - **Phases** start `arrivalRate` VUs per second for `duration` seconds (`rampTo` ramps the rate), or `arrivalCount` VUs spread over the duration.
 - **What a VU does** is `vu`, or `roles` for a mix of VUs (`sse-fanout`), or `run` for a scenario that drives its own clients once (`yjs-typing`).
-- **The VU** carries HTTP, event-stream and WebSocket clients and counters of its own ([types.ts](./src/runner/types.ts)). `benchUser(vu.index)` hands each VU a seeded user. A VU that throws counts as failed.
+- **The VU** carries HTTP, event-stream and WebSocket clients and counters of its own (the `Vu` type of `@cellajs/cli/bench`). `benchUser(vu.index)` hands each VU a seeded user. A VU that throws counts as failed.
 - **Names are typed.** `counters` and `histograms` list every name the scenario records, and `vu.counter`, `expect` and `forbid` accept only those, so a misspelled name fails `pnpm check`. Give a request with ids in its path a `name`, so the endpoint table has one row for it.
+
+## Files
+
+- `run.ts` is the entry `pnpm cella bench` runs: the app's steps around the scenarios. It waits for the stack, seeds,
+  signs bench user 0 in, starts each scenario from cleared rate limits and a settled CDC worker, and checks what the
+  worker recorded after it.
+- `scenarios/` holds one module per scenario, `seeds/` the bench data ([seed registry](./seeds/README.md)).
+- `config.ts` reads the ports, URLs and the `YJS_*` shape of a run from the environment and `backend/.env`.
 
 ## Checks
 
@@ -111,7 +119,7 @@ Baselines and logs live in `cella-bench/` inside the git directory (`git rev-par
 
 ## Interpreting results
 
-Bench measures the live dev stack. Before calling a result a regression:
+Bench measures a live stack: the dev stack, or a testbed with `--isolated`. Before calling a result a regression:
 
 - **Auth and tenant transactions.** Every request reads its session or token, and every write runs in a short tenant transaction: writes are bound by the database pool and round trips, not handler CPU.
 - **Rate limiting is effectively off.** The bench tenant's budget is very high, and every scenario starts with the bench users' own budgets cleared.

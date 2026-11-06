@@ -1,5 +1,5 @@
-import { benchUser } from '../src/bench-user';
-import { defineScenario } from '../src/runner';
+import { defineScenario } from '@cellajs/cli/bench';
+import { benchUser } from '../bench-user';
 
 /**
  * What the guard chain alone costs. `/me` reads nothing beyond the session and the memberships the guards load and

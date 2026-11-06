@@ -95,7 +95,7 @@ async function cleanLoadtestData(pool: pg.Pool) {
   succeedSpinner('existing bench data cleaned');
 }
 
-/** Seeds deterministic bench data through backend/mocks generators. Idempotent: existing bench data is cleaned before re-seeding. Run with `pnpm db:seed`. */
+/** Seeds deterministic bench data through backend/mocks generators. Idempotent: existing bench data is cleaned before re-seeding. Run with `pnpm --filter backend bench:seed`. */
 async function seed() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
   const db = createPgConnection(DB_URL, { max: 1 });
@@ -124,7 +124,7 @@ async function seed() {
   }
 }
 
-/** Deletes all bench data without reseeding. Run with `pnpm db:teardown`. */
+/** Deletes all bench data without reseeding. Run with `pnpm --filter backend bench:teardown`. */
 async function teardown() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
 

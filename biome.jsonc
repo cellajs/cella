@@ -14,6 +14,7 @@
       "backend/tests/**",
       "backend/emails/**",
       "backend/scripts/**",
+      "backend/bench/**",
       "frontend/src/**",
       "!frontend/src/routes/routeTree.gen.ts",
       "frontend/.storybook/**",
@@ -23,8 +24,6 @@
       "cdc/src/**",
       "yjs/src/**",
       "infra/**",
-      "bench/src/**",
-      "bench/scenarios/**",
       "a11y/src/**",
       "cella/skills/**",
       "sdk/gen/**",
@@ -178,8 +177,8 @@
         "frontend/src/content/mdx.d.ts",
         "backend/tests/global-setup.ts",
         "yjs/src/tests/integration/global-setup.ts",
-        // The bench CLI loads each scenario module's default export.
-        "bench/scenarios/*.ts",
+        // `pnpm cella bench` loads each scenario module's default export.
+        "backend/bench/scenarios/*.ts",
         // jspdf calls the default export of the packages this stands in for.
         "frontend/vite/jspdf-optional-stub.ts",
         // pino calls a transport module's default export.

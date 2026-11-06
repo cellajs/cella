@@ -1,5 +1,6 @@
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
 import process from 'node:process';
+import type { Distribution } from '@cellajs/cli/bench';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import pc from 'picocolors';
@@ -12,7 +13,6 @@ import type { yjsTokenResponseSchema } from '#/modules/yjs/yjs-schema';
 import type { StreamChange } from '#/schemas/stream-schemas';
 import { benchCookie } from './bench-user';
 import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
-import type { Distribution } from './runner/metrics';
 import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
@@ -161,7 +161,7 @@ function ledgerSocket(ledger: Pick<Client, 'unsaved' | 'sockets'>) {
       ledger.sockets++;
     }
 
-    send(data: Parameters<InstanceType<typeof Base>['send']>[0]) {
+    override send(data: Parameters<InstanceType<typeof Base>['send']>[0]) {
       const subtype = syncSubtype(data);
       if (subtype === SYNC.step2 || subtype === SYNC.update) ledger.unsaved.push(performance.now());
       super.send(data);
