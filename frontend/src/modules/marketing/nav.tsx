@@ -70,7 +70,7 @@ export function MarketingNav() {
 
       <header className="absolute top-2 z-20 h-16 w-full px-2 sm:top-4 lg:top-8 lg:px-4">
         <div className="mx-auto flex h-full max-w-336 items-center justify-between gap-2">
-          <div className="flex h-full items-center gap-2 md:gap-6">
+          <div className="flex h-full items-center gap-2 ps-2 md:gap-6">
             <Link
               to="/about"
               hash=""

@@ -13,6 +13,7 @@ import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
 import { updateMeOp } from '#/modules/me/operations/update-me';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
@@ -37,6 +38,12 @@ app.openapi(meRoutes.getMyAuth, async (ctx) => {
 
 app.openapi(meRoutes.getMyInvitations, async (ctx) => {
   const data = await getMyInvitationsOp(ctx);
+  return ctx.json(data, 200);
+});
+
+app.openapi(meRoutes.handleMembershipInvitation, async (ctx) => {
+  const { id: inactiveMembershipId, acceptOrReject } = ctx.req.valid('param');
+  const data = await handleMembershipInvitationOp(ctx, inactiveMembershipId, acceptOrReject);
   return ctx.json(data, 200);
 });
 

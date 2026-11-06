@@ -133,7 +133,7 @@ describe('Invitation response', async () => {
       boundTo: invitedUser.id,
     });
 
-    const path = `/${organization.tenantId}/${organization.id}/memberships/${inactiveMembership.id}/reject`;
+    const path = `/me/invitations/${inactiveMembership.id}/reject`;
     const { status, body } = await rawJsonRequest(path, await createTestSession(invitedUser), { method: 'POST' });
 
     expect(status).toBe(200);

@@ -1,6 +1,6 @@
 ---
 name: screenshots
-description: Re-shoot the marketing screenshots this app ships: the device mockups on /about and the README banner.
+description: Re-shoot the marketing screenshots this app ships: the device mockups and the hero's phone screen on /about, and the README banner.
 ---
 
 # Re-shooting the marketing screenshots
@@ -43,8 +43,8 @@ time, and shoot its tables with a wait for what they fill in last (`membersFille
 
 Read each PNG. The driver reports sizes, not whether a shot is worth shipping.
 
-1. **Fill**: the shot matches its frame's ratio (`pc` and `pcWide` 16:9, `tablet` 3:4, `mobile` 9:16). A slide
-   renders `object-contain`, so a mismatch is letterboxed inside the mockup.
+1. **Fill**: the shot matches its frame's ratio (`pc` and `pcWide` 16:9, `tablet` 3:4, `mobile` 9:16, `phone` 9:19.5). A
+   slide renders `object-contain`, so a mismatch is letterboxed inside the mockup.
 2. **Data**: tables full, no empty state, no one-row table, counts plausible. No real person's name or address: a
    database seeded from someone's own account puts their email in the first row of every member table.
 3. **Empty-state affordances**: an admin sees "Upload cover" over an organization without one, and placeholder avatars

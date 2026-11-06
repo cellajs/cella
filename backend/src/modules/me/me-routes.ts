@@ -16,7 +16,8 @@ import {
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { userSchema } from '#/modules/user/user-schema';
-import { batchResponseSchema, entityIdParamSchema, entityWithTypeQuerySchema, idsBodySchema, paginationSchema } from '#/schemas';
+import { batchResponseSchema, entityIdParamSchema, entityWithTypeQuerySchema, idsBodySchema, paginationSchema, validIdSchema } from '#/schemas';
+import { channelBaseSchema } from '#/schemas/entity-base';
 
 const meRoutes = createXRoutes(['me', 'cella'], {
   getMe: xRoute({
@@ -34,6 +35,17 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
     responses: { 200: json('Invitations pending', paginationSchema(mePendingInvitationSchema), mockPaginatedInvitationsResponse()) },
+  }),
+  handleMembershipInvitation: xRoute({
+    method: 'post',
+    path: '/invitations/{id}/{acceptOrReject}',
+    xGuard: [userGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Respond to membership invitation',
+    description:
+      "Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.",
+    request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
+    responses: { 200: json("The invitation's organization", channelBaseSchema), ...errors(404, 409) },
   }),
   updateMe: xRoute({
     method: 'put',

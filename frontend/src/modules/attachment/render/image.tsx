@@ -13,8 +13,8 @@ interface RenderImageProps {
   alt?: string;
   imageClassName?: string;
   showButtons?: boolean;
-  /** Sizes the image to its content, so a letterbox click reaches the backdrop. */
-  backdropDismiss?: boolean;
+  /** Called on a tap beside the image; also sizes the image to its content, so a letterbox tap misses it. */
+  onBackdropClick?: () => void;
 }
 
 /** Pixels one arrow key moves the zoomed image. */
@@ -44,9 +44,9 @@ function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonPro
   );
 }
 
-export function RenderImage({ image, alt, showButtons, imageClassName, backdropDismiss = false }: RenderImageProps) {
+export function RenderImage({ image, alt, showButtons, imageClassName, onBackdropClick }: RenderImageProps) {
   const { t } = useTranslation();
-  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom();
+  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(onBackdropClick);
 
   // Only the shown slide pans: the carousel leaves the arrow keys to a slide that holds them (data-carousel-hold below).
   useEventListener(
@@ -63,7 +63,7 @@ export function RenderImage({ image, alt, showButtons, imageClassName, backdropD
   return (
     <>
       {showButtons && (
-        <ButtonGroup className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md shadow-xs">
+        <ButtonGroup className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md shadow-xs max-sm:hidden">
           <ControlButton tooltipContent={t('c:zoom_in')} onClick={zoomIn} icon={PlusIcon} />
           <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={MinusIcon} />
           <ControlButton tooltipContent={t('c:rotate_right')} onClick={rotateRight} icon={RotateCwSquareIcon} />
@@ -71,15 +71,11 @@ export function RenderImage({ image, alt, showButtons, imageClassName, backdropD
         </ButtonGroup>
       )}
 
-      <div
-        data-carousel-hold={zoomed || undefined}
-        className={cn('flex size-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
-        {...panProps}
-      >
+      <div data-carousel-hold={zoomed || undefined} className="flex size-full items-center justify-center" {...panProps}>
         <div className="flex size-full items-center justify-center" style={layerStyle}>
           <img
             style={{ transform: `rotate(${rotation * 90}deg)` }}
-            className={cn('object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'size-full', imageClassName)}
+            className={cn('object-contain', onBackdropClick ? 'max-h-full max-w-full' : 'size-full', imageClassName)}
             src={image}
             alt={alt}
           />

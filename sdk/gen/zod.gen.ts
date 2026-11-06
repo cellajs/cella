@@ -1376,6 +1376,16 @@ export const zGetMyInvitationsResponse = z.object({
   total: z.number(),
 });
 
+export const zHandleMembershipInvitationPath = z.object({
+  id: z.string().max(50),
+  acceptOrReject: z.enum(['accept', 'reject']),
+});
+
+/**
+ * The invitation's organization
+ */
+export const zHandleMembershipInvitationResponse = zChannelBase;
+
 export const zRevokeMySessionsBody = z.object({
   ids: z.array(z.string().max(50)).min(1).max(50),
 });
@@ -1496,7 +1506,13 @@ export const zGetNotificationsResponse = z.object({
       organizationId: z.uuid(),
       tenantId: z.string().max(24),
       readAt: z.string().nullable(),
-      actor: zUserMinimalBase.nullable(),
+      actor: zUserMinimalBase
+        .and(
+          z.object({
+            firstName: z.string().nullable(),
+          }),
+        )
+        .nullable(),
       channelName: z.string(),
       channelThumbnailUrl: z.string().nullable(),
       organizationName: z.string(),
@@ -2521,16 +2537,6 @@ export const zUpdateMembershipResponse = z.object({
   muted: z.boolean().optional(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
 });
-
-export const zHandleMembershipInvitationPath = z.object({
-  id: z.string().max(50),
-  acceptOrReject: z.enum(['accept', 'reject']),
-});
-
-/**
- * The invitation's organization
- */
-export const zHandleMembershipInvitationResponse = zChannelBase;
 
 export const zGetMembersPath = z.object({
   tenantId: z.string().max(50),

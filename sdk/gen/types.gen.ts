@@ -2849,6 +2849,50 @@ export type GetMyInvitationsResponses = {
 
 export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
 
+export type HandleMembershipInvitationData = {
+  body?: never;
+  path: {
+    id: string;
+    acceptOrReject: 'accept' | 'reject';
+  };
+  query?: never;
+  url: '/me/invitations/{id}/{acceptOrReject}';
+};
+
+export type HandleMembershipInvitationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type HandleMembershipInvitationError = HandleMembershipInvitationErrors[keyof HandleMembershipInvitationErrors];
+
+export type HandleMembershipInvitationResponses = {
+  /**
+   * The invitation's organization
+   */
+  200: ChannelBase;
+};
+
+export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
+
 export type RevokeMySessionsData = {
   body: {
     ids: Array<string>;
@@ -3220,7 +3264,11 @@ export type GetNotificationsResponses = {
       organizationId: string;
       tenantId: string;
       readAt: string | null;
-      actor: UserMinimalBase | null;
+      actor:
+        | (UserMinimalBase & {
+            firstName: string | null;
+          })
+        | null;
       channelName: string;
       channelThumbnailUrl: string | null;
       organizationName: string;
@@ -5833,50 +5881,6 @@ export type UpdateMembershipResponses = {
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
-
-export type HandleMembershipInvitationData = {
-  body?: never;
-  path: {
-    id: string;
-    acceptOrReject: 'accept' | 'reject';
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}';
-};
-
-export type HandleMembershipInvitationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type HandleMembershipInvitationError = HandleMembershipInvitationErrors[keyof HandleMembershipInvitationErrors];
-
-export type HandleMembershipInvitationResponses = {
-  /**
-   * The invitation's organization
-   */
-  200: ChannelBase;
-};
-
-export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;

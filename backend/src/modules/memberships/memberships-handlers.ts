@@ -6,7 +6,6 @@ import { createMembershipsOp } from '#/modules/memberships/operations/create-mem
 import { deleteMembershipsOp } from '#/modules/memberships/operations/delete-memberships';
 import { getMembersOp } from '#/modules/memberships/operations/get-members';
 import { getPendingMembershipsOp } from '#/modules/memberships/operations/get-pending-memberships';
-import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { resendPendingInvitationOp } from '#/modules/memberships/operations/resend-pending-invitation';
 import { updateMembershipOp } from '#/modules/memberships/operations/update-membership';
 import { withdrawPendingInvitationOp } from '#/modules/memberships/operations/withdraw-pending-invitation';
@@ -39,12 +38,6 @@ app.openapi(membershipRoutes.updateMembership, async (ctx) => {
   const { id: membershipId } = ctx.req.valid('param');
   const updates = ctx.req.valid('json');
   const data = await updateMembershipOp(ctx, membershipId, updates);
-  return ctx.json(data, 200);
-});
-
-app.openapi(membershipRoutes.handleMembershipInvitation, async (ctx) => {
-  const { id: inactiveMembershipId, acceptOrReject } = ctx.req.valid('param');
-  const data = await handleMembershipInvitationOp(ctx, inactiveMembershipId, acceptOrReject);
   return ctx.json(data, 200);
 });
 
