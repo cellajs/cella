@@ -16,7 +16,7 @@ export const actorRefSchema = z
     description:
       'Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.',
     example: mockActorRef(),
-    'x-tags': schemaTags('base', 'actors', 'cella'),
+    'x-tags': schemaTags('embedded', 'actors', 'cella'),
   });
 
 export const nullableActorRefSchema = z.union([actorRefSchema, z.null()]);

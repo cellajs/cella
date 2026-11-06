@@ -32,5 +32,5 @@ export const channelBaseSchema = z
     description:
       'The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.',
     example: mockChannelBase(),
-    'x-tags': schemaTags('base', 'entities', 'cella'),
+    'x-tags': schemaTags('embedded', 'entities', 'cella'),
   });

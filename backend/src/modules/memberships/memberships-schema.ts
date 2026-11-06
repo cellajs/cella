@@ -4,12 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import {
-  mockInactiveMembershipResponse,
-  mockInviteOutcome,
-  mockMembershipBase,
-  mockMembershipResponse,
-} from '#/modules/memberships/memberships-mocks';
+import { mockInactiveMembershipResponse, mockInviteOutcome, mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import {
   channelEntityTypeSchema,
   csvQuerySchema,
@@ -26,18 +21,12 @@ import { userBaseSchema } from '#/schemas/user-schema-base';
 
 const entityRoleSchema = z.enum(roles.all);
 
-const membershipSchema = z
-  .object({
-    ...createSelectSchema(membershipsTable).shape,
-    ...auditShape,
-    role: entityRoleSchema,
-    channelType: channelEntityTypeSchema,
-  })
-  .openapi('Membership', {
-    description: "A user's membership in a channel entity, including role and activity data.",
-    example: mockMembershipResponse(),
-    'x-tags': schemaTags('data', 'memberships', 'cella'),
-  });
+const membershipSchema = z.object({
+  ...createSelectSchema(membershipsTable).shape,
+  ...auditShape,
+  role: entityRoleSchema,
+  channelType: channelEntityTypeSchema,
+});
 
 export const inactiveMembershipSchema = z
   .object({
@@ -46,11 +35,10 @@ export const inactiveMembershipSchema = z
     channelType: channelEntityTypeSchema,
     createdBy: actorRefSchema,
   })
-  .openapi('InactiveMembership', {
+  .openapi({
     description:
       "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
     example: mockInactiveMembershipResponse(),
-    'x-tags': schemaTags('data', 'memberships', 'cella'),
   });
 
 export const membershipBaseSchema = membershipSchema
@@ -59,7 +47,7 @@ export const membershipBaseSchema = membershipSchema
     description:
       "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
     example: mockMembershipBase(),
-    'x-tags': schemaTags('base', 'memberships', 'cella'),
+    'x-tags': schemaTags('embedded', 'memberships', 'cella'),
   });
 
 /** Archive, mute and menu order: each member's own view of a channel, never set or shown for anyone else. */

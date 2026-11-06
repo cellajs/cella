@@ -5,211 +5,6 @@ export type ClientOptions = {
 };
 
 /**
- * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
- */
-export type ActorRef =
-  | {
-      id: string;
-      name: string;
-      thumbnailUrl: string | null;
-      kind: 'user';
-      slug: string;
-    }
-  | {
-      id: string;
-      name: string;
-      thumbnailUrl: string | null;
-      kind: 'service';
-      slug: null;
-    };
-
-/**
- * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
- */
-export type UserMinimalBase = {
-  id: string;
-  name: string;
-  slug: string;
-  thumbnailUrl: string | null;
-  entityType: 'user';
-};
-
-/**
- * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
- */
-export type UserBase = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string | null;
-  slug: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-  description: string | null;
-  /**
-   * The primary email address, shown to every user who shares an organization with this one.
-   */
-  email: string;
-  entityType: 'user';
-};
-
-/**
- * The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.
- */
-export type ChannelBase = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string | null;
-  tenantId: string;
-  entityType: 'organization';
-  slug: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-};
-
-/**
- * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
- */
-export type MembershipBase = {
-  id: string;
-  tenantId: string;
-  channelType: 'organization';
-  channelId: string;
-  userId: string;
-  role: 'admin' | 'member';
-  archived: boolean;
-  muted: boolean;
-  displayOrder: number;
-  organizationId: string;
-};
-
-/**
- * The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.
- */
-export type StxBase = {
-  /**
-   * Unique mutation ID
-   */
-  mutationId: string;
-  /**
-   * Tab/instance identifier for echo prevention
-   */
-  sourceId: string;
-  /**
-   * Per-field HLC timestamps for scalar fields being changed
-   */
-  fieldTimestamps: {
-    [key: string]: string;
-  };
-  /**
-   * Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time
-   */
-  replayed?: boolean;
-};
-
-/**
- * The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.
- */
-export type StxStored = StxBase & {
-  /**
-   * The fields the last write changed, set by the server; absent after a create or a server-driven write
-   */
-  changedFields?: Array<string>;
-};
-
-/**
- * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
- */
-export type StreamChange = {
-  /**
-   * Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there
-   */
-  action: 'create' | 'update' | 'delete' | 'moveOut';
-  productType: 'attachment';
-  organizationId: string;
-  tenantId: string;
-  /**
-   * Deepest channel entity ID above the rows, which groups unseen counts
-   */
-  channelId: string | null;
-  /**
-   * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
-   */
-  rows: Array<{
-    subjectId: string;
-    /**
-     * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
-     */
-    seq: number | null;
-    stx: StxBase | null;
-    /**
-     * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
-     */
-    actorId: string | null;
-  }>;
-  /**
-   * Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out
-   */
-  overflow: {
-    afterSeq: number | null;
-    untilSeq: number | null;
-    /**
-     * The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type
-     */
-    subjectIds: Array<string> | null;
-  } | null;
-  /**
-   * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
-   */
-  spreadWindow: number | null;
-  /**
-   * Embedded-product propagation hint for cross-product cache invalidation
-   */
-  propagation: {
-    /**
-     * Embedded product type whose change triggered the propagation
-     */
-    embeddedProduct: 'attachment';
-    /**
-     * Embedded row IDs whose cached copies in host rows need a refresh
-     */
-    update: Array<string>;
-    /**
-     * Embedded row IDs (deleted or soft deleted) that host rows drop
-     */
-    remove: Array<string>;
-  } | null;
-};
-
-/**
- * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
- */
-export type StreamSignal = {
-  /**
-   * Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)
-   */
-  type: string;
-  organizationId: string | null;
-  /**
-   * The one row the signal is about; null when it is about the organization as a whole
-   */
-  subjectId: string | null;
-  /**
-   * A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again
-   */
-  version?: number;
-};
-
-/**
- * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
- */
-export type StreamError = {
-  code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
-  message: string;
-};
-
-/**
  * The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.
  */
 export type BadRequestError = ApiError & {
@@ -281,31 +76,133 @@ export type TooManyRequestsError = ApiError & {
 };
 
 /**
- * The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.
+ * The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.
  */
-export type SsoEntry = {
+export type ChannelBase = {
   id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string | null;
+  tenantId: string;
+  entityType: 'organization';
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
+};
+
+/**
+ * A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.
+ */
+export type StreamChange = {
   /**
-   * Only `active` signs in; `pending` means the institution has not activated the app yet
+   * Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there
    */
-  status: 'pending' | 'active' | 'disabled';
-  federation: {
+  action: 'create' | 'update' | 'delete' | 'moveOut';
+  productType: 'attachment';
+  organizationId: string;
+  tenantId: string;
+  /**
+   * Deepest channel entity ID above the rows, which groups unseen counts
+   */
+  channelId: string | null;
+  /**
+   * The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave
+   */
+  rows: Array<{
+    subjectId: string;
     /**
-     * A federation key in appConfig.federations
+     * Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table
      */
-    key: 'surfconext';
-    label: string;
-  };
-  institution: {
-    displayName: string;
-    logoUrl: string | null;
-  };
-  organization: {
-    id: string;
-    name: string;
-    slug: string;
-    thumbnailUrl: string | null;
+    seq: number | null;
+    stx: StxBase | null;
+    /**
+     * Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user
+     */
+    actorId: string | null;
+  }>;
+  /**
+   * Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out
+   */
+  overflow: {
+    afterSeq: number | null;
+    untilSeq: number | null;
+    /**
+     * The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type
+     */
+    subjectIds: Array<string> | null;
   } | null;
+  /**
+   * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
+   */
+  spreadWindow: number | null;
+  /**
+   * Embedded-product propagation hint for cross-product cache invalidation
+   */
+  propagation: {
+    /**
+     * Embedded product type whose change triggered the propagation
+     */
+    embeddedProduct: 'attachment';
+    /**
+     * Embedded row IDs whose cached copies in host rows need a refresh
+     */
+    update: Array<string>;
+    /**
+     * Embedded row IDs (deleted or soft deleted) that host rows drop
+     */
+    remove: Array<string>;
+  } | null;
+};
+
+/**
+ * The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.
+ */
+export type StxBase = {
+  /**
+   * Unique mutation ID
+   */
+  mutationId: string;
+  /**
+   * Tab/instance identifier for echo prevention
+   */
+  sourceId: string;
+  /**
+   * Per-field HLC timestamps for scalar fields being changed
+   */
+  fieldTimestamps: {
+    [key: string]: string;
+  };
+  /**
+   * Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time
+   */
+  replayed?: boolean;
+};
+
+/**
+ * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
+ */
+export type StreamSignal = {
+  /**
+   * Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)
+   */
+  type: string;
+  organizationId: string | null;
+  /**
+   * The one row the signal is about; null when it is about the organization as a whole
+   */
+  subjectId: string | null;
+  /**
+   * A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again
+   */
+  version?: number;
+};
+
+/**
+ * Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.
+ */
+export type StreamError = {
+  code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
+  message: string;
 };
 
 /**
@@ -422,22 +319,23 @@ export type MeAuthData = {
 };
 
 /**
- * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
+ * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
  */
-export type InactiveMembership = {
-  createdAt: string;
-  id: string;
-  tenantId: string;
-  channelType: 'organization';
-  channelId: string;
-  email: string;
-  userId: string | null;
-  role: 'admin' | 'member';
-  rejectedAt: string | null;
-  remindedAt: string | null;
-  createdBy: ActorRef;
-  organizationId: string;
-};
+export type ActorRef =
+  | {
+      id: string;
+      name: string;
+      thumbnailUrl: string | null;
+      kind: 'user';
+      slug: string;
+    }
+  | {
+      id: string;
+      name: string;
+      thumbnailUrl: string | null;
+      kind: 'service';
+      slug: null;
+    };
 
 /**
  * Permission to upload files with one upload template, signed for the upload service, with the storage prefix the files land under. A client requests one before uploading; the template decides whether files are stored public or private.
@@ -460,16 +358,30 @@ export type UploadToken = {
 };
 
 /**
- * An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.
+ * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
-export type ConnectedApp = {
+export type MembershipBase = {
   id: string;
-  clientId: string;
-  clientName: string;
-  scopes: Array<string>;
-  resources: Array<string>;
-  createdAt: string;
-  expiresAt: string | null;
+  tenantId: string;
+  channelType: 'organization';
+  channelId: string;
+  userId: string;
+  role: 'admin' | 'member';
+  archived: boolean;
+  muted: boolean;
+  displayOrder: number;
+  organizationId: string;
+};
+
+/**
+ * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
+ */
+export type UserMinimalBase = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  entityType: 'user';
 };
 
 /**
@@ -627,6 +539,25 @@ export type Connection = {
 };
 
 /**
+ * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ */
+export type UserBase = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
+  description: string | null;
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
+  email: string;
+  entityType: 'user';
+};
+
+/**
  * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
  */
 export type ProtectedResourceMetadata = {
@@ -780,7 +711,15 @@ export type Attachment = {
         slug: null;
       }
     | null;
-  stx: StxStored;
+  /**
+   * The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.
+   */
+  stx: StxBase & {
+    /**
+     * The fields the last write changed, set by the server; absent after a create or a server-driven write
+     */
+    changedFields?: Array<string>;
+  };
   description: string | null;
   keywords: string;
   deletedAt: string | null;
@@ -2071,9 +2010,32 @@ export type GetSsoEntryError = GetSsoEntryErrors[keyof GetSsoEntryErrors];
 
 export type GetSsoEntryResponses = {
   /**
-   * SSO entry
+   * The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.
    */
-  200: SsoEntry;
+  200: {
+    id: string;
+    /**
+     * Only `active` signs in; `pending` means the institution has not activated the app yet
+     */
+    status: 'pending' | 'active' | 'disabled';
+    federation: {
+      /**
+       * A federation key in appConfig.federations
+       */
+      key: 'surfconext';
+      label: string;
+    };
+    institution: {
+      displayName: string;
+      logoUrl: string | null;
+    };
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+      thumbnailUrl: string | null;
+    } | null;
+  };
 };
 
 export type GetSsoEntryResponse = GetSsoEntryResponses[keyof GetSsoEntryResponses];
@@ -2497,9 +2459,13 @@ export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
 export type GetAppStreamResponses = {
   /**
    * SSE stream started
+   *
+   * Each `change`, `signal` or `error` event carries one of these frames as its data.
    */
-  200: unknown;
+  200: StreamChange | StreamSignal | StreamError;
 };
+
+export type GetAppStreamResponse = GetAppStreamResponses[keyof GetAppStreamResponses];
 
 export type PostAppCatchupData = {
   body: {
@@ -2837,7 +2803,23 @@ export type GetMyInvitationsResponses = {
   200: {
     items: Array<{
       entity: ChannelBase;
-      inactiveMembership: InactiveMembership;
+      /**
+       * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
+       */
+      inactiveMembership: {
+        createdAt: string;
+        id: string;
+        tenantId: string;
+        channelType: 'organization';
+        channelId: string;
+        email: string;
+        userId: string | null;
+        role: 'admin' | 'member';
+        rejectedAt: string | null;
+        remindedAt: string | null;
+        createdBy: ActorRef;
+        organizationId: string;
+      };
       /**
        * The name of the organization the channel is in; null for an invitation to an organization.
        */
@@ -3123,7 +3105,15 @@ export type GetConnectedAppsResponses = {
    * Connected apps
    */
   200: {
-    items: Array<ConnectedApp>;
+    items: Array<{
+      id: string;
+      clientId: string;
+      clientName: string;
+      scopes: Array<string>;
+      resources: Array<string>;
+      createdAt: string;
+      expiresAt: string | null;
+    }>;
   };
 };
 

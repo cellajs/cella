@@ -7,14 +7,7 @@ import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openapi-validation';
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { actorRefSchema } from '#/schemas/actor-ref';
-import { channelBaseSchema } from '#/schemas/entity-base';
 import { registerAllErrorResponses } from '#/schemas/error-response-schemas';
-import { userMinimalBaseSchema } from '#/schemas/minimal-base';
-import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
-import { stxBaseSchema, stxStoredSchema } from '#/schemas/sync-transaction-schemas';
-import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /** `attachment:read` reads as "Read attachments"; `write` covers create, update and delete. */
 const scopeDescription = (scope: string): string => {
@@ -75,18 +68,6 @@ export const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: scopeDescriptions },
     },
   });
-
-  // Named bases and the stream payload: registered here, so the spec lists each one whether or not a route returns it.
-  registry.register('ActorRef', actorRefSchema);
-  registry.register('UserMinimalBase', userMinimalBaseSchema);
-  registry.register('UserBase', userBaseSchema);
-  registry.register('ChannelBase', channelBaseSchema);
-  registry.register('MembershipBase', membershipBaseSchema);
-  registry.register('StxBase', stxBaseSchema);
-  registry.register('StxStored', stxStoredSchema);
-  registry.register('StreamChange', streamChangeSchema);
-  registry.register('StreamSignal', streamSignalSchema);
-  registry.register('StreamError', streamErrorSchema);
 
   registerAllErrorResponses(registry);
 
