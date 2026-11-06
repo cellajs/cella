@@ -4029,7 +4029,7 @@
         "operationId": "getTokenData",
         "tags": ["auth", "cella"],
         "summary": "Get token data",
-        "description": "Gets basic data of the token held in the single-use token session: its address and, for a membership invitation, what it grants. It answers only while the session is valid.",
+        "description": "Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -4059,7 +4059,8 @@
               "application/json": {
                 "example": {
                   "email": "nola.becker-hickle@demo.local",
-                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c"
+                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c",
+                  "inviterName": "Shaun Crona"
                 },
                 "schema": {
                   "type": "object",
@@ -4076,6 +4077,10 @@
                     },
                     "ssoConnectionId": {
                       "type": "string"
+                    },
+                    "inviterName": {
+                      "type": "string",
+                      "description": "Name of the user who sent an invitation, for a system invitation too"
                     },
                     "invitation": {
                       "type": "object",

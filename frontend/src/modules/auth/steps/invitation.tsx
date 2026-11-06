@@ -43,7 +43,7 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
   );
   const { redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
-  const { email, invitation, ssoConnectionId } = tokenData;
+  const { email, invitation, inviterName, ssoConnectionId } = tokenData;
 
   const sso = useSsoAlternatives(ssoConnectionId, federations);
   const oauth = useOAuthAlternatives('invitation');
@@ -75,7 +75,11 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
       <AuthHeader
         image={invitation && <InvitationAvatar invitation={invitation} />}
         title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
-        description={invitation && t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })}
+        description={
+          invitation
+            ? t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`) })
+            : inviterName && t('c:invite_join_system.text', { inviterName })
+        }
       />
 
       {institution ? (
