@@ -83,10 +83,15 @@ describe('tokenGuard', () => {
     expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
   });
 
-  it('treats an opaque API key as no token: the MCP face takes only access tokens', async () => {
-    const ctx = mockCtx('Bearer cella_sk_test_notajwt');
+  it('must not set an actor via an API key, and says the proof was refused: the MCP face takes only access tokens', async () => {
+    const ctx = mockCtx(`Bearer ${appConfig.slug}_sk_test_notajwt`);
     expect((await runExpectingError(ctx)).status).toBe(401);
-    expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}", scope="${mcpInitialScope}"`);
+    expect(ctx.set).not.toHaveBeenCalled();
+    // RFC 6750 §3.1: a request that carried a proof hears `invalid_token`, so the client knows to get a token.
+    expect(ctx.header).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      `Bearer error="invalid_token", error_description="access_token_required", resource_metadata="${metadata}", scope="${mcpInitialScope}"`,
+    );
   });
 
   /**

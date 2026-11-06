@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
-import { resourceUri } from '#/modules/oauth-server/resources';
+import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { adminRole, defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
@@ -115,6 +115,31 @@ describe('OAuth authorization server', async () => {
 
     const otherTenant = await call(listAttachments, { path: { tenantId: 'other01', organizationId: client.org.id }, headers: bearerHeaders(jwt) });
     expect(otherTenant.response.status).toBe(401);
+  });
+
+  it('answers every machine 401 at the API with a challenge that names the tenant metadata (RFC 9728 §5.1)', async () => {
+    const client = await serviceAccountClient();
+    const { body } = await clientCredentials(client, {
+      scope: 'attachment:read',
+      resource: resourceUri({ face: 'api', tenantId: client.org.tenantId }),
+    });
+    const challenge = async (tenantId: string, headers: Record<string, string>) => {
+      const { response } = await call(listAttachments, { path: { tenantId, organizationId: client.org.id }, headers });
+      expect(response.status).toBe(401);
+      return response.headers.get('www-authenticate');
+    };
+    const metadata = (tenantId: string) => resourceMetadataUrl({ face: 'api', tenantId });
+
+    // No proof: where to get a token, with no error, since nothing was refused.
+    const tenantId = client.org.tenantId;
+    expect(await challenge(tenantId, { 'Content-Type': 'application/json' })).toBe(`Bearer resource_metadata="${metadata(tenantId)}"`);
+    // A refused key or token: `invalid_token` and why, so the client knows to get a new one.
+    expect(await challenge(tenantId, bearerHeaders(`${client.clientSecret}x`))).toBe(
+      `Bearer error="invalid_token", error_description="invalid_api_key", resource_metadata="${metadata(tenantId)}"`,
+    );
+    expect(await challenge('other01', bearerHeaders(String(body.access_token)))).toBe(
+      `Bearer error="invalid_token", error_description="invalid_token", resource_metadata="${metadata('other01')}"`,
+    );
   });
 
   it('takes a client identified by its metadata document through consent to a token', async () => {

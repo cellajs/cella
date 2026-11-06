@@ -1,6 +1,8 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { serviceGuard } from '#/middlewares/guard/service-guard';
 import { userGuard } from '#/middlewares/guard/user-guard';
+import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { bearerChallenge } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 
@@ -20,5 +22,14 @@ export const actorGuard = xMiddleware(
     name: 'Actor',
     description: 'Works with a signed-in session, a secret API key or an access token. The request acts as the user or service account behind it.',
   },
-  (ctx, next) => (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
+  (ctx, next) => {
+    if (hasApiKeyHeader(ctx) || bearerJwtFrom(ctx)) return serviceGuard(ctx, next);
+    // No proof at all, which the session guard refuses: the challenge tells a machine caller where to get a token
+    // (RFC 9728 §5.1). A request with a session cookie keeps the session's own refusal: no scheme names a cookie.
+    if (!getAuthCookie(ctx, 'session')) {
+      const tenantId = ctx.req.param('tenantId')?.toLowerCase();
+      ctx.header('WWW-Authenticate', bearerChallenge(tenantId ? { face: 'api', tenantId } : null));
+    }
+    return userGuard(ctx, next);
+  },
 );

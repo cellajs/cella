@@ -502,6 +502,12 @@
             "schema": {
               "type": "string"
             }
+          },
+          "WWW-Authenticate": {
+            "description": "On a route that takes an API key or access token, unless the request carries a session cookie: a `Bearer` challenge naming where the resource publishes its metadata (RFC 9728) and, for a refused key or token, `error=\"invalid_token\"` with the reason.",
+            "schema": {
+              "type": "string"
+            }
           }
         },
         "content": {

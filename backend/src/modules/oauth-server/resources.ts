@@ -40,6 +40,27 @@ export function resourceMetadataUrl(ref: ResourceRef): string {
   return `${resourceUri(ref)}/.well-known/oauth-protected-resource`;
 }
 
+/** What a challenge refuses: a proof (`invalid_token`, with the reason) or a call outside the token's scopes. */
+type ChallengeRefusal = { error: 'invalid_token'; description: string } | { error: 'insufficient_scope'; scope: string };
+
+/**
+ * The `WWW-Authenticate` value of every machine-facing refusal (RFC 6750 §3): the error, where the resource publishes its
+ * metadata (RFC 9728 §5.1), and the scope to ask for. A request with no proof gets no error. On the MCP face the scope
+ * of a 401 is `mcpInitialScope`; a step-up names the scope the call lacks.
+ * @param ref - The resource the request addressed; null on a route outside every tenant, whose challenge names no metadata.
+ */
+export function bearerChallenge(ref: ResourceRef | null, refusal?: ChallengeRefusal): string {
+  const initialScope = ref?.face === 'mcp' ? mcpInitialScope : '';
+  const scope = refusal?.error === 'insufficient_scope' ? refusal.scope : initialScope;
+  const params = [
+    refusal && `error="${refusal.error}"`,
+    refusal?.error === 'invalid_token' && `error_description="${refusal.description}"`,
+    ref && `resource_metadata="${resourceMetadataUrl(ref)}"`,
+    scope && `scope="${scope}"`,
+  ].filter(Boolean);
+  return params.length ? `Bearer ${params.join(', ')}` : 'Bearer';
+}
+
 /** RFC 9728: the metadata document served at `resourceMetadataUrl`. */
 export function protectedResourceMetadata(ref: ResourceRef) {
   return {

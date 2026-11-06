@@ -11,7 +11,7 @@ import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queries';
-import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
+import { bearerChallenge, type ResourceRef } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { apiKeyFrom, apiKeyRefusal, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
@@ -21,6 +21,22 @@ import { findUserModelsByIds } from '#/modules/user/user-queries';
 
 /** The 401 that refuses a machine proof, naming why in `meta.reason`. */
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
+
+/**
+ * Runs a guard's check of a key or token. A 401 it throws carries the challenge of a refused proof, `invalid_token` with
+ * the reason, so a client knows to get a new one (RFC 6750 §3.1).
+ */
+export const challengeRefusal = async (ctx: Context<Env>, ref: ResourceRef, check: () => Promise<void>): Promise<void> => {
+  try {
+    await check();
+  } catch (error) {
+    if (error instanceof AppError && error.status === 401) {
+      const description = String(error.meta?.reason ?? 'invalid_token');
+      ctx.header('WWW-Authenticate', bearerChallenge(ref, { error: 'invalid_token', description }));
+    }
+    throw error;
+  }
+};
 
 /** A service account acts with its stored bindings, masked by the scopes of the key or token; no machine proof is system admin. */
 const setServiceActor = (ctx: Context<Env>, account: ServiceAccountModel, scopes: Actor['scopes']) => {
@@ -96,6 +112,20 @@ const resolveServiceToken = async (token: Extract<VerifiedAccessToken, { kind: '
 /** The key and its account in one read, cached by hash; a revoke, roll, or disable invalidates the account's keys. */
 const resolveApiKey = (hash: string) => loadCachedApiKey(hash, () => findApiKeyWithAccount({ var: { db: baseDb } }, { key: { hash } }));
 
+/** A secret key runs as its service account, masked by the key's scopes. */
+const setActorFromApiKey = async (ctx: Context<Env>, raw: string): Promise<void> => {
+  const parsed = parseApiKey(raw);
+  if (parsed?.type !== 'secret') throw unauthorized('invalid_api_key');
+
+  const resolved = await resolveApiKey(parsed.hash);
+  if (!resolved) throw unauthorized('invalid_api_key');
+  const refusal = apiKeyRefusal(resolved.apiKey, resolved.account);
+  if (refusal) throw unauthorized(refusal);
+  const { apiKey, account } = resolved;
+  updateLastSeenAt(account.id);
+  setServiceActor(ctx, account, apiKey.scopes);
+};
+
 /**
  * Authenticates a machine caller by API key or access token and sets the actor: a secret API key runs as its service account; a token from
  * the app's own authorization server runs as the consenting user or the account behind it. Tenant resolution stays
@@ -116,34 +146,23 @@ export const serviceGuard = xMiddleware(
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);
+    const ref: ResourceRef = { face: 'api', tenantId: target.tenantId };
     const jwt = bearerJwtFrom(ctx);
     if (jwt) {
-      await setActorFromToken(ctx, jwt, target);
+      await challengeRefusal(ctx, ref, () => setActorFromToken(ctx, jwt, target));
       return serviceBurstLimiter(ctx, next);
     }
 
     const raw = apiKeyFrom(ctx);
     if (!raw) {
-      // RFC 9728: the challenge names where the API face publishes its metadata.
-      const metadata = resourceMetadataUrl({ face: 'api', tenantId: target.tenantId });
-      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
+      ctx.header('WWW-Authenticate', bearerChallenge(ref));
       throw unauthorized('missing_api_key');
     }
 
     // Secret keys are for servers: a request from a browser page carries an Origin and is refused outright.
     if (ctx.req.header('origin')) throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'browser_origin' } });
 
-    const parsed = parseApiKey(raw);
-    if (parsed?.type !== 'secret') throw unauthorized('invalid_api_key');
-
-    const resolved = await resolveApiKey(parsed.hash);
-    if (!resolved) throw unauthorized('invalid_api_key');
-    const refusal = apiKeyRefusal(resolved.apiKey, resolved.account);
-    if (refusal) throw unauthorized(refusal);
-    const { apiKey, account } = resolved;
-    updateLastSeenAt(account.id);
-    setServiceActor(ctx, account, apiKey.scopes);
-
+    await challengeRefusal(ctx, ref, () => setActorFromApiKey(ctx, raw));
     return serviceBurstLimiter(ctx, next);
   },
 );
