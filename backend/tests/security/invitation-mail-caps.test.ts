@@ -7,7 +7,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, endRateLimitWindows, expectRefusal, mailsTo } from '../helpers';
+import { createTestOrganization, endRateLimitWindows, expectRefusal, mailsTo, membersOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -66,7 +66,12 @@ describe('Invitation mail caps', async () => {
     expect((await invite(organization, first, [a, b])).response.status).toBe(200);
 
     // A second admin of the tenant spends the same day, and a request the day cannot hold writes and sends nothing.
-    await expectRefusal(await invite(organization, second, [c, d]), 429, 'invitation_limit_reached');
+    const refused = await invite(organization, second, [c, d]);
+    await expectRefusal(refused, 429, 'invitation_limit_reached');
+    // The wait the body states goes out as the header the 429 response documents.
+    const { retryAfter } = membersOf(refused.error);
+    expect(typeof retryAfter).toBe('number');
+    expect(refused.response.headers.get('retry-after')).toBe(String(retryAfter));
     expect([...mailsTo(c), ...mailsTo(d)]).toEqual([]);
     expect([await invitationOf(organization, c), await invitationOf(organization, d)]).toEqual([undefined, undefined]);
 

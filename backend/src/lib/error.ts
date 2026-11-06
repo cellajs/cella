@@ -236,6 +236,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   }
 
   const { willRedirect: _willRedirect, meta, type, title, status, detail, ...refusal } = clientError;
+  // Every 429 that states its wait sends it as the header the 429 response documents, whatever threw it.
+  if (status === 429 && typeof meta?.retryAfter === 'number') ctx.header('Retry-After', String(meta.retryAfter));
   const problem = {
     type,
     title,
