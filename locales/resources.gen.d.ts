@@ -991,6 +991,7 @@ export interface LocaleResources {
     "onboarding_welcome_invited.text": "👋 You have been invited to join {{entityName}}. Let's get you set up.";
     "onboarding_welcome_invited_in_organization.text": "👋 You have been invited to join {{entityName}} at {{organizationName}}. Let's get you set up.";
     "onboarding_welcome_member.text": "👋 You are now a member of {{entityName}}. Let's get you set up.";
+    "onboarding_welcome_member_in_organization.text": "👋 You are now a member of {{entityName}} at {{organizationName}}. Let's get you set up.";
     "online": "Online";
     "only_on_device": "Only on {{name}}'s device";
     "only_on_your_other_device": "Only on your other device";

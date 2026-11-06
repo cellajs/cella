@@ -606,6 +606,7 @@
   "onboarding_welcome_invitations.text": "👋 You have {{count}} invitations waiting. Let's get you set up.",
   "onboarding_welcome_invited_in_organization.text": "👋 You have been invited to join {{entityName}} at {{organizationName}}. Let's get you set up.",
   "onboarding_welcome_invited.text": "👋 You have been invited to join {{entityName}}. Let's get you set up.",
+  "onboarding_welcome_member_in_organization.text": "👋 You are now a member of {{entityName}} at {{organizationName}}. Let's get you set up.",
   "onboarding_welcome_member.text": "👋 You are now a member of {{entityName}}. Let's get you set up.",
   "onboarding_welcome.text": "🚀 This app has no content of its own yet. What will you build?",
   "online": "Online",
