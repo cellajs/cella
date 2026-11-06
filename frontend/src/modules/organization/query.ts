@@ -88,11 +88,12 @@ export const useOrganizationCreateMutation = () => {
   return useMutation<CreateOrganizationsResponse['data'][number], ApiError, MutationData<CreateOrganizationsData>>({
     mutationKey: keys.create,
     mutationFn: async ({ path, body }) => {
-      const { data } = await createOrganizations({ path, body });
-      // A single create comes back empty only when its slug is taken: a tenant without a free slot is refused with a 403.
+      const { data, rejectionReasons } = await createOrganizations({ path, body });
+      // A tenant without a free slot is refused with a 403, so a single create comes back empty when its slug is taken.
       const [created] = data;
-      if (!created) throw new ApiError({ status: 422, type: 'create_resource', entityType: 'organization', severity: 'error' });
-      return created;
+      if (created) return created;
+      if (rejectionReasons?.slug_exists) throw new ApiError({ status: 409, type: 'slug_exists', entityType: 'organization', severity: 'warn' });
+      throw new ApiError({ status: 422, type: 'create_resource', entityType: 'organization', severity: 'error' });
     },
     onSuccess: (createdOrganization) => {
       addMyMembershipCache(createdOrganization.included.membership);
