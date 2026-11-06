@@ -1608,7 +1608,7 @@ export interface LocaleResources {
     "session_revoked.text": "This session was signed out. Sign in again to continue.";
     "sign_up_restricted": "Invite only";
     "sign_up_restricted.text": "We are currently invite-only. Can't wait? Contact us for an invite.";
-    "slug_exists": "Slug already taken";
+    "slug_exists": "Handle already taken";
     "slug_exists.text": "Choose a different one.";
     "sso_email_exists": "This address already has an account";
     "sso_email_exists.text": "The email address your institution shared already belongs to an account. If it is yours, sign in to that account first, then connect your institution account from your account settings.";
