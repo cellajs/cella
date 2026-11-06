@@ -13,6 +13,7 @@ import {
   type XMiddlewareHandler,
   type XRouteProps,
 } from '#/core/openapi-extensions';
+import { toKebabCase } from '#/core/openapi-helpers';
 import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -68,13 +69,6 @@ const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => 
 
 /** A literal path segment, and a custom verb: lowercase kebab-case. */
 const kebabCase = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-
-const toKebabCase = (text: string) =>
-  text
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase();
 
 const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 

@@ -1395,7 +1395,14 @@
           },
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
-        "x-tags": ["data", "attachments", "cella"]
+        "x-tags": ["data", "attachments", "cella"],
+        "x-aep-resource": {
+          "type": "cella/attachment",
+          "singular": "attachment",
+          "plural": "attachments",
+          "parents": ["organization"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}"]
+        }
       },
       "StxBase": {
         "type": "object",
@@ -1862,7 +1869,13 @@
           "lastSignInAt": "2024-06-15T02:53:22.776Z",
           "lastSeenAt": "2024-06-15T02:53:22.776Z"
         },
-        "x-tags": ["data", "users", "cella"]
+        "x-tags": ["data", "users", "cella"],
+        "x-aep-resource": {
+          "type": "cella/user",
+          "singular": "user",
+          "plural": "users",
+          "patterns": ["users/{userId}"]
+        }
       },
       "MeAuthData": {
         "type": "object",
@@ -2902,7 +2915,14 @@
             }
           }
         },
-        "x-tags": ["data", "organizations", "cella"]
+        "x-tags": ["data", "organizations", "cella"],
+        "x-aep-resource": {
+          "type": "cella/organization",
+          "singular": "organization",
+          "plural": "organizations",
+          "parents": ["tenant"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}"]
+        }
       },
       "Request": {
         "type": "object",
@@ -3147,7 +3167,14 @@
           },
           "updatedBy": null
         },
-        "x-tags": ["data", "service-accounts", "cella"]
+        "x-tags": ["data", "service-accounts", "cella"],
+        "x-aep-resource": {
+          "type": "cella/service-account",
+          "singular": "service-account",
+          "plural": "service-accounts",
+          "parents": ["organization"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}"]
+        }
       },
       "ApiKey": {
         "type": "object",
@@ -3265,7 +3292,14 @@
             "thumbnailUrl": null
           }
         },
-        "x-tags": ["data", "service-accounts", "cella"]
+        "x-tags": ["data", "service-accounts", "cella"],
+        "x-aep-resource": {
+          "type": "cella/api-key",
+          "singular": "api-key",
+          "plural": "api-keys",
+          "parents": ["service-account"],
+          "patterns": ["tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}"]
+        }
       },
       "Tenant": {
         "type": "object",
@@ -3547,7 +3581,13 @@
             "entityType": "organization"
           }
         },
-        "x-tags": ["data", "tenants", "cella"]
+        "x-tags": ["data", "tenants", "cella"],
+        "x-aep-resource": {
+          "type": "cella/tenant",
+          "singular": "tenant",
+          "plural": "tenants",
+          "patterns": ["tenants/{tenantId}"]
+        }
       },
       "Connection": {
         "type": "object",
@@ -3753,7 +3793,14 @@
           "createdAt": "2024-07-21T08:06:37.235Z",
           "updatedAt": "2024-07-22T16:57:00.257Z"
         },
-        "x-tags": ["data", "connections", "cella"]
+        "x-tags": ["data", "connections", "cella"],
+        "x-aep-resource": {
+          "type": "cella/connection",
+          "singular": "connection",
+          "plural": "connections",
+          "parents": ["tenant"],
+          "patterns": ["tenants/{tenantId}/connections/{connectionId}"]
+        }
       }
     },
     "parameters": {}

@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
 import type { ErrorKey } from '#/core/error';
+import { documentResources } from '#/core/openapi-resources';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 import { errorResponseComponents, problemJsonType } from '#/schemas/error-response-schemas';
 
@@ -7,17 +8,18 @@ import { errorResponseComponents, problemJsonType } from '#/schemas/error-respon
 export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
 /** The parts of a generated OpenAPI document these checks read. */
-type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
+export type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
 
 /**
  * Normalize generated OpenAPI fields that need source-library compatibility fixes, fold the shared error responses into
- * their `$ref`s, and give custom methods and updates their AEP form.
+ * their `$ref`s, give custom methods and updates their AEP form, and annotate the resources.
  */
 export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
   foldErrorResponses(doc);
   documentCustomMethods(doc);
   documentMergePatch(doc);
+  documentResources(doc);
 };
 
 /**
