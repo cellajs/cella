@@ -99,7 +99,7 @@ describe('buildMcpTools', () => {
     const outcome = await create.call(ctx, {
       items: [{ name: 'a', stx: { mutationId: 'model', sourceId: 'model' } }, { name: 'b' }],
     });
-    if (!outcome.ok) throw new Error(outcome.message);
+    if (!outcome.ok) throw new Error(outcome.detail);
     const body = outcome.output as { name: string; stx: { mutationId: string; sourceId: string } }[];
     expect(body.map((item) => item.name)).toEqual(['a', 'b']);
     expect(body.map((item) => item.stx.sourceId)).toEqual(['server', 'server']);
@@ -112,7 +112,7 @@ describe('buildMcpTools', () => {
 
     expect(await refuse.call(ctx, { id: 'missing' })).toMatchObject({ ok: false, type: 'not_found' });
     const broken = await refuse.call(ctx, { id: 'broken' });
-    expect(broken).toEqual({ ok: false, type: 'server_error', message: 'Internal server error' });
+    expect(broken).toEqual({ ok: false, type: 'server_error', detail: 'Internal server error' });
   });
 
   it('refuses two routes with the same operation', () => {

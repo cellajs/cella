@@ -16,7 +16,7 @@ export interface McpToolDescriptor {
 }
 
 /** What a tool call answers: the route's JSON body, or the type and message of the error it answered with. */
-export type McpToolOutcome = { ok: true; output: unknown } | { ok: false; type: string; message: string };
+export type McpToolOutcome = { ok: true; output: unknown } | { ok: false; type: string; detail: string };
 
 /** A route exposed to MCP clients: named and described by the route, run by the route's own handler. */
 export interface McpTool {
@@ -85,9 +85,9 @@ function toInputSchema(schema: z.ZodType): Record<string, unknown> {
 async function toOutcome(response: Response): Promise<McpToolOutcome> {
   const payload: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   if (response.ok) return { ok: true, output: payload };
-  const error = (payload ?? {}) as { type?: string; message?: string };
-  if (response.status >= 500) return { ok: false, type: error.type ?? 'server_error', message: 'Internal server error' };
-  return { ok: false, type: error.type ?? 'error', message: error.message ?? response.statusText };
+  const error = (payload ?? {}) as { type?: string; detail?: string };
+  if (response.status >= 500) return { ok: false, type: error.type ?? 'server_error', detail: 'Internal server error' };
+  return { ok: false, type: error.type ?? 'error', detail: error.detail ?? response.statusText };
 }
 
 function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpTool {

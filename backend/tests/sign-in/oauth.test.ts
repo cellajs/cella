@@ -25,6 +25,7 @@ import {
   linkIdentity,
   mailedLink,
   mailsTo,
+  membersOf,
   setCookieOf,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -586,7 +587,7 @@ describe('OAuth Authentication', async () => {
 
       const refused = await callback(fn, pendingState(provider, pkce));
       await expectRefusal(refused, 400, 'unsupported_oauth');
-      expect((refused.error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
+      expect((refused.error as ErrorResponse).strategy).toBe(provider);
     });
 
     it.each([
@@ -801,7 +802,7 @@ describe('OAuth Authentication', async () => {
       const { response: res, error } = await inviteCallback();
       await expectRefusal({ response: res, error }, 409, 'oauth_wrong_email');
       // The refusal names the invitation, so the error page can resume it with another method.
-      expect((error as ErrorResponse | undefined)?.meta).toEqual({ tokenId: token.id });
+      expect(membersOf(error)).toEqual({ tokenId: token.id });
       expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });

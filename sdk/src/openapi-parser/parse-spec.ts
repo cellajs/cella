@@ -14,7 +14,7 @@ import type {
   GenTagSummary,
 } from '../docs-types.ts';
 import { generateOperationHash } from './operation-hash.ts';
-import { resolveSchema, resolveSchemaProperty } from './schema-resolvers.ts';
+import { pickContentType, resolveSchema, resolveSchemaProperty } from './schema-resolvers.ts';
 import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag, OpenApiTagKind } from './types.ts';
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
@@ -30,12 +30,6 @@ interface ParsedOpenApiSpec {
   schemas: GenComponentSchema[];
   schemaTags: GenSchemaTagSummary[];
   tagDetails: Map<string, GenOperationDetail[]>;
-}
-
-/** Prefers a JSON media type, falling back to the first declared one. */
-function pickContentType(content: Record<string, unknown>): string | undefined {
-  const types = Object.keys(content);
-  return types.find((ct) => ct.includes('json')) ?? types[0];
 }
 
 /** Groups tag names by their registered kind; unregistered tags land under 'other'. */

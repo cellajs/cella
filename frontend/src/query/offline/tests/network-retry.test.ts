@@ -10,7 +10,7 @@ describe('isNetworkError', () => {
     // A server that responded is not offline, even with a network-y message: its handlers must run at once.
     const notOffline = [
       new ApiError({ status: 503 }),
-      new ApiError({ status: 500, message: 'failed to fetch' }),
+      new ApiError({ status: 500, detail: 'failed to fetch' }),
       new TypeError('Timeout has occurred'),
     ];
     for (const error of notOffline) expect(isNetworkError(error), error.message).toBe(false);

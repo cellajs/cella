@@ -4,11 +4,14 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { mockApiError } from '#/schemas/api-error-mocks';
 import { apiErrorSchema } from '#/schemas/api-error-schemas';
 
+/** The media type of every error body (RFC 9457), in the document and on the wire. */
+export const problemJsonType = 'application/problem+json';
+
 /** A header an error response component documents. */
 type HeaderDoc = { description: string; schema: { type: 'string' } | { type: 'integer'; minimum: number } };
 
 const requestIdHeader = {
-  'X-Request-Id': { description: 'The request id, also `requestId` in the body; quote it when reporting a failure.', schema: { type: 'string' } },
+  'X-Request-Id': { description: 'The request id, also `instance` in the body; quote it when reporting a failure.', schema: { type: 'string' } },
 } satisfies Record<string, HeaderDoc>;
 
 const retryAfterHeader = {
@@ -62,7 +65,7 @@ const errorResponseOptions = [
     name: 'TooManyRequestsError',
     description: 'Too many requests',
     schemaDescription:
-      "A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
+      "A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.",
     headers: retryAfterHeader,
   },
 ] as const;
@@ -78,7 +81,7 @@ const errorBodySchema = ({ code, name, schemaDescription }: ErrorOption) =>
     .openapi(name, { description: schemaDescription, example: mockApiError(code), 'x-tags': schemaTags('errors', 'cella') });
 
 /** A Zod-backed response, as `json()` builds one, whose body is the error body of one status. */
-type ErrorResponse = { description: string; content: { 'application/json': { schema: ReturnType<typeof errorBodySchema> } } };
+type ErrorResponse = { description: string; content: { [problemJsonType]: { schema: ReturnType<typeof errorBodySchema> } } };
 
 /**
  * The shared response of each documented error status, built once so a route's `responses` and the registry hold the
@@ -88,7 +91,7 @@ type ErrorResponse = { description: string; content: { 'application/json': { sch
 export const sharedErrorResponses = Object.fromEntries(
   errorResponseOptions.map((option) => [
     option.code,
-    { description: option.description, content: { 'application/json': { schema: errorBodySchema(option) } } },
+    { description: option.description, content: { [problemJsonType]: { schema: errorBodySchema(option) } } },
   ]),
 ) as Record<ErrorCode, ErrorResponse>;
 
@@ -98,11 +101,11 @@ export const errorResponseComponents: ReadonlyMap<string, string> = new Map(erro
 /** Registers each error body under `components/schemas` and its response, headers included, under `components/responses`. */
 export const registerAllErrorResponses = (registry: OpenAPIRegistry) => {
   for (const option of errorResponseOptions) {
-    registry.register(option.name, sharedErrorResponses[option.code].content['application/json'].schema);
+    registry.register(option.name, sharedErrorResponses[option.code].content[problemJsonType].schema);
     registry.registerComponent('responses', option.name, {
       description: option.description,
       headers: { ...requestIdHeader, ...('headers' in option ? option.headers : {}) },
-      content: { 'application/json': { schema: { $ref: `#/components/schemas/${option.name}` } } },
+      content: { [problemJsonType]: { schema: { $ref: `#/components/schemas/${option.name}` } } },
     });
   }
 };

@@ -3,23 +3,20 @@
 import * as z from 'zod';
 
 /**
- * The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.
+ * The body of every error response, as RFC 9457 Problem Details (`application/problem+json`). `type` is the code to branch on, `title` its meaning and `detail` this occurrence. Every other member is an extension member: each value `detail` names is also a member of its own, kept for the type once added, such as `retryAfter` on a rate limit.
  */
 export const zApiError = z.object({
-  name: z.string(),
-  message: z.string(),
   type: z.string(),
+  title: z.string(),
   status: z.int().gte(400).lte(599),
+  detail: z.string(),
+  instance: z.string().optional(),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-  requestId: z.string().optional(),
   version: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
   timestamp: z.string().optional(),
-  userId: z.string().optional(),
-  organizationId: z.string().optional(),
-  meta: z.record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean()]).nullable()).optional(),
 });
 
 /**
@@ -77,7 +74,7 @@ export const zPayloadTooLargeError = zApiError.and(
 );
 
 /**
- * A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
+ * A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.
  */
 export const zTooManyRequestsError = zApiError.and(
   z.object({

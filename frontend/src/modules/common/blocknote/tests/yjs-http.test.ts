@@ -206,7 +206,8 @@ const socketHandshake = (provider: MockProvider) =>
     provider.messageHandlers[5]?.(undefined, undefined, provider, true, 5);
   });
 
-const refusal = (status: 400 | 403 | 404 | 409 | 429 | 503, meta?: Record<string, string | null>) => new ApiError({ status, type: 'refused', meta });
+const refusal = (status: 400 | 403 | 404 | 409 | 429 | 503, members?: Record<string, string | null>) =>
+  new ApiError({ status, type: 'refused', ...members });
 
 /** A promise a test settles by hand: a request in flight. */
 function deferred<T>() {

@@ -10,4 +10,4 @@ export const askForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
 
 /** What a route shows for a path that matches nothing: informational, so there is nothing to reload or report. */
 export const pageNotFoundError = () =>
-  new ApiError({ type: 'page_not_found', severity: 'info', status: 404, message: i18n.t('error:page_not_found.text') });
+  new ApiError({ type: 'page_not_found', severity: 'info', status: 404, detail: i18n.t('error:page_not_found.text') });

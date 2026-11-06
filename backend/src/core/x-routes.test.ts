@@ -130,7 +130,7 @@ describe('route helpers', () => {
     expect(undocumented.status).toBe(500);
     expect(await undocumented.json()).toMatchObject({
       type: 'server_error',
-      message: expect.stringMatching(/throwsUndocumented answered 404.*errors\(404\)/),
+      detail: expect.stringMatching(/throwsUndocumented answered 404.*errors\(404\)/),
     });
     expect(spy).toHaveBeenCalledOnce();
 

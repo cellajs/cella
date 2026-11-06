@@ -5,10 +5,11 @@ import { appConfig, MissingAncestorError, type Severity } from 'shared';
 import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
-import { AppError, type AppErrorStatus, type ErrorKey } from '#/core/error';
+import { AppError, type AppErrorStatus, type ErrorKey, errorTitle } from '#/core/error';
 import { checksAuthoringRules, undocumentedErrorStatus } from '#/core/openapi-validation';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { env } from '#/env';
+import { problemJsonType } from '#/schemas/error-response-schemas';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -72,15 +73,16 @@ function isPoolTimeoutError(err: unknown): boolean {
 /** A Hono `HTTPException` carries a status and no error key: below 500 it refuses the request itself. */
 const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server_error' : status === 403 ? 'forbidden' : 'invalid_request');
 
-/** What a client may see of a thrown value: status, type and a message that never carries server internals. */
+/** What a client may see of a thrown value: type, title, status and a detail that never carries server internals. */
 interface ClientError {
-  message: string;
-  name: string;
-  status: ContentfulStatusCode;
   /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
   type: ErrorKey;
+  title: string;
+  status: ContentfulStatusCode;
+  detail: string;
   severity: Severity;
   entityType?: AppError['entityType'];
+  /** The extension members, top-level members of the body. */
   meta?: AppError['meta'];
   /** The error came from an `AppError` thrown with `willRedirect`: answer with a redirect to its error page in every mode. */
   willRedirect: boolean;
@@ -90,7 +92,7 @@ interface ClientError {
 type ErrorLogFields = Record<string, string | undefined>;
 
 interface ToClientErrorOptions {
-  /** Keep a 5xx error's own message. Default: development and test only; a caller answering a third party passes false. */
+  /** Keep a 5xx error's own message as its detail. Default: development and test only; a caller answering a third party passes false. */
   exposeServerMessage?: boolean;
 }
 
@@ -103,9 +105,9 @@ const missingAncestorError = (err: MissingAncestorError) =>
 
 /**
  * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through, and so does a
- * `MissingAncestorError`, as a 400; a Postgres error with a known code maps to its status and a fixed message; pool
+ * `MissingAncestorError`, as a 400; a Postgres error with a known code maps to its status and a fixed detail; pool
  * exhaustion answers 503; anything else is a 500 whose message (for a failed query: the SQL and its parameters)
- * reaches the client only with `exposeServerMessage`.
+ * reaches the client as its detail only with `exposeServerMessage`. The title is the type's own text.
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
  * @param thrown - The thrown value.
  * @param logFields - Request facts for the log line.
@@ -124,10 +126,10 @@ export function toClientError(
   if (isPoolTimeoutError(err)) {
     log.error('Database pool exhausted', { err, ...fields });
     return {
-      message: 'Service temporarily unavailable, please retry',
-      name: 'ApiError',
-      status: 503,
       type: 'service_unavailable',
+      title: errorTitle('service_unavailable', 503),
+      status: 503,
+      detail: 'Service temporarily unavailable, please retry',
       severity: 'error',
       willRedirect: false,
     };
@@ -136,11 +138,12 @@ export function toClientError(
   // Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
     log.warn(`HTTPException ${err.status}`, { err, ...fields });
+    const type = httpExceptionType(err.status);
     return {
-      message: hideIfServerError(err.status, err.message || 'Request rejected'),
-      name: 'ApiError',
+      type,
+      title: errorTitle(type, err.status),
       status: err.status,
-      type: httpExceptionType(err.status),
+      detail: hideIfServerError(err.status, err.message || 'Request rejected'),
       severity: 'warn',
       willRedirect: false,
     };
@@ -176,10 +179,10 @@ export function toClientError(
   );
 
   return {
-    message: hideIfServerError(status, message),
-    name,
-    status,
     type,
+    title: errorTitle(type, status),
+    status,
+    detail: hideIfServerError(status, message),
     severity,
     entityType,
     meta,
@@ -204,7 +207,15 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   else if (undocumented) log.warn(undocumented);
   const clientError: ClientError =
     undocumented && appConfig.mode === 'test'
-      ? { ...answered, status: 500, type: 'server_error', severity: 'error', name: 'ApiError', message: undocumented, willRedirect: false }
+      ? {
+          ...answered,
+          type: 'server_error',
+          title: errorTitle('server_error', 500),
+          status: 500,
+          detail: undocumented,
+          severity: 'error',
+          willRedirect: false,
+        }
       : answered;
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
@@ -223,16 +234,19 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
-  const { willRedirect: _willRedirect, ...body } = clientError;
-  return ctx.json(
-    {
-      ...body,
-      requestId: ctx.get('requestId'),
-      version: env.RELEASE_SHA,
-      path: safePath,
-      method: ctx.req.method,
-      timestamp: getIsoDate(),
-    },
-    clientError.status,
-  );
+  const { willRedirect: _willRedirect, meta, type, title, status, detail, ...refusal } = clientError;
+  const problem = {
+    type,
+    title,
+    status,
+    detail,
+    instance: ctx.get('requestId'),
+    ...refusal,
+    version: env.RELEASE_SHA,
+    path: safePath,
+    method: ctx.req.method,
+    timestamp: getIsoDate(),
+  };
+  // Problem Details (RFC 9457): the fixed members lead, each `meta` entry is a member of its own and never replaces one.
+  return ctx.json({ ...problem, ...meta, ...problem }, status, { 'Content-Type': problemJsonType });
 };

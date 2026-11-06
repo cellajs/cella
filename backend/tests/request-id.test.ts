@@ -26,7 +26,7 @@ describe('request id', () => {
     for (const { status, header, body } of answers) {
       expect(status).toBe(401);
       expect(header).toMatch(/^[0-9a-f-]{36}$/);
-      expect(body.requestId).toBe(header);
+      expect(body.instance).toBe(header);
       expect(body).not.toHaveProperty('logId');
     }
   });

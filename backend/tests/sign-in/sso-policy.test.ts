@@ -83,7 +83,7 @@ describe("the tenant's sign-in policy", async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(student, { authStrategy: 'magic' }) },
     });
     await expectRefusal(viaMagic, 403, 'sso_required');
-    expect((viaMagic.error as { meta?: Record<string, unknown> })?.meta).toMatchObject({
+    expect(viaMagic.error).toMatchObject({
       connectionId: connection.id,
       entryPath: `/auth/sso/${connection.id}`,
     });
@@ -128,7 +128,7 @@ describe("the tenant's sign-in policy", async () => {
 
     const elsewhere = await signedIn(other.connection.id);
     await expectRefusal(elsewhere, 403, 'sso_required');
-    expect((elsewhere.error as { meta?: Record<string, unknown> })?.meta).toMatchObject({ connectionId: connection.id });
+    expect(elsewhere.error).toMatchObject({ connectionId: connection.id });
     // A session that recorded no connection proves none either.
     await expectRefusal(await signedIn(), 403, 'sso_required');
 
@@ -161,7 +161,7 @@ describe("the tenant's sign-in policy", async () => {
     const ownBrowser = { ...defaultHeaders, Cookie: authCookie('device-id', deviceId, 400 * 24 * 60 * 60) };
     const refused = await call(sendMagicLink, { body: { email }, headers: ownBrowser });
     await expectRefusal(refused, 403, 'sso_required');
-    expect((refused.error as { meta?: Record<string, unknown> })?.meta).toMatchObject({ connectionId: connection.id });
+    expect(refused.error).toMatchObject({ connectionId: connection.id });
 
     // The policy allows magic links again: the address is a sign-in identifier as before.
     await setPolicy(organization.tenantId, []);

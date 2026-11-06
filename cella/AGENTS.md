@@ -29,7 +29,7 @@ The API is same-origin: it has no CORS middleware. Guards and their usual chains
 
 ## Error handling
 
-Throw `AppError` with an i18n `type` from `locales/en/error` (an app's own in `locales/en/appError`); Postgres errors are mapped to one automatically. The client's global handler (`frontend/src/query/on-error.ts`) toasts every `ApiError`. A mutation toasts its own error only when it sets `meta.suppressGlobalErrorToast`, as product entities do through `createResourceError`; any other local `onError` toast shows the failure twice.
+Throw `AppError` with an i18n `type` from `locales/en/error` (an app's own in `locales/en/appError`); Postgres errors are mapped to one automatically. The body is RFC 9457 Problem Details: the type's text is its `title`, the error's message its `detail`, and each `meta` entry a top-level member, which a client reads as `error.<member>`. The client's global handler (`frontend/src/query/on-error.ts`) toasts every `ApiError`. A mutation toasts its own error only when it sets `meta.suppressGlobalErrorToast`, as product entities do through `createResourceError`; any other local `onError` toast shows the failure twice.
 
 ## Auth and permissions
 

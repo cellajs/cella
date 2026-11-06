@@ -45,7 +45,7 @@ describe('Server error messages', () => {
       const { status, text, marker, body } = await failQueryIn(mode);
 
       expect(status, mode).toBe(500);
-      expect(body.message, mode).toBe('Internal server error');
+      expect(body.detail, mode).toBe('Internal server error');
       expect(text, mode).not.toContain(marker);
       expect(text.toLowerCase(), mode).not.toMatch(/failed query|insert into/);
     }
@@ -55,6 +55,6 @@ describe('Server error messages', () => {
     const { status, body } = await failQueryIn('development');
 
     expect(status).toBe(500);
-    expect(body.message).toMatch(/^Failed query: insert into/);
+    expect(body.detail).toMatch(/^Failed query: insert into/);
   });
 });

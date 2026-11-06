@@ -21,7 +21,7 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
-import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal, membersOf } from './helpers';
 import { bearerHeaders } from './oauth-helpers';
 import { clearSecurityTestData, createFactorOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -192,7 +192,7 @@ describe('Service accounts and API keys', async () => {
 
     const expired = await read(await issueKey({ expiresAt: new Date(Date.now() - halfAnHour).toISOString() }));
     expect(expired.response.status).toBe(401);
-    expect((expired.error as ErrorResponse).meta?.reason).toBe('invalid_api_key');
+    expect((expired.error as ErrorResponse).reason).toBe('invalid_api_key');
 
     const live = await read(await issueKey({ expiresAt: new Date(Date.now() + halfAnHour).toISOString() }));
     expect(live.response.status).toBe(200);
@@ -212,7 +212,7 @@ describe('Service accounts and API keys', async () => {
     expect(update.response.status).toBe(200);
     const disabledCall = await readAsDisabled();
     expect(disabledCall.response.status).toBe(401);
-    expect((disabledCall.error as ErrorResponse).meta?.reason).toBe('service_account_disabled');
+    expect((disabledCall.error as ErrorResponse).reason).toBe('service_account_disabled');
   });
 
   it('enforces the tenant quota on accounts', async () => {
@@ -265,6 +265,6 @@ describe('Service accounts and API keys', async () => {
     const { response, error } = await call(getAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(key) });
     expect(response.status).toBe(403);
     // tenantGuard's refusal, before any organization is resolved; orgGuard's would name the organization.
-    expect((error as ErrorResponse).meta).toEqual({ resource: 'tenant' });
+    expect(membersOf(error)).toEqual({ resource: 'tenant' });
   });
 });

@@ -16,7 +16,7 @@ export class StepUpDismissedError extends Error {
 const isStepUpRequired = (error: unknown): error is ApiError => error instanceof ApiError && error.type === 'step_up_required';
 
 const methodsOf = (error: ApiError): StepUpMethod[] => {
-  const methods = error.meta?.methods;
+  const methods = error.methods;
   return Array.isArray(methods) ? methods.filter((method): method is StepUpMethod => typeof method === 'string') : [];
 };
 

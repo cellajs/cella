@@ -9,28 +9,54 @@ export type ClientOptions = {
  */
 export type BadRequestError = ApiError & {
   status?: 400;
+  [key: string]: number | string | Array<string> | boolean | null | 400 | undefined;
 };
 
 /**
- * The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.
+ * The body of every error response, as RFC 9457 Problem Details (`application/problem+json`). `type` is the code to branch on, `title` its meaning and `detail` this occurrence. Every other member is an extension member: each value `detail` names is also a member of its own, kept for the type once added, such as `retryAfter` on a rate limit.
  */
 export type ApiError = {
-  name: string;
-  message: string;
+  /**
+   * The stable code to branch on, a key of the API's error texts such as `invalid_request`: a relative URI reference.
+   */
   type: string;
+  /**
+   * What the type means, the same for every occurrence: it holds no request data and is safe to log.
+   */
+  title: string;
   status: number;
+  /**
+   * What went wrong in this request; it can quote values the request holds, so it is not logged.
+   */
+  detail: string;
+  /**
+   * The request id, also the `X-Request-Id` response header and in the server logs; quote it when reporting a failure.
+   */
+  instance?: string;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
-  requestId?: string;
   version?: string;
   path?: string;
   method?: string;
   timestamp?: string;
-  userId?: string;
-  organizationId?: string;
-  meta?: {
-    [key: string]: number | string | Array<string> | boolean | null;
-  };
+  [key: string]:
+    | number
+    | string
+    | Array<string>
+    | boolean
+    | null
+    | string
+    | number
+    | 'fatal'
+    | 'error'
+    | 'warn'
+    | 'info'
+    | 'debug'
+    | 'trace'
+    | 'user'
+    | 'organization'
+    | 'attachment'
+    | undefined;
 };
 
 /**
@@ -38,6 +64,7 @@ export type ApiError = {
  */
 export type UnauthorizedError = ApiError & {
   status?: 401;
+  [key: string]: number | string | Array<string> | boolean | null | 401 | undefined;
 };
 
 /**
@@ -45,6 +72,7 @@ export type UnauthorizedError = ApiError & {
  */
 export type ForbiddenError = ApiError & {
   status?: 403;
+  [key: string]: number | string | Array<string> | boolean | null | 403 | undefined;
 };
 
 /**
@@ -52,6 +80,7 @@ export type ForbiddenError = ApiError & {
  */
 export type NotFoundError = ApiError & {
   status?: 404;
+  [key: string]: number | string | Array<string> | boolean | null | 404 | undefined;
 };
 
 /**
@@ -59,6 +88,7 @@ export type NotFoundError = ApiError & {
  */
 export type ConflictError = ApiError & {
   status?: 409;
+  [key: string]: number | string | Array<string> | boolean | null | 409 | undefined;
 };
 
 /**
@@ -66,13 +96,15 @@ export type ConflictError = ApiError & {
  */
 export type PayloadTooLargeError = ApiError & {
   status?: 413;
+  [key: string]: number | string | Array<string> | boolean | null | 413 | undefined;
 };
 
 /**
- * A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
+ * A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.
  */
 export type TooManyRequestsError = ApiError & {
   status?: 429;
+  [key: string]: number | string | Array<string> | boolean | null | 429 | undefined;
 };
 
 /**

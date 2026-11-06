@@ -58,7 +58,7 @@ function classify(error: unknown): Failure {
   if (error.status === 404) return { kind: 'end', reason: 'deleted' };
   if (error.status === 400 || error.status === 413) return { kind: 'end', reason: 'refused' };
   if (error.status === 409) {
-    const generation = error.meta?.generation;
+    const generation = error.generation;
     return { kind: 'conflict', generation: typeof generation === 'string' ? generation : null };
   }
   // 401, 429 and 5xx.

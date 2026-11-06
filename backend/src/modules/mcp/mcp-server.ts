@@ -104,7 +104,7 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
       try {
         const outcome = await tool.call(ctx, message.params?.arguments);
         // Permission and domain failures are answers the model can act on, not transport errors.
-        if (!outcome.ok) return respond({ content: [{ type: 'text', text: `${outcome.type}: ${outcome.message}` }], isError: true });
+        if (!outcome.ok) return respond({ content: [{ type: 'text', text: `${outcome.type}: ${outcome.detail}` }], isError: true });
         const { output } = outcome;
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
         return respond({ content: [{ type: 'text', text }], structuredContent: output ?? undefined });
@@ -113,12 +113,8 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
         if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
         // The call itself failed before the route answered. The model belongs to a third-party client, so a server
         // error reaches it without its internals, in every mode.
-        const { type, message: errorMessage } = toClientError(
-          error,
-          { tool: name, organizationId: ctx.var.organizationId },
-          { exposeServerMessage: false },
-        );
-        return respond({ content: [{ type: 'text', text: `${type}: ${errorMessage}` }], isError: true });
+        const { type, detail } = toClientError(error, { tool: name, organizationId: ctx.var.organizationId }, { exposeServerMessage: false });
+        return respond({ content: [{ type: 'text', text: `${type}: ${detail}` }], isError: true });
       }
     }
 

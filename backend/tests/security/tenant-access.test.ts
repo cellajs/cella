@@ -9,7 +9,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse, expectRefusal, refusalOf } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse, expectRefusal, membersOf, refusalOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
@@ -75,7 +75,7 @@ describe('Tenant access', async () => {
     await setStatus(organization.tenantId, 'suspended');
     const { status, error } = await checkSlug(organization.tenantId, member.sessionCookie);
     expect(status).toBe(403);
-    expect(error?.meta).toEqual({ resource: 'tenant', tenantStatus: 'suspended' });
+    expect(membersOf(error)).toEqual({ resource: 'tenant', tenantStatus: 'suspended' });
   });
 
   it("must not keep the creator's access to a tenant after it has its organization via tenantGuard", async () => {

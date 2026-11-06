@@ -29,9 +29,9 @@ import {
   createTestOrganization,
   createTestUser,
   createTotpUser,
-  type ErrorResponse,
   expectRefusal,
   insertTestSession,
+  membersOf,
   sessionRow,
   totpCode,
 } from '../helpers';
@@ -244,7 +244,7 @@ describe('account-security routes need a step-up', async () => {
     // A fresh sign-in and an emailed code prove presence, not a factor: the user is asked to set one up.
     const fresh = await minting.createAccount(session);
     await expectStepUpRequired(fresh);
-    expect((fresh.error as ErrorResponse | undefined)?.meta).toEqual({ methods: ['enroll'] });
+    expect(membersOf(fresh.error)).toEqual({ methods: ['enroll'] });
     await stepUpByEmail(session);
     await expectStepUpRequired(await minting.createAccount(session));
     expect(await minting.accounts()).toHaveLength(0);

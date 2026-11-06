@@ -19,6 +19,7 @@ export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
     const customType = code === 'custom' && 'params' in issue ? (issue.params?.type as ErrorKey | undefined) : undefined;
     const type = customType ?? (`form.${code}` satisfies ErrorKey);
 
-    throw new AppError(400, type, 'error', { message: customType ? undefined : message, meta: { path: issue.path.join('.') } });
+    // `field`, not `path`: the body's `path` is the request's.
+    throw new AppError(400, type, 'error', { message: customType ? undefined : message, meta: { field: issue.path.join('.') } });
   }
 };

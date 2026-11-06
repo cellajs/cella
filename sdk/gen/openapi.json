@@ -480,14 +480,14 @@
         "description": "Bad request",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/BadRequestError"
             }
@@ -498,14 +498,14 @@
         "description": "Unauthorized",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/UnauthorizedError"
             }
@@ -516,14 +516,14 @@
         "description": "Forbidden",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ForbiddenError"
             }
@@ -534,14 +534,14 @@
         "description": "Not found",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/NotFoundError"
             }
@@ -552,14 +552,14 @@
         "description": "Conflict",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/ConflictError"
             }
@@ -570,14 +570,14 @@
         "description": "Payload too large",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/PayloadTooLargeError"
             }
@@ -588,7 +588,7 @@
         "description": "Too many requests",
         "headers": {
           "X-Request-Id": {
-            "description": "The request id, also `requestId` in the body; quote it when reporting a failure.",
+            "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
             "schema": {
               "type": "string"
             }
@@ -602,7 +602,7 @@
           }
         },
         "content": {
-          "application/json": {
+          "application/problem+json": {
             "schema": {
               "$ref": "#/components/schemas/TooManyRequestsError"
             }
@@ -623,68 +623,7 @@
                 "type": "number",
                 "enum": [400]
               }
-            }
-          }
-        ],
-        "description": "The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.",
-        "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
-          "type": "invalid_request",
-          "status": 400,
-          "severity": "warn",
-          "timestamp": "2025-01-01T12:00:00.000Z"
-        },
-        "x-tags": ["errors", "cella"]
-      },
-      "ApiError": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "status": {
-            "type": "integer",
-            "minimum": 400,
-            "maximum": 599
-          },
-          "severity": {
-            "type": "string",
-            "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["user", "organization", "attachment"]
-          },
-          "requestId": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "method": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "meta": {
-            "type": "object",
+            },
             "additionalProperties": {
               "anyOf": [
                 {
@@ -708,14 +647,94 @@
               ]
             }
           }
-        },
-        "required": ["name", "message", "type", "status", "severity"],
-        "description": "The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.",
+        ],
+        "description": "The request is malformed or fails validation. `type` names the problem, such as `invalid_request`.",
         "example": {
-          "name": "Something's missing or wrong",
-          "message": "Check what you entered and try again.",
           "type": "invalid_request",
+          "title": "Something's missing or wrong",
           "status": 400,
+          "detail": "Check what you entered and try again.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
+          "severity": "warn",
+          "timestamp": "2025-01-01T12:00:00.000Z"
+        },
+        "x-tags": ["errors", "cella"]
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The stable code to branch on, a key of the API's error texts such as `invalid_request`: a relative URI reference."
+          },
+          "title": {
+            "type": "string",
+            "description": "What the type means, the same for every occurrence: it holds no request data and is safe to log."
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string",
+            "description": "What went wrong in this request; it can quote values the request holds, so it is not logged."
+          },
+          "instance": {
+            "type": "string",
+            "description": "The request id, also the `X-Request-Id` response header and in the server logs; quote it when reporting a failure."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["user", "organization", "attachment"]
+          },
+          "version": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": ["type", "title", "status", "detail", "severity"],
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": "The body of every error response, as RFC 9457 Problem Details (`application/problem+json`). `type` is the code to branch on, `title` its meaning and `detail` this occurrence. Every other member is an extension member: each value `detail` names is also a member of its own, kept for the type once added, such as `retryAfter` on a rate limit.",
+        "example": {
+          "type": "invalid_request",
+          "title": "Something's missing or wrong",
+          "status": 400,
+          "detail": "Check what you entered and try again.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -733,15 +752,38 @@
                 "type": "number",
                 "enum": [401]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
         "description": "The request carries no valid session, API key or access token, or it expired. Sign in again, or send a valid key or token.",
         "example": {
-          "name": "Not signed in",
-          "message": "Sign in to continue.",
           "type": "unauthorized",
+          "title": "Not signed in",
           "status": 401,
+          "detail": "Sign in to continue.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -759,15 +801,38 @@
                 "type": "number",
                 "enum": [403]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
         "description": "The caller is known but may not do this: their role denies the action or a recent step-up is required. `type` names the reason, such as `step_up_required`.",
         "example": {
-          "name": "No access",
-          "message": "You don't have permission to do this.",
           "type": "forbidden",
+          "title": "No access",
           "status": 403,
+          "detail": "You don't have permission to do this.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -785,15 +850,38 @@
                 "type": "number",
                 "enum": [404]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
         "description": "The resource does not exist, or the caller may not read it. Both get the same answer, so a response never confirms that an id exists.",
         "example": {
-          "name": "Not found",
-          "message": "This resource does not exist or has been deleted.",
           "type": "not_found",
+          "title": "Not found",
           "status": 404,
+          "detail": "This resource does not exist or has been deleted.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -811,15 +899,38 @@
                 "type": "number",
                 "enum": [409]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
         "description": "The request conflicts with the current state, such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying. Any write can answer `write_conflict` when a concurrent transaction won: retry as is.",
         "example": {
-          "name": "Signed in as someone else",
-          "message": "This link is for another account. Sign out, then open it again.",
           "type": "user_mismatch",
+          "title": "Signed in as someone else",
           "status": 409,
+          "detail": "This link is for another account. Sign out, then open it again.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -837,15 +948,38 @@
                 "type": "number",
                 "enum": [413]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
         "description": "The request body is larger than the limit for its content type: a JSON body, a file upload and any other body each have their own.",
         "example": {
-          "name": "Too large to save",
-          "message": "Shorten it or split it up.",
           "type": "body_too_large",
+          "title": "Too large to save",
           "status": 413,
+          "detail": "Shorten it or split it up.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
@@ -863,17 +997,41 @@
                 "type": "number",
                 "enum": [429]
               }
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         ],
-        "description": "A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
+        "description": "A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.",
         "example": {
-          "name": "Too many attempts",
-          "message": "Wait a moment, then try again.",
           "type": "too_many_requests",
+          "title": "Too many attempts",
           "status": 429,
+          "detail": "Wait a moment, then try again.",
+          "instance": "f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b",
           "severity": "warn",
-          "timestamp": "2025-01-01T12:00:00.000Z"
+          "timestamp": "2025-01-01T12:00:00.000Z",
+          "retryAfter": 30
         },
         "x-tags": ["errors", "cella"]
       },

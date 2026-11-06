@@ -7,7 +7,7 @@ import { i18n } from '#/lib/i18n';
 /** What a client outside development sees of a thrown value. */
 const seenByClient = (err: unknown) => {
   const {
-    name: _name,
+    title: _title,
     willRedirect: _willRedirect,
     entityType: _entityType,
     meta: _meta,
@@ -26,7 +26,7 @@ describe('toClientError', () => {
       status: 500,
       type: 'server_error',
       severity: 'error',
-      message: 'Internal server error',
+      detail: 'Internal server error',
     });
   });
 
@@ -53,12 +53,12 @@ describe('toClientError', () => {
       status: 400,
       type: 'invalid_request',
       severity: 'warn',
-      message: 'Malformed JSON in request body',
+      detail: 'Malformed JSON in request body',
     });
     expect(seenByClient(new HTTPException(403))).toMatchObject({ status: 403, type: 'forbidden' });
     expect(seenByClient(new HTTPException(502, { message: 'upstream said no' }))).toMatchObject({
       type: 'server_error',
-      message: 'Internal server error',
+      detail: 'Internal server error',
     });
   });
 });
@@ -76,8 +76,8 @@ describe('AppError', () => {
     const error = new AppError(500, 'server_error', 'error', { message: 'orgGuard requires tenantGuard middleware' });
 
     expect(error.message).toBe('orgGuard requires tenantGuard middleware');
-    expect(toClientError(error, {}, { exposeServerMessage: true }).message).toBe('orgGuard requires tenantGuard middleware');
-    expect(seenByClient(error).message).toBe('Internal server error');
+    expect(toClientError(error, {}, { exposeServerMessage: true }).detail).toBe('orgGuard requires tenantGuard middleware');
+    expect(seenByClient(error).detail).toBe('Internal server error');
   });
 
   it("reads a type from the app's own texts first, so an app adds types and can reword a template one", () => {
@@ -89,10 +89,10 @@ describe('AppError', () => {
 
     try {
       const refusal = new AppError(409, 'label_mode_locked' as ErrorKey, 'warn');
-      expect(seenByClient(refusal)).toEqual({ status: 409, type: 'label_mode_locked', severity: 'warn', message: 'A primary label keeps its mode.' });
-      expect(refusal.name).toBe('Mode is fixed');
+      expect(seenByClient(refusal)).toEqual({ status: 409, type: 'label_mode_locked', severity: 'warn', detail: 'A primary label keeps its mode.' });
+      expect(toClientError(refusal).title).toBe('Mode is fixed');
 
-      expect(new AppError(409, 'slug_exists', 'warn').name).toBe('Handle taken');
+      expect(toClientError(new AppError(409, 'slug_exists', 'warn')).title).toBe('Handle taken');
     } finally {
       i18n.removeResourceBundle('en', 'appError');
     }

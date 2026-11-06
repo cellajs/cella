@@ -82,7 +82,7 @@ const cimdDocument = {
   response_types: ['code'],
 };
 
-const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
+const reasonOf = (error: unknown) => (error as ErrorResponse).reason;
 
 /** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
 const grantRowsOf = (userId: string) =>

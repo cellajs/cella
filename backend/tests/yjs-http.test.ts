@@ -20,7 +20,7 @@ import type { AppendYjsUpdateOpts } from '#/modules/yjs/operations/append-yjs-up
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
-import { adminDb, createSystemAdminUser, createTestSession, type ErrorResponse, expectRefusal, rawJsonRequest } from './helpers';
+import { adminDb, createSystemAdminUser, createTestSession, expectRefusal, membersOf, rawJsonRequest } from './helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { lockWaiters, paragraph, seedAttachment } from './security/yjs-helpers';
 import { createAppClient } from './test-client';
@@ -425,7 +425,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       const { generation, update } = await pulled(pull(owner.sessionCookie, attachment.id));
       const answer = await push(owner.sessionCookie, attachment.id, randomUUID(), typeInto(docOf(update), 'stale '));
       await expectRefusal(answer, 409, 'sync_document_replaced');
-      expect((answer.error as ErrorResponse).meta).toEqual({ generation });
+      expect(membersOf(answer.error)).toEqual({ generation });
       expect((await stored(attachment.id)).rows).toEqual([]);
     });
 
@@ -435,7 +435,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       offline.getXmlFragment(yjsFragmentName).insert(0, [new Y.XmlText('offline')]);
       const answer = await push(owner.sessionCookie, attachment.id, randomUUID(), Y.encodeStateAsUpdate(offline));
       await expectRefusal(answer, 409, 'sync_document_replaced');
-      expect((answer.error as ErrorResponse).meta).toEqual({ generation: null });
+      expect(membersOf(answer.error)).toEqual({ generation: null });
       expect(await stored(attachment.id)).toEqual({ generation: null, rows: [], state: null });
 
       // The client's recovery: pull, then post again in the generation the pull named.

@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import type { ErrorKey } from '#/core/error';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
-import { errorResponseComponents } from '#/schemas/error-response-schemas';
+import { errorResponseComponents, problemJsonType } from '#/schemas/error-response-schemas';
 
 /** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
 export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
@@ -63,7 +63,7 @@ const foldErrorResponses = (doc: OpenApiDocument) => {
     for (const { responses } of Object.values(pathItem)) {
       for (const [status, response] of Object.entries(responses ?? {})) {
         if (response.$ref || !responses) continue;
-        const name = response.content?.['application/json']?.schema?.$ref?.split('/').pop();
+        const name = response.content?.[problemJsonType]?.schema?.$ref?.split('/').pop();
         if (name && errorResponseComponents.get(name) === response.description) responses[status] = { $ref: `#/components/responses/${name}` };
       }
     }

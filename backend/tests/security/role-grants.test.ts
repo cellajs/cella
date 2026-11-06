@@ -110,7 +110,7 @@ describe('Role grants above the actor', async () => {
   /** Every refusal names the rule, so a refusal by the action check before it fails the row. */
   const expectRoleRefusal = async ({ response, error }: TestResult) => {
     await expectRefusal({ response, error }, 403, 'forbidden');
-    expect((error as ErrorResponse).meta?.reason).toBe('role_exceeds_actor');
+    expect((error as ErrorResponse).reason).toBe('role_exceeds_actor');
   };
 
   describe("must not grant a role above the actor's own", () => {
