@@ -175,7 +175,10 @@ describe('Passkey challenges', async () => {
     expect(victimSignIn.response.status).toBe(204);
     expect(await sessionsOf(victim.id)).toHaveLength(1);
 
-    // Positive control: a credential of the attacker's own registers.
-    expect((await register(softwarePasskey())).response.status).toBe(201);
+    // Positive control: a credential of the attacker's own registers, and the next registration excludes it with the
+    // transports its browser reported.
+    const own = softwarePasskey();
+    expect((await register(own)).response.status).toBe(201);
+    expect((await passkeyChallenge('registration', sessionCookie)).credentials).toEqual([{ id: own.credentialId, transports: ['internal'] }]);
   });
 });

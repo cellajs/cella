@@ -7,6 +7,7 @@ import {
 } from '@simplewebauthn/server';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import { passkeyAlgorithms } from 'shared/passkeys';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -38,8 +39,14 @@ const expectedOrigin = appConfig.frontendUrl;
 /** Challenges and passkeys are read and written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
-/** How long a challenge can be answered; its cookie and its row expire together. */
-const challengeLifetime = new TimeSpan(5, 'm');
+/**
+ * How long a challenge can be answered; its cookie and its row expire together. Ten minutes, the upper end of the
+ * ceremony timeouts WebAuthn recommends (§13.4.3), so an autofill ceremony left open a while still answers in time.
+ */
+const challengeLifetime = new TimeSpan(10, 'm');
+
+/** WebAuthn §7.1 step 25: a registration with a longer credential id fails. */
+const maxCredentialIdBytes = 1023;
 
 /** A response that does not verify is a failed sign-in: a 401 the sign-in limiter counts, never a server error. */
 const verificationFailed = (error?: unknown) =>
@@ -51,7 +58,10 @@ const registrationFailed = (error?: unknown) =>
 
 interface IssuePasskeyChallengeOpts {
   purpose: PasskeyChallengePurpose;
-  /** For an mfa or step-up challenge: the account whose passkey must answer it, and whose passkeys are offered. */
+  /**
+   * The account whose passkey must answer the challenge, and whose passkeys it names: offered for an mfa or step-up
+   * challenge, excluded for a registration.
+   */
   userId?: string;
 }
 
@@ -101,15 +111,15 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
 };
 
 /**
- * Verifies a passkey (WebAuthn) registration response against the registration challenge this browser holds:
- * attestation, relying party, origin, challenge and user verification.
+ * Verifies a passkey (WebAuthn) registration response against the registration challenge this browser holds for
+ * `userId`: attestation, relying party, origin, challenge, user verification, algorithm and credential id length.
  * @returns The credential to store: its id, COSE public key (base64url), signature counter and the transports the
  *   browser reported, null for none.
  * @throws AppError 401 `passkey_verification_failed` without a live registration challenge, 400
  *   `passkey_registration_failed` for a response that does not verify.
  */
-export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation) => {
-  const challenge = await consumeChallenge(ctx, 'registration');
+export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: WebAuthnAttestation, userId: string) => {
+  const challenge = await consumeChallenge(ctx, 'registration', userId);
 
   const { verified, registrationInfo } = await verifyRegistrationResponse({
     // The request schema types `clientExtensionResults` as unknown, the library as extension outputs it never reads.
@@ -118,6 +128,7 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
     expectedOrigin,
     expectedRPID: relyingPartyId,
     requireUserVerification: true,
+    supportedAlgorithmIDs: [...passkeyAlgorithms],
   }).catch((error: unknown) => {
     throw registrationFailed(error);
   });
@@ -125,6 +136,8 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
   if (!verified || !registrationInfo) throw registrationFailed();
 
   const { credential } = registrationInfo;
+  if (Buffer.from(credential.id, 'base64url').byteLength > maxCredentialIdBytes) throw registrationFailed();
+
   return {
     credentialId: credential.id,
     publicKey: Buffer.from(credential.publicKey).toString('base64url'),

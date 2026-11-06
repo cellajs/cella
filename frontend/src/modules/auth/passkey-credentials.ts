@@ -9,6 +9,7 @@ import {
 } from '@simplewebauthn/browser';
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
+import { passkeyAlgorithms } from 'shared/passkeys';
 import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyType } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
@@ -51,7 +52,8 @@ export type ConditionalMediationResult = { assertion: AuthenticationResponseJSON
 
 /** Runs WebAuthn registration and returns the attestation as base64url JSON for the backend. */
 export const getPasskeyRegistrationCredential = async () => {
-  const { challenge } = await getChallenge({ type: 'registration' });
+  // The user's passkeys, so an authenticator that holds one already refuses to register a second.
+  const { challenge, credentials } = await getChallenge({ type: 'registration' });
 
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
@@ -64,12 +66,15 @@ export const getPasskeyRegistrationCredential = async () => {
       challenge,
       user: { id: userHandle, name: nameOnDevice, displayName: nameOnDevice },
       rp: { id: relyingPartyId(), name: appConfig.name },
-      pubKeyCredParams: [
-        { type: 'public-key', alg: -7 }, // ES256
-        { type: 'public-key', alg: -257 }, // RS256
-      ],
+      pubKeyCredParams: passkeyAlgorithms.map((alg) => ({ type: 'public-key', alg })),
+      excludeCredentials: descriptors(credentials),
       attestation: 'none',
-      authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'required', userVerification: 'required' },
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        residentKey: 'required',
+        requireResidentKey: true,
+        userVerification: 'required',
+      },
     },
   });
 

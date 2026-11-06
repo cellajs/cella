@@ -171,6 +171,7 @@
   "organization_mismatch": "This item belongs to another organization than the one you are using. Switch to it, or ask an admin for access.",
   "page_not_found": "Page not found",
   "page_not_found.text": "This page doesn't exist or has been deleted.",
+  "passkey_already_registered": "This device holds a passkey for your account already.",
   "passkey_not_found": "Passkey not recognized",
   "passkey_not_found.text": "We couldn't verify this passkey. It may not belong to your account or has been deleted.",
   "passkey_registration_failed": "Passkey registration failed. Try again later.",
