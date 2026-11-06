@@ -21,7 +21,7 @@ import { cn } from '~/utils/cn';
 import { dateFull } from '~/utils/date-full';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
-import { placeholderColorClass } from '~/utils/placeholder-color-class';
+import { placeholderCoverClass } from '~/utils/placeholder-color-class';
 
 const ChannelTileContext = createContext<ChannelTileEntity | null>(null);
 
@@ -97,7 +97,7 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
       <TileLink className="block">
         <div
           // A min height would transfer through the aspect ratio into a min width wider than a phone's column
-          className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderColorClass(entity.id))}
+          className={cn('relative flex aspect-9/4 flex-col bg-cover bg-center sm:aspect-5/2', !entity.bannerUrl && placeholderCoverClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
