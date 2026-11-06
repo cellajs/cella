@@ -528,6 +528,8 @@
   "no_description": "No description",
   "no_invitations_left.text": "No invitations left to answer. Continue to the next step.",
   "no_notifications": "No notifications yet",
+  "no_organization_yet": "You are not in an organization yet",
+  "no_organization_yet.text": "Create one to start, or wait for an invitation to arrive in your inbox.",
   "no_resource_found": "No {{resource, lowercase}} found",
   "no_resource_yet": "No {{resource, lowercase}} yet",
   "no_results": "No results",
