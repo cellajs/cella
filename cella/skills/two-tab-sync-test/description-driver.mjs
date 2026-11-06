@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { chromium, endSession, mintSession } from '../verify/session-lib.mjs';
+import { loadPlaywright, mintSession, signOut } from '@cellajs/cli/drive';
 import { caretToEnd, editorText, exactText, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
@@ -26,9 +26,10 @@ const RELAY = process.env.RELAY;
 // Status lines and button labels as this checkout words them, so a copy change breaks no assert.
 const strings = JSON.parse(readFileSync('locales/en/common.json', 'utf8'));
 
+const { chromium } = await loadPlaywright();
 const sessions = { a: mintSession(EMAIL), b: mintSession(EMAIL_B), viewer: EMAIL_VIEWER ? mintSession(EMAIL_VIEWER) : null };
 const cookies = { a: sessions.a.cookie, b: sessions.b.cookie, viewer: sessions.viewer?.cookie ?? null };
-const BASE = sessions.a.base;
+const BASE = sessions.a.frontendUrl;
 const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
 
 const evidence = [];
@@ -480,7 +481,7 @@ try {
 } finally {
   writeFileSync(join(OUT, 'description-evidence.json'), JSON.stringify(evidence, null, 1));
   await browser.close();
-  await Promise.all(Object.values(sessions).map(endSession));
+  await Promise.all(Object.values(sessions).map(signOut));
   const failed = asserts.filter((assert) => !assert.ok);
   console.log(`\n${asserts.length - failed.length}/${asserts.length} asserts passed -> ${join(OUT, 'description-evidence.json')}`);
   for (const assert of failed) console.log(`FAIL ${assert.what}`);

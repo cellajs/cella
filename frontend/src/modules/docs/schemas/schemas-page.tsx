@@ -13,7 +13,7 @@ import { TagExpandLink } from '~/modules/docs/tag-expand-link';
 import { TagSectionCard } from '~/modules/docs/tag-section-card';
 import { collectTagKinds } from '~/modules/docs/tag-table';
 
-/** All component schemas from the OpenAPI spec, categorized into base, data, and errors tags. */
+/** All component schemas from the OpenAPI spec, in the buckets the schema-kind tags define. */
 export function SchemasPage() {
   const { t } = useTranslation();
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });

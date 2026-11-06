@@ -59,7 +59,7 @@ Never pass `rem` to the canonicalizer: the root font size differs on phones, so 
 | One module, or sites that override single tokens through `cn` | A `tw` constant |
 | Varies by prop on one component | `cva` |
 | Always the same element and behavior | A small component |
-| The risk is one token missing its partner | A pair rule in `pnpm style` |
+| The risk is one token missing its partner | A pair rule in `pnpm cella style` |
 | Passes the bar, or needs a capability | A class or `@utility` |
 
 ## 3. Performance

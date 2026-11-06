@@ -29,7 +29,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  * @param key - Translation key, e.g. 'error:invalid_offset'.
  * @param options - Interpolation values.
  */
-export const translatedError = (key: string, options?: TOptions) => ({ error: () => t(key, options) });
+export const translatedError = (key: `error:${ErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
 
 export const validIdSchema = z.string().max(maxLength.id);
 

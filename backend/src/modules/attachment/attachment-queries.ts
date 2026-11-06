@@ -10,7 +10,7 @@ import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { deleteStamps } from '#/db/utils/stamps';
-import { stripChangedFields } from '#/db/utils/strip-changed-fields';
+import { stxWithIds } from '#/db/utils/stx-ids';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
@@ -63,7 +63,7 @@ export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, 
   const { db } = ctx.var;
   return db
     .update(attachmentsTable)
-    .set({ ...deleteStamps(actorId), stx: stripChangedFields(attachmentsTable.stx, stx) })
+    .set({ ...deleteStamps(actorId), stx: stxWithIds(attachmentsTable.stx, stx) })
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
 };

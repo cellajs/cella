@@ -111,11 +111,10 @@ export const connectedAppSchema = z
     createdAt: z.string(),
     expiresAt: z.string().nullable(),
   })
-  .openapi('ConnectedApp', {
+  .openapi({
     description:
       'An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.',
     example: mockConnectedApp(),
-    'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
 export type ConnectedApp = z.infer<typeof connectedAppSchema>;

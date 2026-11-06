@@ -21,7 +21,7 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 The driver mints a session for each user and signs it out when it ends ([verify, Drive](../verify/SKILL.md#drive-browser)).
 
-- **Default, the bench user** (needs `pnpm --filter bench db:seed` once): `xbench-user-0000@xbench.local` is admin of `xbench/xbench-org`. The seed sets that tenant's attachment quota to unlimited, so every experiment runs there, creates included.
+- **Default, the bench user** (needs `pnpm --filter backend bench:seed` once): `xbench-user-0000@xbench.local` is admin of `xbench/xbench-org`. The seed sets that tenant's attachment quota to unlimited, so every experiment runs there, creates included.
 - **Any other seeded org**: pick an admin and pass `EMAIL` and `ORG_PATH`.
   `SELECT o.tenant_id, o.slug, m.role, e.email FROM organizations o JOIN memberships m ON m.organization_id = o.id JOIN emails e ON e.user_id = m.user_id WHERE o.slug <> 'xbench-org' ORDER BY o.slug, m.role LIMIT 20;`
   An org at its tenant's attachment quota (`appConfig.defaultRestrictions.quotas`) answers creates with **403 `restrict_by_app`**.
@@ -111,4 +111,4 @@ The description driver's experiments, by their `ONLY` name:
 - A description written through the API (an outside write) needs an HLC in `stx.fieldTimestamps.description`, else 400: `description-driver.mjs` builds one.
 - Offline console noise: S3 thumbnail CORS failures + `[DownloadService] … marked as failed` are harmless. Thumbnail fetches in a large org also use up the presigned URL rate limit.
 - Backend request logging is off for the xbench tenant (bench identity); use DB probes there.
-- Leftovers: the two-tab driver renames one row, soft-deletes one pre-seeded row, leaves a probe row tombstoned and a probe line in one description. The description driver leaves probe lines in the description of `ROW` and soft-deletes `DELETE_ROW` (the second row by default; `ONLY` without `delete` keeps it). `pnpm --filter bench db:seed` restores xbench; faker orgs are throwaway.
+- Leftovers: the two-tab driver renames one row, soft-deletes one pre-seeded row, leaves a probe row tombstoned and a probe line in one description. The description driver leaves probe lines in the description of `ROW` and soft-deletes `DELETE_ROW` (the second row by default; `ONLY` without `delete` keeps it). `pnpm --filter backend bench:seed` restores xbench; faker orgs are throwaway.

@@ -8,7 +8,7 @@ const testMode = process.env.TEST_MODE || 'core';
 // application authorization does not depend on RLS (the default superuser run bypasses it).
 const dbRole = process.env.TEST_DB_ROLE === 'runtime' ? 'runtime' : 'admin';
 
-const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts'];
+const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts', 'bench/**/*.test.ts'];
 const excludePatterns = ['**/node_modules/**'];
 if (testMode === 'core') excludePatterns.push('tests/integration/**');
 

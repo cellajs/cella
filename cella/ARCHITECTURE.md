@@ -115,7 +115,7 @@ Flat-root monorepo:
 
 ```text
 .
-├── backend       Hono API, Drizzle schema, migrations, emails, and seeds
+├── backend       Hono API, Drizzle schema, migrations, emails, seeds, and load tests
 ├── frontend      React SPA/PWA with React Query client
 ├── shared        Hierarchy and entity config, permissions, types, and cross-tier utils
 ├── sdk           Generated OpenAPI client, types, and Zod schemas
@@ -126,6 +126,5 @@ Flat-root monorepo:
 ├── jobs          Jobs worker: cron and queues on pg-boss
 ├── infra         Deploy engine and the infra CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
-├── locales       Translations
-└── bench         Load tests with their own runner
+└── locales       Translations
 ```

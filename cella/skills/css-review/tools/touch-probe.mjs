@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { chromium, endSession, mintSession } from '../../verify/session-lib.mjs';
+import { loadPlaywright, mintSession, signOut } from '@cellajs/cli/drive';
 import { printHeader } from './lib.mjs';
 
 // Finds controls a touch user cannot see and can still tap: `hover:` never fires on touch and `opacity-0` does not stop a tap.
@@ -33,6 +33,7 @@ function invisibleControls() {
 }
 
 printHeader();
+const { chromium } = await loadPlaywright();
 const session = email ? mintSession(email) : undefined;
 const browser = await chromium.launch();
 try {
@@ -53,5 +54,5 @@ try {
   }
 } finally {
   await browser.close();
-  await endSession(session);
+  await signOut(session);
 }

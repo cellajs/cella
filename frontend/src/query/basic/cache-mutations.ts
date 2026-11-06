@@ -8,7 +8,7 @@ import type { BaseQueryItem } from '~/query/types';
 /**
  * Writes one cached query, keeping its refetch mark: `setQueryData` would clear `isInvalidated`, but a cache write is no
  * read of the server, so only a refetch clears the mark. Query code and the modules of synced products write through
- * here (`pnpm style`).
+ * here (`pnpm cella style`).
  * @param update - Returns the next data; the same data or undefined writes nothing, and leaves the timestamp as it was.
  */
 export function writeKeepingMark<T>(

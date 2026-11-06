@@ -7,6 +7,7 @@ import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
+import { acceptFollowedInvitation, findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
@@ -168,8 +169,8 @@ const connectCallbackFlow = async ({
  * Sign-up via invitation, for a provider account that asserts the invited address. An invitation link can be
  * forwarded, so opening it proves the inbox only together with the provider's own verification of the address: then
  * the account is created with its address and identity verified, in one transaction that also claims the invitations
- * waiting for the address, and signs in without a second mail. Otherwise the sign-up waits on the verification mail,
- * and completing it claims the invitations the same way.
+ * waiting for the address, accepts the invitation of the link, and signs in without a second mail. Otherwise the
+ * sign-up waits on the verification mail, and completing it claims the invitations the same way.
  */
 const inviteCallbackFlow = async ({
   ctx,
@@ -201,6 +202,9 @@ const inviteCallbackFlow = async ({
   });
 
   const user = await findUserById(dbCtx, { id: created.userId });
+  const { inactiveMembershipId } = invitationToken;
+  const followed = inactiveMembershipId ? { inactiveMembershipId, email } : null;
+  await acceptFollowedInvitation(user, { provenEmail: providerUser.email, followed });
   return { type: 'verified', user, identity: created.identity };
 };
 
@@ -255,7 +259,8 @@ const verifyCallbackFlow = async ({
 /**
  * Finishes an OAuth sign-up in the browser that opened its verification mail, once the same provider account signed
  * in again: the click proved the inbox, so the account is created now with its address and identity verified, in one
- * transaction that spends the verification. An account or identity that appeared meanwhile ends the sign-up.
+ * transaction that spends the verification, and accepts the invitation whose link this browser opened. An account or
+ * identity that appeared meanwhile ends the sign-up.
  * @throws AppError 403 `sign_up_restricted` when the address may no longer sign up; the verification stays unspent.
  */
 const completeSignUp = async ({
@@ -281,6 +286,8 @@ const completeSignUp = async ({
   if (identity) throw new AppError(409, 'oauth_conflict', 'warn');
   if (await findUserByEmail(dbCtx, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
 
+  // Read before the account claims the invitations of its address, which deletes their links.
+  const followed = await findFollowedInvitation(ctx);
   const created = await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     // Registration may have closed since the mail went out. Checked before the spend, so a refusal leaves the
@@ -299,6 +306,7 @@ const completeSignUp = async ({
   deleteAuthCookie(ctx, 'oauth-verification');
 
   const user = await findUserById(dbCtx, { id: created.userId });
+  await acceptFollowedInvitation(user, { provenEmail: email, followed });
   return { type: 'verified', user, identity: created.identity };
 };
 

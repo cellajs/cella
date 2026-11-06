@@ -94,6 +94,7 @@ import type {
   GetApiProtectedResourceMetadataResponses,
   GetAppStreamData,
   GetAppStreamErrors,
+  GetAppStreamResponse,
   GetAppStreamResponses,
   GetAttachmentData,
   GetAttachmentErrors,
@@ -366,6 +367,7 @@ import {
   zGenerateTotpKeyResponse,
   zGetApiKeysResponse,
   zGetApiProtectedResourceMetadataResponse,
+  zGetAppStreamResponse,
   zGetAttachmentResponse,
   zGetAttachmentsResponse,
   zGetAuthHealthResponse,
@@ -1293,9 +1295,10 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
  * @returns Possible status codes: 200, 400, 401, 429
  */
 export const getAppStream = <ThrowOnError extends boolean = true>(
-  options?: Options<GetAppStreamData, ThrowOnError, unknown>,
+  options?: Options<GetAppStreamData, ThrowOnError, GetAppStreamResponse>,
 ): Promise<ServerSentEventsResult<GetAppStreamResponses>> =>
   (options?.client ?? client).sse.get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetAppStreamResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/entities/app/stream',
     ...options,

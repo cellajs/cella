@@ -89,7 +89,7 @@ export const streamChangeSchema = z
     description:
       'A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
     example: mockStreamChange(),
-    'x-tags': schemaTags('data', 'entities', 'cella'),
+    'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
 
 export type StreamChange = z.infer<typeof streamChangeSchema>;
@@ -112,7 +112,7 @@ export const streamSignalSchema = z
     description:
       'A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.',
     example: mockStreamSignal(),
-    'x-tags': schemaTags('data', 'entities', 'cella'),
+    'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
 
 export type StreamSignal = z.infer<typeof streamSignalSchema>;
@@ -132,7 +132,7 @@ export const streamErrorSchema = z
     description:
       'Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.',
     example: mockStreamError(),
-    'x-tags': schemaTags('data', 'entities', 'cella'),
+    'x-tags': schemaTags('stream', 'entities', 'cella'),
   });
 
 export type StreamErrorPayload = z.infer<typeof streamErrorSchema>;

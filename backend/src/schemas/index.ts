@@ -64,8 +64,6 @@ export {
 export {
   idsWithStxBodySchema,
   type StxBase,
-  type StxStored,
   /** @public */
   stxBaseSchema,
-  stxStoredSchema,
 } from '#/schemas/sync-transaction-schemas';

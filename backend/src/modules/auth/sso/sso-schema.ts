@@ -1,6 +1,5 @@
 import { z } from '@hono/zod-openapi';
 import type { FederationKey } from 'shared';
-import { schemaTags } from '#/core/openapi-helpers';
 import { mockSsoEntryResponse } from '#/modules/auth/auth-mocks';
 import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { isFederationKey } from '#/modules/auth/sso/helpers/federations';
@@ -33,9 +32,8 @@ export const ssoEntrySchema = z
     institution: z.object({ displayName: z.string(), logoUrl: z.string().nullable() }),
     organization: z.object({ id: z.string(), name: z.string(), slug: z.string(), thumbnailUrl: z.string().nullable() }).nullable(),
   })
-  .openapi('SsoEntry', {
+  .openapi({
     description:
       "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
     example: mockSsoEntryResponse(),
-    'x-tags': schemaTags('data', 'auth', 'cella'),
   });

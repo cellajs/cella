@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
-import { invokeToken } from 'sdk';
+import { and, eq } from 'drizzle-orm';
+import { invokeToken, sendMagicLink } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -66,6 +67,44 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
       expect(await invitationRow(inactiveMembership.id)).toBeUndefined();
     },
   );
+
+  it('accepts on another device the invitation the browser that asked for the link opened', async () => {
+    const { organization, inviter } = await setup();
+    const { inactiveMembership } = await createInvitation({ organization, email: invitedEmail, createdBy: inviter.id });
+    const { raw, row } = await insertTestToken('magic', { email: invitedEmail }, { followedInvitationId: inactiveMembership.id });
+
+    // The browser that opens the link holds no invitation cookie, only its own request marker.
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
+    });
+    expect(response.status).toBe(302);
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, invitedEmail));
+    expect((await membershipsOf(user.id)).map(({ organizationId }) => organizationId)).toEqual([organization.id]);
+    expect(await invitationRow(inactiveMembership.id)).toBeUndefined();
+  });
+
+  it.each([
+    { opened: 'to the asked address', email: invitedEmail, recorded: true },
+    { opened: 'to another address', email: 'someone-else@example.com', recorded: false },
+  ])('records on the sign-in link only an opened invitation $opened', async ({ email, recorded }) => {
+    const { organization, inviter } = await setup();
+    const opened = await createInvitation({ organization, email, createdBy: inviter.id, token: 'invoked' });
+
+    await call(sendMagicLink, { body: { email: invitedEmail }, headers: { ...defaultHeaders, Cookie: opened.invitationCookie } });
+
+    // The link is issued after the answer.
+    const link = await vi.waitFor(async () => {
+      const [row] = await db
+        .select()
+        .from(tokensTable)
+        .where(and(eq(tokensTable.type, 'magic'), eq(tokensTable.email, invitedEmail)));
+      expect(row).toBeDefined();
+      return row;
+    });
+    expect(link.followedInvitationId).toBe(recorded ? opened.inactiveMembership.id : null);
+  });
 
   it('must not accept an invitation the sign-in claims by its address alone', async () => {
     const { organization, inviter } = await setup();

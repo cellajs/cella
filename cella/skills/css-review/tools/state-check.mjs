@@ -2,11 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { splitToken } from '../../../../shared/scripts/class-tokens.ts';
-import { repoFiles } from '../../../../shared/scripts/repo-files.ts';
+import { repoFiles, splitToken } from '@cellajs/cli/style';
 import { classSources, classStrings, declaredNames, fileScope, freshDesignSystem, printHeader, repoRoot } from './lib.mjs';
 
-// Lists state variants that compile and that nothing can satisfy, as leads for the state pass in passes.md: `pnpm style` passes
+// Lists state variants that compile and that nothing can satisfy, as leads for the state pass in passes.md: `pnpm cella style` passes
 // them all. Emitters come from the whole frontend without stories, consumers from the files in scope. Usage: node state-check.mjs
 
 const read = (file) => readFileSync(join(repoRoot, file), 'utf8');

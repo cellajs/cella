@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { parseEnv } from 'node:util';
 import { localDatabasePort, localDatabaseUrl } from '../src/local-database.ts';
-import { repoRoot } from './repo-files.ts';
+
+const repoRoot = join(import.meta.dirname, '..', '..');
 
 interface PgClient {
   connect(): Promise<void>;

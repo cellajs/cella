@@ -1,4 +1,4 @@
-import { splitToken } from '../../../../shared/scripts/class-tokens.ts';
+import { splitToken } from '@cellajs/cli/style';
 import { classStrings, declaredNames, fileScope, freshDesignSystem, printHeader } from './lib.mjs';
 
 // Runs Tailwind's canonicalizer over every class string and splits the rewrites into proven equal and held for a person.

@@ -1,0 +1,42 @@
+import pg from 'pg';
+import { appConfig } from 'shared';
+import { benchCookie } from './bench-user';
+import { BASE_URL, CDC_HEALTH_PORT, DB_URL } from './config';
+
+// Only the services the scenarios use are health-checked: the API, and the cdc worker when the app runs it. Yjs and
+// mcp stay out, so a stack without them (or the test config, which turns them on) does not skip or block a run.
+export const SERVICES = {
+  backend: `${BASE_URL}/health`,
+  ...(appConfig.services.cdc.enabled !== false && { cdc: `http://localhost:${CDC_HEALTH_PORT}/health` }),
+} as const;
+
+export async function isPostgresReady(): Promise<boolean> {
+  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function isServiceHealthy(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url);
+    return res.status === 204 || res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** The status `/me` answers for bench user 0's seeded session cookie, or null when the request itself fails. */
+export async function benchSignInStatus(): Promise<number | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/me`, { headers: { cookie: benchCookie(0) } });
+    return res.status;
+  } catch {
+    return null;
+  }
+}

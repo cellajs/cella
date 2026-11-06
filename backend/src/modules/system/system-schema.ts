@@ -1,8 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { roles } from 'shared';
-import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { mockSystemRoleBase } from '#/modules/system/system-mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { userUpdateBodySchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, maxLength, translatedError, uniqueIdsSchema, validEmailSchema } from '#/schemas';
@@ -26,10 +24,4 @@ export const sendNewsletterBodySchema = z.object({
   content: z.string().max(maxLength.html),
 });
 
-const systemRoleSelectSchema = createSelectSchema(systemRolesTable);
-
-export const systemRoleBaseSchema = systemRoleSelectSchema.omit({ createdAt: true, updatedAt: true }).openapi('SystemRoleBase', {
-  description: 'Core fields for a system role assignment.',
-  example: mockSystemRoleBase(),
-  'x-tags': schemaTags('base', 'system', 'cella'),
-});
+export const systemRoleBaseSchema = createSelectSchema(systemRolesTable).omit({ createdAt: true, updatedAt: true });

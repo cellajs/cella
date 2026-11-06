@@ -14,6 +14,7 @@
       "backend/tests/**",
       "backend/emails/**",
       "backend/scripts/**",
+      "backend/bench/**",
       "frontend/src/**",
       "!frontend/src/routes/routeTree.gen.ts",
       "frontend/.storybook/**",
@@ -23,13 +24,14 @@
       "cdc/src/**",
       "yjs/src/**",
       "infra/**",
-      "bench/src/**",
-      "bench/scenarios/**",
-      "a11y/src/**",
+      "cella/a11y*.ts",
+      "cella/screenshots*.ts",
+      "cella/pentest*.ts",
       "cella/skills/**",
       "sdk/gen/**",
       "sdk/src/**",
-      "locales",
+      "locales/**",
+      "!locales/resources.gen.d.ts",
       "sdk/openapi-ts.config.ts",
       // Agent worktrees stay out of the index, which `pnpm sdk` walks with the ignore file off.
       "!!.claude"
@@ -75,7 +77,7 @@
       "preset": "recommended",
       "correctness": {
         // Its missing-dependency half cannot be switched off, and with the React compiler that advice is wrong;
-        // memo-dependency-unread in shared/scripts covers the unnecessary half (112 diagnostics measured 2026-11-03).
+        // memo-dependency-unread in `pnpm cella style` covers the unnecessary half (112 diagnostics measured 2026-11-03).
         "useExhaustiveDependencies": "off",
         "noUnusedVariables": "off",
         // A hook-rule violation makes the React compiler bail out, which fails the production build.
@@ -173,13 +175,17 @@
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",
         "cella/cella.config.ts",
+        // `pnpm cella a11y`, `pnpm cella screenshots` and `pnpm cella pentest` load each adapter's default export.
+        "cella/a11y*.ts",
+        "cella/screenshots*.ts",
+        "cella/pentest*.ts",
         "sdk/openapi-ts.config.ts",
         "frontend/.storybook/**",
         "frontend/src/content/mdx.d.ts",
         "backend/tests/global-setup.ts",
         "yjs/src/tests/integration/global-setup.ts",
-        // The bench CLI loads each scenario module's default export.
-        "bench/scenarios/*.ts",
+        // `pnpm cella bench` loads each scenario module's default export.
+        "backend/bench/scenarios/*.ts",
         // jspdf calls the default export of the packages this stands in for.
         "frontend/vite/jspdf-optional-stub.ts",
         // pino calls a transport module's default export.
@@ -478,9 +484,7 @@
         "frontend/vite/**",
         "frontend/vite.config.ts",
         "cdc/src/env.ts",
-        "yjs/src/env.ts",
-        "a11y/src/audit.ts",
-        "a11y/src/run.ts"
+        "yjs/src/env.ts"
       ],
       "linter": {
         "rules": {
@@ -537,6 +541,17 @@
           },
           "performance": {
             "noAccumulatingSpread": "off"
+          }
+        }
+      }
+    },
+    {
+      // Keys in sort order, so a key is found by name and two edits to one file rarely meet
+      "includes": ["locales/**/*.json"],
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "on"
           }
         }
       }

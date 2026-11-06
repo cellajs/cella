@@ -274,18 +274,23 @@
     },
     {
       "name": "data",
-      "description": "Complete data schemas",
+      "description": "Shapes an operation returns whole: each entity as the API returns it, and the shapes several operations share. A shape one operation alone returns is documented on that operation, unless it is a concept of its own, such as the signed-in user.",
       "x-kind": "schema",
       "x-default": true
     },
     {
-      "name": "base",
-      "description": "Schemas with base fields only",
+      "name": "embedded",
+      "description": "Shapes that appear only inside other shapes, in a response or a request: a writer reference, a user or a channel as another entity carries it, a membership, and the sync envelope of a write. An embedded schema holds the fields every embedding shows; the entity in full is under data.",
+      "x-kind": "schema"
+    },
+    {
+      "name": "stream",
+      "description": "The frames of the app stream: a change of product rows, a signal that something else changed, and the error that ends the stream. The stream operation sends one of them per event.",
       "x-kind": "schema"
     },
     {
       "name": "errors",
-      "description": "Error schemas",
+      "description": "The error body every operation answers with, and the form it takes per status.",
       "x-kind": "schema"
     },
     {
@@ -606,495 +611,6 @@
       }
     },
     "schemas": {
-      "ActorRef": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "thumbnailUrl": {
-                "type": ["string", "null"]
-              },
-              "kind": {
-                "type": "string",
-                "enum": ["user"]
-              },
-              "slug": {
-                "type": "string"
-              }
-            },
-            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "thumbnailUrl": {
-                "type": ["string", "null"]
-              },
-              "kind": {
-                "type": "string",
-                "enum": ["service"]
-              },
-              "slug": {
-                "type": "null"
-              }
-            },
-            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
-          }
-        ],
-        "description": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.",
-        "example": {
-          "id": "91d9225c-2c64-4773-9f1f-8a6a6004192d",
-          "kind": "user",
-          "name": "Jermey Lowe",
-          "slug": "jermey.lowe27",
-          "thumbnailUrl": null
-        },
-        "x-tags": ["base", "actors", "cella"]
-      },
-      "UserMinimalBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["user"]
-          }
-        },
-        "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
-        "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.",
-        "example": {
-          "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
-          "name": "Durward Cummerata",
-          "slug": "durward.cummerata91",
-          "thumbnailUrl": null,
-          "entityType": "user"
-        },
-        "x-tags": ["base", "users", "cella"]
-      },
-      "UserBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "slug": {
-            "type": "string"
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"]
-          },
-          "bannerUrl": {
-            "type": ["string", "null"]
-          },
-          "description": {
-            "type": ["string", "null"]
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "The primary email address, shown to every user who shares an organization with this one."
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["user"]
-          }
-        },
-        "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
-        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
-        "example": {
-          "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
-          "createdAt": "2024-01-28T04:41:50.387Z",
-          "updatedAt": "2024-05-12T18:44:59.999Z",
-          "name": "Roslyn Bayer",
-          "description": null,
-          "entityType": "user",
-          "slug": "roslyn.bayer28",
-          "thumbnailUrl": null,
-          "bannerUrl": null,
-          "email": "roslyn_bayer@hotmail.com"
-        },
-        "x-tags": ["base", "users", "cella"]
-      },
-      "ChannelBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "tenantId": {
-            "type": "string"
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["organization"]
-          },
-          "slug": {
-            "type": "string"
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"]
-          },
-          "bannerUrl": {
-            "type": ["string", "null"]
-          }
-        },
-        "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl"],
-        "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
-        "example": {
-          "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
-          "createdAt": "2024-11-30T08:11:29.841Z",
-          "updatedAt": "2024-12-25T20:49:14.328Z",
-          "tenantId": "fux7yivt59ywq1bpokswyyxl",
-          "name": "Hamill - Price",
-          "entityType": "organization",
-          "slug": "hamill---price",
-          "thumbnailUrl": null,
-          "bannerUrl": null
-        },
-        "x-tags": ["base", "entities", "cella"]
-      },
-      "MembershipBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "channelType": {
-            "type": "string",
-            "enum": ["organization"]
-          },
-          "channelId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "role": {
-            "type": "string",
-            "enum": ["admin", "member"]
-          },
-          "archived": {
-            "type": "boolean"
-          },
-          "muted": {
-            "type": "boolean"
-          },
-          "displayOrder": {
-            "type": "number",
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
-        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
-        "example": {
-          "id": "ee163b99-3dce-4900-a23a-1256a303215e",
-          "tenantId": "7om1aq",
-          "channelType": "organization",
-          "channelId": "da336271-583f-4567-913c-f17c567ab81d",
-          "userId": "154db176-be65-484a-bb34-246b1f99f492",
-          "organizationId": "da336271-583f-4567-913c-f17c567ab81d",
-          "role": "admin",
-          "displayOrder": 38,
-          "muted": false,
-          "archived": false
-        },
-        "x-tags": ["base", "memberships", "cella"]
-      },
-      "StxBase": {
-        "type": "object",
-        "properties": {
-          "mutationId": {
-            "type": "string",
-            "maxLength": 36,
-            "description": "Unique mutation ID"
-          },
-          "sourceId": {
-            "type": "string",
-            "maxLength": 64,
-            "description": "Tab/instance identifier for echo prevention"
-          },
-          "fieldTimestamps": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string",
-              "maxLength": 33
-            },
-            "maxProperties": 100,
-            "description": "Per-field HLC timestamps for scalar fields being changed"
-          },
-          "replayed": {
-            "type": "boolean",
-            "description": "Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time"
-          }
-        },
-        "required": ["mutationId", "sourceId", "fieldTimestamps"],
-        "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
-        "example": {
-          "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
-          "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
-          "fieldTimestamps": {}
-        },
-        "x-tags": ["base", "cella"]
-      },
-      "StxStored": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/StxBase"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "changedFields": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "maxLength": 64
-                },
-                "maxItems": 100,
-                "description": "The fields the last write changed, set by the server; absent after a create or a server-driven write"
-              }
-            }
-          }
-        ],
-        "description": "The sync envelope as a product row stores and returns it: StxBase plus changedFields, the fields the last write changed, which the server sets and the Yjs materializer reads. A request carries StxBase only.",
-        "example": {
-          "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
-          "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
-          "fieldTimestamps": {},
-          "changedFields": ["name", "updatedAt"]
-        },
-        "x-tags": ["base", "cella"]
-      },
-      "StreamChange": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": ["create", "update", "delete", "moveOut"],
-            "description": "Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there"
-          },
-          "productType": {
-            "type": "string",
-            "enum": ["attachment"]
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "tenantId": {
-            "type": "string"
-          },
-          "channelId": {
-            "type": ["string", "null"],
-            "description": "Deepest channel entity ID above the rows, which groups unseen counts"
-          },
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "subjectId": {
-                  "type": "string"
-                },
-                "seq": {
-                  "type": ["integer", "null"],
-                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table"
-                },
-                "stx": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/StxBase"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "actorId": {
-                  "type": ["string", "null"],
-                  "description": "Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user"
-                }
-              },
-              "required": ["subjectId", "seq", "stx", "actorId"]
-            },
-            "description": "The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave"
-          },
-          "overflow": {
-            "type": ["object", "null"],
-            "properties": {
-              "afterSeq": {
-                "type": ["integer", "null"]
-              },
-              "untilSeq": {
-                "type": ["integer", "null"]
-              },
-              "subjectIds": {
-                "type": ["array", "null"],
-                "items": {
-                  "type": "string"
-                },
-                "description": "The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type"
-              }
-            },
-            "required": ["afterSeq", "untilSeq", "subjectIds"],
-            "description": "Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out"
-          },
-          "spreadWindow": {
-            "type": ["integer", "null"],
-            "description": "Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
-          },
-          "propagation": {
-            "type": ["object", "null"],
-            "properties": {
-              "embeddedProduct": {
-                "type": "string",
-                "enum": ["attachment"],
-                "description": "Embedded product type whose change triggered the propagation"
-              },
-              "update": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Embedded row IDs whose cached copies in host rows need a refresh"
-              },
-              "remove": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
-              }
-            },
-            "required": ["embeddedProduct", "update", "remove"],
-            "description": "Embedded-product propagation hint for cross-product cache invalidation"
-          }
-        },
-        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
-        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
-        "example": {
-          "action": "update",
-          "productType": "attachment",
-          "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
-          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
-          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
-          "rows": [
-            {
-              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
-              "seq": 143,
-              "stx": {
-                "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
-                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
-                "fieldTimestamps": {}
-              },
-              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
-            }
-          ],
-          "overflow": null,
-          "spreadWindow": null,
-          "propagation": null
-        },
-        "x-tags": ["data", "entities", "cella"]
-      },
-      "StreamSignal": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)"
-          },
-          "organizationId": {
-            "type": ["string", "null"]
-          },
-          "subjectId": {
-            "type": ["string", "null"],
-            "description": "The one row the signal is about; null when it is about the organization as a whole"
-          },
-          "version": {
-            "type": "integer",
-            "description": "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again"
-          }
-        },
-        "required": ["type", "organizationId", "subjectId"],
-        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.",
-        "example": {
-          "type": "membership.changed",
-          "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
-          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
-        },
-        "x-tags": ["data", "entities", "cella"]
-      },
-      "StreamError": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": ["code", "message"],
-        "description": "Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
-        "example": {
-          "code": "session_replaced",
-          "message": "Session replaced"
-        },
-        "x-tags": ["data", "entities", "cella"]
-      },
       "BadRequestError": {
         "allOf": [
           {
@@ -1361,83 +877,265 @@
         },
         "x-tags": ["errors", "cella"]
       },
-      "SsoEntry": {
+      "ChannelBase": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "status": {
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "entityType": {
             "type": "string",
-            "enum": ["pending", "active", "disabled"],
-            "description": "Only `active` signs in; `pending` means the institution has not activated the app yet"
+            "enum": ["organization"]
           },
-          "federation": {
-            "type": "object",
-            "properties": {
-              "key": {
-                "type": "string",
-                "description": "A federation key in appConfig.federations",
-                "enum": ["surfconext"]
+          "slug": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"]
+          },
+          "bannerUrl": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl"],
+        "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
+        "example": {
+          "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
+          "createdAt": "2024-11-30T08:11:29.841Z",
+          "updatedAt": "2024-12-25T20:49:14.328Z",
+          "tenantId": "fux7yivt59ywq1bpokswyyxl",
+          "name": "Hamill - Price",
+          "entityType": "organization",
+          "slug": "hamill---price",
+          "thumbnailUrl": null,
+          "bannerUrl": null
+        },
+        "x-tags": ["embedded", "entities", "cella"]
+      },
+      "StreamChange": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["create", "update", "delete", "moveOut"],
+            "description": "Change kind; moveOut = the row left the channel the receiver read it under (reparent) and is no longer readable there"
+          },
+          "productType": {
+            "type": "string",
+            "enum": ["attachment"]
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "channelId": {
+            "type": ["string", "null"],
+            "description": "Deepest channel entity ID above the rows, which groups unseen counts"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string"
+                },
+                "seq": {
+                  "type": ["integer", "null"],
+                  "description": "Org-sequence position (one order per organization, shared across product entity types); null on a delete and on a move-out whose row has left its table"
+                },
+                "stx": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/StxBase"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "actorId": {
+                  "type": ["string", "null"],
+                  "description": "Actor whose write the activity records; a tab takes the row as its own echo only when this is its signed-in user"
+                }
               },
-              "label": {
-                "type": "string"
-              }
+              "required": ["subjectId", "seq", "stx", "actorId"]
             },
-            "required": ["key", "label"]
+            "description": "The rows the receiver may read, in commit order; their sequence positions need not be contiguous, since rows of other paths interleave"
           },
-          "institution": {
-            "type": "object",
-            "properties": {
-              "displayName": {
-                "type": "string"
-              },
-              "logoUrl": {
-                "type": ["string", "null"]
-              }
-            },
-            "required": ["displayName", "logoUrl"]
-          },
-          "organization": {
+          "overflow": {
             "type": ["object", "null"],
             "properties": {
-              "id": {
-                "type": "string"
+              "afterSeq": {
+                "type": ["integer", "null"]
               },
-              "name": {
-                "type": "string"
+              "untilSeq": {
+                "type": ["integer", "null"]
               },
-              "slug": {
-                "type": "string"
-              },
-              "thumbnailUrl": {
-                "type": ["string", "null"]
+              "subjectIds": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "string"
+                },
+                "description": "The ids of the rows when they are at most 400, in commit order; null past that, when a delete or a move-out refetches the lists of the type"
               }
             },
-            "required": ["id", "name", "slug", "thumbnailUrl"]
+            "required": ["afterSeq", "untilSeq", "subjectIds"],
+            "description": "Set when the receiver may read more rows than one frame names in full, and `rows` and the propagation hint are then empty: the sequence range of a create or update to fetch, nulls on a delete or a move-out"
+          },
+          "spreadWindow": {
+            "type": ["integer", "null"],
+            "description": "Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
+          },
+          "propagation": {
+            "type": ["object", "null"],
+            "properties": {
+              "embeddedProduct": {
+                "type": "string",
+                "enum": ["attachment"],
+                "description": "Embedded product type whose change triggered the propagation"
+              },
+              "update": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Embedded row IDs whose cached copies in host rows need a refresh"
+              },
+              "remove": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Embedded row IDs (deleted or soft deleted) that host rows drop"
+              }
+            },
+            "required": ["embeddedProduct", "update", "remove"],
+            "description": "Embedded-product propagation hint for cross-product cache invalidation"
           }
         },
-        "required": ["id", "status", "federation", "institution", "organization"],
-        "description": "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
+        "required": ["action", "productType", "organizationId", "tenantId", "channelId", "rows", "overflow", "spreadWindow", "propagation"],
+        "description": "A live change of product rows, naming each row with its sequence position and the write that changed it, but not their content. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
-          "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
-          "status": "active",
-          "federation": {
-            "key": "surfconext",
-            "label": "SURFconext"
+          "action": "update",
+          "productType": "attachment",
+          "organizationId": "d00f807b-dcd4-4167-ba73-ee3fdf380db7",
+          "tenantId": "3u2416jc9qhf837vvzoiw8kv",
+          "channelId": "2cac8f51-4c1c-4f69-adcf-07b90f839f22",
+          "rows": [
+            {
+              "subjectId": "45d70437-9968-4074-a0cb-043fded3f550",
+              "seq": 143,
+              "stx": {
+                "mutationId": "aeeb762f-2105-4211-842f-250beb5701cf",
+                "sourceId": "2244cc73-64fe-4d50-97ee-f520aebf873e",
+                "fieldTimestamps": {}
+              },
+              "actorId": "173e5353-41f8-45b0-8808-1fcd2c8e83df"
+            }
+          ],
+          "overflow": null,
+          "spreadWindow": null,
+          "propagation": null
+        },
+        "x-tags": ["stream", "entities", "cella"]
+      },
+      "StxBase": {
+        "type": "object",
+        "properties": {
+          "mutationId": {
+            "type": "string",
+            "maxLength": 36,
+            "description": "Unique mutation ID"
           },
-          "institution": {
-            "displayName": "Utrecht University",
-            "logoUrl": null
+          "sourceId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Tab/instance identifier for echo prevention"
           },
-          "organization": {
-            "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
-            "name": "Wuckert - Emmerich",
-            "slug": "wuckert---emmerich",
-            "thumbnailUrl": null
+          "fieldTimestamps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 33
+            },
+            "maxProperties": 100,
+            "description": "Per-field HLC timestamps for scalar fields being changed"
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time"
           }
         },
-        "x-tags": ["data", "auth", "cella"]
+        "required": ["mutationId", "sourceId", "fieldTimestamps"],
+        "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
+        "example": {
+          "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
+          "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
+          "fieldTimestamps": {}
+        },
+        "x-tags": ["embedded", "cella"]
+      },
+      "StreamSignal": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Registered signal type, `<module>.<past tense>` (e.g. membership.changed, notification.created)"
+          },
+          "organizationId": {
+            "type": ["string", "null"]
+          },
+          "subjectId": {
+            "type": ["string", "null"],
+            "description": "The one row the signal is about; null when it is about the organization as a whole"
+          },
+          "version": {
+            "type": "integer",
+            "description": "A versioned signal's version on its organization after the change it is about, as catchup returns it; absent on any other signal, from a worker of an earlier release and on a change delivered again"
+          }
+        },
+        "required": ["type", "organizationId", "subjectId"],
+        "description": "A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.",
+        "example": {
+          "type": "membership.changed",
+          "organizationId": "1be38924-da6b-4eea-ab8e-0e94769102fc",
+          "subjectId": "27983ef1-9055-4794-ab1b-540257e8ce1f"
+        },
+        "x-tags": ["stream", "entities", "cella"]
+      },
+      "StreamError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["unauthorized", "session_replaced", "access_changed", "resync"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "description": "Why the server ends an app stream. It arrives as an `error` event on `/entities/app/stream` just before the stream closes; `unauthorized` ends it for good, any other code tells the client to reconnect.",
+        "example": {
+          "code": "session_replaced",
+          "message": "Session replaced"
+        },
+        "x-tags": ["stream", "entities", "cella"]
       },
       "Me": {
         "type": "object",
@@ -1939,90 +1637,62 @@
         },
         "x-tags": ["data", "me", "cella"]
       },
-      "InactiveMembership": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
+      "ActorRef": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["user"]
+              },
+              "slug": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
           },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "channelType": {
-            "type": "string",
-            "enum": ["organization"]
-          },
-          "channelId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "userId": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
-          "role": {
-            "type": "string",
-            "enum": ["admin", "member"]
-          },
-          "rejectedAt": {
-            "type": ["string", "null"]
-          },
-          "remindedAt": {
-            "type": ["string", "null"]
-          },
-          "createdBy": {
-            "$ref": "#/components/schemas/ActorRef"
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["service"]
+              },
+              "slug": {
+                "type": "null"
+              }
+            },
+            "required": ["id", "name", "thumbnailUrl", "kind", "slug"]
           }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "tenantId",
-          "channelType",
-          "channelId",
-          "email",
-          "userId",
-          "role",
-          "rejectedAt",
-          "remindedAt",
-          "createdBy",
-          "organizationId"
         ],
-        "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
+        "description": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.",
         "example": {
-          "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
-          "channelType": "organization",
-          "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-          "email": "dixie.ohara@gmail.com",
-          "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
-          "role": "admin",
-          "rejectedAt": null,
-          "remindedAt": null,
-          "createdAt": "2024-02-07T13:46:57.160Z",
-          "createdBy": {
-            "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
-            "kind": "user",
-            "name": "Lizzie Aufderhar",
-            "slug": "lizzie_aufderhar85",
-            "thumbnailUrl": null
-          },
-          "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-          "tenantId": "2wo2oz"
+          "id": "91d9225c-2c64-4773-9f1f-8a6a6004192d",
+          "kind": "user",
+          "name": "Jermey Lowe",
+          "slug": "jermey.lowe27",
+          "thumbnailUrl": null
         },
-        "x-tags": ["data", "memberships", "cella"]
+        "x-tags": ["embedded", "actors", "cella"]
       },
       "UploadToken": {
         "type": "object",
@@ -2076,49 +1746,95 @@
         },
         "x-tags": ["data", "me", "cella"]
       },
-      "ConnectedApp": {
+      "MembershipBase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "channelType": {
+            "type": "string",
+            "enum": ["organization"]
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "member"]
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "muted": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "number",
+            "minimum": -140737488355328,
+            "maximum": 140737488355327
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
+        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
+        "example": {
+          "id": "ee163b99-3dce-4900-a23a-1256a303215e",
+          "tenantId": "7om1aq",
+          "channelType": "organization",
+          "channelId": "da336271-583f-4567-913c-f17c567ab81d",
+          "userId": "154db176-be65-484a-bb34-246b1f99f492",
+          "organizationId": "da336271-583f-4567-913c-f17c567ab81d",
+          "role": "admin",
+          "displayOrder": 38,
+          "muted": false,
+          "archived": false
+        },
+        "x-tags": ["embedded", "memberships", "cella"]
+      },
+      "UserMinimalBase": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "clientId": {
+          "name": {
             "type": "string"
           },
-          "clientName": {
+          "slug": {
             "type": "string"
           },
-          "scopes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "resources": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "expiresAt": {
+          "thumbnailUrl": {
             "type": ["string", "null"]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["user"]
           }
         },
-        "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
-        "description": "An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.",
+        "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
+        "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.",
         "example": {
-          "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
-          "clientId": "https://vscode.dev/oauth/client-metadata.json",
-          "clientName": "Visual Studio Code",
-          "scopes": ["attachment:read"],
-          "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
-          "createdAt": "2026-09-22T10:00:00.000Z",
-          "expiresAt": "2026-10-22T10:00:00.000Z"
+          "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
+          "name": "Durward Cummerata",
+          "slug": "durward.cummerata91",
+          "thumbnailUrl": null,
+          "entityType": "user"
         },
-        "x-tags": ["data", "me", "cella"]
+        "x-tags": ["embedded", "users", "cella"]
       },
       "Request": {
         "type": "object",
@@ -2644,6 +2360,59 @@
           "updatedAt": "2024-07-22T16:57:00.257Z"
         },
         "x-tags": ["data", "connections", "cella"]
+      },
+      "UserBase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"]
+          },
+          "bannerUrl": {
+            "type": ["string", "null"]
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The primary email address, shown to every user who shares an organization with this one."
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["user"]
+          }
+        },
+        "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
+        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+        "example": {
+          "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
+          "createdAt": "2024-01-28T04:41:50.387Z",
+          "updatedAt": "2024-05-12T18:44:59.999Z",
+          "name": "Roslyn Bayer",
+          "description": null,
+          "entityType": "user",
+          "slug": "roslyn.bayer28",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "email": "roslyn_bayer@hotmail.com"
+        },
+        "x-tags": ["embedded", "users", "cella"]
       },
       "ProtectedResourceMetadata": {
         "type": "object",
@@ -3235,7 +3004,7 @@
             ]
           },
           "stx": {
-            "$ref": "#/components/schemas/StxStored"
+            "$ref": "#/components/schemas/StxBase"
           },
           "description": {
             "type": ["string", "null"],
@@ -4090,6 +3859,9 @@
                           "enum": ["organization"]
                         },
                         "entityName": {
+                          "type": "string"
+                        },
+                        "organizationName": {
                           "type": "string"
                         },
                         "role": {
@@ -5528,7 +5300,81 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SsoEntry"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["pending", "active", "disabled"],
+                      "description": "Only `active` signs in; `pending` means the institution has not activated the app yet"
+                    },
+                    "federation": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "A federation key in appConfig.federations",
+                          "enum": ["surfconext"]
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["key", "label"]
+                    },
+                    "institution": {
+                      "type": "object",
+                      "properties": {
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["displayName", "logoUrl"]
+                    },
+                    "organization": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "thumbnailUrl": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["id", "name", "slug", "thumbnailUrl"]
+                    }
+                  },
+                  "required": ["id", "status", "federation", "institution", "organization"],
+                  "description": "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
+                  "example": {
+                    "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
+                    "status": "active",
+                    "federation": {
+                      "key": "surfconext",
+                      "label": "SURFconext"
+                    },
+                    "institution": {
+                      "displayName": "Utrecht University",
+                      "logoUrl": null
+                    },
+                    "organization": {
+                      "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
+                      "name": "Wuckert - Emmerich",
+                      "slug": "wuckert---emmerich",
+                      "thumbnailUrl": null
+                    }
+                  }
                 }
               }
             }
@@ -6167,10 +6013,22 @@
         "x-rate-limiter": ["streamConnectLimiter"],
         "responses": {
           "200": {
-            "description": "SSE stream started",
+            "description": "SSE stream started\n\nEach `change`, `signal` or `error` event carries one of these frames as its data.",
             "content": {
               "text/event-stream": {
-                "schema": {}
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/StreamChange"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StreamSignal"
+                    },
+                    {
+                      "$ref": "#/components/schemas/StreamError"
+                    }
+                  ]
+                }
               }
             }
           },
@@ -6721,7 +6579,88 @@
                             "$ref": "#/components/schemas/ChannelBase"
                           },
                           "inactiveMembership": {
-                            "$ref": "#/components/schemas/InactiveMembership"
+                            "type": "object",
+                            "properties": {
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "tenantId": {
+                                "type": "string",
+                                "maxLength": 24
+                              },
+                              "channelType": {
+                                "type": "string",
+                                "enum": ["organization"]
+                              },
+                              "channelId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "email": {
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "userId": {
+                                "type": ["string", "null"],
+                                "format": "uuid"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": ["admin", "member"]
+                              },
+                              "rejectedAt": {
+                                "type": ["string", "null"]
+                              },
+                              "remindedAt": {
+                                "type": ["string", "null"]
+                              },
+                              "createdBy": {
+                                "$ref": "#/components/schemas/ActorRef"
+                              },
+                              "organizationId": {
+                                "type": "string",
+                                "format": "uuid"
+                              }
+                            },
+                            "required": [
+                              "createdAt",
+                              "id",
+                              "tenantId",
+                              "channelType",
+                              "channelId",
+                              "email",
+                              "userId",
+                              "role",
+                              "rejectedAt",
+                              "remindedAt",
+                              "createdBy",
+                              "organizationId"
+                            ],
+                            "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
+                            "example": {
+                              "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
+                              "channelType": "organization",
+                              "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+                              "email": "dixie.ohara@gmail.com",
+                              "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
+                              "role": "admin",
+                              "rejectedAt": null,
+                              "remindedAt": null,
+                              "createdAt": "2024-02-07T13:46:57.160Z",
+                              "createdBy": {
+                                "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
+                                "kind": "user",
+                                "name": "Lizzie Aufderhar",
+                                "slug": "lizzie_aufderhar85",
+                                "thumbnailUrl": null
+                              },
+                              "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+                              "tenantId": "2wo2oz"
+                            }
                           },
                           "organizationName": {
                             "type": ["string", "null"],
@@ -7204,7 +7143,47 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/ConnectedApp"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "clientId": {
+                            "type": "string"
+                          },
+                          "clientName": {
+                            "type": "string"
+                          },
+                          "scopes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
+                        "description": "An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.",
+                        "example": {
+                          "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
+                          "clientId": "https://vscode.dev/oauth/client-metadata.json",
+                          "clientName": "Visual Studio Code",
+                          "scopes": ["attachment:read"],
+                          "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+                          "createdAt": "2026-09-22T10:00:00.000Z",
+                          "expiresAt": "2026-10-22T10:00:00.000Z"
+                        }
                       }
                     }
                   },
@@ -7483,7 +7462,7 @@
                                   "entityType": "user",
                                   "firstName": "Nina"
                                 },
-                                "x-tags": ["base", "users", "cella"]
+                                "x-tags": ["embedded", "users", "cella"]
                               },
                               {
                                 "type": "null"
@@ -9776,7 +9755,7 @@
                           "bannerUrl": null,
                           "email": "roslyn_bayer@hotmail.com"
                         },
-                        "x-tags": ["base", "users", "cella"]
+                        "x-tags": ["embedded", "users", "cella"]
                       }
                     },
                     "total": {
@@ -9904,7 +9883,7 @@
                     "bannerUrl": null,
                     "email": "roslyn_bayer@hotmail.com"
                   },
-                  "x-tags": ["base", "users", "cella"]
+                  "x-tags": ["embedded", "users", "cella"]
                 }
               }
             }
@@ -13803,7 +13782,7 @@
                           "bannerUrl": null,
                           "email": "roslyn_bayer@hotmail.com"
                         },
-                        "x-tags": ["base", "users", "cella"]
+                        "x-tags": ["embedded", "users", "cella"]
                       }
                     },
                     "total": {

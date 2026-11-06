@@ -2,6 +2,14 @@
 
 [i18next](https://www.i18next.com/), [react-i18next](https://react.i18next.com/), [i18n Ally](https://github.com/lokalise/i18n-ally/wiki).
 
+### Checks and renames
+
+`pnpm cella i18n` reports, per namespace and language, the keys a translation misses, the keys English lacks, translations equal to English, interpolations and tags that differ from English, plural forms a language lacks or never uses, and the `common.json` keys `app.json` overrides. `pnpm cella i18n unused` lists the keys no code names, here and in the local checkouts of the apps that `cella/cella.config.ts` names. `pnpm cella i18n rename c:old_key c:new_key` renames a key in every language and in the code, and lists the places that build the old key from a value, which it cannot rewrite.
+
+### Editor hover
+
+`t('c:accept')` types as its English text, `"Accept"`, so any TypeScript editor shows the text on hover. The types come from `resources.gen.d.ts`, which the frontend's locales plugin writes at every dev start and build: never edit it. A key added since then types as `string` until the next start.
+
 ### i18n Ally (VSCode)
 
 Point the VSCode plugin `lokalise.i18n-ally` at the processed cache `.vscode/.locales-cache`, not at the raw `locales/` folder (no raw file maps to the merged `c` namespace). The frontend dev server rebuilds the cache: run `pnpm dev` once if annotations are missing. Edit `locales/<lng>/*.json`, never the generated cache.
@@ -49,7 +57,7 @@ A key names the concept, so its text can change without a rename. Texts are shor
 - `{{appName}}` and `{{company}}` are filled in for every translation; a caller passes neither.
 - One named item and a counted many are two keys, not plural forms: `_one` also covers 21 in Russian and 0 in French, and `_many` is itself a plural suffix.
 - `_one` and `_other` with the same text are one base key: i18next falls back to it, and a language that needs separate forms adds them.
-- Sort JSON translation keys alphabetically
+- Keys stay sorted: `pnpm lint:fix` sorts them (Biome `useSortedKeys`)
 - Modules or pages with many unique texts get their own namespace and json (`about:` keys come from `about.json`)
 
 ### Files and runtime namespaces
@@ -65,10 +73,12 @@ A key names the concept, so its text can change without a rename. Texts are shor
 
 > [!IMPORTANT] `common.json` and `app.json` are **merged into one `c` namespace** at runtime: every key from either file is `t('c:key')`. No `app:` or `common:` namespace exists; `t('app:key')` resolves to nothing. The backend loads `common.json` under the same `c` namespace.
 
+`namespaces.json` holds that merge rule, the files of each merged namespace in merge order with a later file's keys winning, and every other file is a namespace of its own. The frontend, the backend, the generated types and `pnpm cella i18n` all read it.
+
 ### Loading
 
 | Path | Mechanism |
 | --- | --- |
 | Frontend, bundled | `frontend/src/lib/i18n-locales.ts` statically imports `en` and merges `c` in code, so English renders without a network roundtrip. |
-| Frontend, lazy | Other languages and the non-preloaded namespaces load as lazy modules through the bundler (`frontend/src/lib/i18n-locales.ts`, `common` + `app` merged into `c` at load), hashed and precached offline with the rest of the build. `frontend/vite/locales-plugin.ts` writes the merged `.vscode/.locales-cache` for i18n Ally in dev. |
+| Frontend, lazy | Other languages and the non-preloaded namespaces load as lazy modules through the bundler (`frontend/src/lib/i18n-locales.ts`, a merged namespace's files merged at load), hashed and precached offline with the rest of the build. `frontend/vite/locales-plugin.ts` writes the merged `.vscode/.locales-cache` for i18n Ally in dev. |
 | Backend | `backend/src/lib/i18n-locales.ts` statically imports all languages at server start (no lazy loading). Apps extend it when adding languages or namespaces. |

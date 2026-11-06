@@ -348,7 +348,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/memberships/helpers/member-counts.ts`, `backend/src/modules/entities/entities-queries.ts`, `backend/src/modules/entities/counters-queries.ts`, `backend/src/modules/yjs/yjs-queries.ts`, `backend/src/db/rls-helpers.ts`, `backend/src/db/utils/path-column.ts`.
   - Added by grep: `backend/src/modules/entities/counter-keys.ts` (`likeAny` builds `col LIKE 'prefix%'` from constant prefixes), `backend/src/db/utils/jsonb-counters.ts` (`jsonbIntRaw`, inlines a jsonb key with `'` doubled), `backend/src/utils/sql.ts` (`textSearchFilter`, the only LIKE helper), `backend/src/utils/order-column.ts` (`getOrderColumns`), `backend/src/db/tenant-transaction-opening.ts` (the `BEGIN; SELECT set_config(...)` text for the API and the relay, `yjs/src/data/db.ts`).
   - `shared/src/config-builder/entity-hierarchy.ts` (`pathColumnSql`, `deepestAncestorSql`, the text `sql.raw` receives); `shared/src/utils/schema-naming.ts` (`toColumnName`, `toTableName`).
-  - Other raw sites: `yjs/src/data/permissions.ts`, `cdc/src/pipeline/{process-flush,verify}.ts`, `cdc/src/utils/apply-unified-deltas.ts`, `backend/src/lib/jobs-health.ts`, `backend/scripts/jobs.ts`, `bench/src/seed-utils.ts`.
+  - Other raw sites: `yjs/src/data/permissions.ts`, `cdc/src/pipeline/{process-flush,verify}.ts`, `cdc/src/utils/apply-unified-deltas.ts`, `backend/src/lib/jobs-health.ts`, `backend/scripts/jobs.ts`, `backend/bench/seed-utils.ts`.
   - `cdc/dist/cdc-worker.js` is a build artifact, not a site.
 - **Holds:**
   - Types come from hierarchy enums; `backend/src/modules/schema-contracts.test.ts` is the test the plan names.
@@ -569,13 +569,13 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### E2 Write integrity and the sync engine
 - **Gain:** integrity, cross-tenant write.
-- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`stripChangedFields`), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
+- **Merges:** `stx` idempotency and a replay by another actor, forged ids or writer fields in mutation variables, `afterSeq` range reads and tombstones, the written-fields list the yjs module reads (`changedFields` on the mutation bus), outside writes, lenses accepting an old shape, `insertEntityLock`, overlapping edits, immutability triggers, counters, `write_conflict`, embeddings keeping only live ids, soft delete and restore across tenants.
 - **Advisories:** none.
 - **Files:**
   - `backend/tests/security/attachment-idempotency.test.ts`; in `backend/tests/`: `attachment-overlapping-edits.test.ts`, `attachment-seq-reads.test.ts`, `recalculate-sequence.test.ts`, `filter-existing-product-ids.test.ts`, `catchup-baseline.test.ts`, `catchup-propagation.test.ts`.
   - Schema evolution tests: `shared/src/schema-evolution/tests/{engine,engine-empty,queued-variables}.test.ts` and `backend/src/core/schema-evolution/tests/lens-seam.test.ts`.
   - Immutability tests: `backend/tests/integration/rls-security.test.ts`.
-  - `checkIdempotency` is used by `modules/attachment/operations/create-attachments.ts`; `insertEntityLock` by `organization-routes.ts`; `filterExistingProductIds` is defined in `modules/entities/embedding-queries.ts`; `stripChangedFields` is used at four sites. There is no restore route.
+  - `checkIdempotency` is used by `modules/attachment/operations/create-attachments.ts`; `insertEntityLock` by `organization-routes.ts`; `filterExistingProductIds` is defined in `modules/entities/embedding-queries.ts`; `stxWithIds` is used by the soft deletes. There is no restore route.
 - **Holds:**
   - `attachment-idempotency`: user B sending A's mutationId with a new id gets only its own row, stored `createdBy` is B; B sending A's row id gets nothing (`rejectedIds`); the same user with the same ids on another tenant's path gets nothing of the first tenant; a deleted row is not revived; partial and concurrent replays; quota with replays.
   - `attachment-overlapping-edits`: field timestamps of two edits while the row is held.
@@ -649,10 +649,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
   - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
   - `shared/README.md` (dev ports).
-  - `backend/compose.yaml` (services `db`, `db_test`, `db_a11y`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
+  - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
-  - `a11y/src/run.ts` (ports shifted by 70, its own database `DB_A11Y_PORT`), `bench/src/config.ts` (default admin URL).
+  - `pnpm cella testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DB_TESTBED_PORT`), `backend/bench/config.ts` (default admin URL).
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.

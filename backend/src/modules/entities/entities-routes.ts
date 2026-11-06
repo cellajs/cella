@@ -5,6 +5,7 @@ import { singlePointsLimiter, streamConnectLimiter } from '#/middlewares/rate-li
 import { mockCatchupResponse } from '#/modules/entities/entities-mocks';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import { appCatchupResponseSchema, streamCatchupBodySchema, tenantOnlyParamSchema } from '#/schemas';
+import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
 
 const entityRoutes = createXRoutes(['entities', 'cella'], {
   checkSlug: xRoute({
@@ -28,7 +29,12 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     summary: 'App SSE stream',
     description:
       'SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.',
-    responses: { 200: { description: 'SSE stream started', content: { 'text/event-stream': { schema: z.any() } } } },
+    responses: {
+      200: {
+        description: 'SSE stream started\n\nEach `change`, `signal` or `error` event carries one of these frames as its data.',
+        content: { 'text/event-stream': { schema: z.union([streamChangeSchema, streamSignalSchema, streamErrorSchema]) } },
+      },
+    },
   }),
 
   appCatchup: xRoute({
