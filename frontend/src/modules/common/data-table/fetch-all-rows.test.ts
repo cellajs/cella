@@ -5,11 +5,14 @@ import { exportChunkSize, fetchAllRows } from './fetch-all-rows';
 /** The backend's largest page (`pageSizeCap` in backend/src/schemas/common-schemas.ts): a larger `maxPageSize` reads this many. */
 const backendPageSizeCap = 1000;
 
-/** A list endpoint over `rows` whose `totalSize` reports `reportedTotal`, as a counter that trails the list does. */
-const listEndpoint = (rows: { id: string }[], reportedTotal = rows.length) =>
+/**
+ * A list endpoint over `rows` whose `totalSize` reports `reportedTotal`, as a counter that trails the list does, and
+ * whose largest page is `cap`, as a list with a smaller one than the backend's (the notifications inbox) caps it.
+ */
+const listEndpoint = (rows: { id: string }[], reportedTotal = rows.length, cap = backendPageSizeCap) =>
   vi.fn(async ({ maxPageSize, skip = 0, pageToken }: PageRequest) => {
     const offset = (pageToken ? Number(pageToken) : 0) + skip;
-    const results = rows.slice(offset, offset + Math.min(maxPageSize, backendPageSizeCap));
+    const results = rows.slice(offset, offset + Math.min(maxPageSize, cap));
     const next = offset + results.length;
     return { results, totalSize: reportedTotal, ...(next < rows.length && { nextPageToken: String(next) }) };
   });
@@ -30,5 +33,10 @@ describe('fetchAllRows', () => {
   it('reads on past a total that trails the list', async () => {
     const all = Array.from({ length: exportChunkSize * 3 }, (_, i) => ({ id: `row-${i}` }));
     expect(await fetchAllRows(listEndpoint(all, exportChunkSize + 1))).toEqual(all);
+  });
+
+  it('exports every row of a list whose largest page is below the page size asked for', async () => {
+    const all = Array.from({ length: exportChunkSize * 2 + 500 }, (_, i) => ({ id: `row-${i}` }));
+    expect(await fetchAllRows(listEndpoint(all, all.length, 100))).toEqual(all);
   });
 });
