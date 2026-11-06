@@ -35,7 +35,7 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const {
-    data: { items: accounts },
+    data: { results: accounts },
   } = useSuspenseQuery(serviceAccountsQueryOptions(path));
   const keyLists = useSuspenseQueries({ queries: accounts.map((account) => apiKeysQueryOptions(path, account.id)) });
   const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -48,7 +48,7 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
   const active: ActiveItem[] = [];
   const ended: { id: string; account: ServiceAccount; apiKey: ApiKey }[] = [];
   accounts.forEach((account, index) => {
-    const keys = keyLists[index].data.items;
+    const keys = keyLists[index].data.results;
     const liveKeys = keys.filter((apiKey) => !isEndedKey(apiKey));
     if (!liveKeys.length) active.push({ id: account.id, account });
     for (const [keyIndex, apiKey] of liveKeys.entries()) active.push({ id: apiKey.id, account, apiKey, showActivity: keyIndex === 0 });

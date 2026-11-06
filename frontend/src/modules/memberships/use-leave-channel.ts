@@ -2,7 +2,7 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for an imperative leave-entity flow tied to a confirmation dialog.
-import { type ChannelBase, deleteMyMembership } from 'sdk';
+import { type ChannelBase, leaveMembership } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
@@ -30,7 +30,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => deleteMyMembership({ query: { entityId: channel.id, entityType: channel.entityType } }),
+    mutationFn: () => leaveMembership({ body: { entityId: channel.id, entityType: channel.entityType } }),
     onSuccess: () => {
       toaster.success(t('c:success.leave_channel', { name: channel.name }));
       if (redirectPath !== null) navigate({ to: redirectPath, replace: true });

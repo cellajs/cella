@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { getAttachments } from 'sdk';
+import { listAttachments } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -32,7 +32,7 @@ describe('access written outside this process', async () => {
     const org = await createTestOrganization();
     const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`, memberRole);
     const read = () =>
-      call(getAttachments, {
+      call(listAttachments, {
         path: { tenantId: org.tenantId, organizationId: org.id },
         headers: { ...defaultHeaders, Cookie: member.sessionCookie },
       });

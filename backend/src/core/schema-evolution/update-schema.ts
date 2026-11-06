@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import type { ProductEntityType } from 'shared';
+import { markFieldOperations } from '#/core/openapi-validation';
 import { widenBodySchema } from '#/core/schema-evolution/lens-seam';
 import { isArrayDelta } from '#/core/stx/array-delta';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
@@ -11,7 +12,7 @@ import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductEntityType, opsShape: T) {
   const partialOps = widenBodySchema(entityType, z.object(opsShape).partial());
 
-  return z.object({ ops: partialOps, stx: stxBaseSchema }).superRefine((val, ctx) => {
+  const schema = z.object({ ops: partialOps, stx: stxBaseSchema }).superRefine((val, ctx) => {
     const ops: Record<string, unknown> = val.ops;
     const opEntries = Object.entries(ops);
     if (opEntries.length === 0) {
@@ -30,4 +31,5 @@ export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductE
       }
     }
   });
+  return markFieldOperations(schema);
 }

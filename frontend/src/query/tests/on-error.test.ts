@@ -28,10 +28,10 @@ describe('onError 401 handling', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('signs the user out over a 401 only when the session is gone, never over a refused second factor', () => {
-    onError(new ApiError({ name: 'ApiError', status: 401, type: 'invalid_token', path: '/me/mfa', severity: 'warn' }));
+    onError(new ApiError({ status: 401, type: 'invalid_token', path: '/me/mfa', severity: 'warn' }));
     expect(mockTeardownUserState).not.toHaveBeenCalled();
 
-    onError(new ApiError({ name: 'ApiError', status: 401, type: 'session_revoked', path: '/organizations' }));
+    onError(new ApiError({ status: 401, type: 'session_revoked', path: '/organizations' }));
     // `false` keeps the local database, and the offline work in it, for the same user's next sign-in.
     expect(mockTeardownUserState).toHaveBeenCalledWith(false);
   });
@@ -40,7 +40,7 @@ describe('onError 401 handling', () => {
 it('toasts a fatal failure as an error', () => {
   vi.clearAllMocks();
   knownKeys.add('error:server_error');
-  onError(new ApiError({ status: 500, type: 'server_error', severity: 'fatal', requestId: 'req-5' }));
+  onError(new ApiError({ status: 500, type: 'server_error', severity: 'fatal', instance: 'req-5' }));
 
   expect(mockToaster.error).toHaveBeenCalledWith('error:server_error', expect.anything());
   expect(mockToaster.info).not.toHaveBeenCalled();

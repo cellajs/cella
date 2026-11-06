@@ -58,7 +58,7 @@ const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
-interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>, 'sort' | 'order'> {
+interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches the name. */
   q?: string;
   status?: TenantModel['status'];
@@ -98,11 +98,15 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
 
 interface FindTenantOpts {
   where: SQL | undefined;
+  /** Locks the tenant row until the caller's transaction ends; needs a read-write transaction. */
+  forUpdate?: boolean;
 }
 
 /** The first tenant matching `where`, in its response shape; undefined when none matches. */
-export const findTenant = async (ctx: DbContext, { where }: FindTenantOpts) => {
-  const [row] = await selectTenants(ctx).where(where).limit(1);
+export const findTenant = async (ctx: DbContext, { where, forUpdate = false }: FindTenantOpts) => {
+  const query = selectTenants(ctx).where(where).limit(1);
+  // The organization joins from the nullable side, so the lock names the tenant row alone.
+  const [row] = forUpdate ? await query.for('no key update', { of: tenantsTable }) : await query;
   return row ? toTenant(row) : undefined;
 };
 

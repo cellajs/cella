@@ -50,27 +50,24 @@ const otherChannelKey = [...membersListQueryOptions({ ...scope, entityId: 'org-2
 const member = (id: string, role: MembershipBase['role'] = memberRole) =>
   ({ id, name: id, membership: membership(`m-${id}`, { userId: id, channelId: 'org-1', role }) }) as Member;
 
-type MemberList = { items: Member[]; total: number } | { pages: { items: Member[]; total: number }[]; pageParams: unknown[] };
+type MemberList = { results: Member[]; totalSize: number } | { pages: { results: Member[]; totalSize: number }[]; pageParams: unknown[] };
 const readList = (key: readonly unknown[]) => queryClient.getQueryData<MemberList>(key);
-const listItems = (data?: MemberList) => (data && 'pages' in data ? data.pages.flatMap((page) => page.items) : data?.items);
-const pageTotals = (data?: MemberList) => (data && 'pages' in data ? data.pages.map((page) => page.total) : []);
+const listItems = (data?: MemberList) => (data && 'pages' in data ? data.pages.flatMap((page) => page.results) : data?.results);
+const pageTotals = (data?: MemberList) => (data && 'pages' in data ? data.pages.map((page) => page.totalSize) : []);
 const firstPageParam = (data?: MemberList) => (data && 'pages' in data ? data.pageParams[0] : undefined);
 
 /** A paged list over two pages, a flat search list, a role-filtered list and another channel's list. */
 function seedMemberLists() {
   queryClient.setQueryData(pagedKey, {
     pages: [
-      { items: [member('u1'), member('u2')], total: 3 },
-      { items: [member('u3')], total: 3 },
+      { results: [member('u1'), member('u2')], totalSize: 3 },
+      { results: [member('u3')], totalSize: 3 },
     ],
-    pageParams: [
-      { page: 0, offset: 0 },
-      { page: 1, offset: 2 },
-    ],
+    pageParams: ['', 'token-1'],
   });
-  queryClient.setQueryData(searchKey, { items: [member('u1')], total: 1 });
-  queryClient.setQueryData(roleKey, { items: [member('u1'), member('u2')], total: 2 });
-  queryClient.setQueryData(otherChannelKey, { items: [member('u1')], total: 1 });
+  queryClient.setQueryData(searchKey, { results: [member('u1')], totalSize: 1 });
+  queryClient.setQueryData(roleKey, { results: [member('u1'), member('u2')], totalSize: 2 });
+  queryClient.setQueryData(otherChannelKey, { results: [member('u1')], totalSize: 1 });
   return new Map<readonly unknown[], MemberList | undefined>([pagedKey, searchKey, roleKey, otherChannelKey].map((key) => [key, readList(key)]));
 }
 
@@ -92,11 +89,11 @@ describe('useMembershipsDeleteMutation', () => {
 
     expect(listItems(readList(pagedKey))?.map((row) => row.id)).toEqual(['u1', 'u3']);
     expect(new Set(pageTotals(readList(pagedKey)))).toEqual(new Set([2]));
-    expect(firstPageParam(readList(pagedKey))).toEqual({ page: 0, offset: 0 });
+    expect(firstPageParam(readList(pagedKey))).toEqual('');
     expect(listItems(readList(roleKey))?.map((row) => row.id)).toEqual(['u1']);
-    expect(readList(roleKey)).toMatchObject({ total: 1 });
+    expect(readList(roleKey)).toMatchObject({ totalSize: 1 });
     // A list that did not hold the deleted member keeps its total.
-    expect(readList(searchKey)).toEqual({ items: [member('u1')], total: 1 });
+    expect(readList(searchKey)).toEqual({ results: [member('u1')], totalSize: 1 });
     expect(readList(otherChannelKey)).toBe(before.get(otherChannelKey));
 
     expect(context).toHaveLength(3);

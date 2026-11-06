@@ -154,7 +154,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### B1 Object-level access across every read path
 - **Gain:** cross-tenant read.
-- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `getUsers` search, activities, notifications, `relatableGuard`.
+- **Merges:** cross-tenant and cross-organization reads, 404 against 403, home scoping and elevated roles, drafts, public read, nullable ancestors, the RLS backstop as `runtime_role`, the system-admin bypass in lists, catchup views, Yjs document to entity, MCP tool reads, counters and member previews, `listUsers` search, activities, notifications, `relatableGuard`.
 - **Advisories:** none.
 - **Files:**
   - The engine: `shared/src/permissions/` (`check-access.ts`, `engine/check.ts`, `engine/resolve-access.ts`, `public-read.ts`, `row-conditions.ts`, `access-scopes.ts`).
@@ -169,8 +169,8 @@ One class is one review iteration. The scout verifies every path below at the re
   - The template has one product (attachment) and one channel (organization); `buildChannelListReadWhere` and `resolveChannelCollectionReadScope` have no caller in `backend/src` outside tests.
 - **Holds:**
   - `cross-tenant`: a user of tenant A listing or reading tenant B attachments and organization, or signing tenant A's attachment from B's session.
-  - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`getUsers` outside a shared org, a cache warmed on org A's path served on org B's.
-  - `defense-in-depth`: `getOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
+  - `cross-org`: routes on tenant A's path naming org B ids (404), a batch delete naming a foreign id, `getUser`/`listUsers` outside a shared org, a cache warmed on org A's path served on org B's.
+  - `defense-in-depth`: `listOrganizations` leaking another tenant's organization. `product-existence`: 404 for a missing and an unreadable id, 403 only for a readable row.
   - `backend/src/permissions/{get-valid-product,get-valid-channel,split-by-permission,row-predicates,view-read-status}.test.ts`: foreign-tenant and foreign-organization rows read 404; a draft channel for a non-member; a bulk call acting on another author's draft; engine, SQL and dispatch agreeing on every row across random policies; a grant below the organization or a row condition proving no catchup frontier.
   - `entities/stream/dispatch-mirror.test.ts`, `entities/helpers/dispatch-eligibility.test.ts`: a stale topic registration after membership removal, a reader of only a non-first row, a malformed membership poisoning a batch, batch against single decisions.
   - `tests/catchup-baseline`, `tests/catchup-propagation`: a view outside memberships leaking numbers, a hint naming an unreadable row.
@@ -192,7 +192,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/modules/service-accounts/`, `backend/src/modules/system/` (`system-schema.ts` has no role field; `system_roles` has no app writer, only seeds and migrations: `backend/scripts/seeds/00-init.seed.ts`, `backend/scripts/migrations/10-rls.migration.ts`), `backend/src/modules/tenants/`.
   - Guards in `backend/src/middlewares/guard/`: `sys-admin-guard.ts`, `relatable-guard.ts`, `tenant-guard.ts`, `user-guard.ts`, `step-up-guard.ts`.
   - `shared/config/hierarchy-config.ts`.
-  - Call sites: `deleteMyMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
+  - Call sites: `leaveMembership` in `me/me-routes.ts` and `me/operations/delete-my-membership.ts`; account deletion in `user/operations/delete-accounts.ts` (last admin by cascade).
 - **Holds:**
   - `last-admin`: demote, remove, leave, delete the account, two admins removed concurrently: all 409 `last_admin`, with a positive control.
   - `membership-update`: a member cannot promote self. `permission-enforcement`: a member session cannot update the org, invite as admin, resend or delete memberships.
@@ -217,12 +217,12 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `firstName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
-  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `getMembers`; the field is absent without `include=mfa`.
-  - `member-personal-view`: another member's archive, mute and order in `getMembers`; pins that email is shown org-wide.
+  - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
+  - `member-personal-view`: another member's archive, mute and order in `listMembers`; pins that email is shown org-wide.
   - `profile-image-urls`: an avatar or banner pointed at another host. `trace-redaction`: a token in a request span and in the request log line (D1).
   - `cdc/src/tests/secret-columns.test.ts`: a new column matching the secret pattern in neither map.
 - **Asks:** per update route the writable columns against its schema, read from the OpenAPI document as request-bodies.test does; per response schema the fields and the relation that may see them; the values `changedFields` carries.
-- **Not this class:** the role ceiling on `membershipInvite`, `createServiceAccount` and `updateMembership` belongs to B2. `welcomeText` and description media URLs (`assertBlockMediaUrls`) belong to C4. HLC `fieldTimestamps` and `replayed` in `stx` belong to C1. Row reach of getMembers, getUsers and getUser belongs to B1. Invitation-address takeover belongs to C7.
+- **Not this class:** the role ceiling on `inviteMembers`, `createServiceAccount` and `updateMembership` belongs to B2. `welcomeText` and description media URLs (`assertBlockMediaUrls`) belong to C4. HLC `fieldTimestamps` and `replayed` in `stx` belong to C1. Row reach of listMembers, listUsers and getUser belongs to B1. Invitation-address takeover belongs to C7.
 
 ### B4 Stream fan-out
 - **Gain:** cross-tenant read by fan-out, denial of service.
@@ -299,7 +299,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C1 Resource exhaustion by input shape
 - **Gain:** denial of service.
-- **Merges:** unbounded collections (the trigger), a chunked request against `bodyLimit`, JSON depth, compressed JWE, ReDoS (zod 2023, sanitize-html, jspdf, ws), nanoid sizes, and every own cap: pagination `limit`, `include` lists, search terms, Yjs update size, uploads (`max_size`, `max_number_of_files`), SSE subscribers, pg-boss payloads, CDC batches, mail batches.
+- **Merges:** unbounded collections (the trigger), a chunked request against `bodyLimit`, JSON depth, compressed JWE, ReDoS (zod 2023, sanitize-html, jspdf, ws), nanoid sizes, and every own cap: `maxPageSize` and `skip`, `include` lists, search terms, Yjs update size, uploads (`max_size`, `max_number_of_files`), SSE subscribers, pg-boss payloads, CDC batches, mail batches.
 - **Advisories:** 30 (zod, hono chunked body limit, jose JWE, ws fragments and header count, yaml nesting, node-server aborted handshake, otel baggage).
 - **Files:**
   - `backend/src/middlewares/body-limit.ts`, `backend/src/schemas/common-schemas.ts`, `backend/src/middlewares/rate-limiter/` (`core.ts`, `helpers.ts`, `limiters.ts`, `points-cache.ts`, `tests/`), `backend/src/lib/transloadit.ts`.
@@ -311,7 +311,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - pg-boss is cron-only: `backend/src/lib/pg-boss.ts`, `jobs-worker.ts`; no `boss.send` with request data.
 - **Holds:**
   - `request-bodies`: an array or record schema in the OpenAPI document without `maxItems` or `maxProperties` (zod collection exhaustion).
-  - `backend/src/schemas/common-schemas.test.ts`: `limit` 0, 1001, 2^53 and malformed `offset`.
+  - `backend/src/schemas/common-schemas.test.ts`: `maxPageSize` 0, 1001, 2^53 and negative, malformed `skip`, an `orderBy` outside its fields.
   - `backend/tests/yjs-http.test.ts`: a Yjs push chunk over 512 KB (400) and a body over 1 MB (413 `body_too_large`), with a full chunk as positive control.
   - `backend/src/modules/yjs/operations/append-yjs-update.test.ts`: an update over `yjsMaxUpdateBytes`. `yjs/src/tests/upgrade-handler.test.ts`: `yjsPendingQueueCap`.
   - `backend/src/middlewares/rate-limiter/tests/` and `brute-force-limits`: the limiters' budgets (policy per route belongs to E1).
@@ -326,7 +326,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `boundedRecord` in `backend/src/schemas/common-schemas.ts`.
   - JSON columns (17 files): `tenants.restrictions` in `backend/src/modules/tenants/tenants-db.ts`; `toolsConfig` in `backend/src/db/utils/channel-columns.ts`; organization settings are `organizationFlags` and `setupConfig` in `backend/src/modules/organization/organization-db.ts`.
   - `frontend/src/query/` cache merges. Persisted stores: `ui-store.ts`, `user-store.ts`, `navigation-store.ts`, `board-store.ts`, `offline-files-store.ts`, `docs-search-store.ts` (under `frontend/src/modules/...`) and `frontend/src/query/realtime/sync-store.ts`.
-  - `backend/src/db/utils/jsonb-merge.ts`: the one merge helper (SQL `col || jsonb`). `backend/src/core/stx/*` (stx field maps).
+  - `backend/src/utils/merge-patch.ts`: the one merge helper (`applyMergePatch`, RFC 7396, on the row an update locked; `userFlags` merge in SQL, `||` with the nulls stripped). `backend/src/core/stx/*` (stx field maps).
   - `shared/src/config-builder/utils.ts` (`mergeDeep`, config build only; skips `__proto__`, `constructor`, `prototype`).
   - `shared/src/utils/derive-description-core.ts`, `backend/src/modules/yjs/helpers/sanitize-block-media.ts` (`JSON.parse` of block JSON).
   - Test: `backend/tests/security/request-bodies.test.ts`.
@@ -334,7 +334,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `request-bodies`: every array and record in the OpenAPI document has a size bound (a record with a million keys).
   - Zod 4 drops `__proto__` from record and object input.
   - Enum-keyed records: `toolsConfigSchema` keys must be a channel slot (`backend/src/schemas/tools-config.ts`); quota keys must be in `quotaKeys` (`tenants-schema.ts`); flag objects are `z.object` over config keys (`organization-schema.ts`, `user-schema.ts`).
-  - jsonb merge is done in SQL from `JSON.stringify` of the parsed value, so a JS object merge never sees stored keys.
+  - `applyMergePatch` merges the parsed patch into the stored value and skips `__proto__`, `constructor` and `prototype` keys on top of Zod dropping `__proto__`.
   - The persisted sync store saves `generation`, `caughtUpAt`, `refetchDueAt` and the keyed `orgs` map; `contrast`, `publicAlertsSeen` and `hintsSeen` belong to `ui-store.ts`.
   - `Object.fromEntries` in `auth/sso/helpers/transform-sso-claims.ts` uses config-listed keys (`federation.snapshotClaims`).
 - **Asks:** a record with `__proto__` through every record-taking route; the JSON column table; the dexie and immer version minimums.
@@ -355,7 +355,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/utils/order-column.test.ts`: the sort lookup and fallback. `backend/src/db/utils/path-column.test.ts`: the SQL path expression equals the TS path.
   - In code: the idAlphabet check (`tenant-transaction-opening.ts`); the `isProduct` gate before dynamic table names (`yjs-queries.ts`, `yjs/src/data/permissions.ts`); signed-token binding of `entityType` (`yjs/src/server/upgrade.ts`); `escapeLikePattern` (`utils/sql.ts`); `jsonbIntRaw` quote doubling.
 - **Asks:** a table of every raw argument's origin (config enum, hierarchy column, request); the escape helper and its callers; a search term with `%`.
-- **Not this class:** RLS policy semantics around `current_setting` belong to B1. `q` and `limit` size caps and `boundedRecord` belong to C1. `lastPostedAtOrder` (memberships `sort=lastPostedAt`) is a sort expression in a column map and enters this table if it holds raw text. Whether a refused tenant id answers 400 or 500 is error handling (E3).
+- **Not this class:** RLS policy semantics around `current_setting` belong to B1. `q` and `maxPageSize` caps and `boundedRecord` belong to C1. `lastPostedAtOrder` (memberships `orderBy=lastPostedAt`) is a sort expression in a column map and enters this table if it holds raw text. Whether a refused tenant id answers 400 or 500 is error handling (E3).
 
 ### C4 Output encoding: HTML, PDF, email, CSS
 - **Gain:** code execution in a browser on the app origin.
@@ -481,7 +481,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/redact-keys.ts`; `backend/src/lib/pino.ts` (adds `req.headers.authorization` and `req.headers.cookie`); `cdc/src/lib/pino.ts` and `yjs/src/lib/pino.ts` reuse `redactPaths`.
   - `shared/src/tracing/redacting-span-processor.ts` (scrubs every span), `shared/src/utils/scrub-url.ts` (key list), `shared/src/otel.ts` (http, undici, pg instrumentations).
   - `backend/src/lib/error.ts` (`exposesServerMessages`, `hideIfServerError`, `appErrorHandler`).
-  - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`.
+  - `backend/src/utils/data-encryption.ts` (AES-256-GCM, HKDF per purpose); users: `modules/auth/totps/helpers/totp-secret-encryption.ts`, `modules/oauth-server/keystore.ts`, `utils/list-page.ts` (page tokens, a purpose per list and params).
   - `backend/src/utils/hash-pii.ts`, `hash-token.ts`.
   - `backend/src/env.ts`, `backend/src/env-service-secrets.ts`, `infra/config/runtime-secrets.config.ts`.
   - CDC strip: `cdc/src/utils/compact-row-data.ts`; activity: `cdc/src/services/create-activity.ts`, `cdc/src/utils/get-changed-fields.ts` (names only).
@@ -491,6 +491,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `response-secrets`: seeds real secrets, requests routes, fails when a stored secret value or a secret-named key appears in any body at any depth.
   - `trace-redaction`: a magic, invitation, unsubscribe or OAuth-callback token in a URL must not reach an exported span or the request log line.
   - `failed-query-redaction`: a request value in a failed query must not reach a log, a span or a colliding database `detail`.
+  - `page-tokens`: a page token holds no readable position, and an altered or forged one, or one replayed with other params or on another list, answers 400 `invalid_page_token`.
   - `server-error-messages`: a failed query must not show in a 5xx outside development (development is the control).
   - `backend/src/env.test.ts`: a worker mode boots without secrets of other modes; the API refuses to boot without the Yjs key; short or empty cookie and unsubscribe secrets refuse to boot; a rotated cookie list boots.
   - `tests/emails/security-inbox`, `request-details`. `cdc/src/tests/secret-columns.test.ts`: a column matching the pattern outside both maps fails.
@@ -499,7 +500,7 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### D2 Enumeration and side channels
 - **Gain:** reconnaissance for A1 and E1.
-- **Merges:** account enumeration, the Refusals table of PERMISSIONS.md as the policy, timing-safe comparison of tokens and hashes, invited addresses, `getUsers` search by address, a 429 as an oracle, error `type` differences, response sizes.
+- **Merges:** account enumeration, the Refusals table of PERMISSIONS.md as the policy, timing-safe comparison of tokens and hashes, invited addresses, `listUsers` search by address, a 429 as an oracle, error `type` differences, response sizes.
 - **Advisories:** 1 (hono timing comparison).
 - **Files:**
   - `cella/PERMISSIONS.md` (the Refusals table).
@@ -515,7 +516,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `pending-invitations`: the pending list, resend, invite response and invite check telling an account from a new address.
   - `tenant-access`: missing, inactive and foreign tenants told apart; `checkSlug` 204/409.
   - `brute-force-limits`: mailing one address forever, the magic budget telling account from none, check-email lookups without end.
-  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`getUsers` outside a shared organization.
+  - `resend-invitation`: resend by address against an unknown id answer alike. `cross-org`: `getUser`/`listUsers` outside a shared organization.
   - `unsubscribe-tokens`: the token is verified before the user lookup (401 first, 404 only after a valid HMAC).
 - **Asks:** every "does X exist" answer in the API as a table against the Refusals table; every comparison of a secret.
 - **Not this class:** invitation token takeover and invoke-token under a cross-site GET belong to C7. Cookie MAC forgery, session revocation and the device cap belong to A2 and A1. `sso_email_unproven` and SSO address trust belong to A4. Brute-force budgets of TOTP and step-up codes belong to A3. Mail content, who can mail whom and Brevo params belong to D3. Secrets at rest and in logs belong to D1. Relay tokens belong to B5.
@@ -563,7 +564,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `tiers.test.ts`: failures counted in hourly and daily tiers, the 24 h tier holds, a failing store gives no 500 (attempt uncounted), error redirects counted.
   - `identifier-validation.test.ts`: no address in the clear in the key, IPv6 /64 and case share one bucket, an empty key refused. `points-cache.test.ts`: fast-path accounting. `limiter-scope.test.ts`: `chargeLimiter` outside a request refuses.
   - `tests/sign-in/session-cap`: the per-user session cap evicts the oldest sessions, counts MFA sessions.
-  - `tests/tenants` (a retry of `selfCreateTenant` reuses the orphan tenant).
+  - `tests/tenants` (a retry of `createTenant` reuses the orphan tenant).
 - **Asks:** route x limiter from the OpenAPI document, as route-guards.test does, with the reason each unlimited route is cheap; the store-down decision; budgets against code spaces.
 - **Not this class:** entropy and guessability of tokens belong to A1 and A5. The TOTP window and daily restart belong to A3. The stream cap belongs to B4. MCP tool charges belong to B6. Body and batch caps belong to C1. Invitation address takeover belongs to C7. Upload content and size belong to C6.
 
@@ -579,7 +580,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `attachment-idempotency`: user B sending A's mutationId with a new id gets only its own row, stored `createdBy` is B; B sending A's row id gets nothing (`rejectedIds`); the same user with the same ids on another tenant's path gets nothing of the first tenant; a deleted row is not revived; partial and concurrent replays; quota with replays.
   - `attachment-overlapping-edits`: field timestamps of two edits while the row is held.
-  - `attachment-seq-reads`: seq order, tombstones, a limit above 1000 refused, `afterSeq` exclusive and `untilSeq` inclusive, `channelId` narrowing.
+  - `attachment-seq-reads`: seq order, tombstones, a page size above 1000 read as 1000 and a negative one refused, `afterSeq` exclusive and `untilSeq` inclusive, `channelId` narrowing, a range read with a page token or skip refused.
   - `recalculate-sequence` (counters), `filter-existing-product-ids` (embeddings), `catchup-propagation` (no unreadable row named).
   - `rls-security`: every immutable column, memberships, append-only activities.
   - Lenses: `shared/src/schema-evolution/tests/engine.test.ts` (normalize), `lens-seam.test.ts` (alias accepted, missing HLC refused, an alias cannot replace canonical absence).

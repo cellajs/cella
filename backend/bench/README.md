@@ -65,7 +65,7 @@ export default defineScenario({
     const { cookie, userIndex } = benchUser(vu.index);
     for (let i = 0; i < 20; i++) {
       const { path, json } = attachmentEdit(userIndex);
-      const res = await vu.http.put(path, { json, headers: { cookie }, name: 'PUT /attachments/:id' });
+      const res = await vu.http.patch(path, { json, headers: { cookie }, name: 'PATCH /attachments/:id' });
       if (res.status === 200) vu.counter('bench.rows_written');
       await vu.think(50);
     }

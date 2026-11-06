@@ -24,7 +24,7 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   const grants = appConfig.entityActions.filter((action) => can(action, channelType, entity));
 
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
-  const pairs = heldContextRoles(entity, myMemberships?.items ?? []);
+  const pairs = heldContextRoles(entity, myMemberships?.results ?? []);
 
   // Cast: registered settings tools carry a render the descriptor type erases
   const tools = getTools(slot) as ChannelSettingsSection<C>[];

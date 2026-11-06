@@ -24,7 +24,7 @@ describe('oauth strategy disabled', async () => {
   ])('should reject $provider OAuth initiation', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
-    expect((error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
+    expect((error as ErrorResponse).strategy).toBe(provider);
   });
 });
 
@@ -49,7 +49,7 @@ describe('oauth provider configuration', async () => {
   ])('should reject disabled $provider provider', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
-    expect((error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
+    expect((error as ErrorResponse).strategy).toBe(provider);
   });
 });
 

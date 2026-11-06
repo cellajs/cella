@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { deleteMe, deleteUsers, revokeMySessions, signOut, toggleMfa } from 'sdk';
+import { batchDeleteUsers, deleteMe, revokeMySessions, signOut, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -247,7 +247,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const secondStream = await openStream(user.id, second);
     const bystanderStream = await openStream(bystander.id, bystanderSession);
 
-    const { response } = await call(deleteUsers, { body: { ids: [user.id] }, headers: adminSession.headers });
+    const { response } = await call(batchDeleteUsers, { body: { ids: [user.id] }, headers: adminSession.headers });
     expect(response.status).toBe(200);
 
     await expectClosedWith(firstStream, 'unauthorized');

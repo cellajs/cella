@@ -8,13 +8,13 @@ import { markReadOp } from '#/modules/notification/operations/mark-read';
 import { getPreferencesOp, updatePreferencesOp } from '#/modules/notification/operations/preferences';
 import { setEmailCategoryOp } from '#/modules/notification/operations/unsubscribe';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(notificationRoutes.getNotifications, async (ctx) => {
-  const { unread, limit, before } = ctx.req.valid('query');
-  const data = await getNotificationsOp(ctx, { unreadOnly: unread, limit, before });
-  return ctx.json(data, 200);
+app.openapi(notificationRoutes.listNotifications, async (ctx) => {
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getNotificationsOp(ctx, { unreadOnly: query.unread, ...page })), 200);
 });
 
 app.openapi(notificationRoutes.markNotificationsRead, async (ctx) => {

@@ -1,4 +1,4 @@
-import type { GetMyMembershipsResponse } from 'sdk';
+import type { ListMyMembershipsResponse } from 'sdk';
 import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
@@ -40,8 +40,8 @@ export function resolveQueryOrgTenantIds(cached: OrgTenantIdSource | undefined, 
 
 /** The tenant of an organization the user belongs to, from the cached memberships; null before they load. */
 export function getTenantIdForOrg(organizationId: string): string | null {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
-  return data?.items.find((item) => item.organizationId === organizationId)?.tenantId ?? null;
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
+  return data?.results.find((item) => item.organizationId === organizationId)?.tenantId ?? null;
 }
 
 /** How soon this client wants a channel view's changes: the fetch prioritizer clamps the server-spread delay between `min` (0 is live) and `max`. `Infinity` means fetch on open only. */
@@ -64,10 +64,10 @@ export function isViewingChannel(organizationId: string, channelId: string | nul
 
 /** Membership `muted`/`archived` = the user declared "not urgent" for this scope. */
 function isMutedOrArchived(organizationId: string, channelId: string | null): boolean {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
-  if (!data?.items) return false;
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
+  if (!data?.results) return false;
   const targetId = channelId ?? organizationId;
-  const membership = data.items.find((item) => item.channelId === targetId);
+  const membership = data.results.find((item) => item.channelId === targetId);
   return membership ? membership.muted || membership.archived : false;
 }
 

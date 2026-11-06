@@ -10,16 +10,16 @@ import {
 import {
   apiKeyParamSchema,
   apiKeySchema,
-  apiKeysResponseSchema,
   createApiKeyBodySchema,
   createdApiKeySchema,
   createServiceAccountBodySchema,
   createServiceAccountResponseSchema,
   serviceAccountListQuerySchema,
+  serviceAccountParamSchema,
   serviceAccountSchema,
   updateServiceAccountBodySchema,
 } from '#/modules/service-accounts/service-accounts-schema';
-import { idInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
+import { pageQuerySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
 /**
  * All routes are user-only: creating and managing machine actors is a human act. Each operation first checks that the
@@ -42,7 +42,7 @@ const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
       }),
     },
   }),
-  getServiceAccounts: xRoute({
+  listServiceAccounts: xRoute({
     method: 'get',
     path: '/',
     xGuard: [userGuard, tenantGuard, orgGuard],
@@ -52,38 +52,38 @@ const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
     responses: { 200: json('Service accounts', paginationSchema(serviceAccountSchema), mockPaginatedServiceAccountsResponse()) },
   }),
   updateServiceAccount: xRoute({
-    method: 'put',
-    path: '/{id}',
+    method: 'patch',
+    path: '/{serviceAccountId}',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update service account',
     description: 'Renames, disables or re-enables a service account. Accounts are never deleted.',
-    request: { params: idInTenantOrgParamSchema, body: jsonBody(updateServiceAccountBodySchema) },
+    request: { params: serviceAccountParamSchema, body: jsonBody(updateServiceAccountBodySchema) },
     responses: { 200: json('Service account was updated', serviceAccountSchema) },
   }),
-  getApiKeys: xRoute({
+  listApiKeys: xRoute({
     method: 'get',
-    path: '/{id}/keys',
+    path: '/{serviceAccountId}/api-keys',
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get API keys',
     description: 'Lists the API keys of a service account. Secrets are never returned here.',
-    request: { params: idInTenantOrgParamSchema },
-    responses: { 200: json('API keys', apiKeysResponseSchema, { items: [mockApiKeyResponse()] }) },
+    request: { params: serviceAccountParamSchema, query: pageQuerySchema },
+    responses: { 200: json('API keys', paginationSchema(apiKeySchema), { results: [mockApiKeyResponse()], totalSize: 1 }) },
   }),
   createApiKey: xRoute({
     method: 'post',
-    path: '/{id}/keys',
+    path: '/{serviceAccountId}/api-keys',
     xGuard: [userGuard, tenantGuard, orgGuard, stepUpFactorGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create API key',
     description:
       'Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.',
-    request: { params: idInTenantOrgParamSchema, body: jsonBody(createApiKeyBodySchema) },
+    request: { params: serviceAccountParamSchema, body: jsonBody(createApiKeyBodySchema) },
     responses: { 201: json('API key was issued', createdApiKeySchema, mockCreatedApiKeyResponse()) },
   }),
   revokeApiKey: xRoute({
-    method: 'delete',
-    path: '/{id}/keys/{keyId}',
+    method: 'post',
+    path: '/{serviceAccountId}/api-keys/{apiKeyId}/~revoke',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Revoke API key',

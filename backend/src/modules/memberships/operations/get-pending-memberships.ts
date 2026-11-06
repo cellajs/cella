@@ -5,6 +5,7 @@ import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/inactive-memberships-queries';
 import type { pendingMembershipListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
+import type { PageWindow } from '#/utils/list-page';
 
 type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchema>;
 
@@ -13,17 +14,16 @@ type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchem
  * names the address the invitation went to and nothing about an account that may hold it, not even whether a token was
  * minted, since anyone may create an organization and invite any address. A resend names the row by its own id.
  */
-export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput) {
+export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput, { offset, limit }: PageWindow) {
   const organization = ctx.var.organization;
 
-  const { entityId, entityType, sort, order, offset, limit } = input;
+  const { entityId, entityType, orderBy } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 
   const { items: rawItems, total } = await findPendingMembershipsPaginated(ctx, {
     organizationId: organization.id,
     entityId: entity.id,
-    sort,
-    order,
+    ...orderBy,
     offset,
     limit,
   });

@@ -71,7 +71,7 @@ registerEntityQueryKeys(noteType, noteKeys);
 registerEntityQueryKeys(projectType, projectKeys);
 
 const task = (id: string, projectId: string) => ({ id, organizationId: 'org-1', projectId });
-const list = <T>(items: T[]) => ({ items, total: items.length });
+const list = <T>(items: T[]) => ({ results: items, totalSize: items.length });
 
 const homeOfP1: QueryKey = taskKeys.list.home('org-1', 'p1');
 const homeOfP2: QueryKey = taskKeys.list.home('org-1', 'p2');
@@ -87,7 +87,7 @@ function seedCache() {
   queryClient.setQueryData(notes, list([{ id: 'n1', organizationId: 'org-1' }]));
   queryClient.setQueryData(projectKeys.list.org('org-1'), list([{ id: 'p1' }, { id: 'p2' }]));
   queryClient.setQueryData(projectKeys.detail.byId('p1'), { id: 'p1' });
-  queryClient.setQueryData(meKeys.memberships, { items: [{ organizationId: 'org-1', channelId: 'p1' }] });
+  queryClient.setQueryData(meKeys.memberships, { results: [{ organizationId: 'org-1', channelId: 'p1' }] });
   queryClient.setQueryData(seenKeys.unseenCounts, {});
 }
 
@@ -101,7 +101,7 @@ const signal = (overrides: Partial<StreamSignal> = {}): StreamSignal => ({
 // Past the handler's window for the rest of a cascade, short of the cache's garbage collection.
 const cascadeSettles = () => vi.advanceTimersByTime(1_000);
 
-const idsOf = (key: QueryKey) => queryClient.getQueryData<{ items: { id: string }[] }>(key)?.items.map(({ id }) => id);
+const idsOf = (key: QueryKey) => queryClient.getQueryData<{ results: { id: string }[] }>(key)?.results.map(({ id }) => id);
 const isMarked = (key: QueryKey) => queryClient.getQueryState(key)?.isInvalidated;
 
 beforeEach(() => {
@@ -130,7 +130,7 @@ describe('channel.deleted', () => {
     // The cascade sent no change for these rows: without the signal they stay in every list and detail.
     expect(idsOf(homeOfP1)).toEqual([]);
     expect(idsOf(acrossProjects)).toEqual(['t3']);
-    expect(queryClient.getQueryData<{ total: number }>(acrossProjects)?.total).toBe(1);
+    expect(queryClient.getQueryData<{ totalSize: number }>(acrossProjects)?.totalSize).toBe(1);
     expect(queryClient.getQueryData(taskKeys.detail.byId('t1'))).toBeUndefined();
     expect(idsOf(homeOfP2)).toEqual(['t3']);
     expect(announced.toSorted()).toEqual(['delete:t1', 'delete:t2']);

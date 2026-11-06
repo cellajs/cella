@@ -2,13 +2,13 @@ import { queryOptions, useMutation } from '@tanstack/react-query';
 import {
   type CreatePushSubscriptionData,
   createPushSubscription,
-  deletePushSubscription,
-  type GetNotificationsResponse,
   getNotificationPreferences,
-  getNotifications,
   getPushVapid,
+  type ListNotificationsResponse,
+  listNotifications,
   type MarkNotificationsReadData,
   markNotificationsRead,
+  removePushSubscription,
   resubscribeNotifications,
   type UnsubscribeNotificationsData,
   type UpdateNotificationPreferencesData,
@@ -24,7 +24,7 @@ export const notificationKeys = { list: ['me', 'notifications'] as const, prefer
 export const notificationsQueryOptions = () =>
   queryOptions({
     queryKey: notificationKeys.list,
-    queryFn: () => getNotifications({ query: { limit: 30 } }),
+    queryFn: () => listNotifications({ query: { maxPageSize: 30 } }),
     staleTime: 60 * 1000,
     refetchOnWindowFocus: true,
   });
@@ -41,16 +41,16 @@ export const useMarkNotificationsReadMutation = () =>
       if (!previous) return;
 
       const readAt = new Date().toISOString();
-      const shouldMark = (item: GetNotificationsResponse['items'][number]) => {
+      const shouldMark = (item: ListNotificationsResponse['results'][number]) => {
         if (body.contextId) return item.contextId === body.contextId;
         if (body.ids?.length) return body.ids.includes(item.id);
         return true;
       };
 
-      const items = previous.items.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
+      const results = previous.results.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
       queryClient.setQueryData(notificationsQueryOptions().queryKey, {
         ...previous,
-        items,
+        results,
         ...(!body.contextId && !body.ids?.length && { unreadCount: 0 }),
       });
     },
@@ -80,4 +80,4 @@ export const useEmailCategoryMutation = () =>
 
 export const fetchPushVapid = () => getPushVapid();
 export const registerPushSubscription = (body: CreatePushSubscriptionData['body']) => createPushSubscription({ body });
-export const removePushSubscription = (endpoint: string) => deletePushSubscription({ query: { endpoint } });
+export const unregisterPushSubscription = (endpoint: string) => removePushSubscription({ body: { endpoint } });

@@ -7,7 +7,7 @@ defineBackendModule({
   scope: ['frontend', 'backend'],
   description: 'Endpoints for tracking entity view counts and marking entities as seen by the current user.',
   routes: [
-    { path: '/unseen', app: unseenHandlers },
-    { path: '/:tenantId/:organizationId/seen', app: seenHandlers, phase: 'tenant' },
+    { path: '/me', app: unseenHandlers },
+    { path: '/tenants/:tenantId/organizations/:organizationId', app: seenHandlers },
   ],
 });

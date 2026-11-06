@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { createAttachments } from 'sdk';
+import { batchCreateAttachments } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -43,7 +43,7 @@ describe('Weekly digest by default', async () => {
     idle = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'digest-default-idle', adminRole);
 
     const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       body: [attachmentBody(attachmentId, home)],
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -129,7 +129,7 @@ describe('Digest window', async () => {
     member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'digest-window-member', adminRole);
 
     const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       body: Object.values(subjectIds).map((id) => attachmentBody(id, home)),
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },

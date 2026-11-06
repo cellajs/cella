@@ -51,7 +51,7 @@ function ArchiveForMe({ channel, name }: { channel: EnrichedChannel; name: strin
   const { mutate: updateMembership } = useMemberUpdateMutation();
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
 
-  const membership = findMembership(myMemberships?.items ?? [], channel.id);
+  const membership = findMembership(myMemberships?.results ?? [], channel.id);
   if (!membership || !isChannelArchivable(channel.entityType)) return null;
   const { archived } = membership;
 

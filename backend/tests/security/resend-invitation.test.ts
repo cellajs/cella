@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { invokeToken, membershipInvite, resendInvitationWithToken, resendPendingInvitation } from 'sdk';
+import { inviteMembers, invokeToken, resendInvitation, resendInvitationWithToken } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -214,7 +214,7 @@ describe('Resend an invitation', async () => {
     await deleted;
 
     // Inviting the address again reminds it: the plan still reads the row the answer has not committed.
-    const reminder = call(membershipInvite, {
+    const reminder = call(inviteMembers, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails: [invitedEmail], role: memberRole },
@@ -278,14 +278,14 @@ describe('Resend a pending invitation from the pending list', async () => {
     const admin = await createOrganizationAdminUser('org-admin@example.com', organization.id, adminRole, organization.tenantId);
     const invitation = await createInvitation({ organization, email: invitedEmail, createdBy: admin.id });
     const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
-    const path = { tenantId: organization.tenantId, organizationId: organization.id, id: invitation.inactiveMembership.id };
+    const path = { tenantId: organization.tenantId, organizationId: organization.id, invitationId: invitation.inactiveMembership.id };
     return { organization, headers, path, ...invitation };
   };
 
   it('re-sends the invitation with one fresh link', async () => {
     const { headers, path, token } = await setup();
 
-    const { response } = await call(resendPendingInvitation, { path, headers });
+    const { response } = await call(resendInvitation, { path, headers });
 
     expect(response.status).toBe(204);
     expect(mailer.sendEmails).toHaveBeenCalledTimes(1);
@@ -294,7 +294,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     expect(tokens[0].id).not.toBe(token.id);
     expect(tokens[0].secret).toBe(hashToken(mailedRawToken()));
     // The resend is the invitation's last mail: a dispatch of held invitations leaves it alone.
-    const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.id));
+    const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.invitationId));
     expect(resent.remindedAt).not.toBeNull();
   });
 
@@ -305,14 +305,14 @@ describe('Resend a pending invitation from the pending list', async () => {
         await db
           .select({ remindedAt: inactiveMembershipsTable.remindedAt })
           .from(inactiveMembershipsTable)
-          .where(eq(inactiveMembershipsTable.id, path.id))
+          .where(eq(inactiveMembershipsTable.id, path.invitationId))
       )[0].remindedAt;
 
     failNextMailSend();
-    expect((await call(resendPendingInvitation, { path, headers })).response.status).toBe(204);
+    expect((await call(resendInvitation, { path, headers })).response.status).toBe(204);
     expect(await remindedAt()).toBeNull();
 
-    expect((await call(resendPendingInvitation, { path, headers })).response.status).toBe(204);
+    expect((await call(resendInvitation, { path, headers })).response.status).toBe(204);
     expect(mailer.sendEmails).toHaveBeenCalledTimes(2);
     expect(await remindedAt()).not.toBeNull();
   });
@@ -321,7 +321,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     const { headers, path, token, inactiveMembership } = await setup();
     await db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
-    const { response, error } = await call(resendPendingInvitation, { path, headers });
+    const { response, error } = await call(resendInvitation, { path, headers });
 
     // A rejected invitation is no longer pending: it answers like a missing one.
     await expectRefusal({ response, error }, 404, 'not_found');

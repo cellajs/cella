@@ -22,11 +22,20 @@ const failWith = async (response: Response) => {
 describe('API client error responses', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("throws the API's own error body as it is", async () => {
-    const body = { name: 'Server error', message: 'Internal server error', type: 'server_error', status: 500, severity: 'error', requestId: 'req-1' };
-    const error = await failWith(Response.json(body, { status: 500 }));
+  it("throws the API's Problem Details body: its title as the name, its detail as the message, every other member as it is", async () => {
+    const body = {
+      type: 'too_many_requests',
+      title: 'Too many attempts',
+      status: 429,
+      detail: 'Wait a moment.',
+      instance: 'req-1',
+      severity: 'warn',
+      retryAfter: 3,
+    };
+    const error = await failWith(Response.json(body, { status: 429, headers: { 'Content-Type': 'application/problem+json' } }));
 
-    expect(error).toMatchObject(body);
+    const { title, detail, ...members } = body;
+    expect(error).toMatchObject({ ...members, name: title, message: detail });
   });
 
   it("throws an ApiError typed by its status for a response without the API's error body: a proxy's page, none, or foreign JSON", async () => {

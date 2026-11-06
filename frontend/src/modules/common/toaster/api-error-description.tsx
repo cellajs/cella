@@ -22,7 +22,7 @@ export function ApiErrorDescription({ message, cause, report }: ApiErrorDescript
   const copyReport = () => {
     if (!report) return;
     const lines = [
-      [t('c:request_id'), report.requestId],
+      [t('c:request_id'), report.instance],
       [t('c:type'), report.type],
       [t('c:http_status'), report.status],
       [t('c:request'), [report.method, report.path].filter(Boolean).join(' ')],
@@ -40,10 +40,10 @@ export function ApiErrorDescription({ message, cause, report }: ApiErrorDescript
     <div className="flex flex-col gap-1">
       {message && <p>{message}</p>}
       {cause && <p className="line-clamp-3 font-mono text-xs break-words">{cause}</p>}
-      {report?.requestId && (
+      {report?.instance && (
         <p className="flex items-center gap-1 text-xs">
           <span className="min-w-0">
-            {t('c:request_id')}: <span className="font-mono break-all">{report.requestId}</span>
+            {t('c:request_id')}: <span className="font-mono break-all">{report.instance}</span>
           </span>
           <Button variant="ghost" size="micro" className="shrink-0" aria-label={copied ? t('c:copied') : t('c:copy')} onClick={copyReport}>
             <CopiedIcon copied={copied} icon={CopyIcon} />

@@ -9,7 +9,7 @@ import { productTypeOf } from '~/query/cache-migration';
 import { isPending, rowIdsOfMutations } from '~/query/offline/mutation-queue';
 import { deletedIdsOf } from '~/query/offline/mutation-variables';
 import { syncStore } from '~/query/realtime/sync-store';
-import type { PageParams, QueryData } from '~/query/types';
+import type { PageParam, QueryData } from '~/query/types';
 
 /**
  * Where a canonical list lives: its read is checked against this scope's cursor, and a range read is narrowed to it. Only
@@ -31,7 +31,7 @@ interface ListReadContext<TKey> {
 }
 
 interface PageReadContext<TKey> extends ListReadContext<TKey> {
-  pageParam: PageParams;
+  pageParam: PageParam;
   direction: 'forward' | 'backward';
 }
 
@@ -90,14 +90,14 @@ function fitsList(entityType: ProductEntityType, queryKey: QueryKey, row: ItemDa
 function withRange(read: List, rows: ItemData[], fits: (row: ItemData) => boolean): List {
   if (!rows.length) return read;
   const ranged = new Map(rows.map((row) => [row.id, row]));
-  const items = read.items.flatMap((item) => {
+  const results = read.results.flatMap((item) => {
     const row = ranged.get(item.id);
     if (!row) return [item];
     return fits(row) ? [row] : [];
   });
-  const readIds = new Set(read.items.map(({ id }) => id));
+  const readIds = new Set(read.results.map(({ id }) => id));
   const entered = rows.filter((row) => !readIds.has(row.id) && fits(row));
-  return { items: [...entered, ...items], total: read.total + entered.length + items.length - read.items.length };
+  return { ...read, results: [...entered, ...results], totalSize: read.totalSize + entered.length + results.length - read.results.length };
 }
 
 /**
@@ -118,16 +118,16 @@ async function readOverlapped(
   let untilSeq = scopeCursor(entityType, scope);
 
   while (rangeFetch && fromSeq < untilSeq && isCurrent()) {
-    const query = { afterSeq: fromSeq, untilSeq, limit: syncChunkSize };
+    const query = { afterSeq: fromSeq, untilSeq, maxPageSize: syncChunkSize };
     const answer = await rangeFetch({ organizationId, tenantId, channelId, query }).catch((cause) => {
       throw new OverlappedChangesError('The changes a list read overlapped could not be read', { cause });
     });
-    if (rowOutsideRange(answer.items, query)) throw new OverlappedChangesError('A range read answered rows outside its range');
-    for (const row of answer.items) ranged.set(row.id, row);
+    if (rowOutsideRange(answer.results, query)) throw new OverlappedChangesError('A range read answered rows outside its range');
+    for (const row of answer.results) ranged.set(row.id, row);
 
     // A canonical read reads on past a full chunk of a list it holds whole: each row change has a position of its own, so it continues after its newest row.
-    const full = answer.items.length >= syncChunkSize;
-    const newest = Math.max(fromSeq, ...answer.items.flatMap((row) => seqOf(row) ?? []));
+    const full = answer.results.length >= syncChunkSize;
+    const newest = Math.max(fromSeq, ...answer.results.flatMap((row) => seqOf(row) ?? []));
     if (full && newest === fromSeq) throw new OverlappedChangesError('A full range chunk carried no positions');
     fromSeq = full ? newest : untilSeq;
     // Changes may have arrived while the range was read.
@@ -184,8 +184,7 @@ async function readAgainstDeltas(
  * The read with each row a mutation held when the read started or ends as the cache holds it: the cached row, which a
  * settle has replaced with the stored one, and none where a delete removed it. A row the cache lacks for another mutation
  * stays as read. A whole list also takes back every cached row of such a mutation that the read lacks, such as an
- * optimistic create; a page does not, or every page would. A page records the rows whose delete is still pending, which
- * its offsets still count; one a delete removed while the read ran is gone from the server. A list with no data takes the read.
+ * optimistic create; a page does not, or every page would. A list with no data takes the read.
  */
 function keepPendingRows(client: QueryClient, queryKey: QueryKey, read: List, atStart: PendingRows, atEnd: PendingRows, wholeList: boolean): List {
   const cached = client.getQueryData(queryKey);
@@ -197,17 +196,13 @@ function keepPendingRows(client: QueryClient, queryKey: QueryKey, read: List, at
       .filter(({ id }) => pending.ids.has(id))
       .map((row) => [row.id, row]),
   );
-  const hidden = new Set(read.items.filter(({ id }) => pending.deleted.has(id) && !cachedRows.has(id)).map(({ id }) => id));
-  const items = read.items.flatMap((row) => (hidden.has(row.id) ? [] : [cachedRows.get(row.id) ?? row]));
-  if (!wholeList) {
-    const hiddenIds = [...hidden].filter((id) => atEnd.deleted.has(id));
-    const page = { ...read, items, total: read.total - (hidden.size - hiddenIds.length) };
-    return hiddenIds.length ? { ...page, hiddenIds } : page;
-  }
+  const hidden = new Set(read.results.filter(({ id }) => pending.deleted.has(id) && !cachedRows.has(id)).map(({ id }) => id));
+  const results = read.results.flatMap((row) => (hidden.has(row.id) ? [] : [cachedRows.get(row.id) ?? row]));
+  if (!wholeList) return { ...read, results, totalSize: read.totalSize - hidden.size };
 
-  const readIds = new Set(read.items.map(({ id }) => id));
+  const readIds = new Set(read.results.map(({ id }) => id));
   const takenBack = [...cachedRows.values()].filter(({ id }) => !readIds.has(id));
-  return { items: [...takenBack, ...items], total: read.total + takenBack.length - hidden.size };
+  return { ...read, results: [...takenBack, ...results], totalSize: read.totalSize + takenBack.length - hidden.size };
 }
 
 /** A reader that mounts refetches a marked list whatever the global `refetchOnMount`: the mark says the list is incomplete, and `syncStaleTime` keeps a fresh one as it is. */

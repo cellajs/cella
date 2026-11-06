@@ -1,7 +1,7 @@
 import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { MembershipBase, MembershipInviteResponse, UpdateMembershipResponse } from 'sdk';
-import { deleteMemberships, membershipInvite, updateMembership, withdrawPendingInvitation } from 'sdk';
+import type { InviteMembersResponse, MembershipBase, UpdateMembershipResponse } from 'sdk';
+import { batchDeleteMemberships, deleteInvitation, inviteMembers, updateMembership } from 'sdk';
 import { getArchiveMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
@@ -22,6 +22,7 @@ import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers
 import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import { findMembership, getCachedMemberships } from '~/query/enrichment/helpers';
 import { queryClient } from '~/query/query-client';
+import type { QueryData } from '~/query/types';
 
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
   [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
@@ -36,9 +37,10 @@ export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembersh
 
 /** Writes to myMemberships, which every membership reader looks up. An uncached list starts empty unless `onlyIfCached`. */
 const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[], onlyIfCached = false) => {
-  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
-    if (!oldData) return onlyIfCached ? oldData : { items: write([]) };
-    return { ...oldData, items: write(oldData.items) };
+  queryClient.setQueryData<QueryData<MembershipBase>>(meKeys.memberships, (oldData) => {
+    const results = write(oldData?.results ?? []);
+    if (!oldData) return onlyIfCached ? oldData : { results, totalSize: results.length };
+    return { ...oldData, results, totalSize: results.length };
   });
 };
 
@@ -67,7 +69,7 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
     const next = mapListItems(data, mapItems, mapItems(items).length - items.length);
     // A paged list emptied by the write collapses to one empty first page.
     const emptied = isInfiniteQueryData(next) && !getQueryItems(next).length;
-    const emptyPage = { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0, offset: 0 }] };
+    const emptyPage = { pages: [{ results: [], totalSize: 0 }], pageParams: [''] };
     queryClient.setQueryData(queryKey, emptied ? emptyPage : next);
     previous.push([queryKey, data]);
   });
@@ -87,11 +89,11 @@ const invalidateInvites = ({ id: entityId, entityType, organizationId }: Enriche
 };
 
 export const useInviteMemberMutation = () =>
-  useMutation<MembershipInviteResponse & { unsent: string[] }, ApiError, MembershipInviteVariables, undefined>({
+  useMutation<InviteMembersResponse & { unsent: string[] }, ApiError, MembershipInviteVariables, undefined>({
     mutationKey: memberQueryKeys.update,
     // Past the per-request limit the addresses go out in batches, one answer for all
     mutationFn: async ({ body, path, query }) => {
-      const { results, unsent } = await sendInBatches(body.emails, (emails) => membershipInvite({ body: { ...body, emails }, path, query }));
+      const { results, unsent } = await sendInBatches(body.emails, (emails) => inviteMembers({ body: { ...body, emails }, path, query }));
       return {
         data: results.flatMap(({ data }) => data),
         outcomes: results.flatMap(({ outcomes }) => outcomes),
@@ -107,7 +109,7 @@ export const useWithdrawInvitationMutation = () =>
   useMutation<void, ApiError, { channel: EnrichedChannel; id: string }>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ channel, id }) => {
-      await withdrawPendingInvitation({ path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), id } });
+      await deleteInvitation({ path: { tenantId: channel.tenantId, organizationId: channelOrganizationId(channel), invitationId: id } });
     },
     onSuccess: (_, { channel }) => invalidateInvites(channel),
   });
@@ -125,7 +127,7 @@ export const useMemberUpdateMutation = () =>
     mutationFn: ({ path, body }) => updateMembership({ body, path }),
     onMutate: async (variables) => {
       const { channelId, channelType, path, body } = variables;
-      const { tenantId, organizationId, id } = path;
+      const { tenantId, organizationId, membershipId: id } = path;
       const membershipInfo = { id, ...body };
 
       const { archived, displayOrder } = body;
@@ -183,7 +185,7 @@ export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembershipsVariables, MemberListSnapshot[]>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
-      await deleteMemberships({ path, body, query });
+      await batchDeleteMemberships({ path, body, query });
     },
     onMutate: async (variables) => {
       const {
@@ -230,12 +232,12 @@ export const useChangeEntityRoleMutation = () =>
       const organizationId = channelOrganizationId(entity);
 
       if (membership) {
-        const updated = await updateMembership({ body: { role }, path: { id: membership.id, tenantId, organizationId } });
+        const updated = await updateMembership({ body: { role }, path: { membershipId: membership.id, tenantId, organizationId } });
         return { ...membership, ...updated };
       }
 
       const { email } = getCurrentUser();
-      const result = await membershipInvite({
+      const result = await inviteMembers({
         query: { entityId, entityType },
         path: { tenantId, organizationId },
         body: { emails: [email], role },

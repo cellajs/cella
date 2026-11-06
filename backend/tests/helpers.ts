@@ -24,7 +24,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
-import type { apiErrorSchema } from '#/schemas';
+import { apiErrorSchema } from '#/schemas';
 import { decodeBase32 } from '#/utils/base32';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
@@ -97,16 +97,21 @@ export function mailedLink(key: string) {
   return { url, token };
 }
 
-/** The parts of an error answer that come from the refusal itself, without the per-request path, id and time. */
-export const refusalOf = ({ status, type, name, message, severity, entityType, meta }: ErrorResponse) => ({
-  status,
-  type,
-  name,
-  message,
-  severity,
-  entityType,
-  meta,
-});
+/** The parts of an error answer that come from the refusal itself, without the per-request id, release, path and time. */
+export const refusalOf = ({
+  instance: _instance,
+  version: _version,
+  path: _path,
+  method: _method,
+  timestamp: _timestamp,
+  ...refusal
+}: ErrorResponse) => refusal;
+
+const problemMembers = new Set(Object.keys(apiErrorSchema.shape));
+
+/** The extension members of an error answer: the `meta` its `AppError` was thrown with. */
+export const membersOf = (error: unknown) =>
+  Object.fromEntries(Object.entries((error ?? {}) as ErrorResponse).filter(([member]) => !problemMembers.has(member)));
 
 /**
  * A request past the SDK from a browser holding `cookie`, its answer read as raw JSON: the SDK's response parsing would

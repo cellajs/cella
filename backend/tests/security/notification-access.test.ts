@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
+import { batchCreateAttachments, type ListNotificationsResponse, listNotifications } from 'sdk';
 import { publicReadGrants } from 'shared';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
@@ -77,9 +77,12 @@ describe('Notification access', async () => {
   };
 
   const inbox = async (as: { sessionCookie: string }) => {
-    const { data, response } = await call(getNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
+    const { data, response } = await call(listNotifications, {
+      query: { maxPageSize: 30 },
+      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
+    });
     expect(response.status).toBe(200);
-    return data as GetNotificationsResponse;
+    return data as ListNotificationsResponse;
   };
 
   /** A digest run at noon UTC today, so the send hour has passed whenever the suite runs. */
@@ -96,7 +99,7 @@ describe('Notification access', async () => {
 
     const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     for (const user of [leaver, stayer]) await joinAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, home, user.id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       body: Object.values(attachmentIds).map((id) => attachmentBody(id, home)),
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -149,15 +152,15 @@ describe('Notification access', async () => {
     await clearSecurityTestData();
   });
 
-  it("must not show a left organization's notifications via getNotifications", async () => {
-    const { items, unreadCount } = await inbox(leaver);
+  it("must not show a left organization's notifications via listNotifications", async () => {
+    const { results: items, unreadCount } = await inbox(leaver);
     expect(items).toEqual([]);
     expect(unreadCount).toBe(0);
     expect(JSON.stringify(items)).not.toContain('Renamed');
   });
 
   it('lists a current member their notifications with names (positive control)', async () => {
-    const { items, unreadCount } = await inbox(stayer);
+    const { results: items, unreadCount } = await inbox(stayer);
     expect(unreadCount).toBe(2);
     const fresh = items.find((item) => item.subjectId === attachmentIds.fresh);
     expect(fresh).toMatchObject({
@@ -203,7 +206,7 @@ describe('Notification access', async () => {
 
     it('must not name an item the member may no longer read via the inbox, the mention mail or the digest', async () => {
       // The stayer still belongs, so the rows stay, but none names its item or channel.
-      const { items, unreadCount } = await inbox(stayer);
+      const { results: items, unreadCount } = await inbox(stayer);
       expect(unreadCount).toBe(2);
       for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '', channelThumbnailUrl: null });
 

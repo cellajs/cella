@@ -59,7 +59,7 @@ export function SearchResultBlock({
           <ComboboxItem
             key={item.id}
             value={item}
-            data-already-member={isChannelType && !!findMembership(myMemberships?.items ?? [], item.id)}
+            data-already-member={isChannelType && !!findMembership(myMemberships?.results ?? [], item.id)}
             className={cn('group group/recent justify-between', collapsed && 'hidden')}
           >
             <div className="flex min-w-0 items-center gap-2">

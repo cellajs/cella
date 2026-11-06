@@ -19,6 +19,7 @@ import {
   expectRefusal,
   mailedLink,
   mailsTo,
+  membersOf,
   sessionRow,
   setCookiePair,
   totpCode,
@@ -161,7 +162,7 @@ describe('brute-force budgets', async () => {
     const blocked = await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) });
     expect(blocked.response.status).toBe(429);
     // The refusal names the wait alone, and the table counts the client under a pseudonym, never its address.
-    expect((blocked.error as ErrorResponse | undefined)?.meta).toEqual({ retryAfter: expect.any(Number) });
+    expect(membersOf(blocked.error)).toEqual({ retryAfter: expect.any(Number) });
     const keys = getAdminDb('rate limit test').select({ key: rateLimitsTable.key }).from(rateLimitsTable);
     expect(await keys.where(like(rateLimitsTable.key, `%${ip}%`))).toEqual([]);
     expect(

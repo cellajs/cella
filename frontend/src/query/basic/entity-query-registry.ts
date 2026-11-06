@@ -12,7 +12,7 @@ export interface EntityQueryKeys {
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
-/** The backend's max limit for range fetches: a response of exactly this size may truncate the range. */
+/** The backend's largest page, the size of a range fetch: a response of exactly this size may truncate the range. */
 export const syncChunkSize = 1000;
 
 export type { SeqRange };
@@ -32,15 +32,15 @@ export function rowOutsideRange(rows: ItemData[], { afterSeq, untilSeq }: SeqRan
 }
 
 /**
- * Fetches one sequence range for catchup, optionally narrowed to a subtree. `query` holds the range and the chunk limit,
+ * Fetches one sequence range for catchup, optionally narrowed to a subtree. `query` holds the range and the chunk size,
  * ready to spread into the product's list request.
  */
 export type RangeFetch = (request: {
   organizationId: string;
   tenantId: string;
   channelId?: string;
-  query: SeqRange & { limit: number };
-}) => Promise<{ items: ItemData[]; total: number }>;
+  query: SeqRange & { maxPageSize: number };
+}) => Promise<{ results: ItemData[]; totalSize: number }>;
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
 const entityQueryKeysRegistry = new Map<EntityType, EntityQueryKeys>();

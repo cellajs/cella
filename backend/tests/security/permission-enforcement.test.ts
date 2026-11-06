@@ -1,11 +1,11 @@
 import { and, eq } from 'drizzle-orm';
 import {
-  createAttachments,
-  deleteAttachments,
-  deleteMemberships,
-  deleteOrganizations,
-  membershipInvite,
-  resendPendingInvitation,
+  batchCreateAttachments,
+  batchDeleteAttachments,
+  batchDeleteMemberships,
+  batchDeleteOrganizations,
+  inviteMembers,
+  resendInvitation,
   updateOrganization,
 } from 'sdk';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
@@ -84,7 +84,7 @@ describe('Member escalation over HTTP', async () => {
     await joinAttachmentHome(org, plan, member.id);
     const attachmentOf = async (user: User) => {
       const id = generateId();
-      const { response } = await call(createAttachments, {
+      const { response } = await call(batchCreateAttachments, {
         path: { tenantId: org.tenantId, organizationId: org.id },
         body: [attachmentBody(id, plan)],
         headers: headers(user),
@@ -100,14 +100,14 @@ describe('Member escalation over HTTP', async () => {
     {
       act: 'update the organization',
       attempt: ({ org }, actor) =>
-        call(updateOrganization, { path: { tenantId: org.tenantId, id: org.id }, body: { name: 'Hijacked' }, headers: headers(actor) }),
+        call(updateOrganization, { path: { tenantId: org.tenantId, organizationId: org.id }, body: { name: 'Hijacked' }, headers: headers(actor) }),
       unchanged: async ({ org }) => expect((await organizationRow(org.id)).name).toBe(org.name),
       okStatus: 200,
     },
     {
       act: 'invite someone as admin',
       attempt: ({ org }, actor) =>
-        call(membershipInvite, {
+        call(inviteMembers, {
           path: { tenantId: org.tenantId, organizationId: org.id },
           query: { entityId: org.id, entityType: 'organization' },
           body: { emails: [`newcomer-${actor.id}@security-test.com`], role: adminRole },
@@ -119,14 +119,14 @@ describe('Member escalation over HTTP', async () => {
     {
       act: 're-send a pending invitation',
       attempt: ({ org, invitation }, actor) =>
-        call(resendPendingInvitation, { path: { tenantId: org.tenantId, organizationId: org.id, id: invitation }, headers: headers(actor) }),
+        call(resendInvitation, { path: { tenantId: org.tenantId, organizationId: org.id, invitationId: invitation }, headers: headers(actor) }),
       unchanged: async () => expect(mailer.sendEmails).not.toHaveBeenCalled(),
       okStatus: 204,
     },
     {
       act: 'remove another member',
       attempt: (fixture, actor) =>
-        call(deleteMemberships, {
+        call(batchDeleteMemberships, {
           path: { tenantId: fixture.org.tenantId, organizationId: fixture.org.id },
           query: { entityId: fixture.org.id, entityType: 'organization' },
           body: { ids: [counterpart(fixture, actor).id] },
@@ -138,7 +138,7 @@ describe('Member escalation over HTTP', async () => {
     {
       act: "delete the admin's attachment",
       attempt: ({ org, attachment }, actor) =>
-        call(deleteAttachments, {
+        call(batchDeleteAttachments, {
           path: { tenantId: org.tenantId, organizationId: org.id },
           body: { ids: [attachment], stx: { mutationId: generateId(), sourceId: 'permission-enforcement' } },
           headers: headers(actor),
@@ -149,7 +149,7 @@ describe('Member escalation over HTTP', async () => {
     {
       act: 'delete the organization',
       attempt: ({ org }, actor) =>
-        call(deleteOrganizations, {
+        call(batchDeleteOrganizations, {
           path: { tenantId: org.tenantId },
           body: { ids: [org.id] },
           headers: headers(actor),
@@ -176,7 +176,7 @@ describe('Member escalation over HTTP', async () => {
     const own = await fixture('escalation-control');
 
     const mine = await own.attachmentOf(own.member);
-    const { data, response } = await call(deleteAttachments, {
+    const { data, response } = await call(batchDeleteAttachments, {
       path: { tenantId: own.org.tenantId, organizationId: own.org.id },
       body: { ids: [mine], stx: { mutationId: generateId(), sourceId: 'permission-enforcement' } },
       headers: headers(own.member),

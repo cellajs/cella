@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { membershipInvite, resendPendingInvitation, withdrawPendingInvitation } from 'sdk';
+import { deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -33,7 +33,7 @@ describe('Invitation mail caps', async () => {
   });
 
   const invite = (organization: Organization, inviter: Inviter, emails: string[]) =>
-    call(membershipInvite, {
+    call(inviteMembers, {
       ...scope(organization, inviter),
       query: { entityId: organization.id, entityType: 'organization' },
       body: { emails, role: memberRole },
@@ -88,7 +88,7 @@ describe('Invitation mail caps', async () => {
       again: async (organization: Organization, admins: { first: Inviter }, email: string) => {
         const invitation = await invitationOf(organization, email);
         const scoped = scope(organization, admins.first);
-        return call(resendPendingInvitation, { ...scoped, path: { ...scoped.path, id: invitation?.id ?? '' } });
+        return call(resendInvitation, { ...scoped, path: { ...scoped.path, invitationId: invitation?.id ?? '' } });
       },
     },
     {
@@ -96,7 +96,7 @@ describe('Invitation mail caps', async () => {
       again: async (organization: Organization, admins: { first: Inviter }, email: string) => {
         const invitation = await invitationOf(organization, email);
         const scoped = scope(organization, admins.first);
-        await call(withdrawPendingInvitation, { ...scoped, path: { ...scoped.path, id: invitation?.id ?? '' } });
+        await call(deleteInvitation, { ...scoped, path: { ...scoped.path, invitationId: invitation?.id ?? '' } });
         return invite(organization, admins.first, [email]);
       },
     },

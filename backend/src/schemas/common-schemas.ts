@@ -26,7 +26,7 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 /**
  * A zod error param translated when a value fails. Schemas are built while the routes import, before the server
  * initializes i18n, so a message translated at build time would stay zod's default.
- * @param key - Translation key, e.g. 'error:invalid_offset'.
+ * @param key - Translation key, e.g. 'error:invalid_skip'.
  * @param options - Interpolation values.
  */
 export const translatedError = (key: `error:${TemplateErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
@@ -67,43 +67,59 @@ export const timeZoneSchema = z
   .refine(isTimeZone, translatedError('error:invalid_timezone'))
   .openapi({ description: 'IANA time zone id.', example: 'Europe/Amsterdam' });
 
-export const entityIdParamSchema = z.object({ id: validIdSchema });
-
-export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: validIdSchema });
-
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
 /** Tenant- and organization-scoped params, for RLS-enabled routes. */
 export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
-export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
+/** The path of one user: cross-tenant, a relatability check or system admin access decides. */
+export const userIdParamSchema = z.object({ userId: validIdSchema });
 
-/** Cross-tenant routes with a relatability check. */
-export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSchema });
+/** A channel entity by type and id, as the membership routes name it in the query or the body. */
+export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
-export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
-
-const limitMax = 1000;
+/** The largest page a list returns; a larger `maxPageSize` coerces down to it. */
+const pageSizeCap = 1000;
 
 /**
- * An integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`, `-1` and `1.5`
- * fail; `z.coerce` would turn `''` and null into 0.
+ * A non-negative integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`,
+ * `-1` and `1.5` fail with `error`; `z.coerce` would turn `''` and null into 0.
  */
-export const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?: number; error?: ReturnType<typeof translatedError> } = {}) => {
-  const integer = z.int(error).min(min, error);
-  return z.preprocess(
-    (value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value),
-    max === undefined ? integer : integer.max(max, error),
-  );
-};
+const integerQuerySchema = (error?: ReturnType<typeof translatedError>) =>
+  z.preprocess((value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value), z.int(error).min(0, error));
 
-/** A list's sort direction; each list query sets its own default. */
-export const orderSchema = z.enum(['asc', 'desc']);
+/** A list's sort direction. */
+const orderSchema = z.enum(['asc', 'desc']);
 
 export type OrderDirection = z.infer<typeof orderSchema>;
 
-/** Search, sort and paging: newest first from offset 0, the configured default `limit` when absent, at most 1000. */
-export const paginationQuerySchema = z.object({
+/**
+ * The most results one page holds (AEP-158): absent or 0 reads the configured default, above `max` it coerces down to
+ * `max`, and a negative value fails.
+ */
+export const maxPageSizeSchema = (max: number) => {
+  const fallback = Math.min(appConfig.requestLimits.default, max);
+  return integerQuerySchema(translatedError('error:invalid_page_size'))
+    .optional()
+    .transform((size) => Math.min(size || fallback, max))
+    .describe(`Most results one page holds. Absent or 0 reads ${fallback}; above ${max} reads ${max}. A page may hold fewer.`);
+};
+
+/** The paging params of a list (AEP-158): a page token, a page size and results to skip. */
+export const pageQuerySchema = z.object({
+  pageToken: z
+    .string()
+    .max(maxLength.url)
+    .optional()
+    .describe("The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it."),
+  maxPageSize: maxPageSizeSchema(pageSizeCap),
+  skip: integerQuerySchema(translatedError('error:invalid_skip'))
+    .default(0)
+    .describe("Results to pass over after the page token's position, or from the start without a token."),
+});
+
+/** Paging and search: what every list that searches takes. */
+export const listQuerySchema = pageQuerySchema.extend({
   q: z
     .string()
     .max(maxLength.field)
@@ -111,23 +127,35 @@ export const paginationQuerySchema = z.object({
     .describe(
       'Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.',
     ),
-  sort: z.enum(['createdAt']).default('createdAt'),
-  order: orderSchema.default('desc'),
-  offset: integerQuerySchema({ error: translatedError('error:invalid_offset') }).default(0),
-  limit: integerQuerySchema({ min: 1, max: limitMax, error: translatedError('error:invalid_limit', { max: limitMax }) }).default(
-    appConfig.requestLimits.default,
-  ),
 });
+
+/**
+ * A list's `orderBy` (AEP-132): one of `fields`, then `asc` or `desc`, ascending when left out. Its values form an enum,
+ * so the docs and the SDK name each one. It parses to the `sort` and `order` that `getOrderColumns` takes.
+ * @param fallback the order when the param is absent
+ */
+export const orderByQuerySchema = <const F extends readonly string[]>(fields: F, fallback: `${F[number]} ${OrderDirection}`) => {
+  const sortSchema = z.enum(fields);
+  const values = fields.flatMap((field) => [field, `${field} asc`, `${field} desc`]);
+  return z
+    .enum(values, translatedError('error:invalid_order_by', { fields: fields.join(', ') }))
+    .default(fallback)
+    .transform((value) => {
+      const [sort, order = 'asc'] = value.split(' ');
+      return { sort: sortSchema.parse(sort), order: orderSchema.parse(order) };
+    })
+    .openapi({ description: 'A field to order by, then `asc` or `desc`; ascending when left out.', example: fallback });
+};
 
 const seqRangeShape = {
   afterSeq: integerQuerySchema().optional().describe('Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.'),
   untilSeq: integerQuerySchema().optional().describe('Range read for sync: the last sequence position to return. Requires afterSeq.'),
 };
 
-type SeqRangeQuery = { afterSeq?: number; untilSeq?: number; q?: string; offset: number };
+type SeqRangeQuery = { afterSeq?: number; untilSeq?: number; q?: string; pageToken?: string; skip: number };
 
-/** A range read pairs both bounds and takes no search and no offset. */
-const refineSeqRange = ({ afterSeq, untilSeq, q, offset }: SeqRangeQuery, ctx: z.RefinementCtx) => {
+/** A range read pairs both bounds and takes no search, no page token and no skip. */
+const refineSeqRange = ({ afterSeq, untilSeq, q, pageToken, skip }: SeqRangeQuery, ctx: z.RefinementCtx) => {
   if (afterSeq === undefined && untilSeq === undefined) return;
   if (afterSeq === undefined || untilSeq === undefined) {
     ctx.addIssue({ code: 'custom', path: [afterSeq === undefined ? 'afterSeq' : 'untilSeq'], message: 'A range read needs afterSeq and untilSeq' });
@@ -135,22 +163,22 @@ const refineSeqRange = ({ afterSeq, untilSeq, q, offset }: SeqRangeQuery, ctx: z
     ctx.addIssue({ code: 'custom', path: ['untilSeq'], message: 'untilSeq must be higher than afterSeq' });
   }
   if (q?.trim()) ctx.addIssue({ code: 'custom', path: ['q'], message: 'A range read takes no search' });
-  if (offset > 0)
+  if (pageToken || skip > 0)
     ctx.addIssue({
       code: 'custom',
-      path: ['offset'],
-      message: 'A range read takes no offset: the next chunk starts after the last position received',
+      path: [pageToken ? 'pageToken' : 'skip'],
+      message: 'A range read takes no page token and no skip: the next chunk starts after the last position received',
     });
 };
 
 /**
- * A product list query: pagination, `afterSeq` and `untilSeq`, and the product's own params in `shape`. With both
+ * A product list query: paging, search, `afterSeq` and `untilSeq`, and the product's own params in `shape`. With both
  * bounds it is a range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq], deleted rows
- * included, in sequence order. A range read takes no search and no offset; the next chunk starts after the last
- * position received. The range rules apply last, so `shape` can redefine `sort`.
+ * included, in sequence order. A range read takes no search, no page token and no skip; the next chunk starts after the
+ * last position received.
  */
 export const productListQuerySchema = <T extends z.ZodRawShape>(shape: T) =>
-  paginationQuerySchema
+  listQuerySchema
     .extend({ ...seqRangeShape, ...shape })
     // TypeScript cannot see the range and paging keys through a generic `extend`; `shape` holds the product's own params.
     .superRefine((query, ctx) => refineSeqRange(query as SeqRangeQuery, ctx));
@@ -260,8 +288,13 @@ export const validUrlSchema = z
   .startsWith('https://', translatedError('error:invalid_url'))
   .transform((str) => lowercaseSchemeAndHost(str.trim()));
 
-/** A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of markup. */
-const namePattern = /^[^\p{Cc}<>]+$/u;
+/**
+ * A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of
+ * markup. The control characters are the Unicode Cc ranges spelled as `\x` escapes, which every client's regex engine
+ * reads from the spec (Python's `re` refuses `\p{Cc}`, and Go's RE2 refuses `\u`).
+ */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the control characters are what the pattern refuses
+const namePattern = /^[^\x00-\x1F\x7F-\x9F<>]+$/;
 export const validNameSchema = z
   .string()
   .trim()

@@ -57,7 +57,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | `[handleProductChange] attachment:<action> viewing=<bool>` in tab B console | the change crossed SSE + BroadcastChannel |
 | `Echo: skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
 | `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
-| range response `items` (id, name, `deletedAt`, seq) | payload truth; a range read includes soft-deleted rows, as tombstones without a name |
+| range response `results` (id, name, `deletedAt`, seq) | payload truth; a range read includes soft-deleted rows, as tombstones without a name |
 | `[CatchupProcessor] Away longer than the activity window → cursors reset, synced data refetched` | the device was away longer than `appConfig.retention.activityDays` (`caughtUpAt` in `syncStore`). To test it, move `caughtUpAt` in the persisted `sync` store back and reload |
 
 Decision rule: **no console change line and the API's `cdc` component is not healthy** (its `reason` says why) → the worker (read its log), not the client; **no console change line otherwise** → SSE/leader/broadcast layer; **change but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
@@ -101,7 +101,7 @@ The description driver's experiments, by their `ONLY` name:
 ## Gotchas
 
 - Upload button: match exact name `Upload`; `/upload/i` also hits the page-header "Upload cover" button (org cover-image editor).
-- Uppy dialog: hidden `input[type="file"]` inside the dialog; `setInputFiles` then click `.uppy-StatusBar-actionBtn--upload`. Use a tiny PDF (an image opens the image-editor step). Upload succeeds without S3 (local-first fallback); the `POST …/attachments` (201) is what matters.
+- Uppy dialog: hidden `input[type="file"]` inside the dialog; `setInputFiles` then click `.uppy-StatusBar-actionBtn--upload`. Use a tiny PDF (an image opens the image-editor step). Upload succeeds without S3 (local-first fallback); the `POST …/attachments:batch-create` (201) is what matters.
 - Table: rows virtualized (~15–20 in DOM), sorted `createdAt desc` so new rows are in the viewport. Selectors: row `.rdg-row`, name `span.truncate.font-medium`, row checkbox `[aria-label="Select"]`, rename = dblclick name cell → `input[data-slot="edit-cell-input"]` → Enter, delete = checkbox → destructive `Delete` bar button → confirm dialog `Delete`. Match a row by its exact name: bench rows are numbered, so `… 2` is also the start of `… 20`.
 - Description editor: dblclick the row's description cell (find the column by its header) → sheet `[role="dialog"]` with the row name as heading → `.bn-editor[contenteditable="true"]`. Remote cursor labels sit inside the editor's text: cut `.bn-collaboration-cursor__base` before matching.
 - Caret: the editor reads a moved caret a moment later, so text typed straight after a click or `Meta+ArrowDown` goes to the caret before it (two users clicking the same spot then type into each other's text). Set the DOM selection (`selectAllChildren` + `collapseToEnd`) and wait about 150ms. A fresh editor also places its own caret right after it shows: wait half a second before the first key.

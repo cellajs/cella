@@ -1,18 +1,88 @@
 import { appConfig } from 'shared';
 import type { ErrorKey } from '#/core/error';
+import { documentResources } from '#/core/openapi-resources';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
-import { errorResponseComponents } from '#/schemas/error-response-schemas';
+import { errorResponseComponents, problemJsonType } from '#/schemas/error-response-schemas';
 
 /** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
 export const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
 /** The parts of a generated OpenAPI document these checks read. */
-type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
+export type OpenApiDocument = { components?: { schemas?: Record<string, unknown> }; paths?: Record<string, unknown> };
 
-/** Normalize generated OpenAPI fields that need source-library compatibility fixes, and fold the shared error responses into their `$ref`s. */
+/**
+ * Normalize generated OpenAPI fields that need source-library compatibility fixes, fold the shared error responses into
+ * their `$ref`s, give custom methods and updates their AEP form, and annotate the resources.
+ */
 export const normalizeOpenApiDocument = (doc: OpenApiDocument) => {
   stripRegexFlagsFromPatterns(doc);
   foldErrorResponses(doc);
+  documentCustomMethods(doc);
+  documentMergePatch(doc);
+  documentResources(doc);
+};
+
+/**
+ * Verbs routes declare as custom methods. A router matches no literal after a path param, so a route declares the
+ * custom method `:verb` at the routable path `/~verb`, and the server rewrites a request for `<resource>:<verb>` to it.
+ */
+const customVerbs = new Set<string>();
+
+export const recordCustomVerb = (verb: string) => {
+  customVerbs.add(verb);
+};
+
+/** A last segment `<resource>:<verb>`, the colon sent as is or percent-encoded. */
+const customMethodSuffix = /(?::|%3[aA])([a-z][a-z0-9-]*)$/;
+
+/**
+ * The routable path of a request path that ends in a custom method a route declares: `<x>:<verb>` as `<x>/~<verb>`.
+ * @returns Undefined for any other path, so a param value holding a colon reaches its route as sent.
+ */
+export const routablePath = (path: string): string | undefined => {
+  const match = customMethodSuffix.exec(path);
+  return match && customVerbs.has(match[1]) ? `${path.slice(0, match.index)}/~${match[1]}` : undefined;
+};
+
+/** A path as clients send it: a custom method's routable `/~verb` as `:verb`. */
+export const clientPath = (path: string) => path.replace(/\/~([a-z][a-z0-9-]*)$/, ':$1');
+
+/** The paths of the document as clients send them. */
+const documentCustomMethods = (doc: OpenApiDocument) => {
+  if (!doc.paths) return;
+  doc.paths = Object.fromEntries(Object.entries(doc.paths).map(([path, item]) => [clientPath(path), item]));
+};
+
+type RequestBodyNode = { content?: Record<string, unknown> };
+
+/** Update bodies of field operations with their timestamps (`{ ops, stx }`), which the sync engine merges field by field. */
+const fieldOperationBodies = new WeakSet<object>();
+
+/** Marks a product update body as field operations, so its route is not documented as taking a merge patch. */
+export const markFieldOperations = <S extends object>(schema: S): S => {
+  fieldOperationBodies.add(schema);
+  return schema;
+};
+
+/** The `operationId`s of patch routes whose body is field operations. */
+const fieldOperationUpdates = new Set<string>();
+
+export const recordPatchBody = (operationId: string, body: unknown) => {
+  if (typeof body === 'object' && body !== null && fieldOperationBodies.has(body)) fieldOperationUpdates.add(operationId);
+};
+
+/**
+ * An update takes a JSON Merge Patch (RFC 7396): the JSON body validator accepts every `+json` media type, so a patch
+ * route's `application/json` body is documented as `application/merge-patch+json` too. A product update takes field
+ * operations (`markFieldOperations`) and is left as it is.
+ */
+const documentMergePatch = (doc: OpenApiDocument) => {
+  const paths = (doc.paths ?? {}) as Record<string, { patch?: { operationId?: string; requestBody?: RequestBodyNode } }>;
+  for (const { patch } of Object.values(paths)) {
+    const content = patch?.requestBody?.content;
+    if (patch?.operationId && fieldOperationUpdates.has(patch.operationId)) continue;
+    if (content?.['application/json']) content['application/merge-patch+json'] = content['application/json'];
+  }
 };
 
 /** Per `operationId`, the error statuses its route documents: `createXRoute` records them, the error handler reads them where authoring rules are checked. */
@@ -63,7 +133,7 @@ const foldErrorResponses = (doc: OpenApiDocument) => {
     for (const { responses } of Object.values(pathItem)) {
       for (const [status, response] of Object.entries(responses ?? {})) {
         if (response.$ref || !responses) continue;
-        const name = response.content?.['application/json']?.schema?.$ref?.split('/').pop();
+        const name = response.content?.[problemJsonType]?.schema?.$ref?.split('/').pop();
         if (name && errorResponseComponents.get(name) === response.description) responses[status] = { $ref: `#/components/responses/${name}` };
       }
     }

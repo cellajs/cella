@@ -33,12 +33,12 @@ describe('ancestor slug enrichment', () => {
 
   // The wide fixture has raak's shape: a project's parent is the organization, and the menu nests it under a workspace.
   it("keeps a project's ancestor slugs current, its parent's and its menu parent's, the ids standing in until a slug is cached", () => {
-    const ancestorSlugs = () => (queryClient.getQueryData(['project', 'list']) as any).pages[0].items[0].ancestorSlugs;
+    const ancestorSlugs = () => (queryClient.getQueryData(['project', 'list']) as any).pages[0].results[0].ancestorSlugs;
     unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' }]));
     queryClient.setQueryData(['me', 'memberships'], {
-      items: [
+      results: [
         makeMembership('org-1'),
         makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1', workspaceId: 'ws-1' }),
       ],

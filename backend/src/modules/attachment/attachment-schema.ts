@@ -6,7 +6,16 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mockAttachmentResponse } from '#/modules/attachment/attachment-mocks';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
-import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
+import {
+  batchResponseSchema,
+  maxLength,
+  orderByQuerySchema,
+  productListQuerySchema,
+  stxBaseSchema,
+  tenantOrgParamSchema,
+  validIdSchema,
+  validUuidSchema,
+} from '#/schemas';
 import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 
 /** The single place the storage-key variant set is enumerated. `original` is always present. */
@@ -97,8 +106,11 @@ export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSche
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 
+/** The path of one attachment in its organization. */
+export const attachmentParamSchema = tenantOrgParamSchema.extend({ attachmentId: validIdSchema });
+
 export const attachmentListQuerySchema = productListQuerySchema({
-  sort: attachmentSortKeys.default('createdAt'),
+  orderBy: orderByQuerySchema(attachmentSortKeys.options, 'createdAt desc'),
   /** Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide. */
   channelId: validUuidSchema.optional(),
 });

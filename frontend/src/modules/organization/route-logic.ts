@@ -16,7 +16,7 @@ export const organizationLayoutBeforeLoad = async ({ params, cause }: Organizati
     tenantId,
     findInCache: findOrganizationByIdOrSlug,
     detailQueryOptions: (id) => organizationQueryOptions(id, tenantId),
-    fetchBySlug: () => getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
+    fetchBySlug: () => getOrganization({ path: { tenantId, organizationId: organizationSlug }, query: { slug: true, include: 'counts' } }),
     readRequiresOnline: false,
     revalidateIfStale: shouldRevalidate,
     params,

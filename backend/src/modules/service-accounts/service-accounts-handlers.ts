@@ -8,6 +8,7 @@ import { revokeApiKeyOp } from '#/modules/service-accounts/operations/revoke-api
 import { updateServiceAccountOp } from '#/modules/service-accounts/operations/update-service-account';
 import { serviceAccountRoutes } from '#/modules/service-accounts/service-accounts-routes';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -16,32 +17,31 @@ app.openapi(serviceAccountRoutes.createServiceAccount, async (ctx) => {
   return ctx.json(data, 201);
 });
 
-app.openapi(serviceAccountRoutes.getServiceAccounts, async (ctx) => {
-  const data = await getServiceAccountsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+app.openapi(serviceAccountRoutes.listServiceAccounts, async (ctx) => {
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getServiceAccountsOp(ctx, query, page)), 200);
 });
 
 app.openapi(serviceAccountRoutes.updateServiceAccount, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const data = await updateServiceAccountOp(ctx, id, ctx.req.valid('json'));
+  const { serviceAccountId } = ctx.req.valid('param');
+  const data = await updateServiceAccountOp(ctx, serviceAccountId, ctx.req.valid('json'));
   return ctx.json(data, 200);
 });
 
-app.openapi(serviceAccountRoutes.getApiKeys, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const data = await getApiKeysOp(ctx, id);
-  return ctx.json(data, 200);
+app.openapi(serviceAccountRoutes.listApiKeys, async (ctx) => {
+  const { serviceAccountId } = ctx.req.valid('param');
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), (page) => getApiKeysOp(ctx, serviceAccountId, page)), 200);
 });
 
 app.openapi(serviceAccountRoutes.createApiKey, async (ctx) => {
-  const { id } = ctx.req.valid('param');
-  const data = await createApiKeyOp(ctx, id, ctx.req.valid('json'));
+  const { serviceAccountId } = ctx.req.valid('param');
+  const data = await createApiKeyOp(ctx, serviceAccountId, ctx.req.valid('json'));
   return ctx.json(data, 201);
 });
 
 app.openapi(serviceAccountRoutes.revokeApiKey, async (ctx) => {
-  const { id, keyId } = ctx.req.valid('param');
-  const data = await revokeApiKeyOp(ctx, id, keyId);
+  const { serviceAccountId, apiKeyId } = ctx.req.valid('param');
+  const data = await revokeApiKeyOp(ctx, serviceAccountId, apiKeyId);
   return ctx.json(data, 200);
 });
 

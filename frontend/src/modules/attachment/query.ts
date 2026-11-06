@@ -1,7 +1,7 @@
 import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
+import { type Attachment, getAttachment, type ListAttachmentsData, listAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig, hierarchy } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
@@ -27,10 +27,10 @@ import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, cancelKeepingMark, removeDetailQueriesById, writeKeepingMark } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
-import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { registerEntityQueryKeys, syncChunkSize } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { liveItems, offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { liveItems, orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import { syncedListOptions } from '~/query/basic/synced-list-options';
@@ -43,9 +43,10 @@ import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/qu
 import { mergeServerResponse, writeEntityToCache } from '~/query/offline/update-success-utils';
 import { queryClient } from '~/query/query-client';
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
+import type { ListFilters } from '~/query/types';
 import { createResourceError } from '~/utils/resource-error';
 
-type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset' | 'afterSeq' | 'untilSeq'>;
+type AttachmentFilters = ListFilters<NonNullable<ListAttachmentsData['query']>>;
 
 const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
 const keys = {
@@ -57,7 +58,7 @@ const keys = {
 };
 // A narrowed range fetch names the channel that covers the due views; org-wide passes none.
 registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channelId, query }) => {
-  return getAttachments({ path: { tenantId, organizationId }, query: { ...query, channelId } });
+  return listAttachments({ path: { tenantId, organizationId }, query: { ...query, channelId } });
 });
 export const attachmentQueryKeys = keys;
 
@@ -95,14 +96,16 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   } = params;
 
   const filters = { q, sort, order };
+  const query = { q, orderBy: orderByParam(sort, order) };
 
+  const paging = tokenPaging((pageToken, signal) =>
+    listAttachments({ path: { tenantId, organizationId }, query: { ...query, ...pageQuery(limit, pageToken) }, signal }).then(liveItems),
+  );
   return syncedListOptions(
     infiniteQueryOptions({
       queryKey: keys.list.filtered(organizationId, filters),
-      ...offsetPaging(limit, (offset, signal) =>
-        getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }).then(liveItems),
-      ),
-      meta: { persist: false },
+      ...paging,
+      meta: { ...paging.meta, persist: false },
       staleTime: syncStaleTime,
     }),
   );
@@ -119,10 +122,7 @@ export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { orga
     queryOptions({
       queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
       queryFn: async () => {
-        return fetchAllPages(
-          ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }).then(liveItems),
-          1000,
-        );
+        return fetchAllPages((page) => listAttachments({ path: { tenantId, organizationId }, query: page }).then(liveItems), syncChunkSize);
       },
       staleTime: syncStaleTime,
     }),
@@ -133,7 +133,7 @@ export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { orga
 export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: () => getAttachment({ path: { tenantId, organizationId, id } }),
+    queryFn: () => getAttachment({ path: { tenantId, organizationId, attachmentId: id } }),
     initialData: () => findAttachmentInCache(id),
   });
 
@@ -147,9 +147,9 @@ export const useGroupAttachments = (tenantId: string | undefined, organizationId
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
     enabled: !!tenantId && !!organizationId && !!groupId,
-    select: ({ items }) => {
+    select: ({ results }) => {
       if (!groupId) return null;
-      const filtered = items.filter((item) => item.groupId === groupId);
+      const filtered = results.filter((item) => item.groupId === groupId);
       return filtered.length > 0 ? filtered : null;
     },
   });
@@ -326,7 +326,7 @@ queryClient.setQueryDefaults(keys.detail.base, {
     const id = queryKey[2] as string;
     const cached = findAttachmentInCache(id);
     const { organizationId, tenantId } = resolveQueryOrgTenantIds(cached, 'attachment');
-    return getAttachment({ path: { id, organizationId, tenantId } });
+    return getAttachment({ path: { attachmentId: id, organizationId, tenantId } });
   },
 });
 

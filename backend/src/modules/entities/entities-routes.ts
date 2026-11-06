@@ -10,7 +10,7 @@ import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/sch
 const entityRoutes = createXRoutes(['entities', 'cella'], {
   checkSlug: xRoute({
     method: 'post',
-    path: '/{tenantId}/check-slug',
+    path: '/tenants/{tenantId}/~check-slug',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Check slug availability',
@@ -23,7 +23,7 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
   appStream: xRoute({
     operationId: 'getAppStream',
     method: 'get',
-    path: '/app/stream',
+    path: '/entities/app/stream',
     xGuard: [userGuard],
     xRateLimiter: [streamConnectLimiter],
     summary: 'App SSE stream',
@@ -40,7 +40,7 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
   appCatchup: xRoute({
     operationId: 'postAppCatchup',
     method: 'post',
-    path: '/app/stream',
+    path: '/entities/app/stream',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'App stream catchup',

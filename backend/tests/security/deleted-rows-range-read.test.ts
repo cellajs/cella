@@ -44,7 +44,7 @@ describe('Deleted rows in range reads', async () => {
     if (!operation?.parameters?.some((parameter) => 'name' in parameter && parameter.name === 'afterSeq')) return [];
     const response = operation.responses?.['200'];
     const page: SchemaNode | undefined = response && 'content' in response ? response.content?.['application/json']?.schema : undefined;
-    const itemSchema = page?.properties?.items?.items;
+    const itemSchema = page?.properties?.results?.items;
     const variants = itemSchema?.anyOf ?? (itemSchema ? [itemSchema] : []);
     const fullName =
       variants
@@ -52,12 +52,13 @@ describe('Deleted rows in range reads', async () => {
         ?.$ref?.split('/')
         .pop() ?? '';
     const tombstone = variants.find((variant) => !variant.$ref);
+    const entityType = appConfig.productEntityTypes.find((type) => type === schemas[fullName]?.properties?.entityType?.enum?.[0]);
     return [
       {
         operationId: String(operation.operationId),
-        entityType: appConfig.productEntityTypes.find((type) => type === schemas[fullName]?.properties?.entityType?.enum?.[0]),
+        entityType,
         path,
-        hasDetail: !!paths[`${path}/{id}`]?.get,
+        hasDetail: !!entityType && !!paths[`${path}/{${appConfig.entityIdColumnKeys[entityType]}}`]?.get,
         declaredKeys: Object.keys(tombstone?.properties ?? {}),
       },
     ];
@@ -109,9 +110,9 @@ describe('Deleted rows in range reads', async () => {
 
     // The writer, who saw the row live, gets the same tombstone: the projection is per row, not per viewer.
     for (const cookie of [reader.sessionCookie, writer.sessionCookie]) {
-      const response = await request(`${listPath}?afterSeq=0&untilSeq=2&limit=100`, cookie);
+      const response = await request(`${listPath}?afterSeq=0&untilSeq=2&maxPageSize=100`, cookie);
       expect(response.status).toBe(200);
-      const { items } = (await response.json()) as { items: Row[] };
+      const { results: items } = (await response.json()) as { results: Row[] };
       const live = items.find((item) => item.id === liveId) ?? {};
       const tombstone = items.find((item) => item.id === deletedId) ?? {};
 

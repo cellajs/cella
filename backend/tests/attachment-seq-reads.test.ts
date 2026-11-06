@@ -1,5 +1,5 @@
 import { inArray } from 'drizzle-orm';
-import { getAttachments } from 'sdk';
+import { listAttachments } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -24,14 +24,14 @@ describe('Attachment range reads', async () => {
   let plan: TestEntityHierarchyPlan;
 
   // The SDK sends requests unchecked, so an out-of-range query reaches the server's own rules.
-  const listAttachments = async (query: Record<string, string | number>) => {
-    const result = await call(getAttachments, {
+  const readAttachments = async (query: Record<string, string | number>) => {
+    const result = await call(listAttachments, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId },
       query,
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
-    const data = result.data as { items: { id: string; seq: number; deletedAt: string | null }[] } | undefined;
-    return { status: result.response.status, items: data?.items ?? [] };
+    const data = result.data as { results: { id: string; seq: number; deletedAt: string | null }[] } | undefined;
+    return { status: result.response.status, items: data?.results ?? [] };
   };
 
   beforeAll(async () => {
@@ -66,8 +66,8 @@ describe('Attachment range reads', async () => {
   });
 
   it('B1: range reads are seq-ascending; a capped response is a clean prefix', async () => {
-    // sort/order params must NOT override seq ordering on range reads
-    const result = await listAttachments({ afterSeq: 0, untilSeq: 999999, limit: 2, sort: 'createdAt', order: 'desc' });
+    // An orderBy param must NOT override seq ordering on range reads
+    const result = await readAttachments({ afterSeq: 0, untilSeq: 999999, maxPageSize: 2, orderBy: 'createdAt desc' });
 
     expect(result.status).toBe(200);
     // Rows in seq order are 10, 20, 30 (tombstone), 40, 50; the cap takes the two lowest.
@@ -76,24 +76,25 @@ describe('Attachment range reads', async () => {
 
   it('B2: range reads include tombstones; normal reads never do', async () => {
     // Range read: tombstones flow through so client caches can drop soft-deleted rows
-    const range = await listAttachments({ afterSeq: 0, untilSeq: 999999, limit: 100 });
+    const range = await readAttachments({ afterSeq: 0, untilSeq: 999999, maxPageSize: 100 });
     expect(range.items.map((a) => a.seq)).toEqual([10, 20, 30, 40, 50]);
     const tombstone = range.items.find((a) => a.seq === 30);
     expect(tombstone?.deletedAt).not.toBeNull();
 
-    const normal = await listAttachments({ limit: 100 });
+    const normal = await readAttachments({ maxPageSize: 100 });
     expect(normal.items.some((a) => a.id === attachmentIds.seq30Deleted)).toBe(false);
   });
 
-  it('B3: limit above 1000 is rejected, not clamped', async () => {
+  it('B3: a page size above 1000 reads 1000; a negative one is rejected', async () => {
+    expect((await readAttachments({ maxPageSize: 1001 })).status).toBe(200);
     // Validation failures are malformed requests: 400 via the app's defaultHook, never 403
-    const result = await listAttachments({ limit: 1001 });
+    const result = await readAttachments({ maxPageSize: -1 });
     expect(result.status).toBe(400);
     expect(result.items).toEqual([]);
   });
 
   it('B4: a range excludes afterSeq and includes untilSeq (seq-filter OR-group regression)', async () => {
-    const result = await listAttachments({ afterSeq: 10, untilSeq: 40, limit: 100 });
+    const result = await readAttachments({ afterSeq: 10, untilSeq: 40, maxPageSize: 100 });
 
     expect(result.status).toBe(200);
     // Regression guard: the bounds must not join an OR'd search group as (seq > 10 OR seq <= 40).
@@ -103,14 +104,14 @@ describe('Attachment range reads', async () => {
   it('B5: channelId narrows to the rows homed at or below that channel', async () => {
     const live = [10, 20, 40, 50];
     const seqs = async (channelId: string) =>
-      (await listAttachments({ channelId, limit: 100, sort: 'createdAt' })).items.map((a) => a.seq).sort((a, b) => a - b);
+      (await readAttachments({ channelId, maxPageSize: 100, orderBy: 'createdAt' })).items.map((a) => a.seq).sort((a, b) => a - b);
 
     // The organization covers every row, and so does each channel between it and the rows' home.
     expect(await seqs(tenant.organization.id)).toEqual(live);
     for (const channelId of Object.values(plan.channelIdColumns)) expect(await seqs(channelId)).toEqual(live);
 
     // A channel no row lives under is an empty page, not a refusal.
-    const elsewhere = await listAttachments({ channelId: generateId(), limit: 100 });
+    const elsewhere = await readAttachments({ channelId: generateId(), maxPageSize: 100 });
     expect(elsewhere.status).toBe(200);
     expect(elsewhere.items).toEqual([]);
   });
@@ -119,10 +120,11 @@ describe('Attachment range reads', async () => {
     ['one bound', { afterSeq: 10 }],
     ['an empty range', { afterSeq: 40, untilSeq: 40 }],
     ['a search', { afterSeq: 10, untilSeq: 40, q: 'seq' }],
-    ['an offset', { afterSeq: 10, untilSeq: 40, offset: 2 }],
+    ['a skip', { afterSeq: 10, untilSeq: 40, skip: 2 }],
+    ['a page token', { afterSeq: 10, untilSeq: 40, pageToken: 'v1:a:b:c' }],
     ['a non-integer bound', { afterSeq: '10.5', untilSeq: 40 }],
   ])('B6: a range read with %s is rejected', async (_, query) => {
-    const result = await listAttachments(query);
+    const result = await readAttachments(query);
     expect(result.status).toBe(400);
   });
 });

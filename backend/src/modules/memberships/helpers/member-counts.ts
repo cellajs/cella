@@ -84,7 +84,7 @@ export const memberCountsSelect = (entityType: ChannelEntityType, entityId: stri
 };
 
 /**
- * ORDER BY expression for `sort=lastPostedAt`, over the first stat product type; the caller must
+ * ORDER BY expression for `orderBy=lastPostedAt`, over the first stat product type; the caller must
  * run under tenantRead (the product table is RLS-guarded). Never-posted coalesces to -infinity so
  * those members trail the recent posters under the default descending sort (plain DESC is NULLS
  * FIRST in Postgres).

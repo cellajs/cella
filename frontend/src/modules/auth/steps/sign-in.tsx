@@ -95,7 +95,7 @@ export function SignInStep({ invitation }: SignInStepProps) {
     onSuccess: () => setMagicLinkSent(form.getValues('email'), 'signin'),
     // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
     onError: (error) => {
-      const connectionId = error.type === 'sso_required' ? error.meta?.connectionId : undefined;
+      const connectionId = error.type === 'sso_required' ? error.connectionId : undefined;
       if (typeof connectionId !== 'string') return;
       navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
     },

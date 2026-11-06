@@ -113,7 +113,7 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
               label="c:revoke"
               icon={UnplugIcon}
               pending={isPending}
-              onDelete={() => revoke({ path: { ...path, id: account.id, keyId: apiKey.id } })}
+              onDelete={() => revoke({ path: { ...path, serviceAccountId: account.id, apiKeyId: apiKey.id } })}
               onCancel={() => setConfirming(false)}
             />
           </div>

@@ -130,7 +130,7 @@ describe('route helpers', () => {
     expect(undocumented.status).toBe(500);
     expect(await undocumented.json()).toMatchObject({
       type: 'server_error',
-      message: expect.stringMatching(/throwsUndocumented answered 404.*errors\(404\)/),
+      detail: expect.stringMatching(/throwsUndocumented answered 404.*errors\(404\)/),
     });
     expect(spy).toHaveBeenCalledOnce();
 
@@ -200,6 +200,59 @@ describe('route helpers', () => {
     appConfig.services.mcp.enabled = true;
     expect((await app.request('/switched')).status).toBe(204);
     expect(guardRan).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { label: 'a put', method: 'put', path: '/things/{id}', id: 'updateThing', error: /put replaces a whole resource/ },
+    { label: 'a body on a get', method: 'get', path: '/things', id: 'listThings', body: true, error: /a get carries no request body/ },
+    { label: 'a body on a delete', method: 'delete', path: '/things', id: 'deleteThings', body: true, error: /a delete carries no request body/ },
+    {
+      label: 'a segment that is no kebab-case',
+      method: 'get',
+      path: '/myThings',
+      id: 'listThings',
+      error: /"myThings" is not lowercase kebab-case.*"my-things"/,
+    },
+    { label: 'a verb written after a param', method: 'post', path: '/things/{id}:archive', id: 'archiveThing', error: /holds a colon.*\/~verb/ },
+    {
+      label: 'a verb that is not the last segment',
+      method: 'post',
+      path: '/things/~archive/{id}',
+      id: 'archiveThing',
+      error: /~archive is not the last segment/,
+    },
+    { label: 'a verb that is no kebab-case', method: 'post', path: '/things/~markRead', id: 'markReadThings', error: /"markRead".*~mark-read/ },
+    { label: 'a verb on a patch', method: 'patch', path: '/things/{id}/~archive', id: 'archiveThing', error: /~archive is a patch/ },
+    {
+      label: 'an operationId that does not lead with the verb',
+      method: 'post',
+      path: '/things/~batch-delete',
+      id: 'deleteThings',
+      error: /does not lead with the verb/,
+    },
+  ] as const)('refuses at load a route that breaks the resource conventions: $label', ({ method, path, id, error, ...route }) => {
+    const create = () =>
+      createXRoute({
+        operationId: id,
+        method,
+        path,
+        xGuard: [publicGuard],
+        tags: ['things'],
+        summary: 'Thing',
+        request: 'body' in route ? { body: jsonBody(itemSchema) } : undefined,
+        responses: { 204: { description: 'Done' } },
+      });
+    expect(create).toThrow(error);
+  });
+
+  it.each([
+    { method: 'get', path: '/tenants/-/organizations', id: 'listOrganizations' },
+    { method: 'get', path: '/.well-known/oauth-protected-resource', id: 'getMetadata' },
+    { method: 'post', path: '/things/{id}/~mark-read', id: 'markThingRead' },
+    { method: 'get', path: '/things/~count', id: 'countThings' },
+  ] as const)('takes a route that keeps the resource conventions: $method $path (positive control)', ({ method, path, id }) => {
+    const route = { operationId: id, method, path, xGuard: [publicGuard], tags: ['things'], summary: 'Thing' };
+    expect(() => createXRoute({ ...route, responses: { 204: { description: 'Done' } } })).not.toThrow();
   });
 
   it('refuses a tool route whose guards take no access token, and names it', () => {

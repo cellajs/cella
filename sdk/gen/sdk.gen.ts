@@ -3,9 +3,33 @@
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
+  AcceptInvitationData,
+  AcceptInvitationErrors,
+  AcceptInvitationResponses,
   AcceptInvitationTokenData,
   AcceptInvitationTokenErrors,
   AcceptInvitationTokenResponses,
+  BatchCreateAttachmentsData,
+  BatchCreateAttachmentsErrors,
+  BatchCreateAttachmentsResponses,
+  BatchCreateOrganizationsData,
+  BatchCreateOrganizationsErrors,
+  BatchCreateOrganizationsResponses,
+  BatchDeleteAttachmentsData,
+  BatchDeleteAttachmentsErrors,
+  BatchDeleteAttachmentsResponses,
+  BatchDeleteMembershipsData,
+  BatchDeleteMembershipsErrors,
+  BatchDeleteMembershipsResponses,
+  BatchDeleteOrganizationsData,
+  BatchDeleteOrganizationsErrors,
+  BatchDeleteOrganizationsResponses,
+  BatchDeleteRequestsData,
+  BatchDeleteRequestsErrors,
+  BatchDeleteRequestsResponses,
+  BatchDeleteUsersData,
+  BatchDeleteUsersErrors,
+  BatchDeleteUsersResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
@@ -20,18 +44,15 @@ import type {
   ConfirmInvitationAddressResponses,
   ConfirmMagicLinkData,
   ConfirmMagicLinkErrors,
+  CountSystemInvitationsData,
+  CountSystemInvitationsErrors,
+  CountSystemInvitationsResponses,
   CreateApiKeyData,
   CreateApiKeyErrors,
   CreateApiKeyResponses,
-  CreateAttachmentsData,
-  CreateAttachmentsErrors,
-  CreateAttachmentsResponses,
   CreateConnectionData,
   CreateConnectionErrors,
   CreateConnectionResponses,
-  CreateOrganizationsData,
-  CreateOrganizationsErrors,
-  CreateOrganizationsResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -44,51 +65,36 @@ import type {
   CreateServiceAccountData,
   CreateServiceAccountErrors,
   CreateServiceAccountResponses,
+  CreateTenantData,
+  CreateTenantErrors,
+  CreateTenantResponses,
   CreateTotpData,
   CreateTotpErrors,
   CreateTotpResponses,
-  DeleteAttachmentsData,
-  DeleteAttachmentsErrors,
-  DeleteAttachmentsResponses,
+  DeleteConnectedAppData,
+  DeleteConnectedAppErrors,
+  DeleteConnectedAppResponses,
   DeleteConnectionData,
   DeleteConnectionErrors,
   DeleteConnectionResponses,
+  DeleteInvitationData,
+  DeleteInvitationErrors,
+  DeleteInvitationResponses,
   DeleteMeData,
   DeleteMeErrors,
-  DeleteMembershipsData,
-  DeleteMembershipsErrors,
-  DeleteMembershipsResponses,
   DeleteMeResponses,
-  DeleteMyMembershipData,
-  DeleteMyMembershipErrors,
-  DeleteMyMembershipResponses,
-  DeleteOrganizationsData,
-  DeleteOrganizationsErrors,
-  DeleteOrganizationsResponses,
   DeletePasskeyData,
   DeletePasskeyErrors,
   DeletePasskeyResponses,
-  DeletePushSubscriptionData,
-  DeletePushSubscriptionErrors,
-  DeletePushSubscriptionResponses,
-  DeleteRequestsData,
-  DeleteRequestsErrors,
-  DeleteRequestsResponses,
   DeleteTotpData,
   DeleteTotpErrors,
   DeleteTotpResponses,
-  DeleteUsersData,
-  DeleteUsersErrors,
-  DeleteUsersResponses,
   GeneratePasskeyChallengeData,
   GeneratePasskeyChallengeErrors,
   GeneratePasskeyChallengeResponses,
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
-  GetApiKeysData,
-  GetApiKeysErrors,
-  GetApiKeysResponses,
   GetApiProtectedResourceMetadataData,
   GetApiProtectedResourceMetadataErrors,
   GetApiProtectedResourceMetadataResponses,
@@ -99,75 +105,36 @@ import type {
   GetAttachmentData,
   GetAttachmentErrors,
   GetAttachmentResponses,
-  GetAttachmentsData,
-  GetAttachmentsErrors,
-  GetAttachmentsResponses,
   GetAuthHealthData,
   GetAuthHealthErrors,
   GetAuthHealthResponses,
-  GetConnectedAppsData,
-  GetConnectedAppsErrors,
-  GetConnectedAppsResponses,
-  GetConnectionsData,
-  GetConnectionsErrors,
-  GetConnectionsResponses,
   GetMcpProtectedResourceMetadataData,
   GetMcpProtectedResourceMetadataErrors,
   GetMcpProtectedResourceMetadataResponses,
   GetMeData,
   GetMeErrors,
-  GetMembersData,
-  GetMembersErrors,
-  GetMembersResponses,
   GetMeResponses,
   GetMyAuthData,
   GetMyAuthErrors,
   GetMyAuthResponses,
-  GetMyInvitationsData,
-  GetMyInvitationsErrors,
-  GetMyInvitationsResponses,
-  GetMyMembershipsData,
-  GetMyMembershipsErrors,
-  GetMyMembershipsResponses,
   GetNotificationPreferencesData,
   GetNotificationPreferencesErrors,
   GetNotificationPreferencesResponses,
-  GetNotificationsData,
-  GetNotificationsErrors,
-  GetNotificationsResponses,
   GetOrganizationData,
   GetOrganizationErrors,
   GetOrganizationResponses,
-  GetOrganizationsData,
-  GetOrganizationsErrors,
-  GetOrganizationsResponses,
   GetPendingMagicLinkData,
   GetPendingMagicLinkErrors,
   GetPendingMagicLinkResponses,
-  GetPendingMembershipsData,
-  GetPendingMembershipsErrors,
-  GetPendingMembershipsResponses,
   GetPendingMfaData,
   GetPendingMfaErrors,
   GetPendingMfaResponses,
-  GetPendingSystemInvitesData,
-  GetPendingSystemInvitesErrors,
-  GetPendingSystemInvitesResponses,
-  GetPresignedUrlsData,
-  GetPresignedUrlsErrors,
-  GetPresignedUrlsResponses,
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
   GetPushVapidData,
   GetPushVapidErrors,
   GetPushVapidResponses,
-  GetRequestsData,
-  GetRequestsErrors,
-  GetRequestsResponses,
-  GetServiceAccountsData,
-  GetServiceAccountsErrors,
-  GetServiceAccountsResponses,
   GetSsoEntryData,
   GetSsoEntryErrors,
   GetSsoEntryResponses,
@@ -177,9 +144,6 @@ import type {
   GetStepUpPasskeyChallengeErrors,
   GetStepUpPasskeyChallengeResponses,
   GetStepUpResponses,
-  GetTenantsData,
-  GetTenantsErrors,
-  GetTenantsResponses,
   GetTokenDataData,
   GetTokenDataErrors,
   GetTokenDataResponses,
@@ -192,9 +156,6 @@ import type {
   GetUserData,
   GetUserErrors,
   GetUserResponses,
-  GetUsersData,
-  GetUsersErrors,
-  GetUsersResponses,
   GetYjsTokenData,
   GetYjsTokenErrors,
   GetYjsTokenResponses,
@@ -209,23 +170,68 @@ import type {
   HandleMcpData,
   HandleMcpErrors,
   HandleMcpResponses,
-  HandleMembershipInvitationData,
-  HandleMembershipInvitationErrors,
-  HandleMembershipInvitationResponses,
+  InviteMembersData,
+  InviteMembersErrors,
+  InviteMembersResponses,
+  InviteUsersData,
+  InviteUsersErrors,
+  InviteUsersResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  LeaveMembershipData,
+  LeaveMembershipErrors,
+  LeaveMembershipResponses,
   LinkAttachmentKeysData,
   LinkAttachmentKeysErrors,
   LinkAttachmentKeysResponses,
+  ListApiKeysData,
+  ListApiKeysErrors,
+  ListApiKeysResponses,
+  ListAttachmentsData,
+  ListAttachmentsErrors,
+  ListAttachmentsResponses,
+  ListConnectedAppsData,
+  ListConnectedAppsErrors,
+  ListConnectedAppsResponses,
+  ListConnectionsData,
+  ListConnectionsErrors,
+  ListConnectionsResponses,
+  ListInvitationsData,
+  ListInvitationsErrors,
+  ListInvitationsResponses,
+  ListMembersData,
+  ListMembersErrors,
+  ListMembersResponses,
+  ListMyInvitationsData,
+  ListMyInvitationsErrors,
+  ListMyInvitationsResponses,
+  ListMyMembershipsData,
+  ListMyMembershipsErrors,
+  ListMyMembershipsResponses,
+  ListNotificationsData,
+  ListNotificationsErrors,
+  ListNotificationsResponses,
+  ListOrganizationsData,
+  ListOrganizationsErrors,
+  ListOrganizationsResponses,
+  ListRequestsData,
+  ListRequestsErrors,
+  ListRequestsResponses,
+  ListServiceAccountsData,
+  ListServiceAccountsErrors,
+  ListServiceAccountsResponses,
+  ListTenantsData,
+  ListTenantsErrors,
+  ListTenantsResponses,
+  ListUsersData,
+  ListUsersErrors,
+  ListUsersResponses,
   MarkNotificationsReadData,
   MarkNotificationsReadErrors,
   MarkNotificationsReadResponses,
   MarkSeenData,
   MarkSeenErrors,
   MarkSeenResponses,
-  MembershipInviteData,
-  MembershipInviteErrors,
-  MembershipInviteResponses,
   MicrosoftCallbackData,
   MicrosoftCallbackErrors,
   MicrosoftData,
@@ -235,6 +241,9 @@ import type {
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
+  PresignAttachmentUrlsData,
+  PresignAttachmentUrlsErrors,
+  PresignAttachmentUrlsResponses,
   PublishOrganizationData,
   PublishOrganizationErrors,
   PublishOrganizationResponses,
@@ -244,27 +253,27 @@ import type {
   PushYjsUpdateData,
   PushYjsUpdateErrors,
   PushYjsUpdateResponses,
+  RejectInvitationData,
+  RejectInvitationErrors,
+  RejectInvitationResponses,
+  RemovePushSubscriptionData,
+  RemovePushSubscriptionErrors,
+  RemovePushSubscriptionResponses,
+  ResendInvitationData,
+  ResendInvitationErrors,
+  ResendInvitationResponses,
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
-  ResendPendingInvitationData,
-  ResendPendingInvitationErrors,
-  ResendPendingInvitationResponses,
   ResubscribeNotificationsData,
   ResubscribeNotificationsErrors,
   ResubscribeNotificationsResponses,
   RevokeApiKeyData,
   RevokeApiKeyErrors,
   RevokeApiKeyResponses,
-  RevokeConnectedAppData,
-  RevokeConnectedAppErrors,
-  RevokeConnectedAppResponses,
   RevokeMySessionsData,
   RevokeMySessionsErrors,
   RevokeMySessionsResponses,
-  SelfCreateTenantData,
-  SelfCreateTenantErrors,
-  SelfCreateTenantResponses,
   SendMagicLinkData,
   SendMagicLinkErrors,
   SendMagicLinkResponses,
@@ -298,9 +307,6 @@ import type {
   StepUpData,
   StepUpErrors,
   StepUpResponses,
-  SystemInviteData,
-  SystemInviteErrors,
-  SystemInviteResponses,
   ToggleMfaData,
   ToggleMfaErrors,
   ToggleMfaResponses,
@@ -334,90 +340,90 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
-  WithdrawPendingInvitationData,
-  WithdrawPendingInvitationErrors,
-  WithdrawPendingInvitationResponses,
 } from './types.gen';
 import {
+  zAcceptInvitationResponse,
   zAcceptInvitationTokenResponse,
+  zBatchCreateAttachmentsResponse,
+  zBatchCreateOrganizationsResponse,
+  zBatchDeleteAttachmentsResponse,
+  zBatchDeleteMembershipsResponse,
+  zBatchDeleteOrganizationsResponse,
+  zBatchDeleteRequestsResponse,
+  zBatchDeleteUsersResponse,
   zCheckEmailResponse,
   zCheckMembershipInviteResponse,
   zCheckSlugResponse,
   zConfirmInvitationAddressResponse,
+  zCountSystemInvitationsResponse,
   zCreateApiKeyResponse,
-  zCreateAttachmentsResponse,
   zCreateConnectionResponse,
-  zCreateOrganizationsResponse,
   zCreatePasskeyResponse,
   zCreatePushSubscriptionResponse,
   zCreateRequestResponse,
   zCreateServiceAccountResponse,
-  zDeleteAttachmentsResponse,
+  zCreateTenantResponse,
+  zDeleteConnectedAppResponse,
   zDeleteConnectionResponse,
-  zDeleteMembershipsResponse,
+  zDeleteInvitationResponse,
   zDeleteMeResponse,
-  zDeleteMyMembershipResponse,
-  zDeleteOrganizationsResponse,
   zDeletePasskeyResponse,
-  zDeletePushSubscriptionResponse,
-  zDeleteRequestsResponse,
   zDeleteTotpResponse,
-  zDeleteUsersResponse,
   zGeneratePasskeyChallengeResponse,
   zGenerateTotpKeyResponse,
-  zGetApiKeysResponse,
   zGetApiProtectedResourceMetadataResponse,
   zGetAppStreamResponse,
   zGetAttachmentResponse,
-  zGetAttachmentsResponse,
   zGetAuthHealthResponse,
-  zGetConnectedAppsResponse,
-  zGetConnectionsResponse,
   zGetMcpProtectedResourceMetadataResponse,
-  zGetMembersResponse,
   zGetMeResponse,
   zGetMyAuthResponse,
-  zGetMyInvitationsResponse,
-  zGetMyMembershipsResponse,
   zGetNotificationPreferencesResponse,
-  zGetNotificationsResponse,
   zGetOrganizationResponse,
-  zGetOrganizationsResponse,
   zGetPendingMagicLinkResponse,
-  zGetPendingMembershipsResponse,
   zGetPendingMfaResponse,
-  zGetPendingSystemInvitesResponse,
-  zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
-  zGetRequestsResponse,
-  zGetServiceAccountsResponse,
   zGetSsoEntryResponse,
   zGetStepUpPasskeyChallengeResponse,
   zGetStepUpResponse,
-  zGetTenantsResponse,
   zGetTokenDataResponse,
   zGetUnseenCountsResponse,
   zGetUploadTokenResponse,
   zGetUserResponse,
-  zGetUsersResponse,
   zGetYjsTokenResponse,
-  zHandleMembershipInvitationResponse,
+  zInviteMembersResponse,
+  zInviteUsersResponse,
+  zLeaveMembershipResponse,
   zLinkAttachmentKeysResponse,
+  zListApiKeysResponse,
+  zListAttachmentsResponse,
+  zListConnectedAppsResponse,
+  zListConnectionsResponse,
+  zListInvitationsResponse,
+  zListMembersResponse,
+  zListMyInvitationsResponse,
+  zListMyMembershipsResponse,
+  zListNotificationsResponse,
+  zListOrganizationsResponse,
+  zListRequestsResponse,
+  zListServiceAccountsResponse,
+  zListTenantsResponse,
+  zListUsersResponse,
   zMarkNotificationsReadResponse,
   zMarkSeenResponse,
-  zMembershipInviteResponse,
   zPostAppCatchupResponse,
+  zPresignAttachmentUrlsResponse,
   zPublishOrganizationResponse,
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
+  zRejectInvitationResponse,
+  zRemovePushSubscriptionResponse,
+  zResendInvitationResponse,
   zResendInvitationWithTokenResponse,
-  zResendPendingInvitationResponse,
   zResubscribeNotificationsResponse,
   zRevokeApiKeyResponse,
-  zRevokeConnectedAppResponse,
   zRevokeMySessionsResponse,
-  zSelfCreateTenantResponse,
   zSendMagicLinkResponse,
   zSendNewsletterResponse,
   zSendSsoRecoveryLinkResponse,
@@ -427,7 +433,6 @@ import {
   zSignOutResponse,
   zStartOAuthConnectResponse,
   zStepUpResponse,
-  zSystemInviteResponse,
   zToggleMfaResponse,
   zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
@@ -439,7 +444,6 @@ import {
   zUpdateServiceAccountResponse,
   zUpdateTenantResponse,
   zUpdateUserResponse,
-  zWithdrawPendingInvitationResponse,
 } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<
@@ -459,6 +463,198 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
    */
   meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Get attachments
+ *
+ * Returns a paginated list of attachments for the organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/attachments** ·· [listAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/tenants/{tenantId}/organizations/{organizationId}/attachments) ·· _attachments · cella · product_
+ *
+ * @param {listAttachmentsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {integer=} options.query.afterSeq - `integer` (optional)
+ * @param {integer=} options.query.untilSeq - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @param {string=} options.query.channelId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<ListAttachmentsData, ThrowOnError>,
+): RequestResult<ListAttachmentsResponses, ListAttachmentsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListAttachmentsResponses, ListAttachmentsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListAttachmentsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments',
+    ...options,
+  });
+
+/**
+ * Get presigned URLs
+ *
+ * Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls** ·· [presignAttachmentUrls](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls) ·· _attachments · cella · product_
+ *
+ * @param {presignAttachmentUrlsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {object[]} options.body.items - `object[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const presignAttachmentUrls = <ThrowOnError extends boolean = true>(
+  options: Options<PresignAttachmentUrlsData, ThrowOnError>,
+): RequestResult<PresignAttachmentUrlsResponses, PresignAttachmentUrlsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PresignAttachmentUrlsResponses, PresignAttachmentUrlsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zPresignAttachmentUrlsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get attachment
+ *
+ * Returns a single attachment by ID.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}) ·· _attachments · cella · product_
+ *
+ * @param {getAttachmentData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.attachmentId - `string`
+ * @returns Possible status codes: 200, 304, 400, 401, 403, 404, 412, 429
+ */
+export const getAttachment = <ThrowOnError extends boolean = true>(
+  options: Options<GetAttachmentData, ThrowOnError>,
+): RequestResult<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetAttachmentResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}',
+    ...options,
+  });
+
+/**
+ * Update attachment
+ *
+ * Renames an attachment or replaces its description.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}** ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PATCH/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}) ·· _attachments · cella · product_
+ *
+ * @param {updateAttachmentData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.attachmentId - `string`
+ * @param {object} options.body.ops - `object`
+ * @param {StxBase} options.body.stx - `StxBase`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 413, 429
+ */
+export const updateAttachment = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateAttachmentData, ThrowOnError>,
+): RequestResult<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateAttachmentResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create attachments
+ *
+ * Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/attachments:batch-create** ·· [batchCreateAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-create) ·· _attachments · cella · product_
+ *
+ * @param {batchCreateAttachmentsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 413, 429
+ */
+export const batchCreateAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<BatchCreateAttachmentsData, ThrowOnError>,
+): RequestResult<BatchCreateAttachmentsResponses, BatchCreateAttachmentsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchCreateAttachmentsResponses, BatchCreateAttachmentsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchCreateAttachmentsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-create',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Link attachment keys
+ *
+ * Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}:link-keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}:link-keys) ·· _attachments · cella · product_
+ *
+ * @param {linkAttachmentKeysData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.attachmentId - `string`
+ * @param {object} options.body.keys - `object`
+ * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
+ */
+export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
+  options: Options<LinkAttachmentKeysData, ThrowOnError>,
+): RequestResult<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zLinkAttachmentKeysResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}:link-keys',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete attachments
+ *
+ * Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/attachments:batch-delete** ·· [batchDeleteAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-delete) ·· _attachments · cella · product_
+ *
+ * @param {batchDeleteAttachmentsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string[]} options.body.ids - `string[]`
+ * @param {object=} options.body.stx - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const batchDeleteAttachments = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteAttachmentsData, ThrowOnError>,
+): RequestResult<BatchDeleteAttachmentsResponses, BatchDeleteAttachmentsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteAttachmentsResponses, BatchDeleteAttachmentsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteAttachmentsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 
 /**
  * Auth health check
@@ -1262,7 +1458,7 @@ export const sendStepUpCode = <ThrowOnError extends boolean = true>(
  *
  * Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants. Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· _entities · cella_
+ * **POST /tenants/{tenantId}:check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/tenants/{tenantId}:check-slug) ·· _entities · cella_
  *
  * @param {checkSlugData} options
  * @param {string} options.path.tenantId - `string`
@@ -1276,7 +1472,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zCheckSlugResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/entities/{tenantId}/check-slug',
+    url: '/tenants/{tenantId}:check-slug',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1330,6 +1526,53 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Protected resource metadata
+ *
+ * RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/mcp/.well-known/oauth-protected-resource** ·· [getMcpProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/GET/tenants/{tenantId}/organizations/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· _mcp · cella_
+ *
+ * @param {getMcpProtectedResourceMetadataData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 400, 404, 429
+ */
+export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
+  options: Options<GetMcpProtectedResourceMetadataData, ThrowOnError>,
+): RequestResult<GetMcpProtectedResourceMetadataResponses, GetMcpProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetMcpProtectedResourceMetadataResponses, GetMcpProtectedResourceMetadataErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetMcpProtectedResourceMetadataResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/mcp/.well-known/oauth-protected-resource',
+    ...options,
+  });
+
+/**
+ * MCP endpoint
+ *
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/tenants/{tenantId}/organizations/{organizationId}/mcp) ·· _mcp · cella_
+ *
+ * @param {handleMcpData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const handleMcp = <ThrowOnError extends boolean = true>(
+  options: Options<HandleMcpData, ThrowOnError>,
+): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/mcp',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Delete self
  *
  * Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
@@ -1374,7 +1617,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  *
  * Updates the current user.
  *
- * **PUT /me** ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me) ·· _me · cella_
+ * **PATCH /me** ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PATCH/me) ·· _me · cella_
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
@@ -1392,7 +1635,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
 export const updateMe = <ThrowOnError extends boolean = true>(
   options: Options<UpdateMeData, ThrowOnError>,
 ): RequestResult<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).patch<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zUpdateMeResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/me',
@@ -1408,7 +1651,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
  *
  * Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.
  *
- * **PUT /me/mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· _me · cella_
+ * **POST /me:toggle-mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me:toggle-mfa) ·· _me · cella_
  *
  * @param {toggleMfaData} options
  * @param {boolean} options.body.mfaRequired - `boolean`
@@ -1417,10 +1660,10 @@ export const updateMe = <ThrowOnError extends boolean = true>(
 export const toggleMfa = <ThrowOnError extends boolean = true>(
   options: Options<ToggleMfaData, ThrowOnError>,
 ): RequestResult<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zToggleMfaResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/mfa',
+    url: '/me:toggle-mfa',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1453,40 +1696,63 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of pending memberships with entity data.
  *
- * **GET /me/invitations** ·· [getMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
+ * **GET /me/invitations** ·· [listMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· _me · cella_
  *
- * @param {getMyInvitationsData} options
+ * @param {listMyInvitationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
-export const getMyInvitations = <ThrowOnError extends boolean = true>(
-  options?: Options<GetMyInvitationsData, ThrowOnError>,
-): RequestResult<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetMyInvitationsResponse.parseAsync(data),
+export const listMyInvitations = <ThrowOnError extends boolean = true>(
+  options?: Options<ListMyInvitationsData, ThrowOnError>,
+): RequestResult<ListMyInvitationsResponses, ListMyInvitationsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListMyInvitationsResponses, ListMyInvitationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListMyInvitationsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/me/invitations',
     ...options,
   });
 
 /**
- * Respond to membership invitation
+ * Accept membership invitation
  *
- * Accepting makes the caller a member of the invited channel, or leaves a membership they hold as it is; rejecting declines the invitation, and its emailed link stops working. Either answer returns the invitation's organization.
+ * Makes the caller a member of the invited channel, or leaves a membership they hold as it is. Returns the invitation's organization.
  *
- * **POST /me/invitations/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{id}/{acceptOrReject}) ·· _me · cella_
+ * **POST /me/invitations/{invitationId}:accept** ·· [acceptInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{invitationId}:accept) ·· _me · cella_
  *
- * @param {handleMembershipInvitationData} options
- * @param {string} options.path.id - `string`
- * @param {enum} options.path.acceptOrReject - `enum`
+ * @param {acceptInvitationData} options
+ * @param {string} options.path.invitationId - `string`
  * @returns Possible status codes: 200, 400, 401, 404, 409, 429
  */
-export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
-  options: Options<HandleMembershipInvitationData, ThrowOnError>,
-): RequestResult<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<HandleMembershipInvitationResponses, HandleMembershipInvitationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zHandleMembershipInvitationResponse.parseAsync(data),
+export const acceptInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<AcceptInvitationData, ThrowOnError>,
+): RequestResult<AcceptInvitationResponses, AcceptInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<AcceptInvitationResponses, AcceptInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zAcceptInvitationResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/invitations/{id}/{acceptOrReject}',
+    url: '/me/invitations/{invitationId}:accept',
+    ...options,
+  });
+
+/**
+ * Reject membership invitation
+ *
+ * Declines the invitation, and its emailed link stops working. Returns the invitation's organization.
+ *
+ * **POST /me/invitations/{invitationId}:reject** ·· [rejectInvitation](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/invitations/{invitationId}:reject) ·· _me · cella_
+ *
+ * @param {rejectInvitationData} options
+ * @param {string} options.path.invitationId - `string`
+ * @returns Possible status codes: 200, 400, 401, 404, 409, 429
+ */
+export const rejectInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<RejectInvitationData, ThrowOnError>,
+): RequestResult<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRejectInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/me/invitations/{invitationId}:reject',
     ...options,
   });
 
@@ -1495,7 +1761,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  *
  * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for the retention period. Revoking the current session signs out; revoking any other needs a recent proof of presence on this session (step-up).
  *
- * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· _me · cella_
+ * **POST /me/sessions:revoke** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/sessions:revoke) ·· _me · cella_
  *
  * @param {revokeMySessionsData} options
  * @param {string[]} options.body.ids - `string[]`
@@ -1504,10 +1770,10 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 export const revokeMySessions = <ThrowOnError extends boolean = true>(
   options: Options<RevokeMySessionsData, ThrowOnError>,
 ): RequestResult<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).post<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zRevokeMySessionsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/sessions',
+    url: '/me/sessions:revoke',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1520,21 +1786,25 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
  *
  * Removes the current user from a channel entity they are a member of.
  *
- * **DELETE /me/leave** ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/leave) ·· _me · cella_
+ * **POST /me/memberships:leave** ·· [leaveMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/POST/me/memberships:leave) ·· _me · cella_
  *
- * @param {deleteMyMembershipData} options
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @returns Possible status codes: 204, 400, 401, 404, 409, 429
+ * @param {leaveMembershipData} options
+ * @param {string} options.body.entityId - `string`
+ * @param {enum} options.body.entityType - `enum`
+ * @returns Possible status codes: 204, 400, 401, 404, 409, 413, 429
  */
-export const deleteMyMembership = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteMyMembershipData, ThrowOnError>,
-): RequestResult<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteMyMembershipResponse.parseAsync(data),
+export const leaveMembership = <ThrowOnError extends boolean = true>(
+  options: Options<LeaveMembershipData, ThrowOnError>,
+): RequestResult<LeaveMembershipResponses, LeaveMembershipErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<LeaveMembershipResponses, LeaveMembershipErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zLeaveMembershipResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/leave',
+    url: '/me/memberships:leave',
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -1562,18 +1832,21 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
 /**
  * Get my memberships
  *
- * Returns all memberships for the current user across all channel entities.
+ * Returns the memberships of the current user across all channel entities.
  *
- * **GET /me/memberships** ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· _me · cella_
+ * **GET /me/memberships** ·· [listMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· _me · cella_
  *
- * @param {getMyMembershipsData} options
+ * @param {listMyMembershipsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
-export const getMyMemberships = <ThrowOnError extends boolean = true>(
-  options?: Options<GetMyMembershipsData, ThrowOnError>,
-): RequestResult<GetMyMembershipsResponses, GetMyMembershipsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetMyMembershipsResponses, GetMyMembershipsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetMyMembershipsResponse.parseAsync(data),
+export const listMyMemberships = <ThrowOnError extends boolean = true>(
+  options?: Options<ListMyMembershipsData, ThrowOnError>,
+): RequestResult<ListMyMembershipsResponses, ListMyMembershipsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListMyMembershipsResponses, ListMyMembershipsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListMyMembershipsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/me/memberships',
     ...options,
@@ -1584,16 +1857,19 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
  *
  * Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.
  *
- * **GET /me/connected-apps** ·· [getConnectedApps](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/connected-apps) ·· _me · cella_
+ * **GET /me/connected-apps** ·· [listConnectedApps](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/connected-apps) ·· _me · cella_
  *
- * @param {getConnectedAppsData} options
+ * @param {listConnectedAppsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
-export const getConnectedApps = <ThrowOnError extends boolean = true>(
-  options?: Options<GetConnectedAppsData, ThrowOnError>,
-): RequestResult<GetConnectedAppsResponses, GetConnectedAppsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetConnectedAppsResponses, GetConnectedAppsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetConnectedAppsResponse.parseAsync(data),
+export const listConnectedApps = <ThrowOnError extends boolean = true>(
+  options?: Options<ListConnectedAppsData, ThrowOnError>,
+): RequestResult<ListConnectedAppsResponses, ListConnectedAppsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListConnectedAppsResponses, ListConnectedAppsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListConnectedAppsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/me/connected-apps',
     ...options,
@@ -1604,19 +1880,265 @@ export const getConnectedApps = <ThrowOnError extends boolean = true>(
  *
  * Revokes a consent: the grant and every token issued under it are deleted.
  *
- * **DELETE /me/connected-apps/{id}** ·· [revokeConnectedApp](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/connected-apps/{id}) ·· _me · cella_
+ * **DELETE /me/connected-apps/{connectedAppId}** ·· [deleteConnectedApp](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/connected-apps/{connectedAppId}) ·· _me · cella_
  *
- * @param {revokeConnectedAppData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 404, 429
+ * @param {deleteConnectedAppData} options
+ * @param {string} options.path.connectedAppId - `string`
+ * @returns Possible status codes: 204, 400, 401, 404, 429
  */
-export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
-  options: Options<RevokeConnectedAppData, ThrowOnError>,
-): RequestResult<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zRevokeConnectedAppResponse.parseAsync(data),
+export const deleteConnectedApp = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteConnectedAppData, ThrowOnError>,
+): RequestResult<DeleteConnectedAppResponses, DeleteConnectedAppErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteConnectedAppResponses, DeleteConnectedAppErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeleteConnectedAppResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/me/connected-apps/{id}',
+    url: '/me/connected-apps/{connectedAppId}',
+    ...options,
+  });
+
+/**
+ * Protected resource metadata (API)
+ *
+ * RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
+ *
+ * **GET /tenants/{tenantId}/.well-known/oauth-protected-resource** ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=oauth-server#tag/oauth-server/GET/tenants/{tenantId}/.well-known/oauth-protected-resource) ·· _oauth-server · cella_
+ *
+ * @param {getApiProtectedResourceMetadataData} options
+ * @param {string} options.path.tenantId - `string`
+ * @returns Possible status codes: 200, 400, 404, 429
+ */
+export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
+  options: Options<GetApiProtectedResourceMetadataData, ThrowOnError>,
+): RequestResult<GetApiProtectedResourceMetadataResponses, GetApiProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetApiProtectedResourceMetadataResponses, GetApiProtectedResourceMetadataErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetApiProtectedResourceMetadataResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/.well-known/oauth-protected-resource',
+    ...options,
+  });
+
+/**
+ * Invite members
+ *
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:invite) ·· _memberships · cella_
+ *
+ * @param {inviteMembersData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.query.entityId - `string`
+ * @param {enum} options.query.entityType - `enum`
+ * @param {string[]} options.body.emails - `string[]`
+ * @param {enum} options.body.role - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ */
+export const inviteMembers = <ThrowOnError extends boolean = true>(
+  options: Options<InviteMembersData, ThrowOnError>,
+): RequestResult<InviteMembersResponses, InviteMembersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<InviteMembersResponses, InviteMembersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zInviteMembersResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:invite',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Check addresses before inviting
+ *
+ * Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite** ·· [checkMembershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite) ·· _memberships · cella_
+ *
+ * @param {checkMembershipInviteData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.query.entityId - `string`
+ * @param {enum} options.query.entityType - `enum`
+ * @param {string[]} options.body.emails - `string[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
+  options: Options<CheckMembershipInviteData, ThrowOnError>,
+): RequestResult<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCheckMembershipInviteResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete memberships
+ *
+ * Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete** ·· [batchDeleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete) ·· _memberships · cella_
+ *
+ * @param {batchDeleteMembershipsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.query.entityId - `string`
+ * @param {enum} options.query.entityType - `enum`
+ * @param {string[]} options.body.ids - `string[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ */
+export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteMembershipsData, ThrowOnError>,
+): RequestResult<BatchDeleteMembershipsResponses, BatchDeleteMembershipsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteMembershipsResponses, BatchDeleteMembershipsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteMembershipsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update membership
+ *
+ * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PATCH/tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}) ·· _memberships · cella_
+ *
+ * @param {updateMembershipData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.membershipId - `string`
+ * @param {enum=} options.body.role - `enum` (optional)
+ * @param {boolean=} options.body.archived - `boolean` (optional)
+ * @param {boolean=} options.body.muted - `boolean` (optional)
+ * @param {number=} options.body.displayOrder - `number` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
+ */
+export const updateMembership = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateMembershipData, ThrowOnError>,
+): RequestResult<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateMembershipResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get list of members
+ *
+ * Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/members** ·· [listMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/members) ·· _memberships · cella_
+ *
+ * @param {listMembersData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {string} options.query.entityId - `string`
+ * @param {enum} options.query.entityType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {string=} options.query.include - `string` (optional)
+ * @param {string=} options.query.userIds - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listMembers = <ThrowOnError extends boolean = true>(
+  options: Options<ListMembersData, ThrowOnError>,
+): RequestResult<ListMembersResponses, ListMembersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListMembersResponses, ListMembersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListMembersResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/members',
+    ...options,
+  });
+
+/**
+ * Get list of pending memberships
+ *
+ * Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/invitations** ·· [listInvitations](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/tenants/{tenantId}/organizations/{organizationId}/invitations) ·· _memberships · cella_
+ *
+ * @param {listInvitationsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string} options.query.entityId - `string`
+ * @param {enum} options.query.entityType - `enum`
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listInvitations = <ThrowOnError extends boolean = true>(
+  options: Options<ListInvitationsData, ThrowOnError>,
+): RequestResult<ListInvitationsResponses, ListInvitationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListInvitationsResponses, ListInvitationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListInvitationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/invitations',
+    ...options,
+  });
+
+/**
+ * Resend pending invitation
+ *
+ * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend** ·· [resendInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend) ·· _memberships · cella_
+ *
+ * @param {resendInvitationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.invitationId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const resendInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<ResendInvitationData, ThrowOnError>,
+): RequestResult<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zResendInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend',
+    ...options,
+  });
+
+/**
+ * Withdraw pending invitation
+ *
+ * Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.
+ *
+ * **DELETE /tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}** ·· [deleteInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}) ·· _memberships · cella_
+ *
+ * @param {deleteInvitationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.invitationId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
+ */
+export const deleteInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteInvitationData, ThrowOnError>,
+): RequestResult<DeleteInvitationResponses, DeleteInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteInvitationResponses, DeleteInvitationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zDeleteInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}',
     ...options,
   });
 
@@ -1645,19 +2167,20 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  *
  * Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.
  *
- * **GET /notifications** ·· [getNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications · cella_
+ * **GET /notifications** ·· [listNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications · cella_
  *
- * @param {getNotificationsData} options
+ * @param {listNotificationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {enum | boolean=} options.query.unread - `enum | boolean` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {string=} options.query.before - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 429
  */
-export const getNotifications = <ThrowOnError extends boolean = true>(
-  options?: Options<GetNotificationsData, ThrowOnError>,
-): RequestResult<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetNotificationsResponse.parseAsync(data),
+export const listNotifications = <ThrowOnError extends boolean = true>(
+  options?: Options<ListNotificationsData, ThrowOnError>,
+): RequestResult<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListNotificationsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/notifications',
     ...options,
@@ -1668,7 +2191,7 @@ export const getNotifications = <ThrowOnError extends boolean = true>(
  *
  * Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.
  *
- * **POST /notifications/read** ·· [markNotificationsRead](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/read) ·· _notifications · cella_
+ * **POST /notifications:mark-read** ·· [markNotificationsRead](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications:mark-read) ·· _notifications · cella_
  *
  * @param {markNotificationsReadData} options
  * @param {string[]=} options.body.ids - `string[]` (optional)
@@ -1681,7 +2204,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zMarkNotificationsReadResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/notifications/read',
+    url: '/notifications:mark-read',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1694,7 +2217,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
  *
  * Email and digest preferences for the current user. In-app delivery is not opt-out.
  *
- * **GET /notifications/preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/preferences) ·· _notifications · cella_
+ * **GET /me/notification-preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/me/notification-preferences) ·· _notifications · cella_
  *
  * @param {getNotificationPreferencesData} options
  * @returns Possible status codes: 200, 400, 401, 429
@@ -1705,7 +2228,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetNotificationPreferencesResponses, GetNotificationPreferencesErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetNotificationPreferencesResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/notifications/preferences',
+    url: '/me/notification-preferences',
     ...options,
   });
 
@@ -1714,7 +2237,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  *
  * Partial update; unspecified keys keep their stored value.
  *
- * **PATCH /notifications/preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/notifications/preferences) ·· _notifications · cella_
+ * **PATCH /me/notification-preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/me/notification-preferences) ·· _notifications · cella_
  *
  * @param {updateNotificationPreferencesData} options
  * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
@@ -1728,7 +2251,7 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
   (options.client ?? client).patch<UpdateNotificationPreferencesResponses, UpdateNotificationPreferencesErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zUpdateNotificationPreferencesResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/notifications/preferences',
+    url: '/me/notification-preferences',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1805,6 +2328,176 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get list of organizations
+ *
+ * Returns a list of organizations across tenants: the `-` tenant reads every tenant.
+ *
+ * **GET /tenants/-/organizations** ·· [listOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/tenants/-/organizations) ·· _organizations · cella · channel_
+ *
+ * @param {listOrganizationsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
+ * @param {string=} options.query.relatableUserId - `string` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
+ * @param {string=} options.query.include - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 429
+ */
+export const listOrganizations = <ThrowOnError extends boolean = true>(
+  options?: Options<ListOrganizationsData, ThrowOnError>,
+): RequestResult<ListOrganizationsResponses, ListOrganizationsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListOrganizationsResponses, ListOrganizationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListOrganizationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/-/organizations',
+    ...options,
+  });
+
+/**
+ * Create organizations
+ *
+ * Creates one or more new organizations within a tenant.
+ *
+ * **POST /tenants/{tenantId}/organizations:batch-create** ·· [batchCreateOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/tenants/{tenantId}/organizations:batch-create) ·· _organizations · cella · channel_
+ *
+ * @param {batchCreateOrganizationsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
+ */
+export const batchCreateOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<BatchCreateOrganizationsData, ThrowOnError>,
+): RequestResult<BatchCreateOrganizationsResponses, BatchCreateOrganizationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchCreateOrganizationsResponses, BatchCreateOrganizationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchCreateOrganizationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations:batch-create',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get organization
+ *
+ * Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/tenants/{tenantId}/organizations/{organizationId}) ·· _organizations · cella · channel_
+ *
+ * @param {getOrganizationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
+ * @param {string=} options.query.include - `string` (optional)
+ * @returns Possible status codes: 200, 304, 400, 401, 403, 404, 412, 429
+ */
+export const getOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<GetOrganizationData, ThrowOnError>,
+): RequestResult<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetOrganizationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}',
+    ...options,
+  });
+
+/**
+ * Update organization
+ *
+ * Updates an organization within a tenant.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PATCH/tenants/{tenantId}/organizations/{organizationId}) ·· _organizations · cella · channel_
+ *
+ * @param {updateOrganizationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.shortName - `string | null` (optional)
+ * @param {string | null=} options.body.country - `string | null` (optional)
+ * @param {string | null=} options.body.timezone - `string | null` (optional)
+ * @param {enum=} options.body.defaultLanguage - `enum` (optional)
+ * @param {enum[]=} options.body.languages - `enum[]` (optional)
+ * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
+ * @param {string | null=} options.body.color - `string | null` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string | null=} options.body.logoUrl - `string | null` (optional)
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
+ * @param {string | null=} options.body.welcomeText - `string | null` (optional)
+ * @param {boolean=} options.body.chatSupport - `boolean` (optional)
+ * @param {object=} options.body.organizationFlags - `object` (optional)
+ * @param {object=} options.body.setupConfig - `object` (optional)
+ * @param {object=} options.body.toolsConfig - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 412, 413, 429
+ */
+export const updateOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateOrganizationData, ThrowOnError>,
+): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateOrganizationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Publish organization
+ *
+ * Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}:publish** ·· [publishOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/tenants/{tenantId}/organizations/{organizationId}:publish) ·· _organizations · cella · channel_
+ *
+ * @param {publishOrganizationData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 412, 429
+ */
+export const publishOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<PublishOrganizationData, ThrowOnError>,
+): RequestResult<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zPublishOrganizationResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}:publish',
+    ...options,
+  });
+
+/**
+ * Delete organizations
+ *
+ * Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.
+ *
+ * **POST /tenants/{tenantId}/organizations:batch-delete** ·· [batchDeleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/tenants/{tenantId}/organizations:batch-delete) ·· _organizations · cella · channel_
+ *
+ * @param {batchDeleteOrganizationsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string[]} options.body.ids - `string[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ */
+export const batchDeleteOrganizations = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteOrganizationsData, ThrowOnError>,
+): RequestResult<BatchDeleteOrganizationsResponses, BatchDeleteOrganizationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteOrganizationsResponses, BatchDeleteOrganizationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteOrganizationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations:batch-delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Get the Web Push application server key
  *
  * Returns the VAPID public key `PushManager.subscribe()` needs, or null while push sending is off (push turned off, VAPID keys missing, or keys or subject refused); the client then offers no push toggle.
@@ -1825,27 +2518,6 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Remove a Web Push subscription
- *
- * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
- *
- * **DELETE /push/subscriptions** ·· [deletePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/DELETE/push/subscriptions) ·· _push · cella_
- *
- * @param {deletePushSubscriptionData} options
- * @param {string} options.query.endpoint - `string`
- * @returns Possible status codes: 200, 400, 401
- */
-export const deletePushSubscription = <ThrowOnError extends boolean = true>(
-  options: Options<DeletePushSubscriptionData, ThrowOnError>,
-): RequestResult<DeletePushSubscriptionResponses, DeletePushSubscriptionErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeletePushSubscriptionResponses, DeletePushSubscriptionErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeletePushSubscriptionResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/push/subscriptions',
-    ...options,
-  });
-
-/**
  * Register a Web Push subscription
  *
  * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.
@@ -1856,7 +2528,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.endpoint - `string`
  * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 200, 400, 401, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 413, 429
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,
@@ -1873,23 +2545,23 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Delete requests
+ * Remove a Web Push subscription
  *
- * Deletes one or more requests from the system by their IDs.
+ * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
  *
- * **DELETE /requests** ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· _requests · cella_
+ * **POST /push/subscriptions:remove** ·· [removePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions:remove) ·· _push · cella_
  *
- * @param {deleteRequestsData} options
- * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @param {removePushSubscriptionData} options
+ * @param {string} options.body.endpoint - `string`
+ * @returns Possible status codes: 200, 400, 401, 413
  */
-export const deleteRequests = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteRequestsData, ThrowOnError>,
-): RequestResult<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteRequestsResponse.parseAsync(data),
+export const removePushSubscription = <ThrowOnError extends boolean = true>(
+  options: Options<RemovePushSubscriptionData, ThrowOnError>,
+): RequestResult<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRemovePushSubscriptionResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/requests',
+    url: '/push/subscriptions:remove',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1902,21 +2574,21 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.
  *
- * **GET /requests** ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
+ * **GET /requests** ·· [listRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
  *
- * @param {getRequestsData} options
+ * @param {listRequestsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getRequests = <ThrowOnError extends boolean = true>(
-  options?: Options<GetRequestsData, ThrowOnError>,
-): RequestResult<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetRequestsResponse.parseAsync(data),
+export const listRequests = <ThrowOnError extends boolean = true>(
+  options?: Options<ListRequestsData, ThrowOnError>,
+): RequestResult<ListRequestsResponses, ListRequestsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListRequestsResponses, ListRequestsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListRequestsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/requests',
     ...options,
@@ -1950,11 +2622,36 @@ export const createRequest = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Delete requests
+ *
+ * Deletes one or more requests from the system by their IDs.
+ *
+ * **POST /requests:batch-delete** ·· [batchDeleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests:batch-delete) ·· _requests · cella_
+ *
+ * @param {batchDeleteRequestsData} options
+ * @param {string[]} options.body.ids - `string[]`
+ * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ */
+export const batchDeleteRequests = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteRequestsData, ThrowOnError>,
+): RequestResult<BatchDeleteRequestsResponses, BatchDeleteRequestsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteRequestsResponses, BatchDeleteRequestsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteRequestsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/requests:batch-delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Get unseen counts
  *
  * Returns the number of unseen product entities per parent channel entity and entity type for the current user. Counts only entities created or published within the seen window: an older one is never unseen.
  *
- * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· _seen · cella_
+ * **GET /me/unseen-counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/me/unseen-counts) ·· _seen · cella_
  *
  * @param {getUnseenCountsData} options
  * @returns Possible status codes: 200, 400, 401, 429
@@ -1965,7 +2662,201 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
   (options?.client ?? client).get<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetUnseenCountsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/unseen/counts',
+    url: '/me/unseen-counts',
+    ...options,
+  });
+
+/**
+ * Mark entities as seen
+ *
+ * Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}:mark-seen** ·· [markSeen](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/POST/tenants/{tenantId}/organizations/{organizationId}:mark-seen) ·· _seen · cella_
+ *
+ * @param {markSeenData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string[]} options.body.entityIds - `string[]`
+ * @param {enum} options.body.entityType - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const markSeen = <ThrowOnError extends boolean = true>(
+  options: Options<MarkSeenData, ThrowOnError>,
+): RequestResult<MarkSeenResponses, MarkSeenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<MarkSeenResponses, MarkSeenErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zMarkSeenResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}:mark-seen',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get service accounts
+ *
+ * Lists the service accounts of this organization.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/service-accounts** ·· [listServiceAccounts](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/tenants/{tenantId}/organizations/{organizationId}/service-accounts) ·· _service-accounts · cella_
+ *
+ * @param {listServiceAccountsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @param {string=} options.query.q - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listServiceAccounts = <ThrowOnError extends boolean = true>(
+  options: Options<ListServiceAccountsData, ThrowOnError>,
+): RequestResult<ListServiceAccountsResponses, ListServiceAccountsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListServiceAccountsResponses, ListServiceAccountsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListServiceAccountsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts',
+    ...options,
+  });
+
+/**
+ * Create service account
+ *
+ * Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/service-accounts** ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/tenants/{tenantId}/organizations/{organizationId}/service-accounts) ·· _service-accounts · cella_
+ *
+ * @param {createServiceAccountData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.body.name - `string`
+ * @param {enum} options.body.role - `enum`
+ * @param {object=} options.body.key - `object` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
+ */
+export const createServiceAccount = <ThrowOnError extends boolean = true>(
+  options: Options<CreateServiceAccountData, ThrowOnError>,
+): RequestResult<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateServiceAccountResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update service account
+ *
+ * Renames, disables or re-enables a service account. Accounts are never deleted.
+ *
+ * **PATCH /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}** ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/PATCH/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}) ·· _service-accounts · cella_
+ *
+ * @param {updateServiceAccountData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.serviceAccountId - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const updateServiceAccount = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateServiceAccountData, ThrowOnError>,
+): RequestResult<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUpdateServiceAccountResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get API keys
+ *
+ * Lists the API keys of a service account. Secrets are never returned here.
+ *
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys** ·· [listApiKeys](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys) ·· _service-accounts · cella_
+ *
+ * @param {listApiKeysData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.serviceAccountId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const listApiKeys = <ThrowOnError extends boolean = true>(
+  options: Options<ListApiKeysData, ThrowOnError>,
+): RequestResult<ListApiKeysResponses, ListApiKeysErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListApiKeysResponses, ListApiKeysErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListApiKeysResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys',
+    ...options,
+  });
+
+/**
+ * Create API key
+ *
+ * Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys** ·· [createApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys) ·· _service-accounts · cella_
+ *
+ * @param {createApiKeyData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.serviceAccountId - `string`
+ * @param {string} options.body.name - `string`
+ * @param {enum[] | null=} options.body.scopes - `enum[] | null` (optional)
+ * @param {string=} options.body.expiresAt - `string` (optional)
+ * @param {string=} options.body.rollFrom - `string` (optional)
+ * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
+ */
+export const createApiKey = <ThrowOnError extends boolean = true>(
+  options: Options<CreateApiKeyData, ThrowOnError>,
+): RequestResult<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateApiKeyResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Revoke API key
+ *
+ * Revokes an API key: it stops working within 10 seconds in every process. The row stays for the audit trail.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}:revoke** ·· [revokeApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}:revoke) ·· _service-accounts · cella_
+ *
+ * @param {revokeApiKeyData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {string} options.path.serviceAccountId - `string`
+ * @param {string} options.path.apiKeyId - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const revokeApiKey = <ThrowOnError extends boolean = true>(
+  options: Options<RevokeApiKeyData, ThrowOnError>,
+): RequestResult<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRevokeApiKeyResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}:revoke',
     ...options,
   });
 
@@ -1974,19 +2865,19 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  *
- * **POST /system/invite** ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/invite) ·· _system · cella_
+ * **POST /users:invite** ·· [inviteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/users:invite) ·· _system · cella_
  *
- * @param {systemInviteData} options
+ * @param {inviteUsersData} options
  * @param {string[]} options.body.emails - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 413, 429
  */
-export const systemInvite = <ThrowOnError extends boolean = true>(
-  options: Options<SystemInviteData, ThrowOnError>,
-): RequestResult<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zSystemInviteResponse.parseAsync(data),
+export const inviteUsers = <ThrowOnError extends boolean = true>(
+  options: Options<InviteUsersData, ThrowOnError>,
+): RequestResult<InviteUsersResponses, InviteUsersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<InviteUsersResponses, InviteUsersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zInviteUsersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system/invite',
+    url: '/users:invite',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1999,18 +2890,18 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
  *
  * Returns how many addresses hold an unexpired system invitation, one sent outside any organization.
  *
- * **GET /system/invite/pending** ·· [getPendingSystemInvites](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system/invite/pending) ·· _system · cella_
+ * **GET /system-invitations:count** ·· [countSystemInvitations](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/GET/system-invitations:count) ·· _system · cella_
  *
- * @param {getPendingSystemInvitesData} options
+ * @param {countSystemInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getPendingSystemInvites = <ThrowOnError extends boolean = true>(
-  options?: Options<GetPendingSystemInvitesData, ThrowOnError>,
-): RequestResult<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetPendingSystemInvitesResponses, GetPendingSystemInvitesErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetPendingSystemInvitesResponse.parseAsync(data),
+export const countSystemInvitations = <ThrowOnError extends boolean = true>(
+  options?: Options<CountSystemInvitationsData, ThrowOnError>,
+): RequestResult<CountSystemInvitationsResponses, CountSystemInvitationsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<CountSystemInvitationsResponses, CountSystemInvitationsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCountSystemInvitationsResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system/invite/pending',
+    url: '/system-invitations:count',
     ...options,
   });
 
@@ -2019,19 +2910,19 @@ export const getPendingSystemInvites = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
  *
- * **DELETE /system** ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/DELETE/system) ·· _system · cella_
+ * **POST /users:batch-delete** ·· [batchDeleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/users:batch-delete) ·· _system · cella_
  *
- * @param {deleteUsersData} options
+ * @param {batchDeleteUsersData} options
  * @param {string[]} options.body.ids - `string[]`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
  */
-export const deleteUsers = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteUsersData, ThrowOnError>,
-): RequestResult<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteUsersResponse.parseAsync(data),
+export const batchDeleteUsers = <ThrowOnError extends boolean = true>(
+  options: Options<BatchDeleteUsersData, ThrowOnError>,
+): RequestResult<BatchDeleteUsersResponses, BatchDeleteUsersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<BatchDeleteUsersResponses, BatchDeleteUsersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zBatchDeleteUsersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system',
+    url: '/users:batch-delete',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2040,14 +2931,37 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get user
+ *
+ * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.
+ *
+ * **GET /users/{userId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/{userId}) ·· _users · cella_
+ *
+ * @param {getUserData} options
+ * @param {string} options.path.userId - `string`
+ * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
+ * @param {string=} options.query.include - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getUser = <ThrowOnError extends boolean = true>(
+  options: Options<GetUserData, ThrowOnError>,
+): RequestResult<GetUserResponses, GetUserErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetUserResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/users/{userId}',
+    ...options,
+  });
+
+/**
  * Update user
  *
  * Updates a user identified by ID.
  *
- * **PUT /system/{id}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· _system · cella_
+ * **PATCH /users/{userId}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PATCH/users/{userId}) ·· _system · cella_
  *
  * @param {updateUserData} options
- * @param {string} options.path.id - `string`
+ * @param {string} options.path.userId - `string`
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
@@ -2061,10 +2975,10 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
 export const updateUser = <ThrowOnError extends boolean = true>(
   options: Options<UpdateUserData, ThrowOnError>,
 ): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).patch<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zUpdateUserResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system/{id}',
+    url: '/users/{userId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2077,7 +2991,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  *
  * Sends a newsletter to members of one or more specified organizations.
  *
- * **POST /system/newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· _system · cella_
+ * **POST /system:send-newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system:send-newsletter) ·· _system · cella_
  *
  * @param {sendNewsletterData} options
  * @param {enum | boolean=} options.query.toSelf - `enum | boolean` (optional)
@@ -2093,7 +3007,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zSendNewsletterResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/system/newsletter',
+    url: '/system:send-newsletter',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2106,22 +3020,22 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of tenants. System admin access required.
  *
- * **GET /tenants** ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· _tenants · cella_
+ * **GET /tenants** ·· [listTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· _tenants · cella_
  *
- * @param {getTenantsData} options
+ * @param {listTenantsData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getTenants = <ThrowOnError extends boolean = true>(
-  options?: Options<GetTenantsData, ThrowOnError>,
-): RequestResult<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetTenantsResponse.parseAsync(data),
+export const listTenants = <ThrowOnError extends boolean = true>(
+  options?: Options<ListTenantsData, ThrowOnError>,
+): RequestResult<ListTenantsResponses, ListTenantsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListTenantsResponses, ListTenantsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListTenantsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants',
     ...options,
@@ -2132,19 +3046,19 @@ export const getTenants = <ThrowOnError extends boolean = true>(
  *
  * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.
  *
- * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· _tenants · cella_
+ * **POST /tenants** ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· _tenants · cella_
  *
- * @param {selfCreateTenantData} options
+ * @param {createTenantData} options
  * @param {string} options.body.name - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 413, 429
  */
-export const selfCreateTenant = <ThrowOnError extends boolean = true>(
-  options: Options<SelfCreateTenantData, ThrowOnError>,
-): RequestResult<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zSelfCreateTenantResponse.parseAsync(data),
+export const createTenant = <ThrowOnError extends boolean = true>(
+  options: Options<CreateTenantData, ThrowOnError>,
+): RequestResult<CreateTenantResponses, CreateTenantErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateTenantResponses, CreateTenantErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateTenantResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/self',
+    url: '/tenants',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2157,7 +3071,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
  *
  * Updates a tenant by ID. System admin access required.
  *
- * **PUT /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PUT/tenants/{tenantId}) ·· _tenants · cella_
+ * **PATCH /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PATCH/tenants/{tenantId}) ·· _tenants · cella_
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantId - `string`
@@ -2173,7 +3087,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
 export const updateTenant = <ThrowOnError extends boolean = true>(
   options: Options<UpdateTenantData, ThrowOnError>,
 ): RequestResult<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).patch<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zUpdateTenantResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}',
@@ -2189,17 +3103,20 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
  *
  * The tenant's connections: the institutions whose members sign in to its organization through an SSO federation. System admin access required.
  *
- * **GET /tenants/{tenantId}/connections** ·· [getConnections](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/connections) ·· _connections · cella_
+ * **GET /tenants/{tenantId}/connections** ·· [listConnections](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/connections) ·· _connections · cella_
  *
- * @param {getConnectionsData} options
+ * @param {listConnectionsData} options
  * @param {string} options.path.tenantId - `string`
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getConnections = <ThrowOnError extends boolean = true>(
-  options: Options<GetConnectionsData, ThrowOnError>,
-): RequestResult<GetConnectionsResponses, GetConnectionsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetConnectionsResponses, GetConnectionsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetConnectionsResponse.parseAsync(data),
+export const listConnections = <ThrowOnError extends boolean = true>(
+  options: Options<ListConnectionsData, ThrowOnError>,
+): RequestResult<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListConnectionsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/connections',
     ...options,
@@ -2221,7 +3138,7 @@ export const getConnections = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
  * @param {string=} options.body.logoUrl - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 409, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
  */
 export const createConnection = <ThrowOnError extends boolean = true>(
   options: Options<CreateConnectionData, ThrowOnError>,
@@ -2242,12 +3159,12 @@ export const createConnection = <ThrowOnError extends boolean = true>(
  *
  * Removes a connection. Identities and sessions that came through it keep their rows; members stay members.
  *
- * **DELETE /tenants/{tenantId}/connections/{id}** ·· [deleteConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/connections/{id}) ·· _connections · cella_
+ * **DELETE /tenants/{tenantId}/connections/{connectionId}** ·· [deleteConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/connections/{connectionId}) ·· _connections · cella_
  *
  * @param {deleteConnectionData} options
  * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ * @param {string} options.path.connectionId - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 429
  */
 export const deleteConnection = <ThrowOnError extends boolean = true>(
   options: Options<DeleteConnectionData, ThrowOnError>,
@@ -2255,7 +3172,7 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
   (options.client ?? client).delete<DeleteConnectionResponses, DeleteConnectionErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zDeleteConnectionResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/connections/{id}',
+    url: '/tenants/{tenantId}/connections/{connectionId}',
     ...options,
   });
 
@@ -2264,11 +3181,11 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
  *
  * Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.
  *
- * **PUT /tenants/{tenantId}/connections/{id}** ·· [updateConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/PUT/tenants/{tenantId}/connections/{id}) ·· _connections · cella_
+ * **PATCH /tenants/{tenantId}/connections/{connectionId}** ·· [updateConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/PATCH/tenants/{tenantId}/connections/{connectionId}) ·· _connections · cella_
  *
  * @param {updateConnectionData} options
  * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.id - `string`
+ * @param {string} options.path.connectionId - `string`
  * @param {string=} options.body.displayName - `string` (optional)
  * @param {string[]=} options.body.claimValues - `string[]` (optional)
  * @param {string[]=} options.body.idpEntityIds - `string[]` (optional)
@@ -2280,10 +3197,10 @@ export const deleteConnection = <ThrowOnError extends boolean = true>(
 export const updateConnection = <ThrowOnError extends boolean = true>(
   options: Options<UpdateConnectionData, ThrowOnError>,
 ): RequestResult<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).patch<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zUpdateConnectionResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/tenants/{tenantId}/connections/{id}',
+    url: '/tenants/{tenantId}/connections/{connectionId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2296,893 +3213,24 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.
  *
- * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· _users · cella_
+ * **GET /users** ·· [listUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users) ·· _users · cella_
  *
- * @param {getUsersData} options
+ * @param {listUsersData} options
+ * @param {string=} options.query.pageToken - `string` (optional)
+ * @param {integer=} options.query.maxPageSize - `integer` (optional)
+ * @param {integer=} options.query.skip - `integer` (optional)
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
-export const getUsers = <ThrowOnError extends boolean = true>(
-  options?: Options<GetUsersData, ThrowOnError>,
-): RequestResult<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetUsersResponse.parseAsync(data),
+export const listUsers = <ThrowOnError extends boolean = true>(
+  options?: Options<ListUsersData, ThrowOnError>,
+): RequestResult<ListUsersResponses, ListUsersErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<ListUsersResponses, ListUsersErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zListUsersResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/users/users',
-    ...options,
-  });
-
-/**
- * Get user
- *
- * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.
- *
- * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· _users · cella_
- *
- * @param {getUserData} options
- * @param {string} options.path.relatableUserId - `string`
- * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
- * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getUser = <ThrowOnError extends boolean = true>(
-  options: Options<GetUserData, ThrowOnError>,
-): RequestResult<GetUserResponses, GetUserErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetUserResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/users/users/{relatableUserId}',
-    ...options,
-  });
-
-/**
- * Protected resource metadata (API)
- *
- * RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
- *
- * **GET /{tenantId}/.well-known/oauth-protected-resource** ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=oauth-server#tag/oauth-server/GET/{tenantId}/.well-known/oauth-protected-resource) ·· _oauth-server · cella_
- *
- * @param {getApiProtectedResourceMetadataData} options
- * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 200, 400, 404, 429
- */
-export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
-  options: Options<GetApiProtectedResourceMetadataData, ThrowOnError>,
-): RequestResult<GetApiProtectedResourceMetadataResponses, GetApiProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetApiProtectedResourceMetadataResponses, GetApiProtectedResourceMetadataErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetApiProtectedResourceMetadataResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/.well-known/oauth-protected-resource',
-    ...options,
-  });
-
-/**
- * Delete organizations
- *
- * Deletes organizations by ID within a tenant. Deleting archives the tenant: members lose access at once, and the organization with everything in it is removed after the archived period; until then a system admin can restore it.
- *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· _organizations · cella · channel_
- *
- * @param {deleteOrganizationsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 413, 429
- */
-export const deleteOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteOrganizationsData, ThrowOnError>,
-): RequestResult<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteOrganizationsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Create organizations
- *
- * Creates one or more new organizations within a tenant.
- *
- * **POST /{tenantId}/organizations** ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· _organizations · cella · channel_
- *
- * @param {createOrganizationsData} options
- * @param {string} options.path.tenantId - `string`
- * @returns Possible status codes: 201, 400, 401, 403, 409, 413, 429
- */
-export const createOrganizations = <ThrowOnError extends boolean = true>(
-  options: Options<CreateOrganizationsData, ThrowOnError>,
-): RequestResult<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateOrganizationsResponses, CreateOrganizationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCreateOrganizationsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/organizations',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get list of organizations
- *
- * Returns a list of organizations.
- *
- * **GET /organizations** ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· _organizations · cella · channel_
- *
- * @param {getOrganizationsData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {string=} options.query.relatableUserId - `string` (optional)
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
- * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 429
- */
-export const getOrganizations = <ThrowOnError extends boolean = true>(
-  options?: Options<GetOrganizationsData, ThrowOnError>,
-): RequestResult<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetOrganizationsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/organizations',
-    ...options,
-  });
-
-/**
- * Get organization
- *
- * Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.
- *
- * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· _organizations · cella · channel_
- *
- * @param {getOrganizationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.id - `string`
- * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
- * @param {string=} options.query.include - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<GetOrganizationData, ThrowOnError>,
-): RequestResult<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetOrganizationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/organizations/{id}',
-    ...options,
-  });
-
-/**
- * Update organization
- *
- * Updates an organization within a tenant.
- *
- * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· _organizations · cella · channel_
- *
- * @param {updateOrganizationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.slug - `string` (optional)
- * @param {string=} options.body.name - `string` (optional)
- * @param {string | null=} options.body.shortName - `string | null` (optional)
- * @param {string | null=} options.body.country - `string | null` (optional)
- * @param {string | null=} options.body.timezone - `string | null` (optional)
- * @param {enum=} options.body.defaultLanguage - `enum` (optional)
- * @param {enum[]=} options.body.languages - `enum[]` (optional)
- * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
- * @param {string | null=} options.body.color - `string | null` (optional)
- * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
- * @param {string | null=} options.body.logoUrl - `string | null` (optional)
- * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
- * @param {string | null=} options.body.welcomeText - `string | null` (optional)
- * @param {boolean=} options.body.chatSupport - `boolean` (optional)
- * @param {object=} options.body.organizationFlags - `object` (optional)
- * @param {object=} options.body.setupConfig - `object` (optional)
- * @param {object=} options.body.toolsConfig - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
- */
-export const updateOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateOrganizationData, ThrowOnError>,
-): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zUpdateOrganizationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/organizations/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Publish organization
- *
- * Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.
- *
- * **PUT /{tenantId}/organizations/{id}/publish** ·· [publishOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}/publish) ·· _organizations · cella · channel_
- *
- * @param {publishOrganizationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const publishOrganization = <ThrowOnError extends boolean = true>(
-  options: Options<PublishOrganizationData, ThrowOnError>,
-): RequestResult<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zPublishOrganizationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/organizations/{id}/publish',
-    ...options,
-  });
-
-/**
- * Delete attachments
- *
- * Deletes one or more attachments by ID. Their stored files are kept for the deleted-items period, then deleted when the retention procedure removes the rows.
- *
- * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/DELETE/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
- *
- * @param {deleteAttachmentsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string[]} options.body.ids - `string[]`
- * @param {object=} options.body.stx - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const deleteAttachments = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteAttachmentsData, ThrowOnError>,
-): RequestResult<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteAttachmentsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get attachments
- *
- * Returns a paginated list of attachments for the organization.
- *
- * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
- *
- * @param {getAttachmentsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {integer=} options.query.afterSeq - `integer` (optional)
- * @param {integer=} options.query.untilSeq - `integer` (optional)
- * @param {string=} options.query.channelId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachments = <ThrowOnError extends boolean = true>(
-  options: Options<GetAttachmentsData, ThrowOnError>,
-): RequestResult<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetAttachmentsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments',
-    ...options,
-  });
-
-/**
- * Create attachments
- *
- * Registers one or more new attachments after client side upload. Includes metadata like name, content type, size and storage keys. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.
- *
- * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
- *
- * @param {createAttachmentsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 413, 429
- */
-export const createAttachments = <ThrowOnError extends boolean = true>(
-  options: Options<CreateAttachmentsData, ThrowOnError>,
-): RequestResult<CreateAttachmentsResponses, CreateAttachmentsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateAttachmentsResponses, CreateAttachmentsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCreateAttachmentsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get presigned URLs
- *
- * Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.
- *
- * **POST /{tenantId}/{organizationId}/attachments/presigned-urls** ·· [getPresignedUrls](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments/presigned-urls) ·· _attachments · cella · product_
- *
- * @param {getPresignedUrlsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {object[]} options.body.items - `object[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const getPresignedUrls = <ThrowOnError extends boolean = true>(
-  options: Options<GetPresignedUrlsData, ThrowOnError>,
-): RequestResult<GetPresignedUrlsResponses, GetPresignedUrlsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<GetPresignedUrlsResponses, GetPresignedUrlsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetPresignedUrlsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments/presigned-urls',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get attachment
- *
- * Returns a single attachment by ID.
- *
- * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
- *
- * @param {getAttachmentData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachment = <ThrowOnError extends boolean = true>(
-  options: Options<GetAttachmentData, ThrowOnError>,
-): RequestResult<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetAttachmentResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments/{id}',
-    ...options,
-  });
-
-/**
- * Update attachment
- *
- * Renames an attachment or replaces its description.
- *
- * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments · cella · product_
- *
- * @param {updateAttachmentData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {object} options.body.ops - `object`
- * @param {StxBase} options.body.stx - `StxBase`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const updateAttachment = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateAttachmentData, ThrowOnError>,
-): RequestResult<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zUpdateAttachmentResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Link attachment keys
- *
- * Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
- *
- * **PUT /{tenantId}/{organizationId}/attachments/{id}/keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· _attachments · cella · product_
- *
- * @param {linkAttachmentKeysData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {object} options.body.keys - `object`
- * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
- */
-export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
-  options: Options<LinkAttachmentKeysData, ThrowOnError>,
-): RequestResult<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zLinkAttachmentKeysResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/attachments/{id}/keys',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Protected resource metadata
- *
- * RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
- *
- * **GET /{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource** ·· [getMcpProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· _mcp · cella_
- *
- * @param {getMcpProtectedResourceMetadataData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 404, 429
- */
-export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
-  options: Options<GetMcpProtectedResourceMetadataData, ThrowOnError>,
-): RequestResult<GetMcpProtectedResourceMetadataResponses, GetMcpProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetMcpProtectedResourceMetadataResponses, GetMcpProtectedResourceMetadataErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetMcpProtectedResourceMetadataResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource',
-    ...options,
-  });
-
-/**
- * MCP endpoint
- *
- * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.
- *
- * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· _mcp · cella_
- *
- * @param {handleMcpData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const handleMcp = <ThrowOnError extends boolean = true>(
-  options: Options<HandleMcpData, ThrowOnError>,
-): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/mcp',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Delete memberships
- *
- * Deletes the memberships of one or more members of a channel entity, named by their user IDs; the users themselves stay. An ID without a membership in the channel comes back in `rejectedIds`.
- *
- * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships) ·· _memberships · cella_
- *
- * @param {deleteMembershipsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @param {string[]} options.body.ids - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
- */
-export const deleteMemberships = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteMembershipsData, ThrowOnError>,
-): RequestResult<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zDeleteMembershipsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Create memberships
- *
- * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.
- *
- * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· _memberships · cella_
- *
- * @param {membershipInviteData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @param {string[]} options.body.emails - `string[]`
- * @param {enum} options.body.role - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
- */
-export const membershipInvite = <ThrowOnError extends boolean = true>(
-  options: Options<MembershipInviteData, ThrowOnError>,
-): RequestResult<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zMembershipInviteResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Check addresses before inviting
- *
- * Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.
- *
- * **POST /{tenantId}/{organizationId}/memberships/check** ·· [checkMembershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/check) ·· _memberships · cella_
- *
- * @param {checkMembershipInviteData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @param {string[]} options.body.emails - `string[]`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
-  options: Options<CheckMembershipInviteData, ThrowOnError>,
-): RequestResult<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCheckMembershipInviteResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/check',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update membership
- *
- * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.
- *
- * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships · cella_
- *
- * @param {updateMembershipData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {enum=} options.body.role - `enum` (optional)
- * @param {boolean=} options.body.archived - `boolean` (optional)
- * @param {boolean=} options.body.muted - `boolean` (optional)
- * @param {number=} options.body.displayOrder - `number` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
- */
-export const updateMembership = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateMembershipData, ThrowOnError>,
-): RequestResult<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zUpdateMembershipResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get list of members
- *
- * Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.
- *
- * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships · cella_
- *
- * @param {getMembersData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @param {enum=} options.query.role - `enum` (optional)
- * @param {string=} options.query.include - `string` (optional)
- * @param {string=} options.query.userIds - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getMembers = <ThrowOnError extends boolean = true>(
-  options: Options<GetMembersData, ThrowOnError>,
-): RequestResult<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetMembersResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/members',
-    ...options,
-  });
-
-/**
- * Get list of pending memberships
- *
- * Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
- *
- * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships · cella_
- *
- * @param {getPendingMembershipsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @param {string} options.query.entityId - `string`
- * @param {enum} options.query.entityType - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getPendingMemberships = <ThrowOnError extends boolean = true>(
-  options: Options<GetPendingMembershipsData, ThrowOnError>,
-): RequestResult<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetPendingMembershipsResponses, GetPendingMembershipsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetPendingMembershipsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/pending',
-    ...options,
-  });
-
-/**
- * Resend pending invitation
- *
- * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one, and one held in a draft channel waits for its publish. An address the tenant mailed within the day gets nothing, and the link it holds keeps working. Answers 204 alike for every pending invitation, and 429 past the tenant's daily invitation mails. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
- *
- * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships · cella_
- *
- * @param {resendPendingInvitationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
-  options: Options<ResendPendingInvitationData, ThrowOnError>,
-): RequestResult<ResendPendingInvitationResponses, ResendPendingInvitationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<ResendPendingInvitationResponses, ResendPendingInvitationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zResendPendingInvitationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/pending/{id}/resend',
-    ...options,
-  });
-
-/**
- * Withdraw pending invitation
- *
- * Withdraws a pending invitation, named by its own id, with its links, so its seat frees. A declined invitation is the invitee's answer and is not withdrawn. Requires update permission on the invited channel.
- *
- * **DELETE /{tenantId}/{organizationId}/memberships/pending/{id}** ·· [withdrawPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships/pending/{id}) ·· _memberships · cella_
- *
- * @param {withdrawPendingInvitationData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 204, 400, 401, 403, 404, 429
- */
-export const withdrawPendingInvitation = <ThrowOnError extends boolean = true>(
-  options: Options<WithdrawPendingInvitationData, ThrowOnError>,
-): RequestResult<WithdrawPendingInvitationResponses, WithdrawPendingInvitationErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<WithdrawPendingInvitationResponses, WithdrawPendingInvitationErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zWithdrawPendingInvitationResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/memberships/pending/{id}',
-    ...options,
-  });
-
-/**
- * Mark entities as seen
- *
- * Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.
- *
- * **POST /{tenantId}/{organizationId}/seen** ·· [markSeen](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/POST/{tenantId}/{organizationId}/seen) ·· _seen · cella_
- *
- * @param {markSeenData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string[]} options.body.entityIds - `string[]`
- * @param {enum} options.body.entityType - `enum`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const markSeen = <ThrowOnError extends boolean = true>(
-  options: Options<MarkSeenData, ThrowOnError>,
-): RequestResult<MarkSeenResponses, MarkSeenErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<MarkSeenResponses, MarkSeenErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zMarkSeenResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/seen',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get service accounts
- *
- * Lists the service accounts of this organization.
- *
- * **GET /{tenantId}/{organizationId}/service-accounts** ·· [getServiceAccounts](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts) ·· _service-accounts · cella_
- *
- * @param {getServiceAccountsData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {integer=} options.query.offset - `integer` (optional)
- * @param {integer=} options.query.limit - `integer` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getServiceAccounts = <ThrowOnError extends boolean = true>(
-  options: Options<GetServiceAccountsData, ThrowOnError>,
-): RequestResult<GetServiceAccountsResponses, GetServiceAccountsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetServiceAccountsResponses, GetServiceAccountsErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetServiceAccountsResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts',
-    ...options,
-  });
-
-/**
- * Create service account
- *
- * Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.
- *
- * **POST /{tenantId}/{organizationId}/service-accounts** ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts) ·· _service-accounts · cella_
- *
- * @param {createServiceAccountData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.body.name - `string`
- * @param {enum} options.body.role - `enum`
- * @param {object=} options.body.key - `object` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
- */
-export const createServiceAccount = <ThrowOnError extends boolean = true>(
-  options: Options<CreateServiceAccountData, ThrowOnError>,
-): RequestResult<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCreateServiceAccountResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update service account
- *
- * Renames, disables or re-enables a service account. Accounts are never deleted.
- *
- * **PUT /{tenantId}/{organizationId}/service-accounts/{id}** ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/PUT/{tenantId}/{organizationId}/service-accounts/{id}) ·· _service-accounts · cella_
- *
- * @param {updateServiceAccountData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
- */
-export const updateServiceAccount = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateServiceAccountData, ThrowOnError>,
-): RequestResult<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zUpdateServiceAccountResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get API keys
- *
- * Lists the API keys of a service account. Secrets are never returned here.
- *
- * **GET /{tenantId}/{organizationId}/service-accounts/{id}/keys** ·· [getApiKeys](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts/{id}/keys) ·· _service-accounts · cella_
- *
- * @param {getApiKeysData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getApiKeys = <ThrowOnError extends boolean = true>(
-  options: Options<GetApiKeysData, ThrowOnError>,
-): RequestResult<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zGetApiKeysResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys',
-    ...options,
-  });
-
-/**
- * Create API key
- *
- * Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.
- *
- * **POST /{tenantId}/{organizationId}/service-accounts/{id}/keys** ·· [createApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts/{id}/keys) ·· _service-accounts · cella_
- *
- * @param {createApiKeyData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {string} options.body.name - `string`
- * @param {enum[] | null=} options.body.scopes - `enum[] | null` (optional)
- * @param {string=} options.body.expiresAt - `string` (optional)
- * @param {string=} options.body.rollFrom - `string` (optional)
- * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 413, 429
- */
-export const createApiKey = <ThrowOnError extends boolean = true>(
-  options: Options<CreateApiKeyData, ThrowOnError>,
-): RequestResult<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zCreateApiKeyResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Revoke API key
- *
- * Revokes an API key: it stops working within 10 seconds in every process. The row stays for the audit trail.
- *
- * **DELETE /{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}** ·· [revokeApiKey](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}) ·· _service-accounts · cella_
- *
- * @param {revokeApiKeyData} options
- * @param {string} options.path.tenantId - `string`
- * @param {string} options.path.organizationId - `string`
- * @param {string} options.path.id - `string`
- * @param {string} options.path.keyId - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const revokeApiKey = <ThrowOnError extends boolean = true>(
-  options: Options<RevokeApiKeyData, ThrowOnError>,
-): RequestResult<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError, 'data'>({
-    responseValidator: async (data) => await zRevokeApiKeyResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}',
+    url: '/users',
     ...options,
   });
 
@@ -3191,7 +3239,7 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
  *
  * Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.
  *
- * **GET /{tenantId}/{organizationId}/yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/{tenantId}/{organizationId}/yjs/token) ·· _yjs · cella_
+ * **GET /tenants/{tenantId}/organizations/{organizationId}/yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/tenants/{tenantId}/organizations/{organizationId}/yjs/token) ·· _yjs · cella_
  *
  * @param {getYjsTokenData} options
  * @param {string} options.path.tenantId - `string`
@@ -3206,7 +3254,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/yjs/token',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/token',
     ...options,
   });
 
@@ -3215,7 +3263,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.
  *
- * **POST /{tenantId}/{organizationId}/yjs/pull** ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/pull) ·· _yjs · cella_
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/yjs/pull** ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/tenants/{tenantId}/organizations/{organizationId}/yjs/pull) ·· _yjs · cella_
  *
  * @param {pullYjsDocumentData} options
  * @param {string} options.path.tenantId - `string`
@@ -3231,7 +3279,7 @@ export const pullYjsDocument = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<PullYjsDocumentResponses, PullYjsDocumentErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zPullYjsDocumentResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/yjs/pull',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/pull',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -3244,7 +3292,7 @@ export const pullYjsDocument = <ThrowOnError extends boolean = true>(
  *
  * Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 `sync_document_replaced` with the current one in `meta.generation`, and with null when the document has no row: pull, which seeds it, then post again. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.
  *
- * **POST /{tenantId}/{organizationId}/yjs/push** ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/push) ·· _yjs · cella_
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/yjs/push** ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/tenants/{tenantId}/organizations/{organizationId}/yjs/push) ·· _yjs · cella_
  *
  * @param {pushYjsUpdateData} options
  * @param {string} options.path.tenantId - `string`
@@ -3261,7 +3309,7 @@ export const pushYjsUpdate = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<PushYjsUpdateResponses, PushYjsUpdateErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zPushYjsUpdateResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/{tenantId}/{organizationId}/yjs/push',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/push',
     ...options,
     headers: {
       'Content-Type': 'application/json',

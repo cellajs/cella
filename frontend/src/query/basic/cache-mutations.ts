@@ -64,21 +64,11 @@ function changePageItems<T extends ItemData>(pageItems: T[], changedItems: T[], 
   }
 }
 
-/** The ids among `ids` that a page of the list hides while their delete is pending. */
-function hiddenAmong(data: BaseQueryItem<ItemData>, ids: Set<string>): Set<string> {
-  const pages = isInfiniteQueryData<ItemData>(data) ? data.pages : [];
-  return new Set(pages.flatMap(({ hiddenIds = [] }) => hiddenIds.filter((id) => ids.has(id))));
-}
-
-/**
- * Totals move only by rows that enter or leave, so a partial overlap cannot drift them; new rows enter the first page, or the
- * last when `insertOrder` is 'asc'. A removed row a page hides leaves its `hiddenIds`: the server no longer sends it.
- */
+/** Totals move only by rows that enter or leave, so a partial overlap cannot drift them; new rows enter the first page, or the last when `insertOrder` is 'asc'. */
 function changeListItems(data: BaseQueryItem<ItemData>, items: ItemData[], action: QueryDataAction, insertOrder?: 'asc' | 'desc') {
   const cachedIds = new Set(getQueryItems(data).map(({ id }) => id));
   const changedItems = items.filter(({ id }) => (action === 'create' ? !cachedIds.has(id) : cachedIds.has(id)));
-  const settledHidden = action === 'remove' ? hiddenAmong(data, new Set(items.map(({ id }) => id))) : new Set<string>();
-  if (!changedItems.length && !settledHidden.size) return data;
+  if (!changedItems.length) return data;
 
   if (action === 'create') {
     const insertPage = insertOrder === 'asc' && isInfiniteQueryData(data) ? data.pages.length - 1 : 0;
@@ -90,14 +80,11 @@ function changeListItems(data: BaseQueryItem<ItemData>, items: ItemData[], actio
   }
 
   const changedIds = new Set(changedItems.map(({ id }) => id));
-  const changed = mapListItems(
+  return mapListItems(
     data,
     (pageItems) => (pageItems.some(({ id }) => changedIds.has(id)) ? changePageItems(pageItems, changedItems, action) : pageItems),
-    action === 'remove' ? -(changedItems.length + settledHidden.size) : 0,
+    action === 'remove' ? -changedItems.length : 0,
   );
-  if (!settledHidden.size || !isInfiniteQueryData<ItemData>(changed)) return changed;
-  const pages = changed.pages.map((page) => (page.hiddenIds ? { ...page, hiddenIds: page.hiddenIds.filter((id) => !settledHidden.has(id)) } : page));
-  return { ...changed, pages };
 }
 
 /** A paged list takes new rows in the createdAt order its key names, newest first by default; a flat list prepends them. */

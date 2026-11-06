@@ -9,7 +9,7 @@ vi.mock('~/query/query-client', () => ({ queryClient: new QueryClient() }));
 describe('a list marked for a refetch stays marked', () => {
   const key = ['task', 'list', 'org-1', 'org-1'];
   const markedList = async () => {
-    queryClient.setQueryData(key, { items: [{ id: 'a', name: 'a' }], total: 1 }, { updatedAt: 1000 });
+    queryClient.setQueryData(key, { results: [{ id: 'a', name: 'a' }], totalSize: 1 }, { updatedAt: 1000 });
     await queryClient.invalidateQueries({ queryKey: key, refetchType: 'none' });
   };
 
@@ -23,7 +23,7 @@ describe('a list marked for a refetch stays marked', () => {
     await markedList();
     const renamed = { id: 'a', name: 'renamed' };
     changeListData(key, [renamed], 'update');
-    expect(queryClient.getQueryState(key)).toMatchObject({ isInvalidated: true, data: { items: [renamed] } });
+    expect(queryClient.getQueryState(key)).toMatchObject({ isInvalidated: true, data: { results: [renamed] } });
   });
 
   it('through a patch while it refetches, and an edit that cancels the refetch', async () => {
@@ -47,9 +47,9 @@ describe('an optimistic write during a first read', () => {
     await vi.waitFor(() => expect(answer).toBeDefined());
 
     await cancelKeepingMark(queryClient, ['task', 'list', 'org-2']);
-    answer?.({ items: [{ id: 'a' }], total: 1 });
+    answer?.({ results: [{ id: 'a' }], totalSize: 1 });
     await read.catch(() => {});
-    expect(queryClient.getQueryState(key)).toMatchObject({ status: 'success', data: { items: [{ id: 'a' }] } });
+    expect(queryClient.getQueryState(key)).toMatchObject({ status: 'success', data: { results: [{ id: 'a' }] } });
   });
 });
 

@@ -1,4 +1,4 @@
-import { getOrganizations } from 'sdk';
+import { listOrganizations } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
@@ -22,14 +22,14 @@ describe('Defense-in-depth data isolation', async () => {
     await clearSecurityTestData();
   });
 
-  it("must not list another tenant's organization via getOrganizations", async () => {
+  it("must not list another tenant's organization via listOrganizations", async () => {
     for (const [own, other] of [
       [tenantA, tenantB],
       [tenantB, tenantA],
     ]) {
-      const { data, response } = await call(getOrganizations, { headers: { ...defaultHeaders, Cookie: own.sessionCookie } });
+      const { data, response } = await call(listOrganizations, { headers: { ...defaultHeaders, Cookie: own.sessionCookie } });
       expect(response.status).toBe(200);
-      const orgIds = (data as { items: { id: string }[] }).items.map((o) => o.id);
+      const orgIds = (data as { results: { id: string }[] }).results.map((o) => o.id);
       expect(orgIds).toContain(own.organization.id);
       expect(orgIds).not.toContain(other.organization.id);
     }

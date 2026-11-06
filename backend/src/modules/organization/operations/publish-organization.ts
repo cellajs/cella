@@ -1,4 +1,5 @@
 import type { UserContext } from '#/core/context';
+import { assertNoWriteBetween } from '#/core/preconditions';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
@@ -29,6 +30,7 @@ export async function publishOrganizationOp(ctx: UserContext, id: string) {
 
   // A draft another call published meanwhile is that call's to send for.
   const raced = wasDraft && !stamped;
+  if (raced) assertNoWriteBetween(ctx, 'organization', organization.id);
   const { dispatched } = raced ? { dispatched: 0 } : await dispatchDeferredInvites(ctx, { channelIds: [organization.id], organization });
 
   const current = stamped ?? (raced ? (await getValidChannel(ctx, id, 'organization', 'update')).entity : organization);

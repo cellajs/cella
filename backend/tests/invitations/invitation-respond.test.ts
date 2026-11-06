@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { handleMembershipInvitation, invokeToken } from 'sdk';
+import { acceptInvitation, invokeToken, rejectInvitation } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -24,8 +24,8 @@ describe('Invitation response', async () => {
   }
 
   async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'reject', sessionCookie: string) {
-    return await call(handleMembershipInvitation, {
-      path: { id: inactiveMembershipId, acceptOrReject: action },
+    return await call(action === 'accept' ? acceptInvitation : rejectInvitation, {
+      path: { invitationId: inactiveMembershipId },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
   }
@@ -133,7 +133,7 @@ describe('Invitation response', async () => {
       boundTo: invitedUser.id,
     });
 
-    const path = `/me/invitations/${inactiveMembership.id}/reject`;
+    const path = `/me/invitations/${inactiveMembership.id}:reject`;
     const { status, body } = await rawJsonRequest(path, await createTestSession(invitedUser), { method: 'POST' });
 
     expect(status).toBe(200);
@@ -165,8 +165,8 @@ describe('Invitation response', async () => {
 
     const sessionCookie = await createTestSession(user);
 
-    const { response: res } = await call(handleMembershipInvitation, {
-      path: { id: '00000000-0000-0000-0000-000000000000', acceptOrReject: 'accept' },
+    const { response: res } = await call(acceptInvitation, {
+      path: { invitationId: '00000000-0000-0000-0000-000000000000' },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
 

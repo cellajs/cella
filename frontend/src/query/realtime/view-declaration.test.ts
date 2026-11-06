@@ -32,7 +32,7 @@ describe('declareViewsFromMemberships', () => {
 
   it('gives an organization the store has not seen its entry, so a first catchup declares its view', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
-    queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')] });
+    queryClient.setQueryData(['me', 'memberships'], { results: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')] });
     // A fresh client: nothing stored, so a request built now would declare no view at all.
     expect(syncStore.getState().getCatchupViews(['attachment'])).toEqual([]);
 
@@ -46,7 +46,7 @@ describe('declareViewsFromMemberships', () => {
 
   it('must not put the cursor of a known organization back', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
-    queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin')] });
+    queryClient.setQueryData(['me', 'memberships'], { results: [orgMembership('org-1', 'admin')] });
     syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
 
     declareViewsFromMemberships();

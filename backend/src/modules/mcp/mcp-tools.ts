@@ -16,7 +16,7 @@ export interface McpToolDescriptor {
 }
 
 /** What a tool call answers: the route's JSON body, or the type and message of the error it answered with. */
-export type McpToolOutcome = { ok: true; output: unknown } | { ok: false; type: string; message: string };
+export type McpToolOutcome = { ok: true; output: unknown } | { ok: false; type: string; detail: string };
 
 /** A route exposed to MCP clients: named and described by the route, run by the route's own handler. */
 export interface McpTool {
@@ -40,6 +40,9 @@ const routeParams = ['tenantId', 'organizationId'];
 const forwardedHeaders = ['authorization', 'x-forwarded-for'];
 
 const isZodObject = (schema: unknown): schema is z.ZodObject<z.ZodRawShape> => schema instanceof z.ZodObject;
+
+/** The standard method a batch custom method (`/~batch-delete`) runs per item: its tool's hints follow that method. */
+const batchedMethods: Record<string, string> = { 'batch-create': 'POST', 'batch-update': 'PATCH', 'batch-delete': 'DELETE' };
 
 /**
  * The sync transaction (`stx`) is trusted server metadata, never model input: `modelSchema` leaves it out of what the
@@ -85,9 +88,9 @@ function toInputSchema(schema: z.ZodType): Record<string, unknown> {
 async function toOutcome(response: Response): Promise<McpToolOutcome> {
   const payload: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   if (response.ok) return { ok: true, output: payload };
-  const error = (payload ?? {}) as { type?: string; message?: string };
-  if (response.status >= 500) return { ok: false, type: error.type ?? 'server_error', message: 'Internal server error' };
-  return { ok: false, type: error.type ?? 'error', message: error.message ?? response.statusText };
+  const error = (payload ?? {}) as { type?: string; detail?: string };
+  if (response.status >= 500) return { ok: false, type: error.type ?? 'server_error', detail: 'Internal server error' };
+  return { ok: false, type: error.type ?? 'error', detail: error.detail ?? response.statusText };
 }
 
 function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpTool {
@@ -117,6 +120,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
   const paramKeys = Object.keys(params.shape);
   const queryKeys = Object.keys(query.shape);
   const method = route.method.toUpperCase();
+  const hintMethod = batchedMethods[/\/~([^/]+)$/.exec(route.path)?.[1] ?? ''] ?? method;
   const action = toolAction(method);
   const isRead = action === 'read';
   const scope = accessScopes.required(spec.entity, action);
@@ -130,7 +134,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
       name,
       description: spec.description,
       inputSchema: toInputSchema(inputSchema),
-      annotations: { readOnlyHint: isRead, destructiveHint: !isRead && method !== 'POST', idempotentHint: method !== 'POST' },
+      annotations: { readOnlyHint: isRead, destructiveHint: !isRead && hintMethod !== 'POST', idempotentHint: hintMethod !== 'POST' },
       _meta: { scope, approvalRequired: spec.approvalRequired },
     },
     call: async (ctx, args) => {

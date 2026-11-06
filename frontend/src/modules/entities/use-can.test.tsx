@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const session = vi.hoisted(() => ({ user: { id: 'user-1' } as { id: string } | null, isSystemAdmin: false }));
 vi.mock('~/modules/user/user-store', () => ({ useUserStore: (select: (state: typeof session) => unknown) => select(session) }));
 // Never answers: a test that seeds no memberships sees them loading.
-vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), getMyMemberships: () => new Promise(() => {}) }));
+vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), listMyMemberships: () => new Promise(() => {}) }));
 const checkAccess = vi.hoisted(() => vi.fn());
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
@@ -23,7 +23,7 @@ type Can = ReturnType<typeof useCan>;
 
 /** The `can` a component gets from `useCan` once these memberships are cached, or while none are. */
 function canWith(memberships: { channelType: string; channelId: string; role: string }[] | null, options?: Parameters<typeof useCan>[0]): Can {
-  if (memberships) queryClient.setQueryData(meKeys.memberships, { items: memberships });
+  if (memberships) queryClient.setQueryData(meKeys.memberships, { results: memberships });
   let can: Can | undefined;
   function Probe() {
     can = useCan(options);

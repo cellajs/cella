@@ -52,6 +52,6 @@ export function useCan({ asMember = false }: { asMember?: boolean } = {}) {
   return (action: EntityActionType, entityType: ChannelEntityType | ProductEntityType, row: CanRow): boolean => {
     if (user && !myMemberships) return false;
     const subject = canSubject(entityType, row);
-    return !!subject && checkAccess(userAccess(user, isSystemAdmin && !asMember, myMemberships?.items ?? []), action, subject).allowed;
+    return !!subject && checkAccess(userAccess(user, isSystemAdmin && !asMember, myMemberships?.results ?? []), action, subject).allowed;
   };
 }

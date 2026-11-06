@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { BellIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GetNotificationsResponse } from 'sdk';
+import type { ListNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -20,7 +20,7 @@ import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-type Notification = GetNotificationsResponse['items'][number];
+type Notification = ListNotificationsResponse['results'][number];
 
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {
@@ -29,10 +29,10 @@ export function NotificationsSheet() {
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const { mutate: markRead } = useMarkNotificationsReadMutation();
 
-  const items = data?.items ?? [];
+  const items = data?.results ?? [];
   const hasUnread = (data?.unreadCount ?? 0) > 0;
   // The listed rows count too: a system admin is told of organizations they hold no membership in
-  const organizationIds = new Set([...(myMemberships?.items ?? []), ...items].map(({ organizationId }) => organizationId));
+  const organizationIds = new Set([...(myMemberships?.results ?? []), ...items].map(({ organizationId }) => organizationId));
   const showOrganization = organizationIds.size > 1;
 
   return (

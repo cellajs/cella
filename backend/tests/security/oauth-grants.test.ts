@@ -2,14 +2,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
 import {
+  batchDeleteUsers,
   createApiKey,
   createServiceAccount,
+  deleteConnectedApp,
   deleteMe,
-  deleteUsers,
-  getAttachments,
-  getConnectedApps,
+  listAttachments,
+  listConnectedApps,
   revokeApiKey,
-  revokeConnectedApp,
   signOut,
   updateOrganization,
   updateServiceAccount,
@@ -82,7 +82,7 @@ const cimdDocument = {
   response_types: ['code'],
 };
 
-const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
+const reasonOf = (error: unknown) => (error as ErrorResponse).reason;
 
 /** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
 const grantRowsOf = (userId: string) =>
@@ -141,7 +141,7 @@ describe('OAuth grants', async () => {
   const refresh = (refreshToken: string, clientId = APP_ID) => refreshAccessToken(oauth.issuer, { clientId, refreshToken });
 
   const readAttachments = (ctx: Tenant, jwt: string) =>
-    call(getAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearerHeaders(jwt) });
+    call(listAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearerHeaders(jwt) });
 
   /** The grant a person's access token names. */
   async function grantIdOf(ctx: Tenant, jwt: string) {
@@ -172,7 +172,7 @@ describe('OAuth grants', async () => {
       expect((await readAttachments(ctx, access)).response.status).toBe(200);
 
       const uninstalled = await call(updateServiceAccount, {
-        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id, id: ctx.installationId },
+        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id, serviceAccountId: ctx.installationId },
         body: { status: 'disabled' },
         headers: ctx.adminHeaders,
       });
@@ -241,7 +241,7 @@ describe('OAuth grants', async () => {
       expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
 
       const sysAdmin = await createSystemAdminUser(`sysadmin-${nanoid(8)}@security-test.com`);
-      const deleted = await call(deleteUsers, {
+      const deleted = await call(batchDeleteUsers, {
         body: { ids: [ctx.member.id] },
         headers: { ...defaultHeaders, Cookie: await createTestSession(sysAdmin) },
       });
@@ -342,15 +342,15 @@ describe('OAuth grants', async () => {
       const memberHeaders = { ...defaultHeaders, Cookie: ctx.member.sessionCookie };
       expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
 
-      const listed = await call(getConnectedApps, { headers: memberHeaders });
-      const [app] = (listed.data as { items: { id: string }[] }).items;
+      const listed = await call(listConnectedApps, { headers: memberHeaders });
+      const [app] = (listed.data as { results: { id: string }[] }).results;
       // Someone else who knows the grant's id, the organization's admin here, finds no connected app of theirs.
-      const notTheirs = await call(revokeConnectedApp, { path: { id: app.id }, headers: ctx.adminHeaders });
+      const notTheirs = await call(deleteConnectedApp, { path: { connectedAppId: app.id }, headers: ctx.adminHeaders });
       expect(notTheirs.response.status).toBe(404);
       expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
 
-      const revoked = await call(revokeConnectedApp, { path: { id: app.id }, headers: memberHeaders });
-      expect(revoked.response.status).toBe(200);
+      const revoked = await call(deleteConnectedApp, { path: { connectedAppId: app.id }, headers: memberHeaders });
+      expect(revoked.response.status).toBe(204);
 
       const read = await readAttachments(ctx, grant.access);
       expect(read.response.status).toBe(401);
@@ -393,9 +393,9 @@ describe('OAuth grants', async () => {
         expect(minted.status).toBe(200);
         return String(minted.body.access_token);
       };
-      const read = (jwt: string) => call(getAttachments, { path: orgPath, headers: bearerHeaders(jwt) });
+      const read = (jwt: string) => call(listAttachments, { path: orgPath, headers: bearerHeaders(jwt) });
       const key = { id: keyId, secret: clientSecret };
-      return { accountId, path: { ...orgPath, id: accountId }, headers, key, mint, tokenFor, read };
+      return { accountId, path: { ...orgPath, serviceAccountId: accountId }, headers, key, mint, tokenFor, read };
     }
 
     /** The token endpoint's answer to a key that no longer authenticates its account: no token. */
@@ -409,7 +409,7 @@ describe('OAuth grants', async () => {
       const jwt = await bot.tokenFor(bot.key.secret);
       expect((await bot.read(jwt)).response.status).toBe(200);
 
-      const revoked = await call(revokeApiKey, { path: { ...bot.path, keyId: bot.key.id }, headers: bot.headers });
+      const revoked = await call(revokeApiKey, { path: { ...bot.path, apiKeyId: bot.key.id }, headers: bot.headers });
       expect(revoked.response.status).toBe(200);
 
       const refused = await bot.read(jwt);
@@ -937,7 +937,11 @@ describe('OAuth grants', async () => {
         .insert(systemRolesTable)
         .values({ id: admin.id, userId: admin.id, role: 'admin', createdAt: new Date().toISOString() });
       const rename = (headers: Record<string, string>) =>
-        call(updateOrganization, { path: { tenantId: ctx.org.tenantId, id: ctx.org.id }, body: { name: 'Renamed organization' }, headers });
+        call(updateOrganization, {
+          path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+          body: { name: 'Renamed organization' },
+          headers,
+        });
 
       const granted = await authorizationCodeToken(oauth.issuer, {
         ...authorization(ctx, APP_ID, admin),

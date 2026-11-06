@@ -45,7 +45,7 @@ export default defineScenario({
         const rangeFetch = async (from: number, until: number) => {
           const started = performance.now();
           try {
-            const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&limit=1000`, {
+            const res = await vu.http.get(`${ORG_PATH}/attachments?afterSeq=${from - 1}&untilSeq=${until}&maxPageSize=1000`, {
               headers: { cookie },
               name: 'GET /attachments (range)',
             });
@@ -124,7 +124,7 @@ export default defineScenario({
         const { cookie, userIndex } = benchUser(vu.index);
         for (let i = 0; i < 20; i++) {
           const { path, json } = attachmentEdit(userIndex);
-          const res = await vu.http.put(path, { json, headers: { cookie }, name: 'PUT /attachments/:id' });
+          const res = await vu.http.patch(path, { json, headers: { cookie }, name: 'PATCH /attachments/:id' });
           if (res.status === 200) vu.counter('bench.rows_written');
           await vu.think(500);
         }

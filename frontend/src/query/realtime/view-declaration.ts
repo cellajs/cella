@@ -1,4 +1,4 @@
-import type { GetMyMembershipsResponse } from 'sdk';
+import type { ListMyMembershipsResponse } from 'sdk';
 import { hierarchy } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { findInCache } from '~/query/basic/find-in-list-cache';
@@ -19,12 +19,12 @@ export function resolveChannelPath(channelId: string): string | null {
 
 /** Matches the stored organizations to the membership cache before each catchup request: the catchup declares a view per stored organization and type. */
 export function declareViewsFromMemberships(): void {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
+  const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
   // Prune stored orgs the caller is not a member of, but only against a loaded cache: `data` is undefined until memberships arrive.
   if (!data) return;
 
   const store = syncStore.getState();
-  const memberOrganizationIds = new Set(data.items.map((membership) => membership.organizationId));
+  const memberOrganizationIds = new Set(data.results.map((membership) => membership.organizationId));
   for (const organizationId of Object.keys(syncStore.getState().orgs)) {
     if (!memberOrganizationIds.has(organizationId)) store.removeOrg(organizationId);
   }

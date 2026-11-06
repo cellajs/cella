@@ -25,8 +25,8 @@ export const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'err
  * the request id to quote to support.
  */
 const getToastDescription = (error: ApiError, message: string): ReactNode => {
-  if (error.status === 429 && error.meta?.retryAfter) {
-    const wait = createElement(RetryWait, { until: Date.now() + Number(error.meta.retryAfter) * 1000 });
+  if (error.status === 429 && error.retryAfter) {
+    const wait = createElement(RetryWait, { until: Date.now() + Number(error.retryAfter) * 1000 });
     if (error.type === 'too_many_requests' || !message) return wait;
     return createElement(Fragment, null, `${message} `, wait);
   }
@@ -34,7 +34,7 @@ const getToastDescription = (error: ApiError, message: string): ReactNode => {
   // A server answers a 5xx with its own message in development only; elsewhere that message is a fixed text.
   const errorMessage = error.status >= 500 && appConfig.mode === 'development' ? getErrorMessage(error) : '';
   const cause = errorMessage && errorMessage !== message ? errorMessage : undefined;
-  const report = error.severity === 'error' && error.requestId ? error : undefined;
+  const report = error.severity === 'error' && error.instance ? error : undefined;
 
   if (!message && !cause && !report) return undefined;
   return createElement(ApiErrorDescription, { message, cause, report });
@@ -49,9 +49,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // A /me probe without a valid session shows no error.
     if (error.path === '/me' && error.status === 401) return;
 
-    // The console line with requestId is for developers; Maple's fetch span already records the status and joins the backend trace.
+    // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
     if (error.status >= 500) {
-      console.error('[api]', error.type ?? 'server_error', { requestId: error.requestId, path: error.path, status: error.status });
+      console.error('[api]', error.type ?? 'server_error', { instance: error.instance, path: error.path, status: error.status });
     }
 
     // A query or mutation with a local toast opts out through `meta`.

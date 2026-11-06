@@ -93,7 +93,7 @@ describe('uploadService: files uploaded after their row was created', () => {
 
     expect(addedFiles[0]?.meta).toEqual({ attachmentId });
     expect(linkAttachmentKeys).toHaveBeenCalledWith({
-      path: { tenantId: 'tenant-1', organizationId: 'org-1', id: attachmentId },
+      path: { tenantId: 'tenant-1', organizationId: 'org-1', attachmentId },
       body: { keys: { original: storedKey }, convertedContentType: null },
     });
     expect(insertEntitiesIntoHome).toHaveBeenCalledWith({}, [{ id: attachmentId }]);

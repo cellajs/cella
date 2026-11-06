@@ -11,10 +11,10 @@ import {
   countryCodeSchema,
   includeQuerySchema,
   languageSchema,
+  listQuerySchema,
   maxLength,
   noDuplicateSlugsRefine,
-  orderSchema,
-  paginationQuerySchema,
+  orderByQuerySchema,
   timeZoneSchema,
   translatedError,
   validCDNUrlSchema,
@@ -27,6 +27,7 @@ import {
 import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
 import { auditShape } from '#/schemas/entity-base';
+import { mergePatchSchema } from '#/schemas/merge-patch-schema';
 import { toolsConfigSchema } from '#/schemas/tools-config';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
@@ -84,9 +85,9 @@ export const organizationContract = evolutionContract.channel('organization', {
     bannerUrl: validCDNUrlSchema.nullable(),
     logoUrl: validCDNUrlSchema.nullable(),
     welcomeText: z.string().max(maxLength.html).nullable(),
-    organizationFlags: organizationFlagsSchema.partial(),
-    setupConfig: setupConfigSchema.partial(),
-    toolsConfig: toolsConfigSchema,
+    organizationFlags: mergePatchSchema(organizationFlagsSchema),
+    setupConfig: mergePatchSchema(setupConfigSchema),
+    toolsConfig: mergePatchSchema(toolsConfigSchema),
   })
     .pick({
       slug: true,
@@ -125,9 +126,8 @@ export const organizationCreateBodySchema = organizationContract.createItemSchem
 
 export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 
-export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
-  order: orderSchema.default('asc'),
+export const organizationListQuerySchema = listQuerySchema.extend({
+  orderBy: orderByQuerySchema(['id', 'name', 'createdAt', 'displayOrder'], 'displayOrder asc'),
   relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: booleanTransformSchema,

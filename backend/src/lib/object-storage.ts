@@ -19,10 +19,7 @@ export function getS3Client(): S3Client {
 
   // Blank keys reach the signer as invalid credentials and return an opaque 500.
   if (!isObjectStorageConfigured()) {
-    throw new AppError(503, 'server_error', 'error', {
-      name: 'S3NotConfigured',
-      message: 'S3 credentials are not configured, cannot reach stored objects',
-    });
+    throw new AppError(503, 'server_error', 'error', { message: 'S3 credentials are not configured, cannot reach stored objects' });
   }
 
   s3Client = new S3Client({

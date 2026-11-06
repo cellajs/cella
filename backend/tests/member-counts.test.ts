@@ -1,4 +1,4 @@
-import { getMembers } from 'sdk';
+import { listMembers } from 'sdk';
 import { appConfig } from 'shared';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -61,14 +61,14 @@ describe('member counts (include=counts)', async () => {
   afterAll(async () => await clearSecurityTestData());
 
   it('counts the rows a member authored in the channel', async () => {
-    const { data, error } = await call(getMembers, {
+    const { data, error } = await call(listMembers, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       query: { entityId: tenant.organization.id, entityType: 'organization', include: 'counts' },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
     expect(error).toBeUndefined();
-    const items = (data as { items: MemberItem[] }).items;
+    const items = (data as { results: MemberItem[] }).results;
     const member = items.find(({ id }) => id === memberId);
     expect(member?.counts?.products[statType]).toBe(authored);
     expect(member?.counts?.activity[statType]).toEqual(expect.any(Number));

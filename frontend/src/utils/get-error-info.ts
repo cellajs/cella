@@ -37,18 +37,18 @@ function getErrorLocaleKeys(error?: ErrorNoticeError, errorFromQuery?: string): 
   return error.entityType ? [`resource_${error.type}`, error.type] : [error.type];
 }
 
-/** Title for an error no key describes: the name the server gave it, else what its status means. */
+/** Title for an error no key describes: the title the server gave it, else what its status means. */
 function getFallbackTitle(error?: ErrorNoticeError): string {
   if (!(error instanceof ApiError)) return error?.name || i18n.t('error:error');
 
-  // An ApiError built without a name carries its type or the class name in its place.
+  // An ApiError's name is the server's title; one built without a title carries its type or the class name in its place.
   if (error.name !== 'ApiError' && error.name !== error.type) return error.name;
 
   const statusKey = statusKeys[error.status];
   return i18n.t(statusKey ?? 'error:error');
 }
 
-/** The sentence the error brought along. An ApiError built without one carries its type, name or status in its place. */
+/** The sentence the error brought along: an ApiError's `detail`. One built without it carries its type, title or status in its place. */
 export function getErrorMessage(error?: ErrorNoticeError): string {
   if (!error) return '';
   if (!(error instanceof ApiError)) return error.message;
@@ -61,7 +61,7 @@ export function getErrorMessage(error?: ErrorNoticeError): string {
  * Title and explanation of an error, the same on the error page and in a toast. The title is the translation of the
  * error's type, in its `resource_` form first when the error names an entity type. The message is that key's `.text`
  * sentence, or the sentence the server sent when the key has none; an `info` error always shows the server's sentence.
- * An error no key describes takes the name and message the server gave it.
+ * An error no key describes takes the title and detail the server gave it.
  * @param args - The error, or an error type read from the `error` search param after a redirect.
  * @returns `title`, and `message`: empty when it would add nothing to the title.
  */

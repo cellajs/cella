@@ -19,7 +19,7 @@ describe('System user update', async () => {
     const slug = `${user.slug}-renamed`;
 
     const { response } = await call(updateUser, {
-      path: { id: user.id },
+      path: { userId: user.id },
       body: { slug },
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
     });

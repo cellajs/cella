@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { type Connection, createConnection, deleteConnection, getConnections, updateConnection } from 'sdk';
+import { type Connection, createConnection, deleteConnection, listConnections, updateConnection } from 'sdk';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { isFederationConfigured } from '#/modules/auth/sso/helpers/federations';
 import { defaultHeaders } from './fixtures';
@@ -40,7 +40,7 @@ describe('connections, managed per tenant by system admins', async () => {
     const organization = await createTestOrganization();
 
     const { response, data } = await call(createConnection, { path: { tenantId: organization.tenantId }, body: institution, headers });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(data).toMatchObject({
       tenantId: organization.tenantId,
       kind: 'sso',
@@ -51,15 +51,14 @@ describe('connections, managed per tenant by system admins', async () => {
       config: { idpEntityIds: institution.idpEntityIds },
     });
 
-    const listed = await call(getConnections, { path: { tenantId: organization.tenantId }, headers });
-    expect(listed.data).toHaveLength(1);
-    expect((listed.data as Connection[])[0].id).toBe((data as Connection).id);
+    const listed = await call(listConnections, { path: { tenantId: organization.tenantId }, headers });
+    expect((listed.data as { results: Connection[] }).results.map(({ id }) => id)).toEqual([(data as Connection).id]);
   });
 
   it('refuses a second SSO connection for the same tenant, and a domain another connection accepts', async () => {
     const headers = await adminHeaders();
     const organization = await createTestOrganization();
-    expect((await call(createConnection, { path: { tenantId: organization.tenantId }, body: institution, headers })).response.status).toBe(200);
+    expect((await call(createConnection, { path: { tenantId: organization.tenantId }, body: institution, headers })).response.status).toBe(201);
 
     const again = await call(createConnection, {
       path: { tenantId: organization.tenantId },
@@ -94,7 +93,7 @@ describe('connections, managed per tenant by system admins', async () => {
     const other = await createTestOrganization();
     await call(createConnection, { path: { tenantId: other.tenantId }, body: { ...institution, claimValues: ['uu.nl'] }, headers });
 
-    const path = { tenantId: organization.tenantId, id: (created as Connection).id };
+    const path = { tenantId: organization.tenantId, connectionId: (created as Connection).id };
     const updated = await call(updateConnection, { path, body: { status: 'active', jitProvisioning: false, claimValues: ['hu.nl'] }, headers });
     expect(updated.response.status).toBe(200);
     expect(updated.data).toMatchObject({
@@ -112,9 +111,9 @@ describe('connections, managed per tenant by system admins', async () => {
     const headers = await adminHeaders();
     const organization = await createTestOrganization();
     const { data: created } = await call(createConnection, { path: { tenantId: organization.tenantId }, body: institution, headers });
-    const path = { tenantId: organization.tenantId, id: (created as Connection).id };
+    const path = { tenantId: organization.tenantId, connectionId: (created as Connection).id };
 
-    expect((await call(deleteConnection, { path, headers })).response.status).toBe(200);
+    expect((await call(deleteConnection, { path, headers })).response.status).toBe(204);
     await expectRefusal(await call(deleteConnection, { path, headers }), 404, 'not_found');
   });
 
@@ -122,11 +121,11 @@ describe('connections, managed per tenant by system admins', async () => {
     const organization = await createTestOrganization();
     const user = await createTestUser(`member-${nanoid(8)}@test.com`);
     const memberHeaders = { ...defaultHeaders, Cookie: await createTestSession(user) };
-    expect((await call(getConnections, { path: { tenantId: organization.tenantId }, headers: memberHeaders })).response.status).toBe(403);
+    expect((await call(listConnections, { path: { tenantId: organization.tenantId }, headers: memberHeaders })).response.status).toBe(403);
 
     setTestConfig({ enabledAuthStrategies: ['passkey'] });
     onTestFinished(() => setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'] }));
     const headers = await adminHeaders();
-    await expectRefusal(await call(getConnections, { path: { tenantId: organization.tenantId }, headers }), 400, 'forbidden_strategy');
+    await expectRefusal(await call(listConnections, { path: { tenantId: organization.tenantId }, headers }), 400, 'forbidden_strategy');
   });
 });

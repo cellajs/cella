@@ -1,24 +1,26 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import {
+  batchDeleteRequests,
   type CreateRequestData,
   type CreateRequestResponse,
   createRequest,
-  deleteRequests,
-  type GetRequestsData,
-  getRequests,
+  type InviteUsersResponse,
+  inviteUsers,
+  type ListRequestsData,
+  listRequests,
   type Request,
-  type SystemInviteResponse,
-  systemInvite,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
 import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import type { PageRequest } from '~/query/basic/fetch-all-pages';
+import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
+import type { ListFilters } from '~/query/types';
 
-type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
+type RequestFilters = ListFilters<NonNullable<ListRequestsData['query']>>;
 type RequestsListParams = RequestFilters & { limit?: number };
 
 const requestsKeys = {
@@ -37,15 +39,17 @@ const withDefaults = ({
   order = requestsSearchDefaults.order,
 }: RequestFilters) => ({ q, sort, order });
 
-const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
-  getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
+const fetchRequestsPage = (filters: RequestFilters, page: PageRequest, signal?: AbortSignal) => {
+  const { q, sort, order } = withDefaults(filters);
+  return listRequests({ query: { q, orderBy: orderByParam(sort, order), ...page }, signal });
+};
 
 export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.requests, ...params }: RequestsListParams) => {
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({
     queryKey: requestsKeys.table.entries(filters),
-    ...offsetPaging(limit, (offset, signal) => fetchRequestsPage(filters, limit, offset, signal)),
+    ...tokenPaging((pageToken, signal) => fetchRequestsPage(filters, pageQuery(limit, pageToken), signal)),
     refetchOnMount: true,
   });
 };
@@ -66,9 +70,9 @@ export const useCreateRequestMutation = () => {
 
 /** Approves waitlist requests: each address gets an invitation email, and the cached rows read invited. */
 export const useSendApprovalInviteMutation = () => {
-  return useMutation<SystemInviteResponse, ApiError, Request[]>({
+  return useMutation<InviteUsersResponse, ApiError, Request[]>({
     mutationKey: requestsKeys.approve,
-    mutationFn: (requests) => systemInvite({ body: { emails: requests.map(({ email }) => email) } }),
+    mutationFn: (requests) => inviteUsers({ body: { emails: requests.map(({ email }) => email) } }),
     onSuccess: (_, requests) => {
       cacheUpdate(
         requestsKeys.table.base,
@@ -84,12 +88,11 @@ export const useDeleteRequestMutation = () => {
     mutationKey: requestsKeys.delete,
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
-      await deleteRequests({ body: { ids } });
+      await batchDeleteRequests({ body: { ids } });
     },
     onSuccess: (_, requests) => cacheRemove(requestsKeys.table.base, requests),
   });
 };
 
-/** Fetch requests for table export. Bypasses cache; returns flat items. */
-export const fetchRequestsForExport = async ({ limit, offset = 0, ...filters }: RequestsListParams & { limit: number; offset?: number }) =>
-  (await fetchRequestsPage(filters, limit, offset)).items;
+/** A page of requests for a table export. Bypasses cache. */
+export const fetchRequestsForExport = (filters: RequestFilters, page: PageRequest) => fetchRequestsPage(filters, page);

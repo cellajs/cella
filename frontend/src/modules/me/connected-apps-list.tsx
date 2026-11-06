@@ -14,13 +14,13 @@ import { dateShort } from '~/utils/date-short';
 export function ConnectedAppsList() {
   const { t } = useTranslation();
   const {
-    data: { items },
+    data: { results: items },
   } = useSuspenseQuery(meConnectedAppsQueryOptions());
   const { mutate: revoke, isPending, variables } = useRevokeConnectedAppMutation();
 
   const handleRevoke = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    revoke({ path: { id } });
+    revoke({ path: { connectedAppId: id } });
   };
 
   if (!items.length)
@@ -48,7 +48,7 @@ export function ConnectedAppsList() {
               variant="secondary"
               size="sm"
               className="max-sm:w-full"
-              loading={isPending && variables?.path.id === app.id}
+              loading={isPending && variables?.path.connectedAppId === app.id}
               onClick={() => handleRevoke(app.id)}
             >
               <UnplugIcon />

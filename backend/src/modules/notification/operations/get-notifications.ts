@@ -28,7 +28,10 @@ type GetNotificationsInput = Omit<FindNotificationsOpts, 'userId'>;
 export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
 
-  const [rows, unreadCount] = await Promise.all([findNotificationsByUser(ctx, { userId, ...input }), countUnreadByUser(ctx, { userId })]);
+  const [{ items: rows, total }, unreadCount] = await Promise.all([
+    findNotificationsByUser(ctx, { userId, ...input }),
+    countUnreadByUser(ctx, { userId }),
+  ]);
 
   const readable = await findReadableSubjectIds(accessFrom(ctx), rows);
   const readableRows = rows.filter((row) => readable.has(row.subjectId));
@@ -64,5 +67,5 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     };
   });
 
-  return { items, unreadCount };
+  return { items, total, unreadCount };
 }

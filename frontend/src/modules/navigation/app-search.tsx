@@ -62,10 +62,10 @@ export function AppSearch() {
   const queries = [userQuery, ...channelQueries.map(({ query }) => query)];
 
   const resultsByType: Partial<Record<SearchableEntityType, (EnrichedChannel | UserBase)[]>> = {
-    user: hasQuery ? (userQuery.data?.pages.flatMap((page) => page.items) ?? []) : [],
+    user: hasQuery ? (userQuery.data?.pages.flatMap((page) => page.results) ?? []) : [],
   };
   for (const { entityType, query } of channelQueries) {
-    resultsByType[entityType] = hasQuery ? (query.data?.pages.flatMap((page) => page.items) ?? []) : [];
+    resultsByType[entityType] = hasQuery ? (query.data?.pages.flatMap((page) => page.results) ?? []) : [];
   }
   const notFound = Object.values(resultsByType).every((items) => items.length === 0);
   const firstTypeWithResults = searchableEntityTypes.find((entityType) => (resultsByType[entityType] ?? []).length > 0);

@@ -1,7 +1,7 @@
 import { inArray } from 'drizzle-orm';
 import { calculateJwkThumbprint, exportJWK, generateKeyPair, importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
-import { getAttachments } from 'sdk';
+import { listAttachments } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -75,7 +75,7 @@ describe('signing key rotation', async () => {
       .setIssuedAt()
       .setExpirationTime('1h')
       .sign(key.privateKey);
-    const read = await call(getAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(jwt) });
+    const read = await call(listAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(jwt) });
     return { status: read.response.status, error: read.error };
   }
 
@@ -83,7 +83,7 @@ describe('signing key rotation', async () => {
     ['a key retired two hours ago', () => retiredLongAgo],
     ['a retired key with no retirement time', () => retiredUndated],
   ])('must not act via a token signed by %s', async (_vector, key) => {
-    expect(await forgedServiceToken(key())).toMatchObject({ status: 401, error: { meta: { reason: 'invalid_token' } } });
+    expect(await forgedServiceToken(key())).toMatchObject({ status: 401, error: { reason: 'invalid_token' } });
   });
 
   it('still verifies a token signed by the current key or a key retired within its grace window (positive control)', async () => {

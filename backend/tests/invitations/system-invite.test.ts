@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getRequests, systemInvite } from 'sdk';
+import { inviteUsers, listRequests } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens/tokens-db';
@@ -24,7 +24,7 @@ describe('System Invitation', async () => {
   }
 
   async function makeInviteRequest(emails: string[], sessionCookie: string) {
-    return await call(systemInvite, { body: { emails }, headers: { ...defaultHeaders, Cookie: sessionCookie } });
+    return await call(inviteUsers, { body: { emails }, headers: { ...defaultHeaders, Cookie: sessionCookie } });
   }
 
   describe('Basic Functionality', () => {
@@ -76,8 +76,8 @@ describe('System Invitation', async () => {
 
       await makeInviteRequest(['waiting@example.com'], sessionCookie);
 
-      const { data } = await call(getRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
-      const listed = (data as { items: { email: string; type: string; wasInvited: boolean }[] }).items;
+      const { data } = await call(listRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
+      const listed = (data as { results: { email: string; type: string; wasInvited: boolean }[] }).results;
       expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, type }) => ({ email, type }))).toEqual([
         { email: 'waiting@example.com', type: 'waitlist' },
       ]);

@@ -65,14 +65,14 @@ const row = (description: string | null, overrides: Partial<TaskRow> = {}): Task
 /** The stx of a server write with these field timestamps. */
 const written = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm-2', sourceId: 'other-tab', fieldTimestamps });
 
-const listOf = (item: TaskRow) => ({ items: [item], total: 1 });
+const listOf = (item: TaskRow) => ({ results: [item], totalSize: 1 });
 const detail = () => queryClient.getQueryData<TaskRow>(detailKey);
-const homeRow = () => queryClient.getQueryData<{ items: TaskRow[] }>(homeKey)?.items[0];
-const filteredRow = () => queryClient.getQueryData<{ items: TaskRow[] }>(filteredKey)?.items[0];
+const homeRow = () => queryClient.getQueryData<{ results: TaskRow[] }>(homeKey)?.results[0];
+const filteredRow = () => queryClient.getQueryData<{ results: TaskRow[] }>(filteredKey)?.results[0];
 
 /** The range fetch answers with these rows: the seq path of a stream notification or a catchup gap. */
 function serverReturns(...items: TaskRow[]) {
-  registerEntityQueryKeys(task, keys, async () => ({ items, total: items.length }));
+  registerEntityQueryKeys(task, keys, async () => ({ results: items, totalSize: items.length }));
 }
 
 function seedCaches(item: TaskRow, { withDetail = true } = {}) {

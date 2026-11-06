@@ -53,7 +53,7 @@ The provider keeps a session of its own in the browser. It answers a client with
 | Refresh token | 30 days, rotated on use; grants live 30 days |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants.
+Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants.
 
 A guard verifies a token locally, against the public signing keys: no round trip to this worker and no row per token. A person's token rests on its grant and a service account's on the API key it was minted with, and the guard reads that at every request. Whatever ends a grant or a key, or changes a membership, stops or narrows its tokens at the next request, in every process.
 

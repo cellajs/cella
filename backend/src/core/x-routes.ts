@@ -13,7 +13,9 @@ import {
   type XMiddlewareHandler,
   type XRouteProps,
 } from '#/core/openapi-extensions';
-import { checksAuthoringRules, recordDocumentedErrors } from '#/core/openapi-validation';
+import { toKebabCase } from '#/core/openapi-helpers';
+import { checksAuthoringRules, recordCustomVerb, recordDocumentedErrors, recordPatchBody } from '#/core/openapi-validation';
+import { preconditionHeaders, preconditionResponses, preconditionsMiddleware, preconditionTarget } from '#/core/preconditions';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { readLimiter } from '#/middlewares/rate-limiter/limiters';
 import { type ErrorCode, sharedErrorResponses } from '#/schemas/error-response-schemas';
@@ -66,6 +68,93 @@ const assertGuardOrder = (route: string, xMiddlewares: XMiddlewareHandler[]) => 
   }
 };
 
+/** A literal path segment, and a custom verb: lowercase kebab-case. */
+const kebabCase = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+
+/** Whether `operationId` leads with the verb's first word and holds its other words after it, in order: `mark-read` in `markNotificationsRead`. */
+const namesVerb = (operationId: string, verb: string) => {
+  const [first, ...rest] = verb.split('-');
+  let from = first.length;
+  return (
+    operationId.startsWith(first) &&
+    rest.every((word) => {
+      const at = operationId.indexOf(capitalize(word), from);
+      from = at + word.length;
+      return at >= 0;
+    })
+  );
+};
+
+/**
+ * Refuses at load a route that breaks the resource conventions of the API (aep.dev): an update is a `patch`, never a
+ * `put`; a `get` or `delete` takes no body; a literal segment is lowercase kebab-case (the `-` wildcard parent and
+ * `.well-known` aside); a custom method is the last segment `/~verb`, a kebab-case verb on a `post` or a bodiless `get`,
+ * and its operationId leads with the verb.
+ */
+const assertRouteShape = (route: string, { method, path, operationId, request }: RouteOptions) => {
+  const refuse = (problem: string): never => {
+    throw new Error(`[routes] ${route}: ${problem}`);
+  };
+  if (method === 'put')
+    refuse('put replaces a whole resource, which no route offers. Make it a patch, or a post custom method (/~verb) for an action.');
+  if ((method === 'get' || method === 'delete') && request?.body) {
+    refuse(`a ${method} carries no request body. Move its input into the query, or make it a post custom method (/~verb).`);
+  }
+  const segments = path.split('/').filter(Boolean);
+  for (const [index, segment] of segments.entries()) {
+    if (/^\{\w+\}$/.test(segment) || segment === '-' || segment === '.well-known') continue;
+    if (segment.startsWith('~')) {
+      const verb = segment.slice(1);
+      if (index < segments.length - 1) refuse(`the custom method ${segment} is not the last segment. End the path with it.`);
+      if (!kebabCase.test(verb)) refuse(`the custom verb "${verb}" is not lowercase kebab-case. Rename it, such as ~${toKebabCase(verb)}.`);
+      if (method !== 'post' && method !== 'get') refuse(`the custom method ${segment} is a ${method}. Make it a post, or a get when it is safe.`);
+      if (!namesVerb(operationId, verb)) {
+        refuse(
+          `the operationId does not lead with the verb of ${segment}. Rename the route key to start with "${verb.split('-')[0]}" and hold the verb's other words in order, as ~batch-delete takes batchDeleteOrganizations.`,
+        );
+      }
+      continue;
+    }
+    if (segment.includes(':'))
+      refuse(`the segment "${segment}" holds a colon. Declare a custom method as the last segment /~verb: the server routes :verb there.`);
+    if (!kebabCase.test(segment)) refuse(`the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`);
+  }
+};
+
+const firstSegment = (path: string) => path.split('/').find(Boolean) ?? '';
+
+/**
+ * Refuses at load a mount whose paths would let a param shadow a static path, and a mount path whose literal segments
+ * are not lowercase kebab-case (a param is `:name`, `-` the wildcard parent). Mounts apply in registration order with
+ * no phases, and a path whose first segment is a param would answer every request meant for a module mounted after
+ * it: the mount path must start with a literal segment, and so must each route of an app mounted at `/`.
+ * @param routePaths - The mounted app's own route paths, in Hono syntax (`/:id`).
+ */
+export const assertMountPath = (path: string, routePaths: string[]) => {
+  const refuse = (problem: string): never => {
+    throw new Error(`[routes] The mount path ${path}: ${problem}`);
+  };
+  if (firstSegment(path).startsWith(':')) {
+    refuse(
+      'it starts with a param, which would answer for the paths of every module mounted after it. Start it with a literal segment, such as /tenants/:tenantId.',
+    );
+  }
+  if (firstSegment(path) === '') {
+    const shadowing = routePaths.find((routePath) => firstSegment(routePath).startsWith(':'));
+    if (shadowing) {
+      refuse(
+        `its route ${shadowing} starts with a param, which would answer for the paths of every module mounted after it. Give the route a literal first segment, or mount the module under one.`,
+      );
+    }
+  }
+  for (const segment of path.split('/').filter(Boolean)) {
+    if (segment.startsWith(':') || segment === '-' || kebabCase.test(segment)) continue;
+    refuse(`the segment "${segment}" is not lowercase kebab-case. Rename it, such as "${toKebabCase(segment)}".`);
+  }
+};
+
 /** The shared error responses of `codes`, keyed by status. */
 const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
   Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
@@ -73,9 +162,10 @@ const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof shared
 /**
  * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
  * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service, 400 for
- * a sign-in method), and what each marked middleware declares in `errors`.
+ * a sign-in method), the preconditions of a route for one channel or product (400, 412), and what each marked
+ * middleware declares in `errors`.
  */
-const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): Map<ErrorCode, string> => {
+const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
   const claim = (code: ErrorCode, owner: string) => {
     if (!owners.has(code)) owners.set(code, owner);
@@ -83,6 +173,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
   if (config.request) claim(400, 'request validation');
   if (config.request?.body) claim(413, 'the body limit');
   if (config.xEnabledBy) claim('service' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
+  if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
   return owners;
 };
@@ -90,6 +181,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
 /**
  * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
  * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, the
+ * preconditions of a route for one channel or product (`preconditionTarget`: entity tags and `If-Match`), the
  * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
  * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
  * A GET route that declares no limiter takes `readLimiter`, and a limiter a guard runs itself (`limiters`) is
@@ -102,16 +194,23 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[]): 
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): XRoute<R> => {
   const route = `${config.operationId} (${config.method} ${config.path})`;
+  if (checksAuthoringRules) assertRouteShape(route, config);
+  const verb = /\/~([^/]+)$/.exec(config.path)?.[1];
+  if (verb) recordCustomVerb(verb);
+  const patchMedia = config.method === 'patch' ? config.request?.body?.content['application/json'] : undefined;
+  if (patchMedia && 'schema' in patchMedia) recordPatchBody(config.operationId, patchMedia.schema);
   // A read declares a limiter only where its own budget differs from the read pace.
   const limited = config.method === 'get' && !config.xRateLimiter?.length ? { ...config, xRateLimiter: [readLimiter] } : config;
   const extensionMiddleware = collectExtensionMiddleware(limited);
   const existing = [config.middleware ?? []].flat();
+  const target = preconditionTarget(config);
 
   // The operation name first, then the error page, so every refusal finds both, the switch gate's included.
   const operation = checksAuthoringRules ? [operationMiddleware(config.operationId)] : [];
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
   const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
-  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
+  const preconditions = target ? [preconditionsMiddleware(target)] : [];
+  const middleware = [...operation, ...errorPage, ...switchGate, ...extensionMiddleware, ...preconditions, ...existing];
 
   // Each marked middleware, then the limiters a guard runs itself, so the document lists them and their errors.
   const xMiddlewares = middleware
@@ -122,7 +221,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  const owners = chainErrors(config, xMiddlewares);
+  const owners = chainErrors(config, xMiddlewares, !!target);
   if (checksAuthoringRules) {
     for (const [code, owner] of owners) {
       if (config.responses[code] === sharedErrorResponses[code]) {
@@ -130,7 +229,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
       }
     }
   }
-  const responses = { ...pickShared(owners.keys()), ...config.responses };
+  const responses = { ...pickShared(owners.keys()), ...config.responses, ...(target && preconditionResponses(target, config.responses[200])) };
   recordDocumentedErrors(
     config.operationId,
     Object.keys(responses)
@@ -155,7 +254,8 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
 
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
   const { xGuard: _guard, xRateLimiter: _rateLimiter, xTool: _tool, xEnabledBy: _enabledBy, xScope: _scope, ...routeConfig } = config;
-  const cleanConfig = { ...routeConfig, ...createMetadataExtensions(config) };
+  const parameters = target ? { parameters: [...(config.parameters ?? []), ...preconditionHeaders(target)] } : {};
+  const cleanConfig = { ...routeConfig, ...parameters, ...createMetadataExtensions(config) };
 
   return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };

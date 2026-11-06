@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { asc, eq, sql } from 'drizzle-orm';
 import pg from 'pg';
-import { deleteAttachments, type PullYjsDocumentResponse, pullYjsDocument, pushYjsUpdate, updateAttachment } from 'sdk';
+import { batchDeleteAttachments, type PullYjsDocumentResponse, pullYjsDocument, pushYjsUpdate, updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
@@ -20,7 +20,7 @@ import type { AppendYjsUpdateOpts } from '#/modules/yjs/operations/append-yjs-up
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
-import { adminDb, createSystemAdminUser, createTestSession, type ErrorResponse, expectRefusal, rawJsonRequest } from './helpers';
+import { adminDb, createSystemAdminUser, createTestSession, expectRefusal, membersOf, rawJsonRequest } from './helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { lockWaiters, paragraph, seedAttachment } from './security/yjs-helpers';
 import { createAppClient } from './test-client';
@@ -425,7 +425,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       const { generation, update } = await pulled(pull(owner.sessionCookie, attachment.id));
       const answer = await push(owner.sessionCookie, attachment.id, randomUUID(), typeInto(docOf(update), 'stale '));
       await expectRefusal(answer, 409, 'sync_document_replaced');
-      expect((answer.error as ErrorResponse).meta).toEqual({ generation });
+      expect(membersOf(answer.error)).toEqual({ generation });
       expect((await stored(attachment.id)).rows).toEqual([]);
     });
 
@@ -435,7 +435,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       offline.getXmlFragment(yjsFragmentName).insert(0, [new Y.XmlText('offline')]);
       const answer = await push(owner.sessionCookie, attachment.id, randomUUID(), Y.encodeStateAsUpdate(offline));
       await expectRefusal(answer, 409, 'sync_document_replaced');
-      expect((answer.error as ErrorResponse).meta).toEqual({ generation: null });
+      expect(membersOf(answer.error)).toEqual({ generation: null });
       expect(await stored(attachment.id)).toEqual({ generation: null, rows: [], state: null });
 
       // The client's recovery: pull, then post again in the generation the pull named.
@@ -447,7 +447,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
       const attachment = await arrange(paragraph('original'));
       const { generation } = await pulled(pull(owner.sessionCookie, attachment.id));
       const pushOf = (update: string) =>
-        rawJsonRequest(`/${owner.tenantId}/${owner.organization.id}/yjs/push`, owner.sessionCookie, {
+        rawJsonRequest(`/tenants/${owner.tenantId}/organizations/${owner.organization.id}/yjs/push`, owner.sessionCookie, {
           method: 'POST',
           body: { entityType: 'attachment', entityId: attachment.id, generation, update },
         });
@@ -487,7 +487,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
     const pushing = push(owner.sessionCookie, attachment.id, generation, typeInto(docOf(update), 'late '));
     await gate.reached;
     // The delete retires the document in its transaction: its delete of the document row waits for the push's key share.
-    const deleting = call(deleteAttachments, {
+    const deleting = call(batchDeleteAttachments, {
       path: ownScope(),
       body: { ids: [attachment.id], stx: { mutationId: generateId(), sourceId: 'yjs-http' } },
       headers: headers(owner.sessionCookie),
@@ -508,7 +508,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
     /** A REST write of the description, as an outside write makes it. */
     const put = (entityId: string, description: string) =>
       call(updateAttachment, {
-        path: { ...ownScope(), id: entityId },
+        path: { ...ownScope(), attachmentId: entityId },
         body: {
           ops: { description },
           stx: mockStxFor('description'),

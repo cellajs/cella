@@ -6,7 +6,7 @@ import { selfCreateTenantBodySchema, tenantListQuerySchema, tenantSchema, update
 import { paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 
 const tenantRoutes = createXRoutes(['tenants', 'cella'], {
-  getTenants: xRoute({
+  listTenants: xRoute({
     method: 'get',
     path: '/',
     xGuard: [userGuard, sysAdminGuard],
@@ -16,9 +16,9 @@ const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     responses: { 200: json('Tenants list', paginationSchema(tenantSchema), mockPaginatedTenantsResponse()) },
   }),
 
-  selfCreateTenant: xRoute({
+  createTenant: xRoute({
     method: 'post',
-    path: '/self',
+    path: '/',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create a tenant for yourself',
@@ -26,11 +26,11 @@ const tenantRoutes = createXRoutes(['tenants', 'cella'], {
       'Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; ' +
       'an org-less tenant from a prior failed attempt is reused, and takes the new name.',
     request: { body: jsonBody(selfCreateTenantBodySchema) },
-    responses: { 200: json('Created tenant', tenantSchema), ...errors(403) },
+    responses: { 201: json('Created tenant', tenantSchema), ...errors(403) },
   }),
 
   updateTenant: xRoute({
-    method: 'put',
+    method: 'patch',
     path: '/{tenantId}',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],

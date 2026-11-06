@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { toastOffline } from '~/modules/common/toaster/toaster';
-import { fetchPushVapid, registerPushSubscription, removePushSubscription } from '~/modules/notification/query';
+import { fetchPushVapid, registerPushSubscription, unregisterPushSubscription } from '~/modules/notification/query';
 
 /** `applicationServerKey` wants raw bytes; VAPID keys travel base64url-encoded. */
 function urlBase64ToUint8Array(base64: string) {
@@ -20,7 +20,7 @@ export async function disablePushSubscription(): Promise<void> {
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager.getSubscription();
   if (!subscription) return;
-  await removePushSubscription(subscription.endpoint);
+  await unregisterPushSubscription(subscription.endpoint);
   await subscription.unsubscribe();
 }
 

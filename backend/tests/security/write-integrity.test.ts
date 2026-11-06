@@ -1,5 +1,5 @@
 import { eq, inArray } from 'drizzle-orm';
-import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
+import { batchCreateAttachments, batchDeleteAttachments, updateAttachment } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -37,7 +37,7 @@ describe('Write integrity', async () => {
   const createIn = async (tenant: TestTenant, plan: TestEntityHierarchyPlan, fields: Record<string, unknown> = {}) => {
     const id = generateId();
     created.push(id);
-    const { response } = await call(createAttachments, {
+    const { response } = await call(batchCreateAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
       body: [attachmentBody(id, plan, fields)],
       headers: headers(tenant.sessionCookie),
@@ -47,7 +47,7 @@ describe('Write integrity', async () => {
 
   const rename = async (id: string, name: string, stx: ReturnType<typeof mockStxFor> & { replayed?: boolean }) => {
     const { response } = await call(updateAttachment, {
-      path: { tenantId: victim.tenantId, organizationId: victim.organization.id, id },
+      path: { tenantId: victim.tenantId, organizationId: victim.organization.id, attachmentId: id },
       body: { ops: { name }, stx },
       headers: headers(victim.sessionCookie),
     });
@@ -55,7 +55,7 @@ describe('Write integrity', async () => {
   };
 
   const remove = async (body: { ids: string[]; stx?: { mutationId: string; sourceId: string } }) => {
-    const { response } = await call(deleteAttachments, {
+    const { response } = await call(batchDeleteAttachments, {
       path: { tenantId: victim.tenantId, organizationId: victim.organization.id },
       body,
       headers: headers(deleter.sessionCookie),

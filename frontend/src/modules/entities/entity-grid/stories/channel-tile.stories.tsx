@@ -52,8 +52,8 @@ const organization: ChannelTileEntity = {
 };
 
 /** The viewer's own memberships and invitations, as the me queries hold them. */
-const joined = { app: { queryData: [[meKeys.memberships, { items: [{ channelId: 'org-1', role: mostPrivileged } as MembershipBase] }]] } };
-const invited = { app: { queryData: [[meKeys.invites, { items: [{ entity: { id: 'org-1' } }] }]] } };
+const joined = { app: { queryData: [[meKeys.memberships, { results: [{ channelId: 'org-1', role: mostPrivileged } as MembershipBase] }]] } };
+const invited = { app: { queryData: [[meKeys.invites, { results: [{ entity: { id: 'org-1' } }] }]] } };
 const parent = { ...organization, id: 'org-parent', slug: 'contoso', name: 'Contoso' };
 
 /** The channel grid tile. Each part reads the row from `ChannelTileCard`; a module composes its own tile from them or renders the default. */

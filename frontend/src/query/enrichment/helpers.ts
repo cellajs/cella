@@ -10,7 +10,7 @@ export function getRegisteredChannelTypes(): ChannelEntityType[] {
 
 /** Null while memberships are not loaded. */
 export function getCachedMemberships(): MembershipBase[] | null {
-  return queryClient.getQueryData<{ items: MembershipBase[] }>(meKeys.memberships)?.items ?? null;
+  return queryClient.getQueryData<{ results: MembershipBase[] }>(meKeys.memberships)?.results ?? null;
 }
 
 export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | null {

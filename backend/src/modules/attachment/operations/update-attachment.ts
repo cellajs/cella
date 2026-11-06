@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import type { ActorContext } from '#/core/context';
+import { assertNoWriteBetween } from '#/core/preconditions';
 import { tenantContext } from '#/db/tenant-context';
 import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
@@ -33,6 +34,7 @@ export async function updateAttachmentOp(ctx: ActorContext, id: string, input: U
       ...updateStamps(actorId),
     };
     const updated = await updateAttachment(txCtx, { id, values });
+    if (!updated) assertNoWriteBetween(txCtx, 'attachment', id);
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires, with the fields
     // this write wrote for the yjs module.
     await dispatchMutation(txCtx, 'attachment.updated', {

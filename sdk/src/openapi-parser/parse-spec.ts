@@ -14,7 +14,7 @@ import type {
   GenTagSummary,
 } from '../docs-types.ts';
 import { generateOperationHash } from './operation-hash.ts';
-import { resolveSchema, resolveSchemaProperty } from './schema-resolvers.ts';
+import { pickContentType, resolveSchema, resolveSchemaProperty } from './schema-resolvers.ts';
 import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag, OpenApiTagKind } from './types.ts';
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
@@ -30,12 +30,6 @@ interface ParsedOpenApiSpec {
   schemas: GenComponentSchema[];
   schemaTags: GenSchemaTagSummary[];
   tagDetails: Map<string, GenOperationDetail[]>;
-}
-
-/** Prefers a JSON media type, falling back to the first declared one. */
-function pickContentType(content: Record<string, unknown>): string | undefined {
-  const types = Object.keys(content);
-  return types.find((ct) => ct.includes('json')) ?? types[0];
 }
 
 /** Groups tag names by their registered kind; unregistered tags land under 'other'. */
@@ -131,17 +125,20 @@ function summarizeResponse(
   return summary;
 }
 
-/** Path and query parameters plus the request body, or undefined when the operation takes none. */
+/** Path, query and header parameters plus the request body, or undefined when the operation takes none. */
 function buildRequest(op: OpenApiOperation, spec: OpenApiSpec): GenRequest | undefined {
   const request: GenRequest = {};
 
   if (op.parameters) {
     const pathParams: Record<string, GenSchema> = {};
     const queryParams: Record<string, GenSchema> = {};
+    const headerParams: Record<string, GenSchema> = {};
+    const byLocation: Record<string, Record<string, GenSchema>> = { path: pathParams, query: queryParams, header: headerParams };
 
     for (const param of op.parameters) {
       if ('$ref' in param) continue;
-      if (param.in !== 'path' && param.in !== 'query') continue;
+      const target = byLocation[param.in];
+      if (!target) continue;
 
       const paramSchema: GenSchema = param.schema
         ? resolveSchemaProperty(param.schema, param.required ?? false, spec)
@@ -151,11 +148,12 @@ function buildRequest(op: OpenApiOperation, spec: OpenApiSpec): GenRequest | und
         paramSchema.description = param.description;
       }
 
-      (param.in === 'path' ? pathParams : queryParams)[param.name] = paramSchema;
+      target[param.name] = paramSchema;
     }
 
     if (Object.keys(pathParams).length > 0) request.path = { properties: pathParams };
     if (Object.keys(queryParams).length > 0) request.query = { properties: queryParams };
+    if (Object.keys(headerParams).length > 0) request.headers = { properties: headerParams };
   }
 
   if (op.requestBody && !('$ref' in op.requestBody)) {

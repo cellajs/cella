@@ -5,6 +5,7 @@ import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests'
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
 import { requestRoutes } from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -19,12 +20,12 @@ app.openapi(requestRoutes.createRequest, async (ctx) => {
   return ctx.body(null, 204);
 });
 
-app.openapi(requestRoutes.getRequests, async (ctx) => {
-  const data = await getRequestsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+app.openapi(requestRoutes.listRequests, async (ctx) => {
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getRequestsOp(ctx, query, page)), 200);
 });
 
-app.openapi(requestRoutes.deleteRequests, async (ctx) => {
+app.openapi(requestRoutes.batchDeleteRequests, async (ctx) => {
   const { ids } = ctx.req.valid('json');
   const data = await deleteRequestsOp(ctx, ids);
   return ctx.json(data, 200);

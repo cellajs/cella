@@ -28,7 +28,7 @@ interface ErrorNoticeProps {
 
 function errorDetailRows(error: ApiError) {
   return [
-    ['c:request_id', error.requestId],
+    ['c:request_id', error.instance],
     // A server error carries the moment it was raised; one made in the browser shows the time it renders.
     ['c:timestamp', new Date(error.timestamp ?? Date.now()).toUTCString()],
     ['c:message', error.message],
@@ -36,8 +36,6 @@ function errorDetailRows(error: ApiError) {
     ['c:resource_type', error.entityType],
     ['c:http_status', error.status],
     ['c:severity', error.severity],
-    ['c:user_id', error.userId],
-    ['c:organization_id', error.organizationId],
     // The server's full SHA cut to the page's short one, so a rollout mismatch reads at a glance
     ['c:server_version', error.version?.slice(0, __APP_VERSION__.length)],
     ['c:app_version', __APP_VERSION__],
@@ -66,7 +64,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   const { title, message } = getErrorInfo({ error: knownError, errorFromQuery });
 
   // A tenant that requires signing in through an institution names the connection; its entry page takes it from here.
-  const ssoConnectionId = apiError?.type === 'sso_required' ? apiError.meta?.connectionId : undefined;
+  const ssoConnectionId = apiError?.type === 'sso_required' ? apiError.connectionId : undefined;
 
   // Reset before a route change so the error state is not retained
   useEffect(() => router.subscribe('onBeforeRouteMount', () => resetErrorBoundary?.()), [router, resetErrorBoundary]);

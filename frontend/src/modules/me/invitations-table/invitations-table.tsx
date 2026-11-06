@@ -26,7 +26,7 @@ export function InvitationsTable() {
 
       <DataTable<Invitation>
         {...{
-          rows: data?.items,
+          rows: data?.results,
           rowKeyGetter,
           columns,
           enableVirtualization: true,

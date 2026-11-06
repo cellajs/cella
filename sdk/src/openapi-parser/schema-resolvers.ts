@@ -1,6 +1,12 @@
 import type { GenSchema } from '../docs-types.ts';
 import type { OpenApiSchema, OpenApiSpec } from './types.ts';
 
+/** Prefers a JSON media type, `application/problem+json` included, falling back to the first declared one. */
+export function pickContentType(content: Record<string, unknown>): string | undefined {
+  const types = Object.keys(content);
+  return types.find((ct) => ct.includes('json')) ?? types[0];
+}
+
 function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
   // Refs take the form "#/components/schemas/User" or "#/components/responses/BadRequestError".
   const parts = ref.split('/');
@@ -12,8 +18,8 @@ function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | u
   if (ref.startsWith('#/components/responses/')) {
     const response = spec.components?.responses?.[name];
     if (!response || '$ref' in response) return { schema: undefined, name };
-    const schema = response.content?.['application/json']?.schema;
-    return { schema, name };
+    const contentType = response.content ? pickContentType(response.content) : undefined;
+    return { schema: contentType ? response.content?.[contentType]?.schema : undefined, name };
   }
 
   return { schema: undefined, name };

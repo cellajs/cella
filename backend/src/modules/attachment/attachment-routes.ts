@@ -16,15 +16,16 @@ import {
   attachmentCreateResponseSchema,
   attachmentLinkKeysBodySchema,
   attachmentListQuerySchema,
+  attachmentParamSchema,
   attachmentPresignedUrlSchema,
   attachmentPresignedUrlsBodySchema,
   attachmentSchema,
   attachmentUpdateStxBodySchema,
 } from '#/modules/attachment/attachment-schema';
-import { batchResponseSchema, idInTenantOrgParamSchema, idsWithStxBodySchema, productListResponseSchema, tenantOrgParamSchema } from '#/schemas';
+import { batchResponseSchema, idsWithStxBodySchema, productListResponseSchema, tenantOrgParamSchema } from '#/schemas';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
-  getAttachments: xRoute({
+  listAttachments: xRoute({
     method: 'get',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
@@ -38,9 +39,9 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     request: { params: tenantOrgParamSchema, query: attachmentListQuerySchema },
     responses: { 200: json('Attachments', productListResponseSchema('attachment', attachmentSchema), mockPaginatedAttachmentsResponse()) },
   }),
-  createAttachments: xRoute({
+  batchCreateAttachments: xRoute({
     method: 'post',
-    path: '/',
+    path: '/~batch-create',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xScope: 'attachment:write',
     xRateLimiter: [bulkPointsLimiter],
@@ -59,7 +60,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   }),
   getAttachment: xRoute({
     method: 'get',
-    path: '/{id}',
+    path: '/{attachmentId}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xTool: {
       description: 'Read one attachment: its metadata and the description as text.',
@@ -68,12 +69,12 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     },
     summary: 'Get attachment',
     description: 'Returns a single attachment by ID.',
-    request: { params: idInTenantOrgParamSchema },
+    request: { params: attachmentParamSchema },
     responses: { 200: json('Attachment', attachmentSchema) },
   }),
   updateAttachment: xRoute({
-    method: 'put',
-    path: '/{id}',
+    method: 'patch',
+    path: '/{attachmentId}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     xTool: {
@@ -83,12 +84,12 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     },
     summary: 'Update attachment',
     description: 'Renames an attachment or replaces its description.',
-    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()) },
+    request: { params: attachmentParamSchema, body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()) },
     responses: { 200: json('Attachment was updated', attachmentSchema) },
   }),
   linkAttachmentKeys: xRoute({
-    method: 'put',
-    path: '/{id}/keys',
+    method: 'post',
+    path: '/{attachmentId}/~link-keys',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     // Linking the stored variants of a file needs read access only.
     xScope: 'attachment:read',
@@ -96,12 +97,12 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     summary: 'Link attachment keys',
     description:
       'Stores the storage keys of a file its uploader uploaded after creating the attachment, for a file added offline. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
-    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
+    request: { params: attachmentParamSchema, body: jsonBody(attachmentLinkKeysBodySchema, mockLinkAttachmentKeysBody()) },
     responses: { 200: json('Attachment with stored file', attachmentSchema), ...errors(409) },
   }),
-  deleteAttachments: xRoute({
-    method: 'delete',
-    path: '/',
+  batchDeleteAttachments: xRoute({
+    method: 'post',
+    path: '/~batch-delete',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     xTool: {
@@ -115,11 +116,11 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     request: { params: tenantOrgParamSchema, body: jsonBody(idsWithStxBodySchema(), mockDeleteAttachmentsBody()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
-  getPresignedUrls: xRoute({
+  presignAttachmentUrls: xRoute({
     method: 'post',
-    path: '/presigned-urls',
+    path: '/~presign-urls',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    // A POST for its list of keys: signing download URLs needs read access only.
+    // Signing download URLs needs read access only.
     xScope: 'attachment:read',
     xRateLimiter: [presignedUrlLimiter],
     summary: 'Get presigned URLs',

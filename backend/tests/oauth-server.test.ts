@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { getAttachments, getConnectedApps, revokeConnectedApp, updateOrganization } from 'sdk';
+import { deleteConnectedApp, listAttachments, listConnectedApps, updateOrganization } from 'sdk';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
@@ -90,19 +90,19 @@ describe('OAuth authorization server', async () => {
     const { body } = await clientCredentials(client, { scope: 'attachment:read', resource });
     const jwt = String(body.access_token);
 
-    const read = await call(getAttachments, { path: { tenantId: client.org.tenantId, organizationId: client.org.id }, headers: bearerHeaders(jwt) });
+    const read = await call(listAttachments, { path: { tenantId: client.org.tenantId, organizationId: client.org.id }, headers: bearerHeaders(jwt) });
     expect(read.response.status).toBe(200);
 
     // The account is an admin, the token only carries attachment:read: under that mask it cannot read the
     // organization, which therefore reads as missing.
     const write = await call(updateOrganization, {
-      path: { tenantId: client.org.tenantId, id: client.org.id },
+      path: { tenantId: client.org.tenantId, organizationId: client.org.id },
       body: { name: 'Should not happen' },
       headers: bearerHeaders(jwt),
     });
     expect(write.response.status).toBe(404);
 
-    const otherTenant = await call(getAttachments, { path: { tenantId: 'other01', organizationId: client.org.id }, headers: bearerHeaders(jwt) });
+    const otherTenant = await call(listAttachments, { path: { tenantId: 'other01', organizationId: client.org.id }, headers: bearerHeaders(jwt) });
     expect(otherTenant.response.status).toBe(401);
   });
 
@@ -153,15 +153,15 @@ describe('OAuth authorization server', async () => {
     });
     await refresh.save();
 
-    const listed = await call(getConnectedApps, { headers });
+    const listed = await call(listConnectedApps, { headers });
     expect(listed.response.status).toBe(200);
-    const { items } = listed.data as { items: { id: string; scopes: string[]; resources: string[] }[] };
+    const { results: items } = listed.data as { results: { id: string; scopes: string[]; resources: string[] }[] };
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ id: grantId, resources: [resource] });
     expect(items[0].scopes.sort()).toEqual(['attachment:read', 'attachment:write']);
 
-    const revoked = await call(revokeConnectedApp, { path: { id: grantId }, headers });
-    expect(revoked.response.status).toBe(200);
+    const revoked = await call(deleteConnectedApp, { path: { connectedAppId: grantId }, headers });
+    expect(revoked.response.status).toBe(204);
 
     const rows = await db.select().from(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
     expect(rows).toHaveLength(0);

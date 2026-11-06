@@ -52,7 +52,7 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
     for (const index of indexes) {
       const { membership } = changedRows[index];
       updateMembership({
-        path: { id: membership.id, tenantId, organizationId },
+        path: { membershipId: membership.id, tenantId, organizationId },
         body: { role: membership.role },
         channelId: entityId,
         channelType: entityType,

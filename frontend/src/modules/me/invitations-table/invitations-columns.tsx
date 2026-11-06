@@ -62,7 +62,7 @@ export const useColumns = () => {
               size="xs"
               variant={variant}
               tabIndex={tabIndex}
-              onClick={() => answerInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
+              onClick={() => answerInvitation({ invitationId: row.inactiveMembership.id, action })}
             >
               {label}
             </Button>

@@ -97,7 +97,7 @@ describe('csv export', () => {
     const orgRoles: readonly string[] = hierarchy.getRoles('organization');
     const roleCount = (role: string) => orgRoles.indexOf(role) + 2;
     // The table reads the caller's role from their memberships.
-    queryClient.setQueryData(meKeys.memberships, { items: [{ channelType: 'organization', channelId: 'org-48', role: 'admin' }] });
+    queryClient.setQueryData(meKeys.memberships, { results: [{ channelType: 'organization', channelId: 'org-48', role: 'admin' }] });
     const rows = [
       {
         id: 'org-48',

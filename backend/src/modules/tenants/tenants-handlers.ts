@@ -5,17 +5,18 @@ import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-ten
 import { updateTenantOp } from '#/modules/tenants/operations/update-tenant';
 import { tenantRoutes } from '#/modules/tenants/tenants-routes';
 import { defaultHook } from '#/utils/default-hook';
+import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(tenantRoutes.getTenants, async (ctx) => {
-  const data = await getTenantsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data, 200);
+app.openapi(tenantRoutes.listTenants, async (ctx) => {
+  const query = ctx.req.valid('query');
+  return ctx.json(await readListPage(ctx, query, (page) => getTenantsOp(ctx, query, page)), 200);
 });
 
-app.openapi(tenantRoutes.selfCreateTenant, async (ctx) => {
+app.openapi(tenantRoutes.createTenant, async (ctx) => {
   const data = await selfCreateTenantOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(data, 201);
 });
 
 app.openapi(tenantRoutes.updateTenant, async (ctx) => {

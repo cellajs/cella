@@ -21,8 +21,8 @@ describe('System roles in the user list', async () => {
   let sysAdmin: { id: string; sessionCookie: string };
 
   const listUsers = async (as: { sessionCookie: string }, query: Record<string, string> = {}) => {
-    const { status, body } = await rawJsonRequest(`/users/users?${new URLSearchParams(query)}`, as.sessionCookie);
-    return { status, body: body as { items: UserRow[] } & ErrorResponse };
+    const { status, body } = await rawJsonRequest(`/users?${new URLSearchParams(query)}`, as.sessionCookie);
+    return { status, body: body as { results: UserRow[] } & ErrorResponse };
   };
 
   beforeAll(async () => {
@@ -40,12 +40,12 @@ describe('System roles in the user list', async () => {
   it('must not reveal system admins via the role field of getUsers', async () => {
     const { status, body } = await listUsers(member);
     expect(status).toBe(200);
-    expect(body.items.map((user) => user.id)).toContain(sysAdmin.id);
-    for (const user of body.items) expect(user).not.toHaveProperty('role');
+    expect(body.results.map((user) => user.id)).toContain(sysAdmin.id);
+    for (const user of body.results) expect(user).not.toHaveProperty('role');
   });
 
   it('must not list system admins via the role filter or sort of getUsers', async () => {
-    const queries: Record<string, string>[] = [{ role: 'admin' }, { sort: 'role', order: 'desc' }];
+    const queries: Record<string, string>[] = [{ role: 'admin' }, { orderBy: 'role desc' }];
     for (const query of queries) {
       const { status, body } = await listUsers(member, query);
       await expectRefusal({ status, body }, 403, 'forbidden', JSON.stringify(query));
@@ -56,23 +56,23 @@ describe('System roles in the user list', async () => {
   it('returns, filters and sorts by the system role for a system admin (positive control)', async () => {
     const all = await listUsers(sysAdmin);
     expect(all.status).toBe(200);
-    const roleOf = (id: string) => all.body.items.find((user) => user.id === id)?.role;
+    const roleOf = (id: string) => all.body.results.find((user) => user.id === id)?.role;
     expect(roleOf(sysAdmin.id)).toBe('admin');
     expect(roleOf(member.id)).toBeNull();
 
     const admins = await listUsers(sysAdmin, { role: 'admin' });
     expect(admins.status).toBe(200);
-    expect(admins.body.items.map((user) => user.id)).toEqual([sysAdmin.id]);
+    expect(admins.body.results.map((user) => user.id)).toEqual([sysAdmin.id]);
 
-    const sorted = await listUsers(sysAdmin, { sort: 'role', order: 'asc' });
+    const sorted = await listUsers(sysAdmin, { orderBy: 'role asc' });
     expect(sorted.status).toBe(200);
-    expect(sorted.body.items[0]?.id).toBe(sysAdmin.id);
+    expect(sorted.body.results[0]?.id).toBe(sysAdmin.id);
   });
 
   it('lists every user for a system admin who belongs to no organization', async () => {
     const admin = await createSystemAdminUser('role-list-sysadmin-no-org@security-test.com');
     const { status, body } = await listUsers({ sessionCookie: await createTestSession(admin) });
     expect(status).toBe(200);
-    expect(body.items.map((user) => user.id)).toContain(member.id);
+    expect(body.results.map((user) => user.id)).toContain(member.id);
   });
 });

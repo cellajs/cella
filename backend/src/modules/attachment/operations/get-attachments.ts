@@ -11,6 +11,7 @@ import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-
 import { accessFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
+import type { PageWindow } from '#/utils/list-page';
 import { projectTombstones, seqRangeOf } from '#/utils/seq-range';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
@@ -19,9 +20,9 @@ type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
  * A page of the attachments the caller may read in the organization; `channelId` narrows it to one channel's subtree.
  * A range read (`afterSeq`, `untilSeq`) includes deleted rows, as tombstones.
  */
-export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput) {
+export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput, { offset, limit }: PageWindow) {
   const organizationId = ctx.var.organization.id;
-  const { q, sort, order, limit, offset, channelId } = input;
+  const { q, orderBy, channelId } = input;
   const range = seqRangeOf(input);
 
   const access = accessFrom(ctx);
@@ -50,8 +51,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
       filters,
       orgWide: scopeWhere.kind === 'all' && !narrowed,
       q,
-      sort,
-      order,
+      ...orderBy,
       limit,
       offset,
       range,

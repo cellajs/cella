@@ -173,9 +173,12 @@ try {
   const { user } = await call('/me');
   check('the seeded admin signs in', Boolean(user?.id), { email: user?.email ?? EMAIL });
   // Home sends a user who has not finished onboarding to the welcome page; the smoke wants the home page itself
-  if (!user.userFlags?.finishedOnboarding) await call('/me', { method: 'PUT', body: { userFlags: { finishedOnboarding: true } } });
+  if (!user.userFlags?.finishedOnboarding) await call('/me', { method: 'PATCH', body: { userFlags: { finishedOnboarding: true } } });
 
-  const [{ items: organizations }, { items: memberships }] = await Promise.all([call('/organizations?limit=50'), call('/me/memberships')]);
+  const [{ results: organizations }, { results: memberships }] = await Promise.all([
+    call('/tenants/-/organizations?maxPageSize=50'),
+    call('/me/memberships?maxPageSize=1000'),
+  ]);
   check('the seed created organizations', organizations.length > 0, { count: organizations.length });
   const [administered] = memberships
     .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)

@@ -9,28 +9,54 @@ export type ClientOptions = {
  */
 export type BadRequestError = ApiError & {
   status?: 400;
+  [key: string]: number | string | Array<string> | boolean | null | 400 | undefined;
 };
 
 /**
- * The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.
+ * The body of every error response, as RFC 9457 Problem Details (`application/problem+json`). `type` is the code to branch on, `title` its meaning and `detail` this occurrence. Every other member is an extension member: each value `detail` names is also a member of its own, kept for the type once added, such as `retryAfter` on a rate limit.
  */
 export type ApiError = {
-  name: string;
-  message: string;
+  /**
+   * The stable code to branch on, a key of the API's error texts such as `invalid_request`: a relative URI reference.
+   */
   type: string;
+  /**
+   * What the type means, the same for every occurrence: it holds no request data and is safe to log.
+   */
+  title: string;
   status: number;
+  /**
+   * What went wrong in this request; it can quote values the request holds, so it is not logged.
+   */
+  detail: string;
+  /**
+   * The request id, also the `X-Request-Id` response header and in the server logs; quote it when reporting a failure.
+   */
+  instance?: string;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
-  requestId?: string;
   version?: string;
   path?: string;
   method?: string;
   timestamp?: string;
-  userId?: string;
-  organizationId?: string;
-  meta?: {
-    [key: string]: number | string | Array<string> | boolean | null;
-  };
+  [key: string]:
+    | number
+    | string
+    | Array<string>
+    | boolean
+    | null
+    | string
+    | number
+    | 'fatal'
+    | 'error'
+    | 'warn'
+    | 'info'
+    | 'debug'
+    | 'trace'
+    | 'user'
+    | 'organization'
+    | 'attachment'
+    | undefined;
 };
 
 /**
@@ -38,6 +64,7 @@ export type ApiError = {
  */
 export type UnauthorizedError = ApiError & {
   status?: 401;
+  [key: string]: number | string | Array<string> | boolean | null | 401 | undefined;
 };
 
 /**
@@ -45,6 +72,7 @@ export type UnauthorizedError = ApiError & {
  */
 export type ForbiddenError = ApiError & {
   status?: 403;
+  [key: string]: number | string | Array<string> | boolean | null | 403 | undefined;
 };
 
 /**
@@ -52,6 +80,7 @@ export type ForbiddenError = ApiError & {
  */
 export type NotFoundError = ApiError & {
   status?: 404;
+  [key: string]: number | string | Array<string> | boolean | null | 404 | undefined;
 };
 
 /**
@@ -59,6 +88,15 @@ export type NotFoundError = ApiError & {
  */
 export type ConflictError = ApiError & {
   status?: 409;
+  [key: string]: number | string | Array<string> | boolean | null | 409 | undefined;
+};
+
+/**
+ * The resource changed since the caller read it: its entity tag is not one `If-Match` lists, or is one `If-None-Match` lists. Read it again for its current `ETag`, apply the change to what it now holds, and retry.
+ */
+export type PreconditionFailedError = ApiError & {
+  status?: 412;
+  [key: string]: number | string | Array<string> | boolean | null | 412 | undefined;
 };
 
 /**
@@ -66,13 +104,132 @@ export type ConflictError = ApiError & {
  */
 export type PayloadTooLargeError = ApiError & {
   status?: 413;
+  [key: string]: number | string | Array<string> | boolean | null | 413 | undefined;
 };
 
 /**
- * A rate limit refused the request. The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.
+ * A rate limit refused the request. The `Retry-After` header and the `retryAfter` member say when to try again; an operation's rate limiters show what is counted.
  */
 export type TooManyRequestsError = ApiError & {
   status?: 429;
+  [key: string]: number | string | Array<string> | boolean | null | 429 | undefined;
+};
+
+/**
+ * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
+ */
+export type Attachment = {
+  id: string;
+  entityType: 'attachment';
+  tenantId: string;
+  name: string;
+  createdAt: string;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedAt: string | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  stx: StxBase;
+  description: string | null;
+  keywords: string;
+  deletedAt: string | null;
+  deletedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  public: boolean;
+  seq: number;
+  /**
+   * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
+   */
+  publicBucket: boolean;
+  bucketName: string;
+  groupId: string | null;
+  filename: string;
+  /**
+   * MIME type of the uploaded file (e.g. image/png).
+   */
+  contentType: string;
+  /**
+   * MIME type of the server-converted variant; null when none.
+   */
+  convertedContentType: string | null;
+  size: number;
+  /**
+   * Storage object keys per variant, keyed by variant name; only generated variants are present.
+   */
+  keys: {
+    original: string;
+    preview?: string;
+    thumbnail?: string;
+    converted?: string;
+  };
+  organizationId: string;
+  viewCount?: number;
+};
+
+/**
+ * The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.
+ */
+export type StxBase = {
+  /**
+   * Unique mutation ID
+   */
+  mutationId: string;
+  /**
+   * Tab/instance identifier for echo prevention
+   */
+  sourceId: string;
+  /**
+   * Per-field HLC timestamps for scalar fields being changed
+   */
+  fieldTimestamps: {
+    [key: string]: string;
+  };
+  /**
+   * Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time
+   */
+  replayed?: boolean;
 };
 
 /**
@@ -155,30 +312,6 @@ export type StreamChange = {
 };
 
 /**
- * The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.
- */
-export type StxBase = {
-  /**
-   * Unique mutation ID
-   */
-  mutationId: string;
-  /**
-   * Tab/instance identifier for echo prevention
-   */
-  sourceId: string;
-  /**
-   * Per-field HLC timestamps for scalar fields being changed
-   */
-  fieldTimestamps: {
-    [key: string]: string;
-  };
-  /**
-   * Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time
-   */
-  replayed?: boolean;
-};
-
-/**
  * A live message that something which is not a product row changed, such as a membership or an inbox row. It arrives as a `signal` event on `/entities/app/stream`; the handler the type registers refetches what it shows.
  */
 export type StreamSignal = {
@@ -203,6 +336,17 @@ export type StreamSignal = {
 export type StreamError = {
   code: 'unauthorized' | 'session_replaced' | 'access_changed' | 'resync';
   message: string;
+};
+
+/**
+ * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
+ */
+export type ProtectedResourceMetadata = {
+  resource: string;
+  authorization_servers: Array<string>;
+  scopes_supported: Array<string>;
+  bearer_methods_supported: Array<string>;
+  resource_documentation: string;
 };
 
 /**
@@ -374,6 +518,42 @@ export type MembershipBase = {
 };
 
 /**
+ * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
+ */
+export type InviteOutcome = {
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
+  email: string;
+  /**
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   */
+  outcome: 'invite' | 'remind' | 'add' | 'member';
+  invitedAt?: string;
+  declinedAt?: string;
+  role?: 'admin' | 'member';
+};
+
+/**
+ * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ */
+export type UserBase = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
+  description: string | null;
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
+  email: string;
+  entityType: 'user';
+};
+
+/**
  * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
  */
 export type UserMinimalBase = {
@@ -382,6 +562,107 @@ export type UserMinimalBase = {
   slug: string;
   thumbnailUrl: string | null;
   entityType: 'user';
+};
+
+/**
+ * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
+ */
+export type Organization = {
+  id: string;
+  entityType: 'organization';
+  tenantId: string;
+  name: string;
+  createdAt: string;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedAt: string | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  slug: string;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
+  publishedAt: string | null;
+  public: boolean;
+  toolsConfig: {
+    'organization.settings'?: {
+      order?: Array<string>;
+      hidden?: Array<string>;
+    };
+    'organization.tabs'?: {
+      order?: Array<string>;
+      hidden?: Array<string>;
+    };
+  };
+  path: string | null;
+  shortName: string | null;
+  country: string | null;
+  timezone: string | null;
+  defaultLanguage: 'en' | 'nl';
+  languages: Array<'en' | 'nl'>;
+  notificationEmail: string | null;
+  color: string | null;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  welcomeText: string | null;
+  chatSupport: boolean;
+  organizationFlags: {
+    [key: string]: unknown;
+  };
+  setupConfig: {
+    [key: string]: unknown;
+  };
+  included: {
+    membership?: MembershipBase;
+    counts?: {
+      membership: {
+        admin: number;
+        member: number;
+        pending: number;
+        total: number;
+      };
+      entities: {
+        attachment: number;
+      };
+      entitiesSelf: {
+        attachment: number;
+      };
+      activity: {
+        attachment: {
+          created: number | null;
+          updated: number | null;
+        };
+      };
+    };
+    members?: Array<UserMinimalBase>;
+  };
 };
 
 /**
@@ -394,6 +675,91 @@ export type Request = {
   email: string;
   type: 'waitlist' | 'newsletter' | 'contact';
   wasInvited: boolean;
+};
+
+/**
+ * An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.
+ */
+export type ServiceAccount = {
+  id: string;
+  tenantId: string;
+  name: string;
+  status: 'active' | 'disabled';
+  bindings: Array<{
+    channelType: 'organization';
+    channelId: string;
+    organizationId: string;
+    role: 'admin' | 'member';
+  }>;
+  oauthClientId: string | null;
+  createdAt: string;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  updatedAt: string | null;
+  updatedBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  role: 'admin' | 'member';
+  lastSeenAt: string | null;
+};
+
+/**
+ * A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.
+ */
+export type ApiKey = {
+  id: string;
+  actorId: string;
+  tenantId: string;
+  name: string;
+  prefix: string;
+  last4: string;
+  scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  createdBy:
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'user';
+        slug: string;
+      }
+    | {
+        id: string;
+        name: string;
+        thumbnailUrl: string | null;
+        kind: 'service';
+        slug: null;
+      }
+    | null;
+  createdAt: string;
 };
 
 /**
@@ -538,331 +904,545 @@ export type Connection = {
     | null;
 };
 
-/**
- * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
- */
-export type UserBase = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string | null;
-  slug: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-  description: string | null;
-  /**
-   * The primary email address, shown to every user who shares an organization with this one.
-   */
-  email: string;
-  entityType: 'user';
-};
-
-/**
- * How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.
- */
-export type ProtectedResourceMetadata = {
-  resource: string;
-  authorization_servers: Array<string>;
-  scopes_supported: Array<string>;
-  bearer_methods_supported: Array<string>;
-  resource_documentation: string;
-};
-
-/**
- * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
- */
-export type Organization = {
-  id: string;
-  entityType: 'organization';
-  tenantId: string;
-  name: string;
-  createdAt: string;
-  createdBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  updatedAt: string | null;
-  updatedBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  slug: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-  publishedAt: string | null;
-  public: boolean;
-  toolsConfig: {
-    'organization.settings'?: {
-      order?: Array<string>;
-      hidden?: Array<string>;
-    };
-    'organization.tabs'?: {
-      order?: Array<string>;
-      hidden?: Array<string>;
-    };
-  };
-  path: string | null;
-  shortName: string | null;
-  country: string | null;
-  timezone: string | null;
-  defaultLanguage: 'en' | 'nl';
-  languages: Array<'en' | 'nl'>;
-  notificationEmail: string | null;
-  color: string | null;
-  logoUrl: string | null;
-  websiteUrl: string | null;
-  welcomeText: string | null;
-  chatSupport: boolean;
-  organizationFlags: {
-    [key: string]: unknown;
-  };
-  setupConfig: {
-    [key: string]: unknown;
-  };
-  included: {
-    membership?: MembershipBase;
-    counts?: {
-      membership: {
-        admin: number;
-        member: number;
-        pending: number;
-        total: number;
-      };
-      entities: {
-        attachment: number;
-      };
-      entitiesSelf: {
-        attachment: number;
-      };
-      activity: {
-        attachment: {
-          created: number | null;
-          updated: number | null;
-        };
-      };
-    };
-    members?: Array<UserMinimalBase>;
-  };
-};
-
-/**
- * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
- */
-export type Attachment = {
-  id: string;
-  entityType: 'attachment';
-  tenantId: string;
-  name: string;
-  createdAt: string;
-  createdBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  updatedAt: string | null;
-  updatedBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  stx: StxBase;
-  description: string | null;
-  keywords: string;
-  deletedAt: string | null;
-  deletedBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  public: boolean;
-  seq: number;
-  /**
-   * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
-   */
-  publicBucket: boolean;
-  bucketName: string;
-  groupId: string | null;
-  filename: string;
-  /**
-   * MIME type of the uploaded file (e.g. image/png).
-   */
-  contentType: string;
-  /**
-   * MIME type of the server-converted variant; null when none.
-   */
-  convertedContentType: string | null;
-  size: number;
-  /**
-   * Storage object keys per variant, keyed by variant name; only generated variants are present.
-   */
-  keys: {
-    original: string;
-    preview?: string;
-    thumbnail?: string;
-    converted?: string;
-  };
-  organizationId: string;
-  viewCount?: number;
-};
-
-/**
- * What an invite does, or would do, with one address, told only from what the inviter already sees: the channel's invitations by address and its members by their listed address. An address an account holds reads as one no account holds.
- */
-export type InviteOutcome = {
-  /**
-   * The primary email address, shown to every user who shares an organization with this one.
-   */
-  email: string;
-  /**
-   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again unless the tenant mailed the address within the day or its decline still holds. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
-   */
-  outcome: 'invite' | 'remind' | 'add' | 'member';
-  invitedAt?: string;
-  declinedAt?: string;
-  role?: 'admin' | 'member';
-};
-
-/**
- * An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.
- */
-export type ServiceAccount = {
-  id: string;
-  tenantId: string;
-  name: string;
-  status: 'active' | 'disabled';
-  bindings: Array<{
-    channelType: 'organization';
-    channelId: string;
+export type ListAttachmentsData = {
+  body?: never;
+  path: {
+    tenantId: string;
     organizationId: string;
-    role: 'admin' | 'member';
-  }>;
-  oauthClientId: string | null;
-  createdAt: string;
-  createdBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  updatedAt: string | null;
-  updatedBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  role: 'admin' | 'member';
-  lastSeenAt: string | null;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
+    q?: string;
+    /**
+     * Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.
+     */
+    afterSeq?: number;
+    /**
+     * Range read for sync: the last sequence position to return. Requires afterSeq.
+     */
+    untilSeq?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'contentType'
+      | 'contentType asc'
+      | 'contentType desc';
+    channelId?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments';
 };
 
-/**
- * A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.
- */
-export type ApiKey = {
-  id: string;
-  actorId: string;
-  tenantId: string;
-  name: string;
-  prefix: string;
-  last4: string;
-  scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
-  expiresAt: string | null;
-  revokedAt: string | null;
-  createdBy:
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'user';
-        slug: string;
-      }
-    | {
-        id: string;
-        name: string;
-        thumbnailUrl: string | null;
-        kind: 'service';
-        slug: null;
-      }
-    | null;
-  createdAt: string;
+export type ListAttachmentsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
 };
+
+export type ListAttachmentsError = ListAttachmentsErrors[keyof ListAttachmentsErrors];
+
+export type ListAttachmentsResponses = {
+  /**
+   * Attachments
+   */
+  200: {
+    results: Array<
+      | Attachment
+      | {
+          id: string;
+          createdAt: string;
+          seq: number;
+          organizationId: string;
+          deletedAt: string;
+        }
+    >;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters. Exact, except an organization-wide read without a search, which counts from the organization's counter and can trail a write by moments. A range read counts its own results.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListAttachmentsResponse = ListAttachmentsResponses[keyof ListAttachmentsResponses];
+
+export type PresignAttachmentUrlsData = {
+  body: {
+    items: Array<{
+      attachmentId: string;
+      variant?: 'original' | 'preview' | 'thumbnail' | 'converted';
+    }>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls';
+};
+
+export type PresignAttachmentUrlsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type PresignAttachmentUrlsError = PresignAttachmentUrlsErrors[keyof PresignAttachmentUrlsErrors];
+
+export type PresignAttachmentUrlsResponses = {
+  /**
+   * Presigned URLs
+   */
+  200: {
+    data: Array<{
+      attachmentId: string;
+      variant: 'original' | 'preview' | 'thumbnail' | 'converted';
+      url: string;
+    }>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type PresignAttachmentUrlsResponse = PresignAttachmentUrlsResponses[keyof PresignAttachmentUrlsResponses];
+
+export type GetAttachmentData = {
+  body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.
+     */
+    'If-None-Match'?: string;
+    /**
+     * Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    attachmentId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}';
+};
+
+export type GetAttachmentErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
+
+export type GetAttachmentResponses = {
+  /**
+   * Attachment
+   */
+  200: Attachment;
+};
+
+export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
+
+export type UpdateAttachmentData = {
+  body: {
+    ops: {
+      name?: string;
+      description?: string;
+    };
+    stx: StxBase;
+  };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    attachmentId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}';
+};
+
+export type UpdateAttachmentErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateAttachmentError = UpdateAttachmentErrors[keyof UpdateAttachmentErrors];
+
+export type UpdateAttachmentResponses = {
+  /**
+   * Attachment was updated
+   */
+  200: Attachment;
+};
+
+export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
+
+export type BatchCreateAttachmentsData = {
+  body: Array<{
+    id: string;
+    name?: string;
+    filename: string;
+    /**
+     * MIME type of the uploaded file (e.g. image/png).
+     */
+    contentType: string;
+    size: number;
+    /**
+     * Storage object keys per variant, keyed by variant name; only generated variants are present.
+     */
+    keys: {
+      original: string;
+      preview?: string;
+      thumbnail?: string;
+      converted?: string;
+    };
+    groupId?: string | null;
+    /**
+     * MIME type of the server-converted variant; null when none.
+     */
+    convertedContentType?: string | null;
+    stx: StxBase;
+  }>;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-create';
+};
+
+export type BatchCreateAttachmentsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchCreateAttachmentsError = BatchCreateAttachmentsErrors[keyof BatchCreateAttachmentsErrors];
+
+export type BatchCreateAttachmentsResponses = {
+  /**
+   * Nothing created
+   *
+   * This request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.
+   */
+  200: {
+    data: Array<Attachment>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+  /**
+   * Attachments created
+   */
+  201: {
+    data: Array<Attachment>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchCreateAttachmentsResponse = BatchCreateAttachmentsResponses[keyof BatchCreateAttachmentsResponses];
+
+export type LinkAttachmentKeysData = {
+  body: {
+    keys: {
+      original: string;
+      preview?: string;
+      thumbnail?: string;
+      converted?: string;
+    };
+    convertedContentType?: string | null;
+  };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    attachmentId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}:link-keys';
+};
+
+export type LinkAttachmentKeysErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type LinkAttachmentKeysError = LinkAttachmentKeysErrors[keyof LinkAttachmentKeysErrors];
+
+export type LinkAttachmentKeysResponses = {
+  /**
+   * Attachment with stored file
+   */
+  200: Attachment;
+};
+
+export type LinkAttachmentKeysResponse = LinkAttachmentKeysResponses[keyof LinkAttachmentKeysResponses];
+
+export type BatchDeleteAttachmentsData = {
+  body: {
+    ids: Array<string>;
+    stx?: {
+      /**
+       * Unique mutation ID
+       */
+      mutationId: string;
+      /**
+       * Tab/instance identifier for echo prevention
+       */
+      sourceId: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-delete';
+};
+
+export type BatchDeleteAttachmentsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchDeleteAttachmentsError = BatchDeleteAttachmentsErrors[keyof BatchDeleteAttachmentsErrors];
+
+export type BatchDeleteAttachmentsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchDeleteAttachmentsResponse = BatchDeleteAttachmentsResponses[keyof BatchDeleteAttachmentsResponses];
 
 export type GetAuthHealthData = {
   body?: never;
@@ -2384,7 +2964,7 @@ export type CheckSlugData = {
     tenantId: string;
   };
   query?: never;
-  url: '/entities/{tenantId}/check-slug';
+  url: '/tenants/{tenantId}:check-slug';
 };
 
 export type CheckSlugErrors = {
@@ -2561,6 +3141,98 @@ export type PostAppCatchupResponses = {
 
 export type PostAppCatchupResponse = PostAppCatchupResponses[keyof PostAppCatchupResponses];
 
+export type GetMcpProtectedResourceMetadataData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/mcp/.well-known/oauth-protected-resource';
+};
+
+export type GetMcpProtectedResourceMetadataErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetMcpProtectedResourceMetadataError = GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
+
+export type GetMcpProtectedResourceMetadataResponses = {
+  /**
+   * Protected resource metadata
+   */
+  200: ProtectedResourceMetadata;
+};
+
+export type GetMcpProtectedResourceMetadataResponse = GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
+
+export type HandleMcpData = {
+  body: Array<unknown> | unknown | null;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/mcp';
+};
+
+export type HandleMcpErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Insufficient scope
+   *
+   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
+   */
+  403: {
+    jsonrpc: '2.0';
+    id: string | number | null;
+    error: {
+      code: number;
+      message: string;
+      data?: unknown;
+    };
+  };
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
+
+export type HandleMcpResponses = {
+  /**
+   * JSON-RPC response
+   */
+  200: unknown;
+};
+
 export type DeleteMeData = {
   body?: never;
   path?: never;
@@ -2647,7 +3319,7 @@ export type UpdateMeData = {
     thumbnailUrl?: string | null;
     slug?: string;
     userFlags?: {
-      finishedOnboarding?: boolean;
+      finishedOnboarding?: boolean | null;
     };
   };
   path?: never;
@@ -2695,7 +3367,7 @@ export type ToggleMfaData = {
   };
   path?: never;
   query?: never;
-  url: '/me/mfa';
+  url: '/me:toggle-mfa';
 };
 
 export type ToggleMfaErrors = {
@@ -2765,14 +3437,27 @@ export type GetMyAuthResponses = {
 
 export type GetMyAuthResponse = GetMyAuthResponses[keyof GetMyAuthResponses];
 
-export type GetMyInvitationsData = {
+export type ListMyInvitationsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/invitations';
 };
 
-export type GetMyInvitationsErrors = {
+export type ListMyInvitationsErrors = {
   /**
    * Bad request
    */
@@ -2787,14 +3472,14 @@ export type GetMyInvitationsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitationsErrors];
+export type ListMyInvitationsError = ListMyInvitationsErrors[keyof ListMyInvitationsErrors];
 
-export type GetMyInvitationsResponses = {
+export type ListMyInvitationsResponses = {
   /**
    * Invitations pending
    */
   200: {
-    items: Array<{
+    results: Array<{
       entity: ChannelBase;
       /**
        * An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.
@@ -2818,23 +3503,29 @@ export type GetMyInvitationsResponses = {
        */
       organizationName: string | null;
     }>;
-    total: number;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
-export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
+export type ListMyInvitationsResponse = ListMyInvitationsResponses[keyof ListMyInvitationsResponses];
 
-export type HandleMembershipInvitationData = {
+export type AcceptInvitationData = {
   body?: never;
   path: {
-    id: string;
-    acceptOrReject: 'accept' | 'reject';
+    invitationId: string;
   };
   query?: never;
-  url: '/me/invitations/{id}/{acceptOrReject}';
+  url: '/me/invitations/{invitationId}:accept';
 };
 
-export type HandleMembershipInvitationErrors = {
+export type AcceptInvitationErrors = {
   /**
    * Bad request
    */
@@ -2857,16 +3548,59 @@ export type HandleMembershipInvitationErrors = {
   429: TooManyRequestsError;
 };
 
-export type HandleMembershipInvitationError = HandleMembershipInvitationErrors[keyof HandleMembershipInvitationErrors];
+export type AcceptInvitationError = AcceptInvitationErrors[keyof AcceptInvitationErrors];
 
-export type HandleMembershipInvitationResponses = {
+export type AcceptInvitationResponses = {
   /**
    * The invitation's organization
    */
   200: ChannelBase;
 };
 
-export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
+export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type RejectInvitationData = {
+  body?: never;
+  path: {
+    invitationId: string;
+  };
+  query?: never;
+  url: '/me/invitations/{invitationId}:reject';
+};
+
+export type RejectInvitationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RejectInvitationError = RejectInvitationErrors[keyof RejectInvitationErrors];
+
+export type RejectInvitationResponses = {
+  /**
+   * The invitation's organization
+   */
+  200: ChannelBase;
+};
+
+export type RejectInvitationResponse = RejectInvitationResponses[keyof RejectInvitationResponses];
 
 export type RevokeMySessionsData = {
   body: {
@@ -2874,7 +3608,7 @@ export type RevokeMySessionsData = {
   };
   path?: never;
   query?: never;
-  url: '/me/sessions';
+  url: '/me/sessions:revoke';
 };
 
 export type RevokeMySessionsErrors = {
@@ -2944,17 +3678,17 @@ export type RevokeMySessionsResponses = {
 
 export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
 
-export type DeleteMyMembershipData = {
-  body?: never;
-  path?: never;
-  query: {
+export type LeaveMembershipData = {
+  body: {
     entityId: string;
     entityType: 'organization';
   };
-  url: '/me/leave';
+  path?: never;
+  query?: never;
+  url: '/me/memberships:leave';
 };
 
-export type DeleteMyMembershipErrors = {
+export type LeaveMembershipErrors = {
   /**
    * Bad request
    */
@@ -2972,21 +3706,25 @@ export type DeleteMyMembershipErrors = {
    */
   409: ConflictError;
   /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
    * Too many requests
    */
   429: TooManyRequestsError;
 };
 
-export type DeleteMyMembershipError = DeleteMyMembershipErrors[keyof DeleteMyMembershipErrors];
+export type LeaveMembershipError = LeaveMembershipErrors[keyof LeaveMembershipErrors];
 
-export type DeleteMyMembershipResponses = {
+export type LeaveMembershipResponses = {
   /**
    * Membership removed
    */
   204: void;
 };
 
-export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
+export type LeaveMembershipResponse = LeaveMembershipResponses[keyof LeaveMembershipResponses];
 
 export type GetUploadTokenData = {
   body?: never;
@@ -3034,14 +3772,27 @@ export type GetUploadTokenResponses = {
 
 export type GetUploadTokenResponse = GetUploadTokenResponses[keyof GetUploadTokenResponses];
 
-export type GetMyMembershipsData = {
+export type ListMyMembershipsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/memberships';
 };
 
-export type GetMyMembershipsErrors = {
+export type ListMyMembershipsErrors = {
   /**
    * Bad request
    */
@@ -3056,27 +3807,48 @@ export type GetMyMembershipsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetMyMembershipsError = GetMyMembershipsErrors[keyof GetMyMembershipsErrors];
+export type ListMyMembershipsError = ListMyMembershipsErrors[keyof ListMyMembershipsErrors];
 
-export type GetMyMembershipsResponses = {
+export type ListMyMembershipsResponses = {
   /**
    * User memberships
    */
   200: {
-    items: Array<MembershipBase>;
+    results: Array<MembershipBase>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
-export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
+export type ListMyMembershipsResponse = ListMyMembershipsResponses[keyof ListMyMembershipsResponses];
 
-export type GetConnectedAppsData = {
+export type ListConnectedAppsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/me/connected-apps';
 };
 
-export type GetConnectedAppsErrors = {
+export type ListConnectedAppsErrors = {
   /**
    * Bad request
    */
@@ -3091,14 +3863,14 @@ export type GetConnectedAppsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetConnectedAppsError = GetConnectedAppsErrors[keyof GetConnectedAppsErrors];
+export type ListConnectedAppsError = ListConnectedAppsErrors[keyof ListConnectedAppsErrors];
 
-export type GetConnectedAppsResponses = {
+export type ListConnectedAppsResponses = {
   /**
    * Connected apps
    */
   200: {
-    items: Array<{
+    results: Array<{
       id: string;
       clientId: string;
       clientName: string;
@@ -3107,21 +3879,29 @@ export type GetConnectedAppsResponses = {
       createdAt: string;
       expiresAt: string | null;
     }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
-export type GetConnectedAppsResponse = GetConnectedAppsResponses[keyof GetConnectedAppsResponses];
+export type ListConnectedAppsResponse = ListConnectedAppsResponses[keyof ListConnectedAppsResponses];
 
-export type RevokeConnectedAppData = {
+export type DeleteConnectedAppData = {
   body?: never;
   path: {
-    id: string;
+    connectedAppId: string;
   };
   query?: never;
-  url: '/me/connected-apps/{id}';
+  url: '/me/connected-apps/{connectedAppId}';
 };
 
-export type RevokeConnectedAppErrors = {
+export type DeleteConnectedAppErrors = {
   /**
    * Bad request
    */
@@ -3140,11 +3920,233 @@ export type RevokeConnectedAppErrors = {
   429: TooManyRequestsError;
 };
 
-export type RevokeConnectedAppError = RevokeConnectedAppErrors[keyof RevokeConnectedAppErrors];
+export type DeleteConnectedAppError = DeleteConnectedAppErrors[keyof DeleteConnectedAppErrors];
 
-export type RevokeConnectedAppResponses = {
+export type DeleteConnectedAppResponses = {
   /**
-   * Consent was revoked
+   * Consent revoked
+   */
+  204: void;
+};
+
+export type DeleteConnectedAppResponse = DeleteConnectedAppResponses[keyof DeleteConnectedAppResponses];
+
+export type GetApiProtectedResourceMetadataData = {
+  body?: never;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/.well-known/oauth-protected-resource';
+};
+
+export type GetApiProtectedResourceMetadataErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetApiProtectedResourceMetadataError = GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
+
+export type GetApiProtectedResourceMetadataResponses = {
+  /**
+   * Protected resource metadata
+   */
+  200: ProtectedResourceMetadata;
+};
+
+export type GetApiProtectedResourceMetadataResponse = GetApiProtectedResourceMetadataResponses[keyof GetApiProtectedResourceMetadataResponses];
+
+export type InviteMembersData = {
+  body: {
+    emails: Array<string>;
+    role: 'admin' | 'member';
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityId: string;
+    entityType: 'organization';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:invite';
+};
+
+export type InviteMembersErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type InviteMembersError = InviteMembersErrors[keyof InviteMembersErrors];
+
+export type InviteMembersResponses = {
+  /**
+   * What happened to each address
+   */
+  200: {
+    data: Array<{
+      id: string;
+      tenantId: string;
+      channelType: 'organization';
+      channelId: string;
+      userId: string;
+      role: 'admin' | 'member';
+      organizationId: string;
+      archived?: boolean;
+      muted?: boolean;
+      displayOrder?: number;
+    }>;
+    outcomes: Array<InviteOutcome>;
+    held: boolean;
+  };
+};
+
+export type InviteMembersResponse = InviteMembersResponses[keyof InviteMembersResponses];
+
+export type CheckMembershipInviteData = {
+  body: {
+    emails: Array<string>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityId: string;
+    entityType: 'organization';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:check-invite';
+};
+
+export type CheckMembershipInviteErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof CheckMembershipInviteErrors];
+
+export type CheckMembershipInviteResponses = {
+  /**
+   * Invite outcomes
+   *
+   * One outcome per address, judged from the members and invitations the caller can see.
+   */
+  200: {
+    outcomes: Array<InviteOutcome>;
+  };
+};
+
+export type CheckMembershipInviteResponse = CheckMembershipInviteResponses[keyof CheckMembershipInviteResponses];
+
+export type BatchDeleteMembershipsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityId: string;
+    entityType: 'organization';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships:batch-delete';
+};
+
+export type BatchDeleteMembershipsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchDeleteMembershipsError = BatchDeleteMembershipsErrors[keyof BatchDeleteMembershipsErrors];
+
+export type BatchDeleteMembershipsResponses = {
+  /**
+   * Success
    */
   200: {
     data: Array<unknown>;
@@ -3161,7 +4163,422 @@ export type RevokeConnectedAppResponses = {
   };
 };
 
-export type RevokeConnectedAppResponse = RevokeConnectedAppResponses[keyof RevokeConnectedAppResponses];
+export type BatchDeleteMembershipsResponse = BatchDeleteMembershipsResponses[keyof BatchDeleteMembershipsResponses];
+
+export type UpdateMembershipData = {
+  body: {
+    role?: 'admin' | 'member';
+    archived?: boolean;
+    muted?: boolean;
+    displayOrder?: number;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    membershipId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}';
+};
+
+export type UpdateMembershipErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
+
+export type UpdateMembershipResponses = {
+  /**
+   * Membership updated
+   */
+  200: {
+    createdAt: string;
+    id: string;
+    tenantId: string;
+    channelType: 'organization';
+    channelId: string;
+    userId: string;
+    role: 'admin' | 'member';
+    createdBy:
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'user';
+          slug: string;
+        }
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'service';
+          slug: null;
+        }
+      | null;
+    updatedAt: string | null;
+    updatedBy:
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'user';
+          slug: string;
+        }
+      | {
+          id: string;
+          name: string;
+          thumbnailUrl: string | null;
+          kind: 'service';
+          slug: null;
+        }
+      | null;
+    organizationId: string;
+    archived?: boolean;
+    muted?: boolean;
+    displayOrder?: number;
+  };
+};
+
+export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
+
+export type ListMembersData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
+    q?: string;
+    entityId: string;
+    entityType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'role'
+      | 'role asc'
+      | 'role desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'lastSeenAt'
+      | 'lastSeenAt asc'
+      | 'lastSeenAt desc'
+      | 'lastPostedAt'
+      | 'lastPostedAt asc'
+      | 'lastPostedAt desc';
+    role?: 'admin' | 'member';
+    /**
+     * Comma-separated values
+     */
+    include?: string;
+    /**
+     * Comma-separated values
+     */
+    userIds?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/members';
+};
+
+export type ListMembersErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
+
+export type ListMembersResponses = {
+  /**
+   * Members
+   */
+  200: {
+    /**
+     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+     */
+    results: Array<
+      UserBase & {
+        lastSeenAt: string | null;
+        membership: {
+          id: string;
+          tenantId: string;
+          channelType: 'organization';
+          channelId: string;
+          userId: string;
+          role: 'admin' | 'member';
+          organizationId: string;
+          archived?: boolean;
+          muted?: boolean;
+          displayOrder?: number;
+        };
+        counts?: {
+          memberships: {
+            [key: string]: unknown;
+          };
+          products: {
+            attachment: number;
+          };
+          activity: {
+            attachment: number | null;
+          };
+        };
+        mfaRequired?: boolean;
+      }
+    >;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
+
+export type ListInvitationsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    entityId: string;
+    entityType: 'organization';
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc';
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/invitations';
+};
+
+export type ListInvitationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListInvitationsError = ListInvitationsErrors[keyof ListInvitationsErrors];
+
+export type ListInvitationsResponses = {
+  /**
+   * Pending memberships
+   */
+  200: {
+    results: Array<{
+      id: string;
+      /**
+       * The primary email address, shown to every user who shares an organization with this one.
+       */
+      email: string;
+      role: 'admin' | 'member';
+      createdAt: string;
+      remindedAt: string | null;
+      linkExpiresAt: string | null;
+      createdBy: ActorRef;
+    }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListInvitationsResponse = ListInvitationsResponses[keyof ListInvitationsResponses];
+
+export type ResendInvitationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    invitationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}:resend';
+};
+
+export type ResendInvitationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
+
+export type ResendInvitationResponses = {
+  /**
+   * Invitation resent
+   */
+  204: void;
+};
+
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+
+export type DeleteInvitationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    invitationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/invitations/{invitationId}';
+};
+
+export type DeleteInvitationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteInvitationError = DeleteInvitationErrors[keyof DeleteInvitationErrors];
+
+export type DeleteInvitationResponses = {
+  /**
+   * Invitation withdrawn
+   */
+  204: void;
+};
+
+export type DeleteInvitationResponse = DeleteInvitationResponses[keyof DeleteInvitationResponses];
 
 export type GetPublicCountsData = {
   body?: never;
@@ -3195,24 +4612,31 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
-export type GetNotificationsData = {
+export type ListNotificationsData = {
   body?: never;
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 100 reads 100. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Return only unread notifications
      */
     unread?: 'true' | 'false' | boolean;
-    limit?: number;
-    /**
-     * createdAt of the last row of the previous page
-     */
-    before?: string;
   };
   url: '/notifications';
 };
 
-export type GetNotificationsErrors = {
+export type ListNotificationsErrors = {
   /**
    * Bad request
    */
@@ -3227,14 +4651,14 @@ export type GetNotificationsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+export type ListNotificationsError = ListNotificationsErrors[keyof ListNotificationsErrors];
 
-export type GetNotificationsResponses = {
+export type ListNotificationsResponses = {
   /**
    * Notifications and unread count
    */
   200: {
-    items: Array<{
+    results: Array<{
       id: string;
       createdAt: string;
       actorId: string | null;
@@ -3258,11 +4682,19 @@ export type GetNotificationsResponses = {
       organizationThumbnailUrl: string | null;
       subjectTitle: string;
     }>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
     unreadCount: number;
   };
 };
 
-export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+export type ListNotificationsResponse = ListNotificationsResponses[keyof ListNotificationsResponses];
 
 export type MarkNotificationsReadData = {
   body: {
@@ -3274,7 +4706,7 @@ export type MarkNotificationsReadData = {
   };
   path?: never;
   query?: never;
-  url: '/notifications/read';
+  url: '/notifications:mark-read';
 };
 
 export type MarkNotificationsReadErrors = {
@@ -3311,7 +4743,7 @@ export type GetNotificationPreferencesData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/notifications/preferences';
+  url: '/me/notification-preferences';
 };
 
 export type GetNotificationPreferencesErrors = {
@@ -3352,7 +4784,7 @@ export type UpdateNotificationPreferencesData = {
   };
   path?: never;
   query?: never;
-  url: '/notifications/preferences';
+  url: '/me/notification-preferences';
 };
 
 export type UpdateNotificationPreferencesErrors = {
@@ -3491,6 +4923,471 @@ export type ResubscribeNotificationsResponses = {
 
 export type ResubscribeNotificationsResponse = ResubscribeNotificationsResponses[keyof ResubscribeNotificationsResponses];
 
+export type ListOrganizationsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
+    q?: string;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'displayOrder'
+      | 'displayOrder asc'
+      | 'displayOrder desc';
+    relatableUserId?: string;
+    role?: 'admin' | 'member';
+    excludeArchived?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
+    include?: string;
+  };
+  url: '/tenants/-/organizations';
+};
+
+export type ListOrganizationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListOrganizationsError = ListOrganizationsErrors[keyof ListOrganizationsErrors];
+
+export type ListOrganizationsResponses = {
+  /**
+   * Organizations
+   */
+  200: {
+    results: Array<Organization>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListOrganizationsResponse = ListOrganizationsResponses[keyof ListOrganizationsResponses];
+
+export type BatchCreateOrganizationsData = {
+  body: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    /**
+     * Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.
+     */
+    draft?: boolean;
+  }>;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations:batch-create';
+};
+
+export type BatchCreateOrganizationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchCreateOrganizationsError = BatchCreateOrganizationsErrors[keyof BatchCreateOrganizationsErrors];
+
+export type BatchCreateOrganizationsResponses = {
+  /**
+   * Organizations were created
+   */
+  201: {
+    /**
+     * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
+     */
+    data: Array<
+      Organization & {
+        included?: {
+          membership: MembershipBase;
+          counts?: {
+            membership: {
+              admin: number;
+              member: number;
+              pending: number;
+              total: number;
+            };
+            entities: {
+              attachment: number;
+            };
+            entitiesSelf: {
+              attachment: number;
+            };
+            activity: {
+              attachment: {
+                created: number | null;
+                updated: number | null;
+              };
+            };
+          };
+          members?: Array<UserMinimalBase>;
+        };
+      }
+    >;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchCreateOrganizationsResponse = BatchCreateOrganizationsResponses[keyof BatchCreateOrganizationsResponses];
+
+export type GetOrganizationData = {
+  body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`: while the resource still has one, the answer is 304 without a body.
+     */
+    'If-None-Match'?: string;
+    /**
+     * Entity tags from `ETag`, or `*`: unless the resource still has one, the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    slug?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
+    include?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}';
+};
+
+export type GetOrganizationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
+
+export type GetOrganizationResponses = {
+  /**
+   * Organization
+   */
+  200: Organization;
+};
+
+export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
+
+export type UpdateOrganizationData = {
+  body: {
+    slug?: string;
+    name?: string;
+    shortName?: string | null;
+    /**
+     * ISO 3166-1 alpha-2 country code.
+     */
+    country?: string | null;
+    /**
+     * IANA time zone id.
+     */
+    timezone?: string | null;
+    defaultLanguage?: 'en' | 'nl';
+    languages?: Array<'en' | 'nl'>;
+    notificationEmail?: string | null;
+    color?: string | null;
+    thumbnailUrl?: string | null;
+    logoUrl?: string | null;
+    bannerUrl?: string | null;
+    websiteUrl?: string | null;
+    welcomeText?: string | null;
+    chatSupport?: boolean;
+    organizationFlags?: {
+      [key: string]: unknown;
+    };
+    setupConfig?: {
+      [key: string]: unknown;
+    };
+    toolsConfig?: {
+      'organization.settings'?: {
+        order?: Array<string> | null;
+        hidden?: Array<string> | null;
+      } | null;
+      'organization.tabs'?: {
+        order?: Array<string> | null;
+        hidden?: Array<string> | null;
+      } | null;
+    };
+  };
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}';
+};
+
+export type UpdateOrganizationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
+
+export type UpdateOrganizationResponses = {
+  /**
+   * Organization was updated
+   */
+  200: Organization;
+};
+
+export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type PublishOrganizationData = {
+  body?: never;
+  headers?: {
+    /**
+     * Entity tags from `ETag`, or `*`: the write applies only while the resource still has one, else the answer is 412.
+     */
+    'If-Match'?: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}:publish';
+};
+
+export type PublishOrganizationErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Precondition failed
+   */
+  412: PreconditionFailedError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type PublishOrganizationError = PublishOrganizationErrors[keyof PublishOrganizationErrors];
+
+export type PublishOrganizationResponses = {
+  /**
+   * Organization was published
+   */
+  200: {
+    organization: Organization;
+    /**
+     * Invitations held while it was a draft and sent now.
+     */
+    invitationsSent: number;
+  };
+};
+
+export type PublishOrganizationResponse = PublishOrganizationResponses[keyof PublishOrganizationResponses];
+
+export type BatchDeleteOrganizationsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations:batch-delete';
+};
+
+export type BatchDeleteOrganizationsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchDeleteOrganizationsError = BatchDeleteOrganizationsErrors[keyof BatchDeleteOrganizationsErrors];
+
+export type BatchDeleteOrganizationsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchDeleteOrganizationsResponse = BatchDeleteOrganizationsResponses[keyof BatchDeleteOrganizationsResponses];
+
 export type GetPushVapidData = {
   body?: never;
   path?: never;
@@ -3525,41 +5422,6 @@ export type GetPushVapidResponses = {
 };
 
 export type GetPushVapidResponse = GetPushVapidResponses[keyof GetPushVapidResponses];
-
-export type DeletePushSubscriptionData = {
-  body?: never;
-  path?: never;
-  query: {
-    endpoint: string;
-  };
-  url: '/push/subscriptions';
-};
-
-export type DeletePushSubscriptionErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-};
-
-export type DeletePushSubscriptionError = DeletePushSubscriptionErrors[keyof DeletePushSubscriptionErrors];
-
-export type DeletePushSubscriptionResponses = {
-  /**
-   * Subscriptions removed
-   *
-   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
-   */
-  200: {
-    deleted: number;
-  };
-};
-
-export type DeletePushSubscriptionResponse = DeletePushSubscriptionResponses[keyof DeletePushSubscriptionResponses];
 
 export type CreatePushSubscriptionData = {
   body: {
@@ -3600,7 +5462,7 @@ export type CreatePushSubscriptionResponses = {
   /**
    * Stored subscription
    */
-  200: {
+  201: {
     id: string;
     endpoint: string;
   };
@@ -3608,16 +5470,16 @@ export type CreatePushSubscriptionResponses = {
 
 export type CreatePushSubscriptionResponse = CreatePushSubscriptionResponses[keyof CreatePushSubscriptionResponses];
 
-export type DeleteRequestsData = {
+export type RemovePushSubscriptionData = {
   body: {
-    ids: Array<string>;
+    endpoint: string;
   };
   path?: never;
   query?: never;
-  url: '/requests';
+  url: '/push/subscriptions:remove';
 };
 
-export type DeleteRequestsErrors = {
+export type RemovePushSubscriptionErrors = {
   /**
    * Bad request
    */
@@ -3626,60 +5488,68 @@ export type DeleteRequestsErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
   /**
    * Payload too large
    */
   413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
 };
 
-export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
+export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof RemovePushSubscriptionErrors];
 
-export type DeleteRequestsResponses = {
+export type RemovePushSubscriptionResponses = {
   /**
-   * Success
+   * Subscriptions removed
+   *
+   * `deleted` is the number removed, 0 when the endpoint belongs to another user.
    */
   200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
+    deleted: number;
   };
 };
 
-export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
+export type RemovePushSubscriptionResponse = RemovePushSubscriptionResponses[keyof RemovePushSubscriptionResponses];
 
-export type GetRequestsData = {
+export type ListRequestsData = {
   body?: never;
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'email' | 'type' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'type'
+      | 'type asc'
+      | 'type desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc';
   };
   url: '/requests';
 };
 
-export type GetRequestsErrors = {
+export type ListRequestsErrors = {
   /**
    * Bad request
    */
@@ -3698,19 +5568,26 @@ export type GetRequestsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
+export type ListRequestsError = ListRequestsErrors[keyof ListRequestsErrors];
 
-export type GetRequestsResponses = {
+export type ListRequestsResponses = {
   /**
    * Requests
    */
   200: {
-    items: Array<Request>;
-    total: number;
+    results: Array<Request>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
-export type GetRequestsResponse = GetRequestsResponses[keyof GetRequestsResponses];
+export type ListRequestsResponse = ListRequestsResponses[keyof ListRequestsResponses];
 
 export type CreateRequestData = {
   body: {
@@ -3749,11 +5626,66 @@ export type CreateRequestResponses = {
 
 export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];
 
+export type BatchDeleteRequestsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/requests:batch-delete';
+};
+
+export type BatchDeleteRequestsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type BatchDeleteRequestsError = BatchDeleteRequestsErrors[keyof BatchDeleteRequestsErrors];
+
+export type BatchDeleteRequestsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type BatchDeleteRequestsResponse = BatchDeleteRequestsResponses[keyof BatchDeleteRequestsResponses];
+
 export type GetUnseenCountsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/unseen/counts';
+  url: '/me/unseen-counts';
 };
 
 export type GetUnseenCountsErrors = {
@@ -3788,16 +5720,442 @@ export type GetUnseenCountsResponses = {
 
 export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
 
-export type SystemInviteData = {
+export type MarkSeenData = {
+  body: {
+    /**
+     * Entity IDs the user has viewed since last batch
+     */
+    entityIds: Array<string>;
+    /**
+     * Entity type for all IDs in this batch
+     */
+    entityType: 'attachment';
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}:mark-seen';
+};
+
+export type MarkSeenErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type MarkSeenError = MarkSeenErrors[keyof MarkSeenErrors];
+
+export type MarkSeenResponses = {
+  /**
+   * Seen records processed
+   */
+  200: {
+    /**
+     * Number of entities newly marked as seen (deduped)
+     */
+    newCount: number;
+  };
+};
+
+export type MarkSeenResponse = MarkSeenResponses[keyof MarkSeenResponses];
+
+export type ListServiceAccountsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
+     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
+     */
+    q?: string;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts';
+};
+
+export type ListServiceAccountsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListServiceAccountsError = ListServiceAccountsErrors[keyof ListServiceAccountsErrors];
+
+export type ListServiceAccountsResponses = {
+  /**
+   * Service accounts
+   */
+  200: {
+    results: Array<ServiceAccount>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListServiceAccountsResponse = ListServiceAccountsResponses[keyof ListServiceAccountsResponses];
+
+export type CreateServiceAccountData = {
+  body: {
+    name: string;
+    role: 'admin' | 'member';
+    key?: {
+      name: string;
+      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+      expiresAt?: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts';
+};
+
+export type CreateServiceAccountErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateServiceAccountError = CreateServiceAccountErrors[keyof CreateServiceAccountErrors];
+
+export type CreateServiceAccountResponses = {
+  /**
+   * Service account was created
+   */
+  201: {
+    serviceAccount: ServiceAccount;
+    /**
+     * A newly created API key with its full secret, returned this once only.
+     */
+    apiKey?: ApiKey & {
+      /**
+       * The plaintext API key; store it now, it is not shown again.
+       */
+      secret: string;
+    };
+  };
+};
+
+export type CreateServiceAccountResponse = CreateServiceAccountResponses[keyof CreateServiceAccountResponses];
+
+export type UpdateServiceAccountData = {
+  body: {
+    name?: string;
+    status?: 'active' | 'disabled';
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    serviceAccountId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}';
+};
+
+export type UpdateServiceAccountErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateServiceAccountError = UpdateServiceAccountErrors[keyof UpdateServiceAccountErrors];
+
+export type UpdateServiceAccountResponses = {
+  /**
+   * Service account was updated
+   */
+  200: ServiceAccount;
+};
+
+export type UpdateServiceAccountResponse = UpdateServiceAccountResponses[keyof UpdateServiceAccountResponses];
+
+export type ListApiKeysData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    serviceAccountId: string;
+  };
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys';
+};
+
+export type ListApiKeysErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ListApiKeysError = ListApiKeysErrors[keyof ListApiKeysErrors];
+
+export type ListApiKeysResponses = {
+  /**
+   * API keys
+   */
+  200: {
+    results: Array<ApiKey>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
+};
+
+export type ListApiKeysResponse = ListApiKeysResponses[keyof ListApiKeysResponses];
+
+export type CreateApiKeyData = {
+  body: {
+    name: string;
+    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+    expiresAt?: string;
+    rollFrom?: string;
+    rollOverlapDays?: number;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    serviceAccountId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys';
+};
+
+export type CreateApiKeyErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
+
+export type CreateApiKeyResponses = {
+  /**
+   * A newly created API key with its full secret, returned this once only.
+   */
+  201: ApiKey & {
+    /**
+     * The plaintext API key; store it now, it is not shown again.
+     */
+    secret: string;
+  };
+};
+
+export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
+
+export type RevokeApiKeyData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    serviceAccountId: string;
+    apiKeyId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/service-accounts/{serviceAccountId}/api-keys/{apiKeyId}:revoke';
+};
+
+export type RevokeApiKeyErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeApiKeyError = RevokeApiKeyErrors[keyof RevokeApiKeyErrors];
+
+export type RevokeApiKeyResponses = {
+  /**
+   * API key was revoked
+   */
+  200: ApiKey;
+};
+
+export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];
+
+export type InviteUsersData = {
   body: {
     emails: Array<string>;
   };
   path?: never;
   query?: never;
-  url: '/system/invite';
+  url: '/users:invite';
 };
 
-export type SystemInviteErrors = {
+export type InviteUsersErrors = {
   /**
    * Bad request
    */
@@ -3820,9 +6178,9 @@ export type SystemInviteErrors = {
   429: TooManyRequestsError;
 };
 
-export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
+export type InviteUsersError = InviteUsersErrors[keyof InviteUsersErrors];
 
-export type SystemInviteResponses = {
+export type InviteUsersResponses = {
   /**
    * Invitations are sent
    */
@@ -3842,16 +6200,16 @@ export type SystemInviteResponses = {
   };
 };
 
-export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
+export type InviteUsersResponse = InviteUsersResponses[keyof InviteUsersResponses];
 
-export type GetPendingSystemInvitesData = {
+export type CountSystemInvitationsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/system/invite/pending';
+  url: '/system-invitations:count';
 };
 
-export type GetPendingSystemInvitesErrors = {
+export type CountSystemInvitationsErrors = {
   /**
    * Bad request
    */
@@ -3870,9 +6228,9 @@ export type GetPendingSystemInvitesErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetPendingSystemInvitesError = GetPendingSystemInvitesErrors[keyof GetPendingSystemInvitesErrors];
+export type CountSystemInvitationsError = CountSystemInvitationsErrors[keyof CountSystemInvitationsErrors];
 
-export type GetPendingSystemInvitesResponses = {
+export type CountSystemInvitationsResponses = {
   /**
    * Pending invitations
    */
@@ -3881,18 +6239,18 @@ export type GetPendingSystemInvitesResponses = {
   };
 };
 
-export type GetPendingSystemInvitesResponse = GetPendingSystemInvitesResponses[keyof GetPendingSystemInvitesResponses];
+export type CountSystemInvitationsResponse = CountSystemInvitationsResponses[keyof CountSystemInvitationsResponses];
 
-export type DeleteUsersData = {
+export type BatchDeleteUsersData = {
   body: {
     ids: Array<string>;
   };
   path?: never;
   query?: never;
-  url: '/system';
+  url: '/users:batch-delete';
 };
 
-export type DeleteUsersErrors = {
+export type BatchDeleteUsersErrors = {
   /**
    * Bad request
    */
@@ -3923,9 +6281,9 @@ export type DeleteUsersErrors = {
   429: TooManyRequestsError;
 };
 
-export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
+export type BatchDeleteUsersError = BatchDeleteUsersErrors[keyof BatchDeleteUsersErrors];
 
-export type DeleteUsersResponses = {
+export type BatchDeleteUsersResponses = {
   /**
    * Success
    */
@@ -3944,7 +6302,59 @@ export type DeleteUsersResponses = {
   };
 };
 
-export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
+export type BatchDeleteUsersResponse = BatchDeleteUsersResponses[keyof BatchDeleteUsersResponses];
+
+export type GetUserData = {
+  body?: never;
+  path: {
+    userId: string;
+  };
+  query?: {
+    slug?: 'true' | 'false' | boolean;
+    /**
+     * Comma-separated values
+     */
+    include?: string;
+  };
+  url: '/users/{userId}';
+};
+
+export type GetUserErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+  /**
+   * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+   */
+  200: UserBase & {
+    lastSeenAt: string | null;
+    mfaRequired?: boolean;
+  };
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type UpdateUserData = {
   body: {
@@ -3958,10 +6368,10 @@ export type UpdateUserData = {
     slug?: string;
   };
   path: {
-    id: string;
+    userId: string;
   };
   query?: never;
-  url: '/system/{id}';
+  url: '/users/{userId}';
 };
 
 export type UpdateUserErrors = {
@@ -4017,7 +6427,7 @@ export type SendNewsletterData = {
   query?: {
     toSelf?: 'true' | 'false' | boolean;
   };
-  url: '/system/newsletter';
+  url: '/system:send-newsletter';
 };
 
 export type SendNewsletterErrors = {
@@ -4054,18 +6464,30 @@ export type SendNewsletterResponses = {
 
 export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
 
-export type GetTenantsData = {
+export type ListTenantsData = {
   body?: never;
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'createdAt' | 'name';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?: 'createdAt' | 'createdAt asc' | 'createdAt desc' | 'name' | 'name asc' | 'name desc';
     /**
      * Filter by status
      */
@@ -4074,7 +6496,7 @@ export type GetTenantsData = {
   url: '/tenants';
 };
 
-export type GetTenantsErrors = {
+export type ListTenantsErrors = {
   /**
    * Bad request
    */
@@ -4093,30 +6515,37 @@ export type GetTenantsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
+export type ListTenantsError = ListTenantsErrors[keyof ListTenantsErrors];
 
-export type GetTenantsResponses = {
+export type ListTenantsResponses = {
   /**
    * Tenants list
    */
   200: {
-    items: Array<Tenant>;
-    total: number;
+    results: Array<Tenant>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
   };
 };
 
-export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
+export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
 
-export type SelfCreateTenantData = {
+export type CreateTenantData = {
   body: {
     name: string;
   };
   path?: never;
   query?: never;
-  url: '/tenants/self';
+  url: '/tenants';
 };
 
-export type SelfCreateTenantErrors = {
+export type CreateTenantErrors = {
   /**
    * Bad request
    */
@@ -4139,16 +6568,16 @@ export type SelfCreateTenantErrors = {
   429: TooManyRequestsError;
 };
 
-export type SelfCreateTenantError = SelfCreateTenantErrors[keyof SelfCreateTenantErrors];
+export type CreateTenantError = CreateTenantErrors[keyof CreateTenantErrors];
 
-export type SelfCreateTenantResponses = {
+export type CreateTenantResponses = {
   /**
    * Created tenant
    */
-  200: Tenant;
+  201: Tenant;
 };
 
-export type SelfCreateTenantResponse = SelfCreateTenantResponses[keyof SelfCreateTenantResponses];
+export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
 
 export type UpdateTenantData = {
   body: {
@@ -4159,30 +6588,33 @@ export type UpdateTenantData = {
     subscriptionPlan?: string | null;
     authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
     /**
-     * Partial restrictions override
+     * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */
     restrictions?: {
       /**
        * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
        */
       quotas?: {
-        user?: number;
-        organization?: number;
-        attachment?: number;
-        serviceAccount?: number;
-        apiKey?: number;
-      };
-      allowUnregisteredClients?: boolean;
+        user?: number | null;
+        organization?: number | null;
+        attachment?: number | null;
+        serviceAccount?: number | null;
+        apiKey?: number | null;
+      } | null;
       rateLimits?: {
         /**
          * Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)
          */
-        apiPointsPerHour?: number;
+        apiPointsPerHour?: number | null;
         /**
          * Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)
          */
-        invitationMailsPerDay?: number;
-      };
+        invitationMailsPerDay?: number | null;
+      } | null;
+      /**
+       * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
+       */
+      allowUnregisteredClients?: boolean | null;
     };
   };
   path: {
@@ -4230,16 +6662,29 @@ export type UpdateTenantResponses = {
 
 export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
 
-export type GetConnectionsData = {
+export type ListConnectionsData = {
   body?: never;
   path: {
     tenantId: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+  };
   url: '/tenants/{tenantId}/connections';
 };
 
-export type GetConnectionsErrors = {
+export type ListConnectionsErrors = {
   /**
    * Bad request
    */
@@ -4258,16 +6703,26 @@ export type GetConnectionsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetConnectionsError = GetConnectionsErrors[keyof GetConnectionsErrors];
+export type ListConnectionsError = ListConnectionsErrors[keyof ListConnectionsErrors];
 
-export type GetConnectionsResponses = {
+export type ListConnectionsResponses = {
   /**
    * Connections
    */
-  200: Array<Connection>;
+  200: {
+    results: Array<Connection>;
+    /**
+     * Pass as `pageToken` to read the next page. Absent on the last page.
+     */
+    nextPageToken?: string;
+    /**
+     * Results across all pages, after filters: an exact count.
+     */
+    totalSize: number;
+  };
 };
 
-export type GetConnectionsResponse = GetConnectionsResponses[keyof GetConnectionsResponses];
+export type ListConnectionsResponse = ListConnectionsResponses[keyof ListConnectionsResponses];
 
 export type CreateConnectionData = {
   body: {
@@ -4331,7 +6786,7 @@ export type CreateConnectionResponses = {
   /**
    * Created connection
    */
-  200: Connection;
+  201: Connection;
 };
 
 export type CreateConnectionResponse = CreateConnectionResponses[keyof CreateConnectionResponses];
@@ -4340,10 +6795,10 @@ export type DeleteConnectionData = {
   body?: never;
   path: {
     tenantId: string;
-    id: string;
+    connectionId: string;
   };
   query?: never;
-  url: '/tenants/{tenantId}/connections/{id}';
+  url: '/tenants/{tenantId}/connections/{connectionId}';
 };
 
 export type DeleteConnectionErrors = {
@@ -4373,9 +6828,9 @@ export type DeleteConnectionError = DeleteConnectionErrors[keyof DeleteConnectio
 
 export type DeleteConnectionResponses = {
   /**
-   * Removed connection
+   * Connection removed
    */
-  200: Connection;
+  204: void;
 };
 
 export type DeleteConnectionResponse = DeleteConnectionResponses[keyof DeleteConnectionResponses];
@@ -4400,10 +6855,10 @@ export type UpdateConnectionData = {
   };
   path: {
     tenantId: string;
-    id: string;
+    connectionId: string;
   };
   query?: never;
-  url: '/tenants/{tenantId}/connections/{id}';
+  url: '/tenants/{tenantId}/connections/{connectionId}';
 };
 
 export type UpdateConnectionErrors = {
@@ -4448,24 +6903,54 @@ export type UpdateConnectionResponses = {
 
 export type UpdateConnectionResponse = UpdateConnectionResponses[keyof UpdateConnectionResponses];
 
-export type GetUsersData = {
+export type ListUsersData = {
   body?: never;
   path?: never;
   query?: {
     /**
+     * The previous page's `nextPageToken`. Every other param except `maxPageSize` and `skip` must match the request that returned it.
+     */
+    pageToken?: string;
+    /**
+     * Most results one page holds. Absent or 0 reads 40; above 1000 reads 1000. A page may hold fewer.
+     */
+    maxPageSize?: number;
+    /**
+     * Results to pass over after the page token's position, or from the start without a token.
+     */
+    skip?: number;
+    /**
      * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
      */
     q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
+    /**
+     * A field to order by, then `asc` or `desc`; ascending when left out.
+     */
+    orderBy?:
+      | 'id'
+      | 'id asc'
+      | 'id desc'
+      | 'name'
+      | 'name asc'
+      | 'name desc'
+      | 'email'
+      | 'email asc'
+      | 'email desc'
+      | 'role'
+      | 'role asc'
+      | 'role desc'
+      | 'createdAt'
+      | 'createdAt asc'
+      | 'createdAt desc'
+      | 'lastSeenAt'
+      | 'lastSeenAt asc'
+      | 'lastSeenAt desc';
     role?: 'admin';
   };
-  url: '/users/users';
+  url: '/users';
 };
 
-export type GetUsersErrors = {
+export type ListUsersErrors = {
   /**
    * Bad request
    */
@@ -4484,9 +6969,9 @@ export type GetUsersErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
+export type ListUsersError = ListUsersErrors[keyof ListUsersErrors];
 
-export type GetUsersResponses = {
+export type ListUsersResponses = {
   /**
    * Users
    */
@@ -4494,2021 +6979,24 @@ export type GetUsersResponses = {
     /**
      * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
-    items: Array<
+    results: Array<
       UserBase & {
         lastSeenAt: string | null;
         role?: 'admin' | null;
       }
     >;
-    total: number;
-  };
-};
-
-export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
-
-export type GetUserData = {
-  body?: never;
-  path: {
-    relatableUserId: string;
-  };
-  query?: {
-    slug?: 'true' | 'false' | boolean;
     /**
-     * Comma-separated values
+     * Pass as `pageToken` to read the next page. Absent on the last page.
      */
-    include?: string;
-  };
-  url: '/users/users/{relatableUserId}';
-};
-
-export type GetUserErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUserError = GetUserErrors[keyof GetUserErrors];
-
-export type GetUserResponses = {
-  /**
-   * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
-   */
-  200: UserBase & {
-    lastSeenAt: string | null;
-    mfaRequired?: boolean;
-  };
-};
-
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
-
-export type GetApiProtectedResourceMetadataData = {
-  body?: never;
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/.well-known/oauth-protected-resource';
-};
-
-export type GetApiProtectedResourceMetadataErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetApiProtectedResourceMetadataError = GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
-
-export type GetApiProtectedResourceMetadataResponses = {
-  /**
-   * Protected resource metadata
-   */
-  200: ProtectedResourceMetadata;
-};
-
-export type GetApiProtectedResourceMetadataResponse = GetApiProtectedResourceMetadataResponses[keyof GetApiProtectedResourceMetadataResponses];
-
-export type DeleteOrganizationsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations';
-};
-
-export type DeleteOrganizationsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
-
-export type DeleteOrganizationsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
+    nextPageToken?: string;
     /**
-     * Identifiers of items that could not be processed
+     * Results across all pages, after filters: an exact count.
      */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
+    totalSize: number;
   };
 };
 
-export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof DeleteOrganizationsResponses];
-
-export type CreateOrganizationsData = {
-  body: Array<{
-    id: string;
-    name: string;
-    slug: string;
-    /**
-     * Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.
-     */
-    draft?: boolean;
-  }>;
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations';
-};
-
-export type CreateOrganizationsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateOrganizationsError = CreateOrganizationsErrors[keyof CreateOrganizationsErrors];
-
-export type CreateOrganizationsResponses = {
-  /**
-   * Organizations were created
-   */
-  201: {
-    /**
-     * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
-     */
-    data: Array<
-      Organization & {
-        included?: {
-          membership: MembershipBase;
-          counts?: {
-            membership: {
-              admin: number;
-              member: number;
-              pending: number;
-              total: number;
-            };
-            entities: {
-              attachment: number;
-            };
-            entitiesSelf: {
-              attachment: number;
-            };
-            activity: {
-              attachment: {
-                created: number | null;
-                updated: number | null;
-              };
-            };
-          };
-          members?: Array<UserMinimalBase>;
-        };
-      }
-    >;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type CreateOrganizationsResponse = CreateOrganizationsResponses[keyof CreateOrganizationsResponses];
-
-export type GetOrganizationsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
-     */
-    q?: string;
-    sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
-    relatableUserId?: string;
-    role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false' | boolean;
-    /**
-     * Comma-separated values
-     */
-    include?: string;
-  };
-  url: '/organizations';
-};
-
-export type GetOrganizationsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
-
-export type GetOrganizationsResponses = {
-  /**
-   * Organizations
-   */
-  200: {
-    items: Array<Organization>;
-    total: number;
-  };
-};
-
-export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
-
-export type GetOrganizationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: {
-    slug?: 'true' | 'false' | boolean;
-    /**
-     * Comma-separated values
-     */
-    include?: string;
-  };
-  url: '/{tenantId}/organizations/{id}';
-};
-
-export type GetOrganizationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
-
-export type GetOrganizationResponses = {
-  /**
-   * Organization
-   */
-  200: Organization;
-};
-
-export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
-
-export type UpdateOrganizationData = {
-  body: {
-    slug?: string;
-    name?: string;
-    shortName?: string | null;
-    /**
-     * ISO 3166-1 alpha-2 country code.
-     */
-    country?: string | null;
-    /**
-     * IANA time zone id.
-     */
-    timezone?: string | null;
-    defaultLanguage?: 'en' | 'nl';
-    languages?: Array<'en' | 'nl'>;
-    notificationEmail?: string | null;
-    color?: string | null;
-    thumbnailUrl?: string | null;
-    logoUrl?: string | null;
-    bannerUrl?: string | null;
-    websiteUrl?: string | null;
-    welcomeText?: string | null;
-    chatSupport?: boolean;
-    organizationFlags?: {
-      [key: string]: unknown;
-    };
-    setupConfig?: {
-      [key: string]: unknown;
-    };
-    toolsConfig?: {
-      'organization.settings'?: {
-        order?: Array<string>;
-        hidden?: Array<string>;
-      };
-      'organization.tabs'?: {
-        order?: Array<string>;
-        hidden?: Array<string>;
-      };
-    };
-  };
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations/{id}';
-};
-
-export type UpdateOrganizationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
-
-export type UpdateOrganizationResponses = {
-  /**
-   * Organization was updated
-   */
-  200: Organization;
-};
-
-export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
-
-export type PublishOrganizationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/organizations/{id}/publish';
-};
-
-export type PublishOrganizationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type PublishOrganizationError = PublishOrganizationErrors[keyof PublishOrganizationErrors];
-
-export type PublishOrganizationResponses = {
-  /**
-   * Organization was published
-   */
-  200: {
-    organization: Organization;
-    /**
-     * Invitations held while it was a draft and sent now.
-     */
-    invitationsSent: number;
-  };
-};
-
-export type PublishOrganizationResponse = PublishOrganizationResponses[keyof PublishOrganizationResponses];
-
-export type DeleteAttachmentsData = {
-  body: {
-    ids: Array<string>;
-    stx?: {
-      /**
-       * Unique mutation ID
-       */
-      mutationId: string;
-      /**
-       * Tab/instance identifier for echo prevention
-       */
-      sourceId: string;
-    };
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments';
-};
-
-export type DeleteAttachmentsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteAttachmentsError = DeleteAttachmentsErrors[keyof DeleteAttachmentsErrors];
-
-export type DeleteAttachmentsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type DeleteAttachmentsResponse = DeleteAttachmentsResponses[keyof DeleteAttachmentsResponses];
-
-export type GetAttachmentsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: {
-    /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
-     */
-    q?: string;
-    sort?: 'name' | 'createdAt' | 'contentType';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
-    /**
-     * Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.
-     */
-    afterSeq?: number;
-    /**
-     * Range read for sync: the last sequence position to return. Requires afterSeq.
-     */
-    untilSeq?: number;
-    channelId?: string;
-  };
-  url: '/{tenantId}/{organizationId}/attachments';
-};
-
-export type GetAttachmentsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
-
-export type GetAttachmentsResponses = {
-  /**
-   * Attachments
-   */
-  200: {
-    items: Array<
-      | Attachment
-      | {
-          id: string;
-          createdAt: string;
-          seq: number;
-          organizationId: string;
-          deletedAt: string;
-        }
-    >;
-    total: number;
-  };
-};
-
-export type GetAttachmentsResponse = GetAttachmentsResponses[keyof GetAttachmentsResponses];
-
-export type CreateAttachmentsData = {
-  body: Array<{
-    id: string;
-    name?: string;
-    filename: string;
-    /**
-     * MIME type of the uploaded file (e.g. image/png).
-     */
-    contentType: string;
-    size: number;
-    /**
-     * Storage object keys per variant, keyed by variant name; only generated variants are present.
-     */
-    keys: {
-      original: string;
-      preview?: string;
-      thumbnail?: string;
-      converted?: string;
-    };
-    groupId?: string | null;
-    /**
-     * MIME type of the server-converted variant; null when none.
-     */
-    convertedContentType?: string | null;
-    stx: StxBase;
-  }>;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments';
-};
-
-export type CreateAttachmentsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateAttachmentsError = CreateAttachmentsErrors[keyof CreateAttachmentsErrors];
-
-export type CreateAttachmentsResponses = {
-  /**
-   * Nothing created
-   *
-   * This request inserted no row. The body returns the rows an earlier attempt created (an idempotent replay) and lists the ids it rejected.
-   */
-  200: {
-    data: Array<Attachment>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-  /**
-   * Attachments created
-   */
-  201: {
-    data: Array<Attachment>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type CreateAttachmentsResponse = CreateAttachmentsResponses[keyof CreateAttachmentsResponses];
-
-export type GetPresignedUrlsData = {
-  body: {
-    items: Array<{
-      attachmentId: string;
-      variant?: 'original' | 'preview' | 'thumbnail' | 'converted';
-    }>;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments/presigned-urls';
-};
-
-export type GetPresignedUrlsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPresignedUrlsError = GetPresignedUrlsErrors[keyof GetPresignedUrlsErrors];
-
-export type GetPresignedUrlsResponses = {
-  /**
-   * Presigned URLs
-   */
-  200: {
-    data: Array<{
-      attachmentId: string;
-      variant: 'original' | 'preview' | 'thumbnail' | 'converted';
-      url: string;
-    }>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type GetPresignedUrlsResponse = GetPresignedUrlsResponses[keyof GetPresignedUrlsResponses];
-
-export type GetAttachmentData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments/{id}';
-};
-
-export type GetAttachmentErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
-
-export type GetAttachmentResponses = {
-  /**
-   * Attachment
-   */
-  200: Attachment;
-};
-
-export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentResponses];
-
-export type UpdateAttachmentData = {
-  body: {
-    ops: {
-      name?: string;
-      description?: string;
-    };
-    stx: StxBase;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments/{id}';
-};
-
-export type UpdateAttachmentErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateAttachmentError = UpdateAttachmentErrors[keyof UpdateAttachmentErrors];
-
-export type UpdateAttachmentResponses = {
-  /**
-   * Attachment was updated
-   */
-  200: Attachment;
-};
-
-export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
-
-export type LinkAttachmentKeysData = {
-  body: {
-    keys: {
-      original: string;
-      preview?: string;
-      thumbnail?: string;
-      converted?: string;
-    };
-    convertedContentType?: string | null;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/attachments/{id}/keys';
-};
-
-export type LinkAttachmentKeysErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type LinkAttachmentKeysError = LinkAttachmentKeysErrors[keyof LinkAttachmentKeysErrors];
-
-export type LinkAttachmentKeysResponses = {
-  /**
-   * Attachment with stored file
-   */
-  200: Attachment;
-};
-
-export type LinkAttachmentKeysResponse = LinkAttachmentKeysResponses[keyof LinkAttachmentKeysResponses];
-
-export type GetMcpProtectedResourceMetadataData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource';
-};
-
-export type GetMcpProtectedResourceMetadataErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetMcpProtectedResourceMetadataError = GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
-
-export type GetMcpProtectedResourceMetadataResponses = {
-  /**
-   * Protected resource metadata
-   */
-  200: ProtectedResourceMetadata;
-};
-
-export type GetMcpProtectedResourceMetadataResponse = GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
-
-export type HandleMcpData = {
-  body: Array<unknown> | unknown | null;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/mcp';
-};
-
-export type HandleMcpErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Insufficient scope
-   *
-   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
-   */
-  403: {
-    jsonrpc: '2.0';
-    id: string | number | null;
-    error: {
-      code: number;
-      message: string;
-      data?: unknown;
-    };
-  };
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
-
-export type HandleMcpResponses = {
-  /**
-   * JSON-RPC response
-   */
-  200: unknown;
-};
-
-export type DeleteMembershipsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    entityId: string;
-    entityType: 'organization';
-  };
-  url: '/{tenantId}/{organizationId}/memberships';
-};
-
-export type DeleteMembershipsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteMembershipsError = DeleteMembershipsErrors[keyof DeleteMembershipsErrors];
-
-export type DeleteMembershipsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type DeleteMembershipsResponse = DeleteMembershipsResponses[keyof DeleteMembershipsResponses];
-
-export type MembershipInviteData = {
-  body: {
-    emails: Array<string>;
-    role: 'admin' | 'member';
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    entityId: string;
-    entityType: 'organization';
-  };
-  url: '/{tenantId}/{organizationId}/memberships';
-};
-
-export type MembershipInviteErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInviteErrors];
-
-export type MembershipInviteResponses = {
-  /**
-   * What happened to each address
-   */
-  200: {
-    data: Array<{
-      id: string;
-      tenantId: string;
-      channelType: 'organization';
-      channelId: string;
-      userId: string;
-      role: 'admin' | 'member';
-      organizationId: string;
-      archived?: boolean;
-      muted?: boolean;
-      displayOrder?: number;
-    }>;
-    outcomes: Array<InviteOutcome>;
-    held: boolean;
-  };
-};
-
-export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];
-
-export type CheckMembershipInviteData = {
-  body: {
-    emails: Array<string>;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    entityId: string;
-    entityType: 'organization';
-  };
-  url: '/{tenantId}/{organizationId}/memberships/check';
-};
-
-export type CheckMembershipInviteErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof CheckMembershipInviteErrors];
-
-export type CheckMembershipInviteResponses = {
-  /**
-   * Invite outcomes
-   *
-   * One outcome per address, judged from the members and invitations the caller can see.
-   */
-  200: {
-    outcomes: Array<InviteOutcome>;
-  };
-};
-
-export type CheckMembershipInviteResponse = CheckMembershipInviteResponses[keyof CheckMembershipInviteResponses];
-
-export type UpdateMembershipData = {
-  body: {
-    role?: 'admin' | 'member';
-    archived?: boolean;
-    muted?: boolean;
-    displayOrder?: number;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/memberships/{id}';
-};
-
-export type UpdateMembershipErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Conflict
-   */
-  409: ConflictError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
-
-export type UpdateMembershipResponses = {
-  /**
-   * Membership updated
-   */
-  200: {
-    createdAt: string;
-    id: string;
-    tenantId: string;
-    channelType: 'organization';
-    channelId: string;
-    userId: string;
-    role: 'admin' | 'member';
-    createdBy:
-      | {
-          id: string;
-          name: string;
-          thumbnailUrl: string | null;
-          kind: 'user';
-          slug: string;
-        }
-      | {
-          id: string;
-          name: string;
-          thumbnailUrl: string | null;
-          kind: 'service';
-          slug: null;
-        }
-      | null;
-    updatedAt: string | null;
-    updatedBy:
-      | {
-          id: string;
-          name: string;
-          thumbnailUrl: string | null;
-          kind: 'user';
-          slug: string;
-        }
-      | {
-          id: string;
-          name: string;
-          thumbnailUrl: string | null;
-          kind: 'service';
-          slug: null;
-        }
-      | null;
-    organizationId: string;
-    archived?: boolean;
-    muted?: boolean;
-    displayOrder?: number;
-  };
-};
-
-export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
-
-export type GetMembersData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
-     */
-    q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'lastPostedAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
-    entityId: string;
-    entityType: 'organization';
-    role?: 'admin' | 'member';
-    /**
-     * Comma-separated values
-     */
-    include?: string;
-    /**
-     * Comma-separated values
-     */
-    userIds?: string;
-  };
-  url: '/{tenantId}/{organizationId}/memberships/members';
-};
-
-export type GetMembersErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetMembersError = GetMembersErrors[keyof GetMembersErrors];
-
-export type GetMembersResponses = {
-  /**
-   * Members
-   */
-  200: {
-    /**
-     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
-     */
-    items: Array<
-      UserBase & {
-        lastSeenAt: string | null;
-        membership: {
-          id: string;
-          tenantId: string;
-          channelType: 'organization';
-          channelId: string;
-          userId: string;
-          role: 'admin' | 'member';
-          organizationId: string;
-          archived?: boolean;
-          muted?: boolean;
-          displayOrder?: number;
-        };
-        counts?: {
-          memberships: {
-            [key: string]: unknown;
-          };
-          products: {
-            attachment: number;
-          };
-          activity: {
-            attachment: number | null;
-          };
-        };
-        mfaRequired?: boolean;
-      }
-    >;
-    total: number;
-  };
-};
-
-export type GetMembersResponse = GetMembersResponses[keyof GetMembersResponses];
-
-export type GetPendingMembershipsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query: {
-    /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
-     */
-    q?: string;
-    sort?: 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: number;
-    limit?: number;
-    entityId: string;
-    entityType: 'organization';
-  };
-  url: '/{tenantId}/{organizationId}/memberships/pending';
-};
-
-export type GetPendingMembershipsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetPendingMembershipsError = GetPendingMembershipsErrors[keyof GetPendingMembershipsErrors];
-
-export type GetPendingMembershipsResponses = {
-  /**
-   * Pending memberships
-   */
-  200: {
-    items: Array<{
-      id: string;
-      /**
-       * The primary email address, shown to every user who shares an organization with this one.
-       */
-      email: string;
-      role: 'admin' | 'member';
-      createdAt: string;
-      remindedAt: string | null;
-      linkExpiresAt: string | null;
-      createdBy: ActorRef;
-    }>;
-    total: number;
-  };
-};
-
-export type GetPendingMembershipsResponse = GetPendingMembershipsResponses[keyof GetPendingMembershipsResponses];
-
-export type ResendPendingInvitationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/memberships/pending/{id}/resend';
-};
-
-export type ResendPendingInvitationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type ResendPendingInvitationError = ResendPendingInvitationErrors[keyof ResendPendingInvitationErrors];
-
-export type ResendPendingInvitationResponses = {
-  /**
-   * Invitation resent
-   */
-  204: void;
-};
-
-export type ResendPendingInvitationResponse = ResendPendingInvitationResponses[keyof ResendPendingInvitationResponses];
-
-export type WithdrawPendingInvitationData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/memberships/pending/{id}';
-};
-
-export type WithdrawPendingInvitationErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type WithdrawPendingInvitationError = WithdrawPendingInvitationErrors[keyof WithdrawPendingInvitationErrors];
-
-export type WithdrawPendingInvitationResponses = {
-  /**
-   * Invitation withdrawn
-   */
-  204: void;
-};
-
-export type WithdrawPendingInvitationResponse = WithdrawPendingInvitationResponses[keyof WithdrawPendingInvitationResponses];
-
-export type MarkSeenData = {
-  body: {
-    /**
-     * Entity IDs the user has viewed since last batch
-     */
-    entityIds: Array<string>;
-    /**
-     * Entity type for all IDs in this batch
-     */
-    entityType: 'attachment';
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/seen';
-};
-
-export type MarkSeenErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type MarkSeenError = MarkSeenErrors[keyof MarkSeenErrors];
-
-export type MarkSeenResponses = {
-  /**
-   * Seen records processed
-   */
-  200: {
-    /**
-     * Number of entities newly marked as seen (deduped)
-     */
-    newCount: number;
-  };
-};
-
-export type MarkSeenResponse = MarkSeenResponses[keyof MarkSeenResponses];
-
-export type GetServiceAccountsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: {
-    /**
-     * Search, case- and accent-insensitive. Every word must appear in a searched field; "quotes" keep a phrase together and a leading - leaves out items holding that whole word or phrase.
-     */
-    q?: string;
-    offset?: number;
-    limit?: number;
-  };
-  url: '/{tenantId}/{organizationId}/service-accounts';
-};
-
-export type GetServiceAccountsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetServiceAccountsError = GetServiceAccountsErrors[keyof GetServiceAccountsErrors];
-
-export type GetServiceAccountsResponses = {
-  /**
-   * Service accounts
-   */
-  200: {
-    items: Array<ServiceAccount>;
-    total: number;
-  };
-};
-
-export type GetServiceAccountsResponse = GetServiceAccountsResponses[keyof GetServiceAccountsResponses];
-
-export type CreateServiceAccountData = {
-  body: {
-    name: string;
-    role: 'admin' | 'member';
-    key?: {
-      name: string;
-      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
-      expiresAt?: string;
-    };
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts';
-};
-
-export type CreateServiceAccountErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateServiceAccountError = CreateServiceAccountErrors[keyof CreateServiceAccountErrors];
-
-export type CreateServiceAccountResponses = {
-  /**
-   * Service account was created
-   */
-  201: {
-    serviceAccount: ServiceAccount;
-    /**
-     * A newly created API key with its full secret, returned this once only.
-     */
-    apiKey?: ApiKey & {
-      /**
-       * The plaintext API key; store it now, it is not shown again.
-       */
-      secret: string;
-    };
-  };
-};
-
-export type CreateServiceAccountResponse = CreateServiceAccountResponses[keyof CreateServiceAccountResponses];
-
-export type UpdateServiceAccountData = {
-  body: {
-    name?: string;
-    status?: 'active' | 'disabled';
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}';
-};
-
-export type UpdateServiceAccountErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateServiceAccountError = UpdateServiceAccountErrors[keyof UpdateServiceAccountErrors];
-
-export type UpdateServiceAccountResponses = {
-  /**
-   * Service account was updated
-   */
-  200: ServiceAccount;
-};
-
-export type UpdateServiceAccountResponse = UpdateServiceAccountResponses[keyof UpdateServiceAccountResponses];
-
-export type GetApiKeysData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys';
-};
-
-export type GetApiKeysErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetApiKeysError = GetApiKeysErrors[keyof GetApiKeysErrors];
-
-export type GetApiKeysResponses = {
-  /**
-   * API keys
-   */
-  200: {
-    items: Array<ApiKey>;
-  };
-};
-
-export type GetApiKeysResponse = GetApiKeysResponses[keyof GetApiKeysResponses];
-
-export type CreateApiKeyData = {
-  body: {
-    name: string;
-    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
-    expiresAt?: string;
-    rollFrom?: string;
-    rollOverlapDays?: number;
-  };
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys';
-};
-
-export type CreateApiKeyErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Payload too large
-   */
-  413: PayloadTooLargeError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
-
-export type CreateApiKeyResponses = {
-  /**
-   * A newly created API key with its full secret, returned this once only.
-   */
-  201: ApiKey & {
-    /**
-     * The plaintext API key; store it now, it is not shown again.
-     */
-    secret: string;
-  };
-};
-
-export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
-
-export type RevokeApiKeyData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    organizationId: string;
-    id: string;
-    keyId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}';
-};
-
-export type RevokeApiKeyErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden
-   */
-  403: ForbiddenError;
-  /**
-   * Not found
-   */
-  404: NotFoundError;
-  /**
-   * Too many requests
-   */
-  429: TooManyRequestsError;
-};
-
-export type RevokeApiKeyError = RevokeApiKeyErrors[keyof RevokeApiKeyErrors];
-
-export type RevokeApiKeyResponses = {
-  /**
-   * API key was revoked
-   */
-  200: ApiKey;
-};
-
-export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];
+export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
 
 export type GetYjsTokenData = {
   body?: never;
@@ -6520,7 +7008,7 @@ export type GetYjsTokenData = {
     entityType: 'attachment';
     entityId: string;
   };
-  url: '/{tenantId}/{organizationId}/yjs/token';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/token';
 };
 
 export type GetYjsTokenErrors = {
@@ -6573,7 +7061,7 @@ export type PullYjsDocumentData = {
     organizationId: string;
   };
   query?: never;
-  url: '/{tenantId}/{organizationId}/yjs/pull';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/pull';
 };
 
 export type PullYjsDocumentErrors = {
@@ -6645,7 +7133,7 @@ export type PushYjsUpdateData = {
     organizationId: string;
   };
   query?: never;
-  url: '/{tenantId}/{organizationId}/yjs/push';
+  url: '/tenants/{tenantId}/organizations/{organizationId}/yjs/push';
 };
 
 export type PushYjsUpdateErrors = {

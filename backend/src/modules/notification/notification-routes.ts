@@ -17,9 +17,9 @@ import { locationSchema, maxLength, validIdSchema } from '#/schemas';
 const unsubscribeQuerySchema = z.object({ user: validIdSchema, category: z.enum(unsubscribeCategories), token: z.string().max(maxLength.field) });
 
 const notificationRoutes = createXRoutes(['notifications', 'cella'], {
-  getNotifications: xRoute({
+  listNotifications: xRoute({
     method: 'get',
-    path: '/',
+    path: '/notifications',
     xGuard: [userGuard],
     summary: 'List notifications',
     description:
@@ -31,7 +31,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   markNotificationsRead: xRoute({
     method: 'post',
-    path: '/read',
+    path: '/notifications/~mark-read',
     xGuard: [userGuard],
     summary: 'Mark notifications as read',
     description:
@@ -41,7 +41,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   getNotificationPreferences: xRoute({
     method: 'get',
-    path: '/preferences',
+    path: '/me/notification-preferences',
     xGuard: [userGuard],
     summary: 'Get notification preferences',
     description: 'Email and digest preferences for the current user. In-app delivery is not opt-out.',
@@ -49,7 +49,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   updateNotificationPreferences: xRoute({
     method: 'patch',
-    path: '/preferences',
+    path: '/me/notification-preferences',
     xGuard: [userGuard],
     summary: 'Update notification preferences',
     description: 'Partial update; unspecified keys keep their stored value.',
@@ -58,7 +58,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   openUnsubscribeLink: xRoute({
     method: 'get',
-    path: '/unsubscribe',
+    path: '/notifications/unsubscribe',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Open an unsubscribe link',
@@ -70,7 +70,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   unsubscribeNotifications: xRoute({
     method: 'post',
-    path: '/unsubscribe',
+    path: '/notifications/unsubscribe',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Unsubscribe from a notification category',
@@ -82,7 +82,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
   }),
   resubscribeNotifications: xRoute({
     method: 'post',
-    path: '/resubscribe',
+    path: '/notifications/resubscribe',
     xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Turn a notification category back on',

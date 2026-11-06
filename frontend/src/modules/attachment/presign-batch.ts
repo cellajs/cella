@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { getPresignedUrls } from 'sdk/sdk.gen';
+import { presignAttachmentUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
 import { groupBy } from '~/modules/attachment/offline/group-by';
 import { subscribeLocalUserChange } from '~/query/local-user-db';
@@ -47,7 +47,7 @@ function subscribeLocalUserOnce() {
 async function sendChunk(requests: PendingRequest[]) {
   const { tenantId, organizationId } = requests[0];
   try {
-    const response = await getPresignedUrls({
+    const response = await presignAttachmentUrls({
       path: { tenantId, organizationId },
       body: { items: requests.map(({ attachmentId, variant }) => ({ attachmentId, variant })) },
     });

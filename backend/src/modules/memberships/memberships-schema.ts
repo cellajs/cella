@@ -9,8 +9,11 @@ import {
   channelEntityTypeSchema,
   csvQuerySchema,
   includeQuerySchema,
-  paginationQuerySchema,
+  listQuerySchema,
+  orderByQuerySchema,
+  pageQuerySchema,
   refineWithType,
+  tenantOrgParamSchema,
   validEmailSchema,
   validIdSchema,
   validUuidSchema,
@@ -102,26 +105,32 @@ export const membershipInviteResponseSchema = z.object({
   held: z.boolean(),
 });
 
+/** The path of one membership in its organization. */
+export const membershipParamSchema = tenantOrgParamSchema.extend({ membershipId: validIdSchema });
+
+/** The path of one pending invitation, named by its own id, in its organization. */
+export const invitationParamSchema = tenantOrgParamSchema.extend({ invitationId: validIdSchema });
+
 export const membershipUpdateBodySchema = z
   .object({ role: entityRoleSchema.optional(), ...optionalPersonalView })
   // With no field to change, the write would only stamp the caller on the row.
   .superRefine(refineWithType((body) => Object.values(body).some((value) => value !== undefined), 'invalid_request'));
 
-export const memberListQuerySchema = paginationQuerySchema.extend({
+export const memberListQuerySchema = listQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
-  /** `lastPostedAt` sorts by the member's latest product row in the viewed channel. */
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).default('lastSeenAt'),
+  /** `lastPostedAt` orders by the member's latest product row in the viewed channel. */
+  orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt'], 'lastSeenAt desc'),
   role: entityRoleSchema.optional(),
   /** `counts` adds per-member counts, as `include=counts` does on the channel lists; `mfa` adds `mfaRequired`. */
   include: includeQuerySchema,
   userIds: csvQuerySchema(validUuidSchema),
 });
 
-export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
+export const pendingMembershipListQuerySchema = pageQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
-  sort: z.enum(['createdAt']).default('createdAt'),
+  orderBy: orderByQuerySchema(['createdAt'], 'createdAt desc'),
 });
 
 /** An invitation as the channel sees it: nothing here tells whether an account holds the invited address. */

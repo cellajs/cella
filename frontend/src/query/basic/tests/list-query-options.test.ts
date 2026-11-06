@@ -7,8 +7,8 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // The list endpoints answer an empty page; each case reads the request the fetcher sent.
 vi.mock('sdk', async (importOriginal) => {
-  const page = () => vi.fn(async () => ({ items: [], total: 0 }));
-  return { ...(await importOriginal<typeof import('sdk')>()), getOrganizations: page(), getMembers: page() };
+  const page = () => vi.fn(async () => ({ results: [], totalSize: 0 }));
+  return { ...(await importOriginal<typeof import('sdk')>()), listOrganizations: page(), listMembers: page() };
 });
 
 const sdk = await import('sdk');
@@ -20,7 +20,7 @@ const channel = { entityId: 'org-1', entityType: 'organization' as const, ...pat
 
 describe('included parts on mount', () => {
   const cached = (rows: { included?: Record<string, unknown> }[]) => ({
-    state: { data: { pages: [{ items: rows, total: rows.length }], pageParams: [{ page: 0, offset: 0 }] } },
+    state: { data: { pages: [{ results: rows, totalSize: rows.length }], pageParams: [''] } },
   });
 
   it('refetches a fresh list missing an asked-for part, and only then', () => {
@@ -37,10 +37,10 @@ describe('included parts on mount', () => {
 
 describe('export fetchers', () => {
   it('ask for the parts their export columns read: counts and my membership for organizations, counts and MFA for members', async () => {
-    await fetchOrganizationsForExport({ limit: 1000 });
-    await fetchMembersForExport({ ...channel, role: memberRole, limit: 1000 });
+    await fetchOrganizationsForExport({}, { maxPageSize: 1000 });
+    await fetchMembersForExport({ ...channel, role: memberRole }, { maxPageSize: 1000 });
 
-    expect(vi.mocked(sdk.getOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,membership' } });
-    expect(vi.mocked(sdk.getMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
+    expect(vi.mocked(sdk.listOrganizations).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,membership' } });
+    expect(vi.mocked(sdk.listMembers).mock.lastCall?.[0]).toMatchObject({ query: { include: 'counts,mfa', entityId: 'org-1' }, path });
   });
 });
