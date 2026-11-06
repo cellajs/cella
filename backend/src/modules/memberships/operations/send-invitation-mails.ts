@@ -2,9 +2,9 @@ import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
-import { findAccountLanguages } from '#/modules/memberships/memberships-queries';
+import { findAccountNamesAndLanguages } from '#/modules/memberships/memberships-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug';
+import { displayNameFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
 /** An address an invitation mail goes to. */
@@ -32,7 +32,7 @@ interface InvitationMailOpts {
 /**
  * Sends the invitation mails, built in one place. The link is the invitation token's for an address without an
  * account, else the invited channel's page. The language is the account's own when the address has one, else the
- * organization's default, else the app's.
+ * organization's default, else the app's. A mail greets an account by its name, and an address without one by none.
  * @returns Whether every mail went out. A failed send is logged, since every caller stored its rows before the mail and
  *   records the mail only once it went out; a failed render still throws.
  */
@@ -40,14 +40,16 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const { sender = { name: 'System' }, channel, organization, invited, added = [] } = opts;
 
   const userIds = [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : []));
-  const languages = await findAccountLanguages(ctx, { userIds });
-  const recipient = ({ email, userId }: InvitedAddress) => ({
+  const accounts = await findAccountNamesAndLanguages(ctx, { userIds });
+  const lng = (userId?: string | null) => (userId && accounts.get(userId)?.language) || organization?.defaultLanguage || appConfig.defaultLanguage;
+  // An account removed after the invitation was planned leaves its address to name it.
+  const accountHolder = ({ email, userId }: InvitedAddress) => ({
     email,
-    lng: (userId && languages.get(userId)) || organization?.defaultLanguage || appConfig.defaultLanguage,
-    name: slugFromEmail(email),
+    lng: lng(userId),
+    name: (userId && accounts.get(userId)?.name) || displayNameFromEmail(email),
   });
-  const withToken = invited.flatMap((address) =>
-    address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
+  const withToken = invited.flatMap(({ email, userId, rawToken }) =>
+    rawToken ? [{ email, lng: lng(userId), inviteLink: tokenLinkUrl('invitation', rawToken) }] : [],
   );
   const senderProps = { senderName: sender.name, senderEmail: sender.email };
   let sent = true;
@@ -64,8 +66,8 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
 
   const statics = { ...senderProps, entityName: channel.name, role: channel.role };
   const page = `${appConfig.frontendUrl}/${channel.type}/${channel.slug}`;
-  const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }]));
-  const addedRecipients = added.map((address) => ({ ...recipient(address), entityLink: page }));
+  const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...accountHolder(address), memberInviteLink: page }]));
+  const addedRecipients = added.map((address) => ({ ...accountHolder(address), entityLink: page }));
 
   if (withToken.length) await mailer.sendEmails(memberInviteWithTokenEmail, statics, withToken, sender.email).catch(logFailure);
   if (withoutToken.length) await mailer.sendEmails(memberInviteEmail, statics, withoutToken, sender.email).catch(logFailure);

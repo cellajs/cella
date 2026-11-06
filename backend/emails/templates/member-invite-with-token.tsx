@@ -2,7 +2,7 @@ import { type EntityRole, hierarchy } from 'shared';
 import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { linkExpiresText, senderEndingFor, senderHtml } from '../shared-texts';
-import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
+import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 interface MemberInviteWithTokenStatic {
   senderName: string;
@@ -12,16 +12,15 @@ interface MemberInviteWithTokenStatic {
   role: EntityRole;
 }
 
-type MemberInviteWithTokenRecipient = EmailRecipient & { name: string; inviteLink: string };
+type MemberInviteWithTokenRecipient = EmailRecipient & { inviteLink: string };
 
-/** For new users, who need the token; existing users get member-invite. */
+/** For an address without an account, which needs the token and is greeted by no name; an account gets member-invite. */
 export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTokenStatic, MemberInviteWithTokenRecipient>()({
-  translate(lng, { senderName, senderEmail, entityName, role }, param = plainParam) {
+  translate(lng, { senderName, senderEmail, entityName, role }) {
     return {
       subject: i18n.t('backend:email.member_invite.subject', { lng, senderName, entityName, ...plainText }),
       previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_invite.title', { lng, entityName }),
-      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       bodyHtml: i18n.t('backend:email.member_invite.text', {
         lng,
         entityName,
@@ -35,14 +34,13 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTo
       senderName,
     };
   },
-  component({ previewText, headerHtml, hiText, bodyHtml, expiresText, buttonText, endingHtml, supportText, senderName, inviteLink, frame }) {
+  component({ previewText, headerHtml, bodyHtml, expiresText, buttonText, endingHtml, supportText, senderName, inviteLink, frame }) {
     return (
       <EmailMessage
         frame={frame}
         previewText={previewText}
         avatarName={senderName}
         headerHtml={headerHtml}
-        greeting={hiText}
         bodyHtml={bodyHtml}
         action={{ label: buttonText, href: inviteLink }}
         note={expiresText}
@@ -58,6 +56,6 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTo
       entityName: 'Acme',
       role: hierarchy.getLeastPrivilegedRole('organization'),
     },
-    recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
+    recipient: { inviteLink: 'https://example.com/invite' },
   },
 });

@@ -6,9 +6,10 @@ import { describeDigestRow, htmlToExcerpt, renderSectionsHtml } from '#/modules/
 import type { SafeHtmlPolicy } from '../../emails/components/safe-html';
 import { emailPreviews } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
+import { memberInviteEmail } from '../../emails/templates/member-invite';
 import { oauthVerificationEmail } from '../../emails/templates/oauth-verification';
-import { systemInviteEmail } from '../../emails/templates/system-invite';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
+import { memberRole } from '../fixtures';
 
 type SentBody = {
   subject: string;
@@ -133,9 +134,9 @@ describe('Mails as Brevo fills them', () => {
 
   it('fills the params a template names in its translated text (positive control)', async () => {
     const invite = await send(
-      systemInviteEmail,
-      { senderName: '{{params.name}}' },
-      { email: 'emily@example.test', lng: 'en', name: 'Emily', inviteLink: link },
+      memberInviteEmail,
+      { senderName: '{{params.name}}', entityName: 'Acme', role: memberRole },
+      { email: 'emily@example.test', lng: 'en', name: 'Emily', memberInviteLink: link },
     );
     expect(invite.html).toContain('Hi Emily,');
     // The sender's name typed as that placeholder stays text.

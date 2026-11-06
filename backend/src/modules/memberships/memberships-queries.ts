@@ -68,15 +68,18 @@ export const findInviteeAccounts = async (ctx: OrgContext, { emails, entityType,
     .where(inArray(emailsTable.email, emails));
 };
 
-interface FindAccountLanguagesOpts {
+interface FindAccountNamesAndLanguagesOpts {
   userIds: string[];
 }
 
-/** Each account's language, for a mail an invited account reads in its own. */
-export const findAccountLanguages = async (ctx: DbContext, { userIds }: FindAccountLanguagesOpts) => {
-  if (!userIds.length) return new Map<string, string>();
-  const rows = await ctx.var.db.select({ id: usersTable.id, language: usersTable.language }).from(usersTable).where(inArray(usersTable.id, userIds));
-  return new Map(rows.map((row) => [row.id, row.language]));
+/** Each account's name and language by its id, for a mail that greets an invited account and reads in its language. */
+export const findAccountNamesAndLanguages = async (ctx: DbContext, { userIds }: FindAccountNamesAndLanguagesOpts) => {
+  if (!userIds.length) return new Map<string, { name: string; language: string }>();
+  const rows = await ctx.var.db
+    .select({ id: usersTable.id, name: usersTable.name, language: usersTable.language })
+    .from(usersTable)
+    .where(inArray(usersTable.id, userIds));
+  return new Map(rows.map(({ id, name, language }) => [id, { name, language }]));
 };
 
 interface FindMembershipByIdInOrgOpts {

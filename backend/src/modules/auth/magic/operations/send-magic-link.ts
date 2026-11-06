@@ -13,7 +13,6 @@ import { findAddressGovernance } from '#/modules/connections/connections-queries
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug';
 import { magicLinkEmail, ssoRequiredEmail } from '../../../../../emails';
 
 /** The account's half of a request may run after the answer, so it reads and writes on the base pool. */
@@ -110,7 +109,8 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 
-  const staticProps = { magicLinkUrl, name: existingUser?.name ?? slugFromEmail(email), isNewUser: !existingUser };
+  // Only an account holder is greeted: an address alone names nobody.
+  const staticProps = { magicLinkUrl, name: existingUser?.name ?? '', isNewUser: !existingUser };
   const recipients = [{ email, lng: existingUser?.language ?? appConfig.defaultLanguage }];
 
   mailer.sendEmails(magicLinkEmail, staticProps, recipients).catch((err) => log.error('Failed to send magic link email', { err }));
