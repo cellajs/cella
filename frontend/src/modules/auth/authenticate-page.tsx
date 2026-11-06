@@ -68,7 +68,9 @@ export function AuthenticatePage() {
 
   const passkeySignIn = usePasskeySignIn('authentication');
   const sso = useSsoAlternatives(tokenData?.ssoConnectionId, healthData?.federations);
-  const oauth = useOAuthAlternatives(step);
+  // With sign-up closed the email step only signs in, and the other ways in say so.
+  const alternativesStep = step === 'checkEmail' && !appConfig.has.selfRegistration ? 'signIn' : step;
+  const oauth = useOAuthAlternatives(alternativesStep);
 
   useEffect(() => {
     // The link-sent step stays until the visitor leaves it.
@@ -138,7 +140,7 @@ export function AuthenticatePage() {
 
       {isSigningIn && (
         <>
-          <AuthAlternatives authStep={step} items={[...passkeyWays, ...ssoWays, ...oauth]} />
+          <AuthAlternatives authStep={alternativesStep} items={[...passkeyWays, ...ssoWays, ...oauth]} />
           {inviteOtherAccount && (
             <Button variant="ghost" className="self-center" onClick={() => setInviteOtherAccount(false)}>
               <ArrowLeftIcon />

@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, count, countDistinct, eq, getColumns, inArray, isNotNull, isNull, notExists, notInArray, or } from 'drizzle-orm';
 import { appConfig, type EntityRole, hierarchy } from 'shared';
-import type { DbContext, OrgContext, UserContext } from '#/core/context';
+import type { DbContext, OrgContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -213,15 +213,16 @@ export const findInactiveMembershipInOrg = async (ctx: OrgContext, { id }: FindI
 
 interface FindInactiveMembershipForUserOpts {
   id: string;
+  userId: string;
 }
 
 /** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
-export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, user } = ctx.var;
+export const findInactiveMembershipForUser = async (ctx: DbContext, { id, userId }: FindInactiveMembershipForUserOpts) => {
+  const { db } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, user.id), isNull(inactiveMembershipsTable.rejectedAt)))
+    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId), isNull(inactiveMembershipsTable.rejectedAt)))
     .limit(1);
   return membership;
 };
@@ -235,12 +236,12 @@ const claimableBy = (userId: string) =>
   and(isNull(inactiveMembershipsTable.rejectedAt), or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)));
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
-export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
-  const { db, user } = ctx.var;
+export const findClaimableInactiveMembership = async (ctx: DbContext, { id, userId }: FindInactiveMembershipForUserOpts) => {
+  const { db } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(user.id)))
+    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(userId)))
     .limit(1);
   return membership;
 };

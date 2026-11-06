@@ -10,7 +10,9 @@ import { getEntityTable } from '#/tables';
 
 /**
  * The user's unseen counts per home channel and product type, `{}` without memberships. Only rows the user may read
- * count: live, published and inside the seen window.
+ * count: live, published, inside the seen window and newer than the user's membership of the row's home channel, so a
+ * new member starts with no backlog. The client mirrors no membership cutoff: its deltas count only rows newer than its
+ * last recount.
  */
 export async function getUnseenCountsOp(ctx: UserContext) {
   const user = ctx.var.user;
@@ -23,18 +25,20 @@ export async function getUnseenCountsOp(ctx: UserContext) {
   }
 
   // Read scopes are org-scoped, so counts run per org, and inside a tenant read because entity tables have row-level security.
-  const orgGroups = new Map<string, { tenantId: string; channelIds: Set<string> }>();
+  const windowStart = Date.parse(seenWindowStart());
+  const orgGroups = new Map<string, { tenantId: string; channels: { id: string; cutoff: string }[] }>();
   for (const m of memberships) {
-    const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channelIds: new Set<string>() };
-    if (seenGroupingChannelTypes.has(m.channelType)) group.channelIds.add(m.channelId);
+    const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channels: [] };
+    const cutoff = new Date(Math.max(windowStart, Date.parse(m.createdAt))).toISOString();
+    // A user holds one membership per channel, so each channel is listed once.
+    if (seenGroupingChannelTypes.has(m.channelType)) group.channels.push({ id: m.channelId, cutoff });
     orgGroups.set(m.organizationId, group);
   }
 
-  const windowCutoff = seenWindowStart();
   const results: Record<string, Record<string, number>> = {};
 
   // Compose each tracked type's collection read predicate so badges only count rows this user can fetch.
-  for (const [organizationId, { tenantId, channelIds }] of orgGroups) {
+  for (const [organizationId, { tenantId, channels }] of orgGroups) {
     const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
     const readableTypes: SeenTrackedProductType[] = [];
 
@@ -50,13 +54,7 @@ export async function getUnseenCountsOp(ctx: UserContext) {
 
     // The route has no tenant guard: each organization's rows are read as its own tenant.
     const unseenRows = await tenantReadAs(ctx, tenantId, (readCtx) =>
-      findUnseenCountsByUser(readCtx, {
-        userId: user.id,
-        channelIds: [...channelIds],
-        productTypes: readableTypes,
-        cutoff: windowCutoff,
-        scopeWhereByType,
-      }),
+      findUnseenCountsByUser(readCtx, { userId: user.id, channels, productTypes: readableTypes, scopeWhereByType }),
     );
 
     for (const row of unseenRows) {

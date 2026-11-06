@@ -19,6 +19,7 @@ export const tokenWithDataSchema = z.object({
   inactiveMembershipId: z.string().optional(),
   /** The invited organization's active SSO connection, so the invitee is offered their institution first. */
   ssoConnectionId: z.string().optional(),
+  inviterName: z.string().optional().describe('Name of the user who sent an invitation, for a system invitation too'),
   /** What the invitation grants, so a signed-in visitor can confirm it before accepting as their own account. */
   invitation: z
     .object({ entityType: z.enum(appConfig.channelEntityTypes), entityName: z.string(), role: z.enum(roles.all), inviterName: z.string() })

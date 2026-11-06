@@ -429,9 +429,8 @@ const rlsSuiteReady = await (async () => {
     const countUnseen = (tx: NodePgTx) =>
       findUnseenCountsByUser({ var: { db: tx } } as Parameters<typeof findUnseenCountsByUser>[0], {
         userId: TEST_USER_A,
-        channelIds: [trackedFixture?.homeChannelId ?? TEST_ORG_A],
+        channels: [{ id: trackedFixture?.homeChannelId ?? TEST_ORG_A, cutoff: cutoff() }],
         productTypes: appConfig.seenTrackedProductTypes,
-        cutoff: cutoff(),
       });
 
     it('counts in-window unseen entities under tenant context', async () => {
