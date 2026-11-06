@@ -136,6 +136,8 @@ export async function createProvider(): Promise<Provider> {
       rpInitiatedLogout: { enabled: false },
       userinfo: { enabled: false },
       revocation: { enabled: true },
+      // The guards verify no DPoP proof, so nothing advertises one or binds a token to a key.
+      dPoP: { enabled: false },
       clientCredentials: { enabled: true },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch, allowClient },
       resourceIndicators: {

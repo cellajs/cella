@@ -54,6 +54,8 @@ describe('OAuth authorization server', async () => {
     expect(metadata.grant_types_supported).toEqual(expect.arrayContaining(['authorization_code', 'refresh_token', 'client_credentials']));
     expect(metadata.code_challenge_methods_supported).toEqual(['S256']);
     expect(metadata.client_id_metadata_document_supported).toBe(true);
+    // A DPoP-bound token would pass a guard as a bearer token, with no proof checked.
+    expect(metadata.dpop_signing_alg_values_supported).toBeUndefined();
 
     const jwks = await fetch(`${oauth.issuer}/jwks`).then((r) => r.json() as Promise<{ keys: { kid: string; d?: string }[] }>);
     expect(jwks.keys.length).toBeGreaterThanOrEqual(2);
