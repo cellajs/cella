@@ -153,8 +153,9 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const write = await toolCall(ctx, 'updateAttachment', { attachmentId: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
     expect(write.response.status).toBe(403);
-    expect(write.response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
-    expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
+    expect(write.response.headers.get('www-authenticate')).toMatch(/^Bearer error="insufficient_scope", .*scope="attachment:write"/);
+    // An application's own code: MCP reserves -32000 to -32099 and gave -32002 the meaning "resource not found".
+    expect(write.rpc.error).toMatchObject({ code: -31403, message: 'insufficient_scope', data: { scope: 'attachment:write' } });
   });
 
   it('answers each call of a batch, one outside the token scopes with its own error', async () => {
@@ -173,10 +174,10 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     // Answered as one 403, the read's result was lost and a client retrying the batch ran it again.
     expect(response.status).toBe(200);
-    expect(response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
+    expect(response.headers.get('www-authenticate')).toMatch(/^Bearer error="insufficient_scope", .*scope="attachment:write"/);
     const [read, refused, invalid, ...rest] = data as Rpc[];
     expect(read).toMatchObject({ id: 1, result: { structuredContent: { results: [], totalSize: 0 } } });
-    expect(refused).toMatchObject({ id: 2, error: { code: -32002, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
+    expect(refused).toMatchObject({ id: 2, error: { code: -31403, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
     // A message without a method keeps its id; a response the client posts back gets no answer.
     expect(invalid).toMatchObject({ id: 3, error: { code: -32600 } });
     expect(rest).toEqual([]);

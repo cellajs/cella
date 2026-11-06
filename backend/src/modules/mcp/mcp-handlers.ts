@@ -3,24 +3,31 @@ import type { Env } from '#/core/context';
 import { mcpRoutes } from '#/modules/mcp/mcp-routes';
 import { handleMcpMessage, InsufficientScopeError, type JsonRpcResponse } from '#/modules/mcp/mcp-server';
 import { getMcpTools } from '#/modules/mcp/mcp-tools';
-import { protectedResourceMetadata, resourceMetadataUrl } from '#/modules/oauth-server/resources';
+import { bearerChallenge, protectedResourceMetadata } from '#/modules/oauth-server/resources';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
+
+/**
+ * The JSON-RPC code of a call outside the token's scopes: an application's own, outside the range JSON-RPC reserves
+ * (-32768 to -32000), whose codes MCP defines, -32002 among them for a missing resource.
+ */
+const insufficientScopeCode = -31403;
 
 /** The JSON-RPC error of a call outside the token's scopes, naming the scope to ask for. */
 const insufficientScope = ({ id, scope }: InsufficientScopeError) =>
   ({
     jsonrpc: '2.0',
     id,
-    error: { code: -32002, message: 'insufficient_scope', data: { scope } },
+    error: { code: insufficientScopeCode, message: 'insufficient_scope', data: { scope } },
   }) satisfies JsonRpcResponse;
 
 /** Step-up (RFC 6750 §3.1): the challenge names the missing scopes, so the client re-authorizes with them and retries. */
-const scopeChallenge = ({ tenantId, organizationId }: { tenantId: string; organizationId: string }, scopes: string[]) => {
-  const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId });
-  return `Bearer error="insufficient_scope", scope="${[...new Set(scopes)].join(' ')}", resource_metadata="${metadata}"`;
-};
+const scopeChallenge = ({ tenantId, organizationId }: { tenantId: string; organizationId: string }, scopes: string[]) =>
+  bearerChallenge(
+    { face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId },
+    { error: 'insufficient_scope', scope: [...new Set(scopes)].join(' ') },
+  );
 
 app.openapi(mcpRoutes.getMcpProtectedResourceMetadata, async (ctx) => {
   const { tenantId, organizationId } = ctx.req.valid('param');
