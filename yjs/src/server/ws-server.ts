@@ -59,7 +59,8 @@ export function startWsServer(): void {
   });
   httpServer = server;
 
-  const wsServer = new WebSocketServer({ noServer: true, maxPayload: yjsMaxUpdateBytes });
+  // The relay speaks no subprotocol, so its handshake agrees to none a client offers (RFC 6455 §4.2.2).
+  const wsServer = new WebSocketServer({ noServer: true, maxPayload: yjsMaxUpdateBytes, handleProtocols: () => false });
   wss = wsServer;
 
   server.on('upgrade', setupUpgradeHandler(wsServer));

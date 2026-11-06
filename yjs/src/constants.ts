@@ -21,6 +21,12 @@ export const yjsCompactMaxWaitMs = 10_000;
  * sockets wait this much longer for the rows.
  */
 export const yjsLogNoticeDelayMs = 50;
+/**
+ * How often the relay pings each socket. One that answered no ping by the next is ended, so a peer that vanished without
+ * closing leaves its session within two intervals, long before its token expires. As often as the editor's own client
+ * expects a frame from the relay.
+ */
+export const yjsPingIntervalMs = 30_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */
 export const yjsPendingQueueCap = 100;
 /** Awareness frames a socket relays per second. What it sends in between is held, the latest state per client, and relayed when the window ends. */

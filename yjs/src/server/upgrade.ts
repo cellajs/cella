@@ -1,10 +1,10 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
-import { MissingAncestorError, type YjsDocScope } from 'shared';
+import { appConfig, MissingAncestorError, type YjsDocScope } from 'shared';
 import { yjsCloseCodes, yjsMessageTypes } from 'shared/utils/yjs-protocol';
 import type { WebSocket, WebSocketServer } from 'ws';
-import { docKey, yjsPendingQueueCap } from '../constants';
+import { docKey, yjsPendingQueueCap, yjsPingIntervalMs } from '../constants';
 import { authorizeDocument } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
@@ -38,11 +38,15 @@ export interface SocketContext {
 
 const statusText = { 400: 'Bad Request', 403: 'Forbidden', 429: 'Too Many Requests', 500: 'Internal Server Error' } as const;
 
+/** The one origin whose pages may open a socket: the app's. */
+const appOrigin = new URL(appConfig.frontendUrl).origin;
+
 /**
- * Rejects at the HTTP level for malformed requests (400), a token for another document (403), rate limits (429) and an
- * error in the handler (500), then destroys the socket once the answer is flushed, as `ws` does for its own refusals: a
- * peer that never closes cannot hold it open. A browser cannot read the body or code of a failed upgrade and sees close
- * 1006, so anything the client must react to (an expired token) closes after the handshake.
+ * Rejects at the HTTP level for malformed requests (400), a page of another origin or a token for another document
+ * (403), rate limits (429) and an error in the handler (500), then destroys the socket once the answer is flushed, as
+ * `ws` does for its own refusals: a peer that never closes cannot hold it open. A browser cannot read the body or code
+ * of a failed upgrade and sees close 1006, so anything the client must react to (an expired token) closes after the
+ * handshake.
  */
 function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: number, reason: string): void {
   if (socket.destroyed) return;
@@ -131,6 +135,14 @@ async function admitUpgrade(
   socket: Duplex,
   handOver: (onOpen: (ws: WebSocket) => void) => void,
 ): Promise<void> {
+  // A browser names the page that opens the socket (RFC 6455 §10.2); a client outside a browser sends no Origin.
+  const { origin } = req.headers;
+  if (origin !== undefined && origin !== appOrigin) {
+    log.warn('WS upgrade from another origin', { origin: origin.slice(0, 200) });
+    rejectUpgrade(socket, 403, yjsCloseCodes.AccessDenied, 'Origin not allowed');
+    return;
+  }
+
   const url = parseTarget(req);
   if (!url) {
     log.warn('WS upgrade with a malformed request target');
@@ -223,7 +235,20 @@ async function admitUpgrade(
       },
       Math.max(0, payload.exp - Date.now()),
     );
-    ws.once('close', () => clearTimeout(deadline));
+    // A peer that vanished without closing raises nothing on its socket: one that answers no ping is ended.
+    let answered = true;
+    ws.on('pong', () => {
+      answered = true;
+    });
+    const heartbeat = setInterval(() => {
+      if (!answered) return ws.terminate();
+      answered = false;
+      ws.ping();
+    }, yjsPingIntervalMs);
+    ws.once('close', () => {
+      clearTimeout(deadline);
+      clearInterval(heartbeat);
+    });
     server.emit('connection', ws, ctx, verification);
   });
 }
