@@ -3,18 +3,47 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { assertSwitchOn } from '#/middlewares/config-switch';
+import { navigationRedirect } from '#/modules/auth/general/helpers/redirect-path';
 import { findFollowedInvitation } from '#/modules/auth/invitations/operations/accept-followed-invitation';
 import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic-link';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkHolder } from '#/modules/auth/magic/operations/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/operations/handle-oauth-verification';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
-import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
-import type { LinkTokenType } from '#/modules/auth/tokens/token-policies';
+import { forgetLinkRequest, holdLinkToken, invokeToken, redeemHeldLink } from '#/modules/auth/tokens/token-lifecycle';
+import type { HeldLinkType, LinkTokenType } from '#/modules/auth/tokens/token-policies';
+import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { log } from '#/utils/logger';
 
 /** Answers a click on an emailed link, from the raw value in its URL. */
 type LinkHandler = (ctx: Context<Env>, rawToken: string) => Promise<Response>;
+
+/**
+ * Where a redeemed invitation or verification link goes on: the same answer to the GET of a link this browser redeemed
+ * before and to the POST that redeems a held one.
+ */
+const redeemedLinkHandlers = {
+  'oauth-verification': handleOAuthVerification,
+  invitation: async (ctx, token) => {
+    log.info('Token invoked, redirecting with single use token in cookie', { tokenId: token.id, userId: token.userId });
+    return navigationRedirect(ctx, `${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`);
+  },
+} satisfies Record<HeldLinkType, (ctx: Context<Env>, token: TokenRecord) => Promise<Response>>;
+
+/** An accepted invitation takes its link with it, so a member who opens the mail again goes to the app. */
+const toAppOnceAccepted = async (ctx: Context<Env>, err: unknown): Promise<Response> => {
+  if (err instanceof AppError && err.type === 'invitation_not_found' && (await findSession(ctx))) {
+    return navigationRedirect(ctx, `${appConfig.frontendUrl}${appConfig.defaultRedirectPath}`);
+  }
+  throw err;
+};
+
+/** Holds an invitation or verification link for its confirm page, or goes on with one this browser redeemed before. */
+const holdLink = async (ctx: Context<Env>, type: HeldLinkType, rawToken: string) => {
+  const redeemed = await holdLinkToken(ctx, type, rawToken);
+  if (redeemed) return redeemedLinkHandlers[type](ctx, redeemed);
+  return ctx.redirect(new URL(`/auth/confirm-link/${type}`, appConfig.frontendUrl), 302);
+};
 
 /**
  * What opening each link token type does, keyed by every link type: a type added with a link policy does not compile
@@ -35,18 +64,18 @@ const linkHandlers = {
     forgetLinkRequest(ctx, 'magic');
     return handleMagicLink(ctx, token, followed);
   },
-  'oauth-verification': async (ctx, rawToken) => handleOAuthVerification(ctx, await invokeToken(ctx, { type: 'oauth-verification', rawToken })),
-  invitation: async (ctx, rawToken) => {
-    // An accepted invitation takes its link with it, so a member who opens the mail again goes to the app.
-    const token = await invokeToken(ctx, { type: 'invitation', rawToken }).catch(async (err) => {
-      if (err instanceof AppError && err.type === 'invitation_not_found' && (await findSession(ctx))) return null;
-      throw err;
-    });
-    if (!token) return ctx.redirect(`${appConfig.frontendUrl}${appConfig.defaultRedirectPath}`, 302);
-    log.info('Token invoked, redirecting with single use token in cookie', { tokenId: token.id, userId: token.userId });
-    return ctx.redirect(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${token.id}`, 302);
-  },
+  'oauth-verification': (ctx, rawToken) => holdLink(ctx, 'oauth-verification', rawToken),
+  invitation: (ctx, rawToken) => holdLink(ctx, 'invitation', rawToken).catch((err) => toAppOnceAccepted(ctx, err)),
 } satisfies Record<LinkTokenType, LinkHandler>;
 
 /** Opens an emailed link of `type` from the raw value in its URL, by what that type's link does. */
 export const openLinkToken = (ctx: Context<Env>, type: LinkTokenType, rawToken: string) => linkHandlers[type](ctx, rawToken);
+
+/** Redeems the invitation or verification link this browser holds, on the form post from its confirm page. */
+export const confirmHeldLink = async (ctx: Context<Env>, type: HeldLinkType) => {
+  try {
+    return await redeemedLinkHandlers[type](ctx, await redeemHeldLink(ctx, type));
+  } catch (err) {
+    return toAppOnceAccepted(ctx, err);
+  }
+};

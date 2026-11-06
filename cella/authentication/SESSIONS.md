@@ -36,7 +36,7 @@ Bumping `cookieVersion` renames every cookie and so signs everyone out. Outside 
 | `session-step-up` | The proof of the session's last step-up, which counts only with it | Strict |
 | `device-id` | The browser's device id | Lax |
 | `magic-requested` | The magic link this browser asked for | Lax |
-| `magic-pending` | A link opened here that waits for confirmation | Strict |
+| `magic-pending`, `invitation-pending`, `oauth-verification-pending` | A link opened here that waits for confirmation | Strict |
 | `oauth-state` | The provider round trip; a new start replaces it | Lax |
 | `sso-recovery` | An institution's refused sign-in | Strict |
 | `passkey-challenge`, `totp-challenge` | The WebAuthn challenge; the TOTP secret being set up | Strict |

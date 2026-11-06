@@ -1605,6 +1605,36 @@ export type InvokeTokenErrors = {
 
 export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 
+export type RedeemLinkTokenData = {
+  body?: never;
+  path: {
+    type: 'oauth-verification' | 'invitation';
+  };
+  query?: never;
+  url: '/auth/invoke-token/{type}';
+};
+
+export type RedeemLinkTokenErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RedeemLinkTokenError = RedeemLinkTokenErrors[keyof RedeemLinkTokenErrors];
+
 export type GetTokenDataData = {
   body?: never;
   path: {

@@ -6,7 +6,7 @@ import { appConfig, type TokenType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
-import { isTokenType, type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { isTokenType, type LinkTokenType, type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -31,7 +31,7 @@ export type CookieName =
   | 'totp-challenge'
   | 'passkey-challenge'
   | 'magic-requested'
-  | 'magic-pending'
+  | `${LinkTokenType}-pending`
   | 'sso-recovery'
   | 'oauth-state';
 

@@ -241,7 +241,7 @@ describe('magic link opened in another browser', async () => {
     expect((pending.data as { email: string }).email).toBe(user.email);
 
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held! } });
-    expect(confirmed.response.status).toBe(302);
+    expect(confirmed.response.status).toBe(303);
     expect(cookieChange(confirmed.response, 'session')).toBe('set');
     expect(await openedAt(row.id)).not.toBeNull();
   });
@@ -418,7 +418,7 @@ describe('magic-link sign-up', async () => {
     expect((pending.data as { email: string }).email).toBe(email);
 
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
-    expect(confirmed.response.status).toBe(302);
+    expect(confirmed.response.status).toBe(303);
     expect(cookieChange(confirmed.response, 'session')).toBe('set');
     expect((await rowsFor(email)).users).toHaveLength(1);
   });

@@ -1,5 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { and, eq, like } from 'drizzle-orm';
+import { invokeToken, redeemLinkToken } from 'sdk';
 import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -11,6 +12,7 @@ import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { type AuthStrategy, type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import type { HeldLinkType } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -28,6 +30,7 @@ import { apiErrorSchema } from '#/schemas';
 import { decodeBase32 } from '#/utils/base32';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
+import { createAppClient } from './test-client';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
@@ -396,6 +399,22 @@ export class CookieJar {
 
 /** The `Cookie` header a browser holding `cookieHeader` sends after `response`. */
 export const cookiesAfter = (cookieHeader: string, response: Response) => new CookieJar([cookieHeader]).absorb(response).header();
+
+/**
+ * Opens an invitation or verification link as a browser does: the GET holds it, and the form post of its confirm page
+ * redeems it. `browser` keeps the cookies both answers set. Returns the post's answer, or the GET's when it held nothing.
+ */
+export async function openHeldLink(type: HeldLinkType, token: string, browser = new CookieJar()) {
+  const call = await createAppClient();
+  const inBrowser = () => ({ ...defaultHeaders, Cookie: browser.header() });
+  const opened = await call(invokeToken, { path: { type, token }, headers: inBrowser() });
+  browser.absorb(opened.response);
+  if (cookieChange(opened.response, `${type}-pending`) !== 'set') return opened;
+
+  const redeemed = await call(redeemLinkToken, { path: { type }, headers: inBrowser() });
+  browser.absorb(redeemed.response);
+  return redeemed;
+}
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
 export async function linkIdentity(user: { id: string; email: string }, overrides: Partial<InsertIdentityModel> = {}) {

@@ -13,7 +13,7 @@ import { resendInvitationByTokenOp } from '#/modules/auth/invitations/operations
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
 import { listSignInFederations } from '#/modules/auth/sso/operations/list-sign-in-federations';
 import '#/modules/auth/sessions/session-listeners';
-import { openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
+import { confirmHeldLink, openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 
@@ -45,6 +45,8 @@ app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
   return openLinkToken(ctx, tokenType, token);
 });
+
+app.openapi(authGeneralRoutes.redeemLinkToken, (ctx) => confirmHeldLink(ctx, ctx.req.valid('param').type));
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');

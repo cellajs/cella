@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { navigationRedirect } from '#/modules/auth/general/helpers/redirect-path';
 import { findIdentityById } from '#/modules/auth/oauth/identities-queries';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 
@@ -24,5 +25,5 @@ export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenRec
   verificationURL.searchParams.set('type', 'verify');
 
   // The post-auth redirect stays on the token row; the verify initiation reads it from there.
-  return ctx.redirect(verificationURL, 302);
+  return navigationRedirect(ctx, verificationURL);
 };

@@ -5,7 +5,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
+import { heldLinkTypes, linkTokenTypes } from '#/modules/auth/tokens/token-policies';
 import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
@@ -58,9 +58,21 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Invoke token session',
     description:
-      'Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.',
+      'Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.',
     request: { params: z.object({ type: z.enum(linkTokenTypes), token: z.string().max(maxLength.field) }) },
-    responses: { 302: { description: 'Redirect with token session', headers: locationSchema }, ...errors(401, 403, 404, 409) },
+    responses: { 302: { description: 'Redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
+  }),
+  redeemLinkToken: xRoute({
+    method: 'post',
+    path: '/invoke-token/{type}',
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('token')],
+    middleware: isNoBot,
+    summary: 'Redeem held link',
+    description:
+      'Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.',
+    request: { params: z.object({ type: z.enum(heldLinkTypes) }) },
+    responses: { 303: { description: 'Redirect with token session', headers: locationSchema }, ...errors(401, 409) },
   }),
   getTokenData: xRoute({
     method: 'get',
@@ -93,7 +105,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     middleware: isNoBot,
     summary: 'Confirm the invited address',
     description:
-      'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.',
+      'Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.',
     responses: {
       204: {
         description:

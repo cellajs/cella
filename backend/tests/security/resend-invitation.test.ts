@@ -22,6 +22,7 @@ import {
   failNextMailSend,
   insertTestToken,
   mailedLink,
+  openHeldLink,
   sentMails,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -93,8 +94,8 @@ describe('Resend an invitation', async () => {
     const rawFresh = mailedRawToken();
     expect(fresh.secret).toBe(hashToken(rawFresh));
 
-    const opened = await invoke(rawFresh);
-    expect(opened.response.status).toBe(302);
+    const opened = await openHeldLink('invitation', rawFresh);
+    expect(opened.response.status).toBe(303);
     expect(opened.response.headers.get('location')).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
 
     const old = await invoke(rawToken);

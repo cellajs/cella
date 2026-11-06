@@ -5451,7 +5451,7 @@
         "operationId": "invokeToken",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
-        "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
+        "description": "Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -5476,7 +5476,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Redirect with token session",
+            "description": "Redirect to the app",
             "headers": {
               "Location": {
                 "schema": {
@@ -5497,6 +5497,53 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/invoke-token/{type}": {
+      "post": {
+        "security": [],
+        "operationId": "redeemLinkToken",
+        "tags": ["auth", "cella"],
+        "summary": "Redeem held link",
+        "description": "Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["oauth-verification", "invitation"]
+            },
+            "required": true,
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Redirect with token session",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
@@ -5662,7 +5709,7 @@
         "operationId": "confirmInvitationAddress",
         "tags": ["auth", "cella"],
         "summary": "Confirm the invited address",
-        "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.",
+        "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "responses": {
@@ -5856,7 +5903,7 @@
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "responses": {
-          "302": {
+          "303": {
             "description": "Signed in, redirect to the app",
             "headers": {
               "Location": {

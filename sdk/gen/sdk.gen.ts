@@ -253,6 +253,8 @@ import type {
   PushYjsUpdateData,
   PushYjsUpdateErrors,
   PushYjsUpdateResponses,
+  RedeemLinkTokenData,
+  RedeemLinkTokenErrors,
   RejectInvitationData,
   RejectInvitationErrors,
   RejectInvitationResponses,
@@ -724,7 +726,7 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
 /**
  * Invoke token session
  *
- * Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.
+ * Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· _auth · cella_
  *
@@ -739,6 +741,26 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/invoke-token/{type}/{token}',
+    ...options,
+  });
+
+/**
+ * Redeem held link
+ *
+ * Redeems the invitation or address verification link this browser holds, confirmed from the page opening it led to. A form post from the app origin. An invitation hands the app a single-use token session in a cookie; a verification goes on to the provider.
+ *
+ * **POST /auth/invoke-token/{type}** ·· [redeemLinkToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invoke-token/{type}) ·· _auth · cella_
+ *
+ * @param {redeemLinkTokenData} options
+ * @param {enum} options.path.type - `enum`
+ * @returns Possible status codes: 303, 400, 401, 409, 429
+ */
+export const redeemLinkToken = <ThrowOnError extends boolean = true>(
+  options: Options<RedeemLinkTokenData, ThrowOnError>,
+): RequestResult<unknown, RedeemLinkTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<unknown, RedeemLinkTokenErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/invoke-token/{type}',
     ...options,
   });
 
@@ -787,7 +809,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
 /**
  * Confirm the invited address
  *
- * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.
  *
  * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
  *
@@ -903,7 +925,7 @@ export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
  * **POST /auth/magic/confirm** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/confirm) ·· _auth · cella_
  *
  * @param {confirmMagicLinkData} options
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 303, 400, 401, 403, 404, 409, 429
  */
 export const confirmMagicLink = <ThrowOnError extends boolean = true>(
   options?: Options<ConfirmMagicLinkData, ThrowOnError>,

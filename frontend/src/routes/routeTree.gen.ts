@@ -48,6 +48,7 @@ import { Route as PublicContentDocsPagesRouteImport } from './_public/_content/d
 import { Route as PublicContentDocsSchemasRouteImport } from './_public/_content/docs/schemas'
 import { Route as PublicMarketingLegalIndexRouteImport } from './_public/_marketing/legal.index'
 import { Route as PublicMarketingLegalSubjectRouteImport } from './_public/_marketing/legal.$subject'
+import { Route as PublicAuthConfirmLinkTypeRouteImport } from './_public/auth/confirm-link.$type'
 import { Route as PublicAuthEmailVerificationReasonRouteImport } from './_public/auth/email-verification.$reason'
 import { Route as PublicAuthSsoConnectionIdRouteImport } from './_public/auth/sso.$connectionId'
 import { Route as AppTenantIdOrganizationSlugOrganizationToolRouteImport } from './_app/$tenantId.$organizationSlug/organization/$tool'
@@ -257,6 +258,12 @@ const PublicMarketingLegalSubjectRoute =
     path: '/legal/$subject',
     getParentRoute: () => PublicMarketingRoute,
   } as any)
+const PublicAuthConfirmLinkTypeRoute =
+  PublicAuthConfirmLinkTypeRouteImport.update({
+    id: '/confirm-link/$type',
+    path: '/confirm-link/$type',
+    getParentRoute: () => PublicAuthRouteRoute,
+  } as any)
 const PublicAuthEmailVerificationReasonRoute =
   PublicAuthEmailVerificationReasonRouteImport.update({
     id: '/email-verification/$reason',
@@ -340,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
+  '/auth/confirm-link/$type': typeof PublicAuthConfirmLinkTypeRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs/': typeof PublicContentDocsIndexRoute
@@ -384,6 +392,7 @@ export interface FileRoutesByTo {
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
+  '/auth/confirm-link/$type': typeof PublicAuthConfirmLinkTypeRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/docs': typeof PublicContentDocsIndexRoute
@@ -434,6 +443,7 @@ export interface FileRoutesById {
   '/_public/_content/docs/pages': typeof PublicContentDocsPagesRoute
   '/_public/_content/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/_public/_marketing/legal/$subject': typeof PublicMarketingLegalSubjectRoute
+  '/_public/auth/confirm-link/$type': typeof PublicAuthConfirmLinkTypeRoute
   '/_public/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/_public/auth/sso/$connectionId': typeof PublicAuthSsoConnectionIdRoute
   '/_public/_content/docs/': typeof PublicContentDocsIndexRoute
@@ -481,6 +491,7 @@ export interface FileRouteTypes {
     | '/docs/pages'
     | '/docs/schemas'
     | '/legal/$subject'
+    | '/auth/confirm-link/$type'
     | '/auth/email-verification/$reason'
     | '/auth/sso/$connectionId'
     | '/docs/'
@@ -525,6 +536,7 @@ export interface FileRouteTypes {
     | '/docs/pages'
     | '/docs/schemas'
     | '/legal/$subject'
+    | '/auth/confirm-link/$type'
     | '/auth/email-verification/$reason'
     | '/auth/sso/$connectionId'
     | '/docs'
@@ -574,6 +586,7 @@ export interface FileRouteTypes {
     | '/_public/_content/docs/pages'
     | '/_public/_content/docs/schemas'
     | '/_public/_marketing/legal/$subject'
+    | '/_public/auth/confirm-link/$type'
     | '/_public/auth/email-verification/$reason'
     | '/_public/auth/sso/$connectionId'
     | '/_public/_content/docs/'
@@ -866,6 +879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicMarketingLegalSubjectRouteImport
       parentRoute: typeof PublicMarketingRoute
     }
+    '/_public/auth/confirm-link/$type': {
+      id: '/_public/auth/confirm-link/$type'
+      path: '/confirm-link/$type'
+      fullPath: '/auth/confirm-link/$type'
+      preLoaderRoute: typeof PublicAuthConfirmLinkTypeRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
     '/_public/auth/email-verification/$reason': {
       id: '/_public/auth/email-verification/$reason'
       path: '/email-verification/$reason'
@@ -1055,6 +1075,7 @@ interface PublicAuthRouteRouteChildren {
   PublicAuthMfaRoute: typeof PublicAuthMfaRoute
   PublicAuthSignOutRoute: typeof PublicAuthSignOutRoute
   PublicAuthUnsubscribeRoute: typeof PublicAuthUnsubscribeRoute
+  PublicAuthConfirmLinkTypeRoute: typeof PublicAuthConfirmLinkTypeRoute
   PublicAuthEmailVerificationReasonRoute: typeof PublicAuthEmailVerificationReasonRoute
   PublicAuthSsoConnectionIdRoute: typeof PublicAuthSsoConnectionIdRoute
 }
@@ -1067,6 +1088,7 @@ const PublicAuthRouteRouteChildren: PublicAuthRouteRouteChildren = {
   PublicAuthMfaRoute: PublicAuthMfaRoute,
   PublicAuthSignOutRoute: PublicAuthSignOutRoute,
   PublicAuthUnsubscribeRoute: PublicAuthUnsubscribeRoute,
+  PublicAuthConfirmLinkTypeRoute: PublicAuthConfirmLinkTypeRoute,
   PublicAuthEmailVerificationReasonRoute:
     PublicAuthEmailVerificationReasonRoute,
   PublicAuthSsoConnectionIdRoute: PublicAuthSsoConnectionIdRoute,

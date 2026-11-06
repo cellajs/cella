@@ -1052,6 +1052,10 @@ export const zInvokeTokenPath = z.object({
   token: z.string().max(255),
 });
 
+export const zRedeemLinkTokenPath = z.object({
+  type: z.enum(['oauth-verification', 'invitation']),
+});
+
 export const zGetTokenDataPath = z.object({
   type: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),

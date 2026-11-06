@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
+import { navigationRedirect, resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { initiateMfa } from '#/modules/auth/mfa/operations/mfa-challenge';
 import { type SessionExtras, setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
@@ -9,7 +9,7 @@ import type { UserWithActivity } from '#/modules/user/helpers/select';
 
 /**
  * Shared tail of every browser-navigated sign-in flow: start an MFA challenge when required, otherwise set the session,
- * then 302 to the resolved post-auth path. The redirect and the session extras (an SSO connection) are carried into
+ * then redirect to the resolved post-auth path. The redirect and the session extras (an SSO connection) are carried into
  * the MFA challenge so they survive it.
  */
 export const finishSignIn = async (
@@ -26,5 +26,5 @@ export const finishSignIn = async (
 
   if (!mfaRedirectPath) await setUserSession(ctx, user, strategy, 'regular', extras);
 
-  return ctx.redirect(redirectUrl, 302);
+  return navigationRedirect(ctx, redirectUrl);
 };

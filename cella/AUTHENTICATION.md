@@ -47,9 +47,9 @@ One module, `auth/tokens/`, issues, opens and spends every token, with one polic
 | `oauth-connect` | cookie | Connecting a provider account to the signed-in account | minutes |
 | `step-up` | code | Proving presence again with an emailed code | minutes |
 
-Opening a link redeems it: the first redemption wins, and the token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
+Opening a link only holds it in the browser, and a click on the app's page that opening leads to redeems it with a form post, so a link a mail scanner or a link preview fetches is not used up. The first redemption wins, and the token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
 
-A magic link signs in directly only in the browser that asked for it. Opened anywhere else, the link is held and the holder confirms on a page that names the address: a link planted in someone's browser, or fetched by a mail scanner, signs nobody in and is not used up. A link of another account than the one signed in is refused, and an expired one leads to an error page that offers a new link.
+A magic link is the one link that redeems on opening, and only in the browser that asked for it, which a cookie set at the request proves: a crawler or a prefetch holds no such cookie and changes nothing. Opened anywhere else, the link waits on a page that names the address, so a link planted in someone's browser signs nobody in. A link of another account than the one signed in is refused, and an expired one leads to an error page that offers a new link.
 
 ## Second factors and MFA
 

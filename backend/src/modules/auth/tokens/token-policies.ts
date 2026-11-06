@@ -29,8 +29,8 @@ export type TokenPolicy =
 
 /**
  * One policy per token type; an app that adds a token type to `appConfig.tokenTypes` must add its policy here, its
- * replacement subject in `replacementSubjects` (`tokens-queries.ts`), and a link type also its handler in
- * `linkHandlers` (`operations/open-link-token.ts`).
+ * replacement subject in `replacementSubjects` (`tokens-queries.ts`), and a link type also what opening it does
+ * (`operations/open-link-token.ts`).
  * - `invitation`: its single-use window outlasts a magic-link sign-in (15 minutes) plus a second-factor challenge, so
  *   answering an invitation from another account never expires midway.
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
@@ -60,6 +60,12 @@ export type LinkTokenType = TokenTypeCarriedBy<'link'>;
  */
 export const tokenLinkUrl = (type: LinkTokenType, rawToken: string) => `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
 
+/**
+ * Link types a GET only holds, for a POST from the app's page to redeem. A magic link signs in on the GET in the browser
+ * that asked for it, and holds itself everywhere else (`holdMagicLinkOutsideItsBrowser`).
+ */
+export type HeldLinkType = Exclude<LinkTokenType, 'magic'>;
+
 /** Token types carried only by a cookie. */
 export type CookieTokenType = TokenTypeCarriedBy<'cookie'>;
 
@@ -70,6 +76,11 @@ const isLinkTokenType = (type: TokenType): type is LinkTokenType => tokenPolicie
 
 /** Every token type carried by an emailed link: the types a link can open. */
 export const linkTokenTypes = appConfig.tokenTypes.filter(isLinkTokenType);
+
+const isHeldLinkType = (type: LinkTokenType): type is HeldLinkType => type !== 'magic';
+
+/** Every link type a GET only holds. */
+export const heldLinkTypes = linkTokenTypes.filter(isHeldLinkType);
 
 /** Whether a cookie name is a token type's own cookie, so its policy decides the cookie's attributes. */
 export const isTokenType = (name: string): name is TokenType => Object.hasOwn(tokenPolicies, name);

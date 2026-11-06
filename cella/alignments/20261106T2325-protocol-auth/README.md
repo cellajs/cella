@@ -1,22 +1,22 @@
 ---
 breaking: true
 clientCacheBump: false
-caughtBy: compiler
+caughtBy: tests
 generate: true
-grep: readStepUp, requireStepUp, updateSessionSteppedUp
+grep: readStepUp, requireStepUp, updateSessionSteppedUp, invokeToken, invoke-token, confirmMagicLink
 ---
 
-# A step-up counts only in the browser that proved it
+# Step-ups count in the proving browser, and emailed links redeem on a POST
 
-`sessions` gains `stepped_up_secret`, the hash of a new Strict `session-step-up` cookie, and a step-up stamp counts only for a request presenting that cookie. `readStepUp` and `requireStepUp` take the request context (`ctx`) where they took the session, `updateSessionSteppedUp` takes the cookie's hash, and `stampStepUp(ctx, via)` stamps a session and sets the cookie. Run `pnpm generate` once after the upgrade.
+`sessions` gains `stepped_up_secret`, the hash of a new Strict `session-step-up` cookie, and a step-up stamp counts only for a request presenting it: `readStepUp` and `requireStepUp` take the request context where they took the session. `GET /auth/invoke-token/{type}/{token}` of an invitation or verification link redeems nothing: it holds the link in a `<type>-pending` cookie and redirects to `/auth/confirm-link/<type>`, whose form post `POST /auth/invoke-token/{type}` (`redeemLinkToken`) redeems it with a 303. `POST /auth/magic/confirm` answers 303. Run `pnpm generate` once after the upgrade.
 
 ## What & why
 
-A step-up stamped the session row and kept the token, so every copy of the session cookie, made at any time before, passed every step-up tier for ten minutes. The stamp now goes out with a cookie of its own: a copy taken before the proof lacks it. `userGuard` reads the cookie into `ctx.var.stepUpCookie`; a sign-in that starts stepped up sets it too.
+A step-up stamped the session row and kept the token, so every copy of the session cookie passed every step-up tier for ten minutes; the stamp now goes out with a cookie of its own (`stampStepUp(ctx, via)`, read into `ctx.var.stepUpCookie` by `userGuard`). A mail scanner's GET or HEAD spent invitation and verification links (RFC 9110 §9.2.1); they now redeem only on the confirm page's post, as a magic link opened elsewhere does.
 
 ## Blast radius
 
-An app that calls `readStepUp`, `requireStepUp` or `updateSessionSteppedUp` in its own code: typecheck flags each call. Touches the database (one nullable column). No wire change, no cache bump.
+Every app: one nullable `sessions` column. An app that calls `readStepUp`, `requireStepUp` or `updateSessionSteppedUp`, or whose tests open invitation or verification links with a GET, or expect 302 from the magic confirm. No wire change for the frontend beyond the new route and page, no cache bump.
 
 ## Run
 
@@ -25,9 +25,10 @@ No script: manual.
 ## Manual steps
 
 1. Run `pnpm generate`: it writes `ALTER TABLE "sessions" ADD COLUMN "stepped_up_secret" varchar(255);`; no hints, no hand-written SQL.
-2. Pass `ctx` to `readStepUp` and `requireStepUp`; a route without `userGuard` passes `{ var: { session, stepUpCookie: getAuthCookie(ctx, 'session-step-up') } }`.
-3. Stamp a step-up with `stampStepUp(ctx, via)`, which sets the cookie the stamp counts with.
-4. An app test that steps up and then calls a guarded route sends the cookies the step-up response set (`keepCookiesOf` in `backend/tests/security/session-helpers.ts`).
+2. Pass `ctx` to `readStepUp` and `requireStepUp`; a route without `userGuard` passes `{ var: { session, stepUpCookie: getAuthCookie(ctx, 'session-step-up') } }`. Stamp a step-up with `stampStepUp`.
+3. An app test that steps up and then calls a guarded route sends the cookies the step-up response set (`keepCookiesOf` in `backend/tests/security/session-helpers.ts`).
+4. An app test that opens an invitation or verification link uses `openHeldLink` (`backend/tests/helpers.ts`), and expects 303 from the redeeming post and from `confirmMagicLink`.
+5. An app link type of its own adds its entry to `redeemedLinkHandlers` in `open-link-token.ts`: typecheck flags it.
 
 ## Verify
 

@@ -1,3 +1,4 @@
+import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 
@@ -30,3 +31,6 @@ export const resolvePostAuthRedirectPath = (
 
   return `${resolved.pathname}${resolved.search}${resolved.hash}`;
 };
+
+/** Redirects a browser navigation: 303 after a form post, so the browser follows it with a GET (RFC 9110 §15.4.4), else 302. */
+export const navigationRedirect = (ctx: Context, url: string | URL): Response => ctx.redirect(url, ctx.req.method === 'POST' ? 303 : 302);

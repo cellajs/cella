@@ -4,16 +4,12 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { isRequestedHere } from '#/modules/auth/tokens/token-lifecycle';
+import { heldLinkLifetime, isRequestedHere } from '#/modules/auth/tokens/token-lifecycle';
 import { deleteUnopenedLinkToken, findLinkToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { TimeSpan } from '#/utils/time-span';
 
 /** Magic links are read on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
-
-/** How long a link opened in another browser waits for its holder to confirm. */
-const heldLinkLifetime = new TimeSpan(10, 'm');
 
 /** The frontend page where a link opened in another browser is confirmed. */
 const confirmSignInPath = '/auth/confirm-sign-in';
