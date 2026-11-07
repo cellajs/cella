@@ -15,11 +15,12 @@ import {
   type UpdateOrganizationData,
   updateOrganization,
 } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type TenantKind } from 'shared';
 import { ApiError } from '~/lib/api';
 import { addMyMembershipCache } from '~/modules/memberships/query-mutations';
 import { organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import type { EnrichedOrganization } from '~/modules/organization/types';
+import { tenantKindsParam } from '~/modules/tenants/query';
 import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -30,7 +31,8 @@ import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
 import type { ListFilters, MutationData, QueryData } from '~/query/types';
 
-type OrganizationFilters = ListFilters<NonNullable<ListOrganizationsData['query']>>;
+/** The list's filters as a route holds them: the tenant kinds as a list, which the request joins with commas. */
+type OrganizationFilters = Omit<ListFilters<NonNullable<ListOrganizationsData['query']>>, 'kind'> & { kind?: TenantKind[] };
 
 const keys = createEntityKeys<OrganizationFilters>('organization');
 
@@ -62,14 +64,16 @@ const withDefaults = ({
   relatableUserId,
   excludeArchived,
   role,
-}: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeArchived, role });
+  kind = [],
+}: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeArchived, role, kind });
 
 // Cache enrichment adds the ancestor slugs.
 const fetchOrganizationsPage = async (
-  { sort, order, ...query }: ReturnType<typeof withDefaults> & Pick<OrganizationFilters, 'include'>,
+  { sort, order, kind, ...query }: ReturnType<typeof withDefaults> & Pick<OrganizationFilters, 'include'>,
   page: PageRequest,
   signal?: AbortSignal,
-): Promise<QueryData<EnrichedOrganization>> => listOrganizations({ query: { ...query, orderBy: orderByParam(sort, order), ...page }, signal });
+): Promise<QueryData<EnrichedOrganization>> =>
+  listOrganizations({ query: { ...query, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...page }, signal });
 
 export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
   const filters = withDefaults(params);

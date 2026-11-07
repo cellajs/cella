@@ -8,6 +8,7 @@ import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
 import { findOrganizationsPaginated } from '#/modules/organization/organization-queries';
 import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
+import { listedTenantKinds } from '#/modules/tenants/tenant-restrictions';
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import type { PageWindow } from '#/utils/list-page';
 
@@ -19,7 +20,7 @@ import type { PageWindow } from '#/utils/list-page';
 export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>, { offset, limit }: PageWindow) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
-  const { q, orderBy, relatableUserId, role, excludeArchived, include } = input;
+  const { q, orderBy, relatableUserId, role, excludeArchived, include, kind } = input;
   const { sort, order } = orderBy;
 
   const entityType = 'organization';
@@ -53,6 +54,8 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
     limit,
     excludeArchived,
     role,
+    // The kind filter is for the list across tenants: a member's own list holds whatever they belong to.
+    tenantKinds: isSystemAdmin ? (kind.length ? kind : listedTenantKinds()) : undefined,
     includeCounts,
   };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);

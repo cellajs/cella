@@ -26,16 +26,31 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const inviteContainerRef = useRef<HTMLDivElement>(null);
 
-  const { role } = searchVars;
-  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
+  const { role, accounts } = searchVars;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined, accounts: [] } });
 
-  const searchFilters = useRoleSearchFilter({
+  const roleFilters = useRoleSearchFilter({
     value: role,
     onChange: (role) => {
       clearSelection();
       setSearch({ role: role as UsersRouteSearchParams['role'] });
     },
   });
+
+  // Provisional accounts (a demo's, with no proven address) stay out until asked for; the one option switches them in.
+  const includesProvisional = accounts.includes('provisional');
+  const toggleProvisional = () => {
+    clearSelection();
+    setSearch({ accounts: includesProvisional ? [] : ['provisional'] });
+  };
+  const provisionalOption = { value: 'provisional', label: t('c:provisional_accounts'), isSelected: includesProvisional };
+  const searchFilters = {
+    groups: [...roleFilters.groups, { key: 'accounts', label: t('c:account'), options: [provisionalOption], onToggle: toggleProvisional }],
+    chips: [
+      ...roleFilters.chips,
+      ...(includesProvisional ? [{ key: 'provisional', label: provisionalOption.label, onRemove: toggleProvisional }] : []),
+    ],
+  };
 
   const openInvite = (triggerRef: TriggerRef) =>
     openInviteDialog({ description: t('c:invite_users.text'), triggerRef, containerRef: inviteContainerRef });

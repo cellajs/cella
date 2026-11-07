@@ -9,6 +9,7 @@ const builtInLabels = {
   microsoft: 'Microsoft',
   magic: 'Magic link',
   email: 'Email',
+  demo: 'Demo',
 };
 
 const federationLabels = Object.fromEntries(Object.entries(appConfig.federations).map(([key, federation]) => [key, federation.label]));
