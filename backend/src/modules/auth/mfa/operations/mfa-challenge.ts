@@ -57,7 +57,7 @@ export type MfaProof = { strategy: 'totp'; code: string } | { strategy: 'passkey
 export const completeMfaChallenge = async (ctx: Context<Env>, proof: MfaProof) => {
   const { user, token, authStrategy } = await validateConfirmMfaToken(ctx);
 
-  if (proof.strategy === 'totp') await verifyTotp(ctx, { user, code: proof.code });
+  if (proof.strategy === 'totp') await verifyTotp({ user, code: proof.code });
   else await verifyPasskeyAssertion(ctx, { assertion: proof.assertion, purpose: 'mfa', userId: user.id });
 
   // Spent, row and cookie, once the factor verified: of two concurrent completions exactly one passes.

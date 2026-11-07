@@ -1,6 +1,4 @@
-import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { matchTOTPStep } from '#/modules/auth/totps/helpers/totp-core';
@@ -37,10 +35,10 @@ interface VerifyTotpOpts {
  * @throws AppError 404 `not_found` without a stored secret, 429 `too_many_requests` while the account's budget is
  *   spent, 401 `invalid_token` for a wrong code and 401 `totp_code_used` for a code whose step was used.
  */
-export const verifyTotp = async (ctx: Context<Env>, { user, code, pendingSecret }: VerifyTotpOpts) => {
+export const verifyTotp = async ({ user, code, pendingSecret }: VerifyTotpOpts) => {
   const secret = pendingSecret ?? (await findStoredSecret(user.id));
 
-  const attempt = await takeTotpAttempt(ctx, user.id);
+  const attempt = await takeTotpAttempt(user.id);
   const step = matchTOTPStep(decodeBase32(secret), intervalInSeconds, digits, code, gracePeriodInSeconds);
   const spent = step !== null && (pendingSecret !== undefined || !!(await updateTotpLastUsedStep(dbCtx, { userId: user.id, step })));
   await settleTotpAttempt(attempt, user, spent);

@@ -103,13 +103,13 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         const debt = fastPath ? takeDebt(fastKey) : 0;
         const taken = await reserveAttempt(store, rateLimitKey, { points: effectiveBudget, duration }, consumePoints, debt);
         if (fastPath) adoptDbCount(fastKey, taken.state.consumedPoints, taken.state.msBeforeNext, windowMs);
-        if (!taken.granted) return refuseRateLimited(ctx, taken.state, refusalType);
+        if (!taken.granted) return refuseRateLimited(taken.state, refusalType);
 
         await next();
         return;
       }
 
-      const reservation = await reserveTiers(ctx, tiers, rateLimitKey, refusalType);
+      const reservation = await reserveTiers(tiers, rateLimitKey, refusalType);
 
       // A handler that throws past the error handler leaves the attempt counted.
       await next();

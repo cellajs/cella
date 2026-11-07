@@ -1,5 +1,3 @@
-import type { Context } from 'hono';
-import type { Env } from '#/core/context';
 import { getRateLimiterInstance } from '#/middlewares/rate-limiter/helpers';
 import { type Reservation, reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type { BucketLimits, Tier } from '#/middlewares/rate-limiter/types';
@@ -41,7 +39,7 @@ const tiers: Tier[] = [
  * the budget's codes.
  * @throws AppError 429 `too_many_requests` while a tier is spent, even for the right code.
  */
-export const takeTotpAttempt = (ctx: Context<Env>, userId: string) => reserveTiers(ctx, tiers, `userId:${userId}`);
+export const takeTotpAttempt = (userId: string) => reserveTiers(tiers, `userId:${userId}`);
 
 /**
  * Settles an attempt once its code is checked. A failure that spent a tier locks the account's TOTP checks for that

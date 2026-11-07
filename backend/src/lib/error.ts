@@ -226,6 +226,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const traced = withoutFailedQuery(err);
   if (traced instanceof Error) ctx.error = traced;
 
+  // Every 429 that states its wait sends it as the header the 429 response documents, whatever threw it, a redirect too.
+  const retryAfter = clientError.status === 429 ? clientError.meta?.retryAfter : undefined;
+  if (typeof retryAfter === 'number') ctx.header('Retry-After', String(retryAfter));
+
   // A navigation's refusal answers with a redirect to its error page, whatever refused it; tests read the JSON body.
   if (clientError.willRedirect || (ctx.var.errorPagePath !== undefined && appConfig.mode !== 'test')) {
     const redirectUrl = new URL(ctx.var.errorPagePath || '/error', appConfig.frontendUrl);
@@ -236,8 +240,6 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   }
 
   const { willRedirect: _willRedirect, meta, type, title, status, detail, ...refusal } = clientError;
-  // Every 429 that states its wait sends it as the header the 429 response documents, whatever threw it.
-  if (status === 429 && typeof meta?.retryAfter === 'number') ctx.header('Retry-After', String(meta.retryAfter));
   const problem = {
     type,
     title,
