@@ -1,9 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
+import { createDemoOp } from '#/modules/tenants/operations/create-demo';
 import { getTenantsOp } from '#/modules/tenants/operations/get-tenants';
 import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-tenant';
 import { updateTenantOp } from '#/modules/tenants/operations/update-tenant';
-import { tenantRoutes } from '#/modules/tenants/tenants-routes';
+import { demoRoutes, tenantRoutes } from '#/modules/tenants/tenants-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { readListPage } from '#/utils/list-page';
 
@@ -26,3 +27,12 @@ app.openapi(tenantRoutes.updateTenant, async (ctx) => {
 });
 
 export const tenantHandlers = app;
+
+const demoApp = new OpenAPIHono<Env>({ defaultHook });
+
+demoApp.openapi(demoRoutes.createDemo, async (ctx) => {
+  const { tenant, created } = await createDemoOp(ctx);
+  return created ? ctx.json(tenant, 201) : ctx.json(tenant, 200);
+});
+
+export const demoHandlers = demoApp;

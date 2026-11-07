@@ -6,7 +6,16 @@ import { memberCountsSchema } from '#/modules/memberships/helpers/member-counts'
 import { memberMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUserResponse } from '#/modules/user/user-mocks';
-import { languageSchema, listQuerySchema, maxLength, orderByQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
+import {
+  booleanTransformSchema,
+  languageSchema,
+  listQuerySchema,
+  maxLength,
+  orderByQuerySchema,
+  validCDNUrlSchema,
+  validNameSchema,
+  validSlugSchema,
+} from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProviders);
@@ -73,4 +82,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
 export const userListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'], 'createdAt desc'),
   role: z.enum(appConfig.systemRoles).optional(),
+  includeProvisional: booleanTransformSchema.describe(
+    'Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.',
+  ),
 });

@@ -17,7 +17,7 @@ export function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
-  const { q, sort, order } = search;
+  const { q, kind, sort, order } = search;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
@@ -45,8 +45,8 @@ export function TenantsTable() {
             onRowsChange,
             columns,
             enableVirtualization: true,
-            isFiltered: !!q,
-            onResetFilters: () => setSearch({ q: '' }),
+            isFiltered: !!q || kind.length > 0,
+            onResetFilters: () => setSearch({ q: '', kind: [] }),
             sortColumns,
             onSortColumnsChange,
             NoRowsComponent: <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:tenant_other') }} />,

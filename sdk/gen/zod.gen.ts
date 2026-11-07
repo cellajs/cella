@@ -346,7 +346,7 @@ export const zMeAuthData = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -687,8 +687,10 @@ export const zApiKey = z.object({
 export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string().max(255),
+  kind: z.enum(['live', 'test', 'demo']),
   status: z.enum(['active', 'suspended', 'archived']),
   statusChangedAt: z.string(),
+  expiresAt: z.string().nullable(),
   restrictions: z.object({
     quotas: z.object({
       user: z.int().gte(0),
@@ -703,7 +705,7 @@ export const zTenant = z.object({
     }),
     allowUnregisteredClients: z.boolean(),
   }),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext'])),
   subscriptionId: z.string().max(255).nullable(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
@@ -1644,7 +1646,7 @@ export const zRevokeMySessionsResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']),
       connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
@@ -2180,6 +2182,7 @@ export const zListOrganizationsQuery = z.object({
     .optional()
     .default('false'),
   include: z.string().max(2048).optional(),
+  kind: z.string().max(2048).optional(),
 });
 
 /**
@@ -2777,6 +2780,7 @@ export const zListTenantsQuery = z.object({
   q: z.string().max(255).optional(),
   orderBy: z.enum(['createdAt', 'createdAt asc', 'createdAt desc', 'name', 'name asc', 'name desc']).optional().default('createdAt desc'),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
+  kind: z.string().max(2048).optional(),
 });
 
 /**
@@ -2808,13 +2812,14 @@ export const zUpdateTenantBody = z.object({
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .optional(),
+  kind: z.enum(['live', 'test', 'demo']).optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
   subscriptionId: z.string().max(255).nullish(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
   subscriptionPlan: z.string().max(255).nullish(),
   authStrategies: z
-    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']))
-    .max(8)
+    .array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'demo', 'surfconext']))
+    .max(9)
     .optional(),
   restrictions: z
     .object({
@@ -2846,6 +2851,11 @@ export const zUpdateTenantPath = z.object({
  * Updated tenant
  */
 export const zUpdateTenantResponse = zTenant;
+
+/**
+ * Your demo
+ */
+export const zCreateDemoResponse = zTenant;
 
 export const zListConnectionsPath = z.object({
   tenantId: z.string().max(50),
@@ -2971,6 +2981,10 @@ export const zListUsersQuery = z.object({
     .optional()
     .default('createdAt desc'),
   role: z.enum(['admin']).optional(),
+  includeProvisional: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
 });
 
 /**

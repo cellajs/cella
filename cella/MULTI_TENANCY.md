@@ -74,11 +74,17 @@ the shared engine, and a contextless insert passes RLS.
 
 Only the admin connection can write `system_roles`. An application system administrator is not `admin_role`: their requests use the runtime connection and normal request scope. The admin credential serves migrations, seeds and job setup, and an API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
+## Tenant kinds
+
+A tenant's `kind` says what it is for, and `appConfig.tenantKinds` says what each kind takes part in. A `live` tenant serves customers. A `test` tenant serves staff and automated runs: the showcase seed, e2e and pentest runs, a flow tried in production. It stays out of the public counts and behind a kind filter in the admin lists of tenants and organizations, and its creation and removal raise no operator notice. A system admin moves a tenant between `live` and `test`.
+
+A `demo` tenant is a visitor's throwaway, which only `createDemo` makes while `has.demos` is on. It holds one account under a placeholder address with no proven inbox, signed in by a `demo` session and by nothing else, as admin of the tenant's organization; the app's `onDemoCreated` hooks fill it with content. A demo invites no one, since that mails third parties, and its session creates no tenant, adds no sign-in method, proves no address and hands out no lasting access: the step-up every such action asks for refuses a demo session. It starts with the kind's restrictions laid over the defaults and expires after `retention.demoTenantDays`. The public user count counts an account with a proven address that belongs to no tenant or to a counted one, so demo accounts and staff who belong to test tenants alone stay out, and the admin users list shows provisional accounts only when asked.
+
 ## Tenant lifecycle
 
-A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active: at once in the process that changed the status, within seconds in any other. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists, and their open streams end, so their apps drop it.
+A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active, or past its `expiresAt`: at once in the process that changed the status, within seconds in any other. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists, and their open streams end, so their apps drop it.
 
-A system admin restores it by setting the tenant active again. After the archived period a nightly sweep removes the tenant with everything in it, and mails the operator what it removed.
+A system admin restores it by setting the tenant active again. After the archived period, or past its expiry, an hourly sweep removes the tenant with everything in it, then the provisional accounts left with no membership, and for a kind with operator notices mails the operator what it removed.
 
 ## Verification
 

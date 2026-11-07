@@ -1,5 +1,7 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, lt, notInArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, lt, notInArray, or, type SQL, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -14,8 +16,10 @@ import { searchFilter } from '#/utils/sql';
 const tenantColumns = pick(tenantsTable, [
   'id',
   'name',
+  'kind',
   'status',
   'statusChangedAt',
+  'expiresAt',
   'restrictions',
   'authStrategies',
   'createdBy',
@@ -58,20 +62,27 @@ const toTenant = ({ organization, ...tenant }: TenantRow) => ({
   organization: organization && { ...organization, entityType: 'organization' as const },
 });
 
+/** `EXISTS` on the tenant a row's `tenantId` column names being of one of `kinds`, for a list or count of another table; no kind matches nothing. */
+export const tenantOfKind = (tenantId: AnyPgColumn, kinds: TenantKind[]): SQL =>
+  kinds.length === 0
+    ? sql`false`
+    : sql`EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${inArray(tenantsTable.kind, kinds)})`;
+
 interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches the name. */
   q?: string;
   status?: TenantModel['status'];
+  kinds: TenantKind[];
   limit: number;
   offset: number;
 }
 
-/** A page of tenants, each with its organization, and the total. */
+/** A page of tenants of `kinds`, each with its organization, and the total. */
 export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { q, status, sort, order, limit, offset } = opts;
+  const { q, status, kinds, sort, order, limit, offset } = opts;
 
-  const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined);
+  const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined, inArray(tenantsTable.kind, kinds));
 
   const orderBy = getOrderColumns({
     sort,
@@ -120,6 +131,10 @@ export const findOrphanTenant = async (ctx: DbContext, { createdBy }: TenantCrea
   return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
 };
 
+/** The demo tenant the user took, in its response shape; undefined for a user who holds none. */
+export const findDemoTenant = async (ctx: DbContext, { createdBy }: TenantCreatorOpts) =>
+  findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), eq(tenantsTable.kind, 'demo')) });
+
 /**
  * Makes the creations of one user wait for each other until the transaction ends, so a parallel burst reads the
  * orphan and the count one request at a time. Its own statement: the reads after it take their snapshot once it is granted.
@@ -134,11 +149,26 @@ export const countTenantsCreatedBy = async (ctx: DbContext, { createdBy }: Tenan
   return total;
 };
 
+interface CountTenantsCreatedSinceOpts {
+  kind: TenantKind;
+  /** The ISO moment the count starts at. */
+  since: string;
+}
+
+/** How many tenants of `kind` were created since `since`, removed ones aside. */
+export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: CountTenantsCreatedSinceOpts) => {
+  const [{ total }] = await ctx.var.db
+    .select({ total: count() })
+    .from(tenantsTable)
+    .where(and(eq(tenantsTable.kind, kind), gte(tenantsTable.createdAt, since)));
+  return total;
+};
+
 interface InsertTenantOpts {
   values: InsertTenantModel;
 }
 
-/** Inserts a tenant; status, restrictions and subscription take their column defaults. */
+/** Inserts a tenant; kind, status, restrictions and subscription take their column defaults. */
 export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
   return tenant;
@@ -156,42 +186,45 @@ export const updateTenant = async (ctx: DbContext, { id, values }: UpdateTenantO
   return updated;
 };
 
-interface FindArchivedTenantsOpts {
-  /** Tenants archived before this ISO moment. */
+interface DueTenantsOpts {
+  /** Tenants archived before this ISO moment are due. */
   archivedBefore: string;
+  /** Tenants whose `expiresAt` lies before this ISO moment are due. */
+  now: string;
 }
 
 /** The sweep's condition: read when it lists the tenants, and again under the row lock before each delete. */
-const dueForRemoval = (archivedBefore: string) => and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore));
+const dueForRemoval = ({ archivedBefore, now }: DueTenantsOpts) =>
+  or(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)), lt(tenantsTable.expiresAt, now));
 
-/** Tenants archived before `archivedBefore`, the ones the archived-tenant sweep removes. */
-export const findArchivedTenants = async (ctx: DbContext, { archivedBefore }: FindArchivedTenantsOpts) => {
+/** Tenants archived before `archivedBefore` or expired before `now`, the ones the removal sweep removes. */
+export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) => {
   return ctx.var.db
-    .select({ id: tenantsTable.id, name: tenantsTable.name, statusChangedAt: tenantsTable.statusChangedAt })
+    .select(pick(tenantsTable, ['id', 'name', 'kind', 'status', 'statusChangedAt', 'expiresAt']))
     .from(tenantsTable)
-    .where(dueForRemoval(archivedBefore));
+    .where(dueForRemoval(opts));
 };
 
-interface DeleteArchivedTenantOpts extends FindArchivedTenantsOpts {
+interface DeleteDueTenantOpts extends DueTenantsOpts {
   tenantId: string;
 }
 
 /**
- * Deletes a tenant archived before `archivedBefore` and its organization in one transaction. It first locks the tenant
- * row and reads it again: a tenant restored, or archived again, since the sweep listed it stays, and a restore that
- * comes later waits for the delete and then finds no row. The organization goes first: its cascade takes the channels,
- * products, memberships and collaborative documents, and their delete triggers queue the stored files. The tenant row
- * then takes its service accounts, API keys and connections.
+ * Deletes a tenant still due under `opts` and its organization in one transaction. It first locks the tenant row and
+ * reads it again: a tenant restored, archived again or given more time since the sweep listed it stays, and a restore
+ * that comes later waits for the delete and then finds no row. The organization goes first: its cascade takes the
+ * channels, products, memberships and collaborative documents, and their delete triggers queue the stored files. The
+ * tenant row then takes its service accounts, API keys and connections.
  * @returns Whether the tenant was still due and is deleted.
  */
-export const deleteArchivedTenant = async (ctx: DbContext, { tenantId, archivedBefore }: DeleteArchivedTenantOpts): Promise<boolean> => {
+export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: DeleteDueTenantOpts): Promise<boolean> => {
   return ctx.var.db.transaction(async (tx) => {
-    const [due] = await tx
+    const [row] = await tx
       .select({ id: tenantsTable.id })
       .from(tenantsTable)
-      .where(and(eq(tenantsTable.id, tenantId), dueForRemoval(archivedBefore)))
+      .where(and(eq(tenantsTable.id, tenantId), dueForRemoval(due)))
       .for('update');
-    if (!due) return false;
+    if (!row) return false;
     await tx.delete(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
     await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
     return true;

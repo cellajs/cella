@@ -319,16 +319,25 @@ export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: Find
     .where(and(inArray(membershipsTable.userId, userIds), inUnarchivedTenant(membershipsTable.tenantId)));
 };
 
-interface RotateTenantMemberBindingsOpts {
+interface TenantMembersOpts {
   tenantId: string;
 }
+
+/** The ids of the users who hold a membership in the tenant, each once. */
+export const findMemberUserIdsByTenant = async (ctx: DbContext, { tenantId }: TenantMembersOpts): Promise<string[]> => {
+  const rows = await ctx.var.db
+    .selectDistinct({ userId: membershipsTable.userId })
+    .from(membershipsTable)
+    .where(eq(membershipsTable.tenantId, tenantId));
+  return rows.map(({ userId }) => userId);
+};
 
 /**
  * Gives every member of the tenant a new `actors.bindings_version`, as a membership write does through its trigger, so
  * their cached memberships reload: `loadMemberships` reads the tenant's status, which no membership trigger sees change.
  * @returns The members' user ids.
  */
-export const rotateTenantMemberBindings = async (ctx: DbContext, { tenantId }: RotateTenantMemberBindingsOpts): Promise<string[]> => {
+export const rotateTenantMemberBindings = async (ctx: DbContext, { tenantId }: TenantMembersOpts): Promise<string[]> => {
   const rotated = await ctx.var.db
     .update(actorsTable)
     .set({ bindingsVersion: sql`gen_random_uuid()` })

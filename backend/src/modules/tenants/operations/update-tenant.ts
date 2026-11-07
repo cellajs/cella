@@ -17,8 +17,10 @@ import { applyMergePatch } from '#/utils/merge-patch';
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
 /**
- * Updates a tenant's name, status, subscription, sign-in policy or restrictions; a restrictions update is a merge
- * patch of the stored ones. A status change also moves the members' bindings and ends their streams.
+ * Updates a tenant's name, kind, status, subscription, sign-in policy or restrictions; a restrictions update is a
+ * merge patch of the stored ones. A status change also moves the members' bindings and ends their streams. The kind
+ * moves between `live` and `test` only: a demo is made by `createDemo` alone and stays one.
+ * @throws AppError 403 `restrict_by_tenant_kind` for a kind change to or from `demo`.
  * @throws AppError 404 `not_found` for an unknown tenant.
  */
 export async function updateTenantOp(ctx: UserContext, tenantId: string, updates: UpdateTenantInput) {
@@ -29,6 +31,11 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     // Locked: the restrictions merge starts from this row, so no other write may commit between the read and the update.
     const existing = await findTenant(txCtx, { where: eq(tenantsTable.id, tenantId), forUpdate: true });
     if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
+
+    const kindChanged = otherUpdates.kind !== undefined && otherUpdates.kind !== existing.kind;
+    if (kindChanged && (existing.kind === 'demo' || otherUpdates.kind === 'demo')) {
+      throw new AppError(403, 'restrict_by_tenant_kind', 'warn', { meta: { resource: 'kind', kind: existing.kind } });
+    }
 
     const statusChanged = otherUpdates.status !== undefined && otherUpdates.status !== existing.status;
     const values = {

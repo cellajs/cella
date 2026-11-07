@@ -432,7 +432,7 @@ export type MeAuthData = {
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;
     browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext';
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext';
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
@@ -769,8 +769,16 @@ export type ApiKey = {
 export type Tenant = {
   id: string;
   name: string;
+  /**
+   * What the tenant is for: `live` serves customers, `test` staff and automated runs, `demo` a visitor.
+   */
+  kind: 'live' | 'test' | 'demo';
   status: 'active' | 'suspended' | 'archived';
   statusChangedAt: string;
+  /**
+   * When the tenant goes with everything in it; a demo always carries one.
+   */
+  expiresAt: string | null;
   restrictions: {
     /**
      * Caps per tenant on entities, service accounts and API keys (0 = unlimited)
@@ -797,7 +805,7 @@ export type Tenant = {
      */
     allowUnregisteredClients: boolean;
   };
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext'>;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
@@ -3703,7 +3711,7 @@ export type RevokeMySessionsResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext';
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
@@ -5020,6 +5028,10 @@ export type ListOrganizationsData = {
      * Comma-separated values
      */
     include?: string;
+    /**
+     * Tenant kinds a system admin's list across tenants covers, comma-separated; absent covers the kinds the app lists by default. A member's own list ignores it.
+     */
+    kind?: string;
   };
   url: '/tenants/-/organizations';
 };
@@ -6550,6 +6562,10 @@ export type ListTenantsData = {
      * Filter by status
      */
     status?: 'active' | 'suspended' | 'archived';
+    /**
+     * Kinds to list, comma-separated (`live`, `test`, `demo`); absent lists the kinds the app lists by default.
+     */
+    kind?: string;
   };
   url: '/tenants';
 };
@@ -6640,11 +6656,15 @@ export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantRespo
 export type UpdateTenantData = {
   body: {
     name?: string;
+    /**
+     * `live` or `test`: a demo is never made or unmade by an update.
+     */
+    kind?: 'live' | 'test' | 'demo';
     status?: 'active' | 'suspended' | 'archived';
     subscriptionId?: string | null;
     subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
     subscriptionPlan?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'demo' | 'surfconext'>;
     /**
      * A merge patch of the tenant's restrictions: a member left out keeps its value, and `null` gives it its default again.
      */
@@ -6719,6 +6739,47 @@ export type UpdateTenantResponses = {
 };
 
 export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
+
+export type CreateDemoData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/demos';
+};
+
+export type CreateDemoErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateDemoError = CreateDemoErrors[keyof CreateDemoErrors];
+
+export type CreateDemoResponses = {
+  /**
+   * Your demo
+   */
+  200: Tenant;
+  /**
+   * Created demo
+   */
+  201: Tenant;
+};
+
+export type CreateDemoResponse = CreateDemoResponses[keyof CreateDemoResponses];
 
 export type ListConnectionsData = {
   body?: never;
@@ -7004,6 +7065,10 @@ export type ListUsersData = {
       | 'lastSeenAt asc'
       | 'lastSeenAt desc';
     role?: 'admin';
+    /**
+     * Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.
+     */
+    includeProvisional?: 'true' | 'false' | boolean;
   };
   url: '/users';
 };

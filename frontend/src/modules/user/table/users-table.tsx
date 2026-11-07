@@ -12,7 +12,7 @@ import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 export function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
-  const { q, role, sort, order } = search;
+  const { q, role, accounts, sort, order } = search;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
@@ -26,7 +26,7 @@ export function UsersTable() {
       <UsersTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
-        searchVars={{ q, role, sort, order }}
+        searchVars={{ q, role, accounts, sort, order }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
@@ -39,8 +39,8 @@ export function UsersTable() {
             rowKeyGetter: rowKeyById,
             columns,
             enableVirtualization: true,
-            isFiltered: role !== undefined || !!q,
-            onResetFilters: () => setSearch({ q: '', role: undefined }),
+            isFiltered: role !== undefined || accounts.length > 0 || !!q,
+            onResetFilters: () => setSearch({ q: '', role: undefined, accounts: [] }),
             selectedRows: selectedRowIds,
             onSelectedRowsChange,
             sortColumns,

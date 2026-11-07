@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -31,7 +32,7 @@ export async function resendInvitationByTokenOp(ctx: DbContext, tokenId: string)
     resolveEntity(ctx, { entityType: 'organization', identifier: invitation.organizationId }),
     resolveEntity(ctx, { entityType: invitation.channelType, identifier: invitation.channelId }),
   ]);
-  if (tenant?.status !== 'active' || !organization || !channel) return;
+  if (tenant?.status !== 'active' || !appConfig.tenantKinds[tenant.kind].invitations || !organization || !channel) return;
   if (isHeldInvitation(invitation.channelType, channel, invitation.role)) return;
 
   const tenantCtx = { var: { db: ctx.var.db, tenantId: tenant.id, tenant } };

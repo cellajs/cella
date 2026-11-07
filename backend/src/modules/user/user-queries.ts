@@ -29,12 +29,18 @@ const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
   );
 };
 
+/** `EXISTS` on a proven address of the user row: what sets a real account apart from a provisional one (a demo's, a sample's). */
+export const hasProvenEmail = (userId: typeof usersTable.id): SQL =>
+  sql`EXISTS (SELECT 1 FROM ${emailsTable} WHERE ${emailsTable.userId} = ${userId})`;
+
 interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema>['orderBy'], 'sort' | 'order'> {
   /** Searches name and email. */
   q?: string;
   role?: SystemRoleModel['role'];
   /** Limits the list to members of one of these organizations; unset lists every user. */
   memberOfAny?: string[];
+  /** Leaves out the accounts without a proven address. */
+  provenOnly?: boolean;
   limit: number;
   offset: number;
 }
@@ -42,10 +48,11 @@ interface FindUsersPaginatedOpts extends Pick<z.infer<typeof userListQuerySchema
 /** A page of users as members see them, each with its system role (null without one), and the total. */
 export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { q, role, memberOfAny, sort, order, limit, offset } = opts;
+  const { q, role, memberOfAny, provenOnly = false, sort, order, limit, offset } = opts;
 
   const filters: SQL[] = [];
   if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
+  if (provenOnly) filters.push(hasProvenEmail(usersTable.id));
   if (role) filters.push(eq(systemRolesTable.role, role));
   const search = searchFilter([usersTable.name, usersTable.email], q);
   if (search) filters.push(search);
@@ -296,6 +303,25 @@ export const findUserModelsByIds = async (ctx: DbContext, { ids }: UserIdsOpts) 
 /** The ids among `ids` that name a user. */
 export const findExistingUserIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
   return ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
+};
+
+/**
+ * The ids among `ids` of provisional accounts nothing holds any more: no proven address and no membership left. A
+ * removed tenant's demo account is one; a member who signed up stays, and so does one who belongs elsewhere.
+ */
+export const findOrphanedProvisionalUserIds = async (ctx: DbContext, { ids }: UserIdsOpts): Promise<string[]> => {
+  if (ids.length === 0) return [];
+  const rows = await ctx.var.db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(
+      and(
+        inArray(usersTable.id, ids),
+        sql`NOT ${hasProvenEmail(usersTable.id)}`,
+        sql`NOT EXISTS (SELECT 1 FROM ${membershipsTable} WHERE ${membershipsTable.userId} = ${usersTable.id})`,
+      ),
+    );
+  return rows.map(({ id }) => id);
 };
 
 /** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
