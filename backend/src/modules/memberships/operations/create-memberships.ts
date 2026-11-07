@@ -117,7 +117,6 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
     const toMail = [...insertedInvites, ...reminders.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
     const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization })).map(({ email }) => email));
-    // An address whose mail did not go out gets its day back.
     await refundInvitationMails(
       ctx,
       mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email)),

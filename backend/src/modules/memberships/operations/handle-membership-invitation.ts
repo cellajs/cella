@@ -45,7 +45,6 @@ export async function handleMembershipInvitationOp(
     ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId, userId })
     : await findInactiveMembershipForUser(ctx, { id: inactiveMembershipId, userId });
 
-  // Missing, rejected and another user's alike (PERMISSIONS.md, Refusals).
   if (!inactiveMembership) {
     throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation', id: inactiveMembershipId } });
   }

@@ -9,9 +9,8 @@ const slots = channelSlots();
 const toolIdsSchema = z.array(z.string().max(maxLength.field)).max(100);
 
 /**
- * Wire schema for a channel's per-slot tool arrangement (see `shared/tools-config` for the
- * contract). Keys are validated against this app's channel slots, so one that belongs to no channel
- * is refused at the wire and never reaches the column.
+ * Wire schema for a channel's per-slot tool arrangement. Keys are validated against this app's channel slots, so one
+ * that belongs to no channel is refused at the wire and never reaches the column.
  */
 export const toolsConfigSchema: z.ZodType<ToolsConfig> = z.partialRecord(
   z.enum(slots),

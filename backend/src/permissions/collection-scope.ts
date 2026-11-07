@@ -38,9 +38,8 @@ export interface CollectionReadFilter {
 /** The rules a read scope resolves under, each the app's unless a test passes a synthetic one. */
 export interface ReadRules {
   policies?: PolicyMatrix;
-  /** Entity-type public read grants. @see shared/src/permissions/public-read.ts */
   publicGrants?: PublicReadGrants;
-  /** Elevation is read off it (`elevatedGrants`). @see shared/config/hierarchy-config.ts */
+  /** Elevation is read off it (`elevatedGrants`). */
   hierarchy?: EntityHierarchy;
 }
 

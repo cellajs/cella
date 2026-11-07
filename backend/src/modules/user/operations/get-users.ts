@@ -24,7 +24,6 @@ export async function getUsersOp(ctx: UserContext, input: GetUsersInput, { offse
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { reason: 'system_role' } });
   }
 
-  // Only see users who share at least one organization; a system admin sees every user.
   const myOrgIds = [...new Set(memberships.map((membership) => membership.organizationId))];
   if (!isSystemAdmin && myOrgIds.length === 0) return { items: [], total: 0 };
 

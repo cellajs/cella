@@ -59,9 +59,7 @@ export interface CdcWorkerReport {
  * adds only what the worker cannot tell: no socket (`worker_disconnected`), no report within `workerHealthStaleMs`
  * (`worker_report_stale`), or one it cannot read (`worker_report_unreadable`). The last two degrade at least, and a
  * stale report still shows what it said.
- * @param socket - The worker socket as the API holds it.
  * @param worker - The worker's latest report, or null when none arrived on this connection.
- * @returns The component for the health response.
  */
 export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerReport | null): HealthComponent {
   const counts = { messages: socket.messagesReceived, parseErrors: socket.parseErrors };

@@ -104,7 +104,6 @@ export const mePendingInvitationSchema = z.object({
     .openapi({ description: 'The name of the organization the channel is in; null for an invitation to an organization.' }),
 });
 
-/** A consent the user gave to an OAuth client, as the account page lists it. */
 /** The path of one connected app, named by its grant id. */
 export const connectedAppParamSchema = z.object({ connectedAppId: validIdSchema });
 

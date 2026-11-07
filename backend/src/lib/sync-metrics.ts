@@ -19,7 +19,6 @@ const tracer = trace.getTracer('app-sync');
  * @param name - Span name, from `syncSpanNames`.
  * @param attributes - Span attributes; null values are left off.
  * @param parent - The CDC span that sent the message. The span then joins that span's trace as its child.
- * @returns The started span.
  */
 export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, parent?: TraceContext | null): Span {
   const span = tracer.startSpan(name, {}, parent ? remoteParentContext(parent) : undefined);

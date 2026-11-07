@@ -85,7 +85,6 @@ const openPageToken = (token: string, purpose: string): PagePosition => {
  * A range read (`afterSeq` and `untilSeq`) is a sync chunk: it reads from its lower bound and returns no token. Members
  * of the read besides `items` and `total` stay on the page.
  * @param ctx the request, whose path a token is bound to
- * @param read reads a window of the list
  * @throws AppError 400 `invalid_page_token`
  */
 export async function readListPage<T, E extends object = object>(

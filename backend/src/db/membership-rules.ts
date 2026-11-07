@@ -1,12 +1,12 @@
 import { hierarchy } from 'shared';
 
-/** The constraint a refused membership write names; `lib/error.ts` maps it to a 409 `last_admin`. */
+/** The constraint a refused membership write names. */
 export const keepOrganizationAdminConstraint = 'memberships_keep_org_admin';
 
-/** The trigger that versions a user's bindings for the membership cache (`middlewares/guard/membership-cache.ts`). */
+/** The trigger that versions a user's bindings for the membership cache. */
 export const bumpBindingsVersionTrigger = 'memberships_bump_bindings_version';
 
-/** The triggers the membership rules create, each with its function: the side-effect verify block asserts them. */
+/** The triggers the membership rules create, each with its function. */
 export const membershipRuleTriggers = [
   { tableName: 'memberships', triggerName: keepOrganizationAdminConstraint, functionName: keepOrganizationAdminConstraint },
   { tableName: 'memberships', triggerName: bumpBindingsVersionTrigger, functionName: bumpBindingsVersionTrigger },

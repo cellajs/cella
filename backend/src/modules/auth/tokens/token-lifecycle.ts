@@ -171,7 +171,6 @@ const checkLinkToken = async (ctx: Context<Env>, type: LinkTokenType, rawToken: 
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
  * holding that cookie. A link issued without an account gets its holder from `claimHolder`, committed with the
  * redemption.
- * @returns The redeemed token.
  * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 401
  *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
  *   to another account, or what `claimHolder` throws.
@@ -182,7 +181,6 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
   const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, type, rawToken);
   if (redeemedBefore) return token;
 
-  // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const singleUse = newHashedToken();
   const redeem = (redeemCtx: DbContext) =>
     updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: singleUse.hash, expiresAt: isoDateIn(singleUseWindow) });

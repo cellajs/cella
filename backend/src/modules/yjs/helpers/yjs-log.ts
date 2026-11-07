@@ -25,7 +25,7 @@ export const yjsMaxServerRowIds = 10_000;
 
 /**
  * The largest update one HTTP push carries. Base64url-encoded, a third larger, it stays under the API's 1 MB JSON body
- * limit. The frontend posts in chunks of this size (httpChunkBytes in yjs-http.ts).
+ * limit.
  */
 export const yjsHttpChunkBytes = 512 * 1024;
 

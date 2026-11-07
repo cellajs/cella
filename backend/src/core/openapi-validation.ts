@@ -85,7 +85,7 @@ const documentMergePatch = (doc: OpenApiDocument) => {
   }
 };
 
-/** Per `operationId`, the error statuses its route documents: `createXRoute` records them, the error handler reads them where authoring rules are checked. */
+/** Per `operationId`, the error statuses its route documents. */
 const documentedErrorStatuses = new Map<string, ReadonlySet<number>>();
 
 export const recordDocumentedErrors = (operationId: string, statuses: number[]) => {

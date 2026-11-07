@@ -121,9 +121,7 @@ interface DeleteGrantWithTokensOpts {
 }
 
 /**
- * The grant and every token issued under it, on the caller's transaction; the client must ask again. `revokeGrant`
- * runs it on the transaction that also publishes the revocation, so the grant's access tokens stop with the delete.
- * @returns The account the grant belonged to, or null when there was no such grant.
+ * The grant and every token issued under it, on the caller's transaction; the client must ask again.
  */
 export async function deleteGrantWithTokens(ctx: DbContext, { grantId }: DeleteGrantWithTokensOpts): Promise<string | null> {
   await ctx.var.db.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));

@@ -43,7 +43,6 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const subtreeWhere = narrowed ? buildSubtreeCoverWhere(attachmentsTable, 'attachment', channelId) : undefined;
   if (subtreeWhere) filters.push(subtreeWhere);
 
-  // A range read returns deleted rows too, so caches drop them.
   const read = range ? tenantReadIncludingDeleted : tenantRead;
   const { items: rawItems, total } = await read(ctx, (readCtx) =>
     findAttachmentsPaginated(readCtx, {

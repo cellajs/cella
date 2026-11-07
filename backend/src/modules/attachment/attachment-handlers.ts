@@ -23,8 +23,7 @@ app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  return ctx.json(await getAttachmentOp(ctx, attachmentId), 200);
+  return ctx.json(await getAttachmentOp(ctx, ctx.req.valid('param').attachmentId), 200);
 });
 
 app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
@@ -33,13 +32,11 @@ app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  return ctx.json(await updateAttachmentOp(ctx, attachmentId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateAttachmentOp(ctx, ctx.req.valid('param').attachmentId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  return ctx.json(await linkAttachmentKeysOp(ctx, attachmentId, ctx.req.valid('json')), 200);
+  return ctx.json(await linkAttachmentKeysOp(ctx, ctx.req.valid('param').attachmentId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(attachmentRoutes.batchDeleteAttachments, async (ctx) => {

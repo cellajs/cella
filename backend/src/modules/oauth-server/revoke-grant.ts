@@ -11,8 +11,6 @@ interface RevokeGrantOpts {
 /**
  * Deletes a grant, with every token issued under it unless the provider deletes those itself. Its access tokens stop at
  * their next request in every process: the guards read the grant at every use.
- * @param ctx - Any context with a database.
- * @param opts - The grant, and whether its tokens go with it.
  */
 export async function revokeGrant(ctx: DbContext, { grantId, withTokens = true }: RevokeGrantOpts): Promise<void> {
   const accountId = await ctx.var.db.transaction(async (tx) => {

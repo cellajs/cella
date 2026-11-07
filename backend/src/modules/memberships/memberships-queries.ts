@@ -176,7 +176,6 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       createdAt: usersTable.createdAt,
       lastSeenAt: lastSeenOrder,
       role: membershipsTable.role,
-      // Latest live product row by the member in the viewed channel
       lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
     },
     tieBreaker: usersTable.id,
@@ -186,7 +185,6 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .select({
       ...memberSelect,
       membership: membershipBaseSelect,
-      // Per-member insight counts on the page rows only; the total below stays free of the subqueries
       ...(includeCounts && { counts: memberCountsSelect(entityType, entityId, organizationId) }),
       ...(includeMfa && { mfaRequired: usersTable.mfaRequired }),
     })
@@ -226,7 +224,6 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
   const previews = new Map<string, UserMinimalBase[]>();
   if (!channelIds.length) return previews;
 
-  // Rank members per channel so a single query returns at most `limit` rows per channel
   const rowNumber = sql<number>`row_number() over (
       partition by ${membershipsTable.channelId} order by ${membershipsTable.createdAt} asc
     )`.as('row_number');
@@ -251,7 +248,6 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
     .where(lte(rankedMembers.rowNumber, limit))
     .orderBy(rankedMembers.channelId, rankedMembers.rowNumber);
 
-  // Group per channel, preserving the createdAt order from the window function
   for (const { channelId, ...user } of rows) {
     const list = previews.get(channelId) ?? [];
     list.push({ ...user, entityType: 'user' });

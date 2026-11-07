@@ -36,7 +36,6 @@ export async function appCatchupOp(ctx: UserContext, { views = [] }: z.infer<typ
     organizations[organizationId] = { signals: Object.keys(signals).length > 0 ? signals : undefined };
   }
 
-  // Embedding propagation hints: frontiers vs the client's org-view cursors.
   await buildPropagationHints(ctx, organizations, views, counters);
 
   return { organizations, views: viewAnswers, generation };

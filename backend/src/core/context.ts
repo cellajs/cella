@@ -85,7 +85,7 @@ export type Env = {
     organizationId: string;
     /** User-only sugar for `actor.bindings`, with the join time and the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
-    /** The authenticated session's facts: its id, type, how it was proven and when (`userGuard` only). */
+    /** The authenticated session's facts (`userGuard` only). */
     session: SessionFacts;
     /** The content of this browser's step-up cookie (`userGuard` only): the session's step-up stamp counts only with it. */
     stepUpCookie?: string;
@@ -93,13 +93,12 @@ export type Env = {
     db: DbOrTx;
     tenantId: string;
     tenant: TenantModel;
-    /** Status of the error `appErrorHandler` answered, also when it answered with a redirect; the rate limiters read it. */
+    /** Status of the error `appErrorHandler` answered, also when it answered with a redirect. */
     errorStatus?: number;
-    /** Where a refusal of this request redirects to: set for a route that answers 302 or 303, a handler may point it elsewhere. */
+    /** Where a refusal of this request redirects to. */
     errorPagePath?: string;
-    /** The `operationId` of the matched route where authoring rules are checked, set before anything can refuse the request; the error handler's documented-status check reads it. */
+    /** The `operationId` of the matched route, set where authoring rules are checked. */
     operationId?: string;
-    /** A write's `If-Match` and `If-None-Match` on a route for one channel or product, for the read of its row. */
     preconditions?: WritePreconditions;
   };
   /** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */

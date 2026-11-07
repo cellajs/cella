@@ -16,14 +16,12 @@ export interface BooksAnswer {
   generation: number;
 }
 
-/** How often a waiting caller looks for the answer. */
 const answerPollMs = 500;
 
 /**
  * Asks the CDC worker to verify its books or to rebuild them, by writing the request into `sync_state`. A worker that
  * reads the stream finds it within seconds; a rebuild is also found by a worker at its next start.
  * @param db - A connection that may write `sync_state`: the worker's own, or an admin one.
- * @param request - What to ask for.
  * @param options - `unlessRequested` leaves a request that already waits as it is.
  * @returns The database's clock right before the request was written: whatever the worker stamps after it is its answer.
  */
@@ -54,8 +52,6 @@ export const findBooksRequest = async (db: DbOrTx): Promise<BooksRequest | null>
  * Takes a request out of `sync_state` once it is answered or given up. A request of the other kind, written since,
  * stays.
  * @param db - A connection or transaction that may write `sync_state`.
- * @param request - The request that is over.
- * @returns Nothing.
  */
 export const clearBooksRequest = async (db: DbOrTx, request: BooksRequest): Promise<void> => {
   await db
@@ -69,10 +65,7 @@ export const clearBooksRequest = async (db: DbOrTx, request: BooksRequest): Prom
  * rebuild. A verify that finds the books wrong ends in a rebuild, whose incident lists what differed. A request nobody
  * answered in time is taken back, so it does not run later with nobody waiting for it.
  * @param db - The connection the request was written on.
- * @param request - What was asked for.
  * @param since - What `requestBooks` returned.
- * @param waitSeconds - How long to wait for the answer.
- * @returns Whether the worker answered, what a verify found different, and the generation of the books.
  */
 export const awaitBooksAnswer = async (db: DbOrTx, request: BooksRequest, since: string, waitSeconds: number): Promise<BooksAnswer> => {
   const answeredAt = request === 'verify' ? syncStateTable.verifiedAt : syncStateTable.rebuiltAt;

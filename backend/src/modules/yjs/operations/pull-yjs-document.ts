@@ -12,7 +12,6 @@ import { log } from '#/utils/logger';
 /** The update of a document that holds nothing. */
 const emptyUpdate = Y.encodeStateAsUpdate(new Y.Doc());
 
-/** True when Yjs decodes `bytes` as a state vector. */
 function isStateVector(bytes: Uint8Array): boolean {
   try {
     Y.decodeStateVector(bytes);
@@ -43,9 +42,6 @@ interface PulledYjsDocument {
  * vector. A document never opened is seeded first, in the same transaction, as the relay's first handshake seeds it
  * (`seedYjsDocument`), so every document is editable while the relay is down. Appends nothing and stamps nothing:
  * the relay's sweep still sees a document edited over HTTP alone as one no session holds.
- * @param ctx - A user acting in a resolved organization.
- * @param opts - The document and the caller's state vector.
- * @returns The generation, the diff and the server's state vector.
  * @throws AppError 403 or 404 as `authorizeYjsEditor`; 404 when the entity was deleted before the seed; 400 for a
  * state vector Yjs cannot decode.
  */

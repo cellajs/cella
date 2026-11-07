@@ -65,7 +65,7 @@ async function loadContextNames(source: NotificationSource, tx: DbOrTx, ids: str
 }
 
 // Across tenants: product rows are read under a tenant transaction, since on a bare connection the fail-closed RLS
-// policy returns nothing. One round trip per tenant and source type, normally one in total.
+// policy returns nothing.
 
 interface SubjectRef {
   tenantId: string;

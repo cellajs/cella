@@ -8,7 +8,6 @@ const matrixTimeoutMs = 10_000;
 /**
  * Posts a plain-text notice to the team's Element room. Never throws: an unreachable server, a timeout and a refusal are
  * logged, and the caller falls back to another channel.
- * @param textMessage - The notice's text.
  * @returns Whether Matrix accepted the message; false when Element is not configured.
  */
 export const sendMatrixMessage = async (textMessage: string): Promise<boolean> => {

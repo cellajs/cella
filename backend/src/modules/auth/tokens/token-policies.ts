@@ -36,7 +36,6 @@ export type TokenPolicy =
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
  *   site started, reads them. The others are Strict.
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
- * - `step-up` is the emailed code a session enters to step up; see `sendStepUpCodeOp`.
  */
 export const tokenPolicies = {
   invitation: { carrier: 'link', ttl: new TimeSpan(7, 'd'), singleUseWindow: new TimeSpan(30, 'm'), sameSite: 'lax' },

@@ -40,7 +40,6 @@ export function htmlToExcerpt(html: string, maxLength: number): string {
  * The title is interpolated escaped; any markup around it lives in the translation string.
  * @param type - Notification type, selecting the line's translation key.
  * @param contextTitle - Title of the item the notification is about; empty renders as `-`.
- * @param lng - Recipient language.
  * @returns The line, safe to place in the digest's HTML list.
  */
 export function describeDigestRow(type: string, contextTitle: string, lng: string): string {
@@ -50,7 +49,6 @@ export function describeDigestRow(type: string, contextTitle: string, lng: strin
 
 /**
  * Digest sections as HTML with every user-derived fragment escaped: the digest mail's declared HTML param.
- * @param sections - The sections `buildDigestForUser` assembled.
  * @param lng - Recipient language, for the line that counts the rows left out.
  * @returns The sections, safe to place in the digest mail.
  */

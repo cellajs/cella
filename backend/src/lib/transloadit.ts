@@ -43,7 +43,6 @@ export const signedUploadParams = (templateId: UploadTemplateId, sub: string) =>
     nonce: nanoid(16),
     steps: {
       ':original': { robot: '/upload/handle' },
-      // Inject steps based on template: avatar thumbnail, cover image, attachments ...
       ...template.steps,
       exported: {
         use: template.use,

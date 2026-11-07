@@ -10,8 +10,7 @@ import { defaultHook } from '#/utils/default-hook';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authSsoRoutes.getSsoEntry, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  return ctx.json(await getSsoEntryOp(connectionId), 200);
+  return ctx.json(await getSsoEntryOp(ctx.req.valid('param').connectionId), 200);
 });
 
 app.openapi(authSsoRoutes.startSso, (ctx) => startSso(ctx, { connectionId: ctx.req.valid('param').connectionId }));

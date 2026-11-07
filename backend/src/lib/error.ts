@@ -17,7 +17,6 @@ import { log } from '#/utils/logger';
 const exposesServerMessages = () => appConfig.mode === 'development' || appConfig.mode === 'test';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
 
-/** PostgreSQL error codes to user-friendly error mappings */
 const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
   // Foreign key violations
   '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
@@ -43,7 +42,6 @@ const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; messa
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
 const pgConstraintMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
-  // Refused when an organization would be left without an admin.
   [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
 };
 
@@ -51,9 +49,7 @@ type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
 export function extractPgError(err: unknown): PgErrorInfo | null {
-  // Direct PG error (e.g., raw pg client)
   if (err instanceof Error && 'code' in err && typeof err.code === 'string') return err as Error & PgErrorInfo;
-  // Drizzle-wrapped PG error (original PG error stored on .cause)
   const cause = err instanceof Error ? err.cause : undefined;
   if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') return cause as PgErrorInfo;
   return null;
@@ -71,7 +67,6 @@ const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server
 
 /** What a client may see of a thrown value: type, title, status and a detail that never carries server internals. */
 interface ClientError {
-  /** Error key from `shared/locales/en/error.json` (or an app's `appError.json`). */
   type: ErrorKey;
   title: string;
   status: ContentfulStatusCode;
@@ -105,10 +100,6 @@ const missingAncestorError = (err: MissingAncestorError) =>
  * exhaustion answers 503; anything else is a 500 whose message (for a failed query: the SQL and its parameters)
  * reaches the client as its detail only with `exposeServerMessage`. The title is the type's own text.
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
- * @param thrown - The thrown value.
- * @param logFields - Request facts for the log line.
- * @param options - Message exposure; defaults to showing 5xx messages in development and test only.
- * @returns The client-facing error.
  */
 export function toClientError(
   thrown: unknown,
@@ -131,7 +122,6 @@ export function toClientError(
     };
   }
 
-  // Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
     log.warn(`HTTPException ${err.status}`, { err, ...fields });
     const type = httpExceptionType(err.status);

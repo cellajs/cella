@@ -37,8 +37,6 @@ type RevokeSessionsOpts = SessionSelection & {
  * The stamps commit inside the caller's transaction when there is one; the cache drop and the streams happen at the
  * call, so call it last in a transaction.
  *
- * @param ctx - Any context with a database; the sign-in paths pass the base pool.
- * @param opts - The user, which sessions (`sessionIds` or `all`), the reason and the acting actor.
  * @returns The stamped sessions, secret stripped; empty for `user_deleted` and for sessions that had already ended.
  */
 export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): Promise<SessionModel[]> => {

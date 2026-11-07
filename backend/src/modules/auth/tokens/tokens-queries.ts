@@ -11,7 +11,6 @@ export type { PendingSignUp } from '#/modules/auth/tokens/tokens-db';
 /** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
 
-/** The columns of a {@link TokenRecord}, for the queries of this module. */
 const { secret: _secret, singleUseToken: _singleUseToken, ...tokenColumns } = getColumns(tokensTable);
 
 interface FindInvitationTokenOpts {
@@ -140,14 +139,12 @@ const replacementSubjects = {
   'confirm-mfa': () => undefined,
 } satisfies Record<TokenType, (token: ReplacingToken) => SQL | undefined>;
 
-/** The earlier tokens a new one replaces, by its type's subject. */
 const replacedBy = (token: ReplacingToken): SQL | undefined => {
   const subject = replacementSubjects[token.type](token);
   return subject && and(eq(tokensTable.type, token.type), subject);
 };
 
 interface DeleteReplacedTokensOpts {
-  /** The new tokens, about to be inserted. */
   tokens: ReplacingToken[];
 }
 

@@ -20,13 +20,11 @@ app.openapi(connectionRoutes.createConnection, async (ctx) => {
 });
 
 app.openapi(connectionRoutes.updateConnection, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  return ctx.json(await updateConnectionOp(ctx, connectionId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateConnectionOp(ctx, ctx.req.valid('param').connectionId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(connectionRoutes.deleteConnection, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  await deleteConnectionOp(ctx, connectionId);
+  await deleteConnectionOp(ctx, ctx.req.valid('param').connectionId);
   return ctx.body(null, 204);
 });
 

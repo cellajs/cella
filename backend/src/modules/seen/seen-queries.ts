@@ -87,7 +87,6 @@ export const findSeenCandidates = async (ctx: DbContext, { productType, where }:
 interface InsertSeenByOpts {
   userId: string;
   productType: SeenTrackedProductType;
-  /** The rows the user saw. */
   productIds: string[];
 }
 

@@ -156,7 +156,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   });
 
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
-  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const selectShape = {
     ...getColumns(organizationsTable),
     organizationFlags: organizationFlagsSelect,
@@ -164,7 +163,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     ...(countData && { counts: countData.countsSelect }),
   } as const;
 
-  // System admins LEFT JOIN memberships and see every organization; others INNER JOIN and see only their own.
   let query = isSystemAdmin
     ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn).$dynamic()
     : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn).$dynamic();

@@ -27,8 +27,7 @@ app.openapi(systemRoutes.batchDeleteUsers, async (ctx) => {
 });
 
 app.openapi(systemRoutes.updateUser, async (ctx) => {
-  const { userId } = ctx.req.valid('param');
-  return ctx.json(await updateUserOp(ctx, userId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateUserOp(ctx, ctx.req.valid('param').userId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(systemRoutes.sendNewsletter, async (ctx) => {

@@ -1,13 +1,11 @@
 /**
- * Secret-bearing columns, by table name: the one declaration that three consumers derive from.
- * `createSelectSchema` (db/utils/drizzle-schema.ts) omits them from every response schema, the log
- * redaction list (lib/redact-keys.ts) censors them in backend and worker logs, and the CDC worker strips
- * them from the row image before it leaves the worker. A leaf module on purpose: nothing imported, so
+ * Secret-bearing columns, by table name: the one declaration that three consumers derive from. `createSelectSchema`
+ * omits them from every response schema, the log redaction list censors them in backend and worker logs, and the CDC
+ * worker strips them from the row image before it leaves the worker. A leaf module on purpose: nothing imported, so
  * every consumer can read it without a cycle.
  *
- * cdc/src/tests/secret-columns.test.ts fails when a column anywhere in the schema matches
- * `secretColumnPattern` and is listed in neither map, so a new secret column cannot reach the wire or
- * the logs by being forgotten.
+ * A test fails when a column anywhere in the schema matches `secretColumnPattern` and is listed in neither map, so a
+ * new secret column cannot reach the wire or the logs by being forgotten.
  */
 export const secretColumns = {
   api_keys: ['hash'],

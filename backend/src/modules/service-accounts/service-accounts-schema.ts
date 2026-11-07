@@ -72,7 +72,7 @@ const apiKeyInputSchema = z.object({
 export const createApiKeyBodySchema = apiKeyInputSchema.extend({
   /** Roll: issue this key as the successor of an existing one, which keeps working for `rollOverlapDays`. */
   rollFrom: validIdSchema.optional(),
-  /** Days the rolled key stays valid, long enough to deploy the successor; Stripe's default is the same week. */
+  /** Days the rolled key stays valid, long enough to deploy the successor. */
   rollOverlapDays: z.number().int().min(0).max(30).default(7),
 });
 

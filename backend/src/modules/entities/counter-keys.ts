@@ -21,24 +21,18 @@ const likeAny = (column: string, prefixes: string[]) => prefixes.map((prefix) =>
  * Whether a counter key is a plain count: the live rows of a type (`e:c:`, and `e:c:h:` for the rows homed at a
  * channel) or the memberships of a role (`m:c:`). Its deltas add up, a recount replaces its value, and it is the one
  * class on which the books must equal the tables.
- * @param key - A key of `channel_counters.counts`.
- * @returns True for a plain count.
  */
 export const isPlainCountKey = (key: string): boolean => startsWithAny(key, plainCountPrefixes);
 
 /**
  * Whether a counter key keeps the highest value it was given: a frontier (`e:f:`) or an activity stamp
  * (`e:li:`, `e:lu:`). Two deltas for it merge as their maximum, never as their sum.
- * @param key - A key of `channel_counters.counts`.
- * @returns True for a key that merges as a maximum.
  */
 export const isMaxMergeKey = (key: string): boolean => startsWithAny(key, maxMergePrefixes);
 
 /**
  * Whether a recount may never lower a counter key: the sequence counter and every frontier. The worker may have
  * handed out values the tables do not show: to changes still in flight, or to rows deleted since.
- * @param key - A key of `channel_counters.counts`.
- * @returns True for a key that only moves forward.
  */
 export const isForwardOnlyCounterKey = (key: string): boolean => key === sequenceKey || key.startsWith(frontierPrefix);
 

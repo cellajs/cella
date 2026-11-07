@@ -88,7 +88,7 @@ const errorResponseOptions = [
 
 type ErrorOption = (typeof errorResponseOptions)[number];
 
-/** The error statuses with a documented response; an `AppError` carries one of these, 410 or a server error. */
+/** The error statuses with a documented response. */
 export type ErrorCode = ErrorOption['code'];
 
 const errorBodySchema = ({ code, name, schemaDescription }: ErrorOption) =>
@@ -101,8 +101,7 @@ type ErrorResponse = { description: string; content: { [problemJsonType]: { sche
 
 /**
  * The shared response of each documented error status, built once so a route's `responses` and the registry hold the
- * same schema instance. A route carries it as a Zod-backed response, which keeps the handler's return type exact;
- * `foldErrorResponses` writes it in the document as a `$ref` to the component `registerAllErrorResponses` registers.
+ * same schema instance. A route carries it as a Zod-backed response, which keeps the handler's return type exact.
  */
 export const sharedErrorResponses = Object.fromEntries(
   errorResponseOptions.map((option) => [

@@ -48,7 +48,6 @@ const main = async () => {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as SERVICE=migrate)`);
   }
 
-  // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stops.push(startGeoipRefresh());
 
   // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.

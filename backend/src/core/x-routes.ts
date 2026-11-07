@@ -155,15 +155,12 @@ export const assertMountPath = (path: string, routePaths: string[]) => {
   }
 };
 
-/** The shared error responses of `codes`, keyed by status. */
 const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
   Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
 
 /**
- * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
- * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service or a
- * feature flag, 400 for a sign-in method), the preconditions of a route for one channel or product (400, 412), and
- * what each marked middleware declares in `errors`.
+ * The error statuses a route's chain answers with before its handler, each with what answers it. The switch gate
+ * answers 404 for a service or a feature flag and 400 for a sign-in method.
  */
 const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();

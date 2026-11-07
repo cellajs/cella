@@ -38,7 +38,6 @@ export class TTLCache<T> {
    * read stores its value only when nothing was invalidated since it started, and a caller arriving after an
    * invalidation starts a read of its own, so no value read before a change is cached or handed out after it. A read
    * that rejects, or resolves undefined, stores nothing: the next caller reads again.
-   * @param key - The cache key.
    * @param read - Reads the value at its source; undefined for a value that does not exist.
    * @returns The cached or read value; a rejected read rejects for every caller sharing it.
    */

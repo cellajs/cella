@@ -13,8 +13,6 @@ const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({ maxSize: 5000, defaultTtl: 
 
 /**
  * The cached key and account for a key hash, or else what `read` resolves, cached for the key's next uses.
- * @param hash - The hash of the API key.
- * @param read - Reads the key with its account by that hash; undefined when no such key exists.
  * @returns The key and its account, or undefined for an unknown key, which is never cached.
  */
 export const loadCachedApiKey = (hash: string, read: () => Promise<ApiKeyCacheEntry | undefined>): Promise<ApiKeyCacheEntry | undefined> =>

@@ -94,7 +94,6 @@ export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId
 /**
  * Takes the challenge this browser holds out of play before its response is checked: the cookie and the row go, so it
  * answers nothing a second time, whatever this check concludes.
- * @returns The challenge, to verify the response against.
  * @throws AppError 401 `passkey_verification_failed` for a challenge that was never issued, is answered or expired,
  *   was issued for another purpose, or for another account than `userId`.
  */

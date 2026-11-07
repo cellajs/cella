@@ -30,10 +30,7 @@ const keyOf = (token: UserToken, bindingsVersion: string) => `${token.actorId}:$
 /**
  * The verdict cached for the token at the bindings version the request read, or else the one `read` resolves, cached
  * for the token's next uses.
- * @param token - The verified user token.
- * @param bindingsVersion - `actors.bindings_version` as the request read it.
  * @param read - Reaches the grant policy's verdict; a refusal is a verdict and is cached like any other.
- * @returns The verdict.
  */
 export const loadCachedTokenGrant = async (
   token: UserToken,

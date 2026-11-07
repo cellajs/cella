@@ -60,7 +60,6 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
   };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
-  // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:c:{role} counters.
   const memberPreviews = includeMembers
     ? await findMemberPreviewsByChannels(ctx, {
         channelType: entityType,

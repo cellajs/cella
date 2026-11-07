@@ -37,7 +37,6 @@ export async function getUnseenCountsOp(ctx: UserContext) {
 
   const results: Record<string, Record<string, number>> = {};
 
-  // Compose each tracked type's collection read predicate so badges only count rows this user can fetch.
   for (const [organizationId, { tenantId, channels }] of orgGroups) {
     const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
     const readableTypes: SeenTrackedProductType[] = [];

@@ -86,7 +86,7 @@ interface MarkNotificationsReadOpts {
   userId: string;
   /** The rows to mark; every unread row of the user when omitted or empty. */
   ids?: string[];
-  /** Marks everything sharing one context, whatever `ids` holds: the "opening the thread clears its badge" path. */
+  /** Marks everything sharing one context, whatever `ids` holds. */
   contextId?: string;
 }
 
@@ -200,13 +200,9 @@ interface GetUserAccessOpts {
  * Build permission `Access` objects for arbitrary users, connected or not. An id that names no user gets none: a
  * mention is written by a client, and an author can be a service account, which has no inbox.
  *
- * `accessFrom` reads the request context, so it only ever describes the caller, and
- * stream fan-out only sees users with an open SSE connection. Notifications must decide what an
- * offline user may read, which needs memberships and system-admin status loaded by user id.
- *
- * Both halves are loaded and paired here on purpose: `accessFrom` warns that hand-assembling an
- * Access risks pairing one user's memberships with another's identity, and that warning applies
- * with more force to a loop over many users.
+ * Memberships and system-admin status are loaded and paired here on purpose: `accessFrom` warns that hand-assembling
+ * an Access risks pairing one user's memberships with another's identity, and that warning applies with more force to a
+ * loop over many users.
  */
 export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOpts): Promise<Map<string, UserAccess>> {
   const result = new Map<string, UserAccess>();
@@ -252,9 +248,8 @@ interface FindChannelLabelsOpts {
  * Name and thumbnail for a set of channel ids, organizations included, so a digest can group by channel and a card
  * can show its place without the caller knowing which table each id lives in.
  *
- * Driven by `appConfig.channelEntityTypes`, so a hierarchy change is picked up automatically. Channel tables sit
- * outside RLS (application-layer guards cover them), and the ids only ever come from rows the recipient was already
- * cleared to read, or from the organization of an inbox row, which the recipient belongs to.
+ * Channel tables sit outside RLS (application-layer guards cover them), and the ids only ever come from rows the
+ * recipient was already cleared to read, or from the organization of an inbox row, which the recipient belongs to.
  */
 export async function findChannelLabels(ctx: DbContext, { channelIds }: FindChannelLabelsOpts): Promise<Map<string, ChannelLabel>> {
   const labels = new Map<string, ChannelLabel>();
@@ -377,7 +372,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart,
         languageCode: usersTable.languageCode,
       })
       .from(usersTable)
-      // Verified addresses only; mailing dormant and never-activated accounts helps no one.
+      // Verified addresses only.
       .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))
       .leftJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, usersTable.id))
       .where(
@@ -392,7 +387,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart,
   );
 }
 
-/** One recipient's digest window `[since, before)`; `buildDigestForUser` takes it without `limit`. */
+/** One recipient's digest window `[since, before)`. */
 export interface FindUndigestedNotificationsOpts {
   userId: string;
   /** The window's start, as `findDueDigestRecipients` gave it. */
@@ -402,7 +397,7 @@ export interface FindUndigestedNotificationsOpts {
   limit: number;
 }
 
-/** The rows of a user's digest window, oldest first; the digest's whole content source. */
+/** The rows of a user's digest window, oldest first. */
 export async function findUndigestedNotifications(ctx: DbContext, { userId, since, before, limit }: FindUndigestedNotificationsOpts) {
   return ctx.var.db
     .select(pick(notificationsTable, ['type', 'entityType', 'subjectId', 'channelId', 'contextId', 'tenantId']))

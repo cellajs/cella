@@ -22,18 +22,15 @@ app.openapi(serviceAccountRoutes.listServiceAccounts, async (ctx) => {
 });
 
 app.openapi(serviceAccountRoutes.updateServiceAccount, async (ctx) => {
-  const { serviceAccountId } = ctx.req.valid('param');
-  return ctx.json(await updateServiceAccountOp(ctx, serviceAccountId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateServiceAccountOp(ctx, ctx.req.valid('param').serviceAccountId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(serviceAccountRoutes.listApiKeys, async (ctx) => {
-  const { serviceAccountId } = ctx.req.valid('param');
-  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), (page) => getApiKeysOp(ctx, serviceAccountId, page)), 200);
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), (page) => getApiKeysOp(ctx, ctx.req.valid('param').serviceAccountId, page)), 200);
 });
 
 app.openapi(serviceAccountRoutes.createApiKey, async (ctx) => {
-  const { serviceAccountId } = ctx.req.valid('param');
-  return ctx.json(await createApiKeyOp(ctx, serviceAccountId, ctx.req.valid('json')), 201);
+  return ctx.json(await createApiKeyOp(ctx, ctx.req.valid('param').serviceAccountId, ctx.req.valid('json')), 201);
 });
 
 app.openapi(serviceAccountRoutes.revokeApiKey, async (ctx) => {

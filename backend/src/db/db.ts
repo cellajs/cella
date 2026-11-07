@@ -29,7 +29,7 @@ const createNoDbStub = (): DB =>
 /** The runtime pool (RLS-subject `runtime_role`): every request handler and worker query goes through this. */
 export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX);
 
-/** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). Feeds the sync spread window. */
+/** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). */
 export const dbPoolPressure = (): number => {
   const client: unknown = baseDb.$client;
   if (!isPool(client)) return 0;
@@ -43,7 +43,6 @@ export const dbPoolPressure = (): number => {
  * the pool.
  * @param onError - Attached before the connection is handed out: a checked-out client has no error listener, and an
  *   unhandled one ends the process.
- * @returns The checked-out client.
  */
 export const openDedicatedConnection = async (onError: (error: Error) => void): Promise<PoolClient> => {
   const pool: unknown = baseDb.$client;

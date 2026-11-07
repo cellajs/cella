@@ -69,7 +69,6 @@ export interface SessionExtras {
   steppedUpVia?: StepUpProof | null;
   /** When that proof was made, an ISO timestamp; default now. An institution's MFA dates from its authentication. */
   steppedUpAt?: string;
-  /** The connection (an institution's trust) an SSO sign-in came through. */
   connectionId?: string | null;
 }
 

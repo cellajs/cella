@@ -32,10 +32,9 @@ export interface ChannelCollectionReadScope {
 }
 
 /**
- * The channel-entity sibling of `collection-scope.ts`, for channel types below the organization (PERMISSIONS.md,
- * "Enforcement paths"): which rows of `channelType` the caller can read via org-root or ancestor-level grants. Own-type
- * memberships are NOT in the result; list queries carry those through their membership join. Row
- * conditions and `publicRead` grants are never compiled here: channel matrices use plain `read: 1`.
+ * For channel types below the organization: which rows of `channelType` the caller can read via org-root or
+ * ancestor-level grants. Own-type memberships are NOT in the result; list queries carry those through their membership
+ * join. Row conditions and `publicRead` grants are never compiled here: channel matrices use plain `read: 1`.
  * @public
  */
 export const resolveChannelCollectionReadScope = (
@@ -99,8 +98,6 @@ export type DraftChannelRow = { id: string; publishedAt: string | null } & Parti
  * compiles for a list, read for one row, so a read by id answers for the drafts a list returns and for no other. A
  * published channel shows. A draft shows to a member of the channel itself and to a caller whose grant on the
  * organization or on a channel above also holds `update` on the type. The engine's read check stays the caller's.
- * @param channelType - The type of the channel row.
- * @param channel - The row, with its publish date and ancestor ids.
  * @param access - Who is asking, with its grants and the system-admin bypass: `accessFrom(ctx)`.
  */
 export const draftChannelVisibleTo = (
@@ -141,7 +138,7 @@ export interface ChannelListReadColumns {
  * org-wide rows ∪ ancestor-scoped rows (published-only for read-only grants). 'none' cannot occur:
  * own membership rows are always in scope.
  *
- * Consumer contract, as `backend/tests/channel-discovery.test.ts` wires it:
+ * Consumer contract:
  * - LEFT JOIN the memberships on the caller's own key alone (channel, type, user). A filter on the membership, such
  *   as a role, makes it a list of memberships: skip the scope and INNER JOIN.
  * - AND the predicate with the organization the scope was resolved for: its membership and published branches name

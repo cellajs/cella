@@ -5,8 +5,6 @@ const tenantCache = new TTLCache<TenantModel>({ maxSize: 1000, defaultTtl: 10_00
 
 /**
  * The cached tenant row, or else the one `read` resolves, cached for 10 seconds.
- * @param tenantId - The tenant's id.
- * @param read - Reads the row; undefined for an unknown tenant.
  * @returns The row, or undefined for an unknown tenant, which is never cached.
  */
 export const loadCachedTenant = (tenantId: string, read: () => Promise<TenantModel | undefined>): Promise<TenantModel | undefined> =>

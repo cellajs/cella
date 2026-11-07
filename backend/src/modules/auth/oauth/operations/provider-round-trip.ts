@@ -97,7 +97,6 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
   }
 
   try {
-    // For an OIDC provider, id_token claims, `nonce` binding, signature and userinfo are validated inside the provider client.
     const { codeVerifier, nonce } = cookiePayload;
     const grant = await client.validateAuthorizationCode({ code, state, iss }, { codeVerifier, nonce });
     const providerUser = await fetchUser(grant);

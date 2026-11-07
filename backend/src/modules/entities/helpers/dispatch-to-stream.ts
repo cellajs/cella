@@ -103,10 +103,6 @@ function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row:
 
 /**
  * Whether one subscriber may read one row of a product event: a fan-out of one, so this and `readerFrames` cannot drift.
- * @param subscriber - Who to decide for.
- * @param event - The event the row belongs to.
- * @param row - The row's permission fields.
- * @returns Whether the subscriber may read the row.
  */
 export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent, row: PermissionRowData): boolean {
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
@@ -161,7 +157,6 @@ export function readerFrames<S extends SubscriberAccess>(
 
 /**
  * Tells the app streams of a product event's organization the rows each may read.
- * @param event - A product change from the activity bus.
  */
 export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
   const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));

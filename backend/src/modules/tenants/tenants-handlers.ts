@@ -20,8 +20,7 @@ app.openapi(tenantRoutes.createTenant, async (ctx) => {
 });
 
 app.openapi(tenantRoutes.updateTenant, async (ctx) => {
-  const { tenantId } = ctx.req.valid('param');
-  return ctx.json(await updateTenantOp(ctx, tenantId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateTenantOp(ctx, ctx.req.valid('param').tenantId, ctx.req.valid('json')), 200);
 });
 
 export const tenantHandlers = app;

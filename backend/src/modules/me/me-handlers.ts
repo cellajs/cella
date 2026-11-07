@@ -40,13 +40,11 @@ app.openapi(meRoutes.listMyInvitations, async (ctx) => {
 });
 
 app.openapi(meRoutes.acceptInvitation, async (ctx) => {
-  const { invitationId } = ctx.req.valid('param');
-  return ctx.json(await handleMembershipInvitationOp(ctx, invitationId, 'accept'), 200);
+  return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'accept'), 200);
 });
 
 app.openapi(meRoutes.rejectInvitation, async (ctx) => {
-  const { invitationId } = ctx.req.valid('param');
-  return ctx.json(await handleMembershipInvitationOp(ctx, invitationId, 'reject'), 200);
+  return ctx.json(await handleMembershipInvitationOp(ctx, ctx.req.valid('param').invitationId, 'reject'), 200);
 });
 
 app.openapi(meRoutes.revokeMySessions, async (ctx) => {
@@ -93,8 +91,7 @@ app.openapi(meRoutes.listConnectedApps, async (ctx) => {
 });
 
 app.openapi(meRoutes.deleteConnectedApp, async (ctx) => {
-  const { connectedAppId } = ctx.req.valid('param');
-  await revokeConnectedAppOp(ctx, connectedAppId);
+  await revokeConnectedAppOp(ctx, ctx.req.valid('param').connectedAppId);
   return ctx.body(null, 204);
 });
 

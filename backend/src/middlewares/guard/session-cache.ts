@@ -12,7 +12,6 @@ const sessionCache = new TTLCache<ResolvedSession>({ maxSize: 5000, defaultTtl: 
 
 /**
  * The cached session for a token hash, or else the one `read` resolves, cached for the next requests.
- * @param secretHash - The hash of the session token.
  * @param read - Reads the live session by that hash; rejects with the refusal for one that is not live.
  * @returns The session; a refusal rejects and is never cached.
  */

@@ -79,18 +79,12 @@ export interface NotificationCandidate {
 }
 
 /**
- * Notification source declaration for a product module (`notifications: true` declares nothing).
- * The notification module reads the subject rows from the product table (`notification-sources.ts`):
- * live rows are the non-deleted, published ones, and the instant mail quotes their `description`.
- * Titles in the inbox, the digest and the instant mail are the context names: `loadContextNames`
- * when given, else the rows' `name`. Apps typically declare only `resolveRecipients` and
- * `resolveContextId`, with `loadContextNames` when the context is a row of another product.
+ * Notification source declaration for a product module (`notifications: true` declares nothing). The notification
+ * module reads the subject rows from the product table: live rows are the non-deleted, published ones. Titles in the
+ * inbox, the digest and the instant mail are the context names: `loadContextNames` when given, else the rows' `name`.
  *
- * The fan-out runs after commit off the CDC activity stream, so an operation needs no call for it. It
- * reads mentions from the stored `description` of a created row, or of an updated one whose changed
- * fields include it, and notifies the mentioned users of its organization who may read the row and
- * were not told about it before. Deep links need no declaration: emails and push carry the subject's
- * location for the frontend `/n` route.
+ * The fan-out runs after commit off the CDC activity stream, so an operation needs no call for it. Deep links need no
+ * declaration: emails and push carry the subject's location.
  */
 export interface ModuleNotifications<TRow extends NotificationSubjectRow = NotificationSubjectRow> {
   // The row readers are methods, so a declaration typed to its module's own row (`TRow`: the subject row plus the
@@ -99,7 +93,7 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
   resolveRecipients?(tx: DbOrTx, row: TRow): Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
   resolveContextId?(row: TRow): string | null;
-  /** Display names for context ids, the titles of inbox rows, digest lines and instant mails; read inside a tenant transaction. */
+  /** Display names for context ids, read inside a tenant transaction. */
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
 }
 
@@ -136,7 +130,7 @@ export type DemoCreatedHook = (ctx: DbContext, demo: DemoCreated) => Promise<voi
 export interface BackendModule extends ModuleConfig {
   /** The product entity this module owns; keys its product-scoped capabilities below. */
   productEntity?: ProductEntityType;
-  /** Yjs collab-session materializer for `productEntity` (indexed by yjs-materializers). */
+  /** Yjs collab-session materializer for `productEntity`. */
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: { [E in TrackedEventType]?: MutationHandler<E> };
@@ -148,9 +142,9 @@ export interface BackendModule extends ModuleConfig {
   jobs?: BackendJob[];
   /** Queues the jobs worker creates and, given a handler, works (see {@link BackendQueue}). */
   queues?: BackendQueue[];
-  /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
+  /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides. */
   notifications?: true | ModuleNotifications;
-  /** Signals this module sends on the app stream (indexed by the stream's signal registry). */
+  /** Signals this module sends on the app stream. */
   signals?: StreamSignalDeclaration[];
   /** Handler apps the API entrypoint mounts (see {@link BackendRoute}); the composition root is the mount list. */
   routes?: BackendRoute[];

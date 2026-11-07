@@ -40,9 +40,8 @@ const asn: GeoipDatabase<AsnResponse> = {
 
 /**
  * Where the DB-IP Lite databases (CC BY 4.0, attribution: IP geolocation by DB-IP, https://db-ip.com) are fetched
- * from, or null when the refresh is off (`GEOIP_SOURCE_URL=off`). Each API process downloads the gzipped MMDB objects
- * from this prefix at boot and re-checks daily, so a refresh published by `pnpm infra` reaches every process within a
- * day. The default is the `geoip/` prefix of the app's public bucket, which in development is the shared template bucket.
+ * from, or null when the refresh is off (`GEOIP_SOURCE_URL=off`). The default is the `geoip/` prefix of the app's
+ * public bucket, which in development is the shared template bucket.
  */
 const geoipSourceUrl = (): string | null => {
   const configured = env.GEOIP_SOURCE_URL;
@@ -125,7 +124,7 @@ const refreshDatabase = async <T extends MmdbResponse>(db: GeoipDatabase<T>, sou
       baseLog.warn(`GeoIP ${db.kind} database fetch failed`, { url, status: res.status });
       return 'failed';
     }
-    // A few megabytes once a day: buffering beats a stream pipeline here, and a truncated archive fails in gunzip before the rename.
+    // A truncated archive fails in gunzip before the rename.
     const archive = Buffer.from(await res.arrayBuffer());
     await mkdir(dirname(db.path), { recursive: true });
     await writeFile(tmp, gunzipSync(archive));

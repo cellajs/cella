@@ -49,7 +49,6 @@ class StreamSubscriberManager {
     this.subscribers.delete(id);
   }
 
-  /** Total registered subscribers. */
   get size(): number {
     return this.subscribers.size;
   }
@@ -59,7 +58,6 @@ class StreamSubscriberManager {
     return Array.from(this.subscribers.values());
   }
 
-  /** The subscribers registered on a topic. */
   getByTopic(topic: string): AppStreamSubscriber[] {
     return [...(this.byTopic.get(topic) ?? [])].flatMap((id) => this.subscribers.get(id) ?? []);
   }

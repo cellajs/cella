@@ -87,9 +87,7 @@ async function writePing(stream: SSEStreamingApi, data: string): Promise<void> {
 /**
  * Sends a ping at once and then every 30 seconds, until the client aborts or the server closes the stream; `write`
  * swallows errors, so the flags are the only exit.
- * @param stream - The stream to keep.
  * @param pingData - Read for every ping; empty by default.
- * @param intervalMs - The time between two pings.
  */
 export async function keepAlive(stream: SSEStreamingApi, pingData: () => string = () => '', intervalMs = 30000): Promise<void> {
   while (!stream.closed && !stream.aborted) {

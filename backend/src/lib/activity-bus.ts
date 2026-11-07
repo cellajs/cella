@@ -33,11 +33,7 @@ export const messageRowSchema = z.object({
   movedFrom: permissionRowDataSchema.nullable().optional(),
 });
 
-/**
- * One product row of an event: the activity it was recorded as (its id, writer, changed fields and stx), the fields
- * that decide who may read it, its org-sequence position, and for a row whose path changed the same fields of the row
- * before the move.
- */
+/** One product row of an event. */
 export type ActivityRow = z.infer<typeof messageRowSchema>;
 
 /** What every event carries: its type, action and place. `trace` stays internal for OTel correlation. */
@@ -73,7 +69,6 @@ export type ActivityEventOf<T extends TrackedEventType> = T extends `${ProductEn
 
 /**
  * The row of an event of a tracked type that is no product, typed. A product event has no whole row: see `rows`.
- * @param event - The event.
  * @param trackedType - The entity or resource type the caller expects.
  * @returns The row, or undefined when the event is of another type.
  */
@@ -106,7 +101,6 @@ class ActivityBus {
     return this;
   }
 
-  /** Called by the CDC WebSocket handler for each arriving message. */
   emit(event: ActivityEvent): void {
     const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace);
 
@@ -120,5 +114,5 @@ class ActivityBus {
   }
 }
 
-/** The process's one activity bus: the CDC socket emits on it, and the modules' listeners subscribe to it. */
+/** The process's one activity bus. */
 export const activityBus = new ActivityBus();

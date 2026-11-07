@@ -231,7 +231,6 @@ const verifyCallbackFlow = async ({
 
   const user = await findUserById(dbCtx, { id: identity.userId });
 
-  // Verify the identity and the address atomically, with the spend of the verification.
   const now = getIsoDate();
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };

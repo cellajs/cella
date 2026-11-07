@@ -19,7 +19,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const verifiedEmails = await findVerifiedEmails(ctx, { emails: uniqueEmails });
   const pendingTokens = await findSystemInvitationTokens(ctx, { emails: uniqueEmails });
 
-  // An address a verified account holds, or one with an unexpired invitation, is rejected; an expired one is invited again.
+  // An expired invitation's address is invited again.
   const taken = new Set([
     ...verifiedEmails.map((row) => row.email),
     ...pendingTokens.filter((token) => new Date(token.expiresAt) > now).map((token) => token.email),
@@ -29,8 +29,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
 
   if (recipientEmails.length === 0) return { data: [], rejectedIds, invitesSentCount: 0 };
 
-  // One independent random secret per recipient, so one link never authenticates another's invitation. Each replaces
-  // the earlier system invitations of its address.
+  // One independent random secret per recipient, so one link never authenticates another's invitation.
   const issued = await issueTokens(
     ctx,
     recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),

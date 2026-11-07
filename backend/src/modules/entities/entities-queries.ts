@@ -17,8 +17,6 @@ import { getEntityTable } from '#/tables';
 
 const hasSlug = (table: ResolvableTable): table is TableWithIdAndSlug => 'slug' in table;
 
-// Channel counter queries
-
 interface FindChannelCountersByKeysOpts {
   keys: string[];
 }
@@ -68,8 +66,6 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
 
   return { countsSelect };
 };
-
-// Product view-count queries: product_counters lives here and every product module reuses these
 
 interface FindProductViewCountOpts {
   productId: string;
@@ -154,20 +150,15 @@ export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: C
   return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
 };
 
-// Sync state queries
-
 /**
  * The generation of the sync books. The CDC worker moves it on whenever it rebuilt them, and a client that holds
  * another one refetches.
- * @param ctx - Carries the connection to read on.
  * @returns The generation, 1 on a database whose books were never rebuilt.
  */
 export const findSyncGeneration = async (ctx: DbContext): Promise<number> => {
   const [state] = await ctx.var.db.select({ generation: syncStateTable.generation }).from(syncStateTable).limit(1);
   return state?.generation ?? 1;
 };
-
-// Entity resolution queries
 
 interface ResolveEntityOpts<T extends EntityType> {
   entityType: T;

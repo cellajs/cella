@@ -14,9 +14,8 @@ app.openapi(userRoutes.listUsers, async (ctx) => {
 });
 
 app.openapi(userRoutes.getUser, async (ctx) => {
-  const { userId } = ctx.req.valid('param');
   const { slug: bySlug, include } = ctx.req.valid('query');
-  return ctx.json(await getUserOp(ctx, userId, { bySlug, include }), 200);
+  return ctx.json(await getUserOp(ctx, ctx.req.valid('param').userId, { bySlug, include }), 200);
 });
 
 export const userHandlers = app;

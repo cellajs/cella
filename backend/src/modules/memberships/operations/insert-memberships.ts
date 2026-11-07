@@ -10,7 +10,6 @@ import { log } from '#/utils/logger';
 
 const columnResolvers: MembershipColumnsResolver[] = [];
 
-// Index the `membershipColumns` each backend module declares (see defineBackendModule).
 onBackendModuleRegister(({ membershipColumns }) => {
   if (membershipColumns) columnResolvers.push(membershipColumns);
 });
@@ -49,7 +48,6 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  // One query for per-user max(displayOrder), the baseline for the next order
   const maxOrderRows = await findMaxDisplayOrders(ctx, { userIds });
 
   const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder]));

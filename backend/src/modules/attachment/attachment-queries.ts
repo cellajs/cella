@@ -121,7 +121,6 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
 
   const whereClause = and(...filters);
 
-  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const itemsQuery = db
     .select({ ...getColumns(attachmentsTable), viewCount: productViewCountSelect() })
     .from(attachmentsTable)

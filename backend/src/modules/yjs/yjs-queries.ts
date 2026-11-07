@@ -125,7 +125,6 @@ export const findServerYjsUpdate = async (ctx: DbContext, { doc, exceptIds }: Fi
 
 interface DeleteYjsDocumentsOpts {
   entityType: ProductEntityType;
-  /** The entities whose documents go. */
   entityIds: string[];
 }
 
@@ -138,7 +137,6 @@ export const deleteYjsDocuments = async (ctx: DbContext, { entityType, entityIds
 
 interface DeleteYjsUpdatesOpts {
   entityType: ProductEntityType;
-  /** The entities whose logs go. */
   entityIds: string[];
 }
 

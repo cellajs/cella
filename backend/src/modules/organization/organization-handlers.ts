@@ -17,19 +17,16 @@ app.openapi(organizationRoutes.batchCreateOrganizations, async (ctx) => {
 });
 
 app.openapi(organizationRoutes.getOrganization, async (ctx) => {
-  const { organizationId } = ctx.req.valid('param');
   const { slug: bySlug, include } = ctx.req.valid('query');
-  return ctx.json(await getOrganizationOp(ctx, organizationId, { bySlug, include }), 200);
+  return ctx.json(await getOrganizationOp(ctx, ctx.req.valid('param').organizationId, { bySlug, include }), 200);
 });
 
 app.openapi(organizationRoutes.updateOrganization, async (ctx) => {
-  const { organizationId } = ctx.req.valid('param');
-  return ctx.json(await updateOrganizationOp(ctx, organizationId, ctx.req.valid('json')), 200);
+  return ctx.json(await updateOrganizationOp(ctx, ctx.req.valid('param').organizationId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(organizationRoutes.publishOrganization, async (ctx) => {
-  const { organizationId } = ctx.req.valid('param');
-  return ctx.json(await publishOrganizationOp(ctx, organizationId), 200);
+  return ctx.json(await publishOrganizationOp(ctx, ctx.req.valid('param').organizationId), 200);
 });
 
 app.openapi(organizationRoutes.batchDeleteOrganizations, async (ctx) => {

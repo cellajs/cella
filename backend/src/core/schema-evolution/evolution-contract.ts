@@ -8,10 +8,7 @@ import { assertBlockMediaUrls } from '#/utils/validate-block-media';
 
 type AnyRecord = Record<string, unknown>;
 
-/**
- * One registration point per entity type for version-tolerant create and update body schemas.
- * @see cella/SCHEMA_EVOLUTION.md
- */
+/** One registration point per entity type for version-tolerant create and update body schemas. */
 export const evolutionContract = {
   product<CS extends z.ZodRawShape, U extends z.ZodRawShape>(
     entityType: ProductEntityType,

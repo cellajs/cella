@@ -58,7 +58,6 @@ const queryLoggers = new WeakMap<DB, Logger>();
  * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
  * the values it bound (tokens, email addresses) to stdout, so `debug` turns it on in development only.
  * @param url - The connection string; its libpq TLS parameters are dropped, so `sslCa` alone decides TLS.
- * @param options - Pool size, TLS CA, the `DEBUG` flag, the connect timeout, the server-side session timeouts and the pool's name.
  * @returns The client; its pool opens a connection on the first query.
  */
 export const createPgConnection = (
