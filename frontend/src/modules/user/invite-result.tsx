@@ -90,16 +90,6 @@ export const inviteResultTitle = (result: InviteResultData, t: TFunction) => {
 /** Moves focus when an element mounts: what held focus is gone. A stable reference, so a rerender moves nothing. */
 export const focusOnMount = (node: HTMLElement | null) => node?.focus();
 
-// Past the press that took focus: the list growing under the pointer would move what it is pressing.
-const blurDelay = 200;
-
-/** Runs once focus has settled outside the field it left. */
-export const afterFocusLeaves = (field: HTMLElement | null, run: () => void) => {
-  setTimeout(() => {
-    if (document.activeElement !== field) run();
-  }, blurDelay);
-};
-
 interface InviteResultProps {
   result: InviteResultData;
   onDone: () => void;

@@ -1,4 +1,3 @@
-import type { ClipboardEvent } from 'react';
 import { zInviteMembersBody } from 'sdk/zod.gen';
 
 /** True for exactly the addresses an invite submit accepts, so everything added to the list passes the form. */
@@ -28,10 +27,4 @@ export const parseInviteText = (text: string) => {
   }
 
   return { emails: [...emails], unparsed: [...unparsed] };
-};
-
-/** The field's text with a paste in place of its selection, on lines of its own: an address typed before it stays whole. */
-export const withPasted = (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  const { value, selectionStart, selectionEnd } = event.currentTarget;
-  return `${value.slice(0, selectionStart ?? value.length)}\n${event.clipboardData.getData('text')}\n${value.slice(selectionEnd ?? value.length)}`;
 };

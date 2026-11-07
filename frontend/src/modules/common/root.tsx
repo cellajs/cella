@@ -11,11 +11,12 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const Devtools = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/devtools/devtools'), 'Devtools') : () => null;
 
-const loadChatSupport = () => import('~/modules/common/gleap-support');
-
 function NoChatSupport() {
   return null;
 }
+
+// The React Compiler cannot lower an `import()` inside a component, so the dynamic import lives at module level
+const loadChatSupport = () => import('~/modules/common/gleap-support');
 
 export function Root() {
   const router = useRouter();

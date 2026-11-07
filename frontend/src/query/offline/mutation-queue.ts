@@ -1,4 +1,4 @@
-import { onlineManager, type QueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 
@@ -39,6 +39,3 @@ export const hasMutationOfRow = (
   entityId: string,
   test: (mutation: MutationLike) => boolean,
 ): boolean => rowIdsOfMutations(client, entityType, test).has(entityId);
-
-/** Only offline-paused mutations may be coalesced or cancelled; online intent stays separate and scope-serialized for backend idempotency and LWW handling. */
-export const canCoalesce = (): boolean => !onlineManager.isOnline();

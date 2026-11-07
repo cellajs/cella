@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { shouldFireEvent } from '~/hooks/use-hotkeys-helpers';
+import { shouldFireEvent } from '~/hooks/use-hotkeys';
 import { announce } from '~/modules/common/announce';
 import { CountBadge } from '~/modules/common/count-badge';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -16,7 +16,7 @@ import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 /** What an action of the bar just did, shown in place of its actions for a moment, with a way to take it back or retry. */
-export interface SelectionReceipt {
+interface SelectionReceipt {
   /** A new id shows the receipt again, so a repeat of the same action restarts it. */
   id: number;
   text: string;

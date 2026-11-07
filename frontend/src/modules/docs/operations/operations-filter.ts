@@ -1,4 +1,3 @@
-import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { foldText, matchesTerms, parseTerms } from 'shared/utils/text-match';
@@ -75,13 +74,6 @@ export function useOperationFilterOptions(operations: GenOperationSummary[]) {
 
   // An option every operation matches filters nothing, as owner "cella" in the template
   return [...tagOptions, ...toolOptions].filter((option) => option.count < operations.length);
-}
-
-/** The search in the URL, for a part of the docs layout outside the route, such as the sidebar. */
-export function useOperationSearch(): OperationSearch {
-  const q = useRouterState({ select: (state) => state.location.search.q });
-  const filter = useRouterState({ select: (state) => state.location.search.filter });
-  return { q, filter };
 }
 
 /** Clears the search on a link to a section the search hides: the section renders, and a queued scroll then finds it. */

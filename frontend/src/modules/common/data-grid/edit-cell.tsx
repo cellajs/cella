@@ -4,8 +4,6 @@ import { bodyCellFocusRing, createCellEvent, getCellClassname, getCellStyle, onE
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
-const cellEditingClassname = 'p-0! [&>input]:border-0 [&>input]:bg-transparent';
-
 type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
 
 interface EditCellProps<R, SR> extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'>, SharedCellRendererProps<R, SR> {
@@ -108,7 +106,7 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
     column,
     bodyCellFocusRing,
     'rdg-editor-container',
-    !column.editorOptions?.displayCellContent && cellEditingClassname,
+    !column.editorOptions?.displayCellContent && 'p-0! [&>input]:border-0 [&>input]:bg-transparent',
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
   );
 

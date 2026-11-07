@@ -1,6 +1,4 @@
 import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
-import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import i18n from 'i18next';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
 import {
@@ -9,15 +7,9 @@ import {
   pendingUploadMessage,
   subscribePendingUploads,
 } from '~/modules/attachment/helpers/pending-uploads';
-import {
-  checklistItemBlock,
-  getChecklistSlashItem,
-  getChecklistTypeItem,
-} from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { checklistItemBlock } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { mentionInlineContent } from '~/modules/common/blocknote/custom-elements/mention/mention-inline-content';
-import { getNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
-import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
-import type { CommonBlockNoteProps, CustomBlock, CustomBlockNoteEditor, CustomBlockTypes, SlashIndexedItems } from '~/modules/common/blocknote/types';
+import { notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 
 // Drop color inline styles so pasted content cannot carry colors that render invisible against the app theme.
 const { textColor: _textColor, backgroundColor: _backgroundColor, ...safeStyleSpecs } = defaultStyleSpecs;
@@ -113,12 +105,11 @@ const pendingUploadPlaceholder = (pending: PendingUpload, props: Record<string, 
   return placeholder;
 };
 
-type MediaRenderResult = { dom: HTMLElement; destroy?: () => void };
 type MediaRender = (
   this: unknown,
   block: { props: Record<string, unknown> },
   editor: { resolveFileUrl?: (url: string) => Promise<string> },
-) => MediaRenderResult;
+) => { dom: HTMLElement; destroy?: () => void };
 
 /**
  * Shows a placeholder for a media block whose file is still only on its uploader's device, and the file once it arrives.
@@ -215,62 +206,3 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
   },
   inlineContentSpecs: { mention: mentionInlineContent },
 });
-
-const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
-
-/** The block types a block can switch to: the allowed switch types, with plain headings at `headingLevels` only. */
-export const getBlockTypeItems = (
-  editor: CustomBlockNoteEditor,
-  allowedTypes: CustomBlockTypes[],
-  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
-): BlockTypeSelectItem[] => {
-  const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
-  return [...blockTypeSelectItems(editor), getChecklistTypeItem()].filter(
-    ({ type, props }) =>
-      switchTypes.includes(type) && (type !== 'heading' || (!props?.isToggleable && headingLevels.some((level) => level === props?.level))),
-  );
-};
-
-/** Whether an item names the block's current type: its type, and each prop the item sets. */
-export const isCurrentBlockType = (item: BlockTypeSelectItem, block: CustomBlock) => {
-  const blockProps: Record<string, unknown> = block.props;
-  return item.type === block.type && Object.entries(item.props ?? {}).every(([name, value]) => blockProps[name] === value);
-};
-
-/** The slash items a digit key picks, in order. */
-export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
-
-export const getSlashMenuItems = (
-  editor: CustomBlockNoteEditor,
-  allowedTypes: CustomBlockTypes[],
-  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
-): DefaultReactSuggestionItem[] => {
-  const baseItems = [...getDefaultReactSlashMenuItems(editor), getNotifySlashItem(editor), getChecklistSlashItem(editor)];
-
-  const { heading, ...restTypeToKeys } = baseBlockNoteTypeToKeys;
-  const filteredHeading = heading.filter((key) => {
-    const match = key.match(/(?:_)?(\d)$/);
-    const level = match ? Number.parseInt(match[1], 10) : 1;
-    return headingLevels.some((headingLevel) => headingLevel === level);
-  });
-
-  const allowedTypeToKeys = { ...restTypeToKeys, heading: filteredHeading };
-
-  const filteredTypeToKeys = Object.fromEntries(allowedTypes.map((type) => [type, allowedTypeToKeys[type]]));
-
-  const allowedKeys: Set<string> = new Set(Object.values(filteredTypeToKeys).flat());
-
-  const sortOrder = new Map<string, number>(
-    customSlashIndexedItems
-      .filter((type) => allowedTypes.includes(type))
-      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index] as const)),
-  );
-
-  return baseItems
-    .filter((item): item is DefaultSuggestionItem => 'key' in item && typeof item.key === 'string' && allowedKeys.has(item.key))
-    .sort(({ key: first }, { key: second }) => {
-      const firstIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
-      const secondIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
-      return firstIndex - secondIndex;
-    });
-};

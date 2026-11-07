@@ -1,12 +1,50 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { FingerprintPatternIcon, PlusIcon } from 'lucide-react';
+import { FingerprintPatternIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
+import { ExpandableTileDetail } from '~/modules/common/expandable-tile';
 import { HelpText } from '~/modules/common/help-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
-import { PasskeyTile } from '~/modules/me/passkey-tile';
+import { DeviceTile } from '~/modules/me/device-tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
+import type { Passkey } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
+import { useCurrentUser } from '~/modules/user/user-store';
+import { dateShort } from '~/utils/date-short';
+
+interface PasskeyTileProps {
+  passkey: Passkey;
+  onDelete: (id: string) => void;
+  /** This passkey's delete is running. */
+  loading: boolean;
+  onlyPasskeyLeft: boolean;
+}
+
+function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: PasskeyTileProps) {
+  const { t } = useTranslation();
+  const user = useCurrentUser();
+  // The backend keeps the last passkey while MFA is on
+  const locked = user.mfaRequired && onlyPasskeyLeft;
+
+  return (
+    <DeviceTile
+      value={passkey.id}
+      device={passkey}
+      iconBadge={FingerprintPatternIcon}
+      meta={passkey.nameOnDevice}
+      details={<ExpandableTileDetail label={t('c:created_at')}>{dateShort(passkey.createdAt)}</ExpandableTileDetail>}
+      actions={
+        <>
+          <Button variant="secondary" size="sm" className="max-sm:w-full" loading={loading} disabled={locked} onClick={() => onDelete(passkey.id)}>
+            <TrashIcon />
+            {t('c:delete')}
+          </Button>
+          {locked && <p className="text-muted-foreground text-sm">{t('c:passkey_locked.text')}</p>}
+        </>
+      }
+    />
+  );
+}
 
 /** The passkeys section: a create button while there are none, else the list with an add button in its heading. */
 export function PasskeysList() {

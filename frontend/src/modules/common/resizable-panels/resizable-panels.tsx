@@ -139,8 +139,6 @@ function releaseAfterSwap(element: HTMLElement) {
 /** How long a toggle glides the widths (T6), the `duration-200` on `ResizablePanel`. */
 export const panelGlideDuration = 200;
 
-const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-
 const resizeSaveDelay = 150;
 
 export interface PanelGroupApi {
@@ -232,7 +230,7 @@ export function ResizablePanelGroup({
   // T6: a toggle moves every width in one eased step, from what is on screen to the widths `change` sets
   const glide = (change: () => void) => {
     const container = containerRef.current;
-    if (!container || prefersReducedMotion()) return change();
+    if (!container || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return change();
     const before = new Map(
       panelsRef.current.map((panel) => [panel.id, { width: panel.element.getBoundingClientRect().width, collapsed: isCollapsed(panel) }]),
     );

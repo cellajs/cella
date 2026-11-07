@@ -1,4 +1,3 @@
-import type { RefObject } from 'react';
 import { defineFrontendModule } from '~/lib/module';
 import { dangerToolBase, detailsToolBase, generalToolBase, tabsToolBase } from '~/modules/entities/channel-settings-tools';
 import { openCreateOrganizationDialog } from '~/modules/organization/create-organization-form';
@@ -12,16 +11,6 @@ const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/sett
 const OrganizationDeleteCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationDeleteCard');
 const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organizations-grid'), 'OrganizationsGrid');
 
-/** Opens the create dialog from the menu section's plus button, then navigates to the new organization. */
-function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
-  openCreateOrganizationDialog(triggerRef, (organization) =>
-    getRouter().navigate({
-      to: '/$tenantId/$organizationSlug/organization/members',
-      params: { tenantId: organization.tenantId, organizationSlug: organization.slug },
-    }),
-  );
-}
-
 defineFrontendModule({
   name: 'organizations',
   owner: 'cella',
@@ -29,7 +18,17 @@ defineFrontendModule({
   description: 'UI for managing organizations, the highest ancestor in the entity hierarchy.',
   channel: {
     entityType: 'organization',
-    menuSection: { createAction: createOrganizationAction, label: 'c:organization_other' },
+    menuSection: {
+      // Opens the create dialog from the menu section's plus button, then navigates to the new organization
+      createAction: (triggerRef) =>
+        openCreateOrganizationDialog(triggerRef, (organization) =>
+          getRouter().navigate({
+            to: '/$tenantId/$organizationSlug/organization/members',
+            params: { tenantId: organization.tenantId, organizationSlug: organization.slug },
+          }),
+        ),
+      label: 'c:organization_other',
+    },
     listQuery: (params) => organizationsListQueryOptions(params),
   },
   tools: [

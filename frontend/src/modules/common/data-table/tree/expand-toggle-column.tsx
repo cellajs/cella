@@ -4,8 +4,6 @@ import { useTreeContext } from '~/modules/common/data-table/tree/tree-context';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { cn } from '~/utils/cn';
 
-const expandToggleColumnKey = 'expand-toggle-column';
-
 /** Minimal row contract this column reads; any {@link buildTree} output satisfies it. */
 type AnyTreeRow = TreeRow<{ id: string }>;
 
@@ -33,7 +31,7 @@ function ExpandToggleCell({ row, tabIndex }: ExpandToggleCellProps) {
 }
 
 const column: ColumnOrColumnGroup<AnyTreeRow> = {
-  key: expandToggleColumnKey,
+  key: 'expand-toggle-column',
   name: '',
   width: 36,
   minWidth: 36,

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { type TriggerRef, withDefaults } from '~/modules/common/overlay-store-helpers';
 
-export type DropdownKind = 'menu' | 'panel';
+type DropdownKind = 'menu' | 'panel';
 
 export type DropdownData = {
   id: number | string;

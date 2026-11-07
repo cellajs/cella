@@ -21,10 +21,8 @@ const tagTypeConfig = {
   },
 };
 
-type TagType = keyof typeof tagTypeConfig;
-
 interface CollapsibleTagItemProps<T> {
-  type: TagType;
+  type: keyof typeof tagTypeConfig;
   tag: { name: string; count: number };
   items: T[];
   isExpanded: boolean;

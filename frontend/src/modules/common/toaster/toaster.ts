@@ -5,10 +5,10 @@ import { prefersMoreContrast } from '~/hooks/use-more-contrast';
 import type { ToastData } from '~/modules/ui/toast';
 
 /** Toast variants with their own icon. */
-export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
+type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 
 /** Base UI toast options; the message and severity come from the call. */
-export type ToastOptions = Omit<ToastManagerAddOptions<ToastData>, 'title' | 'type'>;
+type ToastOptions = Omit<ToastManagerAddOptions<ToastData>, 'title' | 'type'>;
 
 // Errors and toasts with a description carry more to read, so they stay longer
 const timeout = 4_000;

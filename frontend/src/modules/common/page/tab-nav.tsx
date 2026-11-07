@@ -56,7 +56,7 @@ function showsTabsInMenu(slot: Slot): boolean {
   return surface === 'tabs' && isChannel(entityType) && channelTabsInMenu(entityType);
 }
 
-export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
+type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
 
 /** The `$tool` param of a match, naming a registry tab. */
 const toolParam = (params: unknown) => (params as { tool?: string } | undefined)?.tool;

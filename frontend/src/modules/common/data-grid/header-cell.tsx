@@ -18,9 +18,6 @@ import {
   stopPropagation,
 } from './utils/grid-utils';
 
-const resizeHandleClassname =
-  'cursor-col-resize absolute inset-y-0 inset-e-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:inset-e-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
-
 const draggableColumnType = 'grid-column';
 type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
 
@@ -243,7 +240,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   return (
     <div
       aria-hidden
-      className={resizeHandleClassname}
+      className='after:bg-foreground/30 hover:after:bg-primary/80 absolute inset-y-0 inset-e-0 w-4 cursor-col-resize after:absolute after:inset-e-0 after:top-1/2 after:h-4 after:w-0.5 after:-translate-y-1/2 after:rounded-full after:content-[""]'
       onClick={stopPropagation}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

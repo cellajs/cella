@@ -42,7 +42,7 @@ type ChannelSettingsSlotContexts = { [C in ChannelEntityType as `${C}.settings`]
 type ChannelTabsSlotContexts = { [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C> };
 
 /** Render context of the profile page body: the viewed user, the organization route it opened from, and whether it is a sheet. */
-export interface UserProfileContext {
+interface UserProfileContext {
   user: UserBase;
   organizationId?: string;
   isSheet: boolean;
@@ -76,7 +76,7 @@ interface SlotToolFields {
 }
 
 /** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */
-export type ToolFor<S extends Slot> = PlacementDescriptor & {
+type ToolFor<S extends Slot> = PlacementDescriptor & {
   slot: S;
   render: (context: SlotContexts[S]) => ReactNode;
 } & (S extends keyof SlotToolFields ? SlotToolFields[S] : unknown);

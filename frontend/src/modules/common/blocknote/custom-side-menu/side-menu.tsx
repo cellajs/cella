@@ -1,12 +1,20 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, SideMenu, SideMenuController, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
+import {
+  type BlockTypeSelectItem,
+  blockTypeSelectItems,
+  SideMenu,
+  SideMenuController,
+  useExtension,
+  useExtensionState,
+  usePortalElement,
+} from '@blocknote/react';
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
 import { type DragEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getBlockTypeItems, isCurrentBlockType } from '~/modules/common/blocknote/blocknote-schema';
+import { getChecklistTypeItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import { useBlockNoteComponents } from '~/modules/common/blocknote/hooks/use-blocknote-components';
-import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps, CustomBlockTypes } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface CustomSideMenuProps extends CustomBlockNoteMenuProps {
@@ -144,6 +152,27 @@ function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsPro
     </>
   );
 }
+
+const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
+
+/** The block types a block can switch to: the allowed switch types, with plain headings at `headingLevels` only. */
+const getBlockTypeItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: CustomBlockNoteMenuProps['headingLevels'],
+): BlockTypeSelectItem[] => {
+  const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
+  return [...blockTypeSelectItems(editor), getChecklistTypeItem()].filter(
+    ({ type, props }) =>
+      switchTypes.includes(type) && (type !== 'heading' || (!props?.isToggleable && headingLevels.some((level) => level === props?.level))),
+  );
+};
+
+/** Whether an item names the block's current type: its type, and each prop the item sets. */
+const isCurrentBlockType = (item: BlockTypeSelectItem, block: CustomBlock) => {
+  const blockProps: Record<string, unknown> = block.props;
+  return item.type === block.type && Object.entries(item.props ?? {}).every(([name, value]) => blockProps[name] === value);
+};
 
 interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {
   block: CustomBlock;

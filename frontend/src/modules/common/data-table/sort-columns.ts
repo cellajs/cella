@@ -1,12 +1,9 @@
 import type { SortColumn } from '~/modules/common/data-grid';
 
-type Sort = SortColumn['columnKey'];
-type Order = 'asc' | 'desc';
-
 // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
 type SetSearch = (newValues: any) => void;
 
-export const useSortColumns = (sort: Sort | undefined, order: Order | undefined, setSearch: SetSearch) => {
+export const useSortColumns = (sort: SortColumn['columnKey'] | undefined, order: 'asc' | 'desc' | undefined, setSearch: SetSearch) => {
   const sortColumns: SortColumn[] = sort && order ? [{ columnKey: sort, direction: order === 'asc' ? 'ASC' : 'DESC' }] : [];
 
   const setSortColumns = (newSortColumns: SortColumn[]) => {

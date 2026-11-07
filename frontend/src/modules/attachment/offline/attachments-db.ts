@@ -3,7 +3,6 @@ import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
 import { getLocalUserDb } from '~/query/local-user-db';
 
-type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed';
 
@@ -40,7 +39,7 @@ export interface AttachmentBlob {
   contentType: string;
 
   /** How this blob was created: 'upload' (local, may need uploading) or 'download' (from cloud). */
-  source: BlobSource;
+  source: 'upload' | 'download';
 
   /** Upload status: 'uploaded' means "exists in cloud" (downloads included), 'local-only' means no cloud is configured, the rest apply to source='upload'. */
   uploadStatus: UploadStatus;

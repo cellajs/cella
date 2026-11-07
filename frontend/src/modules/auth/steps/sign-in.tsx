@@ -121,7 +121,16 @@ export function SignInStep({ invitation }: SignInStepProps) {
       <AuthHeader
         image={invitation && <InvitationAvatar invitation={invitation} />}
         title={getTitle()}
-        description={restrictedMode && <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />}
+        description={
+          restrictedMode &&
+          (appConfig.has.selfRegistration ? (
+            <>
+              {t('c:new_here')} <InlineLinkButton onClick={() => setStep('signUp', form.getValues('email'))}>{t('c:sign_up')}</InlineLinkButton>
+            </>
+          ) : (
+            <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />
+          ))
+        }
       >
         {!restrictedMode && <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />}
       </AuthHeader>
@@ -147,18 +156,5 @@ export function SignInStep({ invitation }: SignInStepProps) {
         </form>
       )}
     </Form>
-  );
-}
-
-/** Where a visitor without an account goes from the neutral step: sign-up, or the notice that it is closed. */
-function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) {
-  const { t } = useTranslation();
-
-  if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
-
-  return (
-    <>
-      {t('c:new_here')} <InlineLinkButton onClick={() => onStep('signUp')}>{t('c:sign_up')}</InlineLinkButton>
-    </>
   );
 }

@@ -12,8 +12,6 @@ import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
-type ApiSection = 'operations' | 'schemas';
-
 interface ApiReferenceSectionProps {
   label: string;
 }
@@ -35,7 +33,7 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
   const isSchemasRoute = pathname === '/docs/schemas';
 
   // Start collapsed when landing directly via URL without search params
-  const [overrides, setOverrides] = useState<Partial<Record<ApiSection, boolean>>>(() => {
+  const [overrides, setOverrides] = useState<Partial<Record<'operations' | 'schemas', boolean>>>(() => {
     if (isOperationsRoute && !activeOperationTag && !hasQuery) return { operations: false };
     if (isSchemasRoute && !activeSchemaTag) return { schemas: false };
     return {};

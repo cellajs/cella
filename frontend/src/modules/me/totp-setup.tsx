@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { CircleAlertIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -9,22 +9,9 @@ import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { SecretBox } from '~/modules/common/secret-box';
 import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 /** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */
 const keyExpiryMs = 4.5 * 60 * 1000;
-
-/** A muted line behind a warning icon, for what the user should know before acting. */
-function WarningNote({ className, children, ...props }: ComponentProps<'p'>) {
-  return (
-    <p className={cn('text-muted-foreground flex items-start gap-2 text-sm font-normal', className)} {...props}>
-      <span className="flex h-lh shrink-0 items-center">
-        <CircleAlertIcon className="text-warning size-3.5" />
-      </span>
-      <span>{children}</span>
-    </p>
-  );
-}
 
 interface TotpSetupProps {
   /** After the key is confirmed. */
@@ -67,9 +54,14 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <WarningNote className="justify-center">
-        <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
-      </WarningNote>
+      <p className="text-muted-foreground flex items-start justify-center gap-2 text-sm font-normal">
+        <span className="flex h-lh shrink-0 items-center">
+          <CircleAlertIcon className="text-warning size-3.5" />
+        </span>
+        <span>
+          <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
+        </span>
+      </p>
 
       <QRCodeSVG className="mx-auto mt-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
       {expiredUri === data.totpUri ? (

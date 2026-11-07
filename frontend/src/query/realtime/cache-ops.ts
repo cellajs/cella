@@ -143,7 +143,7 @@ function applyServerRows(entityType: ProductEntityType, rows: ItemData[], keys: 
 }
 
 /** `overflow` and `unsupported` deliver no row and `error` may retry; the caller marks the lists of a range that came back short or not at all. */
-export interface RangeFetchResult {
+interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
   items: ItemData[];
   /** Highest seq actually returned; 0 when empty. Lets callers detect a short delivery. */

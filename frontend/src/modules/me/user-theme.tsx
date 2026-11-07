@@ -22,26 +22,6 @@ interface ThemeItem {
   separator?: boolean;
 }
 
-function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
-  return (
-    <div className="flex flex-col">
-      {items.map((item) => (
-        <div key={item.key}>
-          {item.separator && <div className="my-1 border-t in-data-[slot=drawer-row-group]:hidden" />}
-          <DropdownSelectItem selected={item.selected} onSelect={item.onSelect}>
-            <span className="flex items-center gap-2">
-              <span className={item.iconClassName} style={item.iconStyle}>
-                <item.icon />
-              </span>
-              {item.label}
-            </span>
-          </DropdownSelectItem>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 interface UserThemeProps {
   buttonClassName?: string;
   /** Names the button in a tooltip below it. */
@@ -103,12 +83,29 @@ export function UserTheme({ buttonClassName, tooltip = false }: UserThemeProps) 
       })),
     ];
 
-    dropdowner.getState().create(<ThemeDropdownContent items={items} />, {
-      id: 'user-theme',
-      triggerId: 'user-theme-trigger',
-      triggerRef,
-      kind: 'menu',
-    });
+    dropdowner.getState().create(
+      <div className="flex flex-col">
+        {items.map((item) => (
+          <div key={item.key}>
+            {item.separator && <div className="my-1 border-t in-data-[slot=drawer-row-group]:hidden" />}
+            <DropdownSelectItem selected={item.selected} onSelect={item.onSelect}>
+              <span className="flex items-center gap-2">
+                <span className={item.iconClassName} style={item.iconStyle}>
+                  <item.icon />
+                </span>
+                {item.label}
+              </span>
+            </DropdownSelectItem>
+          </div>
+        ))}
+      </div>,
+      {
+        id: 'user-theme',
+        triggerId: 'user-theme-trigger',
+        triggerRef,
+        kind: 'menu',
+      },
+    );
   };
 
   return (

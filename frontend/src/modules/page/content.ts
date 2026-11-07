@@ -33,7 +33,6 @@ const docsTileSchema = z.object({
 });
 
 const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
-export type DocsSectionId = (typeof docsSectionIds)[number];
 
 const docsSectionSchema = z.object({ id: z.enum(docsSectionIds), label: z.string().min(1), visible: z.boolean().default(true) });
 
@@ -49,9 +48,8 @@ const docsConfigSchema = z.object({
     .refine((sections) => new Set(sections.map((section) => section.id)).size === sections.length, 'section ids must be unique'),
 });
 
-export type DocsConfig = z.infer<typeof docsConfigSchema>;
+type DocsConfig = z.infer<typeof docsConfigSchema>;
 export type DocsTile = z.infer<typeof docsTileSchema>;
-export type DocsSection = z.infer<typeof docsSectionSchema>;
 
 // Fallback for a content root without an index.mdx: warn and keep docs rendering with default section labels.
 const defaultDocsConfig: DocsConfig = {

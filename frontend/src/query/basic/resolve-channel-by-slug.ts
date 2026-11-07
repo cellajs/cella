@@ -1,7 +1,9 @@
 import { type DefaultError, type FetchQueryOptions, onlineManager, type QueryKey } from '@tanstack/react-query';
+import { redirect } from '@tanstack/react-router';
+import i18n from 'i18next';
+import { toaster } from '~/modules/common/toaster/toaster';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { queryClient } from '~/query/query-client';
-import { redirectOnMissing } from '~/utils/redirect-on-missing';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
 type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams extends Record<string, string>, TQueryKey extends QueryKey> = {
@@ -73,7 +75,10 @@ export async function resolveChannelBySlug<
     entity = fetched;
   }
 
-  redirectOnMissing(entity);
+  if (entity == null) {
+    if (!onlineManager.isOnline()) toaster.warning(i18n.t('c:offline_cache_miss.text'));
+    throw redirect({ to: '/home', replace: true });
+  }
 
   rewriteUrlToSlug(params, buildSlugOverrides(entity));
 

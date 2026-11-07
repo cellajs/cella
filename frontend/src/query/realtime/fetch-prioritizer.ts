@@ -20,7 +20,7 @@ const retryBaseMs = 2_000;
 /** Re-check delay while offline, where a fetch would fail; catchup reconciles on reconnect. */
 const offlineRecheckMs = 5_000;
 
-export interface EnqueueInput {
+interface EnqueueInput {
   entityType: ProductEntityType;
   organizationId: string;
   tenantId: string | null;

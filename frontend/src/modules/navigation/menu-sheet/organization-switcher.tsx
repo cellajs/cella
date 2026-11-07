@@ -34,30 +34,6 @@ function useSwitcherOrganizations() {
   };
 }
 
-interface SwitcherOrganizationItemProps {
-  organization: UserMenuItem;
-  selected: boolean;
-  unseenCount: number;
-}
-
-function SwitcherOrganizationItem({ organization, selected, unseenCount }: SwitcherOrganizationItemProps) {
-  return (
-    <DropdownSelectItem selected={selected} onSelect={() => showMenuOrganization(organization)}>
-      <span className={cn('flex min-w-0 items-center gap-3', organization.membership.archived && 'text-muted-foreground')}>
-        <EntityAvatar
-          className={cn('size-6 shrink-0', organization.membership.archived && 'opacity-70')}
-          type={organization.entityType}
-          id={organization.id}
-          name={organization.name}
-          url={organization.thumbnailUrl}
-        />
-        <span className="truncate">{organization.name}</span>
-        {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
-      </span>
-    </DropdownSelectItem>
-  );
-}
-
 interface OrganizationSwitcherMenuProps {
   organization: UserMenuItem;
   /** The switcher row, which a dialog opened from the menu returns focus to. */
@@ -85,9 +61,24 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
     createOrganization?.(triggerRef);
   };
 
-  const renderItem = (item: UserMenuItem) => (
-    <SwitcherOrganizationItem key={item.id} organization={item} selected={item.id === organization.id} unseenCount={unseenCounts.get(item.id) ?? 0} />
-  );
+  const renderItem = (item: UserMenuItem) => {
+    const unseenCount = unseenCounts.get(item.id) ?? 0;
+    return (
+      <DropdownSelectItem key={item.id} selected={item.id === organization.id} onSelect={() => showMenuOrganization(item)}>
+        <span className={cn('flex min-w-0 items-center gap-3', item.membership.archived && 'text-muted-foreground')}>
+          <EntityAvatar
+            className={cn('size-6 shrink-0', item.membership.archived && 'opacity-70')}
+            type={item.entityType}
+            id={item.id}
+            name={item.name}
+            url={item.thumbnailUrl}
+          />
+          <span className="truncate">{item.name}</span>
+          {unseenCount > 0 && <CountBadge count={unseenCount} className="shrink-0" />}
+        </span>
+      </DropdownSelectItem>
+    );
+  };
 
   return (
     <>

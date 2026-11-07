@@ -12,6 +12,7 @@ import { markCacheRestored, queryClient } from '~/query/query-client';
 import { resumeRestoredMutations } from '~/query/realtime/stream-manager';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
+// The React Compiler cannot lower an `import()` inside a component, so the dynamic import lives at module level
 const loadUploadService = () => import('~/modules/attachment/offline/upload-service');
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */

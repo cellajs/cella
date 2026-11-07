@@ -1,10 +1,11 @@
 import type { Query } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
-import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
+import { getRegisteredEntityTypes } from '~/query/basic/entity-query-registry';
 import { isInfiniteQueryData } from '~/query/basic/mutate-query';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
-import { getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
+import { getCachedMemberships } from '~/query/enrichment/helpers';
 import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
@@ -12,6 +13,16 @@ import { queryClient } from '~/query/query-client';
 let isEnriching = false;
 
 const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
+
+const getRegisteredChannelTypes = (): ChannelEntityType[] => getRegisteredEntityTypes().filter(isChannel);
+
+/** Channel types hosting this entity as a menu subentity, from menuStructure config, including types that are not hierarchy ancestors. */
+const getMenuParentTypes = (entityType: ChannelEntityType): ChannelEntityType[] =>
+  appConfig.menuStructure.filter((menuItem) => menuItem.subentityType === entityType).map((menuItem) => menuItem.entityType);
+
+/** A menu parent's cache update propagates ancestor-slug re-enrichment to its children. */
+const isMenuParentOf = (parentType: ChannelEntityType, childType: ChannelEntityType): boolean =>
+  appConfig.menuStructure.some((menuItem) => menuItem.entityType === parentType && menuItem.subentityType === childType);
 
 /** Ancestors for URL building: hierarchy ancestors first, then menu parents not already included. */
 function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEntityType[] {

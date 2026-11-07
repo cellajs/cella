@@ -9,7 +9,7 @@ import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
 import { SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { useNodeExpansion } from '~/modules/common/json-viewer/use-node-expansion';
-import { describeNode, getValueType, isDescriptionKeyword, type JsonPath, jsonSchemaTypes, matchRowPaths } from '~/modules/common/json-viewer/utils';
+import { describeNode, isDescriptionKeyword, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
@@ -24,6 +24,15 @@ interface NodeKeyProps {
 }
 
 const colon = <span className="text-faint-foreground mr-1">:</span>;
+
+function getValueType(value: unknown): string {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (Array.isArray(value)) return 'array';
+  return typeof value;
+}
+
+const jsonSchemaTypes = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
 
 function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: NodeKeyProps) {
   if (keyName === false) return null;

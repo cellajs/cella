@@ -8,8 +8,6 @@ import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
 import { uiStore } from '~/modules/ui/ui-store';
 
-type LastUser = Pick<MeUser, 'id' | 'email'>;
-
 /** The `localStorage` key the store persists to, which every tab of the browser shares. */
 export const userStorageKey = `${appConfig.slug}-user`;
 
@@ -27,7 +25,7 @@ interface UserStoreState {
   user: MeUser | null;
   isSystemAdmin: boolean;
   /** The last user signed in on this browser, kept after sign-out. */
-  lastUser: LastUser | null;
+  lastUser: Pick<MeUser, 'id' | 'email'> | null;
   /** Stores what `/me` answered in one write; also sets lastUser. */
   setMe: (me: Me) => void;
   /** Merges into the user; also sets lastUser. */

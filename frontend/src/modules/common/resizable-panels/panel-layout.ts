@@ -37,7 +37,7 @@ export interface DragState {
   end?: EndDragState;
 }
 
-export interface EndDragState {
+interface EndDragState {
   /** Fit at drag start */
   fit: boolean;
   /** What the panels may take for the row to fit: the parent's width less the separators */
@@ -46,7 +46,7 @@ export interface EndDragState {
   reach: number;
 }
 
-export interface FitInput {
+interface FitInput {
   panels: PanelConfig[];
   /** The user's widths: at or below `collapsedWidth` is a panel they closed, and anything unusable counts as `minWidth` */
   chosen: Record<string, number>;

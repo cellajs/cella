@@ -13,7 +13,6 @@ import { passkeyAlgorithms } from 'shared/passkeys';
 import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyKind } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
-const isDevelopment = appConfig.mode === 'development';
 // The host the app is served on, as the backend verifies it: a passkey never crosses hosts.
 const relyingPartyId = () => new URL(appConfig.frontendUrl).hostname;
 
@@ -59,7 +58,7 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const email = getCurrentUser().email;
   const generatedName = generatePasskeyName();
-  const nameOnDevice = isDevelopment ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
+  const nameOnDevice = appConfig.mode === 'development' ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
 
   const attestation = await startRegistration({
     optionsJSON: {

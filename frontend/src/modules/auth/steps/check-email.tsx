@@ -14,9 +14,6 @@ import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 
-const passkeyEnabled = isStrategyEnabled('passkey');
-const magicLinkEnabled = isStrategyEnabled('magic');
-
 interface CheckEmailStepProps {
   invitation?: TokenInvitation;
 }
@@ -67,7 +64,7 @@ export function CheckEmailStep({ invitation }: CheckEmailStepProps) {
         }
       />
 
-      {(passkeyEnabled || magicLinkEnabled) && (
+      {(isStrategyEnabled('passkey') || isStrategyEnabled('magic')) && (
         <form noValidate onSubmit={form.handleSubmit((body) => submitEmail(body), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} />
           <SubmitButton loading={isPending} size="block">

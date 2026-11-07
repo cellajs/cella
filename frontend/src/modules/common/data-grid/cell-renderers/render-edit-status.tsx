@@ -7,7 +7,7 @@ import { cn } from '~/utils/cn';
 import type { CalculatedColumn, RowsChangeData } from '../types';
 
 /** `pending` while the save of an edit runs, `saved` for a moment after it succeeds. */
-export type EditStatus = 'pending' | 'saved';
+type EditStatus = 'pending' | 'saved';
 
 type Edit<R> = { row: R; columnKey: string; status: EditStatus };
 

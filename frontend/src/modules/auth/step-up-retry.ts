@@ -1,8 +1,7 @@
-import type { GetStepUpData, GetStepUpResponse } from 'sdk';
+import type { GetStepUpResponse } from 'sdk';
 import { ApiError } from '~/lib/api';
 
 export type StepUpMethod = GetStepUpResponse['methods'][number];
-export type StepUpTier = NonNullable<NonNullable<GetStepUpData['query']>['tier']>;
 
 /** The user closed the re-auth dialog without proving it's them. */
 export class StepUpDismissedError extends Error {

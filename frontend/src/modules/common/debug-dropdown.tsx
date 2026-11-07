@@ -8,15 +8,12 @@ interface DebugDropdownProps {
   className?: string;
 }
 
-const drizzleStudioUrl = `https://local.drizzle.studio?port=${drizzleStudioPort()}`;
-const storybookUrl = `http://localhost:${storybookPort()}/`;
-
 // The library panels open through their own toggle buttons, which tailwind.css hides
 const clickHidden = (selector: string) => document.querySelector<HTMLElement>(selector)?.click();
 
 const debugOptions = [
-  { id: 'drizzle-studio', icon: '💦', onSelect: () => window.open(drizzleStudioUrl, '_self') },
-  { id: 'storybook', icon: '📖', onSelect: () => window.open(storybookUrl, '_self') },
+  { id: 'drizzle-studio', icon: '💦', onSelect: () => window.open(`https://local.drizzle.studio?port=${drizzleStudioPort()}`, '_self') },
+  { id: 'storybook', icon: '📖', onSelect: () => window.open(`http://localhost:${storybookPort()}/`, '_self') },
   { id: 'tanstack-router', icon: '🌴', onSelect: () => clickHidden('.TanStackRouterDevtools > button') },
   { id: 'react-query', icon: '📡', onSelect: () => clickHidden('.tsqd-parent-container .tsqd-open-btn') },
   { id: 'react-scan', icon: '⏱️', onSelect: toggleReactScan },

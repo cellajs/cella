@@ -34,9 +34,6 @@ const localUserStores = [seenStore, syncStore, navigationStore, draftStore, aler
 let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-/** The user whose database to bind; null while signed out. */
-const resolveLocalUserId = (): string | null => userStore.getState().user?.id || null;
-
 /** The signed-in user id in a value the user store persisted; `null` when signed out, removed or unreadable. */
 function storedUserId(value: string | null): string | null {
   try {
@@ -46,10 +43,6 @@ function storedUserId(value: string | null): string | null {
   } catch {
     return null;
   }
-}
-
-async function hydrateAll(): Promise<void> {
-  await Promise.all(localUserStores.map((store) => store.persist.rehydrate()));
 }
 
 /**
@@ -70,7 +63,7 @@ function bindLocalUser(userId: string): void {
   // A second evaluation of this module, as on an HMR update, finds the database bound and its cache in memory.
   if (db === previous) return;
   resetPersister();
-  readyPromise = Promise.all([hydrateAll(), restoreQueryCache(db)]).then(() => {});
+  readyPromise = Promise.all([...localUserStores.map((store) => store.persist.rehydrate()), restoreQueryCache(db)]).then(() => {});
 }
 
 function unbind(): void {
@@ -84,7 +77,7 @@ function unbind(): void {
 
 /** Reconcile the bound DB with the current auth state. Cheap; no-ops when unchanged. */
 function reconcileLocalUser(): void {
-  const userId = resolveLocalUserId();
+  const userId = userStore.getState().user?.id || null;
   if (userId === boundUserId) return;
   if (userId) bindLocalUser(userId);
   else unbind();

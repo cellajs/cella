@@ -46,7 +46,7 @@ export interface Position {
 }
 
 /** Context passed to a column's `estimateLines` callback for width-aware row sizing. */
-export interface EstimateLinesContext {
+interface EstimateLinesContext {
   /** The column's rendered width in pixels (flex-resolved, or the declared width). */
   readonly width: number;
 }
@@ -127,7 +127,7 @@ export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TR
   readonly mergedSlots?: Maybe<MergedSlots<TRow, TSummaryRow>>;
 }
 
-export interface ColumnGroup<R, SR = unknown> {
+interface ColumnGroup<R, SR = unknown> {
   /** Displayed in the group header cell. */
   readonly name: string | ReactElement;
   readonly headerCellClass?: Maybe<string>;
@@ -234,7 +234,7 @@ export interface CellSelectArgs<TRow, TSummaryRow = unknown> {
 
 export type CellMouseEventHandler<R, SR> = Maybe<(args: CellMouseArgs<NoInfer<R>, NoInfer<SR>>, event: CellMouseEvent) => void>;
 
-export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCellRendererProps<TRow, TSummaryRow> {
+interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCellRendererProps<TRow, TSummaryRow> {
   viewportColumns: readonly CalculatedColumn<TRow, TSummaryRow>[];
   rowIdx: number;
   selectedCellIdx: number | undefined;
@@ -292,25 +292,9 @@ export interface SortColumn {
 }
 
 export type CellNavigationMode = 'NONE' | 'CHANGE_ROW';
-export type SortDirection = 'ASC' | 'DESC';
+type SortDirection = 'ASC' | 'DESC';
 
 export type ColSpanArgs<TRow, TSummaryRow> = { type: 'HEADER' } | { type: 'ROW'; row: TRow } | { type: 'SUMMARY'; row: TSummaryRow };
-
-export interface RenderSortIconProps {
-  sortDirection: SortDirection | undefined;
-}
-
-export interface RenderSortPriorityProps {
-  priority: number | undefined;
-}
-
-export interface RenderSortStatusProps extends RenderSortIconProps, RenderSortPriorityProps {}
-
-export interface RenderCheckboxProps
-  extends Pick<React.ComponentProps<'input'>, 'aria-label' | 'aria-labelledby' | 'checked' | 'tabIndex' | 'disabled'> {
-  indeterminate?: boolean | undefined;
-  onChange: (checked: boolean, shift: boolean) => void;
-}
 
 export interface Renderers<TRow, TSummaryRow> {
   renderCell?: Maybe<(key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode>;

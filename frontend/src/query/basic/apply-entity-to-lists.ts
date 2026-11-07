@@ -30,7 +30,7 @@ function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean 
   return false;
 }
 
-export interface SpliceResult {
+interface SpliceResult {
   /** Rows already present in at least one scanned list cache, by id. */
   seen: Set<string>;
   /** Rows newly inserted into their canonical home list, by id. */

@@ -1,6 +1,10 @@
 import { useRef } from 'react';
 import { Checkbox } from '~/modules/ui/checkbox';
-import type { RenderCheckboxProps } from '../types';
+
+interface RenderCheckboxProps extends Pick<React.ComponentProps<'input'>, 'aria-label' | 'aria-labelledby' | 'checked' | 'tabIndex' | 'disabled'> {
+  indeterminate?: boolean | undefined;
+  onChange: (checked: boolean, shift: boolean) => void;
+}
 
 export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
   const withShift = useRef(false);

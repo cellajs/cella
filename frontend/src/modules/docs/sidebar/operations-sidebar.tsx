@@ -1,15 +1,24 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { useRouterState } from '@tanstack/react-router';
 import { memo, useId } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
-import { filterOperations, useOperationSearch } from '~/modules/docs/operations/operations-filter';
+import { filterOperations } from '~/modules/docs/operations/operations-filter';
 import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
+import type { OperationSearch } from '~/modules/docs/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
+
+/** The search in the URL: the sidebar sits in the docs layout, outside the operations route. */
+function useOperationSearch(): OperationSearch {
+  const q = useRouterState({ select: (state) => state.location.search.q });
+  const filter = useRouterState({ select: (state) => state.location.search.filter });
+  return { q, filter };
+}
 
 interface OperationItemProps {
   operation: GenOperationSummary;

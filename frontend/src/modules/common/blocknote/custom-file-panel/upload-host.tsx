@@ -13,7 +13,7 @@ interface EditorHandle {
 }
 
 /** Bridge → host channel: the editor reports which block opened its file panel and which editor is live. */
-export interface UploadHostApi {
+interface UploadHostApi {
   openFor: (blockId: string) => void;
   registerEditor: (handle: EditorHandle | null) => void;
 }

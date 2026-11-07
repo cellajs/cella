@@ -24,8 +24,6 @@ const linkAttemptLimit = 10;
 
 const uploadIntervalMs = 60_000;
 
-type CloudAvailability = 'available' | 'unconfigured' | 'unreachable';
-
 /**
  * Uploads pending local blobs to cloud on a timer and on reconnect, through headless Uppy + Transloadit (Tus resumable, lazy
  * per-upload token), then links the stored keys to the attachment row so other devices can fetch the file.
@@ -82,7 +80,7 @@ class AttachmentUploadService {
     return candidates.filter((blob) => isUploadCandidate(blob, retryLimit, now));
   }
 
-  private async checkCloudAvailability(organizationId: string): Promise<CloudAvailability> {
+  private async checkCloudAvailability(organizationId: string): Promise<'available' | 'unconfigured' | 'unreachable'> {
     try {
       const token = await getUploadToken({ query: { templateId: 'attachment', organizationId } });
       return token.params && token.signature ? 'available' : 'unconfigured';

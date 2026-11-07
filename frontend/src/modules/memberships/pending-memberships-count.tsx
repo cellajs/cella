@@ -15,8 +15,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const PendingMembershipsList = lazyNamed(() => import('~/modules/memberships/pending-memberships-list'), 'PendingMembershipsList');
 
-type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
-const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
+const hasIncluded = (channel: EnrichedChannel): channel is EnrichedChannel & Pick<Organization, 'included'> => 'included' in channel;
 const countsOf = (channel?: EnrichedChannel) => (channel && hasIncluded(channel) ? channel.included.counts : undefined);
 
 /** The channel's cached detail, read without a fetch of its own: the detail refetch after a membership change rerenders it. */

@@ -79,12 +79,7 @@ export function ExplainedValue({ item, enabled = true, className, children }: Ex
   );
 }
 
-interface CellPayload {
-  label: string;
-  items: AccessValue[];
-}
-
-const cellHandle = createPopoverHandle<CellPayload>();
+const cellHandle = createPopoverHandle<{ label: string; items: AccessValue[] }>();
 
 /** Past this length a cell shows its first value and a count, since the card lists them all. */
 const maxCellText = 28;

@@ -19,8 +19,6 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 
-const magicLinkEnabled = isStrategyEnabled('magic');
-
 interface InvitationStepProps {
   tokenData: TokenData;
   federations?: GetAuthHealthResponse['federations'];
@@ -60,7 +58,7 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
   const { institution } = sso;
 
   // The address shows once the link is sent, on the sent step.
-  const emailWay: AuthAlternative | null = magicLinkEnabled
+  const emailWay: AuthAlternative | null = isStrategyEnabled('magic')
     ? { id: 'email', icon: MailIcon, label: t('c:continue_with_email'), shortLabel: t('c:email'), loading: isPending, onClick: () => sendLink() }
     : null;
 

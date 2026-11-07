@@ -20,8 +20,6 @@ import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-type Notification = ListNotificationsResponse['results'][number];
-
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {
   const { t } = useTranslation();
@@ -68,7 +66,7 @@ export function NotificationsSheet() {
 }
 
 interface NotificationRowProps {
-  notification: Notification;
+  notification: ListNotificationsResponse['results'][number];
   /** A row homed in the organization marks it only for someone in more than one. */
   showOrganization: boolean;
   onOpen: (body: { ids?: string[] }) => void;

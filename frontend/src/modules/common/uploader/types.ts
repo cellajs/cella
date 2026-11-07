@@ -21,9 +21,7 @@ export type UploadResults<T extends UploadTemplateId, K = UserMeta> = { [key in 
 /** An assembly's results, typed by the steps of the template that ran it: Transloadit types them as files of any step. */
 export const uploadResultsOf = <T extends UploadTemplateId>(assembly: AssemblyResponse) => assembly.results as UploadResults<T>;
 
-type Stringified<T> = { [K in keyof T]: string };
-
-type UserMeta = Stringified<UppyMeta> & {
+type UserMeta = { [K in keyof UppyMeta]: string } & {
   filetype: string;
   name: string;
   /** The string 'null' when the file has no relative path. */

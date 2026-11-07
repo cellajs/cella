@@ -11,8 +11,6 @@ import type { AuthStep } from '~/modules/auth/types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
 
-const oauthEnabled = isStrategyEnabled('oauth');
-
 const oauthProviderNames = { github: 'GitHub', google: 'Google', microsoft: 'Microsoft' } satisfies Record<BaseOAuthProviders, string>;
 
 /** The providers the app config enables, in its order. */
@@ -63,7 +61,7 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
     window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params}`);
   };
 
-  if (!oauthEnabled) return [];
+  if (!isStrategyEnabled('oauth')) return [];
 
   return enabledOAuthProviders.map(({ id, name, icon }) => ({
     id,

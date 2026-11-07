@@ -27,7 +27,6 @@ import type { ListFilters, MutationData } from '~/query/types';
 
 /** The list's filters as the route holds them: the kinds as a list, which the request joins with commas. */
 type TenantFilters = Omit<ListFilters<NonNullable<ListTenantsData['query']>>, 'kind'> & { kind?: TenantKind[] };
-type TenantsListParams = TenantFilters & { limit?: number };
 
 /** Tenants are resources, not entities, so their query keys are defined manually. */
 const tenantQueryKeys = {
@@ -40,7 +39,7 @@ const tenantQueryKeys = {
 /** A kind list as the API reads it (`csvQuerySchema`); none picked sends nothing, so the API lists its default kinds. */
 export const tenantKindsParam = (kinds: TenantKind[] = []) => (kinds.length ? kinds.join(',') : undefined);
 
-export const tenantsListQueryOptions = (params: TenantsListParams) => {
+export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number }) => {
   const {
     q = tenantsSearchDefaults.q,
     status,

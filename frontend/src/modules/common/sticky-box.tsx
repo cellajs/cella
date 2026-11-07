@@ -3,8 +3,6 @@ import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
 import { cn } from '~/utils/cn';
 import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-parent';
 
-const passiveArg = { passive: true } as const;
-
 interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** In px, from the top of the scroll container. */
   offsetTop?: number;
@@ -156,7 +154,7 @@ export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, childr
         ticking = false;
       });
     };
-    scrollParent.addEventListener('scroll', onScroll, passiveArg);
+    scrollParent.addEventListener('scroll', onScroll, { passive: true });
     return () => scrollParent.removeEventListener('scroll', onScroll);
   }, [hideWhenOutOfView, offsetTop, publishVar]);
 

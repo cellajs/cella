@@ -75,7 +75,7 @@ function pageDocs(page: EnginePage): SearchDoc[] {
 }
 
 /** Tier-1 breadcrumb labels: bare tag names ("base") are ambiguous on their own. */
-export type EngineLabels = { operations: string; schemas: string };
+type EngineLabels = { operations: string; schemas: string };
 const defaultLabels: EngineLabels = { operations: 'operations', schemas: 'schemas' };
 
 const operationDoc = (op: GenOperationSummary, labels: EngineLabels): SearchDoc => ({

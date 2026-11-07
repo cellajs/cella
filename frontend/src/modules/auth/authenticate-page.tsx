@@ -31,8 +31,6 @@ import { useUserStore } from '~/modules/user/user-store';
 // Warn after this delay that the backend is slow to answer.
 const healthSlowMs = 5000;
 
-const passkeyEnabled = isStrategyEnabled('passkey');
-
 export function AuthenticatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -117,7 +115,7 @@ export function AuthenticatePage() {
   const invitation = inviteOtherAccount ? tokenData?.invitation : undefined;
 
   const passkeyWays: AuthAlternative[] =
-    step === 'signIn' && passkeyEnabled
+    step === 'signIn' && isStrategyEnabled('passkey')
       ? [{ id: 'passkey', icon: FingerprintPatternIcon, label: t('c:passkey.sign_in'), shortLabel: t('c:passkey'), onClick: passkeySignIn }]
       : [];
   const ssoWays = sso.institution ? [sso.institution, ...sso.federations] : sso.federations;

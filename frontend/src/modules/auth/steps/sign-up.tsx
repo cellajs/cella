@@ -16,8 +16,6 @@ import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 
-const magicLinkEnabled = isStrategyEnabled('magic');
-
 interface SignUpStepProps {
   tokenData?: TokenData;
   invitation?: TokenInvitation;
@@ -53,7 +51,7 @@ export function SignUpStep({ tokenData, invitation }: SignUpStepProps) {
 
       <LegalNotice email={typedEmail} mode="signup" />
 
-      {magicLinkEnabled && (
+      {isStrategyEnabled('magic') && (
         <form noValidate onSubmit={form.handleSubmit((body) => sendMagic(body.email), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} />
 

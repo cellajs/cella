@@ -8,16 +8,19 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { Spinner } from '~/modules/common/spinner';
+import { getTypeCodeForRequest, getZodCodeForRequest } from '~/modules/docs/helpers/extract-types';
 import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { openDocsSheet } from '~/modules/docs/open-docs-sheet';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { OperationAccess } from '~/modules/docs/operations/operation-access';
-import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
+import { OperationSection } from '~/modules/docs/operations/operation-section';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
-import { tagDetailsQueryOptions } from '~/modules/docs/query';
+import { tagDetailsQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
+import { useSchemaRefLink } from '~/modules/docs/schemas/schema-detail';
 import { SpecText } from '~/modules/docs/spec-text';
+import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
@@ -30,29 +33,31 @@ export const openOperationSheet = (operation: GenOperationSummary, trigger: HTML
     content: <OperationDetail operation={operation} />,
   });
 
-function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperationDetail) {
-  const tagName = operation.tags[0] ?? '';
-  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
-  return detail ?? tagDetails.find((entry) => entry.operationId === operation.id);
+interface OperationRequestProps {
+  detail?: GenOperationDetail;
 }
 
-/** Every OpenAPI tag by kind, as a bare value such as `product` says little alone. The owner comes last: most operations share it. */
-function OperationTags({ tagsByKind }: Pick<GenOperationSummary, 'tagsByKind'>) {
-  const kinds = Object.entries(tagsByKind).toSorted(([a], [b]) => Number(a === 'owner') - Number(b === 'owner'));
-  if (!kinds.length) return null;
+function OperationRequest({ detail }: OperationRequestProps) {
+  const { t } = useTranslation();
+  const { zodIndex, typesIndex } = useDefinitionIndexes();
+  const renderRef = useSchemaRefLink();
+
+  if (!detail?.request) return null;
+
+  const { example, ...format } = detail.request;
 
   return (
-    <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-      {kinds.map(([kind, values]) => (
-        <div key={kind}>
-          <dt className="text-muted-foreground inline">{upperFirst(kind)}</dt>
-          <dd className="inline">
-            {' '}
-            <HighlightText text={values.join(', ')} />
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <OperationSection title={t('c:docs.request')}>
+      <div className="mt-2">
+        <ViewerGroup
+          schema={format}
+          zodCode={getZodCodeForRequest(zodIndex, detail.operationId)}
+          typeCode={getTypeCodeForRequest(typesIndex, detail.operationId)}
+          example={example}
+          renderRef={renderRef}
+        />
+      </div>
+    </OperationSection>
   );
 }
 
@@ -64,8 +69,11 @@ interface OperationDetailProps {
 
 function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
   const { t } = useTranslation();
-  const detail = useResolvedDetail(operation, detailProp);
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(operation.tags[0] ?? ''));
+  const detail = detailProp ?? tagDetails.find((entry) => entry.operationId === operation.id);
   const { href } = useRouter().buildLocation(operationLinkOptions(operation));
+  // Every OpenAPI tag by kind, as a bare value such as `product` says little alone. The owner comes last: most operations share it.
+  const kinds = Object.entries(operation.tagsByKind).toSorted(([a], [b]) => Number(a === 'owner') - Number(b === 'owner'));
 
   return (
     <Card id={`spy-${operation.hash}`} className={cn('border-0 sm:py-5', className)}>
@@ -84,7 +92,19 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
             <SpecText text={operation.description} />
           </CardDescription>
         )}
-        <OperationTags tagsByKind={operation.tagsByKind} />
+        {kinds.length > 0 && (
+          <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {kinds.map(([kind, values]) => (
+              <div key={kind}>
+                <dt className="text-muted-foreground inline">{upperFirst(kind)}</dt>
+                <dd className="inline">
+                  {' '}
+                  <HighlightText text={values.join(', ')} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">

@@ -5,24 +5,20 @@ import { buildTree, type TreeItem, type TreeRow } from '~/modules/common/data-ta
 import type { TreeContextValue } from '~/modules/common/data-table/tree/tree-context';
 import type { ReorderPosition } from '~/modules/common/reorder-handle/reorder-handle';
 
-export type TreeMutate = (id: string, ops: { displayOrder?: number; parentId?: string | null }) => void;
-
-export interface UseTreeRowsOptions {
+interface UseTreeRowsOptions {
   /** Initial expansion baseline. `true` = all expanded, `false` = all collapsed. */
   defaultExpanded?: boolean;
   /** Pixel height of each row, forwarded to `TreeProvider`. */
   rowHeight: number;
   /** Maximum allowed nesting depth, inclusive. */
   maxDepth?: number;
-  mutate: TreeMutate;
+  mutate: (id: string, ops: { displayOrder?: number; parentId?: string | null }) => void;
 }
-
-export type DropZone = 'top' | 'bottom' | 'center';
 
 interface CanDropArgs {
   fromIdx: number;
   toIdx: number;
-  zone: DropZone;
+  zone: 'top' | 'bottom' | 'center';
 }
 
 function isSelfOrDescendantOf(rootId: string, candidateId: string, byId: Map<string, TreeItem>): boolean {

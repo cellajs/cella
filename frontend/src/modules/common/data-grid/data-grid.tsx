@@ -58,12 +58,11 @@ import {
   computeWrapTextRowHeight,
   createCellEvent,
   getColSpan,
-  getLeftRightKey,
   getNextSelectedCellPosition,
   hasWrapTextColumns,
+  isCellEditableUtil,
   isCtrlKeyHeldDown,
   isDefaultCellInput,
-  isSelectedCellEditable,
   renderMeasuringCells,
   scrollIntoView,
   sign,
@@ -402,7 +401,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const headerRowsHeight = headerRowsCount * headerRowHeight;
   const clientHeight = viewportHeight - headerRowsHeight;
   const isSelectable = effectiveSelectedRows != null && effectiveOnSelectedRowsChange != null;
-  const { leftKey, rightKey } = getLeftRightKey();
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length;
 
   const headerSelectionValue = useMemo((): HeaderRowSelectionContextValue => {
@@ -448,7 +446,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const isCellWithinSelectionBounds = ({ idx, rowIdx }: Position) => rowIdx >= minRowIdx && rowIdx <= maxRowIdx && isColIdxWithinSelectionBounds(idx);
   const isCellWithinViewportBounds = ({ idx, rowIdx }: Position) => isRowIdxWithinViewportBounds(rowIdx) && isColIdxWithinSelectionBounds(idx);
   const isCellEditable = (position: Position) =>
-    isCellWithinViewportBounds(position) && isSelectedCellEditable({ columns, rows, selectedPosition: position });
+    isCellWithinViewportBounds(position) && isCellEditableUtil(columns[position.idx], rows[position.rowIdx]);
 
   const selectedCellIsWithinSelectionBounds = isCellWithinSelectionBounds(selectedPosition);
   const selectedCellIsWithinViewportBounds = isCellWithinViewportBounds(selectedPosition);
@@ -673,9 +671,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         return { idx, rowIdx: rowIdx - 1 };
       case 'ArrowDown':
         return { idx, rowIdx: rowIdx + 1 };
-      case leftKey:
+      case 'ArrowLeft':
         return { idx: idx - 1, rowIdx };
-      case rightKey:
+      case 'ArrowRight':
         return { idx: idx + 1, rowIdx };
       case 'Tab':
         return { idx: idx + (shiftKey ? -1 : 1), rowIdx };
@@ -722,7 +720,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     const nextSelectedCellPosition = getNextSelectedCellPosition({
       moveUp: key === 'ArrowUp',
-      moveNext: key === rightKey || (key === 'Tab' && !shiftKey),
+      moveNext: key === 'ArrowRight' || (key === 'Tab' && !shiftKey),
       columns,
       colSpanColumns,
       rows,

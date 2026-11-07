@@ -5,12 +5,6 @@ import { sheetLayerOf } from '~/modules/common/sheeter/sheet-layer';
 
 export type { TriggerRef } from '~/modules/common/overlay-store-helpers';
 
-type DialogContainerOptions = {
-  ref: RefObject<HTMLDivElement | null>;
-  /** Dims the page and its navigation (in a sheet: that sheet) through the spotlight, which lifts the dialog above the dim and closes it on a backdrop click. */
-  overlay?: boolean;
-};
-
 export type DialogData = {
   id: number | string;
   triggerRef: TriggerRef;
@@ -31,7 +25,11 @@ export type DialogData = {
   instantClose?: boolean;
   className?: string;
   headerClassName?: string;
-  container?: DialogContainerOptions;
+  container?: {
+    ref: RefObject<HTMLDivElement | null>;
+    /** Dims the page and its navigation (in a sheet: that sheet) through the spotlight, which lifts the dialog above the dim and closes it on a backdrop click. */
+    overlay?: boolean;
+  };
   title?: ReactNode;
   titleContent?: ReactNode;
   onClose?: (isCleanup?: boolean) => void;

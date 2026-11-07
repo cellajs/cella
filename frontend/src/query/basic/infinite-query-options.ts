@@ -30,8 +30,6 @@ const startOver = (client: QueryClient, queryKey: QueryKey, error: ApiError) => 
   setTimeout(() => client.resetQueries({ queryKey, exact: true }));
 };
 
-type TokenPageContext = { pageParam: PageParam; signal: AbortSignal; client: QueryClient; queryKey: QueryKey };
-
 /**
  * Token paging over a list endpoint: the queryFn reads the page the page param's token names. A token the server no
  * longer opens (`invalid_page_token`: the list's params changed shape, or the key that seals tokens rotated, as for a
@@ -39,7 +37,17 @@ type TokenPageContext = { pageParam: PageParam; signal: AbortSignal; client: Que
  * call site that sets `meta` of its own spreads this `meta` into it.
  */
 export const tokenPaging = <TPage extends QueryData<unknown>>(fetchPage: (pageToken: PageParam, signal: AbortSignal) => Promise<TPage>) => ({
-  queryFn: async ({ pageParam, signal, client, queryKey }: TokenPageContext) => {
+  queryFn: async ({
+    pageParam,
+    signal,
+    client,
+    queryKey,
+  }: {
+    pageParam: PageParam;
+    signal: AbortSignal;
+    client: QueryClient;
+    queryKey: QueryKey;
+  }) => {
     try {
       return await fetchPage(pageParam, signal);
     } catch (error) {

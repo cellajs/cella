@@ -26,7 +26,6 @@ import {
   type SyncHealth,
   tabCoordinatorStore,
 } from '~/query/realtime/tab-coordinator';
-import type { StreamState } from '~/query/realtime/types';
 import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const streamName = 'AppStream';
@@ -49,6 +48,8 @@ const catchupTimeoutMs = 60_000;
 const streamSilenceMs = 75_000;
 /** Server error codes that end the stream for good: no reconnect, the circuit stays open. */
 const finalStreamErrorCodes: ReadonlySet<StreamError['code']> = new Set(['unauthorized']);
+
+type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
 
 interface StreamStoreState {
   state: StreamState;

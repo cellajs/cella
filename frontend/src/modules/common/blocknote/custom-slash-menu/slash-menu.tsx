@@ -1,9 +1,74 @@
-import { filterSuggestionItems } from '@blocknote/core/extensions';
-import { type DefaultReactSuggestionItem, SuggestionMenuController, type SuggestionMenuProps } from '@blocknote/react';
+import { type DefaultSuggestionItem, filterSuggestionItems } from '@blocknote/core/extensions';
+import { type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems, SuggestionMenuController, type SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { customSlashIndexedItems, getSlashMenuItems } from '~/modules/common/blocknote/blocknote-schema';
-import type { CustomBlockNoteMenuProps, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import { getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { getNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
+import type {
+  CustomBlockNoteEditor,
+  CustomBlockNoteMenuProps,
+  CustomBlockTypes,
+  SlashIndexedItems,
+  SlashItemKeys,
+} from '~/modules/common/blocknote/types';
+
+const baseBlockNoteTypeToKeys = {
+  table: ['table'],
+  notify: ['notify'],
+  paragraph: ['paragraph'],
+  heading: ['heading', 'heading_2', 'heading_3', 'heading_4', 'heading_5', 'heading_6'],
+  quote: ['quote'],
+  codeBlock: ['code_block'],
+  bulletListItem: ['bullet_list'],
+  numberedListItem: ['numbered_list'],
+  checklistItem: ['checklistItem'],
+  // BlockNote's own check list offers no slash item.
+  checkListItem: [],
+  file: ['file'],
+  image: ['image'],
+  video: ['video'],
+  audio: ['audio'],
+  toggleListItem: ['toggle_list'],
+  divider: ['divider'],
+} satisfies Record<CustomBlockTypes, SlashItemKeys[]>;
+
+/** The slash items a digit key picks, in order. */
+const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
+
+const getSlashMenuItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: CustomBlockNoteMenuProps['headingLevels'],
+): DefaultReactSuggestionItem[] => {
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getNotifySlashItem(editor), getChecklistSlashItem(editor)];
+
+  const { heading, ...restTypeToKeys } = baseBlockNoteTypeToKeys;
+  const filteredHeading = heading.filter((key) => {
+    const match = key.match(/(?:_)?(\d)$/);
+    const level = match ? Number.parseInt(match[1], 10) : 1;
+    return headingLevels.some((headingLevel) => headingLevel === level);
+  });
+
+  const allowedTypeToKeys = { ...restTypeToKeys, heading: filteredHeading };
+
+  const filteredTypeToKeys = Object.fromEntries(allowedTypes.map((type) => [type, allowedTypeToKeys[type]]));
+
+  const allowedKeys: Set<string> = new Set(Object.values(filteredTypeToKeys).flat());
+
+  const sortOrder = new Map<string, number>(
+    customSlashIndexedItems
+      .filter((type) => allowedTypes.includes(type))
+      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index] as const)),
+  );
+
+  return baseItems
+    .filter((item): item is DefaultSuggestionItem => 'key' in item && typeof item.key === 'string' && allowedKeys.has(item.key))
+    .sort(({ key: first }, { key: second }) => {
+      const firstIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
+      const secondIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
+      return firstIndex - secondIndex;
+    });
+};
 
 export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
   const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels);

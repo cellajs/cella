@@ -17,6 +17,7 @@ interface ViewPageProps {
 
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
 export function ViewPage({ slug }: ViewPageProps) {
+  const { t } = useTranslation();
   const page = useDocPage(slug);
   const Content = getDocPageComponent(slug);
 
@@ -35,7 +36,11 @@ export function ViewPage({ slug }: ViewPageProps) {
         <div className="max-w-208 min-w-0 flex-1">
           <div id={`${spyPrefix}${pageSectionId}`} className="prose dark:prose-invert max-w-none">
             <h1 className="pt-6">{page.name}</h1>
-            {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
+            {page.updatedAt && (
+              <p className="text-muted-foreground text-sm">
+                {t('c:last_edited')} {dateShort(page.updatedAt)}
+              </p>
+            )}
 
             {renderMode !== 'nodeOnly' && (
               <Suspense fallback={<Spinner className="my-16" />}>
@@ -58,15 +63,6 @@ export function ViewPage({ slug }: ViewPageProps) {
         </aside>
       </div>
     </div>
-  );
-}
-
-function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
-  const { t } = useTranslation();
-  return (
-    <p className="text-muted-foreground text-sm">
-      {t('c:last_edited')} {dateShort(updatedAt)}
-    </p>
   );
 }
 

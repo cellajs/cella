@@ -1,17 +1,20 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { XIcon } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { NamedText } from '~/modules/common/named-text';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
-import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
-import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-steps';
+import type { StepItem } from '~/modules/common/stepper/types';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { SkipStepButton } from '~/modules/home/onboarding/skip-step-button';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
-import { meInvitationsQueryOptions } from '~/modules/me/query';
+import { meInvitationsQueryOptions, useHandleInvitationMutation } from '~/modules/me/query';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
+import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { InviteUsers } from '~/modules/user/invite-users';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
@@ -19,6 +22,30 @@ import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
 export type OnboardingState = 'start' | 'stepper' | 'completed';
+
+interface OnboardingContext {
+  hasOrganizations: boolean;
+  hasInvitations: boolean;
+}
+
+interface OnboardingStep extends StepItem {
+  when: (ctx: OnboardingContext) => boolean;
+}
+
+/** Someone with no organization and no invitation waiting: the one who sets up an organization for others. */
+const isFounder = ({ hasOrganizations, hasInvitations }: OnboardingContext) => !hasOrganizations && !hasInvitations;
+
+/** The steps that fit this user; call it at render time, since `i18n.t` returns undefined until i18next has loaded its namespaces. */
+function getOnboardingSteps(ctx: OnboardingContext): StepItem[] {
+  const steps: OnboardingStep[] = [
+    { id: 'invitations', label: i18n.t('c:pending_invitations'), optional: true, when: ({ hasInvitations }) => hasInvitations },
+    { id: 'profile', label: i18n.t('c:tune_profile'), optional: true, when: () => true },
+    { id: 'organization', label: i18n.t('c:create_resource', { resource: i18n.t('c:organization') }), optional: true, when: isFounder },
+    { id: 'invitation', label: i18n.t('c:invite_others'), optional: true, when: isFounder },
+  ];
+
+  return steps.filter(({ when }) => when(ctx)).map(({ when: _when, ...step }) => step);
+}
 
 interface OnboardingProps {
   state: OnboardingState;
@@ -100,6 +127,75 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface InvitationsStepProps {
+  children?: ReactNode;
+}
+
+/** Answers each pending invitation by an explicit click (one claimed by address was never opened by this user); moves on after the last. */
+function InvitationsStep({ children }: InvitationsStepProps) {
+  const { t } = useTranslation();
+  const { nextStep } = useStepper();
+
+  const { data } = useQuery(meInvitationsQueryOptions());
+  const invitations = data?.results ?? [];
+
+  const { mutate: handleInvitation, isPending } = useHandleInvitationMutation();
+
+  // Only an answer given here moves on; revisiting the step with nothing left stays put.
+  const previousCountRef = useRef(invitations.length);
+  useEffect(() => {
+    if (previousCountRef.current > 0 && invitations.length === 0) nextStep();
+    previousCountRef.current = invitations.length;
+  }, [invitations.length]);
+
+  const answer = (invitationId: string, action: 'accept' | 'reject') => handleInvitation({ invitationId, action });
+
+  return (
+    <div className="flex flex-col gap-4">
+      {invitations.length === 0 && <p className="text-muted-foreground text-sm">{t('c:no_invitations_left.text')}</p>}
+
+      <ul className="flex flex-col gap-3">
+        {invitations.map(({ entity, inactiveMembership }) => (
+          <li key={inactiveMembership.id} className="flex items-center gap-3 max-sm:flex-col max-sm:items-stretch">
+            <div className="flex min-w-0 grow items-center gap-3">
+              <EntityAvatar type={entity.entityType} className="size-10 shrink-0" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
+              <p className="min-w-0 text-sm">
+                {t('c:invite_accept_as_account.text', {
+                  inviterName: inactiveMembership.createdBy?.name ?? t('c:unknown'),
+                  entityName: entity.name,
+                  role: t(`c:${inactiveMembership.role}`),
+                })}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                size="sm"
+                variant="success"
+                className="max-sm:w-full"
+                disabled={isPending}
+                onClick={() => answer(inactiveMembership.id, 'accept')}
+              >
+                {t('c:accept')}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="max-sm:w-full"
+                disabled={isPending}
+                onClick={() => answer(inactiveMembership.id, 'reject')}
+              >
+                {t('c:decline')}
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {children}
     </div>
   );
 }

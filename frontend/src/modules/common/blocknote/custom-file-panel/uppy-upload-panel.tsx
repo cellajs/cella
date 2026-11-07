@@ -3,17 +3,24 @@ import { useBlockNoteEditor, useExtension } from '@blocknote/react';
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import type { Attachment } from 'sdk';
+import { appConfig, type UploadTemplateId } from 'shared';
+import { uploadTemplates } from 'shared/transloadit-config';
 import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
-import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blocknote/custom-file-panel/file-block-props';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
-import { type BaseUppyFilePanelProps, type CustomBlockMediaTypes, type CustomBlockNoteEditor, isMediaBlock } from '~/modules/common/blocknote/types';
+import {
+  type BaseUppyFilePanelProps,
+  type BlockNoteMediaMode,
+  type CustomBlockMediaTypes,
+  type CustomBlockNoteEditor,
+  isMediaBlock,
+} from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
 import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
-import { type CustomUppy, type Plugins, uploadResultsOf } from '~/modules/common/uploader/types';
+import { type CustomUppy, type Plugins, type UploadResults, uploadResultsOf } from '~/modules/common/uploader/types';
 import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
@@ -22,6 +29,31 @@ const basicBlockTypes: Record<CustomBlockMediaTypes, { allowedFileTypes: string[
   video: { allowedFileTypes: ['video/*'], plugins: ['screen-capture', 'webcam', 'url'] },
   audio: { allowedFileTypes: ['audio/*'], plugins: ['audio', 'screen-capture', 'webcam', 'url'] },
   file: { allowedFileTypes: ['*/*'], plugins: ['screen-capture', 'webcam', 'url'] },
+};
+
+/** Props of a completed upload's block; `measuredId` keys the image size measured while uploading. */
+type FileBlockProps = { name: string; url: string; attachmentId?: string; measuredId?: string };
+
+/**
+ * An attachment as a block: referenced by id, or by cloud key in a public mode whose upload is in the public bucket
+ * (images the mid-size preview, other types the converted variant, never the full-size file).
+ */
+const attachmentBlockProps = (attachment: Attachment, isImage: boolean, mediaMode: BlockNoteMediaMode): FileBlockProps => {
+  const publicKey = isImage
+    ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
+    : attachment.keys.converted || attachment.keys.original;
+  const url = mediaMode !== 'private-attachment' && attachment.publicBucket ? publicKey : attachment.id;
+  return { name: attachment.filename, url, attachmentId: attachment.id, measuredId: attachment.id };
+};
+
+/** Files a template without an attachment row stored: each block keeps the stored key of the exported image. */
+const storedFileBlockProps = (results: Partial<UploadResults<UploadTemplateId>>, templateId: UploadTemplateId): FileBlockProps[] => {
+  const [exported] = uploadTemplates[templateId].use;
+  return (results[exported] ?? []).map((file) => ({
+    name: file.original_name ?? file.name ?? '',
+    url: file.url ?? '',
+    measuredId: file.user_meta.attachmentId,
+  }));
 };
 
 /** Read an image blob's intrinsic pixel size by decoding it locally; returns null when it cannot decode. */

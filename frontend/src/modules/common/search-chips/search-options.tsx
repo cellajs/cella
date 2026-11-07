@@ -20,12 +20,6 @@ export const searchComboboxProps = { value: null, filter: () => true, itemToStri
 // The field sets --search-icon-start, measured from the list's edge: its p-1 is already part of that
 const suggestionRowClass = 'pl-[calc(var(--search-icon-start)-0.25rem)]';
 
-/** The count at a row's end, or a spinner while the search it counts is still on its way. */
-function RowCount({ text, isPending }: { text: string; isPending: boolean }) {
-  if (isPending) return <Spinner size="sm" className="size-3.5" />;
-  return <span className="text-muted-foreground text-xs tabular-nums">{text}</span>;
-}
-
 const selectedFirst = (options: SearchOption[]) => [...options].sort((a, b) => Number(b.isSelected) - Number(a.isSelected));
 
 /** A filter under its heading, its values wrapping onto as many lines as they need. */
@@ -84,32 +78,6 @@ function SearchOptionRow({ group }: { group: SearchOptionGroup }) {
   );
 }
 
-function SearchRecentItem({ recent }: { recent: SearchRecent }) {
-  return (
-    <ComboboxItem
-      value={{ kind: 'recent', recent } satisfies SearchSelection}
-      className={cn('group/recent justify-between pr-1', suggestionRowClass)}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <SearchRowIcon>
-          <HistoryIcon className="text-muted-foreground" />
-        </SearchRowIcon>
-        {recent.chips.map((chip) => (
-          <Chip key={chip.label} className="shrink-0">
-            <span className="flex items-center gap-1 [&_svg]:size-3.5 [&_svg]:shrink-0">
-              {chip.icon}
-              {chip.label}
-            </span>
-          </Chip>
-        ))}
-        <span className="truncate">{recent.text}</span>
-      </div>
-      {/* The margin puts this X under the field's */}
-      <SearchRecentRemoveButton className="mr-px" onRemove={recent.onRemove} />
-    </ComboboxItem>
-  );
-}
-
 interface SearchSuggestionsProps {
   word: string;
   groups: SearchOptionGroup[];
@@ -135,7 +103,12 @@ function SearchSuggestions({ word, groups, recents, result, isResultPending }: S
         </SearchRowIcon>
         <span className="truncate">{t('c:search_for', { query: word })}</span>
         <span className="ml-auto flex shrink-0 items-center gap-2">
-          {result !== undefined && <RowCount text={result} isPending={isResultPending} />}
+          {result !== undefined &&
+            (isResultPending ? (
+              <Spinner size="sm" className="size-3.5" />
+            ) : (
+              <span className="text-muted-foreground text-xs tabular-nums">{result}</span>
+            ))}
           <Kbd className="max-sm:hidden">Enter</Kbd>
         </span>
       </ComboboxItem>
@@ -214,7 +187,27 @@ export function SearchOptionsList({
     <>
       {latestRecent && !hasChips && (
         <ComboboxGroup aria-label={t('c:history')} className="border-b p-1 last:border-b-0">
-          <SearchRecentItem recent={latestRecent} />
+          <ComboboxItem
+            value={{ kind: 'recent', recent: latestRecent } satisfies SearchSelection}
+            className={cn('group/recent justify-between pr-1', suggestionRowClass)}
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <SearchRowIcon>
+                <HistoryIcon className="text-muted-foreground" />
+              </SearchRowIcon>
+              {latestRecent.chips.map((chip) => (
+                <Chip key={chip.label} className="shrink-0">
+                  <span className="flex items-center gap-1 [&_svg]:size-3.5 [&_svg]:shrink-0">
+                    {chip.icon}
+                    {chip.label}
+                  </span>
+                </Chip>
+              ))}
+              <span className="truncate">{latestRecent.text}</span>
+            </div>
+            {/* The margin puts this X under the field's */}
+            <SearchRecentRemoveButton className="mr-px" onRemove={latestRecent.onRemove} />
+          </ComboboxItem>
         </ComboboxGroup>
       )}
       {groups.map((group) => (

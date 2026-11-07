@@ -27,13 +27,11 @@ import type { QueryData } from '~/query/types';
 const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
   [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
 
-type ApiResponseWithIncludedMembership = { included?: { membership?: MembershipBase } | null };
-
 /**
  * Extract API-only included membership data for seeding the myMemberships cache.
  * @public
  */
-export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
+export const getApiIncludedMembership = (entity: { included?: { membership?: MembershipBase } | null }) => entity.included?.membership;
 
 /** Writes to myMemberships, which every membership reader looks up. An uncached list starts empty unless `onlyIfCached`. */
 const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[], onlyIfCached = false) => {
@@ -216,11 +214,9 @@ const updateMembers = (members: Member[], updatedMembership: { id: string } & Re
 const hasPersonalView = (membership: Partial<MembershipBase>): membership is MembershipBase =>
   membership.archived !== undefined && membership.muted !== undefined && membership.displayOrder !== undefined;
 
-type ChangeEntityRoleVariables = { entity: EnrichedChannel; role: MembershipBase['role'] };
-
 /** Sets the caller's own role on a channel, joining it without a membership; answers the membership. */
 export const useChangeEntityRoleMutation = () =>
-  useMutation<MembershipBase, ApiError, ChangeEntityRoleVariables>({
+  useMutation<MembershipBase, ApiError, { entity: EnrichedChannel; role: MembershipBase['role'] }>({
     mutationFn: async ({ entity, role }) => {
       if (!onlineManager.isOnline()) {
         toastOffline();

@@ -36,7 +36,6 @@ function getCategoryColorClass(name: string): string {
   return 'text-muted-foreground';
 }
 
-const emptyClass = tw('text-faint-foreground p-6 text-center');
 const tabClass = tw('text-muted-foreground hover:text-foreground cursor-pointer rounded px-2 py-1');
 const statCardClass = tw('bg-card mb-2 rounded-md p-3');
 const statLabelClass = tw('group-label');
@@ -50,7 +49,7 @@ interface SpanListProps {
 function SpanList({ spans, filter }: SpanListProps) {
   const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
-  if (filtered.length === 0) return <div className={emptyClass}>No spans recorded yet</div>;
+  if (filtered.length === 0) return <div className="text-faint-foreground p-6 text-center">No spans recorded yet</div>;
 
   return (
     <div>

@@ -106,7 +106,7 @@ export const getNearestAncestorRoute = (
 };
 
 /** Where a product sits, as a notification or share link carries it: its home channel, and the product to open there. */
-export interface ProductLocation {
+interface ProductLocation {
   tenantId: string;
   organizationId: string;
   channelType: ChannelEntityType;

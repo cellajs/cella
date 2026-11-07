@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export interface OverlayClose {
+interface OverlayClose {
   /** Closes the dropdown or dialog the content renders in. */
   close: () => void;
   /** Returns to what the overlay showed before this content (a menu before its confirmation), or closes when nothing came before. */

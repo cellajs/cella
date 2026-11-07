@@ -58,5 +58,3 @@ export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivE
   }
   return false;
 }
-
-export const getLeftRightKey = () => ({ leftKey: 'ArrowLeft', rightKey: 'ArrowRight' }) as const;

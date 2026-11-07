@@ -17,8 +17,6 @@ import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { tw } from '~/utils/tw';
 
-const sheetId = 'attachment-description';
-
 interface AttachmentDescriptionFormProps {
   attachment: Attachment;
 }
@@ -88,7 +86,7 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,
     {
-      id: sheetId,
+      id: 'attachment-description',
       triggerRef,
       side: 'right',
       className: tw('max-w-full lg:max-w-3xl'),

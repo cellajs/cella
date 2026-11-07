@@ -89,7 +89,7 @@ export interface YDocWriter {
 }
 
 /** How a writer reports to its connection. */
-export interface YDocWriterOptions {
+interface YDocWriterOptions {
   /** The connection's rows; the writer adds each own row once committed. */
   applied?: AppliedRows;
   /** Runs when `pending` or `failed` changed. */

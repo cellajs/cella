@@ -16,7 +16,7 @@ import type { InvitePerson } from '~/modules/user/use-invite-list';
 export type InviteGroupKey = 'fix' | 'unchecked' | 'new' | 'again' | 'out';
 
 /** How an address reads everywhere it shows: the line under a field, its tile and its chip. */
-export interface InviteView {
+interface InviteView {
   group: InviteGroupKey;
   tone: TileTone;
   word: string;

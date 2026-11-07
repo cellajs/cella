@@ -1,18 +1,6 @@
 import type { CalculatedColumn, CalculatedColumnParent, CellNavigationMode, Maybe, Position } from '../types';
 import { getColSpan } from './col-span-utils';
 
-interface IsSelectedCellEditableOpts<R, SR> {
-  selectedPosition: Position;
-  columns: readonly CalculatedColumn<R, SR>[];
-  rows: readonly R[];
-}
-
-export function isSelectedCellEditable<R, SR>({ selectedPosition, columns, rows }: IsSelectedCellEditableOpts<R, SR>): boolean {
-  const column = columns[selectedPosition.idx];
-  const row = rows[selectedPosition.rowIdx];
-  return isCellEditableUtil(column, row);
-}
-
 // https://github.com/vercel/next.js/issues/56480
 export function isCellEditableUtil<R, SR>(column: CalculatedColumn<R, SR>, row: R): boolean {
   return column.renderEditCell != null && (typeof column.editable === 'function' ? column.editable(row) : column.editable) !== false;

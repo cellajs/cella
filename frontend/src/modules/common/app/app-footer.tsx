@@ -24,18 +24,6 @@ const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'legal', href: '/legal' },
 ];
 
-function AppFooterLink({ id, href }: FooterLinkProps) {
-  const { t } = useTranslation();
-
-  return (
-    <li>
-      <Button size="xs" variant="ghost" render={<Link to={href} />}>
-        {t(`c:${id}`)}
-      </Button>
-    </li>
-  );
-}
-
 interface AppFooterLinksProps {
   links?: FooterLinkProps[];
   className?: string;
@@ -49,8 +37,12 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
 
   return (
     <ul className={cn('flex flex-wrap gap-4 text-center', className)}>
-      {footerLinks.map((link) => (
-        <AppFooterLink key={link.id} id={link.id} href={link.href} />
+      {footerLinks.map(({ id, href }) => (
+        <li key={id}>
+          <Button size="xs" variant="ghost" render={<Link to={href} />}>
+            {t(`c:${id}`)}
+          </Button>
+        </li>
       ))}
       <li>
         <Button ref={contactButtonRef} variant="ghost" size="xs" onClick={() => contactFormHandler(contactButtonRef)}>

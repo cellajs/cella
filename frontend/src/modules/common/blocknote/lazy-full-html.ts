@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { lazyNamed } from '~/utils/lazy-named';
 
-/** One shared lazy instance so preloading resolves the same wrapper every consumer uses, avoiding a Suspense spinner flash. */
-export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');
-
+// The React Compiler cannot lower an `import()` inside a hook, so the dynamic imports live at module level
 const loadRenderer = () =>
   Promise.all([import('~/modules/common/blocknote/full-html'), import('~/modules/common/blocknote/helpers/blocknote-helpers')]);
+
+/** One shared lazy instance so preloading resolves the same wrapper every consumer uses, avoiding a Suspense spinner flash. */
+export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');
 
 // Once warm, later mounts skip the gate: a card computes within a frame and a seen document renders from the first-pass cache.
 let rendererWarm = false;

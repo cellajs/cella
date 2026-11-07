@@ -1,11 +1,85 @@
 import { createExtension, getBlockInfoFromSelection } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
+import { type BlockTypeSelectItem, createReactBlockSpec, type ReactCustomBlockRenderProps, useExtensionState } from '@blocknote/react';
 import i18n from 'i18next';
 import { SquareCheckBigIcon } from 'lucide-react';
+import { useEffect } from 'react';
 import { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
-import { ChecklistItemRender, ChecklistItemView, newCheckboxId } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
+import { nanoid } from 'shared/utils/nanoid';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { AnyBlockNoteEditor, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+
+const newCheckboxId = () => nanoid(12);
+
+/** The outer `transact` carries `addToHistory: false`, which covers both the Yjs UndoManager and ProseMirror history. */
+const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
+  editor: TEditor,
+  block: Parameters<TEditor['updateBlock']>[0],
+  update: Parameters<TEditor['updateBlock']>[1],
+) =>
+  editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
+    tr.setMeta('addToHistory', false);
+    editor.updateBlock(block, update);
+  });
+
+interface ChecklistItemViewProps {
+  checked: boolean;
+  checkboxId: string;
+  contentRef: (node: HTMLElement | null) => void;
+  /** The editor's checkbox toggles the item; the exported HTML's is read-only. */
+  input: { readOnly: true } | { disabled: boolean; onChange: () => void };
+}
+
+/** A checklist item's markup, in the editor and in exported HTML. */
+function ChecklistItemView({ checked, checkboxId, contentRef, input }: ChecklistItemViewProps) {
+  return (
+    <div className="checklist-item" data-checked={checked}>
+      <div contentEditable={false} className="checklist-checkbox-wrapper">
+        <input type="checkbox" checked={checked} data-checkbox-id={checkboxId} className="checklist-checkbox" {...input} />
+      </div>
+      <p className="checklist-content" ref={contentRef} />
+    </div>
+  );
+}
+
+type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
+
+function ChecklistItemRender({ block, editor, contentRef }: ChecklistItemRenderProps) {
+  // Assign a checkboxId when missing or duplicated: an Enter split gives both halves the same props, and the first keeps the id.
+  useEffect(() => {
+    const id = block.props.checkboxId;
+    let needsId = !id;
+    if (id) {
+      editor.forEachBlock((other) => {
+        if (other.type !== 'checklistItem' || other.props.checkboxId !== id) return true;
+        needsId = other.id !== block.id;
+        return false;
+      });
+    }
+    if (!needsId) return;
+    // Defer to avoid flushSync inside React lifecycle
+    const timer = setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: newCheckboxId() } }), 0);
+    return () => clearTimeout(timer);
+  }, [block.id, block.props.checkboxId, editor]);
+
+  const { persisted } = useExtensionState(checkedExtension, { editor });
+  const isChecked = block.props.checked ?? false;
+
+  const handleToggle = () => {
+    if (!persisted) return;
+    // In collaborative mode this block update is a Y.Doc update.
+    editor.updateBlock(block, { props: { checked: !isChecked } });
+  };
+
+  return (
+    <ChecklistItemView
+      checked={isChecked}
+      checkboxId={block.props.checkboxId}
+      contentRef={contentRef}
+      input={{ disabled: !persisted, onChange: handleToggle }}
+    />
+  );
+}
 
 /** Empty item becomes a paragraph, a non-empty item splits into a fresh checklist item below; returns true when it handled the key. */
 export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean => {

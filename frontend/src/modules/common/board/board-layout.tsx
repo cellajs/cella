@@ -7,7 +7,7 @@ import { motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { isPanelReorderDragData, PanelCollapseContext, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
+import { PanelCollapseContext, PanelDragHandleContext } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
@@ -51,6 +51,26 @@ interface BoardLayoutProps {
   /** The row always fits its parent, for a parent that cannot scroll: see the F rules in resizable-panels.md. */
   mustFit?: boolean;
   ref?: React.Ref<BoardLayoutHandle>;
+}
+
+type PanelReorderDragData = { dragItem: true; type: 'panelReorder'; panelId: string };
+
+const isPanelReorderDragData = (data: Record<string | symbol, unknown>): data is PanelReorderDragData =>
+  data.dragItem === true && data.type === 'panelReorder' && typeof data.panelId === 'string';
+
+/** Compute new panel order after dragging sourceId relative to targetId. Returns null if unchanged. */
+function reorderPanels(currentOrder: string[], sourceId: string, targetId: string, edge: Edge | null): string[] | null {
+  const fromIndex = currentOrder.indexOf(sourceId);
+  const toIndex = currentOrder.indexOf(targetId);
+  if (fromIndex === -1 || toIndex === -1) return null;
+
+  const newOrder = currentOrder.filter((id) => id !== sourceId);
+  const newTargetIdx = newOrder.indexOf(targetId);
+  const insertIdx = edge === 'right' ? newTargetIdx + 1 : newTargetIdx;
+  newOrder.splice(insertIdx, 0, sourceId);
+
+  if (newOrder.every((id, i) => currentOrder[i] === id)) return null;
+  return newOrder;
 }
 
 // Panel widths are pixel-based (not percentage); the wrapping ScrollArea adds auto-scroll during drag-and-drop.

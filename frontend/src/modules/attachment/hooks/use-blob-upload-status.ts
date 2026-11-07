@@ -35,8 +35,6 @@ const toUploadInfo = (uploadStatus: UploadStatus): BlobUploadInfo => ({
 
 const uploadedInfo = toUploadInfo('uploaded');
 
-const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => objectKeys(a).every((key) => a[key] === b[key]);
-
 /**
  * Upload info per attachment id. Primary keys come from the index alone, so cached downloads are never deserialized;
  * only blobs that are not uploaded yet are read in full.
@@ -72,7 +70,7 @@ let stopLocalUserChange: (() => void) | null = null;
 function publish(next: Map<string, BlobUploadInfo>) {
   for (const [attachmentId, info] of next) {
     const prev = infos.get(attachmentId);
-    if (prev && sameInfo(prev, info)) next.set(attachmentId, prev);
+    if (prev && objectKeys(prev).every((key) => prev[key] === info[key])) next.set(attachmentId, prev);
   }
   infos = next;
   for (const listener of listeners) listener();

@@ -1,32 +1,31 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { ChevronRightIcon, ClipboardPasteIcon, MailIcon, UsersRoundIcon } from 'lucide-react';
+import { ChevronRightIcon, ClipboardPasteIcon, ClockIcon, MailIcon, SendIcon, UsersRoundIcon } from 'lucide-react';
 import { MotionConfig, motion } from 'motion/react';
-import { type ComponentType, type FormEvent, type ReactNode, type RefObject, useRef, useState } from 'react';
+import { type ComponentType, type FormEvent, Fragment, type ReactNode, type RefObject, useRef, useState } from 'react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { hierarchy, isUnpublishedDraft } from 'shared';
+import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
+import { FormActions } from '~/modules/common/form-fields/form-actions';
+import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { NamedText } from '~/modules/common/named-text';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { openPendingMembershipsSheet } from '~/modules/memberships/pending-memberships-count';
+import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel } from '~/modules/ui/field';
 import { InviteBulkField, InviteEmailField, InviteSearchField } from '~/modules/user/invite-fields';
 import { InviteGroups } from '~/modules/user/invite-groups';
 import { focusOnMount, InviteResult, type InviteResultData } from '~/modules/user/invite-result';
-import {
-  type InviteFieldProps,
-  InviteFormFooter,
-  InviteRoleField,
-  inviteDialogId,
-  useInviteFormDraft,
-  useInviteSubmit,
-} from '~/modules/user/invite-submit';
+import { type InviteFieldProps, type InviteForm, inviteDialogId, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
 import { useInviteCheck } from '~/modules/user/use-invite-check';
 import { useInviteList } from '~/modules/user/use-invite-list';
 import { tw } from '~/utils/tw';
@@ -66,6 +65,75 @@ const inviteModes: Record<InviteMode, { label: TKey; crumb: TKey; text: TKey; ic
 const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
 const modeEntrance = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
 
+interface SubmitLabelOptions {
+  invite: number;
+  remind: number;
+  isEmpty: boolean;
+  held: boolean;
+}
+
+const submitLabel = ({ invite, remind, isEmpty, held }: SubmitLabelOptions): TKey => {
+  if (!invite && !remind) return isEmpty ? 'c:invite' : 'c:nothing_to_send';
+  if (held) return 'c:save';
+  if (invite && remind) return 'c:invite_and_remind';
+  return remind ? 'c:remind' : 'c:invite';
+};
+
+/** What every role of the channel may do, as the role field's help. */
+function RoleHelp({ entityType }: { entityType: ChannelEntityType }) {
+  const { t } = useTranslation();
+
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-1">
+      {hierarchy.getRoles(entityType).map((role) => (
+        <Fragment key={role}>
+          <dt className="font-medium">{t(`c:${role}`)}</dt>
+          <dd>{t(`c:role_description.${role}`)}</dd>
+        </Fragment>
+      ))}
+    </dl>
+  );
+}
+
+interface InviteRoleFieldProps {
+  form: InviteForm;
+  channel: EnrichedChannel;
+  /** The picked role's email waits for its draft channel's publish. */
+  held: boolean;
+}
+
+/** Role choice for a channel invite, with when its email goes out in a draft channel. */
+function InviteRoleField({ form, channel, held }: InviteRoleFieldProps) {
+  const { t } = useTranslation();
+
+  return (
+    <FormField
+      control={form.control}
+      name="role"
+      render={({ field: { value, onChange } }) => (
+        <FormItem>
+          <FormLabel nativeLabel={false} help={<RoleHelp entityType={channel.entityType} />}>
+            {t('c:join_as')}
+          </FormLabel>
+          <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} />
+          {isUnpublishedDraft(channel) && (
+            <Alert variant="info">
+              <ClockIcon />
+              <AlertDescription>
+                <NamedText
+                  i18nKey={held ? 'c:invite_held.text' : 'c:invite_prepare.text'}
+                  name={channel.name}
+                  values={{ roles: t(`c:${value}`, { count: 2 }) }}
+                />
+              </AlertDescription>
+            </Alert>
+          )}
+        </FormItem>
+      )}
+    />
+  );
+}
+
 interface InviteUsersProps {
   channel?: EnrichedChannel;
   /** Rendered in the `invite-users` dialog, which a sent invite closes. */
@@ -74,6 +142,7 @@ interface InviteUsersProps {
   description?: ReactNode;
   /** Skips the chooser. Without the dialog's title there is no way back to it. */
   mode?: InviteMode;
+  /** Takes the place of the cancel button. */
   children?: ReactNode;
 }
 
@@ -150,6 +219,11 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
     formRef.current?.querySelector<HTMLElement>('input, textarea, button')?.focus();
   };
 
+  // An address the check could not answer for still goes: the send decides, and its result says what happened.
+  const invite = check.groups.new.length + check.groups.unchecked.length + (list.typedAddress ? 1 : 0);
+  const remind = check.groups.again.length;
+  const isEmpty = !list.hasList && !list.typed.trim();
+
   return (
     <MotionConfig transition={modeTransition} reducedMotion="user">
       <Form {...form}>
@@ -186,9 +260,14 @@ export function InviteUsers({ channel, dialog, description, mode: initialMode, c
           {/* The chooser stands alone: a list kept from a draft or an earlier mode shows once a mode is picked */}
           {inviteMode && list.hasList && <InviteGroups check={check} list={list} held={held} role={channel ? role : undefined} />}
           {inviteMode && (
-            <InviteFormFooter form={form} check={check} list={list} held={held} loading={isPending} onCancel={cancel}>
+            <FormActions>
+              <SubmitButton disabled={!invite && !remind} loading={isPending}>
+                <SendIcon />
+                {t(submitLabel({ invite, remind, isEmpty, held }))}
+              </SubmitButton>
+              {!children && <CancelButton dirty={form.isDirty} onClick={cancel} />}
               {children}
-            </InviteFormFooter>
+            </FormActions>
           )}
         </form>
       </Form>

@@ -1,8 +1,11 @@
-import type { QueryClient } from '@tanstack/react-query';
+import { onlineManager, type QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
 import { isArrayDelta, mergeArrayDeltas } from '~/query/offline/array-delta';
-import { canCoalesce, isQueued, isUnsent } from '~/query/offline/mutation-queue';
+import { isQueued, isUnsent } from '~/query/offline/mutation-queue';
 import { createRowsOf, queuedUpdateOf } from '~/query/offline/mutation-variables';
+
+/** Only offline-paused mutations may be coalesced or cancelled; online intent stays separate and scope-serialized for backend idempotency and LWW handling. */
+const canCoalesce = (): boolean => !onlineManager.isOnline();
 
 /** Scalar fields take `newer`'s value; an AWSet delta both objects carry merges through mergeArrayDeltas. */
 function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TOps): Record<string, unknown> & TOps {

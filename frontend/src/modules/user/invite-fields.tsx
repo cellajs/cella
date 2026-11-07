@@ -1,13 +1,72 @@
 import { type ClipboardEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { lowercaseLabel } from 'shared/utils/i18n-text';
+import { tileTones } from '~/modules/common/expandable-tile';
+import { StatusDot } from '~/modules/common/status-dot';
 import { FormControl, FormItem, FormLabel } from '~/modules/ui/field';
 import { Input, skipPasswordManagers } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
-import { InviteFieldLine } from '~/modules/user/invite-groups';
-import { afterFocusLeaves, focusOnMount } from '~/modules/user/invite-result';
+import { focusOnMount } from '~/modules/user/invite-result';
 import type { InviteFieldProps } from '~/modules/user/invite-submit';
-import { isInviteEmail, withPasted } from '~/modules/user/invite-text';
+import { isInviteEmail } from '~/modules/user/invite-text';
+import type { InviteCheck } from '~/modules/user/use-invite-check';
+import type { InviteList } from '~/modules/user/use-invite-list';
 import { UserCombobox } from '~/modules/user/user-combobox';
+import { cn } from '~/utils/cn';
+
+// Past the press that took focus: the list growing under the pointer would move what it is pressing.
+const blurDelay = 200;
+
+/** Runs once focus has settled outside the field it left. */
+const afterFocusLeaves = (field: HTMLElement | null, run: () => void) => {
+  setTimeout(() => {
+    if (document.activeElement !== field) run();
+  }, blurDelay);
+};
+
+/** The field's text with a paste in place of its selection, on lines of its own: an address typed before it stays whole. */
+const withPasted = (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { value, selectionStart, selectionEnd } = event.currentTarget;
+  return `${value.slice(0, selectionStart ?? value.length)}\n${event.clipboardData.getData('text')}\n${value.slice(selectionEnd ?? value.length)}`;
+};
+
+interface InviteFieldLineProps {
+  list: InviteList;
+  check: InviteCheck;
+}
+
+/** The line under a field, visible only for text that is no address: an address's tile shows its outcome. Stays mounted, so a change is announced. */
+function InviteFieldLine({ list, check }: InviteFieldLineProps) {
+  const { t } = useTranslation();
+  const { last, typedInvalid, people } = list;
+  const listed = last && !last.repeat && (list.emails.includes(last.address) || list.unparsed.includes(last.address)) ? last.address : null;
+
+  const content = () => {
+    if (typedInvalid) {
+      return (
+        <>
+          <StatusDot variant="destructive" pulse={false} />
+          <span className="min-w-0">
+            <span className={cn('font-medium', tileTones.destructive.text)}>{t('c:invite_state_not_address')}</span>
+            {` · ${lowercaseLabel(t('c:invite_state_check_spelling'))}`}
+          </span>
+        </>
+      );
+    }
+    if (last?.repeat) return t('c:invite_already_listed', { address: last.address });
+    if (listed) {
+      const { word, note } = check.viewOf(listed);
+      return [word, people.get(listed)?.name ?? listed, note].filter(Boolean).join(' · ');
+    }
+    return null;
+  };
+
+  return (
+    <div role="status" className={cn('text-muted-foreground flex items-baseline gap-1.5 text-sm', !typedInvalid && 'sr-only')}>
+      {content()}
+    </div>
+  );
+}
 
 /** One address at a time. Enter, a separator or leaving the field moves it below, and the field is ready for the next. */
 export function InviteEmailField({ check, list, autoFocus }: InviteFieldProps) {

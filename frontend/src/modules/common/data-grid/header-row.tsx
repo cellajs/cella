@@ -3,7 +3,7 @@ import { HeaderCell } from './header-cell';
 import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import { cn, getColSpan } from './utils/grid-utils';
 
-export interface HeaderRowProps<R, SR> {
+interface HeaderRowProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
   onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;

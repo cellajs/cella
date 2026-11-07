@@ -35,13 +35,13 @@ const maxBackoffMs = 30_000;
 const maxTokenFailures = 5;
 
 /** Why a connection ends for good: every reason its edits can never be saved except a reseed, which rebuilds the connection. */
-export type EndReason = Exclude<UnsaveableReason, 'replaced'>;
+type EndReason = Exclude<UnsaveableReason, 'replaced'>;
 
 /**
  * Why a connection stopped for good: edit rights withdrawn (`denied`), a document or update the relay or the HTTP
  * routes refuse (`refused`), or tokens the relay kept refusing (`expired`).
  */
-export type YjsStopReason = 'denied' | 'refused' | 'expired';
+type YjsStopReason = 'denied' | 'refused' | 'expired';
 
 const stopMessages: Record<YjsStopReason, TKey> = {
   denied: 'error:no_permission_for_sync.text',
@@ -92,7 +92,7 @@ const freshLedger: Omit<SocketLedger, 'onChange' | 'onHandshakeSent'> = {
 };
 
 /** The transport syncing a connection's document: the relay's socket, the API's HTTP routes, or none yet. */
-export type YjsTransport = 'none' | 'ws' | 'http';
+type YjsTransport = 'none' | 'ws' | 'http';
 
 /** One entity's collaborative document and everything that syncs, stores and shows it. */
 export interface YjsConnection {
@@ -279,7 +279,7 @@ export const handshakeProof = (conn: YjsConnection): StoreProof => ({
 });
 
 /** Where an update applied with the provider as origin came from: the relay, unless {@link applyRemoteUpdate} says otherwise. */
-export type RemoteSource = { kind: 'relay' } | { kind: 'http' } | { kind: 'tab'; rowId: number | null };
+type RemoteSource = { kind: 'relay' } | { kind: 'http' } | { kind: 'tab'; rowId: number | null };
 
 const relaySource: RemoteSource = { kind: 'relay' };
 let remoteSource: RemoteSource = relaySource;

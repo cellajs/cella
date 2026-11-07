@@ -9,8 +9,6 @@ import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import { Button } from '~/modules/ui/button';
 
-const magicLinkEnabled = isStrategyEnabled('magic');
-
 export function AuthErrorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -25,7 +23,7 @@ export function AuthErrorPage() {
   const resumeTokenId = resendTokenId ? undefined : tokenId;
 
   // The address has an account or the institution does not prove it: this browser may ask once for a sign-in link, which opens the account page to connect the institution.
-  const offersRecoveryLink = (errorType === 'sso_email_exists' || errorType === 'sso_email_unproven') && magicLinkEnabled;
+  const offersRecoveryLink = (errorType === 'sso_email_exists' || errorType === 'sso_email_unproven') && isStrategyEnabled('magic');
   const { mutate: sendRecoveryLink, isPending: isSendingRecoveryLink } = useMutation({
     mutationFn: () => sendSsoRecoveryLink(),
     onSuccess: ({ email }) => {

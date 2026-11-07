@@ -5,12 +5,13 @@ import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hotkeys';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
-import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { buildMenuFromCache } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
 import { menuOrganizations, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { BottomBarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { closeNavSheet, openNavSheet } from '~/modules/navigation/nav-sheet';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -42,6 +43,37 @@ const serializeFloatingNavConfig = (matches: { pathname: string; staticData: Sta
   const ownerPathname = matches.findLast((match) => match.staticData.floatingNavButtons)?.pathname;
   return JSON.stringify({ left: [...left], right: [...right], ownerPathname } satisfies FloatingNavConfig);
 };
+
+// No home button: the menu header links home. The footer items end the row, as they end the desktop nav bar.
+const barNavItems: NavItem[] = navItems.filter((item: NavItem) => (item.type === 'base' && item.id !== 'home') || item.type === 'footer');
+
+interface BottomBarNavProps {
+  onNavItemClick: TriggerNavItemFn;
+}
+
+function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
+  const { hasStarted } = useMountedState();
+  const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const floatingNavActive = useNavigationStore((state) => state.floatingNavActive);
+
+  if (floatingNavActive) return null;
+
+  return (
+    <nav
+      id="bottom-bar-nav"
+      data-started={hasStarted}
+      className="chrome-hidden:translate-y-full bg-sidebar focus-view:hidden fixed bottom-0 z-100 w-full pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out select-none [-webkit-touch-callout:none] data-[started=false]:translate-y-full"
+    >
+      <ul className="flex w-full justify-between px-2 py-1">
+        {barNavItems.map((navItem) => (
+          <li key={navItem.id}>
+            <BottomBarNavItemButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={onNavItemClick} />
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
 
 export function AppNav() {
   const { t } = useTranslation();

@@ -1,8 +1,10 @@
 import type { QueryClient, QueryFilters, QueryKey, SetDataOptions } from '@tanstack/react-query';
 import { forEachListQuery, getQueryItems, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
-import type { ItemData, QueryDataAction } from '~/query/basic/types';
+import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem } from '~/query/types';
+
+type QueryDataAction = 'create' | 'update' | 'remove';
 
 /**
  * Writes one cached query, keeping its refetch mark: `setQueryData` would clear `isInvalidated`, but a cache write is no

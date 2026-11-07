@@ -10,13 +10,9 @@ import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { IconComponent } from '~/modules/common/icons/types';
 
-const ssoEnabled = isStrategyEnabled('sso');
-
-type SsoTarget = { connectionId: string } | { federation: string };
-
 /** The backend route that starts an SSO round trip: pinned to an institution's connection, or at a federation at large. */
 export const ssoStartUrl = (
-  target: SsoTarget,
+  target: { connectionId: string } | { federation: string },
   { kind = 'auth', redirectAfter }: { kind?: 'auth' | 'connect'; redirectAfter?: string | null } = {},
 ) => {
   const base =
@@ -49,7 +45,7 @@ export function useSsoAlternatives(connectionId?: string, federations: GetAuthHe
   const { data: entry, isLoading } = useQuery(ssoEntryQueryOptions(connectionId));
   const redirectAfter = tokenId ? invitationResumePath(tokenId) : safeRedirectPath(redirect);
 
-  if (!ssoEnabled) return { institution: null, federations: [], isLoading: false };
+  if (!isStrategyEnabled('sso')) return { institution: null, federations: [], isLoading: false };
 
   const contextual = entry?.status === 'active' ? entry : null;
   const institution = contextual && {

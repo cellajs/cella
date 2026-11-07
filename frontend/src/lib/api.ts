@@ -1,6 +1,5 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { ApiError as ApiErrorPayload } from 'sdk';
-import { isSessionLost } from 'shared/utils/session-lost';
 
 /** The Problem Details members every error body may set; any other member is an extension member. */
 type ProblemFields = Pick<
@@ -39,6 +38,3 @@ export class ApiError extends Error {
 
 /** What a load balancer or proxy answers while the API behind it is down or too slow, as during a deploy. */
 export const gatewayStatuses: ReadonlySet<number> = new Set([502, 503, 504]);
-
-/** Whether the global error handler signs the tab out over this refusal: a lost session's 401, except on an auth page. */
-export const tearsDownSession = (error: ApiError): boolean => isSessionLost(error) && !location.pathname.startsWith('/auth/');

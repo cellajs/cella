@@ -1,5 +1,5 @@
-import { getStepUp } from 'sdk';
-import { retryAfterStepUp, type StepUpMethod, type StepUpTier } from '~/modules/auth/step-up-retry';
+import { type GetStepUpData, getStepUp } from 'sdk';
+import { retryAfterStepUp, type StepUpMethod } from '~/modules/auth/step-up-retry';
 
 let pending: Promise<void> | null = null;
 
@@ -20,7 +20,7 @@ const openStepUpDialog = (methods: StepUpMethod[]) => {
 export const withStepUp = <T>(action: () => Promise<T>) => retryAfterStepUp(action, openStepUpDialog);
 
 /** Steps up for `tier` before an action that opens a ceremony or a form (passkey or authenticator setup, an API key), so the user proves it once. */
-export const ensureStepUp = async (tier: StepUpTier) => {
+export const ensureStepUp = async (tier: NonNullable<NonNullable<GetStepUpData['query']>['tier']>) => {
   const { steppedUp, methods } = await getStepUp({ query: { tier } });
   if (!steppedUp) await openStepUpDialog(methods);
 };

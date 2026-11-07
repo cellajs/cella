@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-export interface RenderExpandToggleProps {
+interface RenderExpandToggleProps {
   expanded: boolean;
   hasChildren: boolean;
   /** In px */

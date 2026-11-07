@@ -1,6 +1,7 @@
 import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
-import { ApiError, tearsDownSession } from '~/lib/api';
+import { isSessionLost } from 'shared/utils/session-lost';
+import { ApiError } from '~/lib/api';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -39,6 +40,9 @@ const getToastDescription = (error: ApiError, message: string): ReactNode => {
   if (!message && !cause && !report) return undefined;
   return createElement(ApiErrorDescription, { message, cause, report });
 };
+
+/** Whether the global error handler signs the tab out over this refusal: a lost session's 401, except on an auth page. */
+const tearsDownSession = (error: ApiError): boolean => isSessionLost(error) && !location.pathname.startsWith('/auth/');
 
 /** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
