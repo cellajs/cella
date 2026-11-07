@@ -8,7 +8,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { removeArchivedTenants } from '#/modules/tenants/operations/remove-archived-tenants';
+import { removeDueTenants } from '#/modules/tenants/operations/remove-due-tenants';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { Restrictions } from '#/modules/tenants/tenants-schema';
@@ -170,7 +170,7 @@ describe('archived-tenant sweep', () => {
     const active = await archivedDaysAgo(period + 1, 'active');
     vi.mocked(mailer.sendEmails).mockClear();
 
-    await removeArchivedTenants();
+    await removeDueTenants();
 
     expect(await tenantExists(expired.tenantId)).toBe(false);
     expect(await db.select().from(organizationsTable).where(eq(organizationsTable.id, expired.id))).toHaveLength(0);
@@ -193,7 +193,7 @@ describe('archived-tenant sweep', () => {
         await db.update(tenantsTable).set({ status: 'active' }).where(eq(tenantsTable.id, restored));
       });
 
-    expect(await removeArchivedTenants()).toBe(1);
+    expect(await removeDueTenants()).toBe(1);
     expect(await tenantExists(restored)).toBe(true);
     expect(vi.mocked(mailer.sendEmails)).toHaveBeenCalledTimes(1);
   });

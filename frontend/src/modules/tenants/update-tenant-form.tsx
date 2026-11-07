@@ -20,7 +20,7 @@ import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { formResolver } from '~/utils/form-resolver';
 
-const formSchema = zUpdateTenantBody.pick({ name: true, status: true, authStrategies: true });
+const formSchema = zUpdateTenantBody.pick({ name: true, kind: true, status: true, authStrategies: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -30,6 +30,9 @@ interface UpdateTenantFormProps {
 }
 
 export const statusOptions = ['active', 'suspended', 'archived'] as const;
+
+/** The kinds an admin moves a tenant between; a demo is made by its own route and stays one. */
+const kindOptions = ['live', 'test'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 
@@ -47,7 +50,7 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormPro
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
-    defaultValues: { name: tenant.name, status: tenant.status, authStrategies: tenant.authStrategies },
+    defaultValues: { name: tenant.name, kind: tenant.kind, status: tenant.status, authStrategies: tenant.authStrategies },
   };
 
   // The sheet is `update-tenant`; this form is its General section, which carries the unsaved badge.
@@ -74,6 +77,34 @@ export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormPro
     <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField control={form.control} name="name" label={t('c:name')} required />
+        {tenant.kind !== 'demo' && (
+          <FormField
+            control={form.control}
+            name="kind"
+            render={({ field }) => (
+              <FormItem name="kind">
+                <FormLabel>{t('c:kind')}</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={kindOptions.map((kind) => ({ value: kind, label: t(`c:${kind}`) }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kindOptions.map((kind) => (
+                      <SelectItem key={kind} value={kind}>
+                        {t(`c:${kind}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="status"

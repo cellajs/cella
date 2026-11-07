@@ -161,9 +161,9 @@ const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof shared
 
 /**
  * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
- * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service, 400 for
- * a sign-in method), the preconditions of a route for one channel or product (400, 412), and what each marked
- * middleware declares in `errors`.
+ * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service or a
+ * feature flag, 400 for a sign-in method), the preconditions of a route for one channel or product (400, 412), and
+ * what each marked middleware declares in `errors`.
  */
 const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
@@ -172,7 +172,7 @@ const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], p
   };
   if (config.request) claim(400, 'request validation');
   if (config.request?.body) claim(413, 'the body limit');
-  if (config.xEnabledBy) claim('service' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
+  if (config.xEnabledBy) claim('service' in config.xEnabledBy || 'feature' in config.xEnabledBy ? 404 : 400, 'xEnabledBy');
   if (preconditioned) for (const code of [400, 412] as const) claim(code, 'the preconditions');
   for (const mw of xMiddlewares) for (const code of mw.__errors ?? []) claim(code, mw.name);
   return owners;

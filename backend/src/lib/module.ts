@@ -8,6 +8,9 @@ import type { MutationHandler } from '#/lib/mutation-bus';
 import type { StreamSignalDeclaration } from '#/modules/entities/stream/audiences';
 import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
 import type { NotificationType } from '#/modules/notification/notification-types';
+import type { OrganizationModel } from '#/modules/organization/organization-db';
+import type { TenantModel } from '#/modules/tenants/tenants-db';
+import type { UserModel } from '#/modules/user/user-db';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 import type { EntityModel } from '#/tables';
 
@@ -116,6 +119,19 @@ export type MembershipColumnsResolver = (
   item: { userId: string; entity: MembershipEntity },
 ) => Promise<Partial<InsertMembershipModel> | undefined>;
 
+/** What `createDemo` wrote before the hooks run: the demo account, its tenant and the organization the account administers. */
+export interface DemoCreated {
+  user: UserModel;
+  tenant: TenantModel;
+  organization: OrganizationModel;
+}
+
+/**
+ * Fills a demo with content, inside the create's tenant transaction, after the organization and its admin membership
+ * exist: a throw rolls the whole demo back. Product rows go through `ctx.var.db`, which runs as the demo's tenant.
+ */
+export type DemoCreatedHook = (ctx: DbContext, demo: DemoCreated) => Promise<void>;
+
 /** Shared module metadata plus backend-only capabilities, indexed by subsystems via {@link onBackendModuleRegister}. */
 export interface BackendModule extends ModuleConfig {
   /** The product entity this module owns; keys its product-scoped capabilities below. */
@@ -124,6 +140,8 @@ export interface BackendModule extends ModuleConfig {
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: { [E in TrackedEventType]?: MutationHandler<E> };
+  /** Content this module gives a new demo (see {@link DemoCreatedHook}); every module's hook runs, in registration order. */
+  onDemoCreated?: DemoCreatedHook;
   /** Columns this module sets on memberships as they are inserted (see {@link MembershipColumnsResolver}). */
   membershipColumns?: MembershipColumnsResolver;
   /** Cron jobs the jobs worker schedules and runs (see {@link BackendJob}). */
@@ -150,6 +168,7 @@ export function defineBackendModule(module: BackendModule): void {
     productEntity: _productEntity,
     yjsMaterializer: _yjsMaterializer,
     onMutation: _onMutation,
+    onDemoCreated: _onDemoCreated,
     membershipColumns: _membershipColumns,
     jobs = [],
     queues = [],

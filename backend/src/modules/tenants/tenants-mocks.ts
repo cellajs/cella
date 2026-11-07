@@ -10,8 +10,10 @@ export const mockTenantResponse = (key = 'tenant:default') =>
     return {
       id: mockTenantId(),
       name,
+      kind: 'live' as const,
       status: 'active' as const,
       statusChangedAt: timestamps.createdAt,
+      expiresAt: null,
       restrictions: defaultRestrictions(),
       authStrategies: [],
       createdBy: mockActorRef(`${key}:created-by`),

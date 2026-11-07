@@ -13,6 +13,7 @@ import { fetchOrganizationsForExport } from '~/modules/organization/query';
 import type { OrganizationRow, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm, newsletterFormId } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
+import { useTenantKindFilter } from '~/modules/tenants/use-tenant-kind-filter';
 import type { PageRequest } from '~/query/basic/fetch-all-pages';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
@@ -33,8 +34,15 @@ export function OrganizationsTableBar({
 
   const newsletterButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { q, order, sort } = searchVars;
-  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
+  const { q, order, sort, kind } = searchVars;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', kind: [] } });
+  const searchFilters = useTenantKindFilter({
+    value: kind,
+    onChange: (kind) => {
+      clearSelection();
+      setSearch({ kind });
+    },
+  });
 
   const openNewsletterSheet = () => {
     const ids = selected.map(({ id }) => id);
@@ -66,6 +74,7 @@ export function OrganizationsTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:organization"
       searchName="organizationSearch"
+      searchFilters={searchFilters}
       action={{ icon: PlusIcon, label: t('c:create'), onClick: openCreateOrganizationDialog }}
       export={{ filename: `${appConfig.slug}-organizations`, selectedRows: selected, fetchRows: fetchExport }}
       selection={{

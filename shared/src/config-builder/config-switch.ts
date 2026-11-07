@@ -1,13 +1,14 @@
 import { appConfig } from './app-config.ts';
-import type { BaseAuthStrategies, BaseOAuthProviders } from './types.ts';
+import type { BaseAuthStrategies, BaseOAuthProviders, HasFlagsConfig } from './types.ts';
 
 /**
- * A config switch a route belongs to: a service in `appConfig.services`, a sign-in method in
+ * A config switch a route belongs to: a service in `appConfig.services`, a feature flag in `has`, a sign-in method in
  * `enabledAuthStrategies`, or one OAuth provider, which also needs the `oauth` method on. Routes name it in
  * `xEnabledBy`; the API refuses the route while it is off and the docs mark the route as off.
  */
 export type ConfigSwitch =
   | { service: keyof typeof appConfig.services }
+  | { feature: keyof HasFlagsConfig }
   | { strategy: BaseAuthStrategies; provider?: never }
   | { strategy: 'oauth'; provider: BaseOAuthProviders };
 
@@ -20,6 +21,7 @@ export const isStrategyEnabled = (strategy: BaseAuthStrategies): boolean => appC
 /** Whether a switch is on in this app's config, read per call: tests change the config at runtime. */
 export const isSwitchOn = (on: ConfigSwitch): boolean => {
   if ('service' in on) return appConfig.services[on.service].enabled;
+  if ('feature' in on) return appConfig.has[on.feature];
   if (!isStrategyEnabled(on.strategy)) return false;
   const { provider } = on;
   return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);

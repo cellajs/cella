@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { AboutStatement } from '~/modules/marketing/about/section';
+import { TryDemoButton } from '~/modules/marketing/about/try-demo-button';
 import { Button } from '~/modules/ui/button';
 
 export function CallToAction() {
@@ -15,6 +17,7 @@ export function CallToAction() {
       <AboutStatement text="about:call_to_action.intro" className="mb-6" />
 
       <div className="z-10 mx-auto mt-6 mb-12 flex flex-col gap-4 sm:flex-row">
+        {appConfig.has.demos && <TryDemoButton className="rounded-full px-10" />}
         <Button
           variant="ghost"
           size="xl"

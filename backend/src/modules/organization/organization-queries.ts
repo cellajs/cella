@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
-import type { EntityRole } from 'shared';
+import type { EntityRole, TenantKind } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
@@ -12,6 +12,7 @@ import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organizati
 import { type InsertOrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import type { organizationListQuerySchema } from '#/modules/organization/organization-schema';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { tenantOfKind } from '#/modules/tenants/tenants-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
@@ -102,6 +103,8 @@ interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizatio
   limit: number;
   excludeArchived?: boolean;
   role?: EntityRole;
+  /** Limits the list to organizations of tenants of these kinds; unset lists every kind. */
+  tenantKinds?: TenantKind[];
   includeCounts: boolean;
 }
 
@@ -111,7 +114,7 @@ interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizatio
  */
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
+  const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeArchived, role, tenantKinds, includeCounts } = opts;
 
   const entityType = 'organization';
 
@@ -139,6 +142,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
         ]),
     ...(search ? [search] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
+    ...(tenantKinds ? [tenantOfKind(organizationsTable.tenantId, tenantKinds)] : []),
   ];
 
   const orderBy = getOrderColumns({

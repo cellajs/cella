@@ -3,7 +3,7 @@ import { batchDeleteUsers, countSystemInvitations, getUser, type ListUsersData, 
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { usersSearchDefaults } from '~/modules/user/search-params-schemas';
+import { type accountSetValues, usersSearchDefaults } from '~/modules/user/search-params-schemas';
 import type { BaseUser } from '~/modules/user/types';
 import { useUserStore } from '~/modules/user/user-store';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
@@ -14,7 +14,8 @@ import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { ListFilters, MutationData } from '~/query/types';
 
 type UserFilters = ListFilters<NonNullable<ListUsersData['query']>>;
-type UsersListParams = UserFilters & { limit?: number };
+/** The list's params as the system route holds them: the account sets as a list, which the request turns into `includeProvisional`. */
+type UsersListParams = Omit<UserFilters, 'includeProvisional'> & { accounts?: (typeof accountSetValues)[number][]; limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
 
@@ -32,13 +33,14 @@ export const userQueryOptions = (id: string) =>
 
 export const usersListQueryOptions = (params: UsersListParams) => {
   const defaults = usersSearchDefaults;
-  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, limit = appConfig.requestLimits.users } = params;
-  const filters = { q, sort, order, role };
+  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, accounts = [], limit = appConfig.requestLimits.users } = params;
+  const includeProvisional = accounts.includes('provisional') || undefined;
+  const filters = { q, sort, order, role, includeProvisional };
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
     ...tokenPaging((pageToken, signal) =>
-      listUsers({ query: { q, role, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
+      listUsers({ query: { q, role, includeProvisional, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
     ),
     refetchOnMount: true,
   });

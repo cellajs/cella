@@ -8,6 +8,7 @@ import { findUserSsoConnection } from '#/modules/connections/connections-queries
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
+import { getIsoDate } from '#/utils/iso-date';
 
 /**
  * A foothold in the tenant: a service account holds at least one binding (its bindings live in its own tenant); a user
@@ -54,6 +55,10 @@ export const tenantGuard = xMiddleware(
     }
     if (tenant.status !== 'active') {
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: tenant.status } });
+    }
+    // A tenant past its expiry is over before the sweep removes it: a demo ends when its time does.
+    if (tenant.expiresAt && tenant.expiresAt < getIsoDate()) {
+      throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: 'expired' } });
     }
 
     // The tenant's sign-in policy: a person who holds an identity through this tenant's connection must have

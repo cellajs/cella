@@ -6,6 +6,7 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganizationResponse } from '#/modules/organization/organization-mocks';
+import { tenantKindsQuerySchema } from '#/modules/tenants/tenants-schema';
 import {
   booleanTransformSchema,
   countryCodeSchema,
@@ -132,4 +133,7 @@ export const organizationListQuerySchema = listQuerySchema.extend({
   role: z.enum(roles.all).optional(),
   excludeArchived: booleanTransformSchema,
   include: includeQuerySchema,
+  kind: tenantKindsQuerySchema.describe(
+    "Tenant kinds a system admin's list across tenants covers, comma-separated; absent covers the kinds the app lists by default. A member's own list ignores it.",
+  ),
 });

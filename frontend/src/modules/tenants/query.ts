@@ -4,6 +4,7 @@ import {
   type CreateConnectionData,
   type CreateTenantData,
   createConnection,
+  createDemo,
   createTenant,
   type DeleteConnectionData,
   deleteConnection,
@@ -16,7 +17,7 @@ import {
   updateConnection,
   updateTenant,
 } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type TenantKind } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { syncChunkSize } from '~/query/basic/entity-query-registry';
@@ -24,35 +25,57 @@ import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { orderByParam, pageQuery, tokenPaging } from '~/query/basic/infinite-query-options';
 import type { ListFilters, MutationData } from '~/query/types';
 
-type TenantFilters = ListFilters<NonNullable<ListTenantsData['query']>>;
+/** The list's filters as the route holds them: the kinds as a list, which the request joins with commas. */
+type TenantFilters = Omit<ListFilters<NonNullable<ListTenantsData['query']>>, 'kind'> & { kind?: TenantKind[] };
 type TenantsListParams = TenantFilters & { limit?: number };
 
 /** Tenants are resources, not entities, so their query keys are defined manually. */
 const tenantQueryKeys = {
   list: { base: ['tenant', 'list'] as const, filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const },
   selfCreate: ['tenant', 'self-create'] as const,
+  createDemo: ['tenant', 'create-demo'] as const,
   update: ['tenant', 'update'] as const,
 };
+
+/** A kind list as the API reads it (`csvQuerySchema`); none picked sends nothing, so the API lists its default kinds. */
+export const tenantKindsParam = (kinds: TenantKind[] = []) => (kinds.length ? kinds.join(',') : undefined);
 
 export const tenantsListQueryOptions = (params: TenantsListParams) => {
   const {
     q = tenantsSearchDefaults.q,
     status,
+    kind = [],
     sort = tenantsSearchDefaults.sort,
     order = tenantsSearchDefaults.order,
     // requestLimits has no tenants entry
     limit = appConfig.requestLimits.users,
   } = params;
-  const filters = { q, status, sort, order };
+  const filters = { q, status, kind, sort, order };
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
     ...tokenPaging((pageToken, signal) =>
-      listTenants({ query: { q, status, orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
+      listTenants({
+        query: { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) },
+        signal,
+      }),
     ),
     refetchOnMount: true,
   });
 };
+
+/**
+ * Takes a demo for this browser and opens its organization: the server set a demo session, so the app reloads on
+ * the organization's page with it.
+ */
+export const useCreateDemoMutation = () =>
+  useMutation<Tenant, ApiError>({
+    mutationKey: tenantQueryKeys.createDemo,
+    mutationFn: () => createDemo(),
+    onSuccess: (tenant) => {
+      if (tenant.organization) window.location.assign(`/${tenant.id}/${tenant.organization.slug}/organization`);
+    },
+  });
 
 /** Self-serve tenant creation: every new organization mints its own tenant. */
 export const useSelfCreateTenantMutation = () => {

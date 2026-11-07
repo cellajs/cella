@@ -20,7 +20,8 @@ type ExtensionMetadata = {
 const extensionMap = {
   'x-enabled-by': {
     id: 'xEnabledBy',
-    description: 'Config switch the endpoint belongs to: a service, a sign-in method or an OAuth provider; refused before the guards while it is off',
+    description:
+      'Config switch the endpoint belongs to: a service, a feature flag, a sign-in method or an OAuth provider; refused before the guards while it is off',
     required: false,
     kind: 'metadata',
   },
