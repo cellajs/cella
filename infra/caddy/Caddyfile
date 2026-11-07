@@ -106,6 +106,14 @@
 		}
 	}
 
+	# OAuth metadata at the RFC 8414 and RFC 9728 location, the well-known name before the issuer or resource path, is
+	# published under that path, which the load balancer routes to its service: the answer points there. The path must
+	# start with a letter or digit, so the address stays on this origin.
+	@oauthMetadata path_regexp oauthMetadata ^/\.well-known/(oauth-authorization-server|oauth-protected-resource)(/[a-z0-9].*)$
+	handle @oauthMetadata {
+		redir {re.oauthMetadata.2}/.well-known/{re.oauthMetadata.1} 307
+	}
+
 	# Probes read /.well-known/* (security.txt, agent catalogs, app links) as data, so a missing
 	# file answers the origin's 404, never the index.html fallback with a 200.
 	@wellKnown path /.well-known/*

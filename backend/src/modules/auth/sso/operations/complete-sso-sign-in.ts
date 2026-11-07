@@ -12,11 +12,13 @@ import type { Federation } from '#/modules/auth/sso/helpers/federations';
 import { assertedInstitution, type SsoProfile, snapshotOf, transformSsoClaims } from '#/modules/auth/sso/helpers/transform-sso-claims';
 import { connectSsoIdentity, touchSsoIdentity } from '#/modules/auth/sso/operations/connect-sso-identity';
 import { provisionSsoUser } from '#/modules/auth/sso/operations/provision-sso-user';
+import { stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { findActiveSsoConnectionByClaim, findConnectionById } from '#/modules/connections/connections-queries';
 import type { EmailProof } from '#/modules/user/emails-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { findUserById } from '#/modules/user/user-queries';
+import { isoDateAgo } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const dbCtx = { var: { db: baseDb } };
@@ -74,8 +76,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
   const snapshot = snapshotOf(federation, claims);
   const identity = await findIdentityBySubject(dbCtx, { kind: 'sso', issuer: federation.key, subject: claims.sub });
   const facts = { federation, connection, claims, profile, snapshot, subject: claims.sub, identity };
-  // An institution that asserts MFA proves a second factor: the session starts stepped up by it.
-  const assertedMfa = typeof claims.acr === 'string' && !!federation.mfaAcr?.includes(claims.acr);
+  const mfaAt = assertedMfaAt(federation, claims);
 
   const user =
     type === 'connect'
@@ -86,8 +87,19 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
 
   return finishSignIn(ctx, user, federation.key, redirectAfter, {
     connectionId: connection.id,
-    ...(assertedMfa && { steppedUpVia: 'sso' as const }),
+    ...(mfaAt && { steppedUpVia: 'sso' as const, steppedUpAt: mfaAt }),
   });
+};
+
+/**
+ * When the institution authenticated the person with a factor it asserts as MFA: the id_token's `auth_time`, never
+ * later than now. Undefined unless that moment lies within the step-up window: an institution's session from hours ago
+ * signs a returning person in without a login, and a token without the `auth_time` the start asked for dates no factor.
+ */
+const assertedMfaAt = (federation: Federation, { acr, auth_time: authTime }: SsoClaims): string | undefined => {
+  if (typeof acr !== 'string' || !federation.mfaAcr?.includes(acr) || typeof authTime !== 'number') return undefined;
+  const authenticatedAt = new Date(Math.min(authTime * 1000, Date.now())).toISOString();
+  return authenticatedAt > isoDateAgo(stepUpWindow) ? authenticatedAt : undefined;
 };
 
 /** The account of a returning identity: the use recorded, and a changed address added when the institution proves it. */

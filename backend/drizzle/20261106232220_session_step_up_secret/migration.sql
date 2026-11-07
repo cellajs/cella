@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "stepped_up_secret" varchar(255);

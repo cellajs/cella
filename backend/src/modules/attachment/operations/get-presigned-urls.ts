@@ -36,6 +36,13 @@ const declaredTypeOf = (attachment: AttachmentModel, variant: AttachmentVariant)
   return `image/${key.slice(key.lastIndexOf('.') + 1)}`;
 };
 
+/** The name a download saves under: the row's filename, with the extension of the file the pipeline wrote for a variant. */
+const filenameOf = (attachment: AttachmentModel, variant: AttachmentVariant): string => {
+  const extension = /\.[a-z0-9]+$/i.exec(attachment.keys[variant] ?? '')?.[0];
+  if (variant === 'original' || !extension) return attachment.filename;
+  return attachment.filename.replace(/(\.[^.]*)?$/, extension);
+};
+
 /**
  * Signs private-bucket download URLs for up to 50 attachments the caller may read.
  * Fails closed: rows resolve under tenant RLS and are permission-checked in one batch before
@@ -77,7 +84,11 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
   const data = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {
       const key = variantKeyOf(row, variant);
-      const url = await getSignedUrlFromKey(key, { bucketName: row.bucketName, contentType: declaredTypeOf(row, variant) });
+      const url = await getSignedUrlFromKey(key, {
+        bucketName: row.bucketName,
+        contentType: declaredTypeOf(row, variant),
+        filename: filenameOf(row, variant),
+      });
       return { attachmentId, variant, url };
     }),
   );

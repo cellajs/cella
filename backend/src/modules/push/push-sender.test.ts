@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import webpush from 'web-push';
 import { type NotificationPushPayload, type PushSendDeps, sendNotificationPush } from './push-sender';
 
@@ -6,6 +6,8 @@ const payload: NotificationPushPayload = { t: 'notif', activityId: 'act-1', chan
 
 /** An endpoint on a host in `appConfig.pushServiceHosts`, so the send-time host check lets it through. */
 const endpointOf = (userId: string) => `https://fcm.googleapis.com/fcm/send/${userId}`;
+/** An endpoint on another push service of `appConfig.pushServiceHosts`. */
+const mozillaEndpointOf = (userId: string) => `https://updates.push.services.mozilla.com/wpush/v2/${userId}`;
 
 const subscription = (endpoint: string) => ({ endpoint, p256dh: 'p', auth: 'a' });
 
@@ -21,12 +23,16 @@ function makeDeps(overrides: Partial<PushSendDeps> = {}) {
       pruned.push(...endpoints);
     },
     isOnline: () => false,
+    pausedServices: new Map(),
     ...overrides,
   };
   return { deps, sent, pruned };
 }
 
-const statusError = (statusCode: number) => new webpush.WebPushError('Received unexpected response code', statusCode, {}, '', 'https://push.test');
+const statusError = (statusCode: number, headers = {}) =>
+  new webpush.WebPushError('Received unexpected response code', statusCode, headers, '', 'https://push.test');
+
+afterEach(() => vi.useRealTimers());
 
 describe('sendNotificationPush', () => {
   it('sends to every offline subscriber', async () => {
@@ -53,17 +59,37 @@ describe('sendNotificationPush', () => {
     expect(sent).toEqual([endpointOf('u2')]);
   });
 
-  it('aborts the remaining batches on 429', async () => {
+  it("drops only a rate-limited push service's pushes, and sends it none until its Retry-After ends", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
     const users = Array.from({ length: 20 }, (_, i) => `u${i}`);
+    const fcm = (endpoints: string[]) => endpoints.filter((endpoint) => endpoint.startsWith('https://fcm.'));
+    let limited = true;
     const { deps, sent } = makeDeps({
+      // Every other user on Mozilla's push service, the rest on FCM, which rate-limits u0's push.
+      findSubscriptions: async (userIds) => userIds.map((id, i) => subscription(i % 2 ? mozillaEndpointOf(id) : endpointOf(id))),
       send: async (sub) => {
-        if (sub.endpoint.endsWith('/u0')) throw statusError(429);
+        if (limited && sub.endpoint === endpointOf('u0')) throw statusError(429, { 'retry-after': '120' });
         sent.push(sub.endpoint);
       },
     });
+
+    // After its 429, FCM loses pushes: fewer than its other nine users get one. Mozilla gets every push.
     await sendNotificationPush(users, payload, deps);
-    // The first batch (concurrency window) still completes; later batches are dropped.
-    expect(sent.length).toBeLessThan(users.length - 1);
+    expect(fcm(sent).length).toBeLessThan(9);
+    expect(sent.length - fcm(sent).length).toBe(10);
+
+    // The next notification within the wait reaches Mozilla alone.
+    sent.length = 0;
+    limited = false;
+    await sendNotificationPush(users, payload, deps);
+    expect(fcm(sent)).toEqual([]);
+    expect(sent).toHaveLength(10);
+
+    // Once the wait ends, FCM takes pushes again.
+    sent.length = 0;
+    vi.setSystemTime(Date.now() + 121_000);
+    await sendNotificationPush(users, payload, deps);
+    expect(sent).toHaveLength(20);
   });
 
   it('never throws: a failing dependency is contained', async () => {

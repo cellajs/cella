@@ -1,4 +1,4 @@
-import { index, integer, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -15,8 +15,10 @@ export const passkeysTable = snakeCase.table(
       .$type<UserId>(),
     credentialId: varchar({ length: maxLength.url }).notNull(),
     publicKey: varchar({ length: maxLength.url }).notNull(),
-    /** The WebAuthn signature counter, stored after each assertion to detect a cloned authenticator. */
-    counter: integer().notNull().default(0),
+    /** The WebAuthn signature counter, unsigned 32-bit, stored after each assertion to detect a cloned authenticator. */
+    counter: bigint({ mode: 'number' }).notNull().default(0),
+    /** The transports the browser reported at registration (WebAuthn `getTransports()`); null when it reported none. */
+    transports: varchar({ length: maxLength.field }).array(),
     deviceName: varchar({ length: maxLength.field }),
     deviceType: varchar({ enum: ['desktop', 'mobile'] })
       .notNull()

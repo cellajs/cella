@@ -6,9 +6,9 @@ import { baseDb as db } from '#/db/db';
 import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
-import { hashToken } from '#/utils/hash-token';
+import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { expectRefusal, insertTestSession, sentMails, setCookiePair } from '../helpers';
+import { authCookie, CookieJar, cookiesAfter, expectRefusal, insertTestSession, sentMails, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 
 export interface TestSession {
@@ -31,12 +31,16 @@ export async function insertSession(
 /** A session signed in an hour ago, past the step-up window: its sign-in no longer proves the user present. */
 export const insertStaleSession = (user: { id: string }) => insertSession(user, { ageMs: 60 * 60 * 1000 });
 
-/** A stale session that then stepped up with `via`: only its stamp proves presence. */
-export async function insertSteppedUpSession(user: { id: string }, via: StepUpProof = 'totp'): Promise<TestSession> {
-  const session = await insertStaleSession(user);
-  await updateSessionSteppedUp({ var: { db } }, { id: session.id, userId: user.id, via });
-  return session;
+/** Stamps a session stepped up by `via`, as a step-up does; returns it with the step-up cookie the stamp counts with. */
+export async function stampSteppedUp(user: { id: string }, session: TestSession, via: StepUpProof): Promise<TestSession> {
+  const { raw, hash } = newHashedToken();
+  await updateSessionSteppedUp({ var: { db } }, { id: session.id, userId: user.id, via, secret: hash });
+  return asSession(session.id, new CookieJar([session.cookie, authCookie('session-step-up', raw)]).header());
 }
+
+/** A stale session that then stepped up with `via`: only its stamp proves presence. */
+export const insertSteppedUpSession = async (user: { id: string }, via: StepUpProof = 'totp') =>
+  stampSteppedUp(user, await insertStaleSession(user), via);
 
 /** Asks for the emailed step-up code from a session; returns the code the mail carries. */
 export async function askStepUpCode(session: TestSession) {
@@ -47,11 +51,17 @@ export async function askStepUpCode(session: TestSession) {
   return code;
 }
 
-/** A step-up through the emailed code, entered on the session that asked for it. */
+/** The session's browser after `response`: it keeps the cookies the response set, a step-up cookie included. */
+export const keepCookiesOf = (session: TestSession, response: Response) =>
+  Object.assign(session, asSession(session.id, cookiesAfter(session.cookie, response)));
+
+/** A step-up through the emailed code, entered on the session that asked for it, whose browser keeps the step-up cookie. */
 export async function stepUpByEmail(session: TestSession) {
   const code = await askStepUpCode(session);
   const call = await createAppClient();
-  expect((await call(stepUp, { body: { emailCode: code }, headers: session.headers })).response.status).toBe(204);
+  const { response } = await call(stepUp, { body: { emailCode: code }, headers: session.headers });
+  expect(response.status).toBe(204);
+  keepCookiesOf(session, response);
 }
 
 /** GET /me from a browser holding `cookie`. */

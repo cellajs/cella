@@ -103,7 +103,7 @@ Catchup runs on every connection before the stream goes live, and only after the
 
 ### SSE wire
 
-Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The server rechecks each open stream's session once a minute, and a new stream's memberships once it registers: one that changed while the stream connected closes it, and the client reconnects with current access. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. Frame shapes: [API reference](/docs/schemas).
+Beside change and signal frames the stream sends a periodic `ping`, which also says whether a CDC worker is reading, and an `error` naming why the server ends it. The `ping` is a named event, not a comment line, so client code sees it, and every proxy on the way has to keep an idle stream open longer than the ping interval. No frame carries an `id` or a `retry`, so a reconnect sends no `Last-Event-ID`: the client resumes through catchup from its cursors, with a backoff of its own. The server rechecks each open stream's session once a minute, and a new stream's memberships once it registers: one that changed while the stream connected closes it, and the client reconnects with current access. After a session ended for good the client waits for a visible tab and a healthy API; after any other end it reconnects. A stream ended for good still answers 200 and closes after its `error` frame, never with a 204: the app's client stops at the frame, and a stock EventSource stops at the 401 its one reconnect gets. Frame shapes: [API reference](/docs/schemas).
 
 ### Fetch prioritization
 

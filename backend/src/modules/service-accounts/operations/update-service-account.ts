@@ -17,7 +17,7 @@ import { log } from '#/utils/logger';
  */
 export async function updateServiceAccountOp(ctx: UserContext, serviceAccountId: string, input: UpdateServiceAccountInput) {
   const account = await getManagedServiceAccount(ctx, serviceAccountId);
-  if (input.status === 'active' && account.status !== 'active') await requireStepUp(ctx.var.session, 'factor');
+  if (input.status === 'active' && account.status !== 'active') await requireStepUp(ctx, 'factor');
   const updated = await updateServiceAccount(ctx, {
     id: serviceAccountId,
     tenantId: ctx.var.tenantId,

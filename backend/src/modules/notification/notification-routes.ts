@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { publicGuard, userGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { oneClickUnsubscribeLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { unsubscribeCategories } from '#/modules/notification/helpers/category-token';
 import {
   markReadBodySchema,
@@ -60,7 +60,6 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'get',
     path: '/notifications/unsubscribe',
     xGuard: [publicGuard],
-    xRateLimiter: [tokenLimiter('unsubscribe')],
     summary: 'Open an unsubscribe link',
     description:
       'Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners ' +
@@ -72,13 +71,13 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     method: 'post',
     path: '/notifications/unsubscribe',
     xGuard: [publicGuard],
-    xRateLimiter: [tokenLimiter('unsubscribe')],
+    xRateLimiter: [oneClickUnsubscribeLimiter],
     summary: 'Unsubscribe from a notification category',
     description:
       'Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest ' +
       "leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.",
     request: { query: unsubscribeQuerySchema },
-    responses: { 204: { description: 'Category turned off' }, ...errors(401, 404) },
+    responses: { 204: { description: 'Category turned off' }, ...errors(403, 404) },
   }),
   resubscribeNotifications: xRoute({
     method: 'post',
@@ -88,7 +87,7 @@ const notificationRoutes = createXRoutes(['notifications', 'cella'], {
     summary: 'Turn a notification category back on',
     description: 'Undoes an unsubscribe with the same link token, from the page that confirmed it. No auth.',
     request: { query: unsubscribeQuerySchema },
-    responses: { 204: { description: 'Category turned on' }, ...errors(401, 404) },
+    responses: { 204: { description: 'Category turned on' }, ...errors(403, 404) },
   }),
 });
 

@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -9,7 +10,8 @@ import { deletePasskey, insertPasskey } from '#/modules/auth/passkeys/passkeys-q
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { deviceColumns, deviceInfo } from '#/modules/auth/sessions/helpers/device-info';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
-import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
+import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
+import { stampStepUp } from '#/modules/auth/step-up/operations/stamp-step-up';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -21,19 +23,19 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
 
   const { attestation, nameOnDevice } = ctx.req.valid('json');
 
-  const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(ctx, attestation);
+  const { credentialId, publicKey, counter, transports } = await verifyPasskeyRegistration(ctx, attestation, user.id);
 
   // A credential id names one account: an authenticator presenting one that is registered already is refused.
   const newPasskey = await insertPasskey(ctx, {
-    values: { userId: user.id, credentialId, publicKey, counter, nameOnDevice, ...deviceColumns(deviceInfo(ctx)) },
+    values: { userId: user.id, credentialId, publicKey, counter, transports, nameOnDevice, ...deviceColumns(deviceInfo(ctx)) },
   });
   if (!newPasskey) throw new AppError(409, 'resource_already_exists', 'warn');
 
   // The registration proved the new passkey on this session: it steps the session up, so the action that asked runs next.
-  await updateSessionSteppedUp(ctx, { id: ctx.var.session.id, userId: user.id, via: 'passkey' });
+  await stampStepUp(ctx, 'passkey');
   sendAccountSecurityEmail(user, 'passkey-added', { passkeyName: newPasskey.nameOnDevice });
 
-  return ctx.json(newPasskey, 201);
+  return ctx.json(newPasskey, 201, { Location: `${appConfig.backendAuthUrl}/passkey/${newPasskey.id}` });
 });
 
 app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
@@ -53,9 +55,10 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
   const { type } = ctx.req.valid('json');
 
-  // The second factor of an MFA challenge is the one case with a known account, so its passkeys may be offered. A
-  // sign-in challenge names none: the passkey the browser picks names its account.
-  const user = type === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : null;
+  // The second factor of an MFA challenge has a known account, whose passkeys may be offered, and a registration the
+  // signed-in one, whose passkeys the browser excludes. A sign-in challenge names none: the passkey the browser picks
+  // names its account.
+  const user = type === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : type === 'registration' ? (await findSession(ctx))?.user : undefined;
 
   return ctx.json(await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id }), 200);
 });

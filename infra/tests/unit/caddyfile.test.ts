@@ -87,6 +87,22 @@ describe('frontend Caddyfile', () => {
     expect(caddyfile).toMatch(/encode\s+zstd\s+gzip/);
   });
 
+  it('points the RFC 8414 and RFC 9728 root locations at the paths the services publish, on this origin only', () => {
+    // Without it the static bucket answers 404, and a client that builds the standard location finds no metadata.
+    const pattern = new RegExp(caddyfile.match(/@oauthMetadata\s+path_regexp\s+oauthMetadata\s+(\S+)/)?.[1] ?? '$^');
+    expect(pattern.exec('/.well-known/oauth-authorization-server/oauth')?.slice(1)).toEqual(['oauth-authorization-server', '/oauth']);
+    expect(pattern.exec('/.well-known/oauth-protected-resource/mcp/tenants/t/organizations/o/mcp')?.slice(1)).toEqual([
+      'oauth-protected-resource',
+      '/mcp/tenants/t/organizations/o/mcp',
+    ]);
+    // A redirect to `//host` or `/\host` would send the client to another origin.
+    for (const path of ['/.well-known/oauth-protected-resource//evil.example', '/.well-known/oauth-protected-resource/\\evil.example']) {
+      expect(pattern.test(path), path).toBe(false);
+    }
+    // Handles with named matchers run in the order written: this one before the bucket's /.well-known/*.
+    expect(caddyfile.indexOf('handle @oauthMetadata')).toBeLessThan(caddyfile.indexOf('handle @wellKnown'));
+  });
+
   it("serves the build's brotli copies, and the original when a release before them has none", () => {
     // Without the fallback, a tab still running an older release could no longer load its lazy chunks.
     expect(caddyfile).toMatch(/rewrite\s+\*\s+\{path\}\.br/);

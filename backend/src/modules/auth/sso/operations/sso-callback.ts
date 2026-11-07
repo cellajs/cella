@@ -12,7 +12,7 @@ import { completeSsoSignIn } from '#/modules/auth/sso/operations/complete-sso-si
  *   state cookie, and what the exchange and the completion throw.
  */
 export const handleSsoCallback = async (ctx: OAuthCallbackContext) => {
-  const { code, state, error } = ctx.req.valid('query');
+  const { code, state, iss, error } = ctx.req.valid('query');
 
   const payload = readOAuthCookie(ctx, state);
   const strategy = payload?.provider ?? 'sso';
@@ -23,7 +23,7 @@ export const handleSsoCallback = async (ctx: OAuthCallbackContext) => {
   }
 
   const federation = getFederation(payload.provider);
-  const claims = await exchangeFederationCode(federation, { code, state, codeVerifier: payload.codeVerifier, nonce: payload.nonce });
+  const claims = await exchangeFederationCode(federation, { code, state, iss, codeVerifier: payload.codeVerifier, nonce: payload.nonce });
 
   return completeSsoSignIn(ctx, { federation, claims, payload });
 };

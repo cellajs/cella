@@ -7,7 +7,7 @@ vi.unmock('#/lib/object-storage');
 
 const { getSignedUrlFromKey } = await import('./signed-url');
 
-const bucket = { bucketName: 'private-bucket' };
+const bucket = { bucketName: 'private-bucket', filename: null };
 
 describe('getSignedUrlFromKey', () => {
   it('signs private keys with the default 2h expiry', async () => {
@@ -36,6 +36,25 @@ describe('getSignedUrlFromKey', () => {
     for (const contentType of ['image/webp', 'video/mp4', 'audio/mpeg', 'application/pdf']) {
       expect(await served(contentType), contentType).toEqual({ disposition: 'inline', type: contentType });
     }
+  });
+
+  it('must not let a filename add a parameter to Content-Disposition, and keeps a name ASCII cannot hold in filename*', async () => {
+    const disposition = async (filename: string) =>
+      new URL(await getSignedUrlFromKey('org/user/a.pdf', { ...bucket, contentType: 'application/pdf', filename })).searchParams.get(
+        'response-content-disposition',
+      );
+
+    expect(await disposition('report.pdf')).toBe('inline; filename="report.pdf"');
+    // A quote, a backslash, a line break or a percent sign never reaches the quoted form, which keeps one parameter.
+    expect(await disposition('x.pdf"; filename="page.html')).toBe(
+      `inline; filename="x.pdf_; filename=_page.html"; filename*=UTF-8''x.pdf%22%3B%20filename%3D%22page.html`,
+    );
+    expect(await disposition('a\r\nSet-Cookie: s=1.pdf')).toBe(
+      `inline; filename="a__Set-Cookie: s=1.pdf"; filename*=UTF-8''a%0D%0ASet-Cookie%3A%20s%3D1.pdf`,
+    );
+    expect(await disposition("Ünïcode (1)'s 100%.pdf")).toBe(
+      `inline; filename="_n_code (1)'s 100_.pdf"; filename*=UTF-8''%C3%9Cn%C3%AFcode%20%281%29%27s%20100%25.pdf`,
+    );
   });
 
   it('must not sign a blob: key, a local blob URL included', async () => {

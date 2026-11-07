@@ -1,6 +1,7 @@
 import { type Socket, connect as tcpConnect } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
 import { yjsPendingQueueCap } from '../constants';
@@ -52,10 +53,10 @@ relay.httpServer.on('upgrade', (_req, socket) => upgradeSockets.push(socket));
 
 afterAll(() => relay.close());
 
-/** Connects and settles on a stable open socket, a close code, or an HTTP-level error. */
-function connect(path: string): Promise<{ ws: WsWebSocket; closeCode?: number; closeReason?: string; error?: Error }> {
+/** Connects and settles on a stable open socket, a close code, or an HTTP-level error; `origin` is the page a browser names. */
+function connect(path: string, origin?: string): Promise<{ ws: WsWebSocket; closeCode?: number; closeReason?: string; error?: Error }> {
   return new Promise((resolve, reject) => {
-    const ws = new WsWebSocket(`${baseUrl}${path}`);
+    const ws = new WsWebSocket(`${baseUrl}${path}`, { origin });
     const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
     ws.on('open', () => {
       setTimeout(() => {
@@ -129,6 +130,22 @@ describe('setupUpgradeHandler', () => {
     // Positive control: a socket whose token is still valid stays open.
     expect(long.ws.readyState).toBe(WsWebSocket.OPEN);
     long.ws.close();
+  });
+
+  it('must not open a socket from a page of another site, whatever token it carries', async () => {
+    const path = `/entity-1?token=${createSignedToken({ userId: 'user-1' })}&entityType=attachment&tenantId=tenant-1`;
+
+    for (const origin of ['https://evil.example', 'null']) {
+      const { error, closeCode } = await connect(path, origin);
+      expect(closeCode, origin).toBeUndefined();
+      expect(error?.message, origin).toContain('403');
+    }
+
+    // Positive control: a page of the app opens it.
+    const { ws, error } = await connect(path, new URL(appConfig.frontendUrl).origin);
+    expect(error).toBeUndefined();
+    expect(ws.readyState).toBe(WsWebSocket.OPEN);
+    ws.close();
   });
 
   it('accepts a valid token', async () => {

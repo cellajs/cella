@@ -84,7 +84,8 @@ app.openapi(meRoutes.leaveMembership, async (ctx) => {
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
   const { organizationId, templateId } = ctx.req.valid('query');
   const data = getUploadTokenOp(ctx, { organizationId, templateId });
-  return ctx.json(data, 200);
+  // Signed upload params are a secret for minutes: no cache keeps them (RFC 9111 §5.2.2.5).
+  return ctx.json(data, 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(meRoutes.listMyMemberships, async (ctx) => {

@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from 'node:crypto';
 import { parse } from 'node:url';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -14,7 +15,10 @@ import { clearSecurityTestData } from './helpers';
 // The registration limiter is under test here; each test signs in a user of its own, so its budget starts empty.
 vi.unmock('#/middlewares/rate-limiter/core');
 
-const keys = { p256dh: 'test-p256dh', auth: 'test-auth' };
+/** Keys as a browser's subscription holds them: a P-256 public key and a 16-octet auth secret, in base64url. */
+const subscriptionKeys = () => ({ p256dh: createECDH('prime256v1').generateKeys('base64url'), auth: randomBytes(16).toString('base64url') });
+
+const keys = subscriptionKeys();
 
 /** One endpoint per push service (FCM, Mozilla, Apple, WNS), in the shape it hands out, with a test token. */
 const realEndpoints = [
@@ -111,6 +115,26 @@ describe('Push subscription endpoints', async () => {
     const other = await userWithSession();
     const { response } = await call(createPushSubscription, { body: { endpoint: realEndpoints[0], keys }, headers: other.headers });
     expect(response.status).toBe(201);
+  });
+
+  it("must not take over another user's push subscription via its endpoint alone", async () => {
+    const owner = await userWithSession();
+    const other = await userWithSession();
+    const [endpoint] = realEndpoints;
+    const ownerKeys = subscriptionKeys();
+    expect((await call(createPushSubscription, { body: { endpoint, keys: ownerKeys }, headers: owner.headers })).response.status).toBe(201);
+
+    // Another user who learned the endpoint, a capability URL, holds no auth secret of the browser's subscription.
+    const taken = await call(createPushSubscription, { body: { endpoint, keys: subscriptionKeys() }, headers: other.headers });
+    await expectRefusal(taken, 403, 'forbidden');
+    expect(await endpointsOf(owner.user.id)).toEqual([endpoint]);
+    expect(await endpointsOf(other.user.id)).toEqual([]);
+
+    // Positive control: the browser that holds the subscription moves it to the user now signed in there.
+    const moved = await call(createPushSubscription, { body: { endpoint, keys: ownerKeys }, headers: other.headers });
+    expect(moved.response.status).toBe(201);
+    expect(await endpointsOf(owner.user.id)).toEqual([]);
+    expect(await endpointsOf(other.user.id)).toEqual([endpoint]);
   });
 
   it('registers subscriptions on known push services (positive control)', async () => {

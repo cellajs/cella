@@ -8,7 +8,7 @@ import { baseDb, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
-import { type CodeTokenType, type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenType, type CookieTokenType, type HeldLinkType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { InsertTokenModel } from '#/modules/auth/tokens/tokens-db';
 import {
   deleteBoundToken,
@@ -27,6 +27,7 @@ import { findUserByEmail } from '#/modules/user/user-queries';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isoDateIn } from '#/utils/iso-date';
+import { TimeSpan } from '#/utils/time-span';
 
 /** Token reads and writes without a caller's transaction run on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
@@ -176,19 +177,10 @@ interface InvokeTokenOpts {
 }
 
 /**
- * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
- * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
- * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
- * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
- * its holder from `claimHolder`, committed with the redemption.
- * @returns The redeemed token.
- * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 401
- *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
- *   to another account, or what `claimHolder` throws.
+ * The link a raw value names, refused as redeeming it would refuse it; `redeemed` when this browser redeemed it before
+ * and holds its single-use cookie, which a fresh read checks against the stored hash.
  */
-export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
-  const { singleUseWindow } = tokenPolicies[type];
-
+const checkLinkToken = async (ctx: Context<Env>, type: LinkTokenType, rawToken: string) => {
   const token = await findLinkToken(dbCtx, { type, rawToken });
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
 
@@ -197,10 +189,29 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
   if (token.invokedAt) {
     const held = await heldByThisBrowser(ctx, token);
     if (!held) throw refuseRedeemed(token);
-    return held;
+    return { token: held, redeemed: true };
   }
 
   if (isExpiredDate(token.expiresAt)) throw expired(token);
+  return { token, redeemed: false };
+};
+
+/**
+ * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
+ * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
+ * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
+ * holding that cookie. A link issued without an account gets its holder from `claimHolder`, committed with the
+ * redemption.
+ * @returns The redeemed token.
+ * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 401
+ *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
+ *   to another account, or what `claimHolder` throws.
+ */
+export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
+  const { singleUseWindow } = tokenPolicies[type];
+
+  const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, type, rawToken);
+  if (redeemedBefore) return token;
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const singleUse = newHashedToken();
@@ -227,6 +238,39 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
   const held = await heldByThisBrowser(ctx, token);
   if (!held) throw refuseRedeemed(token);
   return held;
+};
+
+/** How long a link opened in a browser waits there, in its `<type>-pending` cookie, for its holder to confirm it. */
+export const heldLinkLifetime = new TimeSpan(10, 'm');
+
+/**
+ * Opens an invitation or verification link on a GET, which redeems nothing (RFC 9110 §9.2.1), so a mail scanner that
+ * fetches the link leaves it unused. A link this browser redeemed before comes back to go on with; any other one that
+ * redeeming would accept is held in this browser's `<type>-pending` cookie until the app's page confirms it with a
+ * POST (`redeemHeldLink`).
+ * @returns The token this browser redeemed before, or null once the link is held.
+ * @throws What `invokeToken` throws, before anything is held.
+ */
+export const holdLinkToken = async (ctx: Context<Env>, type: HeldLinkType, rawToken: string): Promise<TokenRecord | null> => {
+  const { token, redeemed } = await checkLinkToken(ctx, type, rawToken);
+  if (redeemed) return token;
+
+  setAuthCookie(ctx, `${type}-pending`, rawToken, heldLinkLifetime);
+  return null;
+};
+
+/**
+ * Redeems the link this browser holds (`holdLinkToken`), on the POST from the app's page, and drops the hold.
+ * @throws AppError 401 `link_not_held` when this browser holds none (the hold lapsed while the page stayed open, or a
+ *   sign-out cleared it), whatever state the link is in, else what `invokeToken` throws.
+ */
+export const redeemHeldLink = async (ctx: Context<Env>, type: HeldLinkType): Promise<TokenRecord> => {
+  const rawToken = getAuthCookie(ctx, `${type}-pending`);
+  if (!rawToken) throw new AppError(401, 'link_not_held', 'info');
+
+  const token = await invokeToken(ctx, { type, rawToken });
+  deleteAuthCookie(ctx, `${type}-pending`);
+  return token;
 };
 
 /** The link types whose request the asking browser remembers, in a cookie named after the type. */

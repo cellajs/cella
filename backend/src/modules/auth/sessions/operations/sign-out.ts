@@ -6,13 +6,20 @@ import { dropHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-br
 import { readBrowserSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
 import { log } from '#/utils/logger';
 
 /**
- * What a sign-out clears from this browser besides its session cookie: what it holds of a sign-in in progress, and an
- * opened invitation, which would show the next person here its address and organization.
+ * What a sign-out clears from this browser besides its session cookie: its step-up, what it holds of a sign-in in
+ * progress, and an opened or held invitation, which would show the next person here its address and organization.
  */
-const signedOutCookies = ['magic', 'magic-pending', 'confirm-mfa', 'invitation'] as const satisfies CookieName[];
+const signedOutCookies: CookieName[] = [
+  'session-step-up',
+  'magic',
+  'confirm-mfa',
+  'invitation',
+  ...linkTokenTypes.map((type) => `${type}-pending` as const),
+];
 
 const deleteSignedOutCookies = (ctx: Context<Env>) => {
   deleteAuthCookie(ctx, 'session');

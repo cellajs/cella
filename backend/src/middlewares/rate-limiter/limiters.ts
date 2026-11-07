@@ -39,6 +39,18 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
     description: 'Failed attempts for each IP address and kind of sign-in. A success resets the count.',
   });
 
+/**
+ * A pace per IP for the one-click unsubscribe (RFC 8058), counted in process. A mail provider posts every recipient's
+ * one-click from a few addresses, so every answer counts alike and one recipient's dead link never refuses another's
+ * valid one; the link's HMAC is what guessing runs into.
+ */
+export const oneClickUnsubscribeLimiter = rateLimiter('limit', 'oneClickUnsubscribe', ['ip'], {
+  limits: { points: 1000, duration: 60 * 5 },
+  countsInProcess: true,
+  name: 'One-click unsubscribes',
+  description: "Requests for each IP address, whatever the answer: a mail provider posts many recipients' unsubscribes from one address.",
+});
+
 /** A budget, as API points are: it holds for the hour. One request signs up to 50 files, and the client keeps the links it got. */
 export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['actorId', 'ip']], {
   limits: { points: 2000, duration: 60 * 60 },

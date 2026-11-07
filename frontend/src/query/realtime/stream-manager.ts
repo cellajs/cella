@@ -404,7 +404,11 @@ class StreamManager {
       }
     });
 
-    eventSource.onerror = () => this.handleStreamFailure('SSE error');
+    // The server's `error` frame reaches `onerror` too, after its listener counted it, and a closed stream fails no more.
+    eventSource.onerror = (event) => {
+      if (event instanceof MessageEvent || this.eventSource !== eventSource) return;
+      this.handleStreamFailure('SSE error');
+    };
 
     this.eventSource = eventSource;
     this.lastEventAt = Date.now();

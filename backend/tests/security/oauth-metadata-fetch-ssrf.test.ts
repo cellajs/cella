@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { Socket } from 'node:net';
 import { accessScopes } from 'shared';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { resourceUri } from '#/modules/oauth-server/resources';
 import { startAuthorization, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
@@ -62,7 +63,9 @@ describe('client metadata document fetch to an internal address', () => {
     await oauth.close();
   });
 
-  const authorize = (clientId: string) => startAuthorization(oauth.issuer, { clientId, redirectUri: REDIRECT_URI, scope: accessScopes.all[0] });
+  const resource = resourceUri({ face: 'api', tenantId: 'tenant1' });
+  const authorize = (clientId: string) =>
+    startAuthorization(oauth.issuer, { clientId, redirectUri: REDIRECT_URI, scope: accessScopes.all[0], resource });
 
   it('must refuse a client_id metadata document on a private address', async () => {
     const service = await startInternalService();

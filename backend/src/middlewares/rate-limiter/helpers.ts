@@ -186,9 +186,8 @@ export const blockSpentBucket = async (store: LimiterStore, rateLimitKey: string
  * The refusal carries the wait alone: the key names a subject, which no client needs and no log line repeats.
  * @param type - The limiter's own refusal type, when a client says more than "too many requests" for it.
  */
-export const refuseRateLimited = (ctx: Context<Env>, limitState: RateLimiterRes, type: ErrorKey = 'too_many_requests') => {
+export const refuseRateLimited = (limitState: RateLimiterRes, type: ErrorKey = 'too_many_requests') => {
   const retryAfter = getRetryAfter(limitState.msBeforeNext);
-  ctx.header('Retry-After', String(retryAfter));
   throw new AppError(429, type, 'warn', { meta: { retryAfter } });
 };
 

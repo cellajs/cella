@@ -32,6 +32,8 @@ export type OAuthCookiePayload = z.infer<typeof oauthCookiePayloadSchema>;
 export const oauthCallbackQuerySchema = z.object({
   code: z.string().max(maxLength.url).optional(),
   state: z.string().max(maxLength.field),
+  /** The issuer that answered (RFC 9207), which the client compares with the server it sent the browser to. */
+  iss: z.string().max(maxLength.url).optional(),
   error: z.string().max(maxLength.field).optional(),
   error_description: z.string().max(maxLength.url).optional(),
   error_uri: z.string().max(maxLength.url).optional(),

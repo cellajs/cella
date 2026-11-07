@@ -113,7 +113,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   const toolCall = (ctx: Parameters<typeof rpc>[0], name: string, args: unknown) => rpc(ctx, 'tools/call', { name, arguments: args });
   const toolResult = (reply: { rpc: Rpc }) => reply.rpc.result as ToolResult;
 
-  it('publishes protected resource metadata and must name only read scopes in the challenge, so a client starts minimal', async () => {
+  it('publishes protected resource metadata and must name only read scopes in it and in the challenge, so a client starts minimal', async () => {
     const { org } = await orgWithAdmin();
     const metadata = await call(getMcpProtectedResourceMetadata, {
       path: { tenantId: org.tenantId, organizationId: org.id },
@@ -123,8 +123,9 @@ describe('MCP on the substrate (Phase E)', async () => {
     const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
     expect(metadata.data).toMatchObject({
       resource,
+      resource_name: expect.any(String),
       authorization_servers: [appConfig.oauthUrl],
-      scopes_supported: expect.arrayContaining(['attachment:read', 'attachment:write']),
+      scopes_supported: mcpInitialScope.split(' '),
     });
 
     const anonymous = await rpc({ org }, 'initialize');
@@ -136,8 +137,8 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('showcase 1: a read token lists and reads attachments, and is stepped up on a write', async () => {
     const ctx = await serviceToken('attachment:read');
-    const init = await rpc(ctx, 'initialize', { protocolVersion: '2026-07-28' });
-    expect(init.rpc.result).toMatchObject({ protocolVersion: '2026-07-28', capabilities: { tools: {} } });
+    const init = await rpc(ctx, 'initialize', { protocolVersion: '2025-11-25' });
+    expect(init.rpc.result).toMatchObject({ protocolVersion: '2025-11-25', capabilities: { tools: {} } });
 
     const list = await rpc(ctx, 'tools/list');
     const tools = (list.rpc.result as { tools: { name: string; _meta: { scope: string } }[] }).tools;
@@ -152,8 +153,9 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const write = await toolCall(ctx, 'updateAttachment', { attachmentId: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
     expect(write.response.status).toBe(403);
-    expect(write.response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
-    expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
+    expect(write.response.headers.get('www-authenticate')).toMatch(/^Bearer error="insufficient_scope", .*scope="attachment:write"/);
+    // An application's own code: MCP reserves -32000 to -32099 and gave -32002 the meaning "resource not found".
+    expect(write.rpc.error).toMatchObject({ code: -31403, message: 'insufficient_scope', data: { scope: 'attachment:write' } });
   });
 
   it('answers each call of a batch, one outside the token scopes with its own error', async () => {
@@ -172,13 +174,36 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     // Answered as one 403, the read's result was lost and a client retrying the batch ran it again.
     expect(response.status).toBe(200);
-    expect(response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
+    expect(response.headers.get('www-authenticate')).toMatch(/^Bearer error="insufficient_scope", .*scope="attachment:write"/);
     const [read, refused, invalid, ...rest] = data as Rpc[];
     expect(read).toMatchObject({ id: 1, result: { structuredContent: { results: [], totalSize: 0 } } });
-    expect(refused).toMatchObject({ id: 2, error: { code: -32002, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
+    expect(refused).toMatchObject({ id: 2, error: { code: -31403, message: 'insufficient_scope', data: { scope: 'attachment:write' } } });
     // A message without a method keeps its id; a response the client posts back gets no answer.
     expect(invalid).toMatchObject({ id: 3, error: { code: -32600 } });
     expect(rest).toEqual([]);
+  });
+
+  it('refuses a revision it does not implement with a 400 an MCP client falls back on, and a page on another origin', async () => {
+    const ctx = await serviceToken('attachment:read');
+    const send = (headers: Record<string, string>) =>
+      call(handleMcp, {
+        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+        body: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+        headers: { ...bearerHeaders(ctx.jwt), ...headers },
+      });
+
+    // A client that tried the stateless revision reads a 400 without a JSON-RPC error as an older server and sends initialize.
+    const stateless = await send({ 'MCP-Protocol-Version': '2026-07-28' });
+    expect(stateless.response.status).toBe(400);
+    expect(stateless.error).toMatchObject({ reason: 'unsupported_protocol_version' });
+    expect(stateless.error).not.toHaveProperty('jsonrpc');
+
+    // DNS rebinding: a page on another origin that reached the endpoint with a token still gets nothing.
+    const foreign = await send({ Origin: 'https://evil.example' });
+    expect(foreign.response.status).toBe(403);
+
+    // Positive control: a revision it implements, and the app's own origin.
+    expect((await send({ 'MCP-Protocol-Version': '2025-06-18', Origin: new URL(appConfig.frontendUrl).origin })).response.status).toBe(200);
   });
 
   it('counts a tool call once against the burst limit, at the route it runs', async () => {

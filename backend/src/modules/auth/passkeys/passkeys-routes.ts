@@ -10,7 +10,7 @@ import {
   passkeySchema,
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
-import { cookieSchema, validIdSchema } from '#/schemas';
+import { cookieSchema, locationSchema, validIdSchema } from '#/schemas';
 
 const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   generatePasskeyChallenge: xRoute({
@@ -34,7 +34,7 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.',
     request: { body: jsonBody(passkeyCreateBodySchema) },
-    responses: { 201: json('Passkey created', passkeySchema, mockPasskeyResponse()), ...errors(409) },
+    responses: { 201: { ...json('Passkey created', passkeySchema, mockPasskeyResponse()), headers: locationSchema }, ...errors(409) },
   }),
   deletePasskey: xRoute({
     method: 'delete',

@@ -117,7 +117,7 @@ describe('Account enumeration', async () => {
     const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: stranger }));
 
     expect(forAccount).toEqual(forStranger);
-    expect(forAccount).toEqual({ status: 200, credentialIds: [] });
+    expect(forAccount).toEqual({ status: 200, credentials: [] });
   });
 
   it('must not learn whether an address has an account via the passkey sign-in', async () => {
@@ -243,7 +243,7 @@ describe('Account enumeration', async () => {
       familyName: 'Ber',
     });
     const state = nanoid();
-    const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', type }));
+    const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', type, codeVerifier: 'verifier' }));
     const res = await app.request(`/auth/github/callback?code=provider-code&state=${state}`, {
       headers: { ...defaultHeaders, Cookie: [stateCookie, cookie].filter(Boolean).join('; ') },
     });

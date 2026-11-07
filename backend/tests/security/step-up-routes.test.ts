@@ -39,7 +39,15 @@ import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
-import { asSession, insertSession, insertStaleSession, insertSteppedUpSession, stepUpByEmail, type TestSession } from './session-helpers';
+import {
+  asSession,
+  insertSession,
+  insertStaleSession,
+  insertSteppedUpSession,
+  keepCookiesOf,
+  stepUpByEmail,
+  type TestSession,
+} from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
@@ -62,8 +70,11 @@ describe('account-security routes need a step-up', async () => {
     return user;
   };
 
-  const stepUpWithTotp = async (session: TestSession) =>
-    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(204);
+  const stepUpWithTotp = async (session: TestSession) => {
+    const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
+    expect(response.status).toBe(204);
+    keepCookiesOf(session, response);
+  };
 
   it('must not add a passkey via a stale session', async () => {
     const user = await totpHolder('add-passkey');
@@ -104,16 +115,16 @@ describe('account-security routes need a step-up', async () => {
     const user = await createTestUser('setup-totp@security-test.com');
     const session = await insertStaleSession(user);
     const secret = encodeBase32(crypto.getRandomValues(new Uint8Array(20)));
-    const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
+    const withChallenge = () => ({ ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` });
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
     await expectStepUpRequired(await call(generateTotpKey, { headers: session.headers }));
-    await expectStepUpRequired(await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge }));
+    await expectStepUpRequired(await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge() }));
     expect(await totpsOf()).toHaveLength(0);
 
     await stepUpByEmail(session);
     expect((await call(generateTotpKey, { headers: session.headers })).response.status).toBe(200);
-    expect((await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge })).response.status).toBe(201);
+    expect((await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge() })).response.status).toBe(201);
     expect(await totpsOf()).toHaveLength(1);
   });
 
@@ -132,6 +143,7 @@ describe('account-security routes need a step-up', async () => {
       headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
     });
     expect(created.response.status).toBe(201);
+    keepCookiesOf(session, created.response);
     expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(204);
   });
 
@@ -139,9 +151,9 @@ describe('account-security routes need a step-up', async () => {
     const user = await createTestUser('setup-totp-stamp@security-test.com');
     const session = await insertStaleSession(user);
     const secret = encodeBase32(crypto.getRandomValues(new Uint8Array(20)));
-    const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
 
     await stepUpByEmail(session);
+    const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
     expect((await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge })).response.status).toBe(201);
     expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
   });
@@ -256,6 +268,7 @@ describe('account-security routes need a step-up', async () => {
       headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
     });
     expect(registered.response.status).toBe(201);
+    keepCookiesOf(session, registered.response);
     const created = await minting.createAccount(session);
     expect(created.response.status).toBe(201);
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;

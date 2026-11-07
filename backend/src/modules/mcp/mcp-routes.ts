@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
+import { createXRoutes, errors, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, tokenGuard } from '#/middlewares/guard';
 import { mcpRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockProtectedResourceResponse } from '#/modules/oauth-server/oauth-server-mocks';
@@ -48,17 +48,18 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     xRateLimiter: [mcpRequestLimiter],
     summary: 'MCP endpoint',
     description:
-      'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.',
+      'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint, for the revisions that open with initialize. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata, and an invalid token or an API key adds invalid_token. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge. A browser Origin other than the app answers 403, and an MCP-Protocol-Version this server does not implement answers 400. GET and DELETE answer 405: the endpoint opens no stream and holds no session.',
     request: { params: tenantOrgParamSchema, body: jsonBody(mcpBodySchema) },
     responses: {
       200: json('JSON-RPC response', z.any()),
       403: {
-        ...json(
-          'Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.',
-          jsonRpcErrorSchema,
-        ),
+        description:
+          'Forbidden\n\nA call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.',
+        content: { 'application/json': { schema: jsonRpcErrorSchema }, ...errors(403)[403].content },
         headers: z.object({
-          'WWW-Authenticate': z.string().openapi({ description: "The scope to step up to, and where to find the authorization server's metadata." }),
+          'WWW-Authenticate': z.string().optional().openapi({
+            description: "On a call outside the token scopes: the scope to step up to, and where to find the authorization server's metadata.",
+          }),
         }),
       },
     },

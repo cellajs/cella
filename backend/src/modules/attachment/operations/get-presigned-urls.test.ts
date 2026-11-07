@@ -27,6 +27,7 @@ const attachmentA = {
   organizationId: 'org-1',
   createdBy: 'user-1',
   bucketName: appConfig.s3.privateBucket,
+  filename: 'a.jpg',
   contentType: 'image/jpeg',
   convertedContentType: null,
   keys: { original: 'org-1/user-1/a.jpg', preview: 'org-1/user-1/a-preview.jpg' },
@@ -36,6 +37,7 @@ const attachmentB = {
   organizationId: 'org-1',
   createdBy: 'user-2',
   bucketName: appConfig.s3.privateBucket,
+  filename: 'b.doc',
   contentType: 'application/msword',
   convertedContentType: 'application/pdf',
   keys: { original: 'org-1/user-2/b.doc', converted: 'org-1/user-2/b.pdf' },
@@ -93,10 +95,11 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
-    // A fallback to the original serves the original's declared type.
+    // A fallback to the original serves the original's declared type and name.
     expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
       bucketName: appConfig.s3.privateBucket,
       contentType: attachmentA.contentType,
+      filename: attachmentA.filename,
     });
     expect(res.data[0]?.variant).toBe('converted');
   });

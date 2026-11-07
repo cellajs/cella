@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import { usersTable } from '#/modules/user/user-db';
@@ -20,7 +21,7 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, insertPasskey } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 import {
   asSession,
   cancelOpenStreams,
@@ -121,6 +122,8 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     const { response } = await call(toggleMfa, { body: { mfaRequired: true }, headers: current.headers });
     expect(response.status).toBe(200);
+    // One Set-Cookie per cookie name (RFC 6265bis 4.1.1): the new session's cookie replaces the old one.
+    expect(response.headers.getSetCookie().filter((line) => line.startsWith(`${authCookieName('session')}=`))).toHaveLength(1);
 
     // This browser carries on with the mfa session the response set, so its stream closes with a code the client
     // reconnects on; the other browser lost its session for good.
@@ -196,6 +199,23 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       expectStillOpen(user.id, elsewhereStream);
       await warmSession(elsewhere);
       await warmSession(later);
+    });
+
+    it("must not keep another account's session live once a same-site passkey sign-in in its browser overwrites its cookie", async () => {
+      const walkedAway = await createTestUser('walked-away@security-test.com');
+      const next = await createTestUser('next-at-browser@security-test.com');
+      const passkey = await insertPasskey(next);
+      const left = await insertSession(walkedAway);
+      await warmSession(left);
+
+      // The next person at a shared computer signs in with a passkey: same-site, so the first account's cookie travels with it.
+      const issued = await passkeyChallenge('authentication');
+      const { response } = await passkeySignIn(passkey.assert(issued.challenge), `${left.cookie}; ${issued.cookie}`);
+      expect(response.status).toBe(204);
+
+      await expectSignedOut(left.cookie, 'session_revoked');
+      expect(await sessionRow(left.id)).toMatchObject({ revocationReason: 'replaced', revokedBy: null });
+      await warmSession(await sessionSetBy(response));
     });
   });
 

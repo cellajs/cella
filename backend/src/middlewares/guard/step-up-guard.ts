@@ -7,7 +7,7 @@ const stepUpMinutes = stepUpWindow.seconds() / 60;
 /** A guard for the step-up tier `tier`: runs after `userGuard`, and a refusal is 403 `step_up_required` naming what the user can offer. */
 const stepUpTierGuard = (tier: StepUpTier, functionName: string, name: string, description: string) =>
   xMiddleware({ functionName, type: 'x-guard', errors: [403], requires: ['session'], name, description }, async (ctx, next) => {
-    await requireStepUp(ctx.var.session, tier);
+    await requireStepUp(ctx, tier);
     await next();
   });
 

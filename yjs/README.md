@@ -32,6 +32,8 @@ Keystrokes merge at character level and reach peers as soon as they are durable.
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the materialize route on its internal listener only, sanitizes media URLs, and indexes the materializers modules register. The relay itself is `yjs/src/`, and the editor's side of the protocol is `frontend/src/modules/common/blocknote/`. Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
 
+The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own, a document's seed generation and the confirmation of a saved update, numbered clear of those y-websocket uses. A stock y-websocket client therefore syncs, but skips the generation check and reports every confirmation as a message it cannot read.
+
 ## Vocabulary
 
 | Term | Meaning |
@@ -48,7 +50,7 @@ The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the 
 
 ## Who may edit
 
-Editing needs a token. The backend issues one for a single entity, for a few minutes, to a user who may update that entity. The relay holds only the public half of the signing key: it can verify a token and cannot mint one.
+Editing needs a token. The backend issues one for a single entity, for a few minutes, to a user who may update that entity. The relay holds only the public half of the signing key: it can verify a token and cannot mint one. A page on another origin than the app's cannot open a socket, while a client outside a browser, which names no page, can.
 
 A valid token opens the socket, and then the relay decides for itself: it asks the permission engine, as the API would, whether this user may update this row. Until that answer is in, the socket receives nothing of the document and relays nothing. A refusal never tells someone without access whether the entity exists. A document's tenant and organization come from the entity row, never from a token or from whoever joined first.
 

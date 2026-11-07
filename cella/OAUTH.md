@@ -13,7 +13,7 @@ MCP client / registered app
         │  authorization code + PKCE (person)  or  client_credentials (service account)
         ▼
 OAuth worker  (/oauth/*)
-  ├─ discovery, authorize, token, revocation, JWKS
+  ├─ discovery, authorize, pushed authorization requests, token, revocation, JWKS
   ├─ interaction routes the app renders as /auth/consent
   └─ store: oauth_clients rows, oidc_payloads, signing_keys
         │
@@ -36,7 +36,9 @@ The code is in `backend/src/modules/oauth-server/`; `pnpm dev` starts the worker
 | Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if an admin installed the app in the tenant |
 | Service account | Its own id | Any of its live API keys as the client secret; the token stays within that key's scopes | None: `client_credentials` |
 
-An authorization request brings the browser to the consent page, through sign-in when needed. The page shows who asks, the tenant (and on the MCP face the organization) the grant reaches, and the requested scopes. A registered app shows the name and logo a system admin set; a client known by its metadata document shows only the host that serves it.
+An authorization request brings the browser to the consent page, through sign-in when needed. The page shows who asks, the tenant (and on the MCP face the organization) the grant reaches, and the requested scopes. A registered app shows the name and logo a system admin set; a client known by its metadata document shows only the host that serves it. Beside either, the page names the host of the redirect URI the authorization goes to, which a client's name does not vouch for.
+
+A client that registers only through dynamic client registration (RFC 7591) cannot connect: it needs a Client ID Metadata Document or a registered app.
 
 Whether a consent is possible is decided on the server, by the grant policy. The person must be a member of the resource's tenant, and the tenant must allow consented clients or, for a registered app, have it installed. The page shows a refusal and disables Accept, and a posted accept is refused all the same.
 
@@ -49,11 +51,11 @@ The provider keeps a session of its own in the browser. It answers a client with
 | Setting | Value |
 | --- | --- |
 | Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` (service accounts only) |
-| Access token | RS256 JWT, 1 hour |
+| Access token | RS256 JWT bearer token, bound to no client key, 1 hour |
 | Refresh token | 30 days, rotated on use; grants live 30 days |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants.
+Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants, and so does an authorization request that names none.
 
 A guard verifies a token locally, against the public signing keys: no round trip to this worker and no row per token. A person's token rests on its grant and a service account's on the API key it was minted with, and the guard reads that at every request. Whatever ends a grant or a key, or changes a membership, stops or narrows its tokens at the next request, in every process.
 
@@ -69,7 +71,7 @@ A change to the rest of what the grant policy reads (the user row, an installed 
 
 ## Operational constraints
 
-- **Same origin.** Discovery, the consent page and the interaction cookies assume the issuer sits on the app origin. Both discovery documents are served under `/oauth/.well-known/`, and MCP clients fall back to the `openid-configuration` one. A client that needs the RFC 8414 form at the origin root needs a proxy rewrite.
+- **Same origin.** Discovery, the consent page and the interaction cookies assume the issuer sits on the app origin. Both discovery documents are served under `/oauth/.well-known/`, and MCP clients fall back to the `openid-configuration` one; the RFC 8414 location at the origin root answers too, through the proxy. The `openid-configuration` document describes an authorization server that refuses the `openid` scope and issues no ID token; it is published for MCP clients that discover through it.
 - **Reads the app database.** Sessions, memberships, tenants, service accounts and keys are read directly, so the worker needs the runtime database role.
 - **Clients are read per request.** A disabled account or a changed redirect URI counts at once.
 - **A fetch budget per address.** A client id the worker has not seen may be the URL of a metadata document on a host the requester picks, so those fetches are limited per IP.

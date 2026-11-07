@@ -98,6 +98,15 @@
               "duration": 3600
             }
           },
+          "oneClickUnsubscribeLimiter": {
+            "name": "One-click unsubscribes",
+            "description": "Requests for each IP address, whatever the answer: a mail provider posts many recipients' unsubscribes from one address.",
+            "policy": {
+              "mode": "limit",
+              "points": 1000,
+              "duration": 300
+            }
+          },
           "presignedUrlLimiter": {
             "name": "File links",
             "description": "Requests for each user or service account. One request can cover up to 50 files.",
@@ -499,6 +508,12 @@
         "headers": {
           "X-Request-Id": {
             "description": "The request id, also `instance` in the body; quote it when reporting a failure.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "WWW-Authenticate": {
+            "description": "On a route that takes an API key or access token, unless the request carries a session cookie: a `Bearer` challenge naming where the resource publishes its metadata (RFC 9728) and, for a refused key or token, `error=\"invalid_token\"` with the reason.",
             "schema": {
               "type": "string"
             }
@@ -1711,6 +1726,9 @@
           "resource": {
             "type": "string"
           },
+          "resource_name": {
+            "type": "string"
+          },
           "authorization_servers": {
             "type": "array",
             "items": {
@@ -1733,10 +1751,11 @@
             "type": "string"
           }
         },
-        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "required": ["resource", "resource_name", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
         "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
         "example": {
           "resource": "http://localhost:3000/api/tenants/m5jfjs",
+          "resource_name": "Cella DEVELOPMENT API",
           "authorization_servers": ["http://localhost:3000/oauth"],
           "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
           "bearer_methods_supported": ["header"],
@@ -5451,7 +5470,7 @@
         "operationId": "invokeToken",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
-        "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
+        "description": "Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -5476,7 +5495,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Redirect with token session",
+            "description": "Redirect to the app",
             "headers": {
               "Location": {
                 "schema": {
@@ -5497,6 +5516,58 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/invoke-token/{type}": {
+      "post": {
+        "security": [],
+        "operationId": "redeemLinkToken",
+        "tags": ["auth", "cella"],
+        "summary": "Redeem held link",
+        "description": "Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["oauth-verification", "invitation"]
+            },
+            "required": true,
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Link redeemed\n\nWhere the browser goes next: the app with the token session, or the provider for a verification.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["redirectTo"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
           },
           "409": {
             "$ref": "#/components/responses/ConflictError"
@@ -5662,7 +5733,7 @@
         "operationId": "confirmInvitationAddress",
         "tags": ["auth", "cella"],
         "summary": "Confirm the invited address",
-        "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.",
+        "description": "Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "responses": {
@@ -5856,7 +5927,7 @@
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "responses": {
-          "302": {
+          "303": {
             "description": "Signed in, redirect to the app",
             "headers": {
               "Location": {
@@ -6191,6 +6262,14 @@
         "responses": {
           "201": {
             "description": "Passkey created",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            },
             "content": {
               "application/json": {
                 "example": {
@@ -6343,7 +6422,12 @@
               "application/json": {
                 "example": {
                   "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
-                  "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
+                  "credentials": [
+                    {
+                      "id": "3EQAejE9eLT26kT6iIsM52HWd5x3aKpV",
+                      "transports": ["hybrid", "internal"]
+                    }
+                  ]
                 },
                 "schema": {
                   "type": "object",
@@ -6351,14 +6435,27 @@
                     "challenge": {
                       "type": "string"
                     },
-                    "credentialIds": {
+                    "credentials": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                            }
+                          }
+                        },
+                        "required": ["id"]
                       }
                     }
                   },
-                  "required": ["challenge", "credentialIds"]
+                  "required": ["challenge", "credentials"]
                 }
               }
             }
@@ -6742,6 +6839,15 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255
             },
             "required": false,
@@ -6835,6 +6941,15 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255
             },
             "required": false,
@@ -6923,6 +7038,15 @@
             },
             "required": true,
             "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
             "in": "query"
           },
           {
@@ -7282,6 +7406,15 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 2048
+            },
+            "required": false,
+            "name": "iss",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "maxLength": 255
             },
             "required": false,
@@ -7579,14 +7712,27 @@
                     "challenge": {
                       "type": "string"
                     },
-                    "credentialIds": {
+                    "credentials": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                            }
+                          }
+                        },
+                        "required": ["id"]
                       }
                     }
                   },
-                  "required": ["challenge", "credentialIds"]
+                  "required": ["challenge", "credentials"]
                 }
               }
             }
@@ -7966,8 +8112,9 @@
               "application/json": {
                 "example": {
                   "resource": "http://localhost:3000/mcp/tenants/5pooo8/organizations/8c598ff2-1070-4bfe-af42-de4764db5aba/mcp",
+                  "resource_name": "Cella DEVELOPMENT MCP",
                   "authorization_servers": ["http://localhost:3000/oauth"],
-                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "scopes_supported": ["organization:read", "attachment:read"],
                   "bearer_methods_supported": ["header"],
                   "resource_documentation": "http://localhost:3000/docs"
                 },
@@ -7999,7 +8146,7 @@
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.",
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint, for the revisions that open with initialize. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata, and an invalid token or an API key adds invalid_token. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge. A browser Origin other than the app answers 403, and an MCP-Protocol-Version this server does not implement answers 400. GET and DELETE answer 405: the endpoint opens no stream and holds no session.",
         "x-enabled-by": {
           "service": "mcp"
         },
@@ -8061,15 +8208,15 @@
             "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
-            "description": "Insufficient scope\n\nThe call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.",
+            "description": "Forbidden\n\nA call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.",
             "headers": {
               "WWW-Authenticate": {
                 "schema": {
                   "type": "string",
-                  "description": "The scope to step up to, and where to find the authorization server's metadata."
+                  "description": "On a call outside the token scopes: the scope to step up to, and where to find the authorization server's metadata."
                 },
-                "required": true,
-                "description": "The scope to step up to, and where to find the authorization server's metadata."
+                "required": false,
+                "description": "On a call outside the token scopes: the scope to step up to, and where to find the authorization server's metadata."
               }
             },
             "content": {
@@ -8109,6 +8256,11 @@
                     }
                   },
                   "required": ["jsonrpc", "id", "error"]
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenError"
                 }
               }
             }
@@ -11398,7 +11550,7 @@
         "summary": "Open an unsubscribe link",
         "description": "Redirects an unsubscribe link from an email to the page that asks to confirm it, and changes nothing: mail scanners and link previews open links on their own. No auth.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
+        "x-rate-limiter": ["readLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11455,7 +11607,7 @@
         "summary": "Unsubscribe from a notification category",
         "description": "Turns off one email category. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. The confirmation page and a mail client's one-click unsubscribe (RFC 8058) post here. No auth.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
+        "x-rate-limiter": ["oneClickUnsubscribeLimiter"],
         "parameters": [
           {
             "schema": {
@@ -11492,8 +11644,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -11549,8 +11701,8 @@
           "400": {
             "$ref": "#/components/responses/BadRequestError"
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "404": {
             "$ref": "#/components/responses/NotFoundError"
@@ -13093,7 +13245,7 @@
         "operationId": "createPushSubscription",
         "tags": ["push", "cella"],
         "summary": "Register a Web Push subscription",
-        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
+        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. An endpoint another user registered moves to the caller only with that subscription's auth secret, as the browser holding it sends. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pushSubscriptionLimiter"],
         "requestBody": {
@@ -13116,12 +13268,10 @@
                     "properties": {
                       "p256dh": {
                         "type": "string",
-                        "minLength": 1,
                         "maxLength": 512
                       },
                       "auth": {
                         "type": "string",
-                        "minLength": 1,
                         "maxLength": 512
                       }
                     },
@@ -13158,6 +13308,9 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"

@@ -43,7 +43,8 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
   if (route.organizationId) audiences.push(resourceUri({ face: 'mcp', tenantId: route.tenantId, organizationId: route.organizationId }));
 
   try {
-    const { payload } = await jwtVerify(jwt, await getPublicJwkSet(), { issuer: appConfig.oauthUrl, audience: audiences });
+    // `typ` tells an access token from any other JWT this issuer could sign for the same audience (RFC 9068 §4).
+    const { payload } = await jwtVerify(jwt, await getPublicJwkSet(), { issuer: appConfig.oauthUrl, audience: audiences, typ: 'at+jwt' });
     const claims = payload as typeof payload &
       Partial<{
         actor_kind: IssuedTokenClaims['actor_kind'];

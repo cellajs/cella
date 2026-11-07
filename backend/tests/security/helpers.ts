@@ -131,11 +131,11 @@ export async function insertPasskey(user: { id: string }, { counter = 0 } = {}) 
 
 export const passkeysOf = (userId: string) => db.select().from(passkeysTable).where(eq(passkeysTable.userId, userId));
 
-/** The challenge a passkey challenge route issued, the credential ids it offers, and the cookie pair that carries it. */
+/** The challenge a passkey challenge route issued, the credentials it names, and the cookie pair that carries it. */
 export function issuedChallenge({ response, data }: TestResult) {
   expect(response.status).toBe(200);
-  const { challenge, credentialIds } = data as { challenge: string; credentialIds?: string[] };
-  return { challenge, credentialIds, cookie: setCookiePair(response, 'passkey-challenge') };
+  const { challenge, credentials } = data as { challenge: string; credentials: { id: string; transports?: string[] }[] };
+  return { challenge, credentials, credentialIds: credentials.map(({ id }) => id), cookie: setCookiePair(response, 'passkey-challenge') };
 }
 
 /** A passkey challenge of `type`, asked for as the page asks from a browser holding `cookie`. */

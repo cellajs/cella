@@ -3,8 +3,12 @@ import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import type { OAuthCookiePayload, OAuthStartContext } from '#/modules/auth/oauth/oauth-schema';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
+import { frontendRedirectPath } from '#/utils/frontend-redirect-path';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+
+/** How long a round trip may stay at the provider: an account creation or an MFA enrollment there takes minutes. */
+const roundTripLifetime = new TimeSpan(15, 'm');
 
 /** One round trip a start hands over: the provider URL, and what the callback must find in the state cookie. */
 type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVerifier' | 'nonce' | 'connectionId'> & { url: URL };
@@ -18,7 +22,9 @@ type OAuthInitiation = Pick<OAuthCookiePayload, 'state' | 'provider' | 'codeVeri
  * @throws AppError 401 for a connect or a verify whose pin or token this browser does not hold.
  */
 export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, url, state, codeVerifier, nonce, connectionId }: OAuthInitiation) => {
-  const { type, redirectAfter } = ctx.req.valid('query');
+  const { type, redirectAfter: requestedPath } = ctx.req.valid('query');
+  // Normalized now, as the last hop would: a raw path can percent-encode past the 4096 octets a browser keeps of a cookie.
+  const redirectAfter = frontendRedirectPath(requestedPath) ?? undefined;
   const cookieContent: OAuthCookiePayload = { state, provider, codeVerifier, nonce, type, redirectAfter, connectionId };
 
   if (type === 'connect') {
@@ -39,7 +45,7 @@ export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, 
 
   const stringifiedContent = JSON.stringify(cookieContent);
 
-  setAuthCookie(ctx, 'oauth-state', stringifiedContent, new TimeSpan(5, 'm'));
+  setAuthCookie(ctx, 'oauth-state', stringifiedContent, roundTripLifetime);
 
   log.info('User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 

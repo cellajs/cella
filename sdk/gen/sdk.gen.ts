@@ -253,6 +253,9 @@ import type {
   PushYjsUpdateData,
   PushYjsUpdateErrors,
   PushYjsUpdateResponses,
+  RedeemLinkTokenData,
+  RedeemLinkTokenErrors,
+  RedeemLinkTokenResponses,
   RejectInvitationData,
   RejectInvitationErrors,
   RejectInvitationResponses,
@@ -417,6 +420,7 @@ import {
   zPublishOrganizationResponse,
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
+  zRedeemLinkTokenResponse,
   zRejectInvitationResponse,
   zRemovePushSubscriptionResponse,
   zResendInvitationResponse,
@@ -724,7 +728,7 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
 /**
  * Invoke token session
  *
- * Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, an invitation hands the app a single-use token session in a cookie. Redirects to the app.
+ * Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· _auth · cella_
  *
@@ -739,6 +743,27 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/invoke-token/{type}/{token}',
+    ...options,
+  });
+
+/**
+ * Redeem held link
+ *
+ * Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.
+ *
+ * **POST /auth/invoke-token/{type}** ·· [redeemLinkToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invoke-token/{type}) ·· _auth · cella_
+ *
+ * @param {redeemLinkTokenData} options
+ * @param {enum} options.path.type - `enum`
+ * @returns Possible status codes: 200, 400, 401, 409, 429
+ */
+export const redeemLinkToken = <ThrowOnError extends boolean = true>(
+  options: Options<RedeemLinkTokenData, ThrowOnError>,
+): RequestResult<RedeemLinkTokenResponses, RedeemLinkTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<RedeemLinkTokenResponses, RedeemLinkTokenErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zRedeemLinkTokenResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/invoke-token/{type}',
     ...options,
   });
 
@@ -787,7 +812,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
 /**
  * Confirm the invited address
  *
- * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it adds the address to the account and lets it accept.
+ * Mails the address the invitation in the single-use token session went to a new link, bound to the signed-in account. The new link replaces the older ones; opened from that inbox, it lets the account accept, and the address stays off the account.
  *
  * **POST /auth/invitation-token/confirm-address** ·· [confirmInvitationAddress](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/confirm-address) ·· _auth · cella_
  *
@@ -903,7 +928,7 @@ export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
  * **POST /auth/magic/confirm** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/confirm) ·· _auth · cella_
  *
  * @param {confirmMagicLinkData} options
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 303, 400, 401, 403, 404, 409, 429
  */
 export const confirmMagicLink = <ThrowOnError extends boolean = true>(
   options?: Options<ConfirmMagicLinkData, ThrowOnError>,
@@ -1194,6 +1219,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(
  * @param {githubCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1218,6 +1244,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
  * @param {googleCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1242,6 +1269,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
  * @param {microsoftCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1331,6 +1359,7 @@ export const startSsoFederation = <ThrowOnError extends boolean = true>(
  * @param {ssoCallbackData} options
  * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.iss - `string` (optional)
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
  * @param {string=} options.query.error_uri - `string` (optional)
@@ -1550,7 +1579,7 @@ export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing or invalid token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge.
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint, for the revisions that open with initialize. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A missing token answers 401 with a WWW-Authenticate challenge naming where to find the authorization server metadata, and an invalid token or an API key adds invalid_token. A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to; in a batch it gets its own insufficient_scope error, the other calls keep their results, and the 200 carries the challenge. A browser Origin other than the app answers 403, and an MCP-Protocol-Version this server does not implement answers 400. GET and DELETE answer 405: the endpoint opens no stream and holds no session.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/tenants/{tenantId}/organizations/{organizationId}/mcp) ·· _mcp · cella_
  *
@@ -2292,7 +2321,7 @@ export const openUnsubscribeLink = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 404, 429
+ * @returns Possible status codes: 204, 400, 403, 404, 429
  */
 export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<UnsubscribeNotificationsData, ThrowOnError>,
@@ -2315,7 +2344,7 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.user - `string`
  * @param {enum} options.query.category - `enum`
  * @param {string} options.query.token - `string`
- * @returns Possible status codes: 204, 400, 401, 404, 429
+ * @returns Possible status codes: 204, 400, 403, 404, 429
  */
 export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
   options: Options<ResubscribeNotificationsData, ThrowOnError>,
@@ -2520,7 +2549,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
 /**
  * Register a Web Push subscription
  *
- * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.
+ * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. An endpoint another user registered moves to the caller only with that subscription's auth secret, as the browser holding it sends. The endpoint must be an https URL of a known browser push service. Past the per-user cap, the least recently seen subscriptions are removed.
  *
  * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push · cella_
  *
@@ -2528,7 +2557,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
  * @param {string} options.body.endpoint - `string`
  * @param {number | null=} options.body.expirationTime - `number | null` (optional)
  * @param {object} options.body.keys - `object`
- * @returns Possible status codes: 201, 400, 401, 413, 429
+ * @returns Possible status codes: 201, 400, 401, 403, 413, 429
  */
 export const createPushSubscription = <ThrowOnError extends boolean = true>(
   options: Options<CreatePushSubscriptionData, ThrowOnError>,

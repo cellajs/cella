@@ -260,6 +260,7 @@ export const zStreamError = z.object({
  */
 export const zProtectedResourceMetadata = z.object({
   resource: z.string(),
+  resource_name: z.string(),
   authorization_servers: z.array(z.string()),
   scopes_supported: z.array(z.string()),
   bearer_methods_supported: z.array(z.string()),
@@ -1052,6 +1053,19 @@ export const zInvokeTokenPath = z.object({
   token: z.string().max(255),
 });
 
+export const zRedeemLinkTokenPath = z.object({
+  type: z.enum(['oauth-verification', 'invitation']),
+});
+
+/**
+ * Link redeemed
+ *
+ * Where the browser goes next: the app with the token session, or the provider for a verification.
+ */
+export const zRedeemLinkTokenResponse = z.object({
+  redirectTo: z.string(),
+});
+
 export const zGetTokenDataPath = z.object({
   type: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
@@ -1209,7 +1223,12 @@ export const zGeneratePasskeyChallengeBody = z.object({
  */
 export const zGeneratePasskeyChallengeResponse = z.object({
   challenge: z.string(),
-  credentialIds: z.array(z.string()),
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+    }),
+  ),
 });
 
 export const zSignInWithPasskeyBody = z.object({
@@ -1257,6 +1276,7 @@ export const zMicrosoftQuery = z.object({
 export const zGithubCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1265,6 +1285,7 @@ export const zGithubCallbackQuery = z.object({
 export const zGoogleCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1273,6 +1294,7 @@ export const zGoogleCallbackQuery = z.object({
 export const zMicrosoftCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1327,6 +1349,7 @@ export const zStartSsoFederationQuery = z.object({
 export const zSsoCallbackQuery = z.object({
   code: z.string().max(2048).optional(),
   state: z.string().max(255),
+  iss: z.string().max(2048).optional(),
   error: z.string().max(255).optional(),
   error_description: z.string().max(2048).optional(),
   error_uri: z.string().max(2048).optional(),
@@ -1391,7 +1414,12 @@ export const zStepUpResponse = z.void();
  */
 export const zGetStepUpPasskeyChallengeResponse = z.object({
   challenge: z.string(),
-  credentialIds: z.array(z.string()),
+  credentials: z.array(
+    z.object({
+      id: z.string(),
+      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+    }),
+  ),
 });
 
 /**
@@ -2373,8 +2401,8 @@ export const zCreatePushSubscriptionBody = z.object({
   endpoint: z.url().max(2048),
   expirationTime: z.number().nullish(),
   keys: z.object({
-    p256dh: z.string().min(1).max(512),
-    auth: z.string().min(1).max(512),
+    p256dh: z.string().max(512),
+    auth: z.string().max(512),
   }),
 });
 

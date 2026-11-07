@@ -12,7 +12,7 @@ import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { findGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
-import { parseResource } from '#/modules/oauth-server/resources';
+import { parseResource, resourceUri } from '#/modules/oauth-server/resources';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { apiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
 import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
@@ -22,6 +22,9 @@ import { log } from '#/utils/logger';
 
 const hour = 60 * 60;
 const day = 24 * hour;
+
+/** The provider routes that start an authorization request: the authorization endpoint and pushed requests. */
+const authorizationRoutes = new Set(['authorization', 'pushed_authorization_request']);
 
 /**
  * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key), with the
@@ -136,12 +139,18 @@ export async function createProvider(): Promise<Provider> {
       rpInitiatedLogout: { enabled: false },
       userinfo: { enabled: false },
       revocation: { enabled: true },
+      // The guards verify no DPoP proof, so nothing advertises one or binds a token to a key.
+      dPoP: { enabled: false },
       clientCredentials: { enabled: true },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch, allowClient },
       resourceIndicators: {
         enabled: true,
-        // Every token names its resource; a request without one gets `invalid_target` at the guard, never a broad token.
-        defaultResource: () => undefined,
+        // Every token names its resource. An authorization request without one is answered `invalid_target` on the
+        // client's redirect URI (RFC 8707 §2.1); at the token endpoint the grant's resource applies (`useGrantedResource`).
+        defaultResource: (ctx, _client, oneOf) => {
+          if (!oneOf && authorizationRoutes.has(ctx.oidc.route)) throw new errors.InvalidTarget('resource indicator is required');
+          return undefined;
+        },
         useGrantedResource: () => true,
         getResourceServerInfo: (ctx, resourceIndicator, client) => {
           const resource = parseResource(resourceIndicator);
@@ -149,7 +158,8 @@ export async function createProvider(): Promise<Provider> {
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
           const scope = grantableScopes(ctx, client).join(' ');
-          return { scope, audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: hour };
+          // The audience is the resource as the guards spell it, whatever case its origin and tenant id were sent in.
+          return { scope, audience: resourceUri(resource), accessTokenFormat: 'jwt', accessTokenTTL: hour };
         },
       },
     },

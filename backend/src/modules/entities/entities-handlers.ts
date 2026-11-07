@@ -32,6 +32,8 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
 const maxStreamsPerUser = 10;
 // One actor's accounts can fill this cap for every tenant: a stream belongs to a user, memberless or not, so no per-tenant share binds.
 const maxStreamSubscribers = 5000;
+/** The wait a capped connect is told, in seconds: the client's first reconnect delay, since a cap frees no slot at a known time. */
+const streamCapRetryAfter = 5;
 
 /**
  * Streams per user id that passed the caps and are not registered yet: the offset write lies between the check and the
@@ -76,7 +78,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
     streamSubscriberManager.size >= maxStreamSubscribers ||
     streamSubscriberManager.getByTopic(userTopic(user.id)).length + admitted >= maxStreamsPerUser
   ) {
-    throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
+    throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap', retryAfter: streamCapRetryAfter } });
   }
   admittedStreams.set(user.id, admitted + 1);
 

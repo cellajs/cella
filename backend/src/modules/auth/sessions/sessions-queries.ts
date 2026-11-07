@@ -156,20 +156,24 @@ interface GetStepUpFactsOpts {
   userId: string;
   /** Start of the step-up window, an ISO timestamp. */
   since: string;
+  /** The hash of the step-up cookie the request presents; undefined without one. */
+  presentedSecret?: string;
 }
 
 /**
  * What a session's step-up state is decided from, in one query: the proof it was stamped with inside the window, whether
  * it signed in inside the window, which second factors its user holds and whether MFA is on. Undefined when the session
- * row is gone.
+ * row is gone. A stamp counts only with the step-up cookie it went out with, so a copy of the session cookie made before
+ * the proof stays unproven; a sign-in counts without it, since no copy of a session cookie predates its sign-in.
  */
-export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since }: GetStepUpFactsOpts) => {
+export const getStepUpFacts = async (ctx: DbContext, { sessionId, userId, since, presentedSecret }: GetStepUpFactsOpts) => {
   // The factors are looked up by the session's user id as a parameter: a select field renders its columns without their
   // table, so a `sessions` column in these subqueries would name the subquery's own `user_id`.
   const held = heldFactorsSql(userId);
+  const stampHeld = presentedSecret ? eq(sessionsTable.steppedUpSecret, presentedSecret) : sql`false`;
   const [row] = await ctx.var.db
     .select({
-      stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} then ${sessionsTable.steppedUpVia} end`,
+      stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} and ${stampHeld} then ${sessionsTable.steppedUpVia} end`,
       signedInRecently: sql<boolean>`${sessionsTable.createdAt} > ${since}`,
       hasPasskey: held.passkey,
       hasTotp: held.totp,
@@ -184,17 +188,19 @@ interface UpdateSessionSteppedUpOpts {
   id: string;
   userId: string;
   via: StepUpProof;
+  /** The hash of the step-up cookie the stamp goes out with. */
+  secret: string;
 }
 
 /**
  * Stamps a live session of the user as stepped up now, by the proof given; only the named session. Undefined when the
  * session ended or belongs to someone else.
  */
-export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via }: UpdateSessionSteppedUpOpts) => {
+export const updateSessionSteppedUp = async (ctx: DbContext, { id, userId, via, secret }: UpdateSessionSteppedUpOpts) => {
   const now = getIsoDate();
   const [stamped] = await ctx.var.db
     .update(sessionsTable)
-    .set({ steppedUpAt: now, steppedUpVia: via })
+    .set({ steppedUpAt: now, steppedUpVia: via, steppedUpSecret: secret })
     .where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, now)))
     .returning({ id: sessionsTable.id });
   return stamped;

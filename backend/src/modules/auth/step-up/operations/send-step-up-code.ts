@@ -18,7 +18,7 @@ import { stepUpEmail } from '../../../../../emails';
 export const sendStepUpCodeOp = async (ctx: Context<Env>) => {
   const { user, session } = ctx.var;
 
-  const { methods } = await readStepUp(session, 'enroll');
+  const { methods } = await readStepUp(ctx, 'enroll');
   if (!methods.includes('email')) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'email_not_offered' } });
 
   const { token, code } = await issueCodeToken({ type: 'step-up', userId: user.id, email: user.email, sessionId: session.id });

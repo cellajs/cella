@@ -7,6 +7,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/auth/query';
 import { ErrorNotice } from '~/modules/common/error-notice';
+import { NamedText } from '~/modules/common/named-text';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { Spinner } from '~/modules/common/spinner';
 import { Button, glassClass } from '~/modules/ui/button';
@@ -42,7 +43,7 @@ export function OAuthConsentPage() {
   if (error && !unauthenticated) return <ErrorNotice error={error} boundary="public" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
-  const { client, scopes, refusal, target } = data;
+  const { client, redirectHost, scopes, refusal, target } = data;
 
   return (
     <>
@@ -51,6 +52,9 @@ export function OAuthConsentPage() {
         title={t('c:oauth_consent_header', { name: client.name })}
         description={t('c:oauth_consent.text', { name: client.name })}
       >
+        <p className="text-sm">
+          <NamedText i18nKey="c:oauth_consent_redirect.text" values={{ host: redirectHost }} />
+        </p>
         {target.tenant && (
           <p className="text-sm">
             {target.organization

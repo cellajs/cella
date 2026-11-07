@@ -22,7 +22,7 @@ function accountChecks() {
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   app.post('/check', async (ctx) => {
-    await verifyTotp(ctx, { user, code: await ctx.req.text(), pendingSecret: testTotpSecret });
+    await verifyTotp({ user, code: await ctx.req.text(), pendingSecret: testTotpSecret });
     return ctx.body(null, 204);
   });
   const check = async (code: string) => (await app.request('http://localhost/check', { method: 'POST', body: code })).status;

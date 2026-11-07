@@ -205,7 +205,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v36-aep-field-names',
+  clientCacheVersion: 'v37-protocol-routes',
 
   // Authentication
 
@@ -243,6 +243,7 @@ export const config = {
   maxSessionsPerUser: 10,
 
   // A code verifies one step either side of now (RFC 6238 §5.2): each step more is one more code a guess can hit.
+  // Google Authenticator reads neither the period nor the digits of the key URI, so other values lock its users out.
   totp: { intervalInSeconds: 30, gracePeriodInSeconds: 30, digits: 6 },
 
   // API configuration

@@ -41,6 +41,9 @@ const forwardedHeaders = ['authorization', 'x-forwarded-for'];
 
 const isZodObject = (schema: unknown): schema is z.ZodObject<z.ZodRawShape> => schema instanceof z.ZodObject;
 
+/** Path param values `new URL` resolves or collapses, so the call would run another route than its tool's. */
+const unroutableSegments = new Set(['', '.', '..']);
+
 /** The standard method a batch custom method (`/~batch-delete`) runs per item: its tool's hints follow that method. */
 const batchedMethods: Record<string, string> = { 'batch-create': 'POST', 'batch-update': 'PATCH', 'batch-delete': 'DELETE' };
 
@@ -149,6 +152,9 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
       params.parse(rawParams);
       query.parse(rawQuery);
       if (body) body.parse(rawBody);
+      const unroutable = paramKeys.find((key) => unroutableSegments.has(String(rawParams[key] ?? '')));
+      if (unroutable)
+        throw new z.ZodError([{ code: 'custom', path: [unroutable], message: 'Not an id: empty, "." or ".."', input: rawParams[unroutable] }]);
 
       // The route parses the raw values again, as it parses any client's.
       const values: Record<string, unknown> = { ...rawParams, tenantId: ctx.var.tenantId, organizationId: ctx.var.organizationId };

@@ -343,6 +343,7 @@ export type StreamError = {
  */
 export type ProtectedResourceMetadata = {
   resource: string;
+  resource_name: string;
   authorization_servers: Array<string>;
   scopes_supported: Array<string>;
   bearer_methods_supported: Array<string>;
@@ -1605,6 +1606,49 @@ export type InvokeTokenErrors = {
 
 export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 
+export type RedeemLinkTokenData = {
+  body?: never;
+  path: {
+    type: 'oauth-verification' | 'invitation';
+  };
+  query?: never;
+  url: '/auth/invoke-token/{type}';
+};
+
+export type RedeemLinkTokenErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Conflict
+   */
+  409: ConflictError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type RedeemLinkTokenError = RedeemLinkTokenErrors[keyof RedeemLinkTokenErrors];
+
+export type RedeemLinkTokenResponses = {
+  /**
+   * Link redeemed
+   *
+   * Where the browser goes next: the app with the token session, or the provider for a verification.
+   */
+  200: {
+    redirectTo: string;
+  };
+};
+
+export type RedeemLinkTokenResponse = RedeemLinkTokenResponses[keyof RedeemLinkTokenResponses];
+
 export type GetTokenDataData = {
   body?: never;
   path: {
@@ -2245,7 +2289,10 @@ export type GeneratePasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 
@@ -2435,6 +2482,7 @@ export type GithubCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2477,6 +2525,7 @@ export type GoogleCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2519,6 +2568,7 @@ export type MicrosoftCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2689,6 +2739,7 @@ export type SsoCallbackData = {
   query: {
     code?: string;
     state: string;
+    iss?: string;
     error?: string;
     error_description?: string;
     error_uri?: string;
@@ -2908,7 +2959,10 @@ export type GetStepUpPasskeyChallengeResponses = {
    */
   200: {
     challenge: string;
-    credentialIds: Array<string>;
+    credentials: Array<{
+      id: string;
+      transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+    }>;
   };
 };
 
@@ -3197,9 +3251,9 @@ export type HandleMcpErrors = {
    */
   401: UnauthorizedError;
   /**
-   * Insufficient scope
+   * Forbidden
    *
-   * The call needs a scope the token lacks. The body is a JSON-RPC `insufficient_scope` error.
+   * A call that needs a scope the token lacks answers a JSON-RPC `insufficient_scope` error. A tenant or organization the caller has no part in, or a browser page on another origin, answers a problem body.
    */
   403: {
     jsonrpc: '2.0';
@@ -4858,9 +4912,9 @@ export type UnsubscribeNotificationsErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized
+   * Forbidden
    */
-  401: UnauthorizedError;
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -4899,9 +4953,9 @@ export type ResubscribeNotificationsErrors = {
    */
   400: BadRequestError;
   /**
-   * Unauthorized
+   * Forbidden
    */
-  401: UnauthorizedError;
+  403: ForbiddenError;
   /**
    * Not found
    */
@@ -5446,6 +5500,10 @@ export type CreatePushSubscriptionErrors = {
    * Unauthorized
    */
   401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
   /**
    * Payload too large
    */

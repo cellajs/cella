@@ -52,7 +52,7 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Confirm magic link',
     description:
       'Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.',
-    responses: { 302: { description: 'Signed in, redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
+    responses: { 303: { description: 'Signed in, redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
 });
 
