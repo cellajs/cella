@@ -140,6 +140,11 @@ describe('OAuth authorization server', async () => {
     expect(await challenge('other01', bearerHeaders(String(body.access_token)))).toBe(
       `Bearer error="invalid_token", error_description="invalid_token", resource_metadata="${metadata('other01')}"`,
     );
+    // A tenant id with a control character, a quote or a non-ASCII letter goes percent-encoded into the header, which
+    // a raw one would end or break: the answer stays a 401, never a 500, and no parameter is added.
+    for (const hostile of ['a\nb', 'a\r\nb', 'a", error="x', 'ä']) {
+      expect(await challenge(hostile, { 'Content-Type': 'application/json' })).toBe(`Bearer resource_metadata="${metadata(hostile)}"`);
+    }
   });
 
   it('takes a client identified by its metadata document through consent to a token', async () => {
