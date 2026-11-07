@@ -3,7 +3,7 @@ import { and, count, eq, inArray, lte, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
@@ -15,6 +15,7 @@ import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpe
 import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
 interface CountMembershipsByChannelOpts {
@@ -24,8 +25,7 @@ interface CountMembershipsByChannelOpts {
 
 /** The number of memberships of one channel. */
 export const countMembershipsByChannel = async (ctx: DbContext, { channelType, channelId }: CountMembershipsByChannelOpts) => {
-  const { db } = ctx.var;
-  const [{ total }] = await db
+  const [{ total }] = await ctx.var.db
     .select({ total: count() })
     .from(membershipsTable)
     .where(and(eq(membershipsTable.channelType, channelType), eq(membershipsTable.channelId, channelId)));
@@ -103,13 +103,11 @@ interface FindMembershipsByUserIdsAndChannelOpts {
 }
 
 /** The channel's memberships of these users, as `MembershipBase`; a user without one has no row. */
-export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts) => {
-  const { db } = ctx.var;
-  return db
+export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts) =>
+  ctx.var.db
     .select(membershipBaseSelect)
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
-};
 
 interface DeleteMembershipsByIdsOpts {
   ids: string[];
@@ -209,13 +207,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
     .where(and(...membersFilters, search));
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(totalQuery.as('members'));
-      return total;
-    },
-  });
+  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(totalQuery.as('members'))));
 };
 
 interface FindMemberPreviewsByChannelsOpts {
@@ -254,13 +246,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
     .as('ranked_members');
 
   const rows = await db
-    .select({
-      channelId: rankedMembers.channelId,
-      id: rankedMembers.id,
-      name: rankedMembers.name,
-      slug: rankedMembers.slug,
-      thumbnailUrl: rankedMembers.thumbnailUrl,
-    })
+    .select(pick(rankedMembers, ['channelId', 'id', 'name', 'slug', 'thumbnailUrl']))
     .from(rankedMembers)
     .where(lte(rankedMembers.rowNumber, limit))
     .orderBy(rankedMembers.channelId, rankedMembers.rowNumber);
@@ -312,12 +298,11 @@ export const inUnarchivedTenant = (tenantId: typeof membershipsTable.tenantId) =
   sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
 
 /** Every membership of these users that counts, in any organization, as a session reads its own (`loadMemberships`). */
-export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) => {
-  return ctx.var.db
+export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) =>
+  ctx.var.db
     .select()
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.userId, userIds), inUnarchivedTenant(membershipsTable.tenantId)));
-};
 
 interface TenantMembersOpts {
   tenantId: string;

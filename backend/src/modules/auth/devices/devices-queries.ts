@@ -29,13 +29,12 @@ interface FindDevicesByEmailOpts {
 }
 
 /** The device rows of the account that holds `email`; empty when no account does. */
-export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesByEmailOpts) => {
-  return ctx.var.db
+export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesByEmailOpts) =>
+  ctx.var.db
     .select({ userId: devicesTable.userId, deviceIdHash: devicesTable.deviceIdHash })
     .from(emailsTable)
     .innerJoin(devicesTable, eq(devicesTable.userId, emailsTable.userId))
     .where(eq(emailsTable.email, email));
-};
 
 interface FindNewDevicesOpts {
   userId: string;

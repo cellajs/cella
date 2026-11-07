@@ -13,9 +13,7 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
   for (const ts of Object.values(incomingTimestamps)) advanceClock(ts);
 
   const mergedTimestamps: Record<string, string> = { ...existingTimestamps };
-  for (const field of acceptedFieldNames ?? []) {
-    if (incomingTimestamps[field]) mergedTimestamps[field] = incomingTimestamps[field];
-  }
+  for (const field of acceptedFieldNames ?? []) if (incomingTimestamps[field]) mergedTimestamps[field] = incomingTimestamps[field];
 
   return { mutationId: stx.mutationId, sourceId: stx.sourceId, fieldTimestamps: mergedTimestamps };
 }

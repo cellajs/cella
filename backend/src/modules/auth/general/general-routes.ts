@@ -9,7 +9,7 @@ import { heldLinkTypes, linkTokenTypes } from '#/modules/auth/tokens/token-polic
 import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
-const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
+export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   health: xRoute({
     operationId: 'getAuthHealth',
     method: 'get',
@@ -145,5 +145,3 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'User signed out' }, ...errors(401) },
   }),
 });
-
-export { authGeneralRoutes };

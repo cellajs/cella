@@ -7,7 +7,7 @@ import { preconditionWhere } from '#/core/preconditions';
 import { channelTables } from '#/db/channel-tables';
 import { imageColumns } from '#/db/storage-columns';
 import type { ActorId } from '#/db/utils/ids';
-import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { deleteStamps } from '#/db/utils/stamps';
@@ -31,8 +31,7 @@ interface InsertAttachmentsOpts {
 
 /** Inserts the rows and returns those it inserted: a row whose id exists is skipped and absent from the result. */
 export const insertAttachments = async (ctx: DbContext, { attachments }: InsertAttachmentsOpts) => {
-  const { db } = ctx.var;
-  return db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
+  return ctx.var.db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
 };
 
 interface UpdateAttachmentOpts {
@@ -45,8 +44,7 @@ interface UpdateAttachmentOpts {
  * or when a write moved it past the request's preconditions (`preconditionWhere`).
  */
 export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
-  const { db } = ctx.var;
-  const [updated] = await db
+  const [updated] = await ctx.var.db
     .update(attachmentsTable)
     .set(values)
     .where(and(eq(attachmentsTable.id, id), requestScopeWhere(ctx, attachmentsTable), preconditionWhere(ctx, attachmentsTable)))
@@ -63,27 +61,23 @@ interface DeleteAttachmentsByIdsOpts {
 }
 
 /** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
-export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, stx }: DeleteAttachmentsByIdsOpts) => {
-  const { db } = ctx.var;
-  return db
+export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, stx }: DeleteAttachmentsByIdsOpts) =>
+  ctx.var.db
     .update(attachmentsTable)
     .set({ ...deleteStamps(actorId), stx: stxWithIds(attachmentsTable.stx, stx) })
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
-};
 
 interface FindAttachmentsByIdsOpts {
   ids: string[];
 }
 
 /** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
-export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttachmentsByIdsOpts) => {
-  const { db } = ctx.var;
-  return db
+export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttachmentsByIdsOpts) =>
+  ctx.var.db
     .select()
     .from(attachmentsTable)
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
-};
 
 interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
@@ -141,13 +135,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     ? { kind: 'pageLength' }
     : orgWide && !search
       ? { kind: 'counter', getTotal: () => getOrganizationEntityCount(ctx, { organizationId, entityType: 'attachment' }) }
-      : {
-          kind: 'exact',
-          getTotal: async () => {
-            const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
-            return total;
-          },
-        };
+      : exactTotal(db.select({ total: count() }).from(attachmentsTable).where(whereClause));
 
   return resolveListTotal(itemsQuery, totalSource);
 };

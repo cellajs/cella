@@ -10,6 +10,12 @@ interface PaginatedResult<TItem> {
   total: number;
 }
 
+/** An `exact` source from a count query, `db.select({ total: count() }).from(...)`, which runs beside the items. */
+export const exactTotal = (countQuery: PromiseLike<{ total: number }[]>): ListTotalSource => ({
+  kind: 'exact',
+  getTotal: async () => (await countQuery)[0].total,
+});
+
 /** Runs the items query and the total source in parallel; page-length reads skip the total source. */
 export async function resolveListTotal<TItem>(itemsQuery: PromiseLike<TItem[]>, source: ListTotalSource): Promise<PaginatedResult<TItem>> {
   if (source.kind === 'pageLength') {

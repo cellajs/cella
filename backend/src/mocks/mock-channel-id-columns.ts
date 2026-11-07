@@ -16,9 +16,7 @@ type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<(AncestorCha
 
 const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   const columns: Record<string, string> = {};
-  for (const entityType of entityTypes) {
-    columns[appConfig.entityIdColumnKeys[entityType]] = mockUuid();
-  }
+  for (const entityType of entityTypes) columns[appConfig.entityIdColumnKeys[entityType]] = mockUuid();
   return columns;
 };
 

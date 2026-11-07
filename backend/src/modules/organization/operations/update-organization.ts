@@ -37,9 +37,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
     }
 
     // Media in the welcome text may reference only this organization's uploads.
-    if (input.welcomeText) {
-      assertBlockMediaUrls(input.welcomeText, organization.id, 'organization', 'welcomeText');
-    }
+    if (input.welcomeText) assertBlockMediaUrls(input.welcomeText, organization.id, 'organization', 'welcomeText');
 
     const values = {
       ...input,

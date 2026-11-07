@@ -15,8 +15,9 @@ import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
  * an outside write. Another row written inside the window (a sibling the materializer moves) is an outside write.
  * Only entity types with a materializer hold documents.
  */
-const recordOnUpdate = (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.updated`> => {
-  return async (ctx, { after = [], changedFields = [] }) => {
+const recordOnUpdate =
+  (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.updated`> =>
+  async (ctx, { after = [], changedFields = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
     await assertMaterializeWindow(ctx, { entityType, rows: after });
@@ -25,15 +26,14 @@ const recordOnUpdate = (entityType: ProductEntityType): MutationHandler<`${Produ
     const written = after.filter((row, index) => row.id !== relayEntityId && changedFields[index]?.includes('description'));
     await recordYjsOutsideWrite(ctx, { entityType, rows: written });
   };
-};
 
 /** A deleted entity's document goes with it, and relays end its sessions at once. */
-const retireOnDelete = (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.deleted`> => {
-  return async (ctx, { before = [] }) => {
+const retireOnDelete =
+  (entityType: ProductEntityType): MutationHandler<`${ProductEntityType}.deleted`> =>
+  async (ctx, { before = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
     await retireYjsDocuments(ctx, { entityType, entityIds: before.map(({ id }) => id) });
   };
-};
 
 const onMutation: NonNullable<BackendModule['onMutation']> = {};
 for (const entityType of appConfig.productEntityTypes) {

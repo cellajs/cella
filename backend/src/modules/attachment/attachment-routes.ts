@@ -24,7 +24,7 @@ import {
 } from '#/modules/attachment/attachment-schema';
 import { batchResponseSchema, idsWithStxBodySchema, productListResponseSchema, tenantOrgParamSchema } from '#/schemas';
 
-const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
+export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   listAttachments: xRoute({
     method: 'get',
     path: '/',
@@ -132,5 +132,3 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     },
   }),
 });
-
-export { attachmentRoutes };

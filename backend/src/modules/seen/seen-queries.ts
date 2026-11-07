@@ -33,7 +33,6 @@ interface FindUnseenCountsByUserOpts {
  * publish time, others creation time; `unseen-sync.ts` mirrors this.
  */
 export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels, productTypes, scopeWhereByType }: FindUnseenCountsByUserOpts) => {
-  const { db } = ctx.var;
   const rows: { channelId: string; productType: SeenTrackedProductType; unseenCount: number }[] = [];
   // `or()` of no channels admits every row.
   if (channels.length === 0) return rows;
@@ -56,7 +55,7 @@ export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels,
       scopeWhereByType?.[productType],
     ];
 
-    const entityRows = await db
+    const entityRows = await ctx.var.db
       .select({ channelId: channelIdColumn, productType: sql<SeenTrackedProductType>`${productType}`, unseenCount: count() })
       .from(entityTable)
       .where(and(...filters))

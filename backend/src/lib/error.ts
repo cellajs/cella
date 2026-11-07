@@ -52,14 +52,10 @@ type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
 export function extractPgError(err: unknown): PgErrorInfo | null {
   // Direct PG error (e.g., raw pg client)
-  if (err instanceof Error && 'code' in err && typeof err.code === 'string') {
-    return err as Error & PgErrorInfo;
-  }
+  if (err instanceof Error && 'code' in err && typeof err.code === 'string') return err as Error & PgErrorInfo;
   // Drizzle-wrapped PG error (original PG error stored on .cause)
   const cause = err instanceof Error ? err.cause : undefined;
-  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') {
-    return cause as PgErrorInfo;
-  }
+  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') return cause as PgErrorInfo;
   return null;
 }
 

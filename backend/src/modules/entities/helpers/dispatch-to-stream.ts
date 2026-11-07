@@ -42,9 +42,7 @@ const channelColumns = appConfig.channelEntityTypes.map((channelType) => appConf
 /** The event as it reads for one row: every channel id column comes from that row, so a reparented row is judged where it is. */
 function rowScopedEvent(event: AppStreamProductEvent, rowData: PermissionRowData): AppStreamProductEvent {
   const overrides: Partial<ChannelIdColumns> = {};
-  for (const columnKey of channelColumns) {
-    if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
-  }
+  for (const columnKey of channelColumns) if (columnKey in rowData) overrides[columnKey] = rowData[columnKey];
   return { ...event, ...overrides, organizationId: rowData.organizationId };
 }
 

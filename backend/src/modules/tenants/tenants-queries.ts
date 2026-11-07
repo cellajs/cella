@@ -3,7 +3,7 @@ import { and, count, eq, gte, inArray, lt, notInArray, or, type SQL, sql } from 
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
@@ -32,10 +32,8 @@ const tenantColumns = pick(tenantsTable, [
 ]);
 
 /** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
-const selectTenants = (ctx: DbContext) => {
-  const { db } = ctx.var;
-
-  return db
+const selectTenants = (ctx: DbContext) =>
+  ctx.var.db
     .select({
       ...tenantColumns,
       organization: {
@@ -48,7 +46,6 @@ const selectTenants = (ctx: DbContext) => {
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
     .$dynamic();
-};
 
 type TenantRow = Awaited<ReturnType<typeof selectTenants>>[number];
 
@@ -79,7 +76,6 @@ interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySc
 
 /** A page of tenants of `kinds`, each with its organization, and the total. */
 export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
-  const { db } = ctx.var;
   const { q, status, kinds, sort, order, limit, offset } = opts;
 
   const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined, inArray(tenantsTable.kind, kinds));
@@ -98,13 +94,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
     .offset(offset)
     .then((rows) => rows.map(toTenant));
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(filter);
-      return total;
-    },
-  });
+  return resolveListTotal(itemsQuery, exactTotal(ctx.var.db.select({ total: count() }).from(tenantsTable).where(filter)));
 };
 
 interface FindTenantOpts {
@@ -181,8 +171,7 @@ interface UpdateTenantOpts {
 
 /** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
 export const updateTenant = async (ctx: DbContext, { id, values }: UpdateTenantOpts) => {
-  const { db } = ctx.var;
-  const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
+  const [updated] = await ctx.var.db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
   return updated;
 };
 
@@ -198,12 +187,11 @@ const dueForRemoval = ({ archivedBefore, now }: DueTenantsOpts) =>
   or(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)), lt(tenantsTable.expiresAt, now));
 
 /** Tenants archived before `archivedBefore` or expired before `now`, the ones the removal sweep removes. */
-export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) => {
-  return ctx.var.db
+export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) =>
+  ctx.var.db
     .select(pick(tenantsTable, ['id', 'name', 'kind', 'status', 'statusChangedAt', 'expiresAt']))
     .from(tenantsTable)
     .where(dueForRemoval(opts));
-};
 
 interface DeleteDueTenantOpts extends DueTenantsOpts {
   tenantId: string;

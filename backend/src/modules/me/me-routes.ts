@@ -20,7 +20,7 @@ import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, pageQuerySchema, paginationSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
-const meRoutes = createXRoutes(['me', 'cella'], {
+export const meRoutes = createXRoutes(['me', 'cella'], {
   getMe: xRoute({
     method: 'get',
     path: '/',
@@ -166,5 +166,3 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     responses: { 204: { description: 'Consent revoked' }, ...errors(404) },
   }),
 });
-
-export { meRoutes };

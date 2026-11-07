@@ -27,8 +27,7 @@ app.openapi(yjsRoutes.pullYjsDocument, async (ctx) => {
 
 app.openapi(yjsRoutes.pushYjsUpdate, async (ctx) => {
   const { update, ...body } = ctx.req.valid('json');
-  const data = await pushYjsUpdateOp(ctx, { ...body, update: fromBase64url(update) });
-  return ctx.json(data, 200);
+  return ctx.json(await pushYjsUpdateOp(ctx, { ...body, update: fromBase64url(update) }), 200);
 });
 
 export const yjsHandlers = app;

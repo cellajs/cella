@@ -33,8 +33,7 @@ interface CountOrganizationsByTenantOpts {
 
 /** How many organizations a tenant holds: 0 or 1, as `organizations.tenant_id` is unique. */
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
-  const { db } = ctx.var;
-  const [result] = await db.select({ count: count() }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
+  const [result] = await ctx.var.db.select({ count: count() }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
   return result.count;
 };
 
@@ -44,8 +43,7 @@ interface InsertOrganizationsOpts {
 
 /** Inserts organization rows and returns them as stored. */
 export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrganizationsOpts) => {
-  const { db } = ctx.var;
-  return db.insert(organizationsTable).values(orgs).returning();
+  return ctx.var.db.insert(organizationsTable).values(orgs).returning();
 };
 
 interface UpdateOrganizationOpts {

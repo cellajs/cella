@@ -16,14 +16,12 @@ app.openapi(connectionRoutes.listConnections, async (ctx) => {
 });
 
 app.openapi(connectionRoutes.createConnection, async (ctx) => {
-  const data = await createConnectionOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 201);
+  return ctx.json(await createConnectionOp(ctx, ctx.req.valid('json')), 201);
 });
 
 app.openapi(connectionRoutes.updateConnection, async (ctx) => {
   const { connectionId } = ctx.req.valid('param');
-  const data = await updateConnectionOp(ctx, connectionId, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(await updateConnectionOp(ctx, connectionId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(connectionRoutes.deleteConnection, async (ctx) => {

@@ -24,13 +24,11 @@ interface FindChannelCountersByKeysOpts {
 }
 
 /** The counter rows of the given channel keys; a key without a row is left out. */
-export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
-  const { db } = ctx.var;
-  return db
+export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) =>
+  ctx.var.db
     .select({ channelKey: channelCountersTable.channelKey, counts: channelCountersTable.counts })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));
-};
 
 /** Projects precomputed values from `channelCountersTable`, avoiding per-request aggregates. */
 export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
@@ -79,8 +77,7 @@ interface FindProductViewCountOpts {
 
 /** How many users viewed a product; 0 before the first view. */
 export const findProductViewCount = async (ctx: DbContext, { productId }: FindProductViewCountOpts) => {
-  const { db } = ctx.var;
-  const [counters] = await db
+  const [counters] = await ctx.var.db
     .select({ viewCount: productCountersTable.viewCount })
     .from(productCountersTable)
     .where(eq(productCountersTable.productId, productId))
@@ -101,10 +98,9 @@ interface GetChannelCountsOpts {
 
 /** The counts of one channel from its counter row; zeros while CDC has written none. */
 export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: GetChannelCountsOpts) => {
-  const { db } = ctx.var;
   const { countsSelect } = getChannelCountsSelect(entityType);
 
-  const [counts] = await db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
+  const [counts] = await ctx.var.db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
   return counts ?? zeroChannelCounts(entityType);
 };
 
@@ -129,8 +125,7 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
     return tenantReadUnlessInTransaction(ctx, countRows);
   }
 
-  const { db } = ctx.var;
-  const [row] = await db
+  const [row] = await ctx.var.db
     .select({ count: sql<number>`${sql.raw(jsonbIntRaw('"channel_counters"."counts"', `e:c:${entityType}`))}` })
     .from(channelCountersTable)
     .where(eq(channelCountersTable.channelKey, organizationId));
@@ -191,7 +186,6 @@ export const resolveEntity = async <T extends EntityType>(
   ctx: DbContext,
   { entityType, identifier, bySlug = false, forUpdate = false }: ResolveEntityOpts<T>,
 ): Promise<EntityModel<T> | undefined> => {
-  const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
   // A slug names no row of a type without a slug column.
@@ -199,7 +193,7 @@ export const resolveEntity = async <T extends EntityType>(
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
   const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
-  const query = db
+  const query = ctx.var.db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
@@ -219,13 +213,12 @@ export const resolveEntities = async <T extends EntityType>(
   ctx: DbContext,
   { entityType, ids }: ResolveEntitiesOpts<T>,
 ): Promise<Array<EntityModel<T>>> => {
-  const { db } = ctx.var;
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
   const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
-  const entities = await db
+  const entities = await ctx.var.db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
@@ -251,14 +244,13 @@ export const findChangedEntityDeltaIds = async (
   ctx: DbContext,
   { entityType, organizationId, afterSeq, readWhere, limit }: FindChangedEntityDeltaIdsOpts,
 ) => {
-  const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
   // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
   const published = publishedRowsPredicate(table);
 
   // pg returns an int8 `seq` as text.
-  const result = await db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
+  const result = await ctx.var.db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}

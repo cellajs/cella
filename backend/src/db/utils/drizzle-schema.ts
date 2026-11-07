@@ -42,9 +42,7 @@ export const describeFields = <T extends z.ZodObject<z.ZodRawShape>>(
   // Zod v4 types `.shape` values as core `$ZodType`, which lacks `.describe`; at runtime the field is a full ZodType.
   const shape = schema.shape as Record<string, z.ZodType>;
   const patches: Record<string, z.ZodType> = {};
-  for (const [key, text] of Object.entries(descriptions)) {
-    if (text) patches[key] = shape[key].describe(text);
-  }
+  for (const [key, text] of Object.entries(descriptions)) if (text) patches[key] = shape[key].describe(text);
   // `.extend()` widens to an index-signature shape, so restoring T needs a double cast; `.describe()` changes no types.
   return schema.extend(patches) as unknown as T;
 };

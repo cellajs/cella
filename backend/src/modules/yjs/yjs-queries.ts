@@ -130,12 +130,11 @@ interface DeleteYjsDocumentsOpts {
 }
 
 /** Deletes the document rows of these entities; returns the entity and tenant of each row deleted. */
-export const deleteYjsDocuments = async (ctx: DbContext, { entityType, entityIds }: DeleteYjsDocumentsOpts) => {
-  return ctx.var.db
+export const deleteYjsDocuments = async (ctx: DbContext, { entityType, entityIds }: DeleteYjsDocumentsOpts) =>
+  ctx.var.db
     .delete(yjsDocumentsTable)
     .where(and(eq(yjsDocumentsTable.entityType, entityType), inArray(yjsDocumentsTable.entityId, entityIds)))
     .returning({ entityId: yjsDocumentsTable.entityId, tenantId: yjsDocumentsTable.tenantId });
-};
 
 interface DeleteYjsUpdatesOpts {
   entityType: ProductEntityType;

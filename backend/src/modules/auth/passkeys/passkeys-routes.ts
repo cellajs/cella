@@ -12,7 +12,7 @@ import {
 } from '#/modules/auth/passkeys/passkeys-schema';
 import { cookieSchema, locationSchema, validIdSchema } from '#/schemas';
 
-const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
+export const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   generatePasskeyChallenge: xRoute({
     method: 'post',
     path: '/passkey/generate-challenge',
@@ -58,5 +58,3 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'Passkey verified', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(401, 403, 404) },
   }),
 });
-
-export { authPasskeysRoutes };

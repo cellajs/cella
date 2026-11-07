@@ -16,14 +16,12 @@ app.openapi(tenantRoutes.listTenants, async (ctx) => {
 });
 
 app.openapi(tenantRoutes.createTenant, async (ctx) => {
-  const data = await selfCreateTenantOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 201);
+  return ctx.json(await selfCreateTenantOp(ctx, ctx.req.valid('json')), 201);
 });
 
 app.openapi(tenantRoutes.updateTenant, async (ctx) => {
   const { tenantId } = ctx.req.valid('param');
-  const data = await updateTenantOp(ctx, tenantId, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(await updateTenantOp(ctx, tenantId, ctx.req.valid('json')), 200);
 });
 
 export const tenantHandlers = app;

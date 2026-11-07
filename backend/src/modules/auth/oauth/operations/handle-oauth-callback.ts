@@ -110,9 +110,7 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
-  if (!(await maySignUp(dbCtx, { email: providerUser.email }))) {
-    throw new AppError(403, 'sign_up_restricted', 'info');
-  }
+  if (!(await maySignUp(dbCtx, { email: providerUser.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
   return pendingSignUp(providerUser, provider);
 };
@@ -138,9 +136,7 @@ const connectCallbackFlow = async ({
   const user = await spendConnectPin(ctx);
 
   if (identity) {
-    if (identity.userId !== user.id) {
-      throw new AppError(409, 'oauth_conflict', 'warn');
-    }
+    if (identity.userId !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
 
     if (identity.verified) {
       await touchIdentity(identity, providerUser);
@@ -342,9 +338,7 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
   const { ctx, provider, redirectAfter } = info;
 
-  if (info.type === 'verified') {
-    return finishSignIn(ctx, info.user, provider, redirectAfter);
-  }
+  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectAfter);
 
   // Stored on the verification token; null means "use the default path" at the final hop.
   const redirectAfterPath = frontendRedirectPath(redirectAfter);

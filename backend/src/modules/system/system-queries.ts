@@ -21,8 +21,8 @@ interface FindNewsletterRecipientsOpts {
 }
 
 /** Members of the organizations who hold one of `roles` and take the newsletter: one row per user, however many of the organizations they belong to. */
-export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: FindNewsletterRecipientsOpts) => {
-  return ctx.var.db
+export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: FindNewsletterRecipientsOpts) =>
+  ctx.var.db
     .selectDistinct({ userId: usersTable.id, email: usersTable.email, name: usersTable.name })
     .from(membershipsTable)
     .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
@@ -34,7 +34,6 @@ export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds
         eq(usersTable.newsletter, true),
       ),
     );
-};
 
 interface FindSystemRoleOpts {
   userId: string;
@@ -57,9 +56,8 @@ interface FindSystemRoleHoldersOpts {
 }
 
 /** Which of these users hold `role`. */
-export const findSystemRoleHolders = async (ctx: DbContext, { userIds, role }: FindSystemRoleHoldersOpts) => {
-  return ctx.var.db
+export const findSystemRoleHolders = async (ctx: DbContext, { userIds, role }: FindSystemRoleHoldersOpts) =>
+  ctx.var.db
     .select({ userId: systemRolesTable.userId })
     .from(systemRolesTable)
     .where(and(inArray(systemRolesTable.userId, userIds), eq(systemRolesTable.role, role)));
-};

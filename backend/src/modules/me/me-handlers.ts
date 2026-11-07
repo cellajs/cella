@@ -22,19 +22,16 @@ import { log } from '#/utils/logger';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(meRoutes.getMe, async (ctx) => {
-  const data = await getMeOp(ctx);
-  return ctx.json(data, 200);
+  return ctx.json(await getMeOp(ctx), 200);
 });
 
 app.openapi(meRoutes.toggleMfa, async (ctx) => {
   const { mfaRequired } = ctx.req.valid('json');
-  const data = await toggleMfaOp(ctx, mfaRequired);
-  return ctx.json(data, 200);
+  return ctx.json(await toggleMfaOp(ctx, mfaRequired), 200);
 });
 
 app.openapi(meRoutes.getMyAuth, async (ctx) => {
-  const data = await getMyAuthOp(ctx);
-  return ctx.json(data, 200);
+  return ctx.json(await getMyAuthOp(ctx), 200);
 });
 
 app.openapi(meRoutes.listMyInvitations, async (ctx) => {
@@ -44,14 +41,12 @@ app.openapi(meRoutes.listMyInvitations, async (ctx) => {
 
 app.openapi(meRoutes.acceptInvitation, async (ctx) => {
   const { invitationId } = ctx.req.valid('param');
-  const data = await handleMembershipInvitationOp(ctx, invitationId, 'accept');
-  return ctx.json(data, 200);
+  return ctx.json(await handleMembershipInvitationOp(ctx, invitationId, 'accept'), 200);
 });
 
 app.openapi(meRoutes.rejectInvitation, async (ctx) => {
   const { invitationId } = ctx.req.valid('param');
-  const data = await handleMembershipInvitationOp(ctx, invitationId, 'reject');
-  return ctx.json(data, 200);
+  return ctx.json(await handleMembershipInvitationOp(ctx, invitationId, 'reject'), 200);
 });
 
 app.openapi(meRoutes.revokeMySessions, async (ctx) => {
@@ -62,8 +57,7 @@ app.openapi(meRoutes.revokeMySessions, async (ctx) => {
 });
 
 app.openapi(meRoutes.updateMe, async (ctx) => {
-  const data = await updateMeOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(await updateMeOp(ctx, ctx.req.valid('json')), 200);
 });
 
 app.openapi(meRoutes.deleteMe, async (ctx) => {

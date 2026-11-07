@@ -16,6 +16,7 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
+import { pick } from '#/utils/pick';
 
 interface FindLiveSessionsHeldByUserOpts {
   userId: string;
@@ -26,8 +27,8 @@ interface FindLiveSessionsHeldByUserOpts {
 }
 
 /** The live sessions the user holds, newest first. */
-export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, deviceIdHash, offset = 0 }: FindLiveSessionsHeldByUserOpts) => {
-  return ctx.var.db
+export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, deviceIdHash, offset = 0 }: FindLiveSessionsHeldByUserOpts) =>
+  ctx.var.db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
     .where(
@@ -40,7 +41,6 @@ export const findLiveSessionsHeldByUser = async (ctx: DbContext, { userId, devic
     )
     .orderBy(desc(sessionsTable.createdAt))
     .offset(offset);
-};
 
 interface FindUserSessionsOpts {
   userId: string;
@@ -49,13 +49,12 @@ interface FindUserSessionsOpts {
 }
 
 /** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
-export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) => {
-  return ctx.var.db
+export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) =>
+  ctx.var.db
     .select(sessionSafeColumns)
     .from(sessionsTable)
     .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
     .orderBy(desc(sessionsTable.createdAt));
-};
 
 interface FindSessionBySecretOpts {
   /** The hash of the session token, the only form the database stores. */
@@ -89,18 +88,11 @@ interface FindSessionStatesOpts {
 }
 
 /** What decides whether these sessions still back a stream: user, revocation and expiry. */
-export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) => {
-  return ctx.var.db
-    .select({
-      id: sessionsTable.id,
-      userId: sessionsTable.userId,
-      revokedAt: sessionsTable.revokedAt,
-      revocationReason: sessionsTable.revocationReason,
-      expiresAt: sessionsTable.expiresAt,
-    })
+export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) =>
+  ctx.var.db
+    .select(pick(sessionsTable, ['id', 'userId', 'revokedAt', 'revocationReason', 'expiresAt']))
     .from(sessionsTable)
     .where(inArray(sessionsTable.id, ids));
-};
 
 interface FindLiveSessionOpts {
   id: string;

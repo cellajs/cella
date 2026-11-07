@@ -74,8 +74,6 @@ export async function buildPropagationHints(
       else hints.push({ embeddedProduct, update: updatedIds, remove: deletedIds, untilSeq });
     }
 
-    if (hints.length > 0) {
-      scope.propagation = hints;
-    }
+    if (hints.length > 0) scope.propagation = hints;
   }
 }

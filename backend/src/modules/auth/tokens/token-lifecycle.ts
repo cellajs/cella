@@ -42,22 +42,7 @@ const newHashedCode = () => {
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
-  Partial<
-    Pick<
-      InsertTokenModel,
-      | 'id'
-      | 'userId'
-      | 'createdBy'
-      | 'identityId'
-      | 'inactiveMembershipId'
-      | 'followedInvitationId'
-      | 'redirectPath'
-      | 'pendingSignUp'
-      | 'sessionId'
-      | 'authStrategy'
-      | 'connectionId'
-    >
-  >;
+  Partial<Omit<InsertTokenModel, 'type' | 'email' | 'secret' | 'singleUseToken' | 'expiresAt' | 'invokedAt' | 'createdAt'>>;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its type's `ttl`. Each first
@@ -77,23 +62,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
     ...(tokenPolicies[token.type].carrier === 'code' ? newHashedCode() : newHashedToken()),
   }));
   const rows = await insertTokens(ctx, {
-    values: issued.map(({ token, id, hash }) => ({
-      id,
-      type: token.type,
-      email: token.email,
-      userId: token.userId ?? null,
-      createdBy: token.createdBy ?? null,
-      identityId: token.identityId ?? null,
-      inactiveMembershipId: token.inactiveMembershipId ?? null,
-      followedInvitationId: token.followedInvitationId ?? null,
-      redirectPath: token.redirectPath ?? null,
-      pendingSignUp: token.pendingSignUp ?? null,
-      sessionId: token.sessionId ?? null,
-      authStrategy: token.authStrategy ?? null,
-      connectionId: token.connectionId ?? null,
-      secret: hash,
-      expiresAt: isoDateIn(tokenPolicies[token.type].ttl),
-    })),
+    values: issued.map(({ token, id, hash }) => ({ ...token, id, secret: hash, expiresAt: isoDateIn(tokenPolicies[token.type].ttl) })),
   });
 
   const rowsById = new Map(rows.map((row) => [row.id, row]));

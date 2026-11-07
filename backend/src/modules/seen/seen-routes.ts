@@ -4,7 +4,7 @@ import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { tenantOrgParamSchema } from '#/schemas';
 
-const seenRoutes = createXRoutes(['seen', 'cella'], {
+export const seenRoutes = createXRoutes(['seen', 'cella'], {
   markSeen: xRoute({
     method: 'post',
     path: '/~mark-seen',
@@ -26,5 +26,3 @@ const seenRoutes = createXRoutes(['seen', 'cella'], {
     responses: { 200: json('Unseen counts\n\nKeyed by parent channel entity id, then by product entity type.', unseenCountsResponseSchema) },
   }),
 });
-
-export { seenRoutes };

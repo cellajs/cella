@@ -41,9 +41,7 @@ class StreamSubscriberManager {
       const set = this.byTopic.get(topic);
       if (set) {
         set.delete(id);
-        if (set.size === 0) {
-          this.byTopic.delete(topic);
-        }
+        if (set.size === 0) this.byTopic.delete(topic);
       }
     }
 

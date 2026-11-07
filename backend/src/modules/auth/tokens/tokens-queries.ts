@@ -68,8 +68,8 @@ interface FindSystemInvitationTokensOpts {
 }
 
 /** The unopened system invitations (no membership row) addressed to any of `emails`, expired ones included. */
-export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: FindSystemInvitationTokensOpts) => {
-  return ctx.var.db
+export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: FindSystemInvitationTokensOpts) =>
+  ctx.var.db
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
     .from(tokensTable)
     .where(
@@ -80,7 +80,6 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: Fin
         isNull(tokensTable.invokedAt),
       ),
     );
-};
 
 interface DeleteInvitationTokensOpts {
   inactiveMembershipIds: string[];

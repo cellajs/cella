@@ -4,7 +4,7 @@ import { passkeyChallengeLimiter, spamLimiter, stepUpLimiter } from '#/middlewar
 import { passkeyChallengeSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { stepUpBodySchema, stepUpQuerySchema, stepUpStateSchema } from '#/modules/auth/step-up/step-up-schema';
 
-const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
+export const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   getStepUp: xRoute({
     method: 'get',
     path: '/step-up',
@@ -48,5 +48,3 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'Code sent' }, ...errors(403, 409) },
   }),
 });
-
-export { authStepUpRoutes };

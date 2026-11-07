@@ -6,7 +6,7 @@ import { magicLinkLimiter, recognizedMagicLinkLimiter, spamLimiter, tokenLimiter
 import { magicLinkBodySchema } from '#/modules/auth/magic/magic-schema';
 import { locationSchema } from '#/schemas';
 
-const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
+export const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   sendMagicLink: xRoute({
     method: 'post',
     path: '/magic/send',
@@ -55,5 +55,3 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 303: { description: 'Signed in, redirect to the app', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
 });
-
-export { authMagicLinkRoutes };

@@ -28,7 +28,7 @@ const mcpBodySchema = z.union([
   z.unknown().refine((body) => !Array.isArray(body), translatedError('error:invalid_max_items', { max: mcpMaxBatchSize, name: 'messages' })),
 ]);
 
-const mcpRoutes = createXRoutes(['mcp', 'cella'], {
+export const mcpRoutes = createXRoutes(['mcp', 'cella'], {
   getMcpProtectedResourceMetadata: xRoute({
     method: 'get',
     path: '/.well-known/oauth-protected-resource',
@@ -65,5 +65,3 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     },
   }),
 });
-
-export { mcpRoutes };

@@ -85,8 +85,8 @@ export interface FindConnectionsClaimingOpts {
 }
 
 /** SSO connections of any tenant that already accept one of the values. */
-export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimValues, excludeId }: FindConnectionsClaimingOpts) => {
-  return ctx.var.db
+export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimValues, excludeId }: FindConnectionsClaimingOpts) =>
+  ctx.var.db
     .select({ id: connectionsTable.id, tenantId: connectionsTable.tenantId, claimValues: connectionsTable.claimValues })
     .from(connectionsTable)
     .where(
@@ -97,7 +97,6 @@ export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimVal
         excludeId ? ne(connectionsTable.id, excludeId) : undefined,
       ),
     );
-};
 
 interface InsertConnectionOpts {
   values: InsertConnectionModel;

@@ -3,6 +3,7 @@ import type { DbContext } from '#/core/context';
 import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
 import { type InsertPasskeyModel, passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { getIsoDate } from '#/utils/iso-date';
+import { pick } from '#/utils/pick';
 
 /** Every column but the credential id, public key, signature counter and transports: what a response carries of a passkey. */
 const {
@@ -18,12 +19,11 @@ interface FindPasskeyCredentialsByUserOpts {
 }
 
 /** The credential ids of the user's passkeys and their transports, which a challenge for the user names to the browser. */
-export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: FindPasskeyCredentialsByUserOpts) => {
-  return ctx.var.db
+export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: FindPasskeyCredentialsByUserOpts) =>
+  ctx.var.db
     .select({ credentialId: passkeysTable.credentialId, transports: passkeysTable.transports })
     .from(passkeysTable)
     .where(eq(passkeysTable.userId, userId));
-};
 
 interface FindPasskeysByUserOpts {
   userId: string;
@@ -126,10 +126,9 @@ interface DeletePasskeyChallengeOpts {
 
 /** Takes a challenge out of play; returns what it was issued for, or undefined when it does not exist. */
 export const deletePasskeyChallenge = async (ctx: DbContext, { challengeHash }: DeletePasskeyChallengeOpts) => {
-  const [issued] = await ctx.var.db.delete(passkeyChallengesTable).where(eq(passkeyChallengesTable.challengeHash, challengeHash)).returning({
-    purpose: passkeyChallengesTable.purpose,
-    userId: passkeyChallengesTable.userId,
-    expiresAt: passkeyChallengesTable.expiresAt,
-  });
+  const [issued] = await ctx.var.db
+    .delete(passkeyChallengesTable)
+    .where(eq(passkeyChallengesTable.challengeHash, challengeHash))
+    .returning(pick(passkeyChallengesTable, ['purpose', 'userId', 'expiresAt']));
   return issued;
 };

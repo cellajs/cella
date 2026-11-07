@@ -127,8 +127,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
 });
 
 app.openapi(entityRoutes.appCatchup, async (ctx) => {
-  const result = await appCatchupOp(ctx, ctx.req.valid('json'));
-  return ctx.json(result, 200);
+  return ctx.json(await appCatchupOp(ctx, ctx.req.valid('json')), 200);
 });
 
 export const entityHandlers = app;

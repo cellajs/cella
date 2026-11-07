@@ -19,19 +19,16 @@ app.openapi(notificationRoutes.listNotifications, async (ctx) => {
 
 app.openapi(notificationRoutes.markNotificationsRead, async (ctx) => {
   const body = ctx.req.valid('json');
-  const data = await markReadOp(ctx, body);
-  return ctx.json(data, 200);
+  return ctx.json(await markReadOp(ctx, body), 200);
 });
 
 app.openapi(notificationRoutes.getNotificationPreferences, async (ctx) => {
-  const data = await getPreferencesOp(ctx);
-  return ctx.json(data, 200);
+  return ctx.json(await getPreferencesOp(ctx), 200);
 });
 
 app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => {
   const body = ctx.req.valid('json');
-  const data = await updatePreferencesOp(ctx, body);
-  return ctx.json(data, 200);
+  return ctx.json(await updatePreferencesOp(ctx, body), 200);
 });
 
 app.openapi(notificationRoutes.openUnsubscribeLink, async (ctx) => {

@@ -45,9 +45,7 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
   app.mount(prefix, (request, env, executionCtx) => app.fetch(request, env, executionCtx), {
     replaceRequest: (request) => {
       const path = app.getPath(request).slice(prefix.length) || '/';
-      if (startsWithMountedPrefix(path) || forbiddenMethods.has(request.method.toUpperCase())) {
-        throw new AppError(404, 'route_not_found', 'warn');
-      }
+      if (startsWithMountedPrefix(path) || forbiddenMethods.has(request.method.toUpperCase())) throw new AppError(404, 'route_not_found', 'warn');
       return requestAtPath(request, path);
     },
   });

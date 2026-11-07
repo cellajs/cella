@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { mockPublicCountsResponse } from '#/modules/metrics/metrics-mocks';
 import { publicCountsSchema } from '#/modules/metrics/metrics-schema';
 
-const metricRoutes = createXRoutes(['metrics', 'cella'], {
+export const metricRoutes = createXRoutes(['metrics', 'cella'], {
   getPublicCounts: xRoute({
     method: 'get',
     path: '/public',
@@ -16,5 +16,3 @@ const metricRoutes = createXRoutes(['metrics', 'cella'], {
     responses: { 200: json('Public counts', publicCountsSchema, mockPublicCountsResponse()) },
   }),
 });
-
-export { metricRoutes };

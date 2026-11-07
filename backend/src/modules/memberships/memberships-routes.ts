@@ -24,7 +24,7 @@ import {
 import { memberSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, entityWithTypeSchema, idsBodySchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 
-const membershipRoutes = createXRoutes(['memberships', 'cella'], {
+export const membershipRoutes = createXRoutes(['memberships', 'cella'], {
   inviteMembers: xRoute({
     method: 'post',
     path: '/memberships/~invite',
@@ -118,5 +118,3 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     responses: { 204: { description: 'Invitation withdrawn' } },
   }),
 });
-
-export { membershipRoutes };

@@ -3,7 +3,7 @@ import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { type Access, appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
@@ -23,6 +23,7 @@ import { usersTable } from '#/modules/user/user-db';
 import { findExistingUserIds } from '#/modules/user/user-queries';
 import { getEntityTable } from '#/tables';
 import { getIsoDate } from '#/utils/iso-date';
+import { pick } from '#/utils/pick';
 
 /**
  * The recipient still belongs to the notification's organization, or is a system admin. A member who left keeps no
@@ -64,13 +65,7 @@ export async function findNotificationsByUser(ctx: DbContext, opts: FindNotifica
     .limit(limit)
     .offset(offset);
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(notificationsTable).where(where);
-      return total;
-    },
-  });
+  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(notificationsTable).where(where)));
 }
 
 interface CountUnreadByUserOpts {
@@ -138,22 +133,7 @@ export async function updatePreferences(ctx: DbContext, { userId, values }: Upda
 }
 
 /** The columns the fan-out writes; the rest take their defaults. */
-export type NotificationInsert = Required<
-  Pick<
-    InsertNotificationModel,
-    | 'userId'
-    | 'type'
-    | 'entityType'
-    | 'subjectId'
-    | 'contextId'
-    | 'channelId'
-    | 'channelType'
-    | 'organizationId'
-    | 'tenantId'
-    | 'activityId'
-    | 'actorId'
-  >
->;
+export type NotificationInsert = Required<Omit<InsertNotificationModel, 'id' | 'createdAt' | 'readAt' | 'emailedAt'>>;
 
 /** A row the fan-out wrote, with its id. */
 export type WrittenNotification = NotificationInsert & { id: string };
@@ -174,7 +154,6 @@ export async function insertNotificationsIgnoringDuplicates(
   { rows }: InsertNotificationsIgnoringDuplicatesOpts,
 ): Promise<WrittenNotification[]> {
   if (rows.length === 0) return [];
-  const { db } = ctx.var;
 
   const candidates = rows.map((row) => ({ ...row, id: generateId() }));
   const values = sql.join(
@@ -185,7 +164,7 @@ export async function insertNotificationsIgnoringDuplicates(
     sql`, `,
   );
 
-  return db.transaction(async (tx) => {
+  return ctx.var.db.transaction(async (tx) => {
     // Sorted, so inserts that share subjects lock in one order; each lock is its own statement, so the insert's snapshot follows it.
     for (const subjectId of [...new Set(rows.map((row) => row.subjectId))].toSorted()) {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`notifications:${subjectId}`}, 0))`);
@@ -331,13 +310,7 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
   if (userIds.length === 0) return new Map<string, UserMinimalBase & { givenName: string | null }>();
 
   const rows = await ctx.var.db
-    .select({
-      id: usersTable.id,
-      name: usersTable.name,
-      slug: usersTable.slug,
-      thumbnailUrl: usersTable.thumbnailUrl,
-      givenName: usersTable.givenName,
-    })
+    .select(pick(usersTable, ['id', 'name', 'slug', 'thumbnailUrl', 'givenName']))
     .from(usersTable)
     .where(inArray(usersTable.id, [...new Set(userIds)]));
 
@@ -432,14 +405,7 @@ export interface FindUndigestedNotificationsOpts {
 /** The rows of a user's digest window, oldest first; the digest's whole content source. */
 export async function findUndigestedNotifications(ctx: DbContext, { userId, since, before, limit }: FindUndigestedNotificationsOpts) {
   return ctx.var.db
-    .select({
-      type: notificationsTable.type,
-      entityType: notificationsTable.entityType,
-      subjectId: notificationsTable.subjectId,
-      channelId: notificationsTable.channelId,
-      contextId: notificationsTable.contextId,
-      tenantId: notificationsTable.tenantId,
-    })
+    .select(pick(notificationsTable, ['type', 'entityType', 'subjectId', 'channelId', 'contextId', 'tenantId']))
     .from(notificationsTable)
     .where(and(eq(notificationsTable.userId, userId), undigestedRows(since, before)))
     .orderBy(asc(notificationsTable.createdAt))

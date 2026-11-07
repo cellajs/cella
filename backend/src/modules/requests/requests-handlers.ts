@@ -27,8 +27,7 @@ app.openapi(requestRoutes.listRequests, async (ctx) => {
 
 app.openapi(requestRoutes.batchDeleteRequests, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const data = await deleteRequestsOp(ctx, ids);
-  return ctx.json(data, 200);
+  return ctx.json(await deleteRequestsOp(ctx, ids), 200);
 });
 
 export const requestHandlers = app;

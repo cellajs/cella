@@ -103,9 +103,7 @@ export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns: Record<string, NullableUuid> = {};
 
   const ancestorTypes = new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)));
-  for (const channelType of ancestorTypes) {
-    columns[appConfig.entityIdColumnKeys[channelType]] = uuid();
-  }
+  for (const channelType of ancestorTypes) columns[appConfig.entityIdColumnKeys[channelType]] = uuid();
 
   return columns as ActivityChannelColumns;
 };

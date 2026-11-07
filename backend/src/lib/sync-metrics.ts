@@ -25,9 +25,7 @@ export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, pa
   const span = tracer.startSpan(name, {}, parent ? remoteParentContext(parent) : undefined);
   if (attributes) {
     for (const [key, value] of Object.entries(attributes)) {
-      if (value !== null) {
-        span.setAttribute(key, value);
-      }
+      if (value !== null) span.setAttribute(key, value);
     }
   }
   return span;

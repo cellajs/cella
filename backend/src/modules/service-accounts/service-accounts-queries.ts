@@ -1,7 +1,7 @@
 import { and, count, desc, eq, getColumns, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
-import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
@@ -52,17 +52,11 @@ export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q
     .orderBy(desc(serviceAccountsTable.createdAt))
     .limit(limit)
     .offset(offset);
-  const totalSource: ListTotalSource = {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await ctx.var.db
-        .select({ total: count() })
-        .from(serviceAccountsTable)
-        .where(and(...where));
-      return total;
-    },
-  };
-  return resolveListTotal(itemsQuery, totalSource);
+  const totalQuery = ctx.var.db
+    .select({ total: count() })
+    .from(serviceAccountsTable)
+    .where(and(...where));
+  return resolveListTotal(itemsQuery, exactTotal(totalQuery));
 }
 
 interface InsertServiceAccountOpts {

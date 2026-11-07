@@ -3,7 +3,7 @@ import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
@@ -20,9 +20,8 @@ import { searchFilter } from '#/utils/sql';
 
 /** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
 const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
-  const { db } = ctx.var;
   return exists(
-    db
+    ctx.var.db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, organizationIds))),
@@ -84,18 +83,13 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
     .limit(limit)
     .offset(offset);
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(usersTable)
-        .innerJoin(actorsTable, userActorJoin)
-        .leftJoin(systemRolesTable, systemRoleJoin)
-        .where(where);
-      return total;
-    },
-  });
+  const totalQuery = db
+    .select({ total: count() })
+    .from(usersTable)
+    .innerJoin(actorsTable, userActorJoin)
+    .leftJoin(systemRolesTable, systemRoleJoin)
+    .where(where);
+  return resolveListTotal(itemsQuery, exactTotal(totalQuery));
 };
 
 interface FindUserByEmailOpts {
@@ -104,8 +98,7 @@ interface FindUserByEmailOpts {
 
 /** Resolves through emailsTable, the owner of address uniqueness; every row there is a proven inbox. */
 export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db
+  const [user] = await ctx.var.db
     .select(userSelect)
     .from(usersTable)
     .innerJoin(actorsTable, userActorJoin)
@@ -121,8 +114,7 @@ interface FindUserByIdOpts {
 
 /** The user with the activity times of its `actors` row; undefined when no user has `id`. */
 export const findUserById = async (ctx: DbContext, { id }: FindUserByIdOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
+  const [user] = await ctx.var.db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
   return user;
 };
 
@@ -136,10 +128,9 @@ interface FindMemberUserOpts {
 
 /** A user as members see them; undefined when none matches, which includes a user outside `memberOfAny`. */
 export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = false, memberOfAny }: FindMemberUserOpts) => {
-  const { db } = ctx.var;
   const filters: SQL[] = [bySlug ? eq(usersTable.slug, identifier) : eq(usersTable.id, identifier)];
   if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
-  const [user] = await db
+  const [user] = await ctx.var.db
     .select(memberSelect)
     .from(usersTable)
     .innerJoin(actorsTable, userActorJoin)
@@ -325,9 +316,7 @@ export const findOrphanedProvisionalUserIds = async (ctx: DbContext, { ids }: Us
 };
 
 /** Deletes the user rows; `deleteAccounts` clears what else an account holds. */
-export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
-  return ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
-};
+export const deleteUsersByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => ctx.var.db.delete(usersTable).where(inArray(usersTable.id, ids));
 
 interface UpdateUserOpts {
   id: string;

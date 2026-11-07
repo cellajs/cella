@@ -14,9 +14,8 @@ interface CountChannelRowsOpts {
 
 /** The channel type's rows in tenants of a counted kind (`appConfig.tenantKinds`), counted on the context's connection. */
 export const countChannelRows = async (ctx: DbContext, { entityType }: CountChannelRowsOpts) => {
-  const { db } = ctx.var;
   const table = getEntityTable(entityType);
-  const [{ total }] = await db.select({ total: count() }).from(table).where(tenantOfKind(table.tenantId, countedTenantKinds()));
+  const [{ total }] = await ctx.var.db.select({ total: count() }).from(table).where(tenantOfKind(table.tenantId, countedTenantKinds()));
   return total;
 };
 
@@ -25,9 +24,8 @@ export const countChannelRows = async (ctx: DbContext, { entityType }: CountChan
  * counted kind. A demo's or a sample's account has no proven address; staff who belong to test tenants alone stay out.
  */
 export const countPublicUsers = async (ctx: DbContext) => {
-  const { db } = ctx.var;
   const memberOf = sql`SELECT 1 FROM ${membershipsTable} WHERE ${membershipsTable.userId} = ${usersTable.id}`;
-  const [{ total }] = await db
+  const [{ total }] = await ctx.var.db
     .select({ total: count() })
     .from(usersTable)
     .where(

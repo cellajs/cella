@@ -13,33 +13,28 @@ import { readListPage } from '#/utils/list-page';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(organizationRoutes.batchCreateOrganizations, async (ctx) => {
-  const data = await createOrganizationsOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 201);
+  return ctx.json(await createOrganizationsOp(ctx, ctx.req.valid('json')), 201);
 });
 
 app.openapi(organizationRoutes.getOrganization, async (ctx) => {
   const { organizationId } = ctx.req.valid('param');
   const { slug: bySlug, include } = ctx.req.valid('query');
-  const data = await getOrganizationOp(ctx, organizationId, { bySlug, include });
-  return ctx.json(data, 200);
+  return ctx.json(await getOrganizationOp(ctx, organizationId, { bySlug, include }), 200);
 });
 
 app.openapi(organizationRoutes.updateOrganization, async (ctx) => {
   const { organizationId } = ctx.req.valid('param');
-  const data = await updateOrganizationOp(ctx, organizationId, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(await updateOrganizationOp(ctx, organizationId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(organizationRoutes.publishOrganization, async (ctx) => {
   const { organizationId } = ctx.req.valid('param');
-  const data = await publishOrganizationOp(ctx, organizationId);
-  return ctx.json(data, 200);
+  return ctx.json(await publishOrganizationOp(ctx, organizationId), 200);
 });
 
 app.openapi(organizationRoutes.batchDeleteOrganizations, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-  const data = await deleteOrganizationsOp(ctx, ids);
-  return ctx.json(data, 200);
+  return ctx.json(await deleteOrganizationsOp(ctx, ids), 200);
 });
 
 export const organizationHandlers = app;

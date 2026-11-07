@@ -149,8 +149,6 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   }
   if (node === null || typeof node !== 'object') return;
   const obj = node as Record<string, unknown>;
-  if (typeof obj.pattern === 'string' && flagSuffix.test(obj.pattern)) {
-    obj.pattern = obj.pattern.replace(flagSuffix, '');
-  }
+  if (typeof obj.pattern === 'string' && flagSuffix.test(obj.pattern)) obj.pattern = obj.pattern.replace(flagSuffix, '');
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };

@@ -14,14 +14,8 @@ const generateHOTP = (key: Uint8Array, counter: bigint, digits: number): string 
 };
 
 /** Generates the RFC 6238 TOTP code for a `key` at the given unix time (defaults to now). */
-export const generateTOTP = (
-  key: Uint8Array,
-  intervalInSeconds: number,
-  digits: number,
-  unixTimeInSeconds = Math.floor(Date.now() / 1000),
-): string => {
-  return generateHOTP(key, BigInt(Math.floor(unixTimeInSeconds / intervalInSeconds)), digits);
-};
+export const generateTOTP = (key: Uint8Array, intervalInSeconds: number, digits: number, unixTimeInSeconds = Math.floor(Date.now() / 1000)): string =>
+  generateHOTP(key, BigInt(Math.floor(unixTimeInSeconds / intervalInSeconds)), digits);
 
 /**
  * The time step `otp` belongs to, among the steps within ±`gracePeriodInSeconds` of now, so codes survive clock drift;

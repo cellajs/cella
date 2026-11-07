@@ -14,7 +14,7 @@ import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
 
-const app = new OpenAPIHono<Env>();
+export const app = new OpenAPIHono<Env>();
 
 // Ambient log context in AsyncLocalStorage, first in the chain so every downstream log carries request ids
 app.use('*', (ctx, next) => runWithLogContext(ctx, () => next()));
@@ -69,5 +69,3 @@ app.use('*', dynamicBodyLimit);
 
 const compressMiddleware = compress();
 app.use('*', (ctx, next) => (ctx.req.method === 'GET' ? compressMiddleware(ctx, next) : next()));
-
-export { app };
