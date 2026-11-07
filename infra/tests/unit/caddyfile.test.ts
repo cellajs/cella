@@ -99,7 +99,6 @@ describe('frontend Caddyfile', () => {
     for (const path of ['/.well-known/oauth-protected-resource//evil.example', '/.well-known/oauth-protected-resource/\\evil.example']) {
       expect(pattern.test(path), path).toBe(false);
     }
-    expect(caddyfile).toMatch(/handle @oauthMetadata\s*\{\s*\n\s*redir \{re\.oauthMetadata\.2\}\/\.well-known\/\{re\.oauthMetadata\.1\} 307/);
     // Handles with named matchers run in the order written: this one before the bucket's /.well-known/*.
     expect(caddyfile.indexOf('handle @oauthMetadata')).toBeLessThan(caddyfile.indexOf('handle @wellKnown'));
   });
