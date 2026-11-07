@@ -6405,12 +6405,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "type": {
+                  "kind": {
                     "type": "string",
                     "enum": ["authentication", "mfa", "registration"]
                   }
                 },
-                "required": ["type"]
+                "required": ["kind"]
               }
             }
           }
@@ -6542,12 +6542,12 @@
                     },
                     "required": ["id", "rawId", "response", "type"]
                   },
-                  "type": {
+                  "kind": {
                     "type": "string",
                     "enum": ["authentication", "mfa"]
                   }
                 },
-                "required": ["assertion", "type"]
+                "required": ["assertion", "kind"]
               }
             }
           }
@@ -6596,7 +6596,7 @@
         "operationId": "startOAuthConnect",
         "tags": ["auth", "cella"],
         "summary": "Start connecting a provider",
-        "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+        "description": "Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
         "x-enabled-by": {
           "strategy": "oauth"
         },
@@ -6651,7 +6651,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -6709,7 +6709,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -6767,7 +6767,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -7236,7 +7236,7 @@
         "operationId": "startSso",
         "tags": ["auth", "cella"],
         "summary": "Sign in through an institution",
-        "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
+        "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `kind=connect` links the institution account to the signed-in user instead; other types are refused.",
         "x-enabled-by": {
           "strategy": "sso"
         },
@@ -7259,7 +7259,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -7332,7 +7332,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {

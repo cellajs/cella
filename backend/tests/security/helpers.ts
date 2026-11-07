@@ -138,16 +138,16 @@ export function issuedChallenge({ response, data }: TestResult) {
   return { challenge, credentials, credentialIds: credentials.map(({ id }) => id), cookie: setCookiePair(response, 'passkey-challenge') };
 }
 
-/** A passkey challenge of `type`, asked for as the page asks from a browser holding `cookie`. */
-export async function passkeyChallenge(type: 'authentication' | 'mfa' | 'registration', cookie?: string) {
+/** A passkey challenge of `kind`, asked for as the page asks from a browser holding `cookie`. */
+export async function passkeyChallenge(kind: 'authentication' | 'mfa' | 'registration', cookie?: string) {
   const call = await createAppClient();
   const headers = cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders;
-  return issuedChallenge(await call(generatePasskeyChallenge, { body: { type }, headers }));
+  return issuedChallenge(await call(generatePasskeyChallenge, { body: { kind }, headers }));
 }
 
 /** Answers a passkey challenge on the sign-in route from a browser holding `cookie`. */
-export async function passkeySignIn(assertion: PasskeyAssertion, cookie: string, type: 'authentication' | 'mfa' = 'authentication') {
+export async function passkeySignIn(assertion: PasskeyAssertion, cookie: string, kind: 'authentication' | 'mfa' = 'authentication') {
   const call = await createAppClient();
   const headers = cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders;
-  return call(signInWithPasskey, { body: { type, assertion }, headers });
+  return call(signInWithPasskey, { body: { kind, assertion }, headers });
 }

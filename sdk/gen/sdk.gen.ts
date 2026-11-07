@@ -1083,7 +1083,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey/generate-challenge) ·· _auth · cella_
  *
  * @param {generatePasskeyChallengeData} options
- * @param {enum} options.body.type - `enum`
+ * @param {enum} options.body.kind - `enum`
  * @returns Possible status codes: 200, 400, 401, 404, 413, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
@@ -1109,7 +1109,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  *
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
- * @param {enum} options.body.type - `enum`
+ * @param {enum} options.body.kind - `enum`
  * @returns Possible status codes: 204, 400, 401, 403, 404, 413, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(
@@ -1129,7 +1129,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
 /**
  * Start connecting a provider
  *
- * Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.
+ * Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.
  *
  * **POST /auth/oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/oauth-connect) ·· _auth · cella_
  *
@@ -1154,7 +1154,7 @@ export const startOAuthConnect = <ThrowOnError extends boolean = true>(
  * **GET /auth/github** ·· [github](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github) ·· _auth · cella_
  *
  * @param {githubData} options
- * @param {enum=} options.query.type - `enum` (optional)
+ * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
@@ -1175,7 +1175,7 @@ export const github = <ThrowOnError extends boolean = true>(
  * **GET /auth/google** ·· [google](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google) ·· _auth · cella_
  *
  * @param {googleData} options
- * @param {enum=} options.query.type - `enum` (optional)
+ * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
@@ -1196,7 +1196,7 @@ export const google = <ThrowOnError extends boolean = true>(
  * **GET /auth/microsoft** ·· [microsoft](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft) ·· _auth · cella_
  *
  * @param {microsoftData} options
- * @param {enum=} options.query.type - `enum` (optional)
+ * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 429
  */
@@ -1308,13 +1308,13 @@ export const getSsoEntry = <ThrowOnError extends boolean = true>(
 /**
  * Sign in through an institution
  *
- * Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.
+ * Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `kind=connect` links the institution account to the signed-in user instead; other types are refused.
  *
  * **GET /auth/sso/connections/{connectionId}/start** ·· [startSso](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/sso/connections/{connectionId}/start) ·· _auth · cella_
  *
  * @param {startSsoData} options
  * @param {string} options.path.connectionId - `string`
- * @param {enum=} options.query.type - `enum` (optional)
+ * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
@@ -1336,7 +1336,7 @@ export const startSso = <ThrowOnError extends boolean = true>(
  *
  * @param {startSsoFederationData} options
  * @param {string} options.path.federation - `string`
- * @param {enum=} options.query.type - `enum` (optional)
+ * @param {enum=} options.query.kind - `enum` (optional)
  * @param {string=} options.query.redirectAfter - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 404, 429
  */

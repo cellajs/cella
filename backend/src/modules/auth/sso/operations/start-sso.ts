@@ -16,12 +16,12 @@ export type SsoTarget = { connectionId: string } | { federation: string };
  * Starts an SSO round trip: resolves the federation (and the connection, when the start names one), builds its
  * authorization URL and stores the round trip's state, verifier, nonce and connection in the state cookie.
  * @throws AppError 404 `not_found` for an unknown connection or federation, 403 `sso_not_active` for a connection
- *   that is not active, 400 `invalid_request` for a flow type SSO does not run, and `getFederation`'s refusal.
+ *   that is not active, 400 `invalid_request` for a flow kind SSO does not run, and `getFederation`'s refusal.
  */
 export const startSso = async (ctx: OAuthStartContext, target: SsoTarget) => {
-  const { type } = ctx.req.valid('query');
+  const { kind } = ctx.req.valid('query');
   // No verification mail (the assertion is the proof) and no invitation pinning (an invitation resumes after the sign-in).
-  if (type !== 'auth' && type !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unsupported_flow' } });
+  if (kind !== 'auth' && kind !== 'connect') throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unsupported_flow' } });
 
   let federation: Federation;
   let connectionId: string | undefined;

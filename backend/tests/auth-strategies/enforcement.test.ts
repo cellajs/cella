@@ -60,7 +60,7 @@ describe('passkey strategy disabled', async () => {
   const call = await createAppClient();
 
   it('should reject passkey generation', async () => {
-    const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'registration' }, headers: defaultHeaders });
+    const { response: res, error } = await call(generatePasskeyChallenge, { body: { kind: 'registration' }, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 

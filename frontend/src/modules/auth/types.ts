@@ -2,7 +2,7 @@ import type { GeneratePasskeyChallengeData, GeneratePasskeyChallengeResponse, Ge
 
 export type PasskeyChallengeBody = GeneratePasskeyChallengeData['body'];
 
-export type PasskeyVerifyType = Exclude<PasskeyChallengeBody['type'], 'registration'>;
+export type PasskeyVerifyKind = Exclude<PasskeyChallengeBody['kind'], 'registration'>;
 
 /** A passkey a challenge names, with the transports its registration reported. */
 export type PasskeyCredential = GeneratePasskeyChallengeResponse['credentials'][number];

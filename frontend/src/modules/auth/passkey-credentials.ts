@@ -10,7 +10,7 @@ import {
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
 import { passkeyAlgorithms } from 'shared/passkeys';
-import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyType } from '~/modules/auth/types';
+import type { PasskeyChallengeBody, PasskeyCredential, PasskeyVerifyKind } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
 const isDevelopment = appConfig.mode === 'development';
@@ -34,7 +34,7 @@ export const isConditionalMediationAvailable = (): Promise<boolean> => browserSu
 
 /** Cancellable passkey autofill over discoverable passkeys: the passkey the user picks names the account. */
 export const startConditionalMediation = async (onCredential: (data: ConditionalMediationResult) => void, signal: AbortSignal) => {
-  const { challenge } = await getChallenge({ type: 'authentication' });
+  const { challenge } = await getChallenge({ kind: 'authentication' });
 
   // The ceremony is managed by @simplewebauthn's singleton abort service; forward external aborts
   signal.addEventListener('abort', () => WebAuthnAbortService.cancelCeremony(), { once: true });
@@ -45,15 +45,15 @@ export const startConditionalMediation = async (onCredential: (data: Conditional
     verifyBrowserAutofillInput: false,
   });
 
-  onCredential({ assertion, type: 'authentication' });
+  onCredential({ assertion, kind: 'authentication' });
 };
 
-export type ConditionalMediationResult = { assertion: AuthenticationResponseJSON; type: 'authentication' };
+export type ConditionalMediationResult = { assertion: AuthenticationResponseJSON; kind: 'authentication' };
 
 /** Runs WebAuthn registration and returns the attestation as base64url JSON for the backend. */
 export const getPasskeyRegistrationCredential = async () => {
   // The user's passkeys, so an authenticator that holds one already refuses to register a second.
-  const { challenge, credentials } = await getChallenge({ type: 'registration' });
+  const { challenge, credentials } = await getChallenge({ kind: 'registration' });
 
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
@@ -82,15 +82,15 @@ export const getPasskeyRegistrationCredential = async () => {
 };
 
 /**
- * Returns the passkey verify credential (assertion plus the challenge type). Only an MFA challenge lists the account's
+ * Returns the passkey verify credential (assertion plus the challenge kind). Only an MFA challenge lists the account's
  * passkeys; otherwise the browser offers its discoverable ones.
  */
-export const getPasskeyVerifyCredential = async ({ type }: { type: PasskeyVerifyType }) => {
-  const { challenge, credentials } = await getChallenge({ type });
+export const getPasskeyVerifyCredential = async ({ kind }: { kind: PasskeyVerifyKind }) => {
+  const { challenge, credentials } = await getChallenge({ kind });
 
   const assertion = await startAuthentication({ optionsJSON: requestOptions(challenge, credentials) });
 
-  return { assertion, type };
+  return { assertion, kind };
 };
 
 /** A passkey assertion for a step-up of the signed-in session: its challenge is bound to the account. */

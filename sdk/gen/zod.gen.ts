@@ -1215,7 +1215,7 @@ export const zDeletePasskeyPath = z.object({
 export const zDeletePasskeyResponse = z.void();
 
 export const zGeneratePasskeyChallengeBody = z.object({
-  type: z.enum(['authentication', 'mfa', 'registration']),
+  kind: z.enum(['authentication', 'mfa', 'registration']),
 });
 
 /**
@@ -1245,7 +1245,7 @@ export const zSignInWithPasskeyBody = z.object({
     clientExtensionResults: z.unknown().optional(),
     type: z.enum(['public-key']),
   }),
-  type: z.enum(['authentication', 'mfa']),
+  kind: z.enum(['authentication', 'mfa']),
 });
 
 /**
@@ -1259,17 +1259,17 @@ export const zSignInWithPasskeyResponse = z.void();
 export const zStartOAuthConnectResponse = z.void();
 
 export const zGithubQuery = z.object({
-  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
 export const zGoogleQuery = z.object({
-  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
 export const zMicrosoftQuery = z.object({
-  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
@@ -1333,7 +1333,7 @@ export const zStartSsoPath = z.object({
 });
 
 export const zStartSsoQuery = z.object({
-  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 
@@ -1342,7 +1342,7 @@ export const zStartSsoFederationPath = z.object({
 });
 
 export const zStartSsoFederationQuery = z.object({
-  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  kind: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().max(2048).optional(),
 });
 

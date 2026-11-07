@@ -2251,7 +2251,7 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 
 export type GeneratePasskeyChallengeData = {
   body: {
-    type: 'authentication' | 'mfa' | 'registration';
+    kind: 'authentication' | 'mfa' | 'registration';
   };
   path?: never;
   query?: never;
@@ -2313,7 +2313,7 @@ export type SignInWithPasskeyData = {
       clientExtensionResults?: unknown;
       type: 'public-key';
     };
-    type: 'authentication' | 'mfa';
+    kind: 'authentication' | 'mfa';
   };
   path?: never;
   query?: never;
@@ -2399,7 +2399,7 @@ export type GithubData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/github';
@@ -2426,7 +2426,7 @@ export type GoogleData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/google';
@@ -2453,7 +2453,7 @@ export type MicrosoftData = {
   body?: never;
   path?: never;
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/microsoft';
@@ -2669,7 +2669,7 @@ export type StartSsoData = {
     connectionId: string;
   };
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/sso/connections/{connectionId}/start';
@@ -2706,7 +2706,7 @@ export type StartSsoFederationData = {
     federation: string;
   };
   query?: {
-    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    kind?: 'auth' | 'connect' | 'invite' | 'verify';
     redirectAfter?: string;
   };
   url: '/auth/sso/federations/{federation}/start';

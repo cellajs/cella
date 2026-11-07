@@ -147,7 +147,7 @@ describe('SSO sign-in through an institution', async () => {
     vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id: user.id }, session: { id: sessionId } } as never);
   };
   const connectThrough = async (connectionId: string, claims: Record<string, unknown>) =>
-    finish(stateOf((await start(connectionId, { type: 'connect' })).response), claims);
+    finish(stateOf((await start(connectionId, { kind: 'connect' })).response), claims);
 
   it('tells the entry page what to show, by the connection id alone', async () => {
     const { organization, connection } = await seedConnection();
@@ -174,7 +174,7 @@ describe('SSO sign-in through an institution', async () => {
     expect(location.searchParams.get('login_hint')).toBe('https://idp.hu.nl/students,https://idp.hu.nl/employees');
 
     const payload = statePayload(stateOf(response));
-    expect(payload).toMatchObject({ provider: 'surfconext', type: 'auth', connectionId: connection.id });
+    expect(payload).toMatchObject({ provider: 'surfconext', kind: 'auth', connectionId: connection.id });
     expect(payload.codeVerifier).toBeTruthy();
     expect(payload.nonce).toBeTruthy();
   });
@@ -189,7 +189,7 @@ describe('SSO sign-in through an institution', async () => {
     await expectRefusal(await start(generateId()), 404, 'not_found', 'unknown');
 
     const active = await seedConnection();
-    await expectRefusal(await start(active.connection.id, { type: 'invite' }), 400, 'invalid_request', 'invite flow');
+    await expectRefusal(await start(active.connection.id, { kind: 'invite' }), 400, 'invalid_request', 'invite flow');
   });
 
   it('a first sign-in creates the account, its verified identity and its membership, with the address proven by the institution', async () => {
@@ -403,7 +403,7 @@ describe('SSO sign-in through an institution', async () => {
       const user = await createUser('l.jansen@hu.nl');
       await pinConnect(user);
 
-      const started = (await start(connection.id, { type: 'connect' })).response;
+      const started = (await start(connection.id, { kind: 'connect' })).response;
       expect(started.status).toBe(302);
       const { response } = await finish(stateOf(started), claimsOf({ email: 'lars@student.hu.nl', sub: 'lars-subject' }));
 
@@ -436,7 +436,7 @@ describe('SSO sign-in through an institution', async () => {
       await pinConnect(user);
       vi.mocked(roleFromClaims).mockReturnValueOnce(adminRole);
 
-      const started = (await start(connection.id, { type: 'connect' })).response;
+      const started = (await start(connection.id, { kind: 'connect' })).response;
       expect((await finish(stateOf(started), claimsOf({ email: 'l.jansen@hu.nl' }))).response.status).toBe(302);
 
       expect(await membershipsOf(user.id)).toMatchObject([{ channelId: organization.id, role: adminRole }]);
@@ -449,11 +449,11 @@ describe('SSO sign-in through an institution', async () => {
 
       const user = await createUser('l.jansen@hu.nl');
       await pinConnect(user);
-      const started = (await start(connection.id, { type: 'connect' })).response;
+      const started = (await start(connection.id, { kind: 'connect' })).response;
       await expectRefusal(await finish(stateOf(started), claimsOf()), 409, 'oauth_conflict');
       expect(await identitiesOf(user.id)).toHaveLength(0);
 
-      expect((await start(connection.id, { type: 'connect' })).response.status).toBe(401);
+      expect((await start(connection.id, { kind: 'connect' })).response.status).toBe(401);
     });
   });
 
