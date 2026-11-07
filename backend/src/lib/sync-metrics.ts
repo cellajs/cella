@@ -22,15 +22,11 @@ const tracer = trace.getTracer('app-sync');
  */
 export function startSyncSpan(name: string, attributes?: CleanSpanAttributes, parent?: TraceContext | null): Span {
   const span = tracer.startSpan(name, {}, parent ? remoteParentContext(parent) : undefined);
-  if (attributes) {
-    for (const [key, value] of Object.entries(attributes)) {
-      if (value !== null) span.setAttribute(key, value);
-    }
+  for (const [key, value] of Object.entries(attributes ?? {})) {
+    if (value !== null) span.setAttribute(key, value);
   }
   return span;
 }
 
 /** Counts one CDC message the activity bus distributes, by its entity type. */
-export function recordMessageReceived(entityType: EntityType | 'unknown'): void {
-  cdcMessagesReceived.add(1, { entity_type: entityType });
-}
+export const recordMessageReceived = (entityType: EntityType | 'unknown'): void => cdcMessagesReceived.add(1, { entity_type: entityType });

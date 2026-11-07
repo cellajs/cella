@@ -2,13 +2,12 @@ import { eq, inArray } from 'drizzle-orm';
 import { listAttachments, listInvitations, listRequests, listUsers } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, describe, expect, it } from 'vitest';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { adminRole, defaultHeaders } from './fixtures';
 import { adminDb, createOrganizationAdminUser, createSystemAdminUser, createTestOrganization, createTestSession, createTestUser } from './helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { createInvitation } from './invitations/helpers';
 import { clearSecurityTestData, createTestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -91,8 +90,7 @@ describe('List pages', async () => {
     const plan = await seedAttachmentHome({ id: organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     const ids = [generateId(), generateId(), generateId()];
     for (const id of ids) {
-      const columns = { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null };
-      await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
+      await insertAttachmentIn(plan, { id, tenantId: tenant.tenantId, createdBy: tenant.user.id });
     }
     const counts = { 'e:c:attachment': 50 };
     await adminDb

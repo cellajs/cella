@@ -25,12 +25,9 @@ class StreamSubscriberManager {
     for (const topic of [subscriber.topic, ...additionalTopics]) {
       if (!topic) continue;
       topics.add(topic);
-      let set = this.byTopic.get(topic);
-      if (!set) {
-        set = new Set();
-        this.byTopic.set(topic, set);
-      }
+      const set = this.byTopic.get(topic) ?? new Set<string>();
       set.add(subscriber.id);
+      this.byTopic.set(topic, set);
     }
     this.topicsOf.set(subscriber.id, topics);
   }

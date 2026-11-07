@@ -4,8 +4,7 @@ import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /** Normalizes through the lens chain, retaining required rename twins during expand. */
 export function normalizeBody<T extends Record<string, unknown>>(entityType: LensEntityType, body: T): T {
-  const { ops } = normalizeOps(entityType, body, {});
-  return ops;
+  return normalizeOps(entityType, body, {}).ops;
 }
 
 /** Normalizes fields and timestamps through the lens chain, retaining required twins during expand. */

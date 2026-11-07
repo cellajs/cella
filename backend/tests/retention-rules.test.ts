@@ -240,10 +240,7 @@ describe('apply_retention() row rules', () => {
       return id;
     };
     const period = retention.pushSubscriptionDaysUnseen;
-    const subscriptions = {
-      unseen: await subscription(outside(period), ago(period * 2)),
-      seen: await subscription(inside(period), ago(period * 2)),
-    };
+    const subscriptions = { unseen: await subscription(outside(period), ago(period * 2)), seen: await subscription(inside(period), ago(period * 2)) };
     cases.push({
       rule: 'push subscriptions',
       remaining: async () =>

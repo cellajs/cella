@@ -116,12 +116,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   beforeAll(async () => {
     vi.unstubAllGlobals();
     owner = await createTestTenant(call, 'internal-listener');
-    attachment = await seedAttachment({
-      tenantId: owner.tenantId,
-      organizationId: owner.organization.id,
-      createdBy: owner.user.id,
-      description: original,
-    });
+    attachment = await seedAttachment(owner, { description: original });
     publicServer = serveApi({ fetch: baseApp.fetch, port: 0, hostname: '127.0.0.1' });
     internal = serveInternal({ port: 0, hostname: '127.0.0.1' });
     await Promise.all([once(publicServer, 'listening'), once(internal.server, 'listening')]);

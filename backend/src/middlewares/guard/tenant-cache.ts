@@ -11,9 +11,7 @@ export const loadCachedTenant = (tenantId: string, read: () => Promise<TenantMod
   tenantCache.load(tenantId, read);
 
 /** What a test seeds so the guard needs no database. */
-export const setTenantCache = (tenantId: string, tenant: TenantModel): void => {
-  tenantCache.set(tenantId, tenant);
-};
+export const setTenantCache = (tenantId: string, tenant: TenantModel): void => tenantCache.set(tenantId, tenant);
 
 /** After a write to the tenant's row. */
 export const dropCachedTenant = (tenantId: string): void => {
@@ -21,6 +19,4 @@ export const dropCachedTenant = (tenantId: string): void => {
 };
 
 /** Drops every entry: what a test does to stand in for the TTL passing. */
-export const clearTenantCache = (): void => {
-  tenantCache.clear();
-};
+export const clearTenantCache = (): void => tenantCache.clear();

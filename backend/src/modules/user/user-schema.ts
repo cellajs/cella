@@ -20,12 +20,8 @@ import { userBaseSchema } from '#/schemas/user-schema-base';
 
 export const enabledOAuthProvidersSchema = z.enum(appConfig.enabledOAuthProviders);
 
-export const userFlagsSchema = z.object(
-  recordFromKeys(
-    typedEntries(appConfig.defaultUserFlags).map(([key]) => key),
-    () => z.boolean(),
-  ),
-);
+const userFlagKeys = typedEntries(appConfig.defaultUserFlags).map(([key]) => key);
+export const userFlagsSchema = z.object(recordFromKeys(userFlagKeys, () => z.boolean()));
 
 export const userSchema = createSelectSchema(usersTable, { email: z.email(), languageCode: languageSchema, userFlags: userFlagsSchema })
   // A profile, not an audited row: who last changed it stays in the database.

@@ -42,21 +42,11 @@ const oauthProviders = {
         fetch('https://api.github.com/user', init),
         fetch('https://api.github.com/user/emails', init),
       ]);
-      const user = (await userResponse.json()) as GithubUserProps;
-      const emails = (await emailsResponse.json()) as GithubUserEmailProps[];
-      return transformGithubUserData(user, emails);
+      return transformGithubUserData((await userResponse.json()) as GithubUserProps, (await emailsResponse.json()) as GithubUserEmailProps[]);
     },
   },
-  google: {
-    client: googleAuth,
-    scopes: ['openid', 'profile', 'email'],
-    fetchUser: verifiedProfile,
-  },
-  microsoft: {
-    client: microsoftAuth,
-    scopes: ['openid', 'profile', 'email'],
-    fetchUser: verifiedProfile,
-  },
+  google: { client: googleAuth, scopes: ['openid', 'profile', 'email'], fetchUser: verifiedProfile },
+  microsoft: { client: microsoftAuth, scopes: ['openid', 'profile', 'email'], fetchUser: verifiedProfile },
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
 /**

@@ -1,6 +1,5 @@
 import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import type { AppError } from '#/core/error';
 import { baseDb, getSeedDb } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
@@ -8,6 +7,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { invalidateCache } from './invalidate-cache';
 import { clearOrgCache, setOrgCache } from './org-cache';
 import { orgGuard } from './org-guard';
+import { thrownBy } from './tests/thrown-by';
 
 // The org row is served from the cache, so the database is reached only on a miss, where this stub
 // returns no row. Membership shape is what the guard actually reads.
@@ -47,14 +47,7 @@ const run = async (ctx: ReturnType<typeof mockCtx>) => {
   return next;
 };
 
-const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
-  try {
-    await run(ctx);
-  } catch (error) {
-    return error as AppError;
-  }
-  throw new Error('expected orgGuard to throw');
-};
+const runExpectingError = (ctx: ReturnType<typeof mockCtx>) => thrownBy(() => run(ctx), 'orgGuard');
 
 describe('orgGuard: organization access', () => {
   beforeEach(() => {

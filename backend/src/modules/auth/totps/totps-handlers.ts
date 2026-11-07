@@ -75,9 +75,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 });
 
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
-  const { code } = ctx.req.valid('json');
-
-  await completeMfaChallenge(ctx, { strategy: 'totp', code });
+  await completeMfaChallenge(ctx, { strategy: 'totp', code: ctx.req.valid('json').code });
 
   return ctx.body(null, 204);
 });

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppError } from '#/core/error';
 import { findUserSsoConnection } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { clearTenantCache, setTenantCache } from './tenant-cache';
 import { tenantGuard } from './tenant-guard';
+import { thrownBy } from './tests/thrown-by';
 
 // The creator's foothold depends on whether the tenant holds an organization yet.
 vi.mock('#/modules/organization/organization-queries', () => ({ countOrganizationsByTenant: vi.fn() }));
@@ -42,14 +42,7 @@ const run = async (ctx: ReturnType<typeof mockCtx>) => {
   return next;
 };
 
-const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
-  try {
-    await run(ctx);
-  } catch (error) {
-    return error as AppError;
-  }
-  throw new Error('expected tenantGuard to throw');
-};
+const runExpectingError = (ctx: ReturnType<typeof mockCtx>) => thrownBy(() => run(ctx), 'tenantGuard');
 
 const user = (bindings: unknown[]): Actor => ({ kind: 'user', id: 'u1', bindings, scopes: null });
 const service = (tenantId: string, bindings: unknown[] = [membership(tenantId)]): Actor => ({

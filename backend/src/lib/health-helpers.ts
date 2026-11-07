@@ -5,9 +5,8 @@ import type { CdcWorkerHealth } from '#/lib/cdc-websocket';
 export { type HealthComponent, type HealthResponse, type HealthStatus, worstStatus } from 'shared/health-status';
 
 /** The worst status among the components: one unhealthy component, a worker's included, makes the rollup unhealthy. */
-export function rollupStatus(components: Record<string, HealthComponent>): HealthStatus {
-  return Object.values(components).reduce<HealthStatus>((status, component) => worstStatus(status, component.status), 'healthy');
-}
+export const rollupStatus = (components: Record<string, HealthComponent>): HealthStatus =>
+  Object.values(components).reduce<HealthStatus>((status, component) => worstStatus(status, component.status), 'healthy');
 
 /** Grade a Node service's own runtime from event-loop lag. */
 export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
@@ -17,25 +16,22 @@ export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
 }
 
 /** The `api` component: this process graded by its event-loop lag, with its memory in MB. */
-export function mapApiComponent(eventLoopLagMs: number, memory: NodeJS.MemoryUsage): HealthComponent {
-  return {
-    status: gradeEventLoop(eventLoopLagMs),
-    checkedVia: 'local',
-    details: {
-      eventLoopLagMs,
-      rssMb: Math.round(memory.rss / 1024 / 1024),
-      heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
-      heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024),
-    },
-  };
-}
+export const mapApiComponent = (eventLoopLagMs: number, memory: NodeJS.MemoryUsage): HealthComponent => ({
+  status: gradeEventLoop(eventLoopLagMs),
+  checkedVia: 'local',
+  details: {
+    eventLoopLagMs,
+    rssMb: Math.round(memory.rss / 1024 / 1024),
+    heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
+    heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024),
+  },
+});
 
 /** The `database` component from the connectivity check; an unreachable database is unhealthy. */
-export function mapDatabaseComponent(connected: boolean, latencyMs: number | null): HealthComponent {
-  return connected
+export const mapDatabaseComponent = (connected: boolean, latencyMs: number | null): HealthComponent =>
+  connected
     ? { status: 'healthy', checkedVia: 'local', latencyMs }
     : { status: 'unhealthy', checkedVia: 'local', latencyMs: null, reason: 'database_unreachable' };
-}
 
 /** Worker reports are considered stale (and therefore degrading) after this long without an update. */
 export const workerHealthStaleMs = 45_000;

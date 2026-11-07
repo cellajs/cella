@@ -26,9 +26,8 @@ const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'produc
  * bloat is still detected and reported as a warning.
  */
 export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOptions> = {}): ConstructorOptions {
-  const url = overrides.connectionString ?? env.DATABASE_URL;
   return {
-    ...verifiedPostgresConnection(url, sslCa),
+    ...verifiedPostgresConnection(overrides.connectionString ?? env.DATABASE_URL, sslCa),
     application_name: `${appConfig.slug}-jobs-${role}`,
     schema: jobsSchema,
     max: poolMax[role],

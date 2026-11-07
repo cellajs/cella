@@ -192,8 +192,7 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
           const txCtx = { var: { db: tx } };
           const won = await redeem(txCtx);
           if (!won) return won;
-          const userId = await claimHolder(tx, won);
-          return updateTokenUser(txCtx, { id: won.id, userId });
+          return updateTokenUser(txCtx, { id: won.id, userId: await claimHolder(tx, won) });
         });
 
   if (redeemed) {

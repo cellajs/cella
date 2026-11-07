@@ -151,9 +151,7 @@ export const meRoutes = createXRoutes(['me', 'cella'], {
     summary: 'Get connected apps',
     description: 'Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.',
     request: { query: pageQuerySchema },
-    responses: {
-      200: json('Connected apps', paginationSchema(connectedAppSchema), { results: [mockConnectedApp()], totalSize: 1 }),
-    },
+    responses: { 200: json('Connected apps', paginationSchema(connectedAppSchema), { results: [mockConnectedApp()], totalSize: 1 }) },
   }),
   deleteConnectedApp: xRoute({
     method: 'delete',

@@ -1,12 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { listOrganizations } from 'sdk';
 import type { EntityRole } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
-import { createTestUser } from './helpers';
+import { createTestUser, insertOrgMembership } from './helpers';
 import { clearSecurityTestData, createSecondOrg, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -34,18 +33,7 @@ describe('Organization member previews (include=members)', async () => {
   };
 
   const insertMembership = async (userId: string, orgId: string, role: EntityRole, createdAt: string, tenantId: string = tenant.tenantId) => {
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId,
-      channelId: orgId,
-      organizationId: orgId,
-      tenantId,
-      channelType: 'organization',
-      role,
-      displayOrder: 1,
-      createdAt,
-      createdBy: userId,
-    });
+    await insertOrgMembership(userId, { id: orgId, tenantId }, { role, displayOrder: 1, createdAt });
   };
 
   beforeAll(async () => {

@@ -106,8 +106,7 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
   }
 
   // An account holds the address: its holder signs in to it and connects the provider from there.
-  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
-  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
+  if (await findUserByEmail(dbCtx, { email: providerUser.email })) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
   if (!(await maySignUp(dbCtx, { email: providerUser.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
@@ -184,8 +183,7 @@ const inviteCallbackFlow = async ({
   if (identity) throw new AppError(409, 'oauth_conflict', 'warn', { meta });
 
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
-  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
-  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
+  if (await findUserByEmail(dbCtx, { email: providerUser.email })) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
 
   if (!providerUser.provesAddress) return pendingSignUp(providerUser, provider);
 
@@ -194,8 +192,7 @@ const inviteCallbackFlow = async ({
     const txCtx = { var: { db: tx } };
     const user = await createAccount(txCtx, { newUser: providerUser, via: provider });
     const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
-    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
-    return { userId: user.id, identity: newIdentity };
+    return { userId: user.id, identity: await insertIdentity(txCtx, { values, verified: true }) };
   });
 
   const user = await findUserById(dbCtx, { id: created.userId });
@@ -219,9 +216,7 @@ const verifyCallbackFlow = async ({
   const verifyToken = await readBoundToken(ctx, 'oauth-verification');
 
   const { pendingSignUp } = verifyToken;
-  if (pendingSignUp) {
-    return completeSignUp({ ctx, verifyToken, signUp: pendingSignUp, providerUser, provider, identity });
-  }
+  if (pendingSignUp) return completeSignUp({ ctx, verifyToken, signUp: pendingSignUp, providerUser, provider, identity });
 
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
@@ -295,8 +290,7 @@ const completeSignUp = async ({
     const { name, slug, givenName, familyName } = signUp;
     const user = await createAccount(txCtx, { newUser: { email, name, slug, givenName, familyName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
-    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
-    return { userId: user.id, identity: newIdentity };
+    return { userId: user.id, identity: await insertIdentity(txCtx, { values, verified: true }) };
   });
   // The spend is committed: the cookie that named the verification goes with it.
   deleteAuthCookie(ctx, 'oauth-verification');
@@ -350,7 +344,5 @@ const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>
   }
 
   const reason = info.type === 'pending' ? 'signup' : 'connect';
-  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
-
-  return ctx.redirect(redirectUrl, 302);
+  return ctx.redirect(new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl), 302);
 };

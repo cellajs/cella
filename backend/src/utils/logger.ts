@@ -9,10 +9,8 @@ import { baseLog } from '#/lib/pino';
 const isProduction = appConfig.mode === 'production';
 
 /** Check if traffic originates from bench/load testing (dev only). */
-export const isBenchTraffic = (userId?: string, tenantId?: string): boolean => {
-  if (isProduction) return false;
-  return tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix) === true;
-};
+export const isBenchTraffic = (userId?: string, tenantId?: string): boolean =>
+  !isProduction && (tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix) === true);
 
 const requestStorage = new AsyncLocalStorage<Context<Env>>();
 

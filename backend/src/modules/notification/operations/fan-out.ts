@@ -119,20 +119,9 @@ async function fanOutRow(
   if (allowed.length === 0) return [];
 
   const contextId = resolveContextId ? resolveContextId(row) : row.id;
+  const place = { tenantId, organizationId, channelId: channel.id, channelType: channel.type, entityType, subjectId: row.id };
   const told = await insertNotificationsIgnoringDuplicates(dbCtx, {
-    rows: allowed.map<NotificationInsert>((recipient) => ({
-      userId: recipient.userId,
-      type: recipient.type,
-      entityType,
-      subjectId: row.id,
-      contextId,
-      channelId: channel.id,
-      channelType: channel.type,
-      organizationId,
-      tenantId,
-      activityId,
-      actorId,
-    })),
+    rows: allowed.map<NotificationInsert>((recipient) => ({ ...recipient, ...place, contextId, activityId, actorId })),
   });
 
   if (told.length === 0) return [];
@@ -143,15 +132,7 @@ async function fanOutRow(
 
   if (isPushSendConfigured()) {
     const primaryType = told.some((recipient) => recipient.type === 'mention') ? 'mention' : told[0].type;
-    const url = buildNotificationLink(appConfig.frontendUrl, {
-      tenantId,
-      organizationId,
-      channelId: channel.id,
-      channelType: channel.type,
-      entityType,
-      subjectId: row.id,
-      contextId: contextId ?? undefined,
-    });
+    const url = buildNotificationLink(appConfig.frontendUrl, { ...place, contextId: contextId ?? undefined });
     await sendNotificationPush(
       told.map((recipient) => recipient.userId),
       { t: 'notif', activityId, channelId: channel.id, type: primaryType, url },

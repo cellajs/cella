@@ -81,12 +81,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
   /** An attachment holding `initial`, with its document as the relay seeds it from the row unless `seeded` is false. */
   const arrange = async (initial: string, { seeded = true } = {}) => {
-    const attachment = await seedAttachment({
-      tenantId: tenant.tenantId,
-      organizationId: tenant.organization.id,
-      createdBy: tenant.user.id,
-      description: initial,
-    });
+    const attachment = await seedAttachment(tenant, { description: initial });
     removals.push(async () => {
       await adminDb.delete(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, attachment.id));
       await adminDb.delete(yjsDocumentsTable).where(eq(yjsDocumentsTable.entityId, attachment.id));
@@ -127,10 +122,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
   const put = (entityId: string, written: string) =>
     call(updateAttachment, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: entityId },
-      body: {
-        ops: { description: written },
-        stx: mockStxFor('description'),
-      },
+      body: { ops: { description: written }, stx: mockStxFor('description') },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
@@ -138,10 +130,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
   const putName = (entityId: string, name: string) =>
     call(updateAttachment, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: entityId },
-      body: {
-        ops: { name },
-        stx: mockStxFor('name'),
-      },
+      body: { ops: { name }, stx: mockStxFor('name') },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 

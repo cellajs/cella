@@ -7,7 +7,6 @@ import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'v
 import { baseDb, getSeedDb } from '#/db/db';
 import type { ActivityRow, ProductActivityEvent } from '#/lib/activity-bus';
 import { mailer } from '#/lib/mailer';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
 import { commentEmail } from '#/modules/notification/emails/comment-email';
@@ -21,7 +20,7 @@ import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-d
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, overrideConfig } from './fixtures';
 import { createTestUser, failNextMailSend, mailsTo, sentMails } from './helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -159,21 +158,7 @@ describe('Attachment mentions (template notification source)', async () => {
   const newSubject = async (description: string | null = null, columns: { public?: boolean; name?: string } = {}) => {
     const id = generateId();
     subjectIds.push(id);
-    const row = buildInsertableProduct(
-      'attachment',
-      {
-        id,
-        tenantId: tenant.tenantId,
-        ...plan.channelIdColumns,
-        description,
-        createdBy: tenant.user.id,
-        updatedBy: null,
-        deletedBy: null,
-        ...columns,
-      },
-      id,
-    );
-    await insertAttachmentRow(row);
+    await insertAttachmentIn(plan, { id, tenantId: tenant.tenantId, description, createdBy: tenant.user.id, ...columns });
     return id;
   };
 
@@ -197,12 +182,7 @@ describe('Attachment mentions (template notification source)', async () => {
 
     plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
-    const row = buildInsertableProduct(
-      'attachment',
-      { id: attachmentId, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
-      attachmentId,
-    );
-    await insertAttachmentRow(row);
+    await insertAttachmentIn(plan, { id: attachmentId, tenantId: tenant.tenantId, createdBy: tenant.user.id });
   });
 
   afterAll(async () => {

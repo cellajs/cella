@@ -30,7 +30,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { adminDb, expectRefusal } from '../helpers';
+import { adminDb, expectRefusal, insertOrgMembership } from '../helpers';
 import { attachmentBody, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
@@ -93,17 +93,7 @@ describe('Cross-organization API isolation', async () => {
 
     insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both', memberRole);
     await joinAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, plan, insider.id);
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId: insider.id,
-      channelId: orgB.id,
-      organizationId: orgB.id,
-      tenantId: orgB.tenantId,
-      channelType: 'organization',
-      role: adminRole,
-      displayOrder: 2,
-      createdBy: insider.id,
-    });
+    await insertOrgMembership(insider.id, orgB, { role: adminRole, displayOrder: 2 });
 
     const attachmentId = generateId();
     const created = await call(batchCreateAttachments, {
@@ -152,12 +142,7 @@ describe('Cross-organization API isolation', async () => {
     },
     {
       route: 'batchDeleteOrganizations',
-      attempt: (as) =>
-        call(batchDeleteOrganizations, {
-          path: { tenantId: tenant.tenantId },
-          body: { ids: [orgB.id] },
-          headers: headers(as),
-        }),
+      attempt: (as) => call(batchDeleteOrganizations, { path: { tenantId: tenant.tenantId }, body: { ids: [orgB.id] }, headers: headers(as) }),
       refusal: forbidden,
       // A delete archives the tenant, so the row stays either way: the tenant must still be active.
       unchanged: async () => expect(await tenantStatus(orgB.tenantId)).toBe('active'),

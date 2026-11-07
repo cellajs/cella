@@ -49,10 +49,8 @@ export interface FindNotificationsOpts {
 }
 
 /** A window of a user's inbox, newest first, and the rows the inbox holds. */
-export async function findNotificationsByUser(ctx: DbContext, opts: FindNotificationsOpts) {
+export async function findNotificationsByUser(ctx: DbContext, { userId, unreadOnly, offset, limit }: FindNotificationsOpts) {
   const { db } = ctx.var;
-  const { userId, unreadOnly, offset, limit } = opts;
-
   const filters = [eq(notificationsTable.userId, userId), recipientStillBelongs];
   if (unreadOnly) filters.push(isNull(notificationsTable.readAt));
   const where = and(...filters);
@@ -68,12 +66,8 @@ export async function findNotificationsByUser(ctx: DbContext, opts: FindNotifica
   return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(notificationsTable).where(where)));
 }
 
-interface CountUnreadByUserOpts {
-  userId: string;
-}
-
 /** Counts the user's unread rows the inbox lists. */
-export async function countUnreadByUser(ctx: DbContext, { userId }: CountUnreadByUserOpts): Promise<number> {
+export async function countUnreadByUser(ctx: DbContext, { userId }: { userId: string }): Promise<number> {
   const [row] = await ctx.var.db
     .select({ count: sql<number>`count(*)::int` })
     .from(notificationsTable)
@@ -105,12 +99,8 @@ export async function markNotificationsRead(ctx: DbContext, { userId, ids, conte
   return updated.length;
 }
 
-interface FindPreferencesOpts {
-  userId: string;
-}
-
 /** The user's preferences row; undefined for a user who never saved one, whose preferences are `defaultPreferences`. */
-export async function findPreferences(ctx: DbContext, { userId }: FindPreferencesOpts) {
+export async function findPreferences(ctx: DbContext, { userId }: { userId: string }) {
   const [row] = await ctx.var.db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
   return row;
 }
@@ -138,10 +128,6 @@ export type NotificationInsert = Required<Omit<InsertNotificationModel, 'id' | '
 /** A row the fan-out wrote, with its id. */
 export type WrittenNotification = NotificationInsert & { id: string };
 
-interface InsertNotificationsIgnoringDuplicatesOpts {
-  rows: NotificationInsert[];
-}
-
 /**
  * Inserts notifications, skipping any recipient who already holds one for the subject: a CDC redelivery, an edit and
  * a republish tell nobody twice. The table is partitioned, so it cannot carry the unique constraint `ON CONFLICT`
@@ -151,7 +137,7 @@ interface InsertNotificationsIgnoringDuplicatesOpts {
  */
 export async function insertNotificationsIgnoringDuplicates(
   ctx: DbContext,
-  { rows }: InsertNotificationsIgnoringDuplicatesOpts,
+  { rows }: { rows: NotificationInsert[] },
 ): Promise<WrittenNotification[]> {
   if (rows.length === 0) return [];
 
@@ -192,10 +178,6 @@ export async function insertNotificationsIgnoringDuplicates(
 /** Always the identified variant: these are known users, never the anonymous actor. */
 type UserAccess = Extract<Access<MembershipBaseModel>, { actorId: string }>;
 
-interface GetUserAccessOpts {
-  userIds: string[];
-}
-
 /**
  * Build permission `Access` objects for arbitrary users, connected or not. An id that names no user gets none: a
  * mention is written by a client, and an author can be a service account, which has no inbox.
@@ -204,7 +186,7 @@ interface GetUserAccessOpts {
  * an Access risks pairing one user's memberships with another's identity, and that warning applies with more force to a
  * loop over many users.
  */
-export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOpts): Promise<Map<string, UserAccess>> {
+export async function getUserAccess(ctx: DbContext, { userIds }: { userIds: string[] }): Promise<Map<string, UserAccess>> {
   const result = new Map<string, UserAccess>();
   if (userIds.length === 0) return result;
 
@@ -217,10 +199,8 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
   ]);
 
   const adminIds = new Set(systemAdmins.map((row) => row.userId));
-  const byUser = Map.groupBy(
-    memberships.map((row) => toMembershipBase(row)),
-    (membership) => membership.userId,
-  );
+  const bases = memberships.map((row) => toMembershipBase(row));
+  const byUser = Map.groupBy(bases, (membership) => membership.userId);
 
   for (const { id: userId } of users) {
     result.set(userId, {
@@ -240,10 +220,6 @@ type LabelledTable = AnyPgTable & { id: PgColumn; name: PgColumn; thumbnailUrl: 
 
 export type ChannelLabel = { name: string; thumbnailUrl: string | null };
 
-interface FindChannelLabelsOpts {
-  channelIds: string[];
-}
-
 /**
  * Name and thumbnail for a set of channel ids, organizations included, so a digest can group by channel and a card
  * can show its place without the caller knowing which table each id lives in.
@@ -251,7 +227,7 @@ interface FindChannelLabelsOpts {
  * Channel tables sit outside RLS (application-layer guards cover them), and the ids only ever come from rows the
  * recipient was already cleared to read, or from the organization of an inbox row, which the recipient belongs to.
  */
-export async function findChannelLabels(ctx: DbContext, { channelIds }: FindChannelLabelsOpts): Promise<Map<string, ChannelLabel>> {
+export async function findChannelLabels(ctx: DbContext, { channelIds }: { channelIds: string[] }): Promise<Map<string, ChannelLabel>> {
   const labels = new Map<string, ChannelLabel>();
   if (channelIds.length === 0) return labels;
 
@@ -286,10 +262,7 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
 
   return ctx.var.db
     .selectDistinctOn([usersTable.id], {
-      id: usersTable.id,
-      email: usersTable.email,
-      name: usersTable.name,
-      languageCode: usersTable.languageCode,
+      ...pick(usersTable, ['id', 'email', 'name', 'languageCode']),
       mentionEmail: sql<boolean>`coalesce(${notificationPreferencesTable.mentionEmail}, ${defaultPreferences.mentionEmail})`,
       commentEmail: sql<boolean>`coalesce(${notificationPreferencesTable.commentEmail}, ${defaultPreferences.commentEmail})`,
     })
@@ -312,12 +285,8 @@ export async function findUsersMinimal(ctx: DbContext, { userIds }: UserIdsOpts)
   return new Map(rows.map((row) => [row.id, { ...toUserMinimalBase(row), givenName: row.givenName }]));
 }
 
-interface NotificationIdsOpts {
-  ids: string[];
-}
-
 /** Stamps the rows whose instant mail went out, so the digest does not repeat them. */
-export async function stampEmailed(ctx: DbContext, { ids }: NotificationIdsOpts): Promise<void> {
+export async function stampEmailed(ctx: DbContext, { ids }: { ids: string[] }): Promise<void> {
   if (ids.length === 0) return;
   await ctx.var.db.update(notificationsTable).set({ emailedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
 }
@@ -363,14 +332,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { runAt, dayStart,
 
   return (
     ctx.var.db
-      .selectDistinctOn([usersTable.id], {
-        userId: usersTable.id,
-        digest,
-        windowStart,
-        email: usersTable.email,
-        name: usersTable.name,
-        languageCode: usersTable.languageCode,
-      })
+      .selectDistinctOn([usersTable.id], { userId: usersTable.id, digest, windowStart, ...pick(usersTable, ['email', 'name', 'languageCode']) })
       .from(usersTable)
       // Verified addresses only.
       .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))

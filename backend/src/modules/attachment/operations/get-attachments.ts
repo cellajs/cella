@@ -29,9 +29,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const readFilter = resolveCollectionReadFilter(access, 'attachment', organizationId);
   const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, access);
 
-  if (scopeWhere.kind === 'none') {
-    return { items: [], total: 0 };
-  }
+  if (scopeWhere.kind === 'none') return { items: [], total: 0 };
 
   // Trusted tenant + organization predicate from guarded context, independent of RLS.
   const filters: SQL[] = [requestScopeWhere(ctx, attachmentsTable, 'attachment')];
@@ -57,6 +55,5 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     }),
   );
 
-  const items = projectTombstones('attachment', await withActorRefs(ctx, rawItems));
-  return { items, total };
+  return { items: projectTombstones('attachment', await withActorRefs(ctx, rawItems)), total };
 }

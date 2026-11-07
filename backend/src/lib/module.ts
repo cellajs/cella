@@ -98,10 +98,7 @@ export interface ModuleNotifications<TRow extends NotificationSubjectRow = Notif
 }
 
 /** The channel a membership is being inserted for. */
-export type MembershipEntity = EntityModel<ChannelEntityType> & {
-  [key: string]: unknown;
-  tenantId: string;
-};
+export type MembershipEntity = EntityModel<ChannelEntityType> & { [key: string]: unknown; tenantId: string };
 
 /**
  * A module's own columns on a membership about to be inserted, resolved inside the caller's transaction before the
@@ -180,19 +177,13 @@ export function defineBackendModule(module: BackendModule): void {
 }
 
 /** Route mounts from every module definition, in registration order, the order the entrypoint applies them in. */
-export function getBackendRoutes(): readonly BackendRoute[] {
-  return backendRoutes;
-}
+export const getBackendRoutes = (): readonly BackendRoute[] => backendRoutes;
 
 /** Jobs from every module definition, in registration order. */
-export function getBackendJobs(): readonly BackendJob[] {
-  return backendJobs;
-}
+export const getBackendJobs = (): readonly BackendJob[] => backendJobs;
 
 /** Queues from every module definition, in registration order. */
-export function getBackendQueues(): readonly BackendQueue[] {
-  return backendQueues;
-}
+export const getBackendQueues = (): readonly BackendQueue[] => backendQueues;
 
 /** Subscribe to backend module registrations; replays modules already registered. */
 export function onBackendModuleRegister(listener: (module: BackendModule) => void): void {

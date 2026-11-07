@@ -14,9 +14,7 @@ type DeleteMembershipsInput = z.infer<typeof entityWithTypeSchema> & { userIds: 
  * Deletes the channel's memberships of these users, which needs `delete` on it; a user id without one comes back rejected.
  * @throws AppError 403 `role_exceeds_actor` when one of them outranks the actor (`assertRoleGrant`): nobody is removed.
  */
-export async function deleteMembershipsOp(ctx: UserContext, input: DeleteMembershipsInput) {
-  const { userIds, entityId, entityType } = input;
-
+export async function deleteMembershipsOp(ctx: UserContext, { userIds, entityId, entityType }: DeleteMembershipsInput) {
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'delete');
 
   const targets = await findMembershipsByUserIdsAndChannel(ctx, { userIds, channelId: entity.id });

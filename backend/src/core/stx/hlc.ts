@@ -31,14 +31,11 @@ let lastCounter = 0n;
 /** Parse `millis:counter:sourceHash`, returning `null` for malformed input. */
 export function parseHLC(value: string): ParsedHLC | null {
   const match = hlcPattern.exec(value);
-  if (!match) return null;
-  return { timestamp: BigInt(match[1]), counter: BigInt(match[2]), source: match[3] };
+  return match ? { timestamp: BigInt(match[1]), counter: BigInt(match[2]), source: match[3] } : null;
 }
 
 /** Whether `value` is an HLC in the `millis:counter:sourceHash` form. */
-export function isValidHLC(value: string): boolean {
-  return parseHLC(value) !== null;
-}
+export const isValidHLC = (value: string): boolean => parseHLC(value) !== null;
 
 const beyondClockSkew = ({ timestamp }: ParsedHLC) => timestamp > BigInt(Date.now() + maxClockSkewMs);
 
@@ -67,8 +64,7 @@ function createHLC(now: number, sourceId: string): string {
   } else {
     lastCounter++;
   }
-  const counter = String(lastCounter).padStart(4, '0');
-  return `${lastTimestamp}:${counter}:${hashSourceId(sourceId)}`;
+  return `${lastTimestamp}:${String(lastCounter).padStart(4, '0')}:${hashSourceId(sourceId)}`;
 }
 
 /** Compares by millis, counter, then source hash. Throws when either timestamp is malformed. */
@@ -100,9 +96,7 @@ export function advanceClock(receivedHLC: string): void {
 }
 
 /** Generate a server HLC (uses Date.now()). */
-export function generateServerHLC(sourceId = 'server'): string {
-  return createHLC(Date.now(), sourceId);
-}
+export const generateServerHLC = (sourceId = 'server'): string => createHLC(Date.now(), sourceId);
 
 /** Reset HLC state (for testing only). */
 export function _resetHLC(): void {

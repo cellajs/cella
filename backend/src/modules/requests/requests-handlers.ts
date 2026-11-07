@@ -25,9 +25,6 @@ app.openapi(requestRoutes.listRequests, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, (page) => getRequestsOp(ctx, query, page)), 200);
 });
 
-app.openapi(requestRoutes.batchDeleteRequests, async (ctx) => {
-  const { ids } = ctx.req.valid('json');
-  return ctx.json(await deleteRequestsOp(ctx, ids), 200);
-});
+app.openapi(requestRoutes.batchDeleteRequests, async (ctx) => ctx.json(await deleteRequestsOp(ctx, ctx.req.valid('json').ids), 200));
 
 export const requestHandlers = app;

@@ -123,9 +123,7 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
 
   mailer.sendEmails(magicLinkEmail, staticProps, recipients).catch((err) => log.error('Failed to send magic link email', { err }));
 
-  if (appConfig.mode === 'development') {
-    console.info(`[magic-link] ${email} ${magicLinkUrl}`);
-  }
+  if (appConfig.mode === 'development') console.info(`[magic-link] ${email} ${magicLinkUrl}`);
 
   log.info('Magic link created', { userId, signUp: !existingUser });
 };

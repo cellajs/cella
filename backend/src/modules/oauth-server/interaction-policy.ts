@@ -17,8 +17,7 @@ async function appSessionUserId(req: IncomingMessage, res: ServerResponse): Prom
     if (typeof value === 'string') headers.set(name, value);
   }
   const ctx = new Context(new Request(appConfig.oauthUrl, { headers }), { env: { incoming: req, outgoing: res } });
-  const entry = await findSession(ctx);
-  return entry?.user.id ?? null;
+  return (await findSession(ctx))?.user.id ?? null;
 }
 
 /**

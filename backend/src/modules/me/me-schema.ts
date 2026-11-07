@@ -35,10 +35,7 @@ export const meSchema = z
   });
 
 /** When a sign-in method was added, and when it last signed the user in. */
-const methodDatesShape = {
-  createdAt: z.string(),
-  lastUsedAt: z.union([z.string(), z.null()]),
-};
+const methodDatesShape = { createdAt: z.string(), lastUsedAt: z.union([z.string(), z.null()]) };
 
 /** An external identity the account holds, with the address its issuer asserted last. */
 const identityShape = { email: z.union([z.string(), z.null()]), ...methodDatesShape };

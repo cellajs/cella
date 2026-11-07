@@ -25,6 +25,4 @@ export const dropCachedSessions = (userId: string): void => {
 };
 
 /** Drops every entry: what a test does to stand in for the TTL passing. */
-export const clearSessionCache = (): void => {
-  sessionCache.clear();
-};
+export const clearSessionCache = (): void => sessionCache.clear();

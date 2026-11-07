@@ -1,4 +1,4 @@
-import { type ServerType, serve } from '@hono/node-server';
+import { serve } from '@hono/node-server';
 import { appConfig } from 'shared';
 import { listenHost } from 'shared/utils/listen-host';
 import { sleep } from 'shared/utils/sleep';
@@ -75,15 +75,12 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   const scheduled = nextRuns.length ? `${nextRuns.length} periodic jobs, next runs: ${nextRuns.join(', ')}` : 'no periodic jobs';
   baseLog.info(`Jobs worker: ${scheduled}${queues.length ? `; working queues: ${queues.join(', ')}` : ''}`);
 
-  let server: ServerType | undefined;
   if (!options.inProcess) {
-    server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => {
-      baseLog.info(`Jobs worker listening on port ${port}`);
-    });
+    const server = serve({ fetch: healthApp.fetch, hostname: listenHost(), port }, () => baseLog.info(`Jobs worker listening on port ${port}`));
     setupGracefulShutdown({
       name: 'jobs',
       cleanup: async () => {
-        server?.close();
+        server.close();
         await stopPgBoss();
         await otel.shutdown();
       },

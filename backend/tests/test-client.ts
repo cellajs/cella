@@ -19,9 +19,7 @@ export function sdk(client: Client) {
   return async <F extends (opts: any) => Promise<any>>(
     fn: F,
     opts: Omit<Parameters<F>[0], 'client' | 'throwOnError' | 'responseStyle'>,
-  ): Promise<TestResult> => {
-    return fn({ ...opts, client, throwOnError: false, responseStyle: 'fields' }) as Promise<TestResult>;
-  };
+  ): Promise<TestResult> => fn({ ...opts, client, throwOnError: false, responseStyle: 'fields' }) as Promise<TestResult>;
 }
 
 /** The route import is deferred so mocks are set up first. */

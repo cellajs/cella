@@ -17,9 +17,7 @@ export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Auth health check',
     description: 'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
-    responses: {
-      200: json('Auth health status', authHealthSchema),
-    },
+    responses: { 200: json('Auth health status', authHealthSchema) },
   }),
   checkEmail: xRoute({
     method: 'post',

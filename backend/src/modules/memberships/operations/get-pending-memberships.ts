@@ -15,13 +15,11 @@ type GetPendingMembershipsInput = z.infer<typeof pendingMembershipListQuerySchem
  * minted, since anyone may create an organization and invite any address. A resend names the row by its own id.
  */
 export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput, { offset, limit }: PageWindow) {
-  const organization = ctx.var.organization;
-
   const { entityId, entityType, orderBy } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
 
   const { items: rawItems, total } = await findPendingMembershipsPaginated(ctx, {
-    organizationId: organization.id,
+    organizationId: ctx.var.organization.id,
     entityId: entity.id,
     ...orderBy,
     offset,
@@ -35,7 +33,5 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
     linkExpiresAt: item.remindedAt ? new Date(Date.parse(item.remindedAt) + linkMs).toISOString() : null,
   }));
 
-  const items = await withCreatorRefs(ctx, withExpiry);
-
-  return { items, total };
+  return { items: await withCreatorRefs(ctx, withExpiry), total };
 }

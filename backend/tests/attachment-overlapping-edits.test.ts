@@ -40,20 +40,12 @@ describe('Overlapping edits of one attachment', async () => {
   const edit = (id: string, field: 'name' | 'description', value: string) =>
     call(updateAttachment, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, attachmentId: id },
-      body: {
-        ops: { [field]: value },
-        stx: mockStxFor(field),
-      },
+      body: { ops: { [field]: value }, stx: mockStxFor(field) },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
   it('stores the field timestamp of each of two edits that arrive while the row is held', async () => {
-    const attachment = await seedAttachment({
-      tenantId: tenant.tenantId,
-      organizationId: tenant.organization.id,
-      createdBy: tenant.user.id,
-      description: description('before'),
-    });
+    const attachment = await seedAttachment(tenant, { description: description('before') });
     removals.push(attachment.remove);
 
     // While the row is held both edits wait on it. Each reads the row only once the lock is its own, so the second

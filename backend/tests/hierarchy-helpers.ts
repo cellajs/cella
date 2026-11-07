@@ -6,6 +6,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 
@@ -134,3 +135,16 @@ export const insertAttachmentRow = (row: Record<string, unknown>) =>
   getAdminDb('test setup')
     .insert(attachmentsTable)
     .values(row as typeof attachmentsTable.$inferInsert);
+
+/**
+ * Inserts an attachment `createdBy` wrote in the plan's home, mocked from `key` with its other writers nulled: the
+ * mock's random ids reference no users rows. `columns` add or replace columns.
+ */
+export const insertAttachmentIn = (
+  plan: TestEntityHierarchyPlan,
+  { tenantId, createdBy, ...columns }: { id: string; tenantId: string; createdBy: string } & Record<string, unknown>,
+  key = columns.id,
+) =>
+  insertAttachmentRow(
+    buildInsertableProduct('attachment', { tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null, ...columns }, key),
+  );

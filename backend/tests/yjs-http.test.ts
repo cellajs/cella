@@ -153,11 +153,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
   const headers = (cookie?: string) => (cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders);
 
   const pull = (cookie: string | undefined, entityId: string, vector = emptyVector, scope = ownScope()) =>
-    call(pullYjsDocument, {
-      path: scope,
-      body: { entityType: 'attachment', entityId, stateVector: toBase64url(vector) },
-      headers: headers(cookie),
-    });
+    call(pullYjsDocument, { path: scope, body: { entityType: 'attachment', entityId, stateVector: toBase64url(vector) }, headers: headers(cookie) });
 
   const push = (cookie: string | undefined, entityId: string, generation: string, update: Uint8Array, scope = ownScope()) =>
     call(pushYjsUpdate, {
@@ -177,13 +173,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
 
   /** An attachment in `tenant` holding `description`, created by `createdBy` (the tenant's user by default). */
   const arrange = async (description: string | null, { tenant = owner, createdBy }: { tenant?: TestTenant; createdBy?: string } = {}) => {
-    const attachment = await seedAttachment({
-      tenantId: tenant.tenantId,
-      organizationId: tenant.organization.id,
-      createdBy: createdBy ?? tenant.user.id,
-      description: '',
-      members: tenant === owner ? [member.id] : [],
-    });
+    const attachment = await seedAttachment(tenant, { createdBy, description: '', members: tenant === owner ? [member.id] : [] });
     await adminDb.update(attachmentsTable).set({ description }).where(eq(attachmentsTable.id, attachment.id));
     removals.push(async () => {
       await adminDb.delete(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, attachment.id));
@@ -509,10 +499,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
     const put = (entityId: string, description: string) =>
       call(updateAttachment, {
         path: { ...ownScope(), attachmentId: entityId },
-        body: {
-          ops: { description },
-          stx: mockStxFor('description'),
-        },
+        body: { ops: { description }, stx: mockStxFor('description') },
         headers: headers(owner.sessionCookie),
       });
 

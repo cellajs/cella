@@ -70,11 +70,7 @@ export const mockOrganizationResponse = (key = 'organization:default') =>
       tenantId,
     });
 
-    return {
-      ...base,
-      ...mockActorRefs(base, key),
-      included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) },
-    };
+    return { ...base, ...mockActorRefs(base, key), included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) } };
   });
 export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationsSent: 12 });
 

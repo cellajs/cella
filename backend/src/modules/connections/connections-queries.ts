@@ -5,15 +5,11 @@ import { type ConnectionModel, connectionsTable, type InsertConnectionModel } fr
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
-
-interface FindConnectionsByTenantOpts {
-  tenantId: string;
-}
+import { pick } from '#/utils/pick';
 
 /** The tenant's connections, oldest first. */
-export const findConnectionsByTenant = async (ctx: DbContext, { tenantId }: FindConnectionsByTenantOpts) => {
-  return ctx.var.db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, tenantId)).orderBy(connectionsTable.createdAt);
-};
+export const findConnectionsByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) =>
+  ctx.var.db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, tenantId)).orderBy(connectionsTable.createdAt);
 
 interface FindConnectionByIdOpts {
   id: string;
@@ -31,22 +27,10 @@ export const findConnectionById = async (ctx: DbContext, { id, tenantId }: FindC
   return row;
 };
 
-interface FindConnectionEntryOpts {
-  id: string;
-}
-
 /** A connection with the organization its tenant holds (null before the organization exists): what the entry page shows. */
-export const findConnectionEntry = async (ctx: DbContext, { id }: FindConnectionEntryOpts) => {
+export const findConnectionEntry = async (ctx: DbContext, { id }: { id: string }) => {
   const [row] = await ctx.var.db
-    .select({
-      connection: connectionsTable,
-      organization: {
-        id: organizationsTable.id,
-        name: organizationsTable.name,
-        slug: organizationsTable.slug,
-        thumbnailUrl: organizationsTable.thumbnailUrl,
-      },
-    })
+    .select({ connection: connectionsTable, organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']) })
     .from(connectionsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, connectionsTable.tenantId))
     .where(eq(connectionsTable.id, id))
@@ -98,12 +82,8 @@ export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimVal
       ),
     );
 
-interface InsertConnectionOpts {
-  values: InsertConnectionModel;
-}
-
 /** Inserts a connection; the unique tenant-and-kind index refuses a second SSO connection of a tenant. */
-export const insertConnection = async (ctx: DbContext, { values }: InsertConnectionOpts): Promise<ConnectionModel> => {
+export const insertConnection = async (ctx: DbContext, { values }: { values: InsertConnectionModel }): Promise<ConnectionModel> => {
   const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning();
   return row;
 };
@@ -124,13 +104,8 @@ export const updateConnection = async (ctx: DbContext, { id, tenantId, values }:
   return row;
 };
 
-interface DeleteConnectionOpts {
-  id: string;
-  tenantId: string;
-}
-
 /** Deletes one tenant's connection; the deleted row, or undefined when the tenant holds no such connection. */
-export const deleteConnection = async (ctx: DbContext, { id, tenantId }: DeleteConnectionOpts) => {
+export const deleteConnection = async (ctx: DbContext, { id, tenantId }: { id: string; tenantId: string }) => {
   const [row] = await ctx.var.db
     .delete(connectionsTable)
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
@@ -138,12 +113,8 @@ export const deleteConnection = async (ctx: DbContext, { id, tenantId }: DeleteC
   return row;
 };
 
-interface FindSsoConnectionByTenantOpts {
-  tenantId: string;
-}
-
 /** The tenant's SSO connection (one per tenant), whatever its status; undefined when none. */
-export const findSsoConnectionByTenant = async (ctx: DbContext, { tenantId }: FindSsoConnectionByTenantOpts) => {
+export const findSsoConnectionByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) => {
   const [row] = await ctx.var.db
     .select()
     .from(connectionsTable)
@@ -152,12 +123,8 @@ export const findSsoConnectionByTenant = async (ctx: DbContext, { tenantId }: Fi
   return row;
 };
 
-interface FindActiveSsoConnectionsByTenantsOpts {
-  tenantIds: string[];
-}
-
 /** The active SSO connections of these tenants: the institutions a member could connect their account to. */
-export const findActiveSsoConnectionsByTenants = async (ctx: DbContext, { tenantIds }: FindActiveSsoConnectionsByTenantsOpts) => {
+export const findActiveSsoConnectionsByTenants = async (ctx: DbContext, { tenantIds }: { tenantIds: string[] }) => {
   if (!tenantIds.length) return [];
   return ctx.var.db
     .select()
@@ -174,16 +141,11 @@ export const findActiveSsoFederations = async (ctx: DbContext) => {
   return rows.map(({ issuer }) => issuer);
 };
 
-interface FindUserSsoConnectionOpts {
-  userId: string;
-  tenantId: string;
-}
-
 /**
  * The tenant's connection the user holds an identity through, if any: the fact that binds them to the tenant's
  * sign-in policy. Externals without such an identity are not bound.
  */
-export const findUserSsoConnection = async (ctx: DbContext, { userId, tenantId }: FindUserSsoConnectionOpts) => {
+export const findUserSsoConnection = async (ctx: DbContext, { userId, tenantId }: { userId: string; tenantId: string }) => {
   const [row] = await ctx.var.db
     .select({ id: connectionsTable.id })
     .from(identitiesTable)
@@ -193,23 +155,14 @@ export const findUserSsoConnection = async (ctx: DbContext, { userId, tenantId }
   return row;
 };
 
-interface FindAddressGovernanceOpts {
-  email: string;
-}
-
 /**
  * The connection and tenant policy that govern an address proven through a federation: the ledger row's proof
  * names the federation, the account's identity through it names the connection, the connection's tenant holds the
  * policy. Undefined for an address proven any other way.
  */
-export const findAddressGovernance = async (ctx: DbContext, { email }: FindAddressGovernanceOpts) => {
+export const findAddressGovernance = async (ctx: DbContext, { email }: { email: string }) => {
   const [row] = await ctx.var.db
-    .select({
-      connectionId: connectionsTable.id,
-      displayName: connectionsTable.displayName,
-      status: connectionsTable.status,
-      authStrategies: tenantsTable.authStrategies,
-    })
+    .select({ connectionId: connectionsTable.id, ...pick(connectionsTable, ['displayName', 'status']), authStrategies: tenantsTable.authStrategies })
     .from(emailsTable)
     .innerJoin(
       identitiesTable,

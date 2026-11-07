@@ -6,14 +6,13 @@ import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Tx } from '#/db/db';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { insertSeenBy } from '#/modules/seen/seen-queries';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization } from '../helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -34,21 +33,7 @@ describe.skipIf(!isSeenTracked('attachment'))('markSeen and rows the caller cann
 
   const insertAttachment = async (createdBy: string, overrides: Record<string, unknown> = {}) => {
     const id = generateId();
-    const row = buildInsertableProduct(
-      'attachment',
-      {
-        id,
-        tenantId: organization.tenantId,
-        ...plan.channelIdColumns,
-        createdBy,
-        updatedBy: null,
-        deletedBy: null,
-        createdAt: new Date().toISOString(),
-        ...overrides,
-      },
-      id,
-    );
-    await insertAttachmentRow(row);
+    await insertAttachmentIn(plan, { id, tenantId: organization.tenantId, createdBy, createdAt: new Date().toISOString(), ...overrides });
     return id;
   };
 

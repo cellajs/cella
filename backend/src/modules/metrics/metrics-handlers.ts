@@ -6,8 +6,6 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(metricRoutes.getPublicCounts, async (ctx) => {
-  return ctx.json(await getPublicCountsOp(ctx), 200);
-});
+app.openapi(metricRoutes.getPublicCounts, async (ctx) => ctx.json(await getPublicCountsOp(ctx), 200));
 
 export const metricHandlers = app;

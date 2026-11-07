@@ -95,10 +95,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const otherStream = await openStream(user.id, other);
     const currentStream = await openStream(user.id, current);
 
-    const { response } = await call(revokeMySessions, {
-      body: { ids: [stalled.id, other.id] },
-      headers: current.headers,
-    });
+    const { response } = await call(revokeMySessions, { body: { ids: [stalled.id, other.id] }, headers: current.headers });
     expect(response.status).toBe(200);
 
     await expectClosedWith(otherStream, 'unauthorized');

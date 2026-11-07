@@ -19,8 +19,6 @@ export const getOrderColumns = <T extends Record<string, AnyColumn | SQLWrapper>
 }: GetOrderColumnsOpts<T, U>): SQL[] => {
   const orderFunc = order === 'asc' ? asc : desc;
   const selected = columns[sort];
-  const primaryOrder = orderFunc(selected);
   const stableOrder = tieBreaker && selected !== tieBreaker ? [orderFunc(tieBreaker)] : [];
-
-  return [primaryOrder, ...stableOrder, ...append];
+  return [orderFunc(selected), ...stableOrder, ...append];
 };

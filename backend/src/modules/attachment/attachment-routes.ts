@@ -62,11 +62,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
     method: 'get',
     path: '/{attachmentId}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    xTool: {
-      description: 'Read one attachment: its metadata and the description as text.',
-      approvalRequired: false,
-      entity: 'attachment',
-    },
+    xTool: { description: 'Read one attachment: its metadata and the description as text.', approvalRequired: false, entity: 'attachment' },
     summary: 'Get attachment',
     description: 'Returns a single attachment by ID.',
     request: { params: attachmentParamSchema },
@@ -77,11 +73,7 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
     path: '/{attachmentId}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    xTool: {
-      description: 'Rename an attachment or replace its description.',
-      approvalRequired: true,
-      entity: 'attachment',
-    },
+    xTool: { description: 'Rename an attachment or replace its description.', approvalRequired: true, entity: 'attachment' },
     summary: 'Update attachment',
     description: 'Renames an attachment or replaces its description.',
     request: { params: attachmentParamSchema, body: jsonBody(attachmentUpdateStxBodySchema, mockUpdateAttachmentBody()) },
@@ -127,8 +119,6 @@ export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'
     description:
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentPresignedUrlsBodySchema, mockPresignedUrlsBody()) },
-    responses: {
-      200: json('Presigned URLs', batchResponseSchema(attachmentPresignedUrlSchema), mockPresignedUrlsResponse()),
-    },
+    responses: { 200: json('Presigned URLs', batchResponseSchema(attachmentPresignedUrlSchema), mockPresignedUrlsResponse()) },
   }),
 });

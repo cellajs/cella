@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
-import type { HealthComponent, HealthStatus } from '#/lib/health-helpers';
+import type { HealthComponent } from '#/lib/health-helpers';
 import { jobsSchema } from '#/lib/pg-boss';
 
 /** The maintainer stamps `cron_on` every half minute; older than this and no process is scheduling. */
@@ -89,13 +89,7 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
     deadLetterDepth: row.dead_letter ? (queuedByName.get(row.dead_letter) ?? 0) : null,
   }));
   const cronOn = version.cron_on ? new Date(version.cron_on) : null;
-  return {
-    installed: true,
-    schema: jobsSchema,
-    cronOn: cronOn?.toISOString() ?? null,
-    cronAgeMs: cronOn ? now - cronOn.getTime() : null,
-    queues,
-  };
+  return { installed: true, schema: jobsSchema, cronOn: cronOn?.toISOString() ?? null, cronAgeMs: cronOn ? now - cronOn.getTime() : null, queues };
 }
 
 /**
@@ -105,30 +99,15 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
  * @param expectsCron - Whether any cron job is declared, so an idle store without jobs stays healthy.
  */
 export function mapJobsComponent(snapshot: JobsHealthSnapshot, expectsCron: boolean): HealthComponent {
-  const reasons: string[] = [];
-  let status: HealthStatus = 'healthy';
   if (!snapshot.installed) {
-    return {
-      status: 'degraded',
-      checkedVia: 'local',
-      reason: 'jobs_not_installed',
-      details: { schema: snapshot.schema, queues: [] },
-    };
+    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_not_installed', details: { schema: snapshot.schema, queues: [] } };
   }
-  if (expectsCron && (snapshot.cronAgeMs === null || snapshot.cronAgeMs > cronStaleMs)) {
-    status = 'degraded';
-    reasons.push('cron_stale');
-  }
-  if (snapshot.queues.some((queue) => queue.warningQueueSize !== null && queue.queued > queue.warningQueueSize)) {
-    status = 'degraded';
-    reasons.push('queue_backlog');
-  }
-  if (snapshot.queues.some((queue) => (queue.deadLetterDepth ?? 0) > 0)) {
-    status = 'degraded';
-    reasons.push('dead_letters');
-  }
+  const reasons: string[] = [];
+  if (expectsCron && (snapshot.cronAgeMs === null || snapshot.cronAgeMs > cronStaleMs)) reasons.push('cron_stale');
+  if (snapshot.queues.some((queue) => queue.warningQueueSize !== null && queue.queued > queue.warningQueueSize)) reasons.push('queue_backlog');
+  if (snapshot.queues.some((queue) => (queue.deadLetterDepth ?? 0) > 0)) reasons.push('dead_letters');
   return {
-    status,
+    status: reasons.length ? 'degraded' : 'healthy',
     checkedVia: 'local',
     ageMs: snapshot.cronAgeMs,
     reason: reasons.length ? reasons.join(',') : undefined,

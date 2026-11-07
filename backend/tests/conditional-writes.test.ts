@@ -115,12 +115,7 @@ describe('Conditional writes', async () => {
   });
 
   it('refuses an attachment update whose tag a write since has replaced', async () => {
-    const attachment = await seedAttachment({
-      tenantId: tenant.tenantId,
-      organizationId: tenant.organization.id,
-      createdBy: tenant.user.id,
-      description: paragraph('before'),
-    });
+    const attachment = await seedAttachment(tenant, { description: paragraph('before') });
     removals.push(attachment.remove);
     const path = { ...orgPath(), attachmentId: attachment.id };
     const rename = (name: string, ifMatch?: string) =>

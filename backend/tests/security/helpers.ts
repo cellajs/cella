@@ -1,9 +1,10 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import type { EntityRole } from 'shared';
 import { expect } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, setCookiePair } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
@@ -62,6 +63,15 @@ export async function createFactorOrgUser(...args: Parameters<typeof createOrgUs
   await insertPasskey(user);
   return user;
 }
+
+/** The membership of `userId` in the organization itself, none of a channel below it. */
+export const orgMembershipOf = async (userId: string, organizationId: string) =>
+  (
+    await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, organizationId)))
+  )[0];
 
 /** Empties tenant-scoped and auth tables and everything that references them. */
 export async function clearSecurityTestData() {

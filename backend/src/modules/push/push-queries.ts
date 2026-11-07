@@ -12,10 +12,6 @@ interface PushSubscriptionInput {
   userAgent: string | null;
 }
 
-interface UpsertPushSubscriptionOpts {
-  values: PushSubscriptionInput;
-}
-
 /** Subscriptions a user keeps, the most recently seen: a notification fan-out loads all of them. */
 const pushSubscriptionsPerUser = 20;
 
@@ -27,7 +23,7 @@ const pushSubscriptionsPerUser = 20;
  * refused.
  * @returns The stored row, or null when the endpoint stays with another user.
  */
-export async function upsertPushSubscription(ctx: DbContext, { values }: UpsertPushSubscriptionOpts) {
+export async function upsertPushSubscription(ctx: DbContext, { values }: { values: PushSubscriptionInput }) {
   const lastSeenAt = getIsoDate();
   return ctx.var.db.transaction(async (tx) => {
     const [row] = await tx
@@ -52,13 +48,8 @@ export async function upsertPushSubscription(ctx: DbContext, { values }: UpsertP
   });
 }
 
-interface DeletePushSubscriptionOpts {
-  userId: string;
-  endpoint: string;
-}
-
 /** Scoped to the caller: an endpoint another user registered deletes nothing. */
-export async function deletePushSubscription(ctx: DbContext, { userId, endpoint }: DeletePushSubscriptionOpts): Promise<number> {
+export async function deletePushSubscription(ctx: DbContext, { userId, endpoint }: { userId: string; endpoint: string }): Promise<number> {
   const deleted = await ctx.var.db
     .delete(pushSubscriptionsTable)
     .where(and(eq(pushSubscriptionsTable.endpoint, endpoint), eq(pushSubscriptionsTable.userId, userId)))
@@ -66,22 +57,14 @@ export async function deletePushSubscription(ctx: DbContext, { userId, endpoint 
   return deleted.length;
 }
 
-interface FindSubscriptionsByUserIdsOpts {
-  userIds: string[];
-}
-
 /** Every subscription of these users, one per browser installation. */
-export async function findSubscriptionsByUserIds(ctx: DbContext, { userIds }: FindSubscriptionsByUserIdsOpts) {
+export async function findSubscriptionsByUserIds(ctx: DbContext, { userIds }: { userIds: string[] }) {
   if (userIds.length === 0) return [];
   return ctx.var.db.select().from(pushSubscriptionsTable).where(inArray(pushSubscriptionsTable.userId, userIds));
 }
 
-interface DeleteSubscriptionsByEndpointsOpts {
-  endpoints: string[];
-}
-
 /** Sender cleanup: the push service said the endpoint is gone (404/410). */
-export async function deleteSubscriptionsByEndpoints(ctx: DbContext, { endpoints }: DeleteSubscriptionsByEndpointsOpts): Promise<void> {
+export async function deleteSubscriptionsByEndpoints(ctx: DbContext, { endpoints }: { endpoints: string[] }): Promise<void> {
   if (endpoints.length === 0) return;
   await ctx.var.db.delete(pushSubscriptionsTable).where(inArray(pushSubscriptionsTable.endpoint, endpoints));
 }

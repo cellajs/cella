@@ -9,7 +9,7 @@ import { tokensTable } from '#/modules/auth/tokens/tokens-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, magicLinkEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { adminDb, authCookie, createTestOrganization, createUser, insertTestSession, insertTestToken, mailsTo } from '../helpers';
+import { adminDb, authCookie, createTestOrganization, createTestUser, insertTestSession, insertTestToken, mailsTo } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
@@ -91,15 +91,11 @@ describe('Account enumeration', async () => {
 
   /** A raw JSON request: the SDK drops body fields its schema lacks, and these tests send them on purpose. */
   const post = (path: string, body: unknown, cookie?: string) =>
-    app.request(path, {
-      method: 'POST',
-      headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) },
-      body: JSON.stringify(body),
-    });
+    app.request(path, { method: 'POST', headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body) });
 
   /** An account holding a passkey, and an address nobody holds. */
   async function accountAndStranger() {
-    const account = await createUser(`holder-${nanoid(8)}@security-test.com`.toLowerCase());
+    const account = await createTestUser(`holder-${nanoid(8)}@security-test.com`.toLowerCase());
     await insertPasskey(account);
     return { account, stranger: `nobody-${nanoid(8)}@security-test.com`.toLowerCase() };
   }
@@ -159,7 +155,7 @@ describe('Account enumeration', async () => {
     expect(await checkEmail(account.email)).toEqual(await checkEmail(stranger));
 
     // A browser that signed in, to another account: the prober's own.
-    const prober = await createUser(`prober-${nanoid(8)}@security-test.com`.toLowerCase());
+    const prober = await createTestUser(`prober-${nanoid(8)}@security-test.com`.toLowerCase());
     const proberBrowser = await browserOf(prober);
     const forAccount = await checkEmail(account.email, proberBrowser);
     expect(forAccount).toEqual(await checkEmail(stranger, proberBrowser));
@@ -270,7 +266,7 @@ describe('Account enumeration', async () => {
     expect(open).toEqual({ status: 302, location: `${appConfig.frontendUrl}/auth/email-verification/signup?provider=github`, type: undefined });
 
     // Signed in to an own account, connecting the provider account: held or free, the connect waits on the mail.
-    const prober = await createUser(`prober-${nanoid(8)}@security-test.com`.toLowerCase());
+    const prober = await createTestUser(`prober-${nanoid(8)}@security-test.com`.toLowerCase());
     const connectPin = async () => {
       const { id: sessionId } = await insertTestSession(prober);
       return authCookie('oauth-connect', (await insertTestToken('oauth-connect', prober, { sessionId })).raw);

@@ -19,19 +19,9 @@ const long: BucketLimits = { points: 100, duration: threeWeeks, blockDuration: t
  * the hourly series only, so a guesser who waits out every block still tries at most 100 codes in three weeks.
  */
 const tiers: Tier[] = [
-  {
-    store: getRateLimiterInstance({ ...hourly, keyPrefix: 'totpAccount' }),
-    limits: hourly,
-    counts: 'fail',
-    resetsOnSuccess: true,
-  },
+  { store: getRateLimiterInstance({ ...hourly, keyPrefix: 'totpAccount' }), limits: hourly, counts: 'fail', resetsOnSuccess: true },
   slowTier('totpAccount'),
-  {
-    store: getRateLimiterInstance({ ...long, keyPrefix: 'totpAccount:long' }),
-    limits: long,
-    counts: 'fail',
-    resetsOnSuccess: false,
-  },
+  { store: getRateLimiterInstance({ ...long, keyPrefix: 'totpAccount:long' }), limits: long, counts: 'fail', resetsOnSuccess: false },
 ];
 
 /**

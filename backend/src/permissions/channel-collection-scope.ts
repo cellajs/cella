@@ -53,8 +53,7 @@ export const resolveChannelCollectionReadScope = (
   const byLevel = new Map<ChannelEntityType, { managedIds: Set<string>; publishedIds: Set<string> }>();
 
   for (const membership of access.memberships) {
-    if (membership.organizationId !== organizationId) continue;
-    if (!ancestors.includes(membership.channelType)) continue;
+    if (membership.organizationId !== organizationId || !ancestors.includes(membership.channelType)) continue;
 
     const grantLevel = membership.channelType;
     const isOrganization = grantLevel === 'organization';
@@ -65,8 +64,7 @@ export const resolveChannelCollectionReadScope = (
     const managed = permissions.update === 1;
 
     if (isOrganization) {
-      if (managed) orgWide = 'all';
-      else orgWide ??= 'published';
+      orgWide = managed ? 'all' : (orgWide ?? 'published');
       continue;
     }
 
@@ -78,15 +76,12 @@ export const resolveChannelCollectionReadScope = (
 
   if (orgWide === 'all') return { orgWide, ancestorScopes: [] };
 
-  const ancestorScopes: ChannelAncestorScope[] = [];
-  for (const [levelType, { managedIds, publishedIds }] of byLevel) {
-    ancestorScopes.push({
-      channelType: levelType,
-      managedIds: [...managedIds],
-      // Managed ids subsume the published-only slice for the same id
-      publishedIds: [...publishedIds].filter((id) => !managedIds.has(id)),
-    });
-  }
+  const ancestorScopes = [...byLevel].map(([channelType, { managedIds, publishedIds }]) => ({
+    channelType,
+    managedIds: [...managedIds],
+    // Managed ids subsume the published-only slice for the same id
+    publishedIds: [...publishedIds].filter((id) => !managedIds.has(id)),
+  }));
   return { orgWide, ancestorScopes };
 };
 
@@ -169,7 +164,5 @@ export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, col
 };
 
 /** `excludeArchived` for the LEFT-join variant: a row the caller archived is hidden, not shown as a discovery row. */
-export const excludeArchivedWhere = (columns: ChannelListReadColumns): SQL | undefined => {
-  if (!columns.membershipArchived) return undefined;
-  return or(isNull(columns.membershipUserId), eq(columns.membershipArchived, false));
-};
+export const excludeArchivedWhere = (columns: ChannelListReadColumns): SQL | undefined =>
+  columns.membershipArchived ? or(isNull(columns.membershipUserId), eq(columns.membershipArchived, false)) : undefined;

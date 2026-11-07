@@ -24,6 +24,5 @@ export function homeChannelOf(
   row: Record<string, unknown> & { organizationId: string },
 ): { id: string; type: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(productType, row);
-  if (deepest) return { id: deepest.id, type: deepest.type };
-  return { id: row.organizationId, type: 'organization' };
+  return deepest ? { id: deepest.id, type: deepest.type } : { id: row.organizationId, type: 'organization' };
 }

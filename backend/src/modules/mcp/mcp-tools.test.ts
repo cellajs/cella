@@ -102,9 +102,7 @@ describe('buildMcpTools', () => {
     expect(Object.keys((create.descriptor.inputSchema as { properties: object }).properties)).toEqual(['items']);
 
     // A sync transaction the model sends is replaced by the server's own, item by item.
-    const outcome = await create.call(ctx, {
-      items: [{ name: 'a', stx: { mutationId: 'model', sourceId: 'model' } }, { name: 'b' }],
-    });
+    const outcome = await create.call(ctx, { items: [{ name: 'a', stx: { mutationId: 'model', sourceId: 'model' } }, { name: 'b' }] });
     if (!outcome.ok) throw new Error(outcome.detail);
     const body = outcome.output as { name: string; stx: { mutationId: string; sourceId: string } }[];
     expect(body.map((item) => item.name)).toEqual(['a', 'b']);

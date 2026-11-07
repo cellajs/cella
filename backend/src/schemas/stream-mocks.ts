@@ -21,11 +21,7 @@ export const mockStreamChange = (key = 'stream-change:default') =>
 
 /** The user's own membership changed: an ephemeral signal to one user. */
 export const mockStreamSignal = (key = 'stream-signal:default') =>
-  withFakerSeed(key, () => ({
-    type: 'membership.changed',
-    organizationId: mockUuid(),
-    subjectId: mockUuid(),
-  }));
+  withFakerSeed(key, () => ({ type: 'membership.changed', organizationId: mockUuid(), subjectId: mockUuid() }));
 
 /** A session sign-in replaced: the client reconnects with the newer session. */
 export const mockStreamError = () => ({ code: 'session_replaced' as const, message: 'Session replaced' });

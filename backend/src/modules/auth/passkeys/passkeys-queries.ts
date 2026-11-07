@@ -14,25 +14,16 @@ const {
   ...passkeyColumns
 } = getColumns(passkeysTable);
 
-interface FindPasskeyCredentialsByUserOpts {
-  userId: string;
-}
-
 /** The credential ids of the user's passkeys and their transports, which a challenge for the user names to the browser. */
-export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: FindPasskeyCredentialsByUserOpts) =>
+export const findPasskeyCredentialsByUser = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db
     .select({ credentialId: passkeysTable.credentialId, transports: passkeysTable.transports })
     .from(passkeysTable)
     .where(eq(passkeysTable.userId, userId));
 
-interface FindPasskeysByUserOpts {
-  userId: string;
-}
-
 /** The user's passkeys as a response carries them ({@link passkeyColumns}), for the account page. */
-export const findPasskeysByUser = async (ctx: DbContext, { userId }: FindPasskeysByUserOpts) => {
-  return ctx.var.db.select(passkeyColumns).from(passkeysTable).where(eq(passkeysTable.userId, userId));
-};
+export const findPasskeysByUser = async (ctx: DbContext, { userId }: { userId: string }) =>
+  ctx.var.db.select(passkeyColumns).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 
 interface FindPasskeyByCredentialIdOpts {
   credentialId: string;
@@ -50,15 +41,11 @@ export const findPasskeyByCredentialId = async (ctx: DbContext, { credentialId, 
   return passkey;
 };
 
-interface InsertPasskeyOpts {
-  values: InsertPasskeyModel;
-}
-
 /**
  * Stores a passkey and returns it as a response carries it ({@link passkeyColumns}); undefined when its credential id is
  * registered already, to this account or another.
  */
-export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpts) => {
+export const insertPasskey = async (ctx: DbContext, { values }: { values: InsertPasskeyModel }) => {
   const [newPasskey] = await ctx.var.db
     .insert(passkeysTable)
     .values(values)
@@ -67,16 +54,11 @@ export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpt
   return newPasskey;
 };
 
-interface UpdatePasskeyCounterOpts {
-  id: string;
-  counter: number;
-}
-
 /**
  * Stores the new signature counter only while the stored one is still lower (or both are 0, for an authenticator
  * without a counter); undefined otherwise, so of two copies of one authenticator answering at once, one fails.
  */
-export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: UpdatePasskeyCounterOpts) => {
+export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: { id: string; counter: number }) => {
   const counterAdvances = counter > 0 ? lt(passkeysTable.counter, counter) : eq(passkeysTable.counter, 0);
   const [stored] = await ctx.var.db
     .update(passkeysTable)
@@ -86,13 +68,8 @@ export const updatePasskeyCounter = async (ctx: DbContext, { id, counter }: Upda
   return stored;
 };
 
-interface DeletePasskeyOpts {
-  userId: string;
-  id: string;
-}
-
 /** Deletes the user's passkey with this id; undefined when the user holds none by that id. */
-export const deletePasskey = async (ctx: DbContext, { userId, id }: DeletePasskeyOpts) => {
+export const deletePasskey = async (ctx: DbContext, { userId, id }: { userId: string; id: string }) => {
   const [deleted] = await ctx.var.db
     .delete(passkeysTable)
     .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.id, id)))
@@ -100,12 +77,8 @@ export const deletePasskey = async (ctx: DbContext, { userId, id }: DeletePasske
   return deleted;
 };
 
-interface InsertPasskeyChallengeOpts {
-  values: typeof passkeyChallengesTable.$inferInsert;
-}
-
 /** Stores a challenge handed out to a browser. */
-export const insertPasskeyChallenge = async (ctx: DbContext, { values }: InsertPasskeyChallengeOpts) => {
+export const insertPasskeyChallenge = async (ctx: DbContext, { values }: { values: typeof passkeyChallengesTable.$inferInsert }) => {
   await ctx.var.db.insert(passkeyChallengesTable).values(values);
 };
 
@@ -120,12 +93,8 @@ export const deleteStalePasskeyChallenges = async (ctx: DbContext, { previousHas
   await ctx.var.db.delete(passkeyChallengesTable).where(previousHash ? or(eq(passkeyChallengesTable.challengeHash, previousHash), expired) : expired);
 };
 
-interface DeletePasskeyChallengeOpts {
-  challengeHash: string;
-}
-
 /** Takes a challenge out of play; returns what it was issued for, or undefined when it does not exist. */
-export const deletePasskeyChallenge = async (ctx: DbContext, { challengeHash }: DeletePasskeyChallengeOpts) => {
+export const deletePasskeyChallenge = async (ctx: DbContext, { challengeHash }: { challengeHash: string }) => {
   const [issued] = await ctx.var.db
     .delete(passkeyChallengesTable)
     .where(eq(passkeyChallengesTable.challengeHash, challengeHash))

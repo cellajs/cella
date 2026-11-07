@@ -29,6 +29,9 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
  */
 export const translatedError = (key: `error:${TemplateErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
 
+/** The error of a field that holds `min` to `maxLength.field` characters. */
+const lengthError = (name: string, min: number) => translatedError('error:invalid_between_num', { name, min, max: maxLength.field });
+
 export const validIdSchema = z.string().max(maxLength.id);
 
 export const validTempIdSchema = z
@@ -199,12 +202,10 @@ export const csvQuerySchema = <T extends z.ZodType<unknown, string>>(item: T, ma
     .max(maxLength.url)
     .optional()
     .transform((value) =>
-      value
-        ? value
-            .split(',')
-            .map((entry) => entry.trim())
-            .filter(Boolean)
-        : [],
+      (value ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
     )
     .pipe(z.array(item).max(maxItems))
     .openapi({ description: 'Comma-separated values' });
@@ -229,9 +230,7 @@ export const locationSchema = z.object({ Location: z.string() });
 export const refineWithType =
   <T>(check: (val: T) => boolean, errorType: TemplateErrorKey) =>
   (val: T, ctx: z.RefinementCtx) => {
-    if (!check(val)) {
-      ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
-    }
+    if (!check(val)) ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
   };
 
 export const validUuidSchema = z.uuid(translatedError('error:invalid_id'));
@@ -290,22 +289,17 @@ const namePattern = /^[^\x00-\x1F\x7F-\x9F<>]+$/;
 export const validNameSchema = z
   .string()
   .trim()
-  .min(1, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
+  .min(1, lengthError('Name', 1))
+  .max(maxLength.field, lengthError('Name', 1))
   .regex(namePattern, translatedError('error:invalid_name'));
 
 /** An email address, trimmed and lowercased before it is checked; the raw input is bounded first. */
 export const validEmailSchema = z
   .string()
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
+  .max(maxLength.field, lengthError('Email', 4))
   .trim()
   .toLowerCase()
-  .pipe(
-    z
-      .email(translatedError('error:invalid_email'))
-      .min(4, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field })),
-  )
+  .pipe(z.email(translatedError('error:invalid_email')).min(4, lengthError('Email', 4)).max(maxLength.field, lengthError('Email', 4)))
   .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
 
 const canonicalDomainPattern = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -317,8 +311,8 @@ export const validDomainSchema = z
   .pipe(
     z
       .string()
-      .min(4, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .min(4, lengthError('Domain', 4))
+      .max(maxLength.field, lengthError('Domain', 4))
       .regex(canonicalDomainPattern, translatedError('error:invalid_domain')),
   )
   .openapi({ type: 'string', format: 'hostname', minLength: 4, maxLength: maxLength.field, pattern: canonicalDomainPattern.source });
@@ -330,8 +324,8 @@ const slugPattern = /^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/;
 /** A slug of 2 to 255 characters, lowercased once it is checked. */
 export const validSlugSchema = z
   .string()
-  .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .min(2, lengthError('Slug', 2))
+  .max(maxLength.field, lengthError('Slug', 2))
   .regex(slugPattern, translatedError('error:invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 

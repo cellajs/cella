@@ -3,7 +3,7 @@ import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'driz
 import type { EntityRole, TenantKind } from 'shared';
 import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { preconditionWhere } from '#/core/preconditions';
-import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
@@ -15,47 +15,30 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { tenantOfKind } from '#/modules/tenants/tenants-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 import { searchFilter } from '#/utils/sql';
 
-interface FindOrganizationByTenantOpts {
-  tenantId: string;
-}
-
 /** The organization a tenant holds (organizations.tenant_id is unique); undefined before it is created. */
-export const findOrganizationByTenant = async (ctx: DbContext, { tenantId }: FindOrganizationByTenantOpts) => {
+export const findOrganizationByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) => {
   const [organization] = await ctx.var.db.select().from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId)).limit(1);
   return organization;
 };
 
-interface CountOrganizationsByTenantOpts {
-  tenantId: string;
-}
-
 /** How many organizations a tenant holds: 0 or 1, as `organizations.tenant_id` is unique. */
-export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
+export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: { tenantId: string }) => {
   const [result] = await ctx.var.db.select({ count: count() }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
   return result.count;
 };
 
-interface InsertOrganizationsOpts {
-  orgs: InsertOrganizationModel[];
-}
-
 /** Inserts organization rows and returns them as stored. */
-export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrganizationsOpts) => {
-  return ctx.var.db.insert(organizationsTable).values(orgs).returning();
-};
-
-interface UpdateOrganizationOpts {
-  id: string;
-  values: Partial<InsertOrganizationModel>;
-}
+export const insertOrganizations = async (ctx: DbContext, { orgs }: { orgs: InsertOrganizationModel[] }) =>
+  ctx.var.db.insert(organizationsTable).values(orgs).returning();
 
 /**
  * Writes `values` to the organization within the request's tenant. Undefined when no row matched, as when a write
  * moved the row past the request's preconditions (`preconditionWhere`).
  */
-export const updateOrganization = async (ctx: ActorContext, { id, values }: UpdateOrganizationOpts) => {
+export const updateOrganization = async (ctx: ActorContext, { id, values }: { id: string; values: Partial<InsertOrganizationModel> }) => {
   const { db, tenantId } = ctx.var;
   const [updated] = await db
     .update(organizationsTable)
@@ -65,15 +48,11 @@ export const updateOrganization = async (ctx: ActorContext, { id, values }: Upda
   return updated;
 };
 
-interface PublishOrganizationOpts {
-  id: string;
-}
-
 /**
  * Stamps a draft organization published. Undefined when it was not a draft, when another call published it first, or
  * when a write moved it past the request's preconditions.
  */
-export const publishOrganization = async (ctx: UserContext, { id }: PublishOrganizationOpts) => {
+export const publishOrganization = async (ctx: UserContext, { id }: { id: string }) => {
   const { db, tenantId, user } = ctx.var;
   const at = getIsoDate();
   const [published] = await db
@@ -146,12 +125,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   const orderBy = getOrderColumns({
     sort,
     order,
-    columns: {
-      id: organizationsTable.id,
-      name: organizationsTable.name,
-      createdAt: organizationsTable.createdAt,
-      displayOrder: membershipsTable.displayOrder,
-    },
+    columns: { ...pick(organizationsTable, ['id', 'name', 'createdAt']), displayOrder: membershipsTable.displayOrder },
     tieBreaker: organizationsTable.id,
   });
 
@@ -177,27 +151,19 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     .limit(limit)
     .offset(offset);
 
-  const totalSource: ListTotalSource = {
-    kind: 'exact',
-    getTotal: async () => {
-      if (isSystemAdmin) {
-        const [{ total }] = await db
-          .select({ total: count() })
-          .from(organizationsTable)
-          .where(and(...orgWhere));
-        return total;
-      }
-
-      const baseQuery = db
-        .select({ id: organizationsTable.id })
+  const totalQuery = isSystemAdmin
+    ? db
+        .select({ total: count() })
         .from(organizationsTable)
-        .innerJoin(membershipsTable, membershipOn)
         .where(and(...orgWhere))
-        .as('organizations');
-      const [{ total }] = await db.select({ total: count() }).from(baseQuery);
-      return total;
-    },
-  };
+    : db.select({ total: count() }).from(
+        db
+          .select({ id: organizationsTable.id })
+          .from(organizationsTable)
+          .innerJoin(membershipsTable, membershipOn)
+          .where(and(...orgWhere))
+          .as('organizations'),
+      );
 
-  return resolveListTotal(itemsQuery, totalSource);
+  return resolveListTotal(itemsQuery, exactTotal(totalQuery));
 };

@@ -68,12 +68,8 @@ export const findInviteeAccounts = async (ctx: OrgContext, { emails, entityType,
     .where(inArray(emailsTable.email, emails));
 };
 
-interface FindAccountNamesAndLanguagesOpts {
-  userIds: string[];
-}
-
 /** Each account's name and language by its id, for a mail that greets an invited account and reads in its language. */
-export const findAccountNamesAndLanguages = async (ctx: DbContext, { userIds }: FindAccountNamesAndLanguagesOpts) => {
+export const findAccountNamesAndLanguages = async (ctx: DbContext, { userIds }: { userIds: string[] }) => {
   if (!userIds.length) return new Map<string, { name: string; languageCode: string }>();
   const rows = await ctx.var.db
     .select({ id: usersTable.id, name: usersTable.name, languageCode: usersTable.languageCode })
@@ -82,12 +78,8 @@ export const findAccountNamesAndLanguages = async (ctx: DbContext, { userIds }: 
   return new Map(rows.map(({ id, name, languageCode }) => [id, { name, languageCode }]));
 };
 
-interface FindMembershipByIdInOrgOpts {
-  membershipId: string;
-}
-
 /** A membership of the request's organization by id, as `MembershipBase`; one of another organization reads as missing. */
-export const findMembershipByIdInOrg = async (ctx: OrgContext, { membershipId }: FindMembershipByIdInOrgOpts) => {
+export const findMembershipByIdInOrg = async (ctx: OrgContext, { membershipId }: { membershipId: string }) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
     .select(membershipBaseSelect)
@@ -97,35 +89,21 @@ export const findMembershipByIdInOrg = async (ctx: OrgContext, { membershipId }:
   return membership;
 };
 
-interface FindMembershipsByUserIdsAndChannelOpts {
-  userIds: string[];
-  channelId: string;
-}
-
 /** The channel's memberships of these users, as `MembershipBase`; a user without one has no row. */
-export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts) =>
+export const findMembershipsByUserIdsAndChannel = async (ctx: DbContext, { userIds, channelId }: { userIds: string[]; channelId: string }) =>
   ctx.var.db
     .select(membershipBaseSelect)
     .from(membershipsTable)
     .where(and(inArray(membershipsTable.userId, userIds), eq(membershipsTable.channelId, channelId)));
 
-interface DeleteMembershipsByIdsOpts {
-  ids: string[];
-}
-
 /** Deletes memberships by id, only those of the request's organization. */
-export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: DeleteMembershipsByIdsOpts) => {
+export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: { ids: string[] }) => {
   const { db, organizationId } = ctx.var;
   return db.delete(membershipsTable).where(and(inArray(membershipsTable.id, ids), eq(membershipsTable.organizationId, organizationId)));
 };
 
-interface UpdateMembershipOpts {
-  id: string;
-  values: Partial<typeof membershipsTable.$inferInsert>;
-}
-
 /** Updates a membership of the request's organization and returns the row; null when none has the id. */
-export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMembershipOpts) => {
+export const updateMembership = async (ctx: OrgContext, { id, values }: { id: string; values: Partial<typeof membershipsTable.$inferInsert> }) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
     .update(membershipsTable)
@@ -170,10 +148,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     sort,
     order,
     columns: {
-      id: usersTable.id,
-      name: usersTable.name,
-      email: usersTable.email,
-      createdAt: usersTable.createdAt,
+      ...pick(usersTable, ['id', 'name', 'email', 'createdAt']),
       lastSeenAt: lastSeenOrder,
       role: membershipsTable.role,
       lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
@@ -229,14 +204,7 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
     )`.as('row_number');
 
   const rankedMembers = db
-    .select({
-      channelId: membershipsTable.channelId,
-      id: usersTable.id,
-      name: usersTable.name,
-      slug: usersTable.slug,
-      thumbnailUrl: usersTable.thumbnailUrl,
-      rowNumber,
-    })
+    .select({ channelId: membershipsTable.channelId, ...pick(usersTable, ['id', 'name', 'slug', 'thumbnailUrl']), rowNumber })
     .from(membershipsTable)
     .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
     .where(and(eq(membershipsTable.channelType, channelType), inArray(membershipsTable.channelId, channelIds), eq(membershipsTable.role, role)))
@@ -257,12 +225,8 @@ export const findMemberPreviewsByChannels = async (ctx: DbContext, { channelType
   return previews;
 };
 
-interface FindMaxDisplayOrdersOpts {
-  userIds: string[];
-}
-
 /** Each user's highest membership `displayOrder`, the baseline for the next; a user without memberships has no row. */
-export const findMaxDisplayOrders = async (ctx: DbContext, { userIds }: FindMaxDisplayOrdersOpts) => {
+export const findMaxDisplayOrders = async (ctx: DbContext, { userIds }: { userIds: string[] }) => {
   // Grouped by user, so max() covers at least one notNull displayOrder: drizzle's max() would type it nullable.
   return ctx.var.db
     .select({ userId: membershipsTable.userId, maxOrder: sql<number>`max(${membershipsTable.displayOrder})`.mapWith(Number) })
@@ -276,25 +240,20 @@ interface InsertMembershipRowsOpts {
 }
 
 /** Inserts membership rows and returns them as `MembershipBase`. */
-export const insertMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) => {
-  return ctx.var.db.insert(membershipsTable).values(values).returning(membershipBaseSelect);
-};
+export const insertMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) =>
+  ctx.var.db.insert(membershipsTable).values(values).returning(membershipBaseSelect);
 
 /** Inserts the membership rows that do not exist yet; the unique constraint skips the others. */
 export const insertMissingMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) => {
   await ctx.var.db.insert(membershipsTable).values(values).onConflictDoNothing();
 };
 
-interface FindMembershipsByUserIdsOpts {
-  userIds: string[];
-}
-
 /** A membership counts while its tenant is not archived: an organization deleted by its admin leaves every member's list at once. */
 export const inUnarchivedTenant = (tenantId: typeof membershipsTable.tenantId) =>
   sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
 
 /** Every membership of these users that counts, in any organization, as a session reads its own (`loadMemberships`). */
-export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) =>
+export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: { userIds: string[] }) =>
   ctx.var.db
     .select()
     .from(membershipsTable)

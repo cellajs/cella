@@ -124,9 +124,7 @@ export const cookieMock = () => ({
     mockCookieStore.set(name, stringValue);
     ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`);
   }),
-  getAuthCookie: vi.fn().mockImplementation((_ctx, name) => {
-    return mockCookieStore.get(name) || null;
-  }),
+  getAuthCookie: vi.fn().mockImplementation((_ctx, name) => mockCookieStore.get(name) || null),
   deleteAuthCookie: vi.fn().mockImplementation((ctx, name) => {
     mockCookieStore.delete(name);
     ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);

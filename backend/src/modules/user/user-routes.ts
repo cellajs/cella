@@ -36,9 +36,6 @@ export const userRoutes = createXRoutes(['users', 'cella'], {
     description:
       'Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.',
     request: { params: userIdParamSchema, query: slugIncludeQuerySchema },
-    responses: {
-      200: json('User', memberUserSchema.extend({ mfaRequired: z.boolean().optional() }), mockMemberUserResponse()),
-      ...errors(404),
-    },
+    responses: { 200: json('User', memberUserSchema.extend({ mfaRequired: z.boolean().optional() }), mockMemberUserResponse()), ...errors(404) },
   }),
 });

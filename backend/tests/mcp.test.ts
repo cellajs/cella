@@ -5,12 +5,11 @@ import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { mcpInitialScope, resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders } from './fixtures';
 import { adminDb, createTestOrganization } from './helpers';
-import { insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
   bearerHeaders,
@@ -66,8 +65,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   /** An attachment row in the organization's home: a machine uploads no files, so the rows its tools touch come from users. */
   async function insertAttachment(ctx: { org: { tenantId: string }; plan: TestEntityHierarchyPlan }, name: string, createdBy: string) {
     const id = generateId();
-    const columns = { id, name, tenantId: ctx.org.tenantId, ...ctx.plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null };
-    await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
+    await insertAttachmentIn(ctx.plan, { id, name, tenantId: ctx.org.tenantId, createdBy });
     return id;
   }
 

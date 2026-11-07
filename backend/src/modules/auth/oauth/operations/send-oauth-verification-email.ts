@@ -48,18 +48,9 @@ const verificationFor = async (props: Props) => {
   // The address under verification is the provider's, which may differ from the account's own.
   const email = identity.email ?? user.email;
 
-  if (identity.verified && (await findEmail(dbCtx, { email }))) {
-    throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
-  }
+  if (identity.verified && (await findEmail(dbCtx, { email }))) throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
 
-  const token: NewToken = {
-    type: 'oauth-verification',
-    userId: user.id,
-    email,
-    createdBy: user.id,
-    identityId: identity.id,
-    redirectPath,
-  };
+  const token: NewToken = { type: 'oauth-verification', userId: user.id, email, createdBy: user.id, identityId: identity.id, redirectPath };
   return { token, name: user.name, lng: user.languageCode, providerName: readableProviderName(identity.issuer), isNewUser: false };
 };
 
@@ -80,9 +71,7 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
 
   mailer.sendEmails(oauthVerificationEmail, staticProps, recipients).catch((err) => log.error('Failed to send OAuth verification email', { err }));
 
-  if (appConfig.mode === 'development') {
-    console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);
-  }
+  if (appConfig.mode === 'development') console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);
 
   log.info('Verification email sent', { userId: tokenRecord.userId, signUp: !!tokenRecord.pendingSignUp });
 };

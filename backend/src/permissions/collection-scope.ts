@@ -158,9 +158,7 @@ export const resolveCollectionReadFilter = (
     if (readable(id)) return { orgWide: false, scopes: atHome([id]) };
 
     const scopes = conditionalAt([id]);
-    if (scopes.length === 0) {
-      throw new AppError(404, 'not_found', 'warn', { entityType: homeLevel === 'organization' ? entityType : homeLevel });
-    }
+    if (scopes.length === 0) throw new AppError(404, 'not_found', 'warn', { entityType: homeLevel === 'organization' ? entityType : homeLevel });
     return { orgWide: false, scopes };
   }
 

@@ -252,10 +252,8 @@ class CdcWebSocketServer {
 
   /** Forgets the live connection and what it reported. */
   private cleanup(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
     this.currentConnection = null;
     this.workerHealth = null;
     this.noteReading(false);

@@ -3,11 +3,7 @@ import { compareHLC } from '#/core/stx/hlc';
 import { resolveUpdateOps } from '#/core/stx/resolve-update';
 
 const storedHLC = '1700000000000:0001:ccccc';
-const entity = {
-  id: 'a1',
-  name: 'stored',
-  stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: { name: storedHLC } },
-};
+const entity = { id: 'a1', name: 'stored', stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: { name: storedHLC } } };
 // Older than the stored value: a device whose wall clock runs behind.
 const staleClientHLC = '1600000000000:0001:aaaaa';
 

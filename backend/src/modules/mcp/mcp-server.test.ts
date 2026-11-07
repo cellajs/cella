@@ -148,10 +148,7 @@ describe('mcp-server', () => {
 
     it('must not leak SQL or query parameters to the model via a failing query', async () => {
       const res = await call('brokenQueryTool');
-      expect(res?.result).toEqual({
-        content: [{ type: 'text', text: 'server_error: Internal server error' }],
-        isError: true,
-      });
+      expect(res?.result).toEqual({ content: [{ type: 'text', text: 'server_error: Internal server error' }], isError: true });
       expect(JSON.stringify(res)).not.toMatch(/select|mcp_missing_table|param-secret-value/i);
     });
 
@@ -165,12 +162,7 @@ describe('mcp-server', () => {
   });
 
   it('errors when calling a tool that is not registered', async () => {
-    const res = await handle(null, {
-      jsonrpc: '2.0',
-      id: 5,
-      method: 'tools/call',
-      params: { name: 'missing_tool', arguments: {} },
-    });
+    const res = await handle(null, { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'missing_tool', arguments: {} } });
     expect(res?.error?.code).toBe(-32602);
   });
 });

@@ -63,9 +63,7 @@ const main = async () => {
         const cdc = await import('cdc-worker');
         stops.push(cdc.shutdownCdcWorker);
         // The replication loop runs until that stop, so detach it and log failures to prevent unhandled rejections.
-        void cdc.runCdcWorker({ inProcess: true }).catch((error) => {
-          console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
-        });
+        void cdc.runCdcWorker({ inProcess: true }).catch((error) => console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error));
       }
       if (appConfig.services.yjs.enabled) {
         const yjs = await import('yjs-worker');

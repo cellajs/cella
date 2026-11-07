@@ -22,8 +22,7 @@ export const sysAdminGuard = xMiddleware(
     const { user, isSystemAdmin } = ctx.var;
 
     if (!isSystemAdmin) {
-      const ip = getIp(ctx) ?? 'unknown';
-      await sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path) }, user.id);
+      await sendSecurityInboxEmail('sysadmin-fail', { ip: getIp(ctx) ?? 'unknown', route: scrubUrl(ctx.req.path) }, user.id);
       throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
     }
 

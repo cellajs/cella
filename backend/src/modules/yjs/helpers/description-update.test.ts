@@ -38,13 +38,7 @@ describe('descriptionToSeed', () => {
   it('round-trips blocks of the server schema, a mention and a checklist item included', () => {
     const blocks = [
       paragraph('p1', 'Hello'),
-      {
-        id: 'p2',
-        type: 'paragraph',
-        props: {},
-        content: [{ type: 'mention', props: { id: 'user-1', name: 'Ada' } }],
-        children: [],
-      },
+      { id: 'p2', type: 'paragraph', props: {}, content: [{ type: 'mention', props: { id: 'user-1', name: 'Ada' } }], children: [] },
       { id: 'c1', type: 'checklistItem', props: { checked: true }, content: [{ type: 'text', text: 'Done', styles: {} }], children: [] },
     ];
     const restored = JSON.parse(stateToBlocksJson(descriptionToSeed(JSON.stringify(blocks))));

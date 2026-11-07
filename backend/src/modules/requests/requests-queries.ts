@@ -32,18 +32,12 @@ interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuery
 }
 
 /** A page of requests with `wasInvited`, and the total. */
-export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPaginatedOpts) => {
+export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, limit, offset }: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { q, sort, order, limit, offset } = opts;
 
   const filter = searchFilter([requestsTable.email], q);
 
-  const orderBy = getOrderColumns({
-    sort,
-    order,
-    columns: pick(requestsTable, ['id', 'email', 'createdAt', 'type']),
-    tieBreaker: requestsTable.id,
-  });
+  const orderBy = getOrderColumns({ sort, order, columns: pick(requestsTable, ['id', 'email', 'createdAt', 'type']), tieBreaker: requestsTable.id });
 
   const itemsQuery = db
     .select({ ...requestColumns, wasInvited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('wasInvited') })
@@ -56,21 +50,12 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(requestsTable).where(filter)));
 };
 
-interface DeleteRequestsByIdsOpts {
-  ids: string[];
-}
-
 /** Deletes requests by id. */
-export const deleteRequestsByIds = async (ctx: DbContext, { ids }: DeleteRequestsByIdsOpts) => {
-  return ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids));
-};
-
-interface StampWaitlistRequestInvitedOpts {
-  email: string;
-}
+export const deleteRequestsByIds = async (ctx: DbContext, { ids }: { ids: string[] }) =>
+  ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids));
 
 /** Stamps the address's waitlist request as invited now; a request invited before keeps its first time. */
-export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: StampWaitlistRequestInvitedOpts) =>
+export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: { email: string }) =>
   ctx.var.db
     .update(requestsTable)
     .set({ invitedAt: getIsoDate() })

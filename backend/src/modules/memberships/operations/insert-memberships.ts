@@ -42,22 +42,16 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
   // Ahead of the order baseline: a resolver may insert memberships, whose order this run then continues from.
   const items: Array<InsertMultipleProps<T>> = [];
-  for (const item of givenItems) {
-    items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
-  }
+  for (const item of givenItems) items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  const maxOrderRows = await findMaxDisplayOrders(ctx, { userIds });
-
-  const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder]));
+  const maxOrdersByUser = new Map<string, number>((await findMaxDisplayOrders(ctx, { userIds })).map((r) => [r.userId, r.maxOrder]));
 
   // Rows assigned per user in this run, to step the order by orderGap
   const assignedCounts = new Map<string, number>();
 
-  const prepared = items.map((info) => {
-    const { userId, role, entity, createdBy } = info;
-
+  const prepared = items.map(({ userId, role, entity, createdBy, extraFields }) => {
     const channelIdColumns = channelIdColumnsOf(entity);
 
     // Order per user: start at the global max and add orderGap per assignment, so a user's first membership takes `defaultOrder`.
@@ -70,7 +64,7 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
     const baseMembership = { userId, role, createdBy, displayOrder: nextOrder } as const;
 
-    return { channelIdColumns, baseMembership, entity, extraFields: info.extraFields };
+    return { channelIdColumns, baseMembership, entity, extraFields };
   });
 
   // The memberships each new one brings along, inserted when missing. A parent row keeps the target's id columns other
@@ -104,9 +98,7 @@ export const insertMemberships = async <T extends MembershipEntity>(
     broughtAlongRows.length ? insertMissingMembershipRows(ctx, { values: broughtAlongRows }) : Promise.resolve(),
   ]);
 
-  if (insertedTarget.length) {
-    log.info('Memberships created', { count: insertedTarget.length });
-  }
+  if (insertedTarget.length) log.info('Memberships created', { count: insertedTarget.length });
 
   return insertedTarget;
 };

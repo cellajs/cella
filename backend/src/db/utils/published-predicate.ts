@@ -2,14 +2,10 @@ import { eq, getColumns, isNotNull, or, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 
 /** Type guard: the table declares the opt-in `publishedAt` draft column. */
-export function hasPublishedAt(table: AnyPgTable): table is AnyPgTable & { publishedAt: PgColumn } {
-  return 'publishedAt' in table;
-}
+export const hasPublishedAt = (table: AnyPgTable): table is AnyPgTable & { publishedAt: PgColumn } => 'publishedAt' in table;
 
 /** For collection, delta and catchup reads: excludes drafts for everyone, the author included. */
-export function publishedRowsPredicate(table: AnyPgTable): SQL | undefined {
-  return hasPublishedAt(table) ? isNotNull(table.publishedAt) : undefined;
-}
+export const publishedRowsPredicate = (table: AnyPgTable): SQL | undefined => (hasPublishedAt(table) ? isNotNull(table.publishedAt) : undefined);
 
 /**
  * SQL twin of `draftVisibleTo` (shared): published rows, plus the actor's own drafts. Undefined for a table without

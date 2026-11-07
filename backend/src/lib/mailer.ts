@@ -58,8 +58,7 @@ function withSafeHtmlParams(params: Record<string, unknown>, htmlParams: Partial
   return Object.fromEntries(
     Object.entries(params).map(([key, value]) => {
       const policy = htmlParams[key];
-      if (!policy) return [key, value];
-      return [key, neutralizeBrevoTags(sanitizeEmailHtml(String(value ?? ''), policy), { params: [] }, 'html')];
+      return [key, policy ? neutralizeBrevoTags(sanitizeEmailHtml(String(value ?? ''), policy), { params: [] }, 'html') : value];
     }),
   );
 }
@@ -76,9 +75,7 @@ async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
     if (res.ok) return;
 
     const retryable = res.status === 408 || res.status === 429 || res.status >= 500;
-    if (!retryable || attempt >= brevoMaxRetries) {
-      throw new Error(`Brevo responded ${res.status}: ${await res.text().catch(() => '')}`);
-    }
+    if (!retryable || attempt >= brevoMaxRetries) throw new Error(`Brevo responded ${res.status}: ${await res.text().catch(() => '')}`);
     const retryAfterSeconds = Number.parseInt(res.headers.get('retry-after') ?? '', 10);
     const delayMs = retryAfterSeconds > 0 ? Math.min(retryAfterSeconds * 1000, 60_000) : 1000 * 2 ** attempt;
     await new Promise((resolve) => setTimeout(resolve, delayMs));

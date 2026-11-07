@@ -76,8 +76,7 @@ export function getEventData<T extends Exclude<TrackedType, ProductEntityType>>(
   event: RowActivityEvent,
   trackedType: T,
 ): TrackedModel<T> | undefined {
-  const matches = event.entityType === trackedType || event.resourceType === trackedType;
-  return matches ? (event.rowData as TrackedModel<T>) : undefined;
+  return event.entityType === trackedType || event.resourceType === trackedType ? (event.rowData as TrackedModel<T>) : undefined;
 }
 
 type EventHandler<T extends TrackedEventType> = (event: ActivityEventOf<T>) => void | Promise<void>;

@@ -5,10 +5,7 @@ export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promi
   const existing = inFlight.get(key);
   if (existing) return existing as Promise<T>;
 
-  const promise = fetcher().finally(() => {
-    inFlight.delete(key);
-  });
-
+  const promise = fetcher().finally(() => inFlight.delete(key));
   inFlight.set(key, promise);
   return promise;
 }

@@ -15,14 +15,11 @@ import { getEntityTable } from '#/tables';
  * last recount.
  */
 export async function getUnseenCountsOp(ctx: UserContext) {
-  const user = ctx.var.user;
-  const memberships = ctx.var.memberships;
+  const { user, memberships } = ctx.var;
   const access = accessFrom(ctx);
 
   // No memberships means no channels to badge: administrator bypass widens rows inside an organization, not the organization set.
-  if (memberships.length === 0) {
-    return {};
-  }
+  if (memberships.length === 0) return {};
 
   // Read scopes are org-scoped, so counts run per org, and inside a tenant read because entity tables have row-level security.
   const windowStart = Date.parse(seenWindowStart());

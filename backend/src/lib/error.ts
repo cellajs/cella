@@ -79,6 +79,16 @@ interface ClientError {
   willRedirect: boolean;
 }
 
+/** A client error that answers as JSON, titled with its type's own text. */
+const jsonClientError = (type: ErrorKey, status: ContentfulStatusCode, detail: string, severity: Severity): ClientError => ({
+  type,
+  title: errorTitle(type, status),
+  status,
+  detail,
+  severity,
+  willRedirect: false,
+});
+
 /** Request facts for the error's log line (`path`, `method`, `userId`, `organizationId`, an MCP `tool`); unset ones are left out. */
 type ErrorLogFields = Record<string, string | undefined>;
 
@@ -112,27 +122,12 @@ export function toClientError(
 
   if (isPoolTimeoutError(err)) {
     log.error('Database pool exhausted', { err, ...fields });
-    return {
-      type: 'service_unavailable',
-      title: errorTitle('service_unavailable', 503),
-      status: 503,
-      detail: 'Service temporarily unavailable, please retry',
-      severity: 'error',
-      willRedirect: false,
-    };
+    return jsonClientError('service_unavailable', 503, 'Service temporarily unavailable, please retry', 'error');
   }
 
   if (err instanceof HTTPException) {
     log.warn(`HTTPException ${err.status}`, { err, ...fields });
-    const type = httpExceptionType(err.status);
-    return {
-      type,
-      title: errorTitle(type, err.status),
-      status: err.status,
-      detail: hideIfServerError(err.status, err.message || 'Request rejected'),
-      severity: 'warn',
-      willRedirect: false,
-    };
+    return jsonClientError(httpExceptionType(err.status), err.status, hideIfServerError(err.status, err.message || 'Request rejected'), 'warn');
   }
 
   const isAppError = err instanceof AppError;
@@ -165,14 +160,10 @@ export function toClientError(
   );
 
   return {
-    type,
-    title: errorTitle(type, status),
-    status,
-    detail: hideIfServerError(status, message),
-    severity,
+    ...jsonClientError(type, status, hideIfServerError(status, message), severity),
     entityType,
     meta,
-    willRedirect: isAppError ? err.willRedirect : false,
+    willRedirect: isAppError && err.willRedirect,
   };
 }
 
@@ -192,18 +183,8 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const undocumented = checksAuthoringRules ? undocumentedErrorStatus(ctx.var.operationId, answered.status, answered.type) : undefined;
   if (undocumented && appConfig.mode === 'test') console.error(undocumented);
   else if (undocumented) log.warn(undocumented);
-  const clientError: ClientError =
-    undocumented && appConfig.mode === 'test'
-      ? {
-          ...answered,
-          type: 'server_error',
-          title: errorTitle('server_error', 500),
-          status: 500,
-          detail: undocumented,
-          severity: 'error',
-          willRedirect: false,
-        }
-      : answered;
+  const clientError =
+    undocumented && appConfig.mode === 'test' ? { ...answered, ...jsonClientError('server_error', 500, undocumented, 'error') } : answered;
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
   ctx.set('errorStatus', clientError.status);

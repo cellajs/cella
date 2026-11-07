@@ -4,6 +4,7 @@ import { configurePolicyMatrix } from 'shared/testing/policies';
 import { describe, expect, it } from 'vitest';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { type ChannelCollectionReadScope, draftChannelVisibleTo, resolveChannelCollectionReadScope } from '#/permissions/channel-collection-scope';
+import { actorMembership } from './tests/actor-membership';
 
 const orgId = 'org-1';
 
@@ -21,15 +22,7 @@ const policies: PolicyMatrix = configurePolicyMatrix(
   deepOverrides,
 );
 
-const membership = (channelType: string, channelId: string, role: string): MembershipBaseModel =>
-  ({
-    id: `mem-${channelType}-${channelId}-${role}`,
-    userId: 'actor',
-    channelType,
-    channelId,
-    organizationId: orgId,
-    role,
-  }) as unknown as MembershipBaseModel;
+const membership = (channelType: string, channelId: string, role: string) => actorMembership(channelType, channelId, role, orgId);
 
 const accessOf = (memberships: MembershipBaseModel[], isSystemAdmin = false): Access<MembershipBaseModel> => ({
   actorId: 'actor',

@@ -33,9 +33,7 @@ interface MaterializeDescriptionResult {
 export async function materializeDescriptionOp(input: YjsMaterializeBody): Promise<MaterializeDescriptionResult> {
   const { entityType } = input;
   const materializer = getYjsMaterializer(entityType);
-  if (!materializer) {
-    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `No Yjs materializer registered for ${entityType}` } });
-  }
+  if (!materializer) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `No Yjs materializer registered for ${entityType}` } });
 
   const gone = () => new AppError(410, 'not_found', 'warn', { entityType, meta: { reason: 'The entity is gone' } });
   const row = await tenantReadById(input.tenantId, (tx) => resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }));
@@ -45,9 +43,7 @@ export async function materializeDescriptionOp(input: YjsMaterializeBody): Promi
   }
 
   const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description, { organizationId: row.organizationId });
-  if (sanitized) {
-    log.warn('Yjs materialization sanitized untrusted media URLs', { entityType, entityId: input.entityId, invalidUrls });
-  }
+  if (sanitized) log.warn('Yjs materialization sanitized untrusted media URLs', { entityType, entityId: input.entityId, invalidUrls });
 
   const [users, memberships, tenant, organization] = await Promise.all([
     findUserModelsByIds(dbCtx, { ids: input.editors }),

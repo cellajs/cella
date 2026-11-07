@@ -60,9 +60,7 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
 export const channelRelationIndexes = (tableName: string, table: Record<string, PgColumn>, entityType: ProductEntityType) =>
   [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
     .filter((type) => type !== 'organization')
-    .map((type) => {
-      return index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]);
-    });
+    .map((type) => index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]));
 
 type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
 

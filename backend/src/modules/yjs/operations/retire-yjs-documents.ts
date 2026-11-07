@@ -20,7 +20,5 @@ export async function retireYjsDocuments(ctx: DbContext, { entityType, entityIds
   if (entityIds.length === 0) return;
   const retired = await deleteYjsDocuments(ctx, { entityType, entityIds });
   await deleteYjsUpdates(ctx, { entityType, entityIds });
-  await notifyYjsLog(ctx, {
-    notices: retired.map(({ entityId, tenantId }) => ({ tenantId, entityType, entityId, retired: true as const })),
-  });
+  await notifyYjsLog(ctx, { notices: retired.map(({ entityId, tenantId }) => ({ tenantId, entityType, entityId, retired: true as const })) });
 }

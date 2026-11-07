@@ -19,7 +19,7 @@ import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   cookieChange,
   createTestOrganization,
-  createUser,
+  createTestUser,
   expectRefusal,
   getUserByEmail,
   insertTestSession,
@@ -282,7 +282,7 @@ describe('SSO sign-in through an institution', async () => {
     await expectRefusal(await signInThrough(connection.id, claimsOf({ email: undefined })), 400, 'sso_email_missing');
     expect(await getUserByEmail(studentEmail)).toHaveLength(0);
 
-    await createUser(studentEmail);
+    await createTestUser(studentEmail);
     await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
     expect(await identitiesOf((await getUserByEmail(studentEmail))[0].id)).toHaveLength(0);
   });
@@ -290,7 +290,7 @@ describe('SSO sign-in through an institution', async () => {
   it("must not count a federated address outside the connection's domains as proven", async () => {
     const { connection } = await seedConnection();
     const victim = await createTestOrganization();
-    const inviter = await createUser('admin@victim.example');
+    const inviter = await createTestUser('admin@victim.example');
     const foreign = 'ceo@victim.example';
     const { inactiveMembership } = await createInvitation({ organization: victim, email: foreign, createdBy: inviter.id });
     const invitee = async (id: string) => (await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0].userId;
@@ -305,7 +305,7 @@ describe('SSO sign-in through an institution', async () => {
     await signInThrough(connection.id);
     const [student] = await getUserByEmail(studentEmail);
     expect((await signInThrough(connection.id, claimsOf({ email: foreign }))).response.status).toBe(302);
-    const member = await createUser('l.jansen@hu.nl');
+    const member = await createTestUser('l.jansen@hu.nl');
     await pinConnect(member);
     expect((await connectThrough(connection.id, claimsOf({ email: foreign, sub: 'lars-subject' }))).response.status).toBe(302);
 
@@ -323,7 +323,7 @@ describe('SSO sign-in through an institution', async () => {
   it('must not provision a membership through an invitation elsewhere when the connection does not provision just in time', async () => {
     const { connection } = await seedConnection({ jitProvisioning: false });
     const elsewhere = await createTestOrganization();
-    const inviter = await createUser('admin@elsewhere.example');
+    const inviter = await createTestUser('admin@elsewhere.example');
     await createInvitation({ organization: elsewhere, email: studentEmail, createdBy: inviter.id });
 
     // The invitation admits the account; it is no invitation to this tenant's organization.
@@ -360,7 +360,7 @@ describe('SSO sign-in through an institution', async () => {
     await expectRefusal(await signInThrough(connection.id), 403, 'sign_up_restricted');
     expect(await getUserByEmail(studentEmail)).toHaveLength(0);
 
-    const inviter = await createUser('teacher@hu.nl');
+    const inviter = await createTestUser('teacher@hu.nl');
     const { inactiveMembership } = await createInvitation({ organization, email: studentEmail, createdBy: inviter.id, role: adminRole });
 
     const { response } = await signInThrough(connection.id);
@@ -400,7 +400,7 @@ describe('SSO sign-in through an institution', async () => {
   describe('connect: the institution account of a signed-in user', () => {
     it('links the identity, proves the asserted address and grants membership in the institution’s organization', async () => {
       const { organization, connection } = await seedConnection();
-      const user = await createUser('l.jansen@hu.nl');
+      const user = await createTestUser('l.jansen@hu.nl');
       await pinConnect(user);
 
       const started = (await start(connection.id, { type: 'connect' })).response;
@@ -422,7 +422,7 @@ describe('SSO sign-in through an institution', async () => {
 
     it('must not provision a membership through connect when the connection does not provision just in time', async () => {
       const { connection } = await seedConnection({ jitProvisioning: false });
-      const user = await createUser('l.jansen@hu.nl');
+      const user = await createTestUser('l.jansen@hu.nl');
       await pinConnect(user);
 
       expect((await connectThrough(connection.id, claimsOf({ email: 'l.jansen@hu.nl', sub: 'lars-subject' }))).response.status).toBe(302);
@@ -432,7 +432,7 @@ describe('SSO sign-in through an institution', async () => {
 
     it('grants the membership of a connect with the role the seam gives', async () => {
       const { organization, connection } = await seedConnection();
-      const user = await createUser('l.jansen@hu.nl');
+      const user = await createTestUser('l.jansen@hu.nl');
       await pinConnect(user);
       vi.mocked(roleFromClaims).mockReturnValueOnce(adminRole);
 
@@ -444,10 +444,10 @@ describe('SSO sign-in through an institution', async () => {
 
     it('refuses an institution account that belongs to another user, and a connect without a pin', async () => {
       const { connection } = await seedConnection();
-      const holder = await createUser('holder@hu.nl');
+      const holder = await createTestUser('holder@hu.nl');
       await linkIdentity(holder, { kind: 'sso', issuer: 'surfconext', subject, connectionId: connection.id });
 
-      const user = await createUser('l.jansen@hu.nl');
+      const user = await createTestUser('l.jansen@hu.nl');
       await pinConnect(user);
       const started = (await start(connection.id, { type: 'connect' })).response;
       await expectRefusal(await finish(stateOf(started), claimsOf()), 409, 'oauth_conflict');
@@ -471,7 +471,7 @@ describe('SSO sign-in through an institution', async () => {
 
     it('offers one sign-in link to that address, which returns to connect the institution account', async () => {
       const { connection } = await seedConnection();
-      const user = await createUser(studentEmail);
+      const user = await createTestUser(studentEmail);
 
       // Nothing to recover from before a sign-in at the institution collided.
       await expectRefusal(await recover(), 401, 'sso_recovery_expired');
@@ -492,7 +492,7 @@ describe('SSO sign-in through an institution', async () => {
 
     it('keeps the offer while magic links are switched off', async () => {
       const { connection } = await seedConnection();
-      await createUser(studentEmail);
+      await createTestUser(studentEmail);
       await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
 
       setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'] });
@@ -504,7 +504,7 @@ describe('SSO sign-in through an institution', async () => {
 
     it('recovers an account whose identifier at the institution changed, even where the tenant requires SSO', async () => {
       const { organization, connection } = await seedConnection();
-      const user = await createUser(studentEmail);
+      const user = await createTestUser(studentEmail);
       await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
       await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
       await requireSso(organization.tenantId);
@@ -522,7 +522,7 @@ describe('SSO sign-in through an institution', async () => {
     it('does not lift the policy for a sign-in through another institution', async () => {
       const { organization, connection } = await seedConnection();
       const other = await seedConnection({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'] });
-      const user = await createUser(studentEmail);
+      const user = await createTestUser(studentEmail);
       await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
       await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
       await requireSso(organization.tenantId);

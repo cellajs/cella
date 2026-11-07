@@ -21,38 +21,21 @@ export const findIdentityBySubject = async (ctx: DbContext, { issuer, subject, k
   return identity;
 };
 
-interface FindIdentityByIdOpts {
-  id: string;
-}
-
 /** The identity with this id, of any kind; undefined when it is gone. */
-export const findIdentityById = async (ctx: DbContext, { id }: FindIdentityByIdOpts) => {
+export const findIdentityById = async (ctx: DbContext, { id }: { id: string }) => {
   const [identity] = await ctx.var.db.select().from(identitiesTable).where(eq(identitiesTable.id, id)).limit(1);
   return identity;
 };
 
-interface FindVerifiedOAuthIdentitiesOpts {
-  userId: string;
-}
-
 /** The user's verified OAuth identities: the provider, the address it asserted last, when it was linked and last signed in. */
-export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: FindVerifiedOAuthIdentitiesOpts) =>
+export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db
-    .select({
-      provider: identitiesTable.issuer,
-      email: identitiesTable.email,
-      createdAt: identitiesTable.createdAt,
-      lastUsedAt: identitiesTable.lastUsedAt,
-    })
+    .select({ provider: identitiesTable.issuer, ...pick(identitiesTable, ['email', 'createdAt', 'lastUsedAt']) })
     .from(identitiesTable)
     .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)));
 
-interface FindSsoIdentitiesOpts {
-  userId: string;
-}
-
 /** The user's SSO identities that still name the connection they came through. */
-export const findSsoIdentities = async (ctx: DbContext, { userId }: FindSsoIdentitiesOpts) =>
+export const findSsoIdentities = async (ctx: DbContext, { userId }: { userId: string }) =>
   ctx.var.db
     .select(pick(identitiesTable, ['connectionId', 'email', 'createdAt', 'lastUsedAt']))
     .from(identitiesTable)

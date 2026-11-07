@@ -8,10 +8,7 @@ const rejectMany = (rejectionState: RejectionState, ids: string[], reason: strin
   if (ids.length === 0) return rejectionState;
   return {
     rejectedIds: [...rejectionState.rejectedIds, ...ids],
-    rejectionReasons: {
-      ...rejectionState.rejectionReasons,
-      [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
-    },
+    rejectionReasons: { ...rejectionState.rejectionReasons, [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids] },
   };
 };
 

@@ -53,13 +53,8 @@ export const countPendingInactiveMembershipSeats = async (
   return seats;
 };
 
-interface FindInactiveMembershipsByEmailsOpts {
-  emails: string[];
-  channelId: string;
-}
-
 /** The channel's inactive memberships addressed to exactly these addresses, pending or rejected. */
-export const findInactiveMembershipsByEmails = async (ctx: DbContext, { emails, channelId }: FindInactiveMembershipsByEmailsOpts) => {
+export const findInactiveMembershipsByEmails = async (ctx: DbContext, { emails, channelId }: { emails: string[]; channelId: string }) => {
   if (!emails.length) return [];
   return ctx.var.db
     .select(pick(inactiveMembershipsTable, ['id', 'email', 'userId', 'role', 'rejectedAt', 'createdAt', 'remindedAt']))
@@ -67,12 +62,8 @@ export const findInactiveMembershipsByEmails = async (ctx: DbContext, { emails, 
     .where(and(eq(inactiveMembershipsTable.channelId, channelId), inArray(inactiveMembershipsTable.email, emails)));
 };
 
-interface FindPendingInactiveMembershipsByChannelsOpts {
-  channelIds: string[];
-}
-
 /** Pending (not rejected) inactive memberships of a set of channels. */
-export const findPendingInactiveMembershipsByChannels = async (ctx: DbContext, { channelIds }: FindPendingInactiveMembershipsByChannelsOpts) => {
+export const findPendingInactiveMembershipsByChannels = async (ctx: DbContext, { channelIds }: { channelIds: string[] }) => {
   if (!channelIds.length) return [];
   return ctx.var.db
     .select()
@@ -80,13 +71,8 @@ export const findPendingInactiveMembershipsByChannels = async (ctx: DbContext, {
     .where(and(inArray(inactiveMembershipsTable.channelId, channelIds), isNull(inactiveMembershipsTable.rejectedAt)));
 };
 
-interface StampInactiveMembershipsRemindedOpts {
-  ids: string[];
-  remindedAt: string;
-}
-
 /** Stamps `remindedAt` on the invitations whose mail just went out: a first mail, a reminder, a resend or a dispatch. */
-export const stampInactiveMembershipsReminded = async (ctx: DbContext, { ids, remindedAt }: StampInactiveMembershipsRemindedOpts) => {
+export const stampInactiveMembershipsReminded = async (ctx: DbContext, { ids, remindedAt }: { ids: string[]; remindedAt: string }) => {
   if (!ids.length) return;
   return ctx.var.db.update(inactiveMembershipsTable).set({ remindedAt }).where(inArray(inactiveMembershipsTable.id, ids));
 };
@@ -107,15 +93,11 @@ export const findPendingInactiveMembership = async (ctx: DbContext, { id, forUpd
   return invitation;
 };
 
-interface LockPendingInactiveMembershipsOpts {
-  ids: string[];
-}
-
 /**
  * The pending (not rejected) invitations among `ids`, locked for the caller's transaction in id order: a concurrent
  * answer, rejection or resend waits for it, and two batches over the same rows never deadlock.
  */
-export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: LockPendingInactiveMembershipsOpts) => {
+export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: { ids: string[] }) => {
   if (!ids.length) return [];
   return ctx.var.db
     .select()
@@ -125,12 +107,8 @@ export const lockPendingInactiveMemberships = async (ctx: DbContext, { ids }: Lo
     .for('update');
 };
 
-interface FindPendingInactiveMembershipByEmailOpts {
-  email: string;
-}
-
 /** A membership invitation to the address that stands, not rejected; undefined when none does. */
-export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { email }: FindPendingInactiveMembershipByEmailOpts) => {
+export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { email }: { email: string }) => {
   const [invitation] = await ctx.var.db
     .select({ id: inactiveMembershipsTable.id })
     .from(inactiveMembershipsTable)
@@ -139,15 +117,10 @@ export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { ema
   return invitation;
 };
 
-interface FindPendingOrganizationInactiveMembershipOpts {
-  email: string;
-  organizationId: string;
-}
-
 /** An invitation to the address into the organization itself that stands, not rejected: it names the role a sign-in must not pre-empt. */
 export const findPendingOrganizationInactiveMembership = async (
   ctx: DbContext,
-  { email, organizationId }: FindPendingOrganizationInactiveMembershipOpts,
+  { email, organizationId }: { email: string; organizationId: string },
 ) => {
   const [invitation] = await ctx.var.db
     .select({ id: inactiveMembershipsTable.id })
@@ -231,13 +204,8 @@ export const findClaimableInactiveMembership = async (ctx: DbContext, { id, user
   return membership;
 };
 
-interface BindInactiveMembershipsOpts {
-  ids: string[];
-  userId: string;
-}
-
 /** Binds claimable invitations to the user and returns the ids it bound; an id missing from the result lost a race or belongs to someone else. */
-export const bindInactiveMemberships = async (ctx: DbContext, { ids, userId }: BindInactiveMembershipsOpts) => {
+export const bindInactiveMemberships = async (ctx: DbContext, { ids, userId }: { ids: string[]; userId: string }) => {
   if (!ids.length) return [];
   const bound = await ctx.var.db
     .update(inactiveMembershipsTable)
@@ -247,17 +215,12 @@ export const bindInactiveMemberships = async (ctx: DbContext, { ids, userId }: B
   return bound.map((row) => row.id);
 };
 
-interface BindInactiveMembershipsByEmailOpts {
-  email: string;
-  userId: string;
-}
-
 /**
  * Binds every unbound, {@link claimableBy claimable} invitation addressed to `email` and returns the ids it bound. The
  * caller has proven that inbox. An invitation already bound to the user is left out, so the link flow that bound it
  * keeps its token.
  */
-export const bindInactiveMembershipsByEmail = async (ctx: DbContext, { email, userId }: BindInactiveMembershipsByEmailOpts) => {
+export const bindInactiveMembershipsByEmail = async (ctx: DbContext, { email, userId }: { email: string; userId: string }) => {
   const bound = await ctx.var.db
     .update(inactiveMembershipsTable)
     .set({ userId })
@@ -322,15 +285,11 @@ export const stampInactiveMembershipRejected = async (ctx: DbContext, { id }: In
   await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
 };
 
-interface FindPendingInactiveMembershipsByUserOpts {
-  userId: string;
-}
-
 /**
  * The user's open invitations: inactive memberships not rejected, each with its channel's base columns and, for a
  * channel below the organization, the organization's name.
  */
-export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { userId }: FindPendingInactiveMembershipsByUserOpts) => {
+export const findPendingInactiveMembershipsByUser = async (ctx: DbContext, { userId }: { userId: string }) => {
   const results = await Promise.all(
     appConfig.channelEntityTypes.map(async (channelType) => {
       const channelTable = getEntityTable(channelType);

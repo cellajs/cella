@@ -12,9 +12,7 @@ import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(serviceAccountRoutes.createServiceAccount, async (ctx) => {
-  return ctx.json(await createServiceAccountOp(ctx, ctx.req.valid('json')), 201);
-});
+app.openapi(serviceAccountRoutes.createServiceAccount, async (ctx) => ctx.json(await createServiceAccountOp(ctx, ctx.req.valid('json')), 201));
 
 app.openapi(serviceAccountRoutes.listServiceAccounts, async (ctx) => {
   const query = ctx.req.valid('query');

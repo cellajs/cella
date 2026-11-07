@@ -17,17 +17,11 @@ app.openapi(notificationRoutes.listNotifications, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, (page) => getNotificationsOp(ctx, { unreadOnly: query.unread, ...page })), 200);
 });
 
-app.openapi(notificationRoutes.markNotificationsRead, async (ctx) => {
-  return ctx.json(await markReadOp(ctx, ctx.req.valid('json')), 200);
-});
+app.openapi(notificationRoutes.markNotificationsRead, async (ctx) => ctx.json(await markReadOp(ctx, ctx.req.valid('json')), 200));
 
-app.openapi(notificationRoutes.getNotificationPreferences, async (ctx) => {
-  return ctx.json(await getPreferencesOp(ctx), 200);
-});
+app.openapi(notificationRoutes.getNotificationPreferences, async (ctx) => ctx.json(await getPreferencesOp(ctx), 200));
 
-app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => {
-  return ctx.json(await updatePreferencesOp(ctx, ctx.req.valid('json')), 200);
-});
+app.openapi(notificationRoutes.updateNotificationPreferences, async (ctx) => ctx.json(await updatePreferencesOp(ctx, ctx.req.valid('json')), 200));
 
 app.openapi(notificationRoutes.openUnsubscribeLink, async (ctx) => {
   const { user, category, token } = ctx.req.valid('query');

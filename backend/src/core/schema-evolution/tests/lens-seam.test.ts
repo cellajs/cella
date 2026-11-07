@@ -67,9 +67,7 @@ describe('createUpdateSchema widening', () => {
 
   it('accepts an AWSet delta without an HLC', () => {
     const deltaSchema = createUpdateSchema(lensless, { labels: arrayDeltaSchema(z.string()) });
-    expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({
-      labels: { add: ['a'], remove: [] },
-    });
+    expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({ labels: { add: ['a'], remove: [] } });
     expect(() => deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({ labels: hlc }) })).toThrow(/does not match a scalar op/);
   });
 });
@@ -133,12 +131,7 @@ describe('normalizeCreateItem', () => {
 });
 
 describe('resolveUpdateOps lens seam', () => {
-  const entity = {
-    id: 'a1',
-    title: 'old',
-    name: 'old',
-    stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: { title: hlc, name: hlc } },
-  };
+  const entity = { id: 'a1', title: 'old', name: 'old', stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: { title: hlc, name: hlc } } };
 
   it('canonicalizes old-shape ops before HLC resolution and writes both twins', () => {
     const incomingHLC = '300:0001:bbbbb';
@@ -151,10 +144,7 @@ describe('resolveUpdateOps lens seam', () => {
   });
 
   it('drops an old-shape op whose canonical twin has a newer stored HLC', () => {
-    const freshEntity = {
-      ...entity,
-      stx: { ...entity.stx, fieldTimestamps: { title: '400:0001:ccccc', name: '400:0001:ccccc' } },
-    };
+    const freshEntity = { ...entity, stx: { ...entity.stx, fieldTimestamps: { title: '400:0001:ccccc', name: '400:0001:ccccc' } } };
     const resolved = resolveUpdateOps('attachment', freshEntity, { name: 'stale' }, stx({ name: '300:0001:bbbbb' }));
     expect(resolved.changed).toBe(false);
   });

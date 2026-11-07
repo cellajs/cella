@@ -5,18 +5,13 @@ import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScope } from '#/db/utils/request-scope';
 import { getEntityTable } from '#/tables';
 
-interface FilterExistingProductIdsOpts {
-  entityType: ProductEntityType;
-  ids: string[];
-}
-
 /**
  * Out of `ids`, the ones that name a live row of `entityType` in the request's tenant and organization, in the order
  * given: what a host row may store in an id array column (`appConfig.productEmbeddings`). An unknown, deleted or
  * out-of-scope id is left out, and so is a draft that does not show to the caller, so a host names no row its
  * organization does not hold. Runs on the connection it is handed: a host write calls it inside its tenant transaction.
  */
-export const filterExistingProductIds = async (ctx: ActorContext, { entityType, ids }: FilterExistingProductIdsOpts) => {
+export const filterExistingProductIds = async (ctx: ActorContext, { entityType, ids }: { entityType: ProductEntityType; ids: string[] }) => {
   if (ids.length === 0) return [];
   const { tenantId, organizationId } = requestScope(ctx, entityType);
   const table = getEntityTable(entityType);

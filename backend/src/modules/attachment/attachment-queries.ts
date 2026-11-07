@@ -19,31 +19,22 @@ import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
 import { searchFilter } from '#/utils/sql';
 
 // Every attachment read and write below carries the request's tenant + organization predicate, so the result is the
 // same with RLS bypassed; the RLS transaction wrappers stay the backstop.
 
-interface InsertAttachmentsOpts {
-  attachments: InsertAttachmentModel[];
-}
-
 /** Inserts the rows and returns those it inserted: a row whose id exists is skipped and absent from the result. */
-export const insertAttachments = async (ctx: DbContext, { attachments }: InsertAttachmentsOpts) => {
-  return ctx.var.db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
-};
-
-interface UpdateAttachmentOpts {
-  id: string;
-  values: PgUpdateSetSource<typeof attachmentsTable>;
-}
+export const insertAttachments = async (ctx: DbContext, { attachments }: { attachments: InsertAttachmentModel[] }) =>
+  ctx.var.db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
 
 /**
  * Writes `values` to the attachment within the request's tenant and organization; undefined when no such row exists,
  * or when a write moved it past the request's preconditions (`preconditionWhere`).
  */
-export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
+export const updateAttachment = async (ctx: ActorContext, { id, values }: { id: string; values: PgUpdateSetSource<typeof attachmentsTable> }) => {
   const [updated] = await ctx.var.db
     .update(attachmentsTable)
     .set(values)
@@ -68,12 +59,8 @@ export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, 
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
 
-interface FindAttachmentsByIdsOpts {
-  ids: string[];
-}
-
 /** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
-export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttachmentsByIdsOpts) =>
+export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: { ids: string[] }) =>
   ctx.var.db
     .select()
     .from(attachmentsTable)
@@ -112,12 +99,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
 
   const orderBy =
     rangeRead.orderBy ??
-    getOrderColumns({
-      sort,
-      order,
-      columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
-      tieBreaker: attachmentsTable.id,
-    });
+    getOrderColumns({ sort, order, columns: pick(attachmentsTable, ['name', 'createdAt', 'contentType']), tieBreaker: attachmentsTable.id });
 
   const whereClause = and(...filters);
 

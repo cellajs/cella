@@ -2,13 +2,13 @@ import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchChange } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
+import { streamSubscriber } from './tests/stream-subscriber';
 import type { AppStreamProductEvent } from './types';
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
@@ -27,18 +27,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, orga
     },
   } as unknown as SSEStreamingApi;
 
-  const subscriber: AppStreamSubscriber = {
-    id: crypto.randomUUID(),
-    topic: `org:${topicOrg}`,
-    stream,
-    userId,
-    sessionId: `session-${userId}`,
-    organizationIds: new Set(organizationIds),
-    isSystemAdmin: false,
-    systemAccessAllowed: false,
-    memberships,
-  };
-  return { subscriber, received };
+  return { subscriber: streamSubscriber(userId, stream, memberships, topicOrg, organizationIds), received };
 };
 
 /**

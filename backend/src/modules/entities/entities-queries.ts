@@ -17,12 +17,8 @@ import { getEntityTable } from '#/tables';
 
 const hasSlug = (table: ResolvableTable): table is TableWithIdAndSlug => 'slug' in table;
 
-interface FindChannelCountersByKeysOpts {
-  keys: string[];
-}
-
 /** The counter rows of the given channel keys; a key without a row is left out. */
-export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) =>
+export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: { keys: string[] }) =>
   ctx.var.db
     .select({ channelKey: channelCountersTable.channelKey, counts: channelCountersTable.counts })
     .from(channelCountersTable)
@@ -67,12 +63,8 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   return { countsSelect };
 };
 
-interface FindProductViewCountOpts {
-  productId: string;
-}
-
 /** How many users viewed a product; 0 before the first view. */
-export const findProductViewCount = async (ctx: DbContext, { productId }: FindProductViewCountOpts) => {
+export const findProductViewCount = async (ctx: DbContext, { productId }: { productId: string }) => {
   const [counters] = await ctx.var.db
     .select({ viewCount: productCountersTable.viewCount })
     .from(productCountersTable)
@@ -87,13 +79,8 @@ export const productViewCountSelect = () => sql<number>`coalesce(${productCounte
 /** The join condition of `product_counters` on a product id column, for {@link productViewCountSelect}. */
 export const productViewCountJoin = (productIdColumn: AnyColumn) => eq(productCountersTable.productId, productIdColumn);
 
-interface GetChannelCountsOpts {
-  entityType: ChannelEntityType;
-  entityId: string;
-}
-
 /** The counts of one channel from its counter row; zeros while CDC has written none. */
-export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: GetChannelCountsOpts) => {
+export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: { entityType: ChannelEntityType; entityId: string }) => {
   const { countsSelect } = getChannelCountsSelect(entityType);
 
   const [counts] = await ctx.var.db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
@@ -128,16 +115,12 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
   return row?.count ?? 0;
 };
 
-interface CountTenantEntityRowsOpts {
-  entityType: ChannelEntityType | ProductEntityType;
-}
-
 /**
  * The rows of `entityType` the context's tenant holds, drafts included and tombstones left out, counted on the table:
  * what a tenant quota compares with. A counter row would make the quota wait for the CDC worker. A product table sits
  * under RLS, so on one the count opens a tenant transaction unless the caller holds one.
  */
-export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: CountTenantEntityRowsOpts) => {
+export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: { entityType: ChannelEntityType | ProductEntityType }) => {
   const table: AnyPgTable & { tenantId: PgColumn } = getEntityTable(entityType);
   const countRows = async (readCtx: DbContext) => {
     const live = hasDeletedAt(table) ? isNull(table.deletedAt) : undefined;
@@ -194,15 +177,10 @@ export const resolveEntity = async <T extends EntityType>(
   return entity as EntityModel<T> | undefined;
 };
 
-interface ResolveEntitiesOpts<T extends EntityType> {
-  entityType: T;
-  ids: string[];
-}
-
 /** @internal See {@link resolveEntity} for usage guidelines. */
 export const resolveEntities = async <T extends EntityType>(
   ctx: DbContext,
-  { entityType, ids }: ResolveEntitiesOpts<T>,
+  { entityType, ids }: { entityType: T; ids: string[] },
 ): Promise<Array<EntityModel<T>>> => {
   if (!ids.length) return [];
 
@@ -253,11 +231,7 @@ export const findChangedEntityDeltaIds = async (
   let untilSeq: number | null = null;
 
   for (const row of result.rows) {
-    if (row.deletedAt) {
-      deletedIds.push(row.id);
-    } else {
-      updatedIds.push(row.id);
-    }
+    (row.deletedAt ? deletedIds : updatedIds).push(row.id);
     untilSeq = Math.max(untilSeq ?? 0, Number(row.seq));
   }
 

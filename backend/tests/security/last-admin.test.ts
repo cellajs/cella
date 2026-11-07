@@ -1,17 +1,16 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { batchDeleteMemberships, batchDeleteOrganizations, deleteMe, leaveMembership, updateMembership } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db, openDedicatedConnection } from '#/db/db';
 import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createOrgUser, orgMembershipOf } from './helpers';
 
 /**
  * An organization always keeps an admin: the only role that can invite, change roles and manage settings. Demoting,
@@ -28,13 +27,7 @@ describe('last organization admin', async () => {
     const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`, memberRole);
     const headers = (user: { sessionCookie: string }) => ({ ...defaultHeaders, Cookie: user.sessionCookie });
-    const membershipOf = async (userId: string) =>
-      (
-        await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, org.id)))
-      )[0];
+    const membershipOf = (userId: string) => orgMembershipOf(userId, org.id);
     return { org, admin, member, headers, membershipOf };
   }
 
@@ -134,11 +127,7 @@ describe('last organization admin', async () => {
     });
     expect(steppedDown.response.status).toBe(200);
 
-    const deleted = await call(batchDeleteOrganizations, {
-      path: { tenantId: org.tenantId },
-      body: { ids: [org.id] },
-      headers: headers(member),
-    });
+    const deleted = await call(batchDeleteOrganizations, { path: { tenantId: org.tenantId }, body: { ids: [org.id] }, headers: headers(member) });
     expect(deleted.response.status).toBe(200);
     // Deleting archives the tenant; the archived-tenant sweep removes the organization later.
     const [tenant] = await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, org.tenantId));

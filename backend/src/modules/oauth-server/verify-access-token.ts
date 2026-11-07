@@ -53,10 +53,7 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
         key_id: string;
         auth_strategy: string | null;
         connection_id: string | null;
-      }> & {
-        scope?: string;
-        client_id?: string;
-      };
+      }> & { scope?: string; client_id?: string };
     if (claims.sub && claims.tenant_id && claims.client_id) {
       const scopes = accessScopes.parse(claims.scope);
       const token = { actorId: claims.sub, tenantId: claims.tenant_id, scopes, clientId: claims.client_id };

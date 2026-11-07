@@ -15,9 +15,7 @@ app.openapi(connectionRoutes.listConnections, async (ctx) => {
   return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(connections, page)), 200);
 });
 
-app.openapi(connectionRoutes.createConnection, async (ctx) => {
-  return ctx.json(await createConnectionOp(ctx, ctx.req.valid('json')), 201);
-});
+app.openapi(connectionRoutes.createConnection, async (ctx) => ctx.json(await createConnectionOp(ctx, ctx.req.valid('json')), 201));
 
 app.openapi(connectionRoutes.updateConnection, async (ctx) => {
   return ctx.json(await updateConnectionOp(ctx, ctx.req.valid('param').connectionId, ctx.req.valid('json')), 200);

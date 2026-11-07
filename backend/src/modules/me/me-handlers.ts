@@ -21,18 +21,11 @@ import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(meRoutes.getMe, async (ctx) => {
-  return ctx.json(await getMeOp(ctx), 200);
-});
+app.openapi(meRoutes.getMe, async (ctx) => ctx.json(await getMeOp(ctx), 200));
 
-app.openapi(meRoutes.toggleMfa, async (ctx) => {
-  const { mfaRequired } = ctx.req.valid('json');
-  return ctx.json(await toggleMfaOp(ctx, mfaRequired), 200);
-});
+app.openapi(meRoutes.toggleMfa, async (ctx) => ctx.json(await toggleMfaOp(ctx, ctx.req.valid('json').mfaRequired), 200));
 
-app.openapi(meRoutes.getMyAuth, async (ctx) => {
-  return ctx.json(await getMyAuthOp(ctx), 200);
-});
+app.openapi(meRoutes.getMyAuth, async (ctx) => ctx.json(await getMyAuthOp(ctx), 200));
 
 app.openapi(meRoutes.listMyInvitations, async (ctx) => {
   const invitations = await getMyInvitationsOp(ctx);
@@ -54,9 +47,7 @@ app.openapi(meRoutes.revokeMySessions, async (ctx) => {
   return ctx.json({ data, rejectedIds }, 200);
 });
 
-app.openapi(meRoutes.updateMe, async (ctx) => {
-  return ctx.json(await updateMeOp(ctx, ctx.req.valid('json')), 200);
-});
+app.openapi(meRoutes.updateMe, async (ctx) => ctx.json(await updateMeOp(ctx, ctx.req.valid('json')), 200));
 
 app.openapi(meRoutes.deleteMe, async (ctx) => {
   const user = ctx.var.user;
@@ -74,10 +65,8 @@ app.openapi(meRoutes.leaveMembership, async (ctx) => {
 });
 
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
-  const { organizationId, templateId } = ctx.req.valid('query');
-  const data = getUploadTokenOp(ctx, { organizationId, templateId });
   // Signed upload params are a secret for minutes: no cache keeps them (RFC 9111 §5.2.2.5).
-  return ctx.json(data, 200, { 'Cache-Control': 'no-store' });
+  return ctx.json(getUploadTokenOp(ctx, ctx.req.valid('query')), 200, { 'Cache-Control': 'no-store' });
 });
 
 app.openapi(meRoutes.listMyMemberships, async (ctx) => {

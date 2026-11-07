@@ -18,13 +18,9 @@ app.openapi(attachmentRoutes.listAttachments, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, (page) => getAttachmentsOp(ctx, query, page)), 200);
 });
 
-app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => {
-  return ctx.json(await getPresignedUrlsOp(ctx, ctx.req.valid('json')), 200);
-});
+app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => ctx.json(await getPresignedUrlsOp(ctx, ctx.req.valid('json')), 200));
 
-app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
-  return ctx.json(await getAttachmentOp(ctx, ctx.req.valid('param').attachmentId), 200);
-});
+app.openapi(attachmentRoutes.getAttachment, async (ctx) => ctx.json(await getAttachmentOp(ctx, ctx.req.valid('param').attachmentId), 200));
 
 app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
   const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));

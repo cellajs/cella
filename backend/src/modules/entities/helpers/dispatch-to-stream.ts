@@ -108,6 +108,13 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
 }
 
+/** The value `map` holds under `key`, made by `create` and stored on first use. */
+function getOrCreate<K, V>(map: Map<K, V>, key: K, create: () => V): V {
+  const value = map.get(key) ?? create();
+  map.set(key, value);
+  return value;
+}
+
 /**
  * The frames of a product event: each set of its rows that some subscribers may read, in event order, with those
  * subscribers. Only `own` reads a row's author, and it grants that author alone: rows of one `decisionKey` share one
@@ -119,17 +126,14 @@ export function readerFrames<S extends SubscriberAccess>(
   event: AppStreamProductEvent,
 ): { rows: ActivityRow[]; readers: S[] }[] {
   const accesses = accessesOf(subscribers);
-  const keys = new Map<string, number>();
-  const classes: { allowed: boolean[]; byAuthor: Map<number, boolean> }[] = [];
-  const classOf = event.rows.map(({ rowData }) => {
-    const key = decisionKey(rowData);
-    let at = keys.get(key);
-    if (at === undefined) {
-      at = classes.push({ allowed: rowReadDecisions(accesses, event, { ...rowData, createdBy: null }), byAuthor: new Map() }) - 1;
-      keys.set(key, at);
-    }
-    return classes[at];
-  });
+  const byKey = new Map<string, { allowed: boolean[]; byAuthor: Map<number, boolean> }>();
+  const classOf = event.rows.map(({ rowData }) =>
+    getOrCreate(byKey, decisionKey(rowData), () => ({
+      allowed: rowReadDecisions(accesses, event, { ...rowData, createdBy: null }),
+      byAuthor: new Map(),
+    })),
+  );
+  const classes = [...byKey.values()];
   const authors = new Set(event.rows.map(({ rowData }) => rowData.createdBy));
 
   const frames = new Map<string, { rows: ActivityRow[]; readers: S[] }>();
@@ -137,20 +141,10 @@ export function readerFrames<S extends SubscriberAccess>(
     const reads = ({ rowData }: ActivityRow, at: number): boolean => {
       const { allowed, byAuthor } = classOf[at];
       if (allowed[index] || rowData.createdBy !== subscriber.userId) return allowed[index];
-      let own = byAuthor.get(index);
-      if (own === undefined) {
-        own = rowReadDecisions([accesses[index]], event, rowData)[0];
-        byAuthor.set(index, own);
-      }
-      return own;
+      return getOrCreate(byAuthor, index, () => rowReadDecisions([accesses[index]], event, rowData)[0]);
     };
     const signature = authors.has(subscriber.userId) ? `author:${index}` : classes.map(({ allowed }) => (allowed[index] ? '1' : '0')).join('');
-    let frame = frames.get(signature);
-    if (!frame) {
-      frame = { rows: event.rows.filter(reads), readers: [] };
-      frames.set(signature, frame);
-    }
-    frame.readers.push(subscriber);
+    getOrCreate(frames, signature, () => ({ rows: event.rows.filter(reads), readers: [] })).readers.push(subscriber);
   }
   return [...frames.values()].filter(({ rows }) => rows.length > 0);
 }

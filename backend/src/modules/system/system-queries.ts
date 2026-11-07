@@ -6,22 +6,12 @@ import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 
-interface FindVerifiedEmailsOpts {
-  emails: string[];
-}
-
 /** The addresses among `emails` an account has verified. */
-export const findVerifiedEmails = async (ctx: DbContext, { emails }: FindVerifiedEmailsOpts) => {
-  return ctx.var.db.select({ email: emailsTable.email }).from(emailsTable).where(inArray(emailsTable.email, emails));
-};
-
-interface FindNewsletterRecipientsOpts {
-  organizationIds: string[];
-  roles: EntityRole[];
-}
+export const findVerifiedEmails = async (ctx: DbContext, { emails }: { emails: string[] }) =>
+  ctx.var.db.select({ email: emailsTable.email }).from(emailsTable).where(inArray(emailsTable.email, emails));
 
 /** Members of the organizations who hold one of `roles` and take the newsletter: one row per user, however many of the organizations they belong to. */
-export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: FindNewsletterRecipientsOpts) =>
+export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: { organizationIds: string[]; roles: EntityRole[] }) =>
   ctx.var.db
     .selectDistinct({ userId: usersTable.id, email: usersTable.email, name: usersTable.name })
     .from(membershipsTable)
@@ -35,13 +25,8 @@ export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds
       ),
     );
 
-interface FindSystemRoleOpts {
-  userId: string;
-  role: SystemRoleModel['role'];
-}
-
 /** The user's system role row when they hold `role`; undefined otherwise. */
-export const findSystemRole = async (ctx: DbContext, { userId, role }: FindSystemRoleOpts) => {
+export const findSystemRole = async (ctx: DbContext, { userId, role }: { userId: string; role: SystemRoleModel['role'] }) => {
   const [row] = await ctx.var.db
     .select({ role: systemRolesTable.role })
     .from(systemRolesTable)
@@ -50,13 +35,8 @@ export const findSystemRole = async (ctx: DbContext, { userId, role }: FindSyste
   return row;
 };
 
-interface FindSystemRoleHoldersOpts {
-  userIds: string[];
-  role: SystemRoleModel['role'];
-}
-
 /** Which of these users hold `role`. */
-export const findSystemRoleHolders = async (ctx: DbContext, { userIds, role }: FindSystemRoleHoldersOpts) =>
+export const findSystemRoleHolders = async (ctx: DbContext, { userIds, role }: { userIds: string[]; role: SystemRoleModel['role'] }) =>
   ctx.var.db
     .select({ userId: systemRolesTable.userId })
     .from(systemRolesTable)

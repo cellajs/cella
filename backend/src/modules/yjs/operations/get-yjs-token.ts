@@ -10,14 +10,5 @@ import { authorizeYjsEditor } from '#/modules/yjs/operations/authorize-yjs-edito
  */
 export async function getYjsTokenOp(ctx: UserContext, params: { entityType: ProductEntityType; entityId: string }) {
   const doc = await authorizeYjsEditor(ctx, params);
-
-  const token = signYjsToken({
-    userId: ctx.var.user.id,
-    entityType: params.entityType,
-    entityId: doc.entityId,
-    tenantId: doc.tenantId,
-    organizationId: doc.organizationId,
-  });
-
-  return { token };
+  return { token: signYjsToken({ userId: ctx.var.user.id, ...doc }) };
 }

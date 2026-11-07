@@ -15,9 +15,7 @@ export function createUpdateSchema<T extends z.ZodRawShape>(entityType: ProductE
   const schema = z.object({ ops: partialOps, stx: stxBaseSchema }).superRefine((val, ctx) => {
     const ops: Record<string, unknown> = val.ops;
     const opEntries = Object.entries(ops);
-    if (opEntries.length === 0) {
-      ctx.addIssue({ code: 'custom', message: 'At least one op must be provided', path: ['ops'] });
-    }
+    if (opEntries.length === 0) ctx.addIssue({ code: 'custom', message: 'At least one op must be provided', path: ['ops'] });
 
     for (const [field, value] of opEntries) {
       if (!isArrayDelta(value) && !(field in val.stx.fieldTimestamps)) {

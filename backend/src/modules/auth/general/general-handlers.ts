@@ -46,10 +46,7 @@ app.openapi(authGeneralRoutes.invokeToken, (ctx) => {
   return openLinkToken(ctx, tokenType, token);
 });
 
-app.openapi(authGeneralRoutes.redeemLinkToken, async (ctx) => {
-  const redirectTo = await confirmHeldLink(ctx, ctx.req.valid('param').type);
-  return ctx.json({ redirectTo }, 200);
-});
+app.openapi(authGeneralRoutes.redeemLinkToken, async (ctx) => ctx.json({ redirectTo: await confirmHeldLink(ctx, ctx.req.valid('param').type) }, 200));
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');

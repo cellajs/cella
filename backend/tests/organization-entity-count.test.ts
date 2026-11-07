@@ -3,10 +3,9 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import { baseDb, getSeedDb } from '#/db/db';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -35,8 +34,7 @@ describe('The count of a product that keeps drafts', async () => {
     tenant = await createTestTenant(call, 'entity-count');
     plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     for (const id of ids) {
-      const columns = { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null };
-      await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
+      await insertAttachmentIn(plan, { id, tenantId: tenant.tenantId, createdBy: tenant.user.id });
     }
     await db.update(attachmentsTable).set({ deletedAt: new Date().toISOString() }).where(eq(attachmentsTable.id, ids[2]));
   });

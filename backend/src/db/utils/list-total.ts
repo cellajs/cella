@@ -23,7 +23,6 @@ export async function resolveListTotal<TItem>(itemsQuery: PromiseLike<TItem[]>, 
     return { items, total: items.length };
   }
 
-  const totalQuery = source.getTotal();
-  const [items, total] = await Promise.all([itemsQuery, totalQuery]);
+  const [items, total] = await Promise.all([itemsQuery, source.getTotal()]);
   return { items, total };
 }

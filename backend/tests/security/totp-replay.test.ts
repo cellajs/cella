@@ -87,10 +87,7 @@ describe('TOTP replay', async () => {
     const challengeCookie = setCookiePair(generated.response, 'totp-challenge');
 
     const code = totpCode(manualKey);
-    const created = await call(createTotp, {
-      body: { code },
-      headers: { ...defaultHeaders, Cookie: [sessionCookie, challengeCookie].join('; ') },
-    });
+    const created = await call(createTotp, { body: { code }, headers: { ...defaultHeaders, Cookie: [sessionCookie, challengeCookie].join('; ') } });
     expect(created.response.status).toBe(201);
 
     const replay = await answerChallenge(user, code);

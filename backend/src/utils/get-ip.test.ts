@@ -4,10 +4,7 @@ import { getIp } from '#/utils/get-ip';
 
 /** Minimal Context stub exposing only what getIp reads (headers + socket peer). */
 const makeCtx = (headers: Record<string, string>, remoteAddress?: string): Context =>
-  ({
-    req: { header: (name: string) => headers[name.toLowerCase()] },
-    env: { incoming: { socket: { remoteAddress } } },
-  }) as unknown as Context;
+  ({ req: { header: (name: string) => headers[name.toLowerCase()] }, env: { incoming: { socket: { remoteAddress } } } }) as unknown as Context;
 
 describe('getIp', () => {
   it('returns the right-most X-Forwarded-For entry (client appended by the trusted single-hop LB)', () => {

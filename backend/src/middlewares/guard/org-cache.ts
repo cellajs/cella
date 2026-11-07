@@ -34,6 +34,4 @@ export const dropCachedOrganizations = (tenantId: string): void => {
 };
 
 /** Drops every entry: what a test does to stand in for the TTL passing. */
-export const clearOrgCache = (): void => {
-  organizationCache.clear();
-};
+export const clearOrgCache = (): void => organizationCache.clear();

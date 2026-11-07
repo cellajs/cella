@@ -8,12 +8,8 @@ import { usersTable } from '#/modules/user/user-db';
 import { hasProvenEmail } from '#/modules/user/user-queries';
 import { getEntityTable } from '#/tables';
 
-interface CountChannelRowsOpts {
-  entityType: ChannelEntityType;
-}
-
 /** The channel type's rows in tenants of a counted kind (`appConfig.tenantKinds`), counted on the context's connection. */
-export const countChannelRows = async (ctx: DbContext, { entityType }: CountChannelRowsOpts) => {
+export const countChannelRows = async (ctx: DbContext, { entityType }: { entityType: ChannelEntityType }) => {
   const table = getEntityTable(entityType);
   const [{ total }] = await ctx.var.db.select({ total: count() }).from(table).where(tenantOfKind(table.tenantId, countedTenantKinds()));
   return total;

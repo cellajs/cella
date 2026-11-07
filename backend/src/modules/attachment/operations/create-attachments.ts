@@ -33,11 +33,8 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization } = ctx.var;
 
-  const replayed = await checkIdempotency(
-    ctx,
-    attachmentsTable,
-    input.map((item) => item.id),
-  );
+  const ids = input.map((item) => item.id);
+  const replayed = await checkIdempotency(ctx, attachmentsTable, ids);
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
   if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };

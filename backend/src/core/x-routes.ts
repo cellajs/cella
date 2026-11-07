@@ -99,9 +99,8 @@ const assertRouteShape = (route: string, { method, path, operationId, request }:
   };
   if (method === 'put')
     refuse('put replaces a whole resource, which no route offers. Make it a patch, or a post custom method (/~verb) for an action.');
-  if ((method === 'get' || method === 'delete') && request?.body) {
+  if ((method === 'get' || method === 'delete') && request?.body)
     refuse(`a ${method} carries no request body. Move its input into the query, or make it a post custom method (/~verb).`);
-  }
   const segments = path.split('/').filter(Boolean);
   for (const [index, segment] of segments.entries()) {
     if (/^\{\w+\}$/.test(segment) || segment === '-' || segment === '.well-known') continue;
@@ -219,11 +218,9 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   );
 
   const owners = chainErrors(config, xMiddlewares, !!target);
-  if (checksAuthoringRules) {
-    for (const [code, owner] of owners) {
-      if (config.responses[code] === sharedErrorResponses[code]) {
-        throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
-      }
+  for (const [code, owner] of owners) {
+    if (checksAuthoringRules && config.responses[code] === sharedErrorResponses[code]) {
+      throw new Error(`[routes] ${route}: errors(${code}) repeats the ${code} that ${owner} answers with. Drop it.`);
     }
   }
   const responses = { ...pickShared(owners.keys()), ...config.responses, ...(target && preconditionResponses(target, config.responses[200])) };
@@ -257,10 +254,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };
 
-type JsonResponse<S extends z.ZodType> = {
-  description: string;
-  content: { 'application/json': { schema: S; example?: z.output<S> } };
-};
+type JsonResponse<S extends z.ZodType> = { description: string; content: { 'application/json': { schema: S; example?: z.output<S> } } };
 
 /**
  * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs

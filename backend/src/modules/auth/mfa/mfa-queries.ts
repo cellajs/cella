@@ -13,15 +13,11 @@ export const heldFactorsSql = (userId: string) => ({
   totp: sql<boolean>`exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${userId})`,
 });
 
-interface FindHeldFactorsOpts {
-  userId: string;
-}
-
 /**
  * Which second factors the user holds and whether MFA is on (null for a user that is gone), in one query. Inside
  * `mfaFactorRules.locked`, pass the context it hands over, so the read sees the change made there.
  */
-export const findHeldFactors = async (ctx: DbContext, { userId }: FindHeldFactorsOpts) => {
+export const findHeldFactors = async (ctx: DbContext, { userId }: { userId: string }) => {
   const held = heldFactorsSql(userId);
   const { rows } = await ctx.var.db.execute<{ mfaRequired: boolean | null; passkey: boolean; totp: boolean }>(sql`
     select (select ${usersTable.mfaRequired} from ${usersTable} where ${usersTable.id} = ${userId}) as "mfaRequired",

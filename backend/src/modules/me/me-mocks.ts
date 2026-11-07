@@ -6,10 +6,7 @@ import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import { TimeSpan } from '#/utils/time-span';
 
-export const mockMeResponse = (key = 'me:default') => ({
-  user: mockUserResponse(`${key}:user`),
-  isSystemAdmin: false,
-});
+export const mockMeResponse = (key = 'me:default') => ({ user: mockUserResponse(`${key}:user`), isSystemAdmin: false });
 
 export const mockMeAuthResponse = (key = 'me-auth:default') =>
   withFakerSeed(key, () => {

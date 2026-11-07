@@ -39,12 +39,8 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
 const liveSystemInvitation = () =>
   and(eq(tokensTable.type, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
 
-interface HasLiveSystemInvitationTokenOpts {
-  email: string;
-}
-
 /** Whether an unexpired system invitation is addressed to `email`. */
-export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: HasLiveSystemInvitationTokenOpts) => {
+export const hasLiveSystemInvitationToken = async (ctx: DbContext, { email }: { email: string }) => {
   const [liveToken] = await ctx.var.db
     .select({ id: tokensTable.id })
     .from(tokensTable)
@@ -62,12 +58,8 @@ export const countLiveSystemInvitations = async (ctx: DbContext) => {
   return row.count;
 };
 
-interface FindSystemInvitationTokensOpts {
-  emails: string[];
-}
-
 /** The unopened system invitations (no membership row) addressed to any of `emails`, expired ones included. */
-export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: FindSystemInvitationTokensOpts) =>
+export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: { emails: string[] }) =>
   ctx.var.db
     .select({ id: tokensTable.id, email: tokensTable.email, expiresAt: tokensTable.expiresAt })
     .from(tokensTable)
@@ -80,23 +72,14 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: Fin
       ),
     );
 
-interface DeleteInvitationTokensOpts {
-  inactiveMembershipIds: string[];
-}
-
 /** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
-export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: DeleteInvitationTokensOpts) => {
+export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: { inactiveMembershipIds: string[] }) => {
   if (!inactiveMembershipIds.length) return;
   await ctx.var.db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
-interface UpdateTokenUserOpts {
-  id: string;
-  userId: string;
-}
-
 /** Binds a token issued without an account to the account its sign-up link's redemption created; undefined when the token is bound already. */
-export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateTokenUserOpts) => {
+export const updateTokenUser = async (ctx: DbContext, { id, userId }: { id: string; userId: string }) => {
   const [bound] = await ctx.var.db
     .update(tokensTable)
     .set({ userId })
@@ -144,58 +127,38 @@ const replacedBy = (token: ReplacingToken): SQL | undefined => {
   return subject && and(eq(tokensTable.type, token.type), subject);
 };
 
-interface DeleteReplacedTokensOpts {
-  tokens: ReplacingToken[];
-}
-
 /** Deletes the earlier tokens these new ones replace, so only the newest one for a subject works. */
-export const deleteReplacedTokens = async (ctx: DbContext, { tokens }: DeleteReplacedTokensOpts) => {
+export const deleteReplacedTokens = async (ctx: DbContext, { tokens }: { tokens: ReplacingToken[] }) => {
   const replaced = tokens.map(replacedBy).filter((filter) => filter !== undefined);
   if (replaced.length) await ctx.var.db.delete(tokensTable).where(or(...replaced));
 };
 
-interface InsertTokensOpts {
-  values: InsertTokenModel[];
-}
-
 /** Stores new tokens; returns the stored rows without their secrets. */
-export const insertTokens = async (ctx: DbContext, { values }: InsertTokensOpts) => {
-  return ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
-};
+export const insertTokens = async (ctx: DbContext, { values }: { values: InsertTokenModel[] }) =>
+  ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
 
 /** Names the token a link of `type` carries, by the hash of the raw value in its URL. */
 const namedBy = (type: LinkTokenType, rawToken: string) => and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type));
 
-interface FindLinkTokenOpts {
+interface LinkTokenOpts {
   type: LinkTokenType;
   /** The raw value from the link. */
   rawToken: string;
 }
 
 /** The link token a raw value names, read without redeeming it; undefined when there is none. */
-export const findLinkToken = async (ctx: DbContext, { type, rawToken }: FindLinkTokenOpts): Promise<TokenRecord | undefined> => {
+export const findLinkToken = async (ctx: DbContext, { type, rawToken }: LinkTokenOpts): Promise<TokenRecord | undefined> => {
   const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(namedBy(type, rawToken)).limit(1);
   return token;
 };
 
-interface DeleteUnopenedLinkTokenOpts {
-  type: LinkTokenType;
-  /** The raw value from the link. */
-  rawToken: string;
-}
-
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
-export const deleteUnopenedLinkToken = async (ctx: DbContext, { type, rawToken }: DeleteUnopenedLinkTokenOpts) => {
+export const deleteUnopenedLinkToken = async (ctx: DbContext, { type, rawToken }: LinkTokenOpts) => {
   await ctx.var.db.delete(tokensTable).where(and(namedBy(type, rawToken), isNull(tokensTable.invokedAt)));
 };
 
-interface DeleteOpenedLinkTokensOpts {
-  type: LinkTokenType;
-  userId: string;
-}
-
 /** Deletes the user's opened links of `type`, so no browser holding a single-use cookie for one opens it again. */
-export const deleteOpenedLinkTokens = async (ctx: DbContext, { type, userId }: DeleteOpenedLinkTokensOpts) => {
+export const deleteOpenedLinkTokens = async (ctx: DbContext, { type, userId }: { type: LinkTokenType; userId: string }) => {
   await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.type, type), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
 };
 
@@ -229,26 +192,20 @@ const boundTo = (type: TokenType, cookie: string) => {
   return and(eq(tokensTable.type, type), eq(hashedColumn, hashToken(cookie)));
 };
 
-interface FindBoundTokenOpts {
+interface BoundTokenOpts {
   type: TokenType;
   /** The value of the browser's cookie of `type`. */
   cookie: string;
 }
 
 /** The token a browser's cookie of `type` binds it to, whatever its state; undefined when it names no row. */
-export const findBoundToken = async (ctx: DbContext, { type, cookie }: FindBoundTokenOpts) => {
+export const findBoundToken = async (ctx: DbContext, { type, cookie }: BoundTokenOpts) => {
   const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(boundTo(type, cookie)).limit(1);
   return token;
 };
 
-interface DeleteBoundTokenOpts {
-  type: TokenType;
-  /** The value of the browser's cookie of `type`. */
-  cookie: string;
-}
-
 /** Deletes the token a browser's cookie of `type` binds it to; returns the deleted row, undefined when there was none. */
-export const deleteBoundToken = async (ctx: DbContext, { type, cookie }: DeleteBoundTokenOpts) => {
+export const deleteBoundToken = async (ctx: DbContext, { type, cookie }: BoundTokenOpts) => {
   const [spent] = await ctx.var.db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);
   return spent;
 };

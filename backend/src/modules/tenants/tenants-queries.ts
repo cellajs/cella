@@ -34,15 +34,7 @@ const tenantColumns = pick(tenantsTable, [
 /** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
 const selectTenants = (ctx: DbContext) =>
   ctx.var.db
-    .select({
-      ...tenantColumns,
-      organization: {
-        id: organizationsTable.id,
-        name: organizationsTable.name,
-        slug: organizationsTable.slug,
-        thumbnailUrl: organizationsTable.thumbnailUrl,
-      },
-    })
+    .select({ ...tenantColumns, organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']) })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
     .$dynamic();
@@ -75,17 +67,10 @@ interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySc
 }
 
 /** A page of tenants of `kinds`, each with its organization, and the total. */
-export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
-  const { q, status, kinds, sort, order, limit, offset } = opts;
-
+export const findTenantsPaginated = async (ctx: DbContext, { q, status, kinds, sort, order, limit, offset }: FindTenantsPaginatedOpts) => {
   const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined, inArray(tenantsTable.kind, kinds));
 
-  const orderBy = getOrderColumns({
-    sort,
-    order,
-    columns: pick(tenantsTable, ['name', 'createdAt']),
-    tieBreaker: tenantsTable.id,
-  });
+  const orderBy = getOrderColumns({ sort, order, columns: pick(tenantsTable, ['name', 'createdAt']), tieBreaker: tenantsTable.id });
 
   const itemsQuery = selectTenants(ctx)
     .where(filter)
@@ -154,23 +139,14 @@ export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: 
   return total;
 };
 
-interface InsertTenantOpts {
-  values: InsertTenantModel;
-}
-
 /** Inserts a tenant; kind, status, restrictions and subscription take their column defaults. */
-export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts): Promise<TenantModel> => {
+export const insertTenant = async (ctx: DbContext, { values }: { values: InsertTenantModel }): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
   return tenant;
 };
 
-interface UpdateTenantOpts {
-  id: string;
-  values: Partial<InsertTenantModel>;
-}
-
 /** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
-export const updateTenant = async (ctx: DbContext, { id, values }: UpdateTenantOpts) => {
+export const updateTenant = async (ctx: DbContext, { id, values }: { id: string; values: Partial<InsertTenantModel> }) => {
   const [updated] = await ctx.var.db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
   return updated;
 };
@@ -205,8 +181,8 @@ interface DeleteDueTenantOpts extends DueTenantsOpts {
  * tenant row then takes its service accounts, API keys and connections.
  * @returns Whether the tenant was still due and is deleted.
  */
-export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: DeleteDueTenantOpts): Promise<boolean> => {
-  return ctx.var.db.transaction(async (tx) => {
+export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: DeleteDueTenantOpts): Promise<boolean> =>
+  ctx.var.db.transaction(async (tx) => {
     const [row] = await tx
       .select({ id: tenantsTable.id })
       .from(tenantsTable)
@@ -217,4 +193,3 @@ export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: Dele
     await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
     return true;
   });
-};

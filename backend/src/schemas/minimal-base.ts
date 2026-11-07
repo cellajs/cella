@@ -9,13 +9,7 @@ import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
  * entity stays unnamed and inlines where it is used.
  */
 export const minimalBaseSchema = <T extends string>(entityType: T) =>
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    slug: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    entityType: z.literal(entityType),
-  });
+  z.object({ id: z.string(), name: z.string(), slug: z.string(), thumbnailUrl: z.string().nullable(), entityType: z.literal(entityType) });
 
 /** Minimal user schema for references: a member list, a notification's actor. */
 export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMinimalBase', {

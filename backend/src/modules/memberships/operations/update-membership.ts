@@ -23,21 +23,15 @@ type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
  */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
   const actorId = ctx.var.user.id;
-  const memberships = ctx.var.memberships;
-
   const { role, archived, muted, displayOrder } = input;
 
   const setsPersonalView = personalViewKeys.some((key) => input[key] !== undefined);
   // Refused here as well as by the body schema, so the rule holds for every caller of the operation.
   if (role === undefined && !setsPersonalView) throw new AppError(400, 'invalid_request', 'warn');
 
-  let orderToUpdate = displayOrder;
-
   const membershipToUpdate = await findMembershipByIdInOrg(ctx, { membershipId });
 
-  if (!membershipToUpdate) {
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
-  }
+  if (!membershipToUpdate) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
 
   // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
   const isActorsMembership = membershipToUpdate.userId === actorId;
@@ -66,9 +60,10 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     for (const handedOut of [role, membershipToUpdate.role]) assertRoleGrant(ctx, { subject, role: handedOut, action: 'update' });
   }
 
-  if (displayOrder === undefined && archived !== undefined && archived !== membershipToUpdate.archived) {
-    orderToUpdate = getArchiveMoveOrder(memberships, updatedType, archived);
-  }
+  const orderToUpdate =
+    displayOrder === undefined && archived !== undefined && archived !== membershipToUpdate.archived
+      ? getArchiveMoveOrder(ctx.var.memberships, updatedType, archived)
+      : displayOrder;
 
   const values = {
     ...(role !== undefined && { role }),
@@ -79,9 +74,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });
   // Deleted after the read above (the member removed, the user deleted): the same 404 as a membership never found.
-  if (!updatedMembership) {
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
-  }
+  if (!updatedMembership) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   invalidateCache.user(updatedMembership.userId);
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });

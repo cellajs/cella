@@ -32,15 +32,9 @@ export function mergeLog<Row extends { payload: Uint8Array }>(
   base: Uint8Array | null,
   rows: readonly Row[],
 ): { state: Uint8Array | null; accepted: readonly Row[]; rejected: Row[] } {
+  const payloads = rows.map((row) => row.payload);
   try {
-    return {
-      state: mergeState(
-        base,
-        rows.map((row) => row.payload),
-      ),
-      accepted: rows,
-      rejected: [],
-    };
+    return { state: mergeState(base, payloads), accepted: rows, rejected: [] };
   } catch {
     // Merge one at a time to find the row that throws.
   }

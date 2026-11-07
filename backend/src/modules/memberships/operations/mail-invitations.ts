@@ -40,12 +40,10 @@ export async function mailInvitations(ctx: DbContext, { ids, organization }: Mai
       const channel = await resolveEntity(txCtx, { entityType: group[0].channelType, identifier: group[0].channelId });
       if (!channel) continue;
 
-      const links = await issueTokens(
-        txCtx,
-        group.flatMap(({ id, email, userId, createdBy }) =>
-          userId ? [] : [{ type: 'invitation' as const, email, createdBy, inactiveMembershipId: id }],
-        ),
+      const tokenRequests = group.flatMap(({ id, email, userId, createdBy }) =>
+        userId ? [] : [{ type: 'invitation' as const, email, createdBy, inactiveMembershipId: id }],
       );
+      const links = await issueTokens(txCtx, tokenRequests);
       const linkById = new Map(links.map(({ token, rawToken }) => [token.inactiveMembershipId, rawToken]));
       ready.push({ channel, group: group.map((invitation) => ({ ...invitation, rawToken: linkById.get(invitation.id) })) });
     }

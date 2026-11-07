@@ -40,8 +40,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await findLiveSessionsHeldByUser(dbCtx, { userId, offset: appConfig.maxSessionsPerUser - 1 });
   if (excess.length === 0) return;
 
-  const sessionIds = excess.map(({ id }) => id);
-  await revokeSessions(dbCtx, { userId, sessionIds, reason: 'session_cap', by: null });
+  await revokeSessions(dbCtx, { userId, sessionIds: excess.map(({ id }) => id), reason: 'session_cap', by: null });
 };
 
 /**
@@ -53,10 +52,7 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
   try {
     const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
-
-    const previousSignInAt = await findLastSignInAt(dbCtx, { userId });
-
-    return { deviceIdHash, previousSignInAt: previousSignInAt ?? null };
+    return { deviceIdHash, previousSignInAt: (await findLastSignInAt(dbCtx, { userId })) ?? null };
   } catch (err) {
     log.error('Failed to enroll device on sign-in', { userId, err });
     return null;

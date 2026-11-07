@@ -53,12 +53,7 @@ export {
   type StreamSignal,
   streamCatchupBodySchema,
 } from '#/schemas/stream-schemas';
-export {
-  type BatchResponseEmpty,
-  batchResponseSchema,
-  paginationSchema,
-  productListResponseSchema,
-} from '#/schemas/success-response-schemas';
+export { type BatchResponseEmpty, batchResponseSchema, paginationSchema, productListResponseSchema } from '#/schemas/success-response-schemas';
 export {
   idsWithStxBodySchema,
   type StxBase,

@@ -83,23 +83,15 @@ export const findSessionBySecret = async (ctx: DbContext, { secret }: FindSessio
   return result;
 };
 
-interface FindSessionStatesOpts {
-  ids: string[];
-}
-
 /** What decides whether these sessions still back a stream: user, revocation and expiry. */
-export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) =>
+export const findSessionStates = async (ctx: DbContext, { ids }: { ids: string[] }) =>
   ctx.var.db
     .select(pick(sessionsTable, ['id', 'userId', 'revokedAt', 'revocationReason', 'expiresAt']))
     .from(sessionsTable)
     .where(inArray(sessionsTable.id, ids));
 
-interface FindLiveSessionOpts {
-  id: string;
-}
-
 /** The session when it is still live, neither revoked nor expired; undefined otherwise. */
-export const findLiveSession = async (ctx: DbContext, { id }: FindLiveSessionOpts) => {
+export const findLiveSession = async (ctx: DbContext, { id }: { id: string }) => {
   const [live] = await ctx.var.db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
@@ -108,12 +100,8 @@ export const findLiveSession = async (ctx: DbContext, { id }: FindLiveSessionOpt
   return live;
 };
 
-interface InsertSessionOpts {
-  values: InsertSessionModel;
-}
-
 /** Stores a session; its `secret` is the hash of the session token, never the token. */
-export const insertSession = async (ctx: DbContext, { values }: InsertSessionOpts) => {
+export const insertSession = async (ctx: DbContext, { values }: { values: InsertSessionModel }) => {
   await ctx.var.db.insert(sessionsTable).values(values);
 };
 

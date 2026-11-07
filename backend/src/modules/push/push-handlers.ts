@@ -9,9 +9,7 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(pushRoutes.getPushVapid, async (ctx) => {
-  return ctx.json({ publicKey: getVapidPublicKey() }, 200);
-});
+app.openapi(pushRoutes.getPushVapid, async (ctx) => ctx.json({ publicKey: getVapidPublicKey() }, 200));
 
 app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
   const body = ctx.req.valid('json');
@@ -19,8 +17,7 @@ app.openapi(pushRoutes.createPushSubscription, async (ctx) => {
     values: {
       userId: ctx.var.user.id,
       endpoint: body.endpoint,
-      p256dh: body.keys.p256dh,
-      auth: body.keys.auth,
+      ...body.keys,
       expirationTime: body.expirationTime ? new Date(body.expirationTime).toISOString() : null,
       userAgent: ctx.req.header('user-agent')?.slice(0, maxLength.field) ?? null,
     },

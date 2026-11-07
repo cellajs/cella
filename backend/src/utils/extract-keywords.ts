@@ -21,6 +21,5 @@ export const extractKeywords = (...inputs: (string | null | undefined)[]): strin
 
 /** The keywords of a stored BlockNote document (blocks as a JSON string) and of `extras`; a body that is no block document adds none. */
 export const extractKeywordsFromBlocks = (blocksJson: string, ...extras: (string | null | undefined)[]): string => {
-  const fullText = (parseBlocks(blocksJson) ?? []).map(getTextFromBlock).join(' ').trim();
-  return extractKeywords(fullText, ...extras);
+  return extractKeywords((parseBlocks(blocksJson) ?? []).map(getTextFromBlock).join(' ').trim(), ...extras);
 };

@@ -12,9 +12,7 @@ import { readListPage } from '#/utils/list-page';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(organizationRoutes.batchCreateOrganizations, async (ctx) => {
-  return ctx.json(await createOrganizationsOp(ctx, ctx.req.valid('json')), 201);
-});
+app.openapi(organizationRoutes.batchCreateOrganizations, async (ctx) => ctx.json(await createOrganizationsOp(ctx, ctx.req.valid('json')), 201));
 
 app.openapi(organizationRoutes.getOrganization, async (ctx) => {
   const { slug: bySlug, include } = ctx.req.valid('query');

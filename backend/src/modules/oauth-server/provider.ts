@@ -74,9 +74,7 @@ async function accountMayUseGrant(sub: string, source: GrantSource | undefined):
   if (!tenantIds.every((tenantId): tenantId is string => !!tenantId)) return false;
 
   let refusal: string | null = null;
-  for (const tenantId of tenantIds) {
-    refusal ??= await grantRefusal({ userId: sub, clientId: source.clientId ?? '', tenantId });
-  }
+  for (const tenantId of tenantIds) refusal ??= await grantRefusal({ userId: sub, clientId: source.clientId ?? '', tenantId });
   if (!refusal) return true;
   if (source.grantId) await revokeGrant({ var: { db: baseDb } }, { grantId: source.grantId });
   log.info('OAuth grant refused', { refusal, grantId: source.grantId });

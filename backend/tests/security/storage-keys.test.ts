@@ -34,11 +34,7 @@ describe('Attachment storage keys', async () => {
     attachmentBody(id, attackerPlan, { keys, ...claims });
 
   const create = (body: Record<string, unknown>, headers: Record<string, string> = { ...defaultHeaders, Cookie: attacker.sessionCookie }) =>
-    call(batchCreateAttachments, {
-      path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id },
-      body: [body] as never,
-      headers,
-    });
+    call(batchCreateAttachments, { path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id }, body: [body] as never, headers });
 
   const presign = (attachmentId: string) =>
     call(presignAttachmentUrls, {

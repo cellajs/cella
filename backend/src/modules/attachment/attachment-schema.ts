@@ -39,13 +39,7 @@ const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTabl
 const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions);
 
 export const attachmentSchema = z
-  .object({
-    ...attachmentSelectSchema.shape,
-    ...auditShape,
-    ...tombstoneShape,
-    stx: stxBaseSchema,
-    viewCount: productViewCountSchema,
-  })
+  .object({ ...attachmentSelectSchema.shape, ...auditShape, ...tombstoneShape, stx: stxBaseSchema, viewCount: productViewCountSchema })
   .openapi('Attachment', {
     description:
       'A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.',

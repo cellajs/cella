@@ -35,16 +35,10 @@ describe('OpenAPI composition conventions', () => {
   it('inlines nullable references as anyOf [$ref, null] without extra component schemas', () => {
     // Guards against `.nullable()` on a registered schema, which emits a contradictory
     // allOf [$ref, {type: [x, 'null']}]. Unnamed z.union([ref, z.null()]) is the convention.
-    const nullableUserRef = {
-      anyOf: [{ $ref: '#/components/schemas/UserMinimalBase' }, { type: 'null' }],
-    };
-    const nullableStxRef = {
-      anyOf: [{ $ref: '#/components/schemas/StxBase' }, { type: 'null' }],
-    };
+    const nullableUserRef = { anyOf: [{ $ref: '#/components/schemas/UserMinimalBase' }, { type: 'null' }] };
+    const nullableStxRef = { anyOf: [{ $ref: '#/components/schemas/StxBase' }, { type: 'null' }] };
     expect(schemas).toMatchObject({
-      ReusableUnionFixture: {
-        properties: { user: nullableUserRef, stx: nullableStxRef },
-      },
+      ReusableUnionFixture: { properties: { user: nullableUserRef, stx: nullableStxRef } },
       StreamChange: { properties: { rows: { items: { properties: { stx: nullableStxRef } } } } },
     });
 
@@ -54,20 +48,12 @@ describe('OpenAPI composition conventions', () => {
 
   it('inlines the boolean query helper instead of exposing it as a component schema', () => {
     expect(schemas).toMatchObject({
-      ReusableUnionFixture: {
-        properties: { flag: { anyOf: [{ type: 'string', enum: ['true', 'false'] }, { type: 'boolean' }] } },
-      },
+      ReusableUnionFixture: { properties: { flag: { anyOf: [{ type: 'string', enum: ['true', 'false'] }, { type: 'boolean' }] } } },
     });
     expect(schemas).not.toHaveProperty('BooleanQueryValue');
   });
 
   it('uses nullable type arrays for inline primitives and objects', () => {
-    expect(schemas).toMatchObject({
-      UploadToken: {
-        properties: {
-          params: { type: ['object', 'null'] },
-        },
-      },
-    });
+    expect(schemas).toMatchObject({ UploadToken: { properties: { params: { type: ['object', 'null'] } } } });
   });
 });

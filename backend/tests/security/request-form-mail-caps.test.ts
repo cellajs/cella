@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { defaultHeaders } from '../fixtures';
-import { createUser, mailsTo } from '../helpers';
+import { createTestUser, mailsTo } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
 afterEach(async () => await clearDatabase());
@@ -18,7 +18,7 @@ describe('Request form mail caps', async () => {
 
   it('must not mail one address more than once a day through the request form', async () => {
     const victim = `request-victim-${nanoid(8)}@security-test.com`.toLowerCase();
-    const account = await createUser(`request-holder-${nanoid(8)}@security-test.com`.toLowerCase());
+    const account = await createTestUser(`request-holder-${nanoid(8)}@security-test.com`.toLowerCase());
 
     // Two contact messages and a waitlist entry: all stored for the team, one confirmation to the address.
     expect([await submit(victim, 'contact', 'Hi'), await submit(victim, 'contact', 'Hi'), await submit(victim, 'waitlist', null)]).toEqual([

@@ -11,18 +11,10 @@ import { accessFrom } from '#/permissions/access';
  */
 export const canCreateEntity = (ctx: ActorContext, subject: SubjectForPermission) => {
   const { entityType } = subject;
-
-  const { allowed } = checkAccess(accessFrom(ctx), 'create', subject);
-
-  if (!allowed) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType });
-  }
-
-  const organization = ctx.var.organization;
+  if (!checkAccess(accessFrom(ctx), 'create', subject).allowed) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
   // Defense in depth: a subject scoped to an organization must name the organization of the request.
+  const { organization } = ctx.var;
   const organizationId = subject.channelIds.organization;
-  if (organization && organizationId && organizationId !== organization.id) {
-    throw new AppError(409, 'organization_mismatch', 'error', { entityType });
-  }
+  if (organization && organizationId && organizationId !== organization.id) throw new AppError(409, 'organization_mismatch', 'error', { entityType });
 };

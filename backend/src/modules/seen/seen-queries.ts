@@ -101,10 +101,8 @@ export const insertSeenBy = async (ctx: DbContext, { userId, productType, produc
   // Its own statement: the insert below must take its snapshot after the lock is granted.
   await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`seen_by:${userId}`}, 0))`);
 
-  const values = sql.join(
-    productIds.map((productId) => sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, now())`),
-    sql`, `,
-  );
+  const rows = productIds.map((productId) => sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, now())`);
+  const values = sql.join(rows, sql`, `);
 
   const result = await db.execute<{ new_count: number }>(sql`
     WITH candidate (id, user_id, product_id, product_type, created_at) AS (

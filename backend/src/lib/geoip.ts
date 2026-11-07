@@ -46,8 +46,7 @@ const asn: GeoipDatabase<AsnResponse> = {
 const geoipSourceUrl = (): string | null => {
   const configured = env.GEOIP_SOURCE_URL;
   if (configured === 'off') return null;
-  const base = configured || `${appConfig.s3.publicCDNUrl}/geoip`;
-  return base.replace(/\/$/, '');
+  return (configured || `${appConfig.s3.publicCDNUrl}/geoip`).replace(/\/$/, '');
 };
 
 const loadReader = async <T extends MmdbResponse>(db: GeoipDatabase<T>): Promise<Reader<T> | null> => {
@@ -83,9 +82,7 @@ export const lookupIp = async (ip: string | null | undefined): Promise<{ country
   if (!target) return { country: null, asn: null };
   try {
     const [countryReader, asnReader] = await Promise.all([loadReader(country), loadReader(asn)]);
-    const countryCode = countryReader?.get(target)?.country?.iso_code ?? null;
-    const asnNumber = asnReader?.get(target)?.autonomous_system_number ?? null;
-    return { country: countryCode, asn: asnNumber };
+    return { country: countryReader?.get(target)?.country?.iso_code ?? null, asn: asnReader?.get(target)?.autonomous_system_number ?? null };
   } catch (err) {
     log.warn('GeoIP lookup failed', { err });
     return { country: null, asn: null };

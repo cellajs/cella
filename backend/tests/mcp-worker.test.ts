@@ -24,9 +24,7 @@ vi.mock('shared/utils/worker-lifecycle', () => ({ setupGracefulShutdown: vi.fn()
 // The worker starts telemetry; a test exports none.
 vi.mock('#/lib/tracing', async (importOriginal) => {
   const { otel } = await importOriginal<typeof import('#/lib/tracing')>();
-  return {
-    otel: { ...otel, start: vi.fn(), verifyConnection: vi.fn(async () => {}), shutdown: vi.fn(async () => {}) },
-  };
+  return { otel: { ...otel, start: vi.fn(), verifyConnection: vi.fn(async () => {}), shutdown: vi.fn(async () => {}) } };
 });
 
 /**

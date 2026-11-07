@@ -4,10 +4,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ActorContext } from '#/core/context';
 import { baseDb, getSeedDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { filterExistingProductIds } from '#/modules/entities/embedding-queries';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -36,8 +35,7 @@ describe('filterExistingProductIds', async () => {
   const seed = async (owner: TestTenant, id: string, createdBy: string = owner.user.id) => {
     const plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
     plans.push(plan);
-    const columns = { id, tenantId: owner.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null };
-    await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
+    await insertAttachmentIn(plan, { id, tenantId: owner.tenantId, createdBy });
   };
 
   beforeAll(async () => {

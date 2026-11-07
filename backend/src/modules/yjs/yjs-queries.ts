@@ -17,12 +17,8 @@ export const docWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
 export const logWhere = ({ entityType, entityId, tenantId }: YjsDocKey) =>
   and(eq(yjsUpdatesTable.entityType, entityType), eq(yjsUpdatesTable.entityId, entityId), eq(yjsUpdatesTable.tenantId, tenantId));
 
-interface FindYjsLogOpts {
-  doc: YjsDocKey;
-}
-
 /** The document's log, oldest first, in the caller's transaction; empty when nothing is logged. */
-export const findYjsLog = async (ctx: DbContext, { doc }: FindYjsLogOpts): Promise<LogRow[]> => {
+export const findYjsLog = async (ctx: DbContext, { doc }: { doc: YjsDocKey }): Promise<LogRow[]> => {
   const rows = await ctx.var.db
     .select({ id: yjsUpdatesTable.id, payload: yjsUpdatesTable.payload, userId: yjsUpdatesTable.userId })
     .from(yjsUpdatesTable)
@@ -31,10 +27,6 @@ export const findYjsLog = async (ctx: DbContext, { doc }: FindYjsLogOpts): Promi
   return rows.map((row) => ({ ...row, payload: new Uint8Array(row.payload) }));
 };
 
-interface FindYjsDocumentOpts {
-  doc: YjsDocKey;
-}
-
 /**
  * The document row under FOR SHARE, then its log, oldest first; null when no row exists (never seeded, or retired).
  * The lock makes base and log one read: a compaction's base replace (an UPDATE of the row) commits before it or waits
@@ -42,7 +34,7 @@ interface FindYjsDocumentOpts {
  * row FOR KEY SHARE and do not wait. Runs in the caller's transaction, which carries the document's tenant context:
  * both tables are fail-closed under RLS, and a read without it finds no row.
  */
-export const findYjsDocument = async (ctx: DbContext, { doc }: FindYjsDocumentOpts): Promise<YjsDocumentRead | null> => {
+export const findYjsDocument = async (ctx: DbContext, { doc }: { doc: YjsDocKey }): Promise<YjsDocumentRead | null> => {
   const [document] = await ctx.var.db
     .select({ state: yjsDocumentsTable.state, generation: yjsDocumentsTable.generation })
     .from(yjsDocumentsTable)
@@ -70,16 +62,12 @@ export const insertYjsDocument = async (ctx: DbContext, { doc, state }: InsertYj
     .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
 };
 
-interface FindYjsDocumentGenerationOpts {
-  doc: YjsDocKey;
-}
-
 /**
  * The document row's generation and `bytes`, its base and log together, the row held FOR KEY SHARE until the caller's
  * transaction ends: a retirement, which deletes the row, waits for it, and a read's FOR SHARE lets it through. Undefined
  * when no row exists.
  */
-export const findYjsDocumentGeneration = async (ctx: DbContext, { doc }: FindYjsDocumentGenerationOpts) => {
+export const findYjsDocumentGeneration = async (ctx: DbContext, { doc }: { doc: YjsDocKey }) => {
   // `octet_length` reads a stored size without loading the value; the subquery's bare columns name the log's own.
   const logBytes = sql`(SELECT coalesce(sum(octet_length(${yjsUpdatesTable.payload})), 0) FROM ${yjsUpdatesTable} WHERE ${logWhere(doc)})`;
   const [document] = await ctx.var.db
@@ -123,25 +111,15 @@ export const findServerYjsUpdate = async (ctx: DbContext, { doc, exceptIds }: Fi
   return row;
 };
 
-interface DeleteYjsDocumentsOpts {
-  entityType: ProductEntityType;
-  entityIds: string[];
-}
-
 /** Deletes the document rows of these entities; returns the entity and tenant of each row deleted. */
-export const deleteYjsDocuments = async (ctx: DbContext, { entityType, entityIds }: DeleteYjsDocumentsOpts) =>
+export const deleteYjsDocuments = async (ctx: DbContext, { entityType, entityIds }: { entityType: ProductEntityType; entityIds: string[] }) =>
   ctx.var.db
     .delete(yjsDocumentsTable)
     .where(and(eq(yjsDocumentsTable.entityType, entityType), inArray(yjsDocumentsTable.entityId, entityIds)))
     .returning({ entityId: yjsDocumentsTable.entityId, tenantId: yjsDocumentsTable.tenantId });
 
-interface DeleteYjsUpdatesOpts {
-  entityType: ProductEntityType;
-  entityIds: string[];
-}
-
 /** Deletes the update log of these entities' documents. */
-export const deleteYjsUpdates = async (ctx: DbContext, { entityType, entityIds }: DeleteYjsUpdatesOpts) => {
+export const deleteYjsUpdates = async (ctx: DbContext, { entityType, entityIds }: { entityType: ProductEntityType; entityIds: string[] }) => {
   await ctx.var.db.delete(yjsUpdatesTable).where(and(eq(yjsUpdatesTable.entityType, entityType), inArray(yjsUpdatesTable.entityId, entityIds)));
 };
 
@@ -174,10 +152,6 @@ export const getTableColumnNames = (ctx: DbContext, { table }: GetTableColumnNam
   return cached;
 };
 
-interface FindEntityDescriptionOpts {
-  doc: YjsDocScope;
-}
-
 /**
  * The entity's stored description, read FOR SHARE in the caller's transaction: an outside write's UPDATE of the row
  * waits until the caller commits, and a write in flight commits first and is read. Null when no live row exists in the
@@ -185,7 +159,7 @@ interface FindEntityDescriptionOpts {
  * it locks its row and gives none. The app-owned table is queried by name, after access to the entity was verified;
  * the tenant and live-row predicates repeat what RLS applies, so the read is the same on a connection that bypasses it.
  */
-export const findEntityDescription = async (ctx: DbContext, { doc }: FindEntityDescriptionOpts) => {
+export const findEntityDescription = async (ctx: DbContext, { doc }: { doc: YjsDocScope }) => {
   const table = toTableName(doc.entityType);
   const existing = await getTableColumnNames(ctx, { table });
   if (!existing.has('id')) return { description: null };
