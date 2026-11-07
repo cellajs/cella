@@ -27,7 +27,7 @@ No script: manual.
 1. Run `pnpm generate`: it writes `ALTER TABLE "sessions" ADD COLUMN "stepped_up_secret" varchar(255);`, `ALTER TABLE "passkeys" ADD COLUMN "transports" varchar(255)[];`, the `bigint` cast of `passkeys.counter` and the unique `totps_user_id_idx`. Paste `data.sql`, which keeps each account's newest `totps` row, above the `CREATE UNIQUE INDEX` in the new `migration.sql`; no hints.
 2. Pass `ctx` to `readStepUp` and `requireStepUp`; a route without `userGuard` passes `{ var: { session, stepUpCookie: getAuthCookie(ctx, 'session-step-up') } }`. Stamp a step-up with `stampStepUp`.
 3. An app test that steps up and then calls a guarded route sends the cookies the step-up response set (`keepCookiesOf` in `backend/tests/security/session-helpers.ts`).
-4. An app test that opens an invitation or verification link uses `openHeldLink` (`backend/tests/helpers.ts`), which answers the redeeming POST's `redirectTo`, and expects 303 from `confirmMagicLink`.
+4. An app test that opens an invitation or verification link uses `openHeldLink` (`backend/tests/helpers.ts`), which answers the redeeming POST's `redirectTo`, expects 401 `link_not_held` from a POST whose browser holds no link, and expects 303 from `confirmMagicLink`.
 5. An app link type of its own adds its entry to `redeemedLinkTargets` in `open-link-token.ts`: typecheck flags it.
 6. App code that reads a passkey challenge's `credentialIds` reads `credentials` (`{ id, transports? }`), and `findCredentialIdsByUser` is `findPasskeyCredentialsByUser`.
 
