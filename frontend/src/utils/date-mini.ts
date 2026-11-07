@@ -16,6 +16,15 @@ export interface DateMiniOptions {
   compact?: boolean;
 }
 
+/** What `dateMini` shows: "now", a counted distance, or a date. */
+export type DateMiniKind = 'now' | 'count' | 'date';
+
+export const dateMiniKind = (startDate: string, { compact }: DateMiniOptions = {}): DateMiniKind => {
+  const diff = Math.abs(dayjs().diff(dayjs.utc(startDate)));
+  if (diff <= secondMs) return 'now';
+  return diff < dayMs || compact ? 'count' : 'date';
+};
+
 /**
  * Distance from now as a minimal relative string: "now" (<1s), seconds (<1m), minutes (<1h), hours (<1d),
  * "MMM D" (<1y), else "MMM D, YYYY". `compact` counts on in days, weeks, months and years. Unit strings come from the

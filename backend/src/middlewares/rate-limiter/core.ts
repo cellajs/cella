@@ -1,7 +1,14 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { extractIdentifiers, getRateLimiterInstance, refuseRateLimited, reserveAttempt, subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { adoptDbCount, maxWindowMs, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+import {
+  extractIdentifiers,
+  getRateLimiterInstance,
+  refuseRateLimited,
+  reportBudget,
+  reserveAttempt,
+  subjectSegment,
+} from '#/middlewares/rate-limiter/helpers';
+import { adoptDbCount, localCount, maxWindowMs, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type {
   Outcome,
@@ -35,7 +42,8 @@ const defaultOptions = {
  * @param opts - Limits and middleware metadata.
  */
 export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitKeyPart[], opts?: RateLimiterOpts): RateLimiterHandler => {
-  const { limits, functionName, name, description, refusalType, exempt, getConsumePoints, getPointsBudget, countsInProcess } = opts ?? {};
+  const { limits, functionName, name, description, refusalType, exempt, getConsumePoints, getPointsBudget, countsInProcess, reportsBudget } =
+    opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
   const fastPath = mode === 'limit' && (countsInProcess || getPointsBudget !== undefined);
@@ -43,6 +51,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
   const windowMs = config.duration * 1000;
   if (fastPath && windowMs > maxWindowMs) throw new Error(`${keyPrefix}: counting in process needs a window of at most an hour`);
   if (mode === 'limit' && limits?.blockDuration) throw new Error(`${keyPrefix}: a limit refuses until its window ends; a block needs a fail mode`);
+  if (reportsBudget && mode !== 'limit') throw new Error(`${keyPrefix}: only a limit reports its budget`);
   const isFailMode = mode === 'fail' || mode === 'failseries';
   const store = getRateLimiterInstance({ ...config, keyPrefix });
   const policy: RateLimitPolicy = { mode, points: config.points, duration: config.duration };
@@ -94,6 +103,9 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         const fastKey = `${keyPrefix}:${rateLimitKey}`;
         if (fastPath && tryFastConsume(fastKey, consumePoints, effectiveBudget, windowMs) === 'allow') {
           await next();
+          // Read after the handler, so reads it overlapped are in the count too
+          const count = reportsBudget ? localCount(fastKey) : null;
+          if (count) reportBudget(ctx, key, effectiveBudget, config.duration, effectiveBudget - count.consumed, count.msLeft);
           return;
         }
 
@@ -106,6 +118,8 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         if (!taken.granted) return refuseRateLimited(taken.state, refusalType);
 
         await next();
+        const { consumedPoints, msBeforeNext } = taken.state;
+        if (reportsBudget) reportBudget(ctx, key, effectiveBudget, config.duration, effectiveBudget - consumedPoints, msBeforeNext);
         return;
       }
 

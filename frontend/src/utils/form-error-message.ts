@@ -1,5 +1,6 @@
-import i18n, { t } from 'i18next';
+import { t } from 'i18next';
 import type { z } from 'zod';
+import { formatList } from '~/utils/format-list';
 
 type Issue = z.core.$ZodRawIssue;
 
@@ -20,7 +21,7 @@ const formatMessage = (issue: Extract<Issue, { code: 'invalid_format' }>) => {
   if (issue.format === 'starts_with' && 'prefix' in issue) return t('error:form.starts_with', { prefix: issue.prefix });
 
   const chars = refusedChars(issue.pattern, issue.input).map((char) => `“${char}”`);
-  if (chars.length) return t('error:form.remove_chars', { chars: new Intl.ListFormat(i18n.resolvedLanguage, { type: 'conjunction' }).format(chars) });
+  if (chars.length) return t('error:form.remove_chars', { chars: formatList(chars) });
   return isBlank(issue.input) ? t('error:form.required') : t('error:form.format');
 };
 

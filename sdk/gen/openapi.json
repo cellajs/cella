@@ -219,7 +219,7 @@
           },
           "readLimiter": {
             "name": "Reads",
-            "description": "Reads for each user or service account, or for each IP address when not signed in.",
+            "description": "Reads for each user or service account, or for each IP address when not signed in. Each read answers with what is left, in `RateLimit` and `RateLimit-Policy` under `\"read\"`.",
             "policy": {
               "mode": "limit",
               "points": 1000,
