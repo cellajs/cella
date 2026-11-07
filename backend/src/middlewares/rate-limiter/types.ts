@@ -78,4 +78,10 @@ export interface RateLimiterOpts {
    * tenant budget counts this way too.
    */
   countsInProcess?: boolean;
+  /**
+   * For a `limit` keyed to the requester alone: each request it lets through is answered with what is left of the budget
+   * (`RateLimit` and `RateLimit-Policy`, IETF httpapi draft), so a client can pace background work before a refusal. A
+   * budget others spend, such as one per email address, must not report it.
+   */
+  reportsBudget?: boolean;
 }

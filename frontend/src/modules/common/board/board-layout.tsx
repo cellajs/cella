@@ -69,8 +69,6 @@ export function BoardLayout({
   mustFit,
   ref,
 }: BoardLayoutProps) {
-  // Compiler gap: an optional-chain comparison in the drop indicator's state updater.
-  'use no memo';
   const { t } = useTranslation();
   const setPanelCollapsed = useBoardStore((state) => state.setPanelCollapsed);
   const fit = useBoardStore((state) => state.boardFits[boardId] ?? false);

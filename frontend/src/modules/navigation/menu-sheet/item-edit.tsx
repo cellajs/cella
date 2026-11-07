@@ -112,8 +112,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <span className={avatarBoxClass}>{avatar}</span>
       )}
 
-      {/* A sub-row's name sits 0.125rem above center, as it does outside edit mode */}
-      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:pb-1 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
+      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
         {item.name} {env.VITE_DEBUG_MODE && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (

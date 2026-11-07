@@ -1,6 +1,7 @@
 import i18n, { t } from 'i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import type { CustomUppyOptions } from '~/modules/common/uploader/types';
+import { formatList } from '~/utils/format-list';
 
 /** File kinds by the types that name them; any other type is a file. */
 const kindTypes: [TKey, string[]][] = [
@@ -12,16 +13,19 @@ const everyKind: TKey[] = [...kindTypes.map(([kind]) => kind), 'c:file_other'];
 
 const kindOf = (type: string) => kindTypes.find(([, types]) => types.includes(type))?.[0] ?? 'c:file_other';
 
-const formatList = (kinds: TKey[], type: Intl.ListFormatType) =>
-  new Intl.ListFormat(i18n.resolvedLanguage, { type }).format(kinds.map((kind) => t(kind)));
+const formatKinds = (kinds: TKey[], type: Intl.ListFormatType) =>
+  formatList(
+    kinds.map((kind) => t(kind)),
+    type,
+  );
 
 /** The Dashboard note: the file kinds, the number of files and the size each may have. */
 export const generateRestrictionNote = ({ allowedFileTypes, maxNumberOfFiles, maxFileSize }: Partial<CustomUppyOptions['restrictions']>) => {
   const kinds = allowedFileTypes?.includes('*/*') ? everyKind : [...new Set((allowedFileTypes ?? []).map(kindOf))];
 
   const parts: string[] = [];
-  if (kinds.length === everyKind.length) parts.push(formatList(kinds, 'unit'));
-  else if (kinds.length) parts.push(t('c:upload_note.only', { kinds: formatList(kinds, 'conjunction') }));
+  if (kinds.length === everyKind.length) parts.push(formatKinds(kinds, 'unit'));
+  else if (kinds.length) parts.push(t('c:upload_note.only', { kinds: formatKinds(kinds, 'conjunction') }));
   if (maxNumberOfFiles != null) parts.push(t('c:upload_note.max_files', { count: maxNumberOfFiles }));
   if (maxFileSize != null) {
     const size = new Intl.NumberFormat(i18n.resolvedLanguage, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 });

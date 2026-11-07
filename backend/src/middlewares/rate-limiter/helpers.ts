@@ -195,6 +195,16 @@ export const refuseRateLimited = (limitState: RateLimiterRes, type: ErrorKey = '
 export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000));
 
 /**
+ * Answers with what a budget has left, as the IETF httpapi draft's `RateLimit-Policy` (`q` quota, `w` window) and
+ * `RateLimit` (`r` left, `t` seconds until the window ends) fields, under the limiter's key. Appended, so a request
+ * behind two reporting limiters carries both.
+ */
+export const reportBudget = (ctx: Context<Env>, policy: string, quota: number, windowSeconds: number, remaining: number, msLeft: number) => {
+  ctx.header('RateLimit-Policy', `"${policy}";q=${quota};w=${windowSeconds}`, { append: true });
+  ctx.header('RateLimit', `"${policy}";r=${Math.max(remaining, 0)};t=${Math.max(0, Math.ceil(msLeft / 1000))}`, { append: true });
+};
+
+/**
  * One identifier's segment of a rate-limit key. An id enters as it is; an IP (IPv6 by its /64) or an address enters
  * as its keyed pseudonym, so `rate_limits` holds neither in the clear.
  */

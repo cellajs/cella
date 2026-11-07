@@ -28,7 +28,7 @@ function guardedRoute(
   mode: RateLimitMode,
   status: Answer,
   limits: typeof budget = budget,
-  opts: Pick<RateLimiterOpts, 'getPointsBudget' | 'countsInProcess'> = {},
+  opts: Pick<RateLimiterOpts, 'getPointsBudget' | 'countsInProcess' | 'reportsBudget'> = {},
 ) {
   const getConsumePoints = (ctx: Context<Env>) => Number(ctx.req.header('x-cost') ?? 1);
   const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, getConsumePoints, ...opts });
@@ -306,6 +306,41 @@ describe('a points budget at the static ceiling', () => {
 
       expect(accepted).toBe(27);
     });
+  });
+});
+
+/** A client paces background reads by what the budget reports, so the report must match what the limiter refuses. */
+describe('a reported budget', () => {
+  const left = (response: Response) => {
+    const [, remaining, seconds] = response.headers.get('ratelimit')?.match(/^"[\w-]+";r=(\d+);t=(\d+)$/) ?? [];
+    return remaining === undefined ? null : { remaining: Number(remaining), seconds: Number(seconds) };
+  };
+
+  it('must not report a budget other than the one the limiter refuses at, in process or past it in the database', async () => {
+    // The read limiter's shape, scaled down: the first 7 count in process, the rest in the database.
+    const route = guardedRoute('limit', 200, { points: 10, duration: 60 * 5, blockDuration: 0 }, { countsInProcess: true, reportsBudget: true });
+    const ip = randomIp();
+
+    const reports: (number | null)[] = [];
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const response = await route.attempt(ip);
+      expect(response.headers.get('ratelimit-policy')).toMatch(/^"[\w-]+";q=10;w=300$/);
+      const report = left(response);
+      expect(report?.seconds).toBeGreaterThan(0);
+      expect(report?.seconds).toBeLessThanOrEqual(300);
+      reports.push(report?.remaining ?? null);
+    }
+
+    expect(reports).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+    expect((await route.attempt(ip)).status).toBe(429);
+  });
+
+  it('must not report a budget via a limiter that does not opt in', async () => {
+    const route = guardedRoute('limit', 200, { points: 10, duration: 60 * 5, blockDuration: 0 }, { countsInProcess: true });
+    const response = await route.attempt(randomIp());
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('ratelimit')).toBeNull();
   });
 });
 
