@@ -7,6 +7,7 @@ import { appDescriptionHash } from '../lib/deploy/app-description';
 import { type AppliedEngine, ENGINE_IMAGE_NAME, engineImageRef, engineImageRepository, writeAppliedEngine } from '../lib/deploy/applied-engine';
 import { rootNodeVersion } from '../lib/deploy/main-job';
 import { pinnedNodeImage } from '../lib/deploy/node-image';
+import { publishAppliedDescription } from '../lib/deploy/release-gate';
 import { COMMIT } from '../lib/deploy/target';
 import { deriveInfra } from '../lib/naming';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
@@ -184,7 +185,7 @@ export async function publishEngine(opts: {
   }
 }
 
-/** Record the engine an apply published, once its `up` wrote the definition that runs it: `applied.json`, on the operator key. */
+/** Record the engine an apply published, once its `up` wrote the definition that runs it: `applied.json`, on the operator key, and its description on GitHub. */
 export async function recordAppliedEngine(opts: {
   appConfig: EngineConfig;
   stack: string;
@@ -201,6 +202,8 @@ export async function recordAppliedEngine(opts: {
     appliedAt: new Date().toISOString(),
   };
   await writeAppliedEngine(s3, naming.bootDiagBucket, opts.stack, applied);
+  // Under the lease too, so two applies publish in the order they recorded.
+  publishAppliedDescription(opts.appConfig.mode, applied.descriptionHash);
   return applied;
 }
 
