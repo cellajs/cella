@@ -25,6 +25,7 @@ Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the install wizard; on a
 4. A Scaleway project per environment (optional): the wizard picks or creates one and writes its id to `infra/Pulumi.<mode>.yaml`. Each environment needs a project of its own.
 5. A password manager, for the Pulumi passphrase the wizard shows once.
 6. The root `package.json`'s `repository` set to the https URL of the app's repository, which create-cella leaves empty: every deploy fetches its commit from there.
+7. The GitHub CLI (`gh`), signed in with access to the repository's variables: every apply publishes its description there for the release PR's check.
 
 ## 2. Your Owner API key
 

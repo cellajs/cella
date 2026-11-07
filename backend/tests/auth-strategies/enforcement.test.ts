@@ -60,7 +60,7 @@ describe('passkey strategy disabled', async () => {
   const call = await createAppClient();
 
   it('should reject passkey generation', async () => {
-    const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'registration' }, headers: defaultHeaders });
+    const { response: res, error } = await call(generatePasskeyChallenge, { body: { kind: 'registration' }, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 
@@ -137,14 +137,14 @@ describe('magic strategy disabled', async () => {
   });
   const call = await createAppClient();
 
-  // The invoke route serves every link type, so only a magic link checks the magic switch.
+  // The invoke route serves every link kind, so only a magic link checks the magic switch.
   it('must not open a magic link while magic links are off', async () => {
-    const refused = await call(invokeToken, { path: { type: 'magic', token: 'any' }, headers: defaultHeaders });
+    const refused = await call(invokeToken, { path: { kind: 'magic', token: 'any' }, headers: defaultHeaders });
     await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 
-  it('opens other link types while magic links are off (positive control)', async () => {
-    const { response, error } = await call(invokeToken, { path: { type: 'invitation', token: 'any' }, headers: defaultHeaders });
+  it('opens other link kinds while magic links are off (positive control)', async () => {
+    const { response, error } = await call(invokeToken, { path: { kind: 'invitation', token: 'any' }, headers: defaultHeaders });
     expect((error as ErrorResponse | undefined)?.type).not.toBe('forbidden_strategy');
     expect(response.status).not.toBe(400);
   });

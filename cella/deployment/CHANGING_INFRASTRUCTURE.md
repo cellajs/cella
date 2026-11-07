@@ -26,7 +26,7 @@ Identities are IAM, written at an Owner moment ([Identities](#identities)). To a
 1. Builds the engine image from your checkout's tracked files and pushes it to the environment's registry on your operator key. Your machine needs Docker with buildx, able to build linux/amd64 (Docker Desktop and OrbStack are). Until the `up` names the image, no run starts from it, and a plan you decline deletes it again.
 2. Shows the plan: what differs between the code and the live resources, drift made outside Pulumi included, the main job's new image among them, and asks once whether to apply it. Answering no applies nothing.
 3. On a yes, applies the plan. Running machines stay in place: no machine is a resource of the program. If another apply ran meanwhile, you see the new plan and confirm again.
-4. Records the engine it published in `applied.json`, under the lease and failing the apply when it cannot, then deletes the older engine images but the newest few, which a run started before the apply may still pull. It verifies the result live (the declared database privileges exist) and starts a target whose last run ended blocked or apply needed. A mismatch of privileges fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
+4. Records the engine it published in `applied.json`, under the lease and failing the apply when it cannot, and its description on GitHub for the release PR's check ([Pull request check](#pull-request-check)), then deletes the older engine images but the newest few, which a run started before the apply may still pull. It verifies the result live (the declared database privileges exist) and starts a target whose last run ended blocked or apply needed. A mismatch of privileges fails the run; `pnpm infra --debug-provider` keeps the engine and provider log under `infra/.debug/`.
 
 When an identity differs from the declared ones, the apply stops before changing anything and names **Update identities**. `pnpm infra preview` shows the same plan without the question and changes nothing at all, for a script or a look that must never apply.
 
@@ -38,7 +38,9 @@ A deploy runs the engine the last **Review & apply changes** built, and holds ev
 
 ## Pull request check
 
-Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes: **Update identities** for an application or a policy that is new, gone or changed, an apply for a resource of the program or a change of the applied description. It fails only when the head cannot render, which blocks the merge, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes: **Update identities** for an application or a policy that is new, gone or changed, an apply for a resource of the program or a change of the applied description. It fails when the head cannot render, which blocks the merge, and it reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+
+On the release PR it also fails while the release describes the app otherwise than the last apply of an environment that follows the releases: merged, that release would end **apply needed**, so it merges only after its apply. GitHub holds no key to read `applied.json`, so each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`, and runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
 
 ## Identities
 

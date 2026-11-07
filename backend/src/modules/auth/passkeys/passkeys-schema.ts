@@ -6,8 +6,8 @@ import { maxLength } from '#/schemas';
 /** Authenticator data and credential ids are a few hundred bytes; an attestation object carries a certificate chain. */
 const webAuthnBlobLength = 16_384;
 
-const passkeyTypeSchema = z.enum(['authentication', 'mfa']);
-const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration']);
+const passkeyKindSchema = z.enum(['authentication', 'mfa']);
+const challengeKindSchema = z.enum([...passkeyKindSchema.options, 'registration']);
 
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true, counter: true, transports: true });
 
@@ -48,7 +48,7 @@ export type WebAuthnAssertion = z.infer<typeof webAuthnAssertionSchema>;
 
 export const passkeyCreateBodySchema = z.object({ attestation: webAuthnAttestationSchema, nameOnDevice: z.string().max(maxLength.field) });
 
-export const passkeyChallengeBodySchema = z.object({ type: challengeTypeSchema });
+export const passkeyChallengeBodySchema = z.object({ kind: challengeKindSchema });
 
 /** The transports WebAuthn names (§5.8.4). A browser ignores any other, so a challenge offers only these. */
 export const passkeyTransportSchema = z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']);
@@ -64,4 +64,4 @@ export const passkeyChallengeSchema = z.object({
   credentials: z.array(z.object({ id: z.string(), transports: z.array(passkeyTransportSchema).optional() })),
 });
 
-export const passkeyVerificationBodySchema = z.object({ assertion: webAuthnAssertionSchema, type: passkeyTypeSchema });
+export const passkeyVerificationBodySchema = z.object({ assertion: webAuthnAssertionSchema, kind: passkeyKindSchema });

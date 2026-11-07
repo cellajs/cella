@@ -219,7 +219,7 @@
           },
           "readLimiter": {
             "name": "Reads",
-            "description": "Reads for each user or service account, or for each IP address when not signed in.",
+            "description": "Reads for each user or service account, or for each IP address when not signed in. Each read answers with what is left, in `RateLimit` and `RateLimit-Policy` under `\"read\"`.",
             "policy": {
               "mode": "limit",
               "points": 1000,
@@ -2087,7 +2087,7 @@
                   "type": "string",
                   "format": "uuid"
                 },
-                "type": {
+                "kind": {
                   "type": "string",
                   "enum": ["regular", "mfa"]
                 },
@@ -2170,7 +2170,7 @@
               },
               "required": [
                 "id",
-                "type",
+                "kind",
                 "userId",
                 "deviceName",
                 "deviceType",
@@ -2252,7 +2252,7 @@
             {
               "id": "bf531073-c93c-4225-b553-bcd3fdbee2ac",
               "userId": "b301e7af-e587-410c-8dd4-a5c678f6be37",
-              "type": "regular",
+              "kind": "regular",
               "createdAt": "2024-05-28T17:45:48.607Z",
               "expiresAt": "2024-06-04T17:45:48.607Z",
               "deviceName": "Firefox on Windows",
@@ -3010,7 +3010,7 @@
             "type": "string",
             "maxLength": 255
           },
-          "type": {
+          "kind": {
             "type": "string",
             "enum": ["waitlist", "newsletter", "contact"]
           },
@@ -3018,12 +3018,12 @@
             "type": "boolean"
           }
         },
-        "required": ["createdAt", "id", "message", "email", "type", "wasInvited"],
+        "required": ["createdAt", "id", "message", "email", "kind", "wasInvited"],
         "description": "A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
           "email": "al.braun57@gmail.com",
-          "type": "contact",
+          "kind": "contact",
           "message": "Amitto sapiente antiquus temptatio verus mollitia.",
           "createdAt": "2024-03-17T12:06:02.574Z",
           "wasInvited": false
@@ -5493,13 +5493,13 @@
         }
       }
     },
-    "/auth/invoke-token/{type}/{token}": {
+    "/auth/invoke-token/{kind}/{token}": {
       "get": {
         "security": [],
         "operationId": "invokeToken",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
-        "description": "Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.",
+        "description": "Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "parameters": [
@@ -5509,7 +5509,7 @@
               "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
-            "name": "type",
+            "name": "kind",
             "in": "path"
           },
           {
@@ -5555,7 +5555,7 @@
         }
       }
     },
-    "/auth/invoke-token/{type}": {
+    "/auth/invoke-token/{kind}": {
       "post": {
         "security": [],
         "operationId": "redeemLinkToken",
@@ -5571,7 +5571,7 @@
               "enum": ["oauth-verification", "invitation"]
             },
             "required": true,
-            "name": "type",
+            "name": "kind",
             "in": "path"
           }
         ],
@@ -5607,7 +5607,7 @@
         }
       }
     },
-    "/auth/token/{type}/{id}": {
+    "/auth/token/{kind}/{id}": {
       "get": {
         "security": [],
         "operationId": "getTokenData",
@@ -5623,7 +5623,7 @@
               "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
-            "name": "type",
+            "name": "kind",
             "in": "path"
           },
           {
@@ -6434,12 +6434,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "type": {
+                  "kind": {
                     "type": "string",
                     "enum": ["authentication", "mfa", "registration"]
                   }
                 },
-                "required": ["type"]
+                "required": ["kind"]
               }
             }
           }
@@ -6571,12 +6571,12 @@
                     },
                     "required": ["id", "rawId", "response", "type"]
                   },
-                  "type": {
+                  "kind": {
                     "type": "string",
                     "enum": ["authentication", "mfa"]
                   }
                 },
-                "required": ["assertion", "type"]
+                "required": ["assertion", "kind"]
               }
             }
           }
@@ -6625,7 +6625,7 @@
         "operationId": "startOAuthConnect",
         "tags": ["auth", "cella"],
         "summary": "Start connecting a provider",
-        "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+        "description": "Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
         "x-enabled-by": {
           "strategy": "oauth"
         },
@@ -6680,7 +6680,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -6738,7 +6738,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -6796,7 +6796,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -7265,7 +7265,7 @@
         "operationId": "startSso",
         "tags": ["auth", "cella"],
         "summary": "Sign in through an institution",
-        "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
+        "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `kind=connect` links the institution account to the signed-in user instead; other types are refused.",
         "x-enabled-by": {
           "strategy": "sso"
         },
@@ -7288,7 +7288,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -7361,7 +7361,7 @@
               "default": "auth"
             },
             "required": false,
-            "name": "type",
+            "name": "kind",
             "in": "query"
           },
           {
@@ -9041,7 +9041,7 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "type": {
+                          "kind": {
                             "type": "string",
                             "enum": ["regular", "mfa"]
                           },
@@ -9117,7 +9117,7 @@
                         },
                         "required": [
                           "id",
-                          "type",
+                          "kind",
                           "userId",
                           "deviceName",
                           "deviceType",
@@ -11231,7 +11231,7 @@
                             "type": ["string", "null"],
                             "format": "uuid"
                           },
-                          "type": {
+                          "kind": {
                             "type": "string",
                             "enum": ["mention", "comment", "reply"]
                           },
@@ -11319,7 +11319,7 @@
                           "id",
                           "createdAt",
                           "actorId",
-                          "type",
+                          "kind",
                           "entityType",
                           "subjectId",
                           "contextId",
@@ -13444,7 +13444,7 @@
                     "minLength": 4,
                     "maxLength": 255
                   },
-                  "type": {
+                  "kind": {
                     "type": "string",
                     "enum": ["waitlist", "newsletter", "contact"]
                   },
@@ -13453,7 +13453,7 @@
                     "maxLength": 5000
                   }
                 },
-                "required": ["email", "type", "message"]
+                "required": ["email", "kind", "message"]
               }
             }
           }
@@ -13482,7 +13482,7 @@
         "operationId": "listRequests",
         "tags": ["requests", "cella"],
         "summary": "Get list of requests",
-        "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
+        "description": "Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
@@ -13541,9 +13541,9 @@
                 "email",
                 "email asc",
                 "email desc",
-                "type",
-                "type asc",
-                "type desc",
+                "kind",
+                "kind asc",
+                "kind desc",
                 "createdAt",
                 "createdAt asc",
                 "createdAt desc"
@@ -13568,7 +13568,7 @@
                     {
                       "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
                       "email": "marielle_donnelly-bashirian18@gmail.com",
-                      "type": "contact",
+                      "kind": "contact",
                       "message": "Canonicus capio aedificium consequuntur velum.",
                       "createdAt": "2024-09-19T17:10:46.529Z",
                       "wasInvited": false
@@ -13576,7 +13576,7 @@
                     {
                       "id": "d772a771-fc15-4065-be63-546594859fc3",
                       "email": "ollie_effertz@gmail.com",
-                      "type": "contact",
+                      "kind": "contact",
                       "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
                       "createdAt": "2024-03-06T02:06:40.920Z",
                       "wasInvited": false

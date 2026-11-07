@@ -222,7 +222,7 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v37-protocol-routes',
+  clientCacheVersion: 'v38-type-to-kind',
 
   // Authentication
 
@@ -249,7 +249,7 @@ export const config = {
       mfaAcr: ['https://refeds.org/profile/mfa'],
     },
   } satisfies Record<string, FederationConfig>,
-  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
+  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

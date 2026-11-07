@@ -39,7 +39,7 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
 
   if (passkeyData) await verifyPasskeyAssertion(ctx, { assertion: passkeyData, purpose: 'step-up', userId: user.id });
   if (totpCode) await verifyTotp({ user, code: totpCode });
-  if (emailCode && !(await spendCodeToken({ type: 'step-up', sessionId: session.id, code: emailCode }))) {
+  if (emailCode && !(await spendCodeToken({ kind: 'step-up', sessionId: session.id, code: emailCode }))) {
     throw new AppError(401, 'invalid_credentials', 'warn');
   }
 

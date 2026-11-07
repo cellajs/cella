@@ -155,7 +155,7 @@ describe('Invitation response', async () => {
     expect(res.status).toBe(200);
 
     expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id))).toHaveLength(0);
-    const { response, error } = await call(invokeToken, { path: { type: 'invitation', token: rawToken }, headers: defaultHeaders });
+    const { response, error } = await call(invokeToken, { path: { kind: 'invitation', token: rawToken }, headers: defaultHeaders });
     await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
 

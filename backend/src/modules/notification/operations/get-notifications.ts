@@ -48,7 +48,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     return {
       id: row.id,
       createdAt: row.createdAt,
-      type: row.type,
+      kind: row.kind,
       entityType: row.entityType,
       subjectId: row.subjectId,
       contextId: row.contextId,

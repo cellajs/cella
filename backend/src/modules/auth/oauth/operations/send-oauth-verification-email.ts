@@ -35,7 +35,7 @@ const verificationFor = async (props: Props) => {
 
   if ('signUp' in props) {
     const { signUp, email } = props;
-    const token: NewToken = { type: 'oauth-verification', email, pendingSignUp: signUp, redirectPath };
+    const token: NewToken = { kind: 'oauth-verification', email, pendingSignUp: signUp, redirectPath };
     return { token, name: signUp.name, lng: appConfig.defaultLanguage, providerName: readableProviderName(signUp.issuer), isNewUser: true };
   }
 
@@ -53,7 +53,7 @@ const verificationFor = async (props: Props) => {
   }
 
   const token: NewToken = {
-    type: 'oauth-verification',
+    kind: 'oauth-verification',
     userId: user.id,
     email,
     createdBy: user.id,

@@ -41,7 +41,7 @@ const invitationTokensOf = (email: string) =>
   db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), eq(tokensTable.email, email)));
+    .where(and(eq(tokensTable.kind, 'invitation'), eq(tokensTable.email, email)));
 
 /** The raw token at the end of the invite link in the mail handed to the mailer. */
 const mailedRawToken = () => {
@@ -72,7 +72,7 @@ describe('Resend an invitation', async () => {
 
   const resend = (body: { tokenId: string }) => call(resendInvitationWithToken, { body, headers: defaultHeaders });
 
-  const invoke = (token: string) => call(invokeToken, { path: { type: 'invitation', token }, headers: defaultHeaders });
+  const invoke = (token: string) => call(invokeToken, { path: { kind: 'invitation', token }, headers: defaultHeaders });
 
   it('re-sends a pending invitation with one fresh link that works, and retires the old link', async () => {
     const { token, rawToken, inactiveMembership } = await expiredInvitation();

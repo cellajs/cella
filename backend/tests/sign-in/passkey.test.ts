@@ -51,7 +51,7 @@ describe('Passkey Authentication', async () => {
       const user = await createUser(signUpUser.email);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'mfa' }, headers: defaultHeaders });
+      const { response: res, error } = await call(generatePasskeyChallenge, { body: { kind: 'mfa' }, headers: defaultHeaders });
       await expectRefusal({ response: res, error }, 401, 'confirm-mfa_not_found');
     });
   });

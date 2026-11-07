@@ -19,7 +19,7 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
     inactiveMembershipId: tokenRecord.inactiveMembershipId ?? undefined,
   };
 
-  if (tokenRecord.type === 'invitation' && tokenRecord.createdBy) {
+  if (tokenRecord.kind === 'invitation' && tokenRecord.createdBy) {
     const sender = await findUserById(ctx, { id: tokenRecord.createdBy });
     if (sender) tokenData.inviterName = sender.name;
   }

@@ -78,7 +78,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       </span>
       <span
         className={cn(
-          'text-md grow truncate pr-2 leading-5 group-data-[subitem=true]/menu-sheet-item:pb-1 group-data-[subitem=true]/menu-sheet-item:text-sm',
+          'text-md grow truncate pr-2 leading-5 group-data-[subitem=true]/menu-sheet-item:text-sm',
           isSubitem ? 'group-data-[link-active=true]/menu-sheet-item:font-medium' : 'font-medium',
         )}
       >

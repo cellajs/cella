@@ -66,7 +66,7 @@ describe('List pages', async () => {
     const admin = await createSystemAdminUser('pages-admin@example.com');
     const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
     const emails = ['a', 'b', 'c', 'd', 'e', 'f'].map((letter) => `paged-${letter}@example.com`);
-    await adminDb.insert(requestsTable).values(emails.map((email) => ({ email, type: 'waitlist' as const })));
+    await adminDb.insert(requestsTable).values(emails.map((email) => ({ email, kind: 'waitlist' as const })));
 
     const read = async (pageToken?: string) => {
       const query = { q: 'paged', orderBy: 'email asc' as const, maxPageSize: 2, ...(pageToken && { pageToken }) };

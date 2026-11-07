@@ -3,7 +3,7 @@ import { getMe, sendStepUpCode, stepUp } from 'sdk';
 import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { type SessionType, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type SessionKind, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { streamSubscriberManager } from '#/modules/entities/stream/subscriber-manager';
 import { hashToken, newHashedToken } from '#/utils/hash-token';
@@ -22,7 +22,7 @@ export const asSession = (id: string, cookie: string): TestSession => ({ id, coo
 /** A live session row and the signed cookie that presents it; the options are `insertTestSession`'s. */
 export async function insertSession(
   user: { id: string },
-  opts: { type?: SessionType; ageMs?: number; expiresInMs?: number } = {},
+  opts: { kind?: SessionKind; ageMs?: number; expiresInMs?: number } = {},
 ): Promise<TestSession> {
   const { id, cookie } = await insertTestSession(user, opts);
   return asSession(id, cookie);

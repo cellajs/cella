@@ -190,13 +190,16 @@ export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'],
  * client cannot hold the event loop with reads. It is also the backpressure for the read fan-out one SSE notification
  * triggers; a 429 rides the client's invalidate-and-backoff. A pace, in a short window: a client catching up reads once
  * per product type and organization, and one watching a busy scope reads at each notification, so a spent key has to
- * be back within minutes. Counted in process: a transaction on each read would cost as much as the read.
+ * be back within minutes. Counted in process: a transaction on each read would cost as much as the read. Reported, so
+ * the client's background warm-up stops short of the budget and leaves it to what the user opens.
  */
 export const readLimiter = rateLimiter('limit', 'read', [['actorId', 'ip']], {
   limits: { points: 1000, duration: 60 * 5 },
   countsInProcess: true,
+  reportsBudget: true,
   name: 'Reads',
-  description: 'Reads for each user or service account, or for each IP address when not signed in.',
+  description:
+    'Reads for each user or service account, or for each IP address when not signed in. Each read answers with what is left, in `RateLimit` and `RateLimit-Policy` under `"read"`.',
 });
 
 /**

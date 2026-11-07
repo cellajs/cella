@@ -33,7 +33,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   // the earlier system invitations of its address.
   const issued = await issueTokens(
     ctx,
-    recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),
+    recipientEmails.map((email) => ({ kind: 'invitation' as const, email, createdBy: user.id })),
   );
 
   await Promise.all(issued.map(({ token }) => stampWaitlistRequestInvited(ctx, { email: token.email })));

@@ -13,17 +13,17 @@ export const useColumns = () => {
   const columns: ColumnOrColumnGroup<Request>[] = [
     CheckboxColumn,
     {
-      key: 'type',
+      key: 'kind',
       name: t('c:request_type'),
       sortable: true,
       resizable: true,
       width: 160,
-      renderCell: ({ row: { type, wasInvited } }) => {
+      renderCell: ({ row: { kind, wasInvited } }) => {
         const status = wasInvited ? t('c:pending') : t('c:not_processed');
         return (
           <div className="flex items-center gap-2">
-            {t(`c:${type}`)}
-            {type === 'waitlist' && (
+            {t(`c:${kind}`)}
+            {kind === 'waitlist' && (
               <TooltipButton toolTipContent={status}>
                 <span className={cn('inline-block size-2 rounded-full', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')}>
                   <span className="sr-only">{status}</span>

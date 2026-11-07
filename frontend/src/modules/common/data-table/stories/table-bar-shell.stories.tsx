@@ -20,8 +20,8 @@ import { withApp } from '~/stories/with-app';
 // Bars read their count from this cached list; the rows are stand-ins, the bars read only ids and a few fields.
 const listKey = ['story', 'list'];
 const rows = [
-  { id: 'r1', name: 'One', email: 'one@example.com', type: 'waitlist', wasInvited: false, createdBy: null },
-  { id: 'r2', name: 'Two', email: 'two@example.com', type: 'waitlist', wasInvited: true, createdBy: null },
+  { id: 'r1', name: 'One', email: 'one@example.com', kind: 'waitlist', wasInvited: false, createdBy: null },
+  { id: 'r2', name: 'Two', email: 'two@example.com', kind: 'waitlist', wasInvited: true, createdBy: null },
 ];
 // The attachment bar asks the engine per row, as the signed-in user over `memberships`; each row carries every id column of an org-homed attachment.
 const attachmentIds = hierarchy.ancestorIdsHomedAt('attachment', 'organization', { id: 'org-1' });

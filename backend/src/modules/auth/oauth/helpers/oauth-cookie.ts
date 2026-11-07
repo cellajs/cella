@@ -18,6 +18,6 @@ export const readOAuthCookie = (ctx: Context<Env>, state: string): OAuthCookiePa
   if (!payload || !safeEqual(payload.state, state)) return null;
 
   deleteAuthCookie(ctx, 'oauth-state');
-  if (payload.type === 'connect') ctx.set('errorPagePath', '/account');
+  if (payload.kind === 'connect') ctx.set('errorPagePath', '/account');
   return payload;
 };

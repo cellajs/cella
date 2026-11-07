@@ -27,14 +27,14 @@ export type PendingSignUp = {
   familyName?: string;
 };
 
-/** One row per issued token, of any type in `appConfig.tokenTypes`. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */
+/** One row per issued token, of any kind in `appConfig.tokenKinds`. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */
 export const tokensTable = snakeCase.table(
   'tokens',
   {
     id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
-    type: varchar({ enum: appConfig.tokenTypes }).notNull(),
+    kind: varchar({ enum: appConfig.tokenKinds }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
@@ -60,17 +60,17 @@ export const tokensTable = snakeCase.table(
     invokedAt: isoTimestamp(),
   },
   (table) => [
-    index('tokens_secret_type_idx').on(table.secret, table.type),
+    index('tokens_secret_kind_idx').on(table.secret, table.kind),
     index('tokens_user_id_idx').on(table.userId),
     index('tokens_created_by_idx').on(table.createdBy),
-    index('tokens_single_use_token_idx').on(table.type, table.singleUseToken),
+    index('tokens_single_use_token_idx').on(table.kind, table.singleUseToken),
     // Tokens are found by session when it is deleted or a session-bound token is replaced; most hold null.
     index('tokens_session_id_idx').on(table.sessionId).where(sql`${table.sessionId} is not null`),
     // The same for an invitation's tokens, when its row is deleted or a new link replaces them.
     index('tokens_inactive_membership_id_idx').on(table.inactiveMembershipId).where(sql`${table.inactiveMembershipId} is not null`),
     index('tokens_followed_invitation_id_idx').on(table.followedInvitationId).where(sql`${table.followedInvitationId} is not null`),
     // One live step-up code per session: of two concurrent requests that both cleared the session's code, the later insert is refused.
-    uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.type} = 'step-up'`),
+    uniqueIndex('tokens_step_up_session_id_idx').on(table.sessionId).where(sql`${table.kind} = 'step-up'`),
   ],
 );
 

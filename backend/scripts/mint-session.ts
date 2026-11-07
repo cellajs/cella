@@ -55,7 +55,7 @@ await db.insert(sessionsTable).values({
   secret,
   userId: owner.userId,
   deviceName,
-  type: 'regular',
+  kind: 'regular',
   authStrategy: 'magic',
   createdAt: now,
   expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),

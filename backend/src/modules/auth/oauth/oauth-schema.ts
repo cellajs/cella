@@ -5,9 +5,9 @@ import type { Env } from '#/core/context';
 import { federationKeys } from '#/modules/auth/sso/helpers/federation-keys';
 import { maxLength } from '#/schemas';
 
-const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
+const oauthFlowKinds = ['auth', 'connect', 'invite', 'verify'] as const;
 
-export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().max(maxLength.url).optional() });
+export const oauthQuerySchema = z.object({ kind: z.enum(oauthFlowKinds).default('auth'), redirectAfter: z.string().max(maxLength.url).optional() });
 
 /** The request of a route that starts a round trip, its query validated by `oauthQuerySchema`. */
 export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>;
@@ -19,7 +19,7 @@ export type OAuthStartContext = Context<Env, string, { out: { query: z.infer<typ
 export const oauthCookiePayloadSchema = z.object({
   state: z.string(),
   provider: z.enum([...oauthProviders, ...federationKeys]),
-  type: z.enum(oauthFlowTypes).default('auth'),
+  kind: z.enum(oauthFlowKinds).default('auth'),
   redirectAfter: z.string().optional(),
   codeVerifier: z.string().optional(),
   nonce: z.string().optional(),

@@ -3,6 +3,7 @@ import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { ApiError, type ApiErrorInit, gatewayStatuses } from '~/lib/api';
+import { recordReportedBudgets } from '~/lib/reported-budgets';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
 
@@ -64,6 +65,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   if (!gatewayStatuses.has(response.status)) reportReachable();
   // Below 500 the API itself answered, so the service is back; a 5xx leaves a raised alert as it is.
   if (response.status < 500) alertStore.getState().setDownAlert(false);
+  recordReportedBudgets(response.headers);
 
   if (response.ok) return response;
   throw await failedResponseError(response);

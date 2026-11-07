@@ -15,8 +15,8 @@ import { usersTable } from '#/modules/user/user-db';
  * What a session stands for: `regular`, a sign-in; `mfa`, a sign-in with a second factor (an MFA challenge completed, or
  * MFA turned on).
  */
-const sessionTypes = ['regular', 'mfa'] as const;
-export type SessionType = (typeof sessionTypes)[number];
+const sessionKinds = ['regular', 'mfa'] as const;
+export type SessionKind = (typeof sessionKinds)[number];
 
 /** The built-in sign-in methods; `demo` is the session `createDemo` mints for a demo account, which no other method signs in. */
 const baseAuthStrategies = [...oauthProviders, 'passkey', 'totp', 'email', 'magic', 'demo'] as const;
@@ -54,7 +54,7 @@ export const sessionsTable = snakeCase.table(
   {
     id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
-    type: varchar({ enum: sessionTypes }).notNull().default('regular'),
+    kind: varchar({ enum: sessionKinds }).notNull().default('regular'),
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
@@ -101,9 +101,9 @@ const { secret: _secret, steppedUpSecret: _steppedUpSecret, ...safeColumns } = g
 /** Every column but the secrets: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
-const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt } = safeColumns;
+const { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt } = safeColumns;
 /** The columns of {@link SessionFacts}. */
-export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt };
+export const sessionFactColumns = { id, userId, kind, authStrategy, connectionId, createdAt, expiresAt };
 
 /** A session row without its secrets. */
 export type SessionModel = Omit<typeof sessionsTable.$inferSelect, 'secret' | 'steppedUpSecret'>;

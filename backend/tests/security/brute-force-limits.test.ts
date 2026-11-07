@@ -78,7 +78,7 @@ describe('brute-force budgets', async () => {
 
     // The owner opens the newest link in another browser and confirms it there, as the refusal's text suggests.
     await vi.waitFor(() => expect(magicLinkMailsTo(account)).toHaveLength(3));
-    const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: defaultHeaders });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: defaultHeaders });
     const held = setCookiePair(opened.response, 'magic-pending') ?? '';
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
     expect(cookieChange(confirmed.response, 'session')).toBe('set');
@@ -98,7 +98,7 @@ describe('brute-force budgets', async () => {
       browser.absorb(sent.response);
       await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(signIn + 1));
 
-      const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
+      const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
       expect(cookieChange(opened.response, 'session')).toBe('set');
       browser.absorb(opened.response);
 
@@ -112,7 +112,7 @@ describe('brute-force budgets', async () => {
     const inBrowser = () => ({ ...fromIp(randomIp()), Cookie: browser.header() });
     browser.absorb((await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() })).response);
     await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(1));
-    const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
     expect(cookieChange(opened.response, 'session')).toBe('set');
 
     // A copy of the device cookie the sign-in left, sent from ever new client addresses.
@@ -317,7 +317,7 @@ describe('brute-force budgets', async () => {
   it('answers a browser navigation past its budget with a redirect to the error page, never JSON', async () => {
     const ip = randomIp();
     /** A token link opened with a guessed token: a failure the link's budget counts. */
-    const open = async () => (await call(invokeToken, { path: { type: 'invitation', token: nanoid(40) }, headers: fromIp(ip) })).response;
+    const open = async () => (await call(invokeToken, { path: { kind: 'invitation', token: nanoid(40) }, headers: fromIp(ip) })).response;
 
     for (let attempt = 0; attempt < 10; attempt++) expect((await open()).status).not.toBe(429);
     // Tests read the refusal as JSON, like every other error.

@@ -29,7 +29,7 @@ app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
 
   const followed = await findFollowedInvitation(ctx);
   // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
-  const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
+  const tokenRecord = await invokeToken(ctx, { kind: 'magic', rawToken, claimHolder: claimMagicLinkHolder });
   deleteAuthCookie(ctx, 'magic-pending');
 
   return handleMagicLink(ctx, tokenRecord, followed);
