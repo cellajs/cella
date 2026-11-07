@@ -1,6 +1,6 @@
 ---
 breaking: true
-clientCacheBump: false
+clientCacheBump: true
 caughtBy: tests
 generate: true
 grep: readStepUp, requireStepUp, updateSessionSteppedUp, invokeToken, invoke-token, confirmMagicLink, credentialIds, findCredentialIdsByUser
