@@ -1,17 +1,10 @@
 import 'fake-indexeddb/auto';
-import { QueryClient } from '@tanstack/react-query';
-import { type PersistedClient, persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
+import '~/query/tests/query-client-env';
+import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query';
+import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
+import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('shared', () => {
-  const productEntityTypes = ['task', 'label', 'attachment'];
-  const channelEntityTypes = ['organization', 'workspace', 'project'];
-  return {
-    appConfig: { slug: 'test-app', productEntityTypes, channelEntityTypes, clientCacheVersion: 'v1' },
-    isProduct: (type: string) => productEntityTypes.includes(type),
-    isChannel: (type: string) => channelEntityTypes.includes(type),
-  };
-});
+import type { QueryMeta } from '~/query/react-query';
 
 // One lens ordinal, so a store behind it runs the lens pass; `lensPassSaw` records the queue that pass was handed.
 const lensPassSaw = vi.hoisted(() => ({ variables: [] as unknown[] }));
@@ -30,10 +23,11 @@ vi.mock('~/query/cache-migration', async (importOriginal) => {
   };
 });
 
-const addWindowListener = vi.fn();
-vi.stubGlobal('window', { addEventListener: addWindowListener, removeEventListener: vi.fn() });
+// The persister reads its tab id from sessionStorage when it loads, and registers its page-hide flush on the window the
+// env stubs. The env's navigator has no locks API, so a tab's liveness falls back to the age of its record.
 vi.stubGlobal('document', { addEventListener: vi.fn(), visibilityState: 'visible' });
-
+const addWindowListener = vi.fn();
+Object.assign(window, { addEventListener: addWindowListener });
 const sessionStorageMap = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {
   getItem: (key: string) => sessionStorageMap.get(key) ?? null,
@@ -41,46 +35,29 @@ vi.stubGlobal('sessionStorage', {
   removeItem: (key: string) => sessionStorageMap.delete(key),
 });
 
-const { persister, persistOptions } = await import('~/query/persister');
-// The persister reads/writes the live per-user localUserDb; bind one (owner `u1`) per test.
+const { persister, persistOptions, shouldPersistQuery } = await import('~/query/persister');
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { registerVariablesVersion } = await import('~/query/offline/mutation-variables');
+const { authHealthQueryOptions, pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
+const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
+const { totpKeyQueryOptions } = await import('~/modules/me/query');
+const { organizationsListQueryOptions } = await import('~/modules/organization/query');
 
-// Snapshot of the listeners registered at import time.
-const importTimeWindowListeners = new Map(addWindowListener.mock.calls.map(([type, listener]) => [type, listener]));
+/** What a browser runs on pagehide: every listener the modules registered for it, taken now since the harness clears a mock's calls before each test. */
+const pageHideListeners: (() => void)[] = addWindowListener.mock.calls.filter(([type]) => type === 'pagehide').map(([, listener]) => listener);
 
-function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data: unknown = null) {
-  return {
-    queryHash: hash,
-    queryKey: [entityType, 'list', 'org-1'] as unknown[],
-    dehydratedAt: dataUpdatedAt,
-    state: {
-      data,
-      dataUpdatedAt,
-      dataUpdateCount: 1,
-      error: null,
-      errorUpdateCount: 0,
-      errorUpdatedAt: 0,
-      fetchFailureCount: 0,
-      fetchFailureReason: null,
-      fetchMeta: null,
-      fetchStatus: 'idle' as const,
-      isInvalidated: false,
-      status: 'success' as const,
-    },
-  };
-}
+type StoredMutation = DehydratedState['mutations'][number];
 
-function makePersistedClient(queries: ReturnType<typeof makeQuery>[], timestamp = Date.now()): PersistedClient {
-  return {
-    timestamp,
-    buster: '',
-    clientState: { queries, mutations: [] },
-  };
-}
+const [productType] = appConfig.productEntityTypes;
+/** A product list, which the store holds as a record of its own; any other query goes into the bundle. */
+const productKey = (organizationId: string) => [productType, 'list', organizationId];
+const thisTabId = () => sessionStorageMap.get(`${appConfig.slug}-tab-session-id`);
+const tabRecords = async () => getLocalUserDb()!.meta.where('key').startsWith('rq:mut:').toArray();
 
-const queuedMutation = (mutationKey: string[], variables: unknown) => ({
+/** A write as the store holds it: paused, since it met an outage, and stamped with the version of its variables. */
+const storedWrite = (mutationKey: unknown[], variables: unknown): StoredMutation => ({
   mutationKey,
+  meta: { variablesVersion: 1 },
   state: {
     context: undefined,
     data: undefined,
@@ -88,160 +65,164 @@ const queuedMutation = (mutationKey: string[], variables: unknown) => ({
     failureCount: 0,
     failureReason: null,
     isPaused: true,
-    status: 'pending' as const,
+    status: 'pending',
     variables,
     submittedAt: 100,
   },
 });
 
-async function deleteDb() {
+/** Queues a write in a client's mutation cache as one that met an outage: paused, with the meta its module gives it. */
+const queueWrite = (client: QueryClient, mutationKey: unknown[], variables: unknown, meta?: QueryMeta) =>
+  client.getMutationCache().build(client, { mutationKey, meta }, storedWrite(mutationKey, variables).state);
+
+/** Saves a client as the provider does, through its dehydrate options, and waits out the write throttle. */
+const save = async (client: QueryClient) => {
+  await persistQueryClientSave({ queryClient: client, ...persistOptions });
+  await persister.flush();
+};
+
+/** A tab that opens: a new client, restored as the provider restores it. */
+const reload = async () => {
+  const client = new QueryClient();
+  await persistQueryClientRestore({ ...persistOptions, queryClient: client });
+  return client;
+};
+
+beforeEach(async () => {
+  bindLocalUserDb('u1');
+  await persister.removeClient();
+});
+
+afterEach(async () => {
   await deleteLocalUserDb();
-}
+});
 
-describe('per-query IDB persister', () => {
-  beforeEach(async () => {
-    // Bind a fresh per-user localUserDb, then clear internal lastPersistedAt state + IDB records
-    bindLocalUserDb('u1');
-    await persister.removeClient();
-    sessionStorageMap.clear();
+// The filter every save passes through, fed the app's own query options, so a query that must stay out of the local
+// database is checked as declared and not as restated here.
+describe('the queries the provider saves', () => {
+  it('must not persist the Yjs token, the pending magic link, token data or a TOTP key, while an ordinary query persists', async () => {
+    const client = new QueryClient();
+    const yjsToken = yjsTokenQueryOptions({ entityType: 'attachment', entityId: 'attachment-1', tenantId: 'tenant-1', organizationId: 'org-1' });
+    await client.query({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
+    await client.query({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
+    await client.query({ ...tokenDataQueryOptions('invitation', 'token-1'), queryFn: async () => ({ email: 'invited@example.com' }) });
+    await client.query({ ...totpKeyQueryOptions(), queryFn: async () => ({ totpUri: 'otpauth://totp/x', manualKey: 'SECRET' }) });
+    await client.query({ queryKey: ['organization', 'list'], queryFn: async () => [] });
+
+    const { queries } = dehydrate(client, { shouldDehydrateQuery: shouldPersistQuery });
+
+    expect(queries.map((query) => query.queryKey)).toEqual([['organization', 'list']]);
   });
+});
 
-  afterEach(async () => {
-    await deleteDb();
-  });
-
+describe('the cache as the provider saves and restores it', () => {
   it('restores the cache as the last write left it: a changed query updated, a dropped one gone, product and context alike', async () => {
-    const task = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
-    const label = makeQuery('["label","list","org-1"]', 'label', 1000, [{ id: 'l1' }]);
-    const me = makeQuery('["me"]', 'me', 2000, { name: 'user' });
-    await persister.persistClient(makePersistedClient([task, label, me]));
-    await persister.flush();
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }], { updatedAt: 1000 });
+    client.setQueryData(productKey('org-2'), [{ id: 'p2' }], { updatedAt: 1000 });
+    client.setQueryData(['me'], { name: 'user' }, { updatedAt: 2000 });
+    await save(client);
+    // The next write: one list changed, the other is gone, the context query is as it was.
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }, { id: 'p3' }], { updatedAt: 3000 });
+    client.removeQueries({ queryKey: productKey('org-2') });
+    await save(client);
 
-    // The next write: the task list changed, the label list is gone, the context query is as it was.
-    const taskUpdated = makeQuery('["task","list","org-1"]', 'task', 3000, [{ id: 't1' }, { id: 't2' }]);
-    await persister.persistClient(makePersistedClient([taskUpdated, me], 12345));
-    await persister.flush();
-
-    const restored = await persister.restoreClient();
-    expect(restored?.timestamp).toBe(12345);
-    expect(Object.fromEntries(restored!.clientState.queries.map(({ queryHash, state }) => [queryHash, state.data]))).toEqual({
-      '["task","list","org-1"]': [{ id: 't1' }, { id: 't2' }],
-      '["me"]': { name: 'user' },
-    });
+    const reloaded = await reload();
+    expect(reloaded.getQueryData(productKey('org-1'))).toEqual([{ id: 'p1' }, { id: 'p3' }]);
+    expect(reloaded.getQueryData(productKey('org-2'))).toBeUndefined();
+    expect(reloaded.getQueryData(['me'])).toEqual({ name: 'user' });
   });
 
-  describe('cache-bust on schema change', () => {
-    it('wipes cached queries but keeps queued mutations when clientCacheVersion changes', async () => {
-      const client: PersistedClient = {
-        timestamp: 1000,
-        buster: '',
-        clientState: {
-          queries: [makeQuery('["task","list","org-1"]', 'task', 100, [{ id: 't1' }]), makeQuery('["me"]', 'me', 200)],
-          mutations: [
-            {
-              mutationKey: ['task', 'create'],
-              state: {
-                context: undefined,
-                data: undefined,
-                error: null,
-                failureCount: 0,
-                failureReason: null,
-                isPaused: true,
-                status: 'pending',
-                variables: { title: 'offline edit' },
-                submittedAt: 100,
-              },
-            },
-          ],
-        },
-      };
-      await persister.persistClient(client);
-      await persister.flush();
+  // A toast rule in `meta` is a function, which the store refuses: the write failed whole, product rows and queued writes
+  // included, for every session that read a list (0.40.0).
+  it('stores the cache when a list, a probe or a queued write carries a toast rule, as the organization list, the health probe and the organization create do', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const client = new QueryClient();
+    const organizations = organizationsListQueryOptions({});
+    await client.infiniteQuery({ ...organizations, queryFn: async () => ({ results: [], totalSize: 0 }) });
+    await client.query({ ...authHealthQueryOptions, queryFn: async () => ({ restrictedMode: false, emailEnabled: true, federations: [] }) });
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }]);
+    const variables = { body: [{ name: 'Offline org' }] };
+    queueWrite(client, ['organization', 'create'], variables, { suppressGlobalErrorToast: (error) => error.type === 'slug_exists' });
+    await save(client);
 
-      // Simulate a prior build's clientCacheVersion persisted on disk (now stale vs 'v1').
-      const db = getLocalUserDb()!;
-      const meta = await db.meta.get('rq');
-      await db.meta.put({ ...meta!, clientCacheVersion: 'v0' });
+    const reloaded = await reload();
+    expect(logged).not.toHaveBeenCalled();
+    expect(reloaded.getQueryData(productKey('org-1'))).toEqual([{ id: 'p1' }]);
+    expect(reloaded.getQueryData(organizations.queryKey)).toMatchObject({ pages: [{ results: [] }] });
+    expect(reloaded.getQueryData(authHealthQueryOptions.queryKey)).toMatchObject({ restrictedMode: false });
+    expect(
+      reloaded
+        .getMutationCache()
+        .getAll()
+        .map(({ state, meta }) => [state.variables, meta]),
+    ).toEqual([[variables, { variablesVersion: 1 }]]);
+    logged.mockRestore();
+  });
 
-      const restored = await persister.restoreClient();
-      expect(restored).toBeDefined();
-      expect(restored!.clientState.queries).toHaveLength(0);
-      // ...but the queued offline mutation survives for replay.
-      expect(restored!.clientState.mutations).toHaveLength(1);
-      expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
+  it('wipes the cached queries but keeps the queued writes when the client cache version changes', async () => {
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }]);
+    client.setQueryData(['me'], { name: 'user' });
+    queueWrite(client, [productType, 'create'], { title: 'offline edit' });
+    await save(client);
+    // A prior bundle wrote the store under another cache version.
+    const db = getLocalUserDb()!;
+    await db.meta.put({ ...(await db.meta.get('rq'))!, clientCacheVersion: 'a-prior-version' });
 
-      const metaAfter = await db.meta.get('rq');
-      expect(metaAfter!.clientCacheVersion).toBe('v1');
-    });
+    const reloaded = await reload();
+    expect(reloaded.getQueryCache().getAll()).toHaveLength(0);
+    expect(
+      reloaded
+        .getMutationCache()
+        .getAll()
+        .map(({ state }) => state.variables),
+    ).toEqual([{ title: 'offline edit' }]);
+    expect((await db.meta.get('rq'))?.clientCacheVersion).toBe(appConfig.clientCacheVersion);
   });
 
   it('writes a changed query again after the write that held it failed', async () => {
     const db = getLocalUserDb()!;
-    const client = makePersistedClient([makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }])]);
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }]);
     const failOnce = vi.spyOn(db.queries, 'bulkPut').mockRejectedValueOnce(new Error('QuotaExceededError'));
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await persister.persistClient(client);
-    await persister.flush();
-    await persister.persistClient(client);
-    await persister.flush();
+    await save(client);
+    await save(client);
 
     expect(await db.queries.count()).toBe(1);
     failOnce.mockRestore();
     logged.mockRestore();
   });
-});
-
-describe('the options PersistQueryClientProvider restores and saves with', () => {
-  beforeEach(async () => {
-    bindLocalUserDb('u1');
-    await persister.removeClient();
-  });
-
-  afterEach(async () => {
-    await deleteDb();
-  });
 
   it('restores a cache no tab wrote for days, its queued writes included', async () => {
     const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
-    const queries = [makeQuery('["task","list","org-1"]', 'task', threeDaysAgo, [{ id: 't1' }])];
-    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
-    await persister.persistClient({ timestamp: threeDaysAgo, buster: '', clientState: { queries, mutations } });
-    await persister.flush();
+    const client = new QueryClient();
+    client.setQueryData(productKey('org-1'), [{ id: 'p1' }], { updatedAt: threeDaysAgo });
+    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'offline edit' } });
+    await save(client);
+    const db = getLocalUserDb()!;
+    await db.meta.put({ ...(await db.meta.get('rq'))!, timestamp: threeDaysAgo });
 
-    const queryClient = new QueryClient();
-    await persistQueryClientRestore({ ...persistOptions, queryClient });
-
-    expect(queryClient.getQueryData(['task', 'list', 'org-1'])).toEqual([{ id: 't1' }]);
+    const reloaded = await reload();
+    expect(reloaded.getQueryData(productKey('org-1'))).toEqual([{ id: 'p1' }]);
     expect(
-      queryClient
+      reloaded
         .getMutationCache()
         .getAll()
         .map(({ state }) => state.variables),
-    ).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
+    ).toEqual([{ id: 'p1', ops: { name: 'offline edit' } }]);
   });
-
-  const save = async (queryClient: QueryClient) => {
-    await persistQueryClientSave({ queryClient, persister, dehydrateOptions: persistOptions.dehydrateOptions });
-    await persister.flush();
-  };
-  const reload = async () => {
-    const queryClient = new QueryClient();
-    await persistQueryClientRestore({ ...persistOptions, queryClient });
-    return queryClient;
-  };
 
   // The mark never reached disk: a list marked for a refetch came back from a reload as fresh, a product list and a bundled one alike.
   it('restores a query marked for a refetch as marked', async () => {
-    const queryClient = new QueryClient();
-    const keys = [
-      ['task', 'list', 'org-1'],
-      ['organization', 'list'],
-    ];
-    for (const key of keys) queryClient.setQueryData(key, [{ id: 'a' }]);
-    await save(queryClient);
-    await queryClient.invalidateQueries({ refetchType: 'none' });
-    await save(queryClient);
+    const client = new QueryClient();
+    const keys = [productKey('org-1'), ['organization', 'list']];
+    for (const key of keys) client.setQueryData(key, [{ id: 'a' }]);
+    await save(client);
+    await client.invalidateQueries({ refetchType: 'none' });
+    await save(client);
 
     const reloaded = await reload();
     expect(keys.map((key) => reloaded.getQueryState(key)?.isInvalidated)).toEqual([true, true]);
@@ -249,18 +230,18 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
 
   // A failed refetch dropped the stored copy: one offline cold boot lost the memberships, and the next showed the root error page.
   it('keeps the last data of a query whose refetch got no response, restored marked, and drops it on a 404', async () => {
-    const queryClient = new QueryClient();
+    const client = new QueryClient();
     const offlineKey = ['me', 'memberships'];
     const goneKey = ['organization', 'detail', 'o1'];
-    for (const key of [offlineKey, goneKey]) await queryClient.query({ queryKey: key, queryFn: async () => ({ results: [{ id: 'm1' }] }) });
-    const { dataUpdatedAt } = queryClient.getQueryState(offlineKey)!;
-    await save(queryClient);
+    for (const key of [offlineKey, goneKey]) await client.query({ queryKey: key, queryFn: async () => ({ results: [{ id: 'm1' }] }) });
+    const { dataUpdatedAt } = client.getQueryState(offlineKey)!;
+    await save(client);
     const fail = (error: Error) => () => Promise.reject(error);
-    await queryClient.query({ queryKey: offlineKey, queryFn: fail(new TypeError('Failed to fetch')), staleTime: 0, retry: false }).catch(() => {});
-    await queryClient
+    await client.query({ queryKey: offlineKey, queryFn: fail(new TypeError('Failed to fetch')), staleTime: 0, retry: false }).catch(() => {});
+    await client
       .query({ queryKey: goneKey, queryFn: fail(Object.assign(new Error('gone'), { status: 404 })), staleTime: 0, retry: false })
       .catch(() => {});
-    await save(queryClient);
+    await save(client);
 
     const reloaded = await reload();
     expect(reloaded.getQueryState(offlineKey)).toMatchObject({
@@ -275,120 +256,124 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
 
   // Discarding a cache that failed to hydrate deleted the queue of every tab, open tabs included.
   it("keeps every tab's queued writes when it discards the cache", async () => {
-    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
-    await persister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [makeQuery('["me"]', 'me', 200)], mutations } });
-    await persister.flush();
+    const client = new QueryClient();
+    client.setQueryData(['me'], { name: 'user' });
+    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'offline edit' } });
+    await save(client);
     const db = getLocalUserDb()!;
-    await db.meta.put({ key: 'rq:mut:open-tab', timestamp: Date.now(), buster: '', mutations, bundledQueries: [] });
+    const [own] = await tabRecords();
+    await db.meta.put({ ...own, key: 'rq:mut:open-tab' });
 
     await persister.removeClient();
 
     expect((await db.meta.get('rq'))?.bundledQueries).toEqual([]);
-    expect((await db.meta.where('key').startsWith('rq:mut:').toArray()).map(({ mutations }) => mutations?.length)).toEqual([1, 1]);
+    expect((await tabRecords()).map(({ mutations }) => mutations?.length)).toEqual([1, 1]);
+  });
+
+  it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
+    const client = new QueryClient();
+    queueWrite(client, [productType, 'update'], { id: 'p1', ops: { name: 'last edit' } });
+    await persistQueryClientSave({ queryClient: client, ...persistOptions });
+
+    expect(pageHideListeners).not.toHaveLength(0);
+    for (const listener of pageHideListeners) listener();
+
+    // Under the one-second throttle: only the hide listener can have written it.
+    await vi.waitFor(async () => expect((await tabRecords()).length).toBe(1), { timeout: 500 });
   });
 });
 
-describe('queued mutations across a change of their variables shape', () => {
-  /** A delete whose module declares version 2: rows under `rows`, where version 1 held them under `tasks`. */
-  const versionedKey = ['task', 'delete'];
-
-  /** Persists queued mutations and returns the record the store holds for this tab's queue. */
-  const persistQueue = async (...mutations: ReturnType<typeof queuedMutation>[]) => {
-    await persister.persistClient({ timestamp: 1000, buster: '', clientState: { queries: [makeQuery('["me"]', 'me', 200)], mutations } });
-    await persister.flush();
+describe('the queued writes of every tab', () => {
+  // A queue in the shared meta record let one tab's write overwrite another tab's queue: each tab writes its own record.
+  it('restores every queued write once: no tab overwrites the queue of another, or takes over one still open', async () => {
+    const client = new QueryClient();
+    queueWrite(client, [productType, 'update'], { id: 'own' });
+    await save(client);
     const db = getLocalUserDb()!;
-    const [record] = await db.meta.where('key').startsWith('rq:mut:').toArray();
-    return { db, record };
-  };
+    // A tab that is still open has written its own queue...
+    await db.meta.put({
+      key: 'rq:mut:other-live-tab',
+      timestamp: Date.now(),
+      buster: '',
+      mutations: [storedWrite([productType, 'update'], { id: 'other' })],
+      bundledQueries: [],
+    });
+    // ...and a tab that crashed hours ago left one behind.
+    await db.meta.put({
+      key: 'rq:mut:dead-tab',
+      timestamp: Date.now() - 3 * 60 * 60 * 1000,
+      buster: '',
+      mutations: [storedWrite([productType, 'update'], { id: 'crashed' })],
+      bundledQueries: [],
+    });
 
-  /** Rewrites the stored queue as a bundle before versions left it: without stamps. */
-  const withoutStamps = async ({ db, record }: Awaited<ReturnType<typeof persistQueue>>) =>
-    db.meta.put({ ...record, mutations: (record.mutations ?? []).map(({ meta: _stamp, ...mutation }) => mutation) });
+    const reloaded = await reload();
 
-  beforeEach(async () => {
-    await persister.removeClient();
-    await deleteDb();
-    bindLocalUserDb('u1');
+    const ids = reloaded
+      .getMutationCache()
+      .getAll()
+      .map(({ state }) => (state.variables as { id: string }).id);
+    expect(ids.sort()).toEqual(['crashed', 'own']);
+    // The open tab keeps its record, the dead one's is taken over, and this tab's own stays until its next write.
+    expect((await tabRecords()).map((record) => record.key).sort()).toEqual(['rq:mut:other-live-tab', `rq:mut:${thisTabId()}`].sort());
+  });
+
+  // The restore deleted a dead tab's record and stored its queue only at this tab's first write, up to a second later.
+  it("keeps a dead tab's queue when this tab reloads before its first write", async () => {
+    const db = getLocalUserDb()!;
+    await db.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', bundledQueries: [] });
+    await db.meta.put({
+      key: 'rq:mut:dead-tab',
+      timestamp: Date.now() - 3 * 60 * 60 * 1000,
+      buster: '',
+      mutations: [storedWrite([productType, 'update'], { id: 'crashed' })],
+      bundledQueries: [],
+    });
+
+    await reload();
+    const reloaded = await reload();
+
+    expect(
+      reloaded
+        .getMutationCache()
+        .getAll()
+        .map(({ state }) => state.variables),
+    ).toEqual([{ id: 'crashed' }]);
+  });
+});
+
+describe('a queued write across a change of its variables shape', () => {
+  /** A delete whose module declares version 2: rows under `rows`, where version 1 held them under `tasks`. */
+  const versionedKey = [productType, 'delete'];
+
+  beforeEach(() => {
     lensPassSaw.variables.length = 0;
     registerVariablesVersion(versionedKey, 2, (variables) => {
       if (typeof variables !== 'object' || variables === null || !('tasks' in variables)) return null;
       const { tasks, ...rest } = variables;
-      if (tasks === 'throws') throw new Error('an upgrade that did not expect this');
       return { ...rest, rows: tasks };
     });
   });
 
-  afterEach(async () => await deleteDb());
-
-  it('restores a mutation stored at the current version as it was stored', async () => {
-    await persistQueue(queuedMutation(versionedKey, { tenantId: 't', rows: [{ id: 't1' }] }));
-
-    const restored = await persister.restoreClient();
-
-    expect(restored!.clientState.mutations).toMatchObject([
-      { meta: { variablesVersion: 2 }, state: { variables: { tenantId: 't', rows: [{ id: 't1' }] } } },
-    ]);
-  });
-
-  it("restores the rest of a closed tab's queue, and the cached queries, when the upgrade of one mutation throws", async () => {
-    const { db } = await persistQueue();
-    // A tab that is gone left a queue: one delete its upgrade throws on, and an update of another key.
-    await db.meta.put({
-      key: 'rq:mut:closed-tab',
-      timestamp: 1000,
-      buster: '',
-      bundledQueries: [],
-      mutations: [
-        queuedMutation(versionedKey, { tenantId: 't', tasks: 'throws' }),
-        queuedMutation(['label', 'update'], { id: 'l1', ops: { name: 'Kept' } }),
-      ],
-    });
-
-    const restored = await persister.restoreClient();
-
-    expect(restored!.clientState.queries).toHaveLength(1);
-    expect(restored!.clientState.mutations.map(({ state }) => state.variables)).toEqual([{ id: 'l1', ops: { name: 'Kept' } }]);
-  });
-
   it('hands the lens pass the queue in the shape this bundle reads, so it finds the rows of an older delete', async () => {
-    const queue = await persistQueue(queuedMutation(versionedKey, { tenantId: 't', tasks: [{ id: 't1' }] }));
-    await withoutStamps(queue);
-    // The store is one lens ordinal behind the bundle.
-    await queue.db.meta.put({ ...(await queue.db.meta.get('rq'))!, schemaVersion: 0 });
+    const client = new QueryClient();
+    client.setQueryData(['me'], { name: 'user' });
+    queueWrite(client, versionedKey, { tenantId: 't', tasks: [{ id: 'p1' }] });
+    await save(client);
+    // The store as a bundle before versions left it: a queue without stamps, one lens ordinal behind this bundle.
+    const db = getLocalUserDb()!;
+    const [record] = await tabRecords();
+    await db.meta.put({ ...record, mutations: (record.mutations ?? []).map(({ meta: _stamp, ...mutation }) => mutation) });
+    await db.meta.put({ ...(await db.meta.get('rq'))!, schemaVersion: 0 });
 
     const restored = await persister.restoreClient();
 
-    expect(lensPassSaw.variables).toEqual([{ tenantId: 't', rows: [{ id: 't1' }] }]);
+    expect(lensPassSaw.variables).toEqual([{ tenantId: 't', rows: [{ id: 'p1' }] }]);
     expect(restored!.clientState.mutations).toMatchObject([
-      { meta: { variablesVersion: 2 }, state: { variables: { tenantId: 't', rows: [{ id: 't1' }] } } },
+      { meta: { variablesVersion: 2 }, state: { variables: { tenantId: 't', rows: [{ id: 'p1' }] } } },
     ]);
     // The store holds the upgraded queue with its stamp: a second restore has nothing left to upgrade.
-    const [record] = await queue.db.meta.where('key').startsWith('rq:mut:').toArray();
-    expect(record.mutations).toMatchObject([{ meta: { variablesVersion: 2 }, state: { variables: { rows: [{ id: 't1' }] } } }]);
-  });
-});
-
-describe('a closing tab', () => {
-  beforeEach(async () => {
-    bindLocalUserDb('u1');
-    await persister.removeClient();
-    sessionStorageMap.clear();
-  });
-
-  afterEach(async () => {
-    await deleteLocalUserDb();
-  });
-
-  it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
-    const onPageHide = importTimeWindowListeners.get('pagehide');
-    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'last edit' } })];
-    await persister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
-
-    expect(onPageHide).toBeTypeOf('function');
-    onPageHide();
-
-    const queueStored = async () => (await getLocalUserDb()!.meta.toArray()).some(({ key }) => key.includes(':mut:'));
-    // Under the one-second throttle: only the hide listener can have written it.
-    await vi.waitFor(async () => expect(await queueStored()).toBe(true), { timeout: 500 });
+    const [upgraded] = await tabRecords();
+    expect(upgraded.mutations).toMatchObject([{ meta: { variablesVersion: 2 }, state: { variables: { rows: [{ id: 'p1' }] } } }]);
   });
 });

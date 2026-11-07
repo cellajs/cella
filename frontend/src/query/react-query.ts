@@ -4,7 +4,7 @@ import type { ApiError } from '~/lib/api';
 export type QueryMeta = {
   /** `false` keeps the query out of the persisted cache. Default: true. */
   persist?: boolean;
-  /** Skips the global error toast; a predicate suppresses only the errors it matches. */
+  /** Skips the global error toast; a predicate suppresses only the errors it matches, and stays out of the persisted cache. */
   suppressGlobalErrorToast?: boolean | ((error: ApiError) => boolean);
   /** On a queued mutation in the persisted cache: the version of its variables' shape. The persister sets it. */
   variablesVersion?: number;
