@@ -115,7 +115,7 @@ describe('TOTP Authentication', async () => {
 
       // The session records the method the sign-in started with; the factor is its step-up, not its method.
       const [session] = await sessionsOf(user.id);
-      expect(session).toMatchObject({ type: 'mfa', authStrategy: 'magic', steppedUpVia: 'totp' });
+      expect(session).toMatchObject({ kind: 'mfa', authStrategy: 'magic', steppedUpVia: 'totp' });
       expect(session.steppedUpAt).not.toBeNull();
     });
 

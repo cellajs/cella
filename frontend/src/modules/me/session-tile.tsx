@@ -64,7 +64,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       status={{ tone: statuses[status].tone, label: t(`c:${status}`) }}
       badges={
         <>
-          {session.type === 'mfa' && (
+          {session.kind === 'mfa' && (
             <span className="text-success flex shrink-0 items-center gap-1">
               <ShieldCheckIcon className="size-4" />
               <span className="text-xs font-medium max-sm:sr-only">{t('c:mfa_short')}</span>

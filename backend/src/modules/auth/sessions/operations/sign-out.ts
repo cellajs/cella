@@ -6,7 +6,7 @@ import { dropHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-br
 import { readBrowserSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
-import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
+import { linkTokenKinds } from '#/modules/auth/tokens/token-policies';
 import { log } from '#/utils/logger';
 
 /**
@@ -18,7 +18,7 @@ const signedOutCookies: CookieName[] = [
   'magic',
   'confirm-mfa',
   'invitation',
-  ...linkTokenTypes.map((type) => `${type}-pending` as const),
+  ...linkTokenKinds.map((kind) => `${kind}-pending` as const),
 ];
 
 const deleteSignedOutCookies = (ctx: Context<Env>) => {

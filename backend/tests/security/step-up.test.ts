@@ -148,7 +148,7 @@ describe('step-up', async () => {
     const codes = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.type, 'step-up'), eq(tokensTable.sessionId, session.id)));
+      .where(and(eq(tokensTable.kind, 'step-up'), eq(tokensTable.sessionId, session.id)));
     expect(codes).toHaveLength(1);
     // A refused request mails nothing, and of the mailed codes only the stored one is live.
     const mailed = sentMails().map(({ statics }) => String(statics.code));

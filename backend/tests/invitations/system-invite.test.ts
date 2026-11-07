@@ -37,7 +37,7 @@ describe('System Invitation', async () => {
       expect(response.invitesSentCount).toBe(2);
       expect(response.rejectedIds).toHaveLength(0);
 
-      const tokens = await db.select().from(tokensTable).where(eq(tokensTable.type, 'invitation'));
+      const tokens = await db.select().from(tokensTable).where(eq(tokensTable.kind, 'invitation'));
       expect(tokens).toHaveLength(2);
       // The last mail carries the link of one of the minted tokens.
       expect(tokens.map(({ secret }) => secret)).toContain(hashToken(mailedLink('inviteLink').token));
@@ -69,21 +69,21 @@ describe('System Invitation', async () => {
     it('marks the waitlist request of an invited address as invited, at its first invitation', async () => {
       const sessionCookie = await createAdminSession();
       await db.insert(requestsTable).values([
-        { email: 'waiting@example.com', type: 'waitlist' },
-        { email: 'waiting@example.com', type: 'newsletter' },
-        { email: 'other@example.com', type: 'waitlist' },
+        { email: 'waiting@example.com', kind: 'waitlist' },
+        { email: 'waiting@example.com', kind: 'newsletter' },
+        { email: 'other@example.com', kind: 'waitlist' },
       ]);
 
       await makeInviteRequest(['waiting@example.com'], sessionCookie);
 
       const { data } = await call(listRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
-      const listed = (data as { results: { email: string; type: string; wasInvited: boolean }[] }).results;
-      expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, type }) => ({ email, type }))).toEqual([
-        { email: 'waiting@example.com', type: 'waitlist' },
+      const listed = (data as { results: { email: string; kind: string; wasInvited: boolean }[] }).results;
+      expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, kind }) => ({ email, kind }))).toEqual([
+        { email: 'waiting@example.com', kind: 'waitlist' },
       ]);
 
       // A later invitation to the address leaves the first time standing.
-      const invitedAtOf = async () => (await db.select().from(requestsTable).where(eq(requestsTable.type, 'waitlist'))).map((r) => r.invitedAt);
+      const invitedAtOf = async () => (await db.select().from(requestsTable).where(eq(requestsTable.kind, 'waitlist'))).map((r) => r.invitedAt);
       const first = await invitedAtOf();
       await stampWaitlistRequestInvited({ var: { db } }, { email: 'waiting@example.com' });
       expect(await invitedAtOf()).toEqual(first);

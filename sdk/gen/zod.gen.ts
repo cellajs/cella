@@ -340,7 +340,7 @@ export const zMeAuthData = z.object({
   sessions: z.array(
     z.object({
       id: z.uuid(),
-      type: z.enum(['regular', 'mfa']),
+      kind: z.enum(['regular', 'mfa']),
       userId: z.uuid(),
       deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
@@ -584,7 +584,7 @@ export const zRequest = z.object({
   id: z.uuid(),
   message: z.string().nullable(),
   email: z.string().max(255),
-  type: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'newsletter', 'contact']),
   wasInvited: z.boolean(),
 });
 
@@ -1049,12 +1049,12 @@ export const zGetPendingMfaResponse = z.object({
 });
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  kind: z.enum(['oauth-verification', 'invitation', 'magic']),
   token: z.string().max(255),
 });
 
 export const zRedeemLinkTokenPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation']),
+  kind: z.enum(['oauth-verification', 'invitation']),
 });
 
 /**
@@ -1067,7 +1067,7 @@ export const zRedeemLinkTokenResponse = z.object({
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  kind: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
 });
 
@@ -1638,7 +1638,7 @@ export const zRevokeMySessionsResponse = z.object({
   data: z.array(
     z.object({
       id: z.uuid(),
-      type: z.enum(['regular', 'mfa']),
+      kind: z.enum(['regular', 'mfa']),
       userId: z.uuid(),
       deviceName: z.string().max(255).nullable(),
       deviceType: z.enum(['desktop', 'mobile']),
@@ -2057,7 +2057,7 @@ export const zListNotificationsResponse = z.object({
       id: z.uuid(),
       createdAt: z.string(),
       actorId: z.uuid().nullable(),
-      type: z.enum(['mention', 'comment', 'reply']),
+      kind: z.enum(['mention', 'comment', 'reply']),
       entityType: z.enum(['attachment']),
       subjectId: z.uuid(),
       contextId: z.uuid().nullable(),
@@ -2440,9 +2440,9 @@ export const zListRequestsQuery = z.object({
       'email',
       'email asc',
       'email desc',
-      'type',
-      'type asc',
-      'type desc',
+      'kind',
+      'kind asc',
+      'kind desc',
       'createdAt',
       'createdAt asc',
       'createdAt desc',
@@ -2462,7 +2462,7 @@ export const zListRequestsResponse = z.object({
 
 export const zCreateRequestBody = z.object({
   email: z.email().min(4).max(255),
-  type: z.enum(['waitlist', 'newsletter', 'contact']),
+  kind: z.enum(['waitlist', 'newsletter', 'contact']),
   message: z.string().max(5000).nullable(),
 });
 

@@ -14,7 +14,7 @@ setTestConfig({ enabledAuthStrategies: ['oauth'], enabledOAuthProviders: ['githu
 
 afterEach(async () => await clearSecurityTestData());
 
-const pins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
+const pins = () => db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-connect'));
 
 /** A connect is pinned to the account that starts it, by a token only this browser's Lax cookie carries. */
 describe('starting a provider connect', async () => {

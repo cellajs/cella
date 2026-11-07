@@ -52,7 +52,7 @@ async function resendSystemInvitation(ctx: DbContext, oldToken: TokenRecord) {
     const anchor = await findInvitationToken(txCtx, { id: oldToken.id, forUpdate: true });
     if (!anchor) return null;
 
-    const issued = await issueToken(txCtx, { type: 'invitation', email, createdBy });
+    const issued = await issueToken(txCtx, { kind: 'invitation', email, createdBy });
     await stampWaitlistRequestInvited(txCtx, { email });
     return issued;
   });

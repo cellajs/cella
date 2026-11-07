@@ -177,7 +177,7 @@ describe('Account enumeration', async () => {
   it('must not learn whether an address has an account via the waitlist form', async () => {
     const { account, stranger } = await accountAndStranger();
     const join = async (email: string) => {
-      const res = await post('/requests', { email, type: 'waitlist', message: null });
+      const res = await post('/requests', { email, kind: 'waitlist', message: null });
       return { status: res.status, body: await res.text() };
     };
 
@@ -203,7 +203,7 @@ describe('Account enumeration', async () => {
     const stranger = `nobody-${nanoid(8)}@security-test.com`.toLowerCase();
 
     // An address with an account stores no row, so an answer that waited for the row would come later for a stranger.
-    const answered = await answerWhileWriteWaits('requests', () => post('/requests', { email: stranger, type: 'waitlist', message: null }));
+    const answered = await answerWhileWriteWaits('requests', () => post('/requests', { email: stranger, kind: 'waitlist', message: null }));
     expect(answered).toBe(204);
 
     // Stored once the write gets through (positive control).

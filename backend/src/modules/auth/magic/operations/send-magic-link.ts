@@ -112,7 +112,7 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
   // A sign-up link names no user: asking for it proves nothing about the address, so the account is created when the
   // link is clicked (claimMagicLinkHolder).
   const userId = existingUser?.id ?? null;
-  const magicToken = { id: tokenId, type: 'magic' as const, userId, email, createdBy: userId, redirectPath, followedInvitationId };
+  const magicToken = { id: tokenId, kind: 'magic' as const, userId, email, createdBy: userId, redirectPath, followedInvitationId };
   const { rawToken } = await issueToken(dbCtx, magicToken);
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);

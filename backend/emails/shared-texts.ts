@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { TimeSpan } from '#/utils/time-span';
 import { i18n, plainText } from './i18n';
 
@@ -15,9 +15,9 @@ export const durationText = (lng: string, seconds: number) => {
   return spanText(lng, spans.find(({ value }) => Number.isInteger(value)) ?? new TimeSpan(seconds, 's'));
 };
 
-/** "This link expires in 15 minutes.", from the link type's own lifetime, so the mail and the token cannot disagree. */
-export const linkExpiresText = (lng: string, type: LinkTokenType) =>
-  i18n.t('backend:email.link_expires', { lng, duration: spanText(lng, tokenPolicies[type].ttl), ...plainText });
+/** "This link expires in 15 minutes.", from the link kind's own lifetime, so the mail and the token cannot disagree. */
+export const linkExpiresText = (lng: string, kind: LinkTokenKind) =>
+  i18n.t('backend:email.link_expires', { lng, duration: spanText(lng, tokenPolicies[kind].ttl), ...plainText });
 
 /** The preview of an invitation to an address without an account: how signing in goes, and how long the link works. */
 export const invitePreviewText = (lng: string) =>

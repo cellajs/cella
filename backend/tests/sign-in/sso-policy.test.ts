@@ -189,7 +189,7 @@ describe('what the sign-in surfaces read', async () => {
     });
 
     const { data } = await call(getTokenData, {
-      path: { type: 'invitation', id: token.id },
+      path: { kind: 'invitation', id: token.id },
       headers: { ...defaultHeaders, Cookie: invitationCookie },
     });
     expect((data as { ssoConnectionId?: string }).ssoConnectionId).toBe(connection.id);

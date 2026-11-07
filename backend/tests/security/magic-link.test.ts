@@ -75,7 +75,7 @@ describe('magic link replay', async () => {
 
     // The attacker's own opened link hands them a validly signed `magic` cookie with another value.
     const { error, response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic', nanoid(40)) },
     });
     await expectRefusal({ response, error }, 401, 'magic_opened');
@@ -87,7 +87,7 @@ describe('magic link replay', async () => {
     const { raw, row } = await magicLink(user);
     // A click in a mail client is a navigation from another site: only the Lax request marker comes along.
     const click = () =>
-      call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) } });
+      call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) } });
 
     const first = await click();
     expect(first.response.status).toBe(302);
@@ -103,7 +103,7 @@ describe('magic link replay', async () => {
     const overlapping = await Promise.all(
       [0, 1].map(() =>
         call(invokeToken, {
-          path: { type: 'magic', token: next.raw },
+          path: { kind: 'magic', token: next.raw },
           headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', next.row.id) },
         }),
       ),
@@ -120,7 +120,7 @@ describe('magic link replay', async () => {
       .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
       .where(eq(tokensTable.id, row.id));
 
-    const { error, response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    const { error, response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
     await expectRefusal({ response, error }, 401, 'magic_expired');
     expect(cookieChange(response, 'session')).toBeUndefined();
   });
@@ -131,7 +131,7 @@ describe('magic link replay', async () => {
     const { raw, row } = await magicLink(user, { singleUse });
 
     const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic', singleUse) },
     });
     expect(response.status).toBe(302);
@@ -159,7 +159,7 @@ describe('magic link opened in another browser', async () => {
     const user = await newUser();
     const { raw, row } = await magicLink(user);
 
-    const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe(confirmPage);
     expect(cookieChange(response, 'session')).toBeUndefined();
@@ -169,7 +169,7 @@ describe('magic link opened in another browser', async () => {
     // A browser that asked for another link, such as its owner's own, did not ask for this one.
     const own = await magicLink(await newUser());
     const planted = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', own.row.id) },
     });
     expect(planted.response.headers.get('location')).toBe(confirmPage);
@@ -183,7 +183,7 @@ describe('magic link opened in another browser', async () => {
 
     // The victim's browser opened a link of its own minutes ago, so it holds a validly signed `magic` cookie.
     const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic', nanoid(40)) },
     });
     expect(response.status).toBe(302);
@@ -197,14 +197,14 @@ describe('magic link opened in another browser', async () => {
     const { raw, row } = await magicLink(user);
 
     for (let fetchByScanner = 0; fetchByScanner < 2; fetchByScanner++) {
-      const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+      const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
       expect(response.headers.get('location')).toBe(confirmPage);
     }
     expect(await openedAt(row.id)).toBeNull();
 
     // The owner's browser, which asked for the link, still signs in with it.
     const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
     });
     expect(response.status).toBe(302);
@@ -232,7 +232,7 @@ describe('magic link opened in another browser', async () => {
     const user = await newUser();
     const { raw, row } = await magicLink(user);
 
-    const opened = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: defaultHeaders });
     const held = setCookiePair(opened.response, 'magic-pending');
     expect(held).toBeDefined();
 
@@ -291,7 +291,7 @@ describe('magic-link sign-up', async () => {
   };
 
   const openLink = (rawToken: string, cookie: string) =>
-    call(invokeToken, { path: { type: 'magic', token: rawToken }, headers: { ...defaultHeaders, Cookie: cookie } });
+    call(invokeToken, { path: { kind: 'magic', token: rawToken }, headers: { ...defaultHeaders, Cookie: cookie } });
 
   const rowsFor = async (email: string) => ({
     users: await db.select().from(usersTable).where(eq(usersTable.email, email)),
@@ -308,7 +308,7 @@ describe('magic-link sign-up', async () => {
 
     expect(await rowsFor(email)).toEqual({ users: [], emails: [] });
     expect(await actorCount()).toBe(actorsBefore);
-    expect(await tokensFor(email)).toEqual([expect.objectContaining({ type: 'magic', userId: null, createdBy: null, invokedAt: null })]);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ kind: 'magic', userId: null, createdBy: null, invokedAt: null })]);
   });
 
   it('creates the account with its address verified when the link is clicked, and signs in (positive control)', async () => {
@@ -410,7 +410,7 @@ describe('magic-link sign-up', async () => {
     const email = newcomer();
     const { rawToken } = await requestLink(email);
 
-    const opened = await call(invokeToken, { path: { type: 'magic', token: rawToken }, headers: defaultHeaders });
+    const opened = await call(invokeToken, { path: { kind: 'magic', token: rawToken }, headers: defaultHeaders });
     const held = setCookiePair(opened.response, 'magic-pending');
     expect((await rowsFor(email)).users).toHaveLength(0);
 
@@ -461,7 +461,7 @@ describe('magic link in a browser with a stale session cookie', async () => {
       const { raw, row } = await magicLink(owner);
       const cookies = [stale, authCookie('magic-requested', row.id)].join('; ');
 
-      const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
+      const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
       expect(response.status, kind).toBe(302);
       expect(response.headers.get('location'), kind).not.toContain('/auth/error');
       expect(cookieChange(response, 'session'), kind).toBe('set');
@@ -474,7 +474,7 @@ describe('magic link in a browser with a stale session cookie', async () => {
     const { raw, row } = await magicLink(owner);
     const cookies = [await createTestSession(other), authCookie('magic-requested', row.id)].join('; ');
 
-    const { error, response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
+    const { error, response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
     await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect(cookieChange(response, 'session')).toBeUndefined();
   });
@@ -487,7 +487,7 @@ describe('magic link in a browser with a stale session cookie', async () => {
 
     // The pool has no connection for the session read: who is signed in here is unknown, so nobody signs in.
     failNextReadOf(sessionsTable);
-    const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
+    const { response } = await call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
     expect(response.status).toBe(503);
     expect(cookieChange(response, 'session')).toBeUndefined();
     expect((await tokenRow(row.id)).invokedAt).toBeNull();

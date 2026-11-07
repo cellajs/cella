@@ -9,12 +9,12 @@ import { Button } from '~/modules/ui/button';
 export function ConfirmLinkPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { type } = useParams({ from: '/_public/auth/confirm-link/$type' });
+  const { kind } = useParams({ from: '/_public/auth/confirm-link/$kind' });
 
   const { mutate: redeem, isPending } = useRedeemHeldLinkMutation();
 
   const onConfirm = () =>
-    redeem(type, {
+    redeem(kind, {
       onError: (error) => {
         const tokenId = typeof error.tokenId === 'string' ? error.tokenId : undefined;
         navigate({ to: '/auth/error', search: { error: error.type, severity: error.severity, tokenId }, replace: true });
@@ -22,7 +22,7 @@ export function ConfirmLinkPage() {
     });
 
   const header =
-    type === 'invitation'
+    kind === 'invitation'
       ? { title: t('c:confirm_invitation_link'), description: t('c:confirm_invitation_link.text') }
       : { title: t('c:confirm_verification_link'), description: t('c:confirm_verification_link.text') };
 

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import webpush from 'web-push';
 import { type NotificationPushPayload, type PushSendDeps, sendNotificationPush } from './push-sender';
 
-const payload: NotificationPushPayload = { t: 'notif', activityId: 'act-1', channelId: 'chan-1', type: 'mention' };
+const payload: NotificationPushPayload = { t: 'notif', activityId: 'act-1', channelId: 'chan-1', kind: 'mention' };
 
 /** An endpoint on a host in `appConfig.pushServiceHosts`, so the send-time host check lets it through. */
 const endpointOf = (userId: string) => `https://fcm.googleapis.com/fcm/send/${userId}`;

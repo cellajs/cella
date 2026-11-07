@@ -1,7 +1,7 @@
 import { and, countDistinct, eq, getColumns, gt, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
-import type { TokenType } from 'shared';
+import type { TokenKind } from 'shared';
 import type { DbContext } from '#/core/context';
-import { type CodeTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type InsertTokenModel, tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
@@ -28,7 +28,7 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
   const query = ctx.var.db
     .select(tokenColumns)
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), eq(tokensTable.id, id)));
+    .where(and(eq(tokensTable.kind, 'invitation'), eq(tokensTable.id, id)));
   const [token] = forUpdate ? await query.for('update') : await query;
   return token;
 };
@@ -38,7 +38,7 @@ export const findInvitationToken = async (ctx: DbContext, { id, forUpdate }: Fin
  * its row decides, and its tokens go with the row.
  */
 const liveSystemInvitation = () =>
-  and(eq(tokensTable.type, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
+  and(eq(tokensTable.kind, 'invitation'), isNull(tokensTable.inactiveMembershipId), gt(tokensTable.expiresAt, getIsoDate()));
 
 interface HasLiveSystemInvitationTokenOpts {
   email: string;
@@ -75,7 +75,7 @@ export const findSystemInvitationTokens = async (ctx: DbContext, { emails }: Fin
     .where(
       and(
         inArray(tokensTable.email, emails),
-        eq(tokensTable.type, 'invitation'),
+        eq(tokensTable.kind, 'invitation'),
         isNull(tokensTable.inactiveMembershipId),
         isNull(tokensTable.invokedAt),
       ),
@@ -108,11 +108,11 @@ export const updateTokenUser = async (ctx: DbContext, { id, userId }: UpdateToke
 };
 
 /** What decides which earlier tokens a new one replaces. */
-type ReplacingToken = Pick<InsertTokenModel, 'type' | 'email'> &
+type ReplacingToken = Pick<InsertTokenModel, 'kind' | 'email'> &
   Partial<Pick<InsertTokenModel, 'userId' | 'identityId' | 'inactiveMembershipId' | 'pendingSignUp' | 'sessionId'>>;
 
 /**
- * Per token type, the subject whose earlier tokens of that type a new one deletes, so only the newest one for it works;
+ * Per token kind, the subject whose earlier tokens of that kind a new one deletes, so only the newest one for it works;
  * undefined deletes nothing.
  */
 const replacementSubjects = {
@@ -139,12 +139,12 @@ const replacementSubjects = {
   'step-up': (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
   // Every sign-in holds its own second-factor challenge.
   'confirm-mfa': () => undefined,
-} satisfies Record<TokenType, (token: ReplacingToken) => SQL | undefined>;
+} satisfies Record<TokenKind, (token: ReplacingToken) => SQL | undefined>;
 
-/** The earlier tokens a new one replaces, by its type's subject. */
+/** The earlier tokens a new one replaces, by its kind's subject. */
 const replacedBy = (token: ReplacingToken): SQL | undefined => {
-  const subject = replacementSubjects[token.type](token);
-  return subject && and(eq(tokensTable.type, token.type), subject);
+  const subject = replacementSubjects[token.kind](token);
+  return subject && and(eq(tokensTable.kind, token.kind), subject);
 };
 
 interface DeleteReplacedTokensOpts {
@@ -167,40 +167,40 @@ export const insertTokens = async (ctx: DbContext, { values }: InsertTokensOpts)
   return ctx.var.db.insert(tokensTable).values(values).returning(tokenColumns);
 };
 
-/** Names the token a link of `type` carries, by the hash of the raw value in its URL. */
-const namedBy = (type: LinkTokenType, rawToken: string) => and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type));
+/** Names the token a link of `kind` carries, by the hash of the raw value in its URL. */
+const namedBy = (kind: LinkTokenKind, rawToken: string) => and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.kind, kind));
 
 interface FindLinkTokenOpts {
-  type: LinkTokenType;
+  kind: LinkTokenKind;
   /** The raw value from the link. */
   rawToken: string;
 }
 
 /** The link token a raw value names, read without redeeming it; undefined when there is none. */
-export const findLinkToken = async (ctx: DbContext, { type, rawToken }: FindLinkTokenOpts): Promise<TokenRecord | undefined> => {
-  const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(namedBy(type, rawToken)).limit(1);
+export const findLinkToken = async (ctx: DbContext, { kind, rawToken }: FindLinkTokenOpts): Promise<TokenRecord | undefined> => {
+  const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(namedBy(kind, rawToken)).limit(1);
   return token;
 };
 
 interface DeleteUnopenedLinkTokenOpts {
-  type: LinkTokenType;
+  kind: LinkTokenKind;
   /** The raw value from the link. */
   rawToken: string;
 }
 
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
-export const deleteUnopenedLinkToken = async (ctx: DbContext, { type, rawToken }: DeleteUnopenedLinkTokenOpts) => {
-  await ctx.var.db.delete(tokensTable).where(and(namedBy(type, rawToken), isNull(tokensTable.invokedAt)));
+export const deleteUnopenedLinkToken = async (ctx: DbContext, { kind, rawToken }: DeleteUnopenedLinkTokenOpts) => {
+  await ctx.var.db.delete(tokensTable).where(and(namedBy(kind, rawToken), isNull(tokensTable.invokedAt)));
 };
 
 interface DeleteOpenedLinkTokensOpts {
-  type: LinkTokenType;
+  kind: LinkTokenKind;
   userId: string;
 }
 
-/** Deletes the user's opened links of `type`, so no browser holding a single-use cookie for one opens it again. */
-export const deleteOpenedLinkTokens = async (ctx: DbContext, { type, userId }: DeleteOpenedLinkTokensOpts) => {
-  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.type, type), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
+/** Deletes the user's opened links of `kind`, so no browser holding a single-use cookie for one opens it again. */
+export const deleteOpenedLinkTokens = async (ctx: DbContext, { kind, userId }: DeleteOpenedLinkTokensOpts) => {
+  await ctx.var.db.delete(tokensTable).where(and(eq(tokensTable.kind, kind), eq(tokensTable.userId, userId), isNotNull(tokensTable.invokedAt)));
 };
 
 interface UpdateTokenRedeemedOpts {
@@ -225,55 +225,55 @@ export const updateTokenRedeemed = async (ctx: DbContext, { id, singleUseToken, 
 };
 
 /**
- * Names the row a browser's cookie of `type` binds it to, by the hash of the cookie's value: after a link's redemption
+ * Names the row a browser's cookie of `kind` binds it to, by the hash of the cookie's value: after a link's redemption
  * the cookie holds its single-use value, a cookie-carried token's cookie holds the token itself.
  */
-const boundTo = (type: TokenType, cookie: string) => {
-  const hashedColumn = tokenPolicies[type].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secret;
-  return and(eq(tokensTable.type, type), eq(hashedColumn, hashToken(cookie)));
+const boundTo = (kind: TokenKind, cookie: string) => {
+  const hashedColumn = tokenPolicies[kind].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secret;
+  return and(eq(tokensTable.kind, kind), eq(hashedColumn, hashToken(cookie)));
 };
 
 interface FindBoundTokenOpts {
-  type: TokenType;
-  /** The value of the browser's cookie of `type`. */
+  kind: TokenKind;
+  /** The value of the browser's cookie of `kind`. */
   cookie: string;
 }
 
-/** The token a browser's cookie of `type` binds it to, whatever its state; undefined when it names no row. */
-export const findBoundToken = async (ctx: DbContext, { type, cookie }: FindBoundTokenOpts) => {
-  const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(boundTo(type, cookie)).limit(1);
+/** The token a browser's cookie of `kind` binds it to, whatever its state; undefined when it names no row. */
+export const findBoundToken = async (ctx: DbContext, { kind, cookie }: FindBoundTokenOpts) => {
+  const [token] = await ctx.var.db.select(tokenColumns).from(tokensTable).where(boundTo(kind, cookie)).limit(1);
   return token;
 };
 
 interface DeleteBoundTokenOpts {
-  type: TokenType;
-  /** The value of the browser's cookie of `type`. */
+  kind: TokenKind;
+  /** The value of the browser's cookie of `kind`. */
   cookie: string;
 }
 
-/** Deletes the token a browser's cookie of `type` binds it to; returns the deleted row, undefined when there was none. */
-export const deleteBoundToken = async (ctx: DbContext, { type, cookie }: DeleteBoundTokenOpts) => {
-  const [spent] = await ctx.var.db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);
+/** Deletes the token a browser's cookie of `kind` binds it to; returns the deleted row, undefined when there was none. */
+export const deleteBoundToken = async (ctx: DbContext, { kind, cookie }: DeleteBoundTokenOpts) => {
+  const [spent] = await ctx.var.db.delete(tokensTable).where(boundTo(kind, cookie)).returning(tokenColumns);
   return spent;
 };
 
 interface DeleteSessionCodeTokenOpts {
-  type: CodeTokenType;
+  kind: CodeTokenKind;
   sessionId: string;
   /** The code as the user entered it. */
   code: string;
 }
 
 /**
- * Deletes the session's unexpired code token of `type` when `code` matches it; returns the deleted row, undefined
+ * Deletes the session's unexpired code token of `kind` when `code` matches it; returns the deleted row, undefined
  * otherwise. The session narrows the search first, so a guess can match only this session's code; a miss deletes nothing.
  */
-export const deleteSessionCodeToken = async (ctx: DbContext, { type, sessionId, code }: DeleteSessionCodeTokenOpts) => {
+export const deleteSessionCodeToken = async (ctx: DbContext, { kind, sessionId, code }: DeleteSessionCodeTokenOpts) => {
   const [spent] = await ctx.var.db
     .delete(tokensTable)
     .where(
       and(
-        eq(tokensTable.type, type),
+        eq(tokensTable.kind, kind),
         eq(tokensTable.sessionId, sessionId),
         eq(tokensTable.secret, hashToken(code)),
         gt(tokensTable.expiresAt, getIsoDate()),

@@ -1,0 +1,8 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "sessions", "type"], "to": ["public", "sessions", "kind"] },
+  { "type": "rename", "kind": "column", "from": ["public", "tokens", "type"], "to": ["public", "tokens", "kind"] },
+  { "type": "rename", "kind": "column", "from": ["public", "notifications", "type"], "to": ["public", "notifications", "kind"] },
+  { "type": "rename", "kind": "column", "from": ["public", "requests", "type"], "to": ["public", "requests", "kind"] },
+  { "type": "rename", "kind": "index", "from": ["public", "tokens", "tokens_secret_type_idx"], "to": ["public", "tokens", "tokens_secret_kind_idx"] },
+  { "type": "rename", "kind": "index", "from": ["public", "requests", "requests_unique_signup_email_type"], "to": ["public", "requests", "requests_unique_signup_email_kind"] }
+]

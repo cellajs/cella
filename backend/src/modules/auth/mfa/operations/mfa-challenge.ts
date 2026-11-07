@@ -20,7 +20,7 @@ import { findUserById } from '#/modules/user/user-queries';
 export const initiateMfa = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, connectionId: string | null = null) => {
   if (!user.mfaRequired) return null;
 
-  await issueCookieToken(ctx, { type: 'confirm-mfa', userId: user.id, email: user.email, createdBy: user.id, authStrategy: strategy, connectionId });
+  await issueCookieToken(ctx, { kind: 'confirm-mfa', userId: user.id, email: user.email, createdBy: user.id, authStrategy: strategy, connectionId });
 
   return '/auth/mfa';
 };

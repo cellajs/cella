@@ -728,12 +728,12 @@ export const getPendingMfa = <ThrowOnError extends boolean = true>(
 /**
  * Invoke token session
  *
- * Opens an emailed link of a link-carried token type and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
+ * Opens an emailed link of a link-carried token kind and redirects to the app. A magic link signs in, in the browser that asked for it. An invitation or a provider address verification is held in this browser for its confirm page, which redeems it (`redeemLinkToken`), so a mail scanner that fetches the link uses up nothing; one this browser redeemed before goes on at once.
  *
- * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· _auth · cella_
+ * **GET /auth/invoke-token/{kind}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{kind}/{token}) ·· _auth · cella_
  *
  * @param {invokeTokenData} options
- * @param {enum} options.path.type - `enum`
+ * @param {enum} options.path.kind - `enum`
  * @param {string} options.path.token - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
  */
@@ -742,7 +742,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
 ): RequestResult<unknown, InvokeTokenErrors, ThrowOnError, 'data'> =>
   (options.client ?? client).get<unknown, InvokeTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
-    url: '/auth/invoke-token/{type}/{token}',
+    url: '/auth/invoke-token/{kind}/{token}',
     ...options,
   });
 
@@ -751,10 +751,10 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
  *
  * Redeems the invitation or address verification link this browser holds, confirmed on the page opening it led to, and hands the browser a single-use token session in a cookie. Answers where the browser goes next, which the page navigates to: the app for an invitation, the provider for a verification.
  *
- * **POST /auth/invoke-token/{type}** ·· [redeemLinkToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invoke-token/{type}) ·· _auth · cella_
+ * **POST /auth/invoke-token/{kind}** ·· [redeemLinkToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invoke-token/{kind}) ·· _auth · cella_
  *
  * @param {redeemLinkTokenData} options
- * @param {enum} options.path.type - `enum`
+ * @param {enum} options.path.kind - `enum`
  * @returns Possible status codes: 200, 400, 401, 409, 429
  */
 export const redeemLinkToken = <ThrowOnError extends boolean = true>(
@@ -763,7 +763,7 @@ export const redeemLinkToken = <ThrowOnError extends boolean = true>(
   (options.client ?? client).post<RedeemLinkTokenResponses, RedeemLinkTokenErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zRedeemLinkTokenResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/invoke-token/{type}',
+    url: '/auth/invoke-token/{kind}',
     ...options,
   });
 
@@ -772,10 +772,10 @@ export const redeemLinkToken = <ThrowOnError extends boolean = true>(
  *
  * Gets basic data of the token held in the single-use token session: its address, the sender of an invitation and, for a membership invitation, what it grants. It answers only while the session is valid.
  *
- * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· _auth · cella_
+ * **GET /auth/token/{kind}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{kind}/{id}) ·· _auth · cella_
  *
  * @param {getTokenDataData} options
- * @param {enum} options.path.type - `enum`
+ * @param {enum} options.path.kind - `enum`
  * @param {string} options.path.id - `string`
  * @returns Possible status codes: 200, 400, 401, 429
  */
@@ -785,7 +785,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
   (options.client ?? client).get<GetTokenDataResponses, GetTokenDataErrors, ThrowOnError, 'data'>({
     responseValidator: async (data) => await zGetTokenDataResponse.parseAsync(data),
     responseStyle: 'data',
-    url: '/auth/token/{type}/{id}',
+    url: '/auth/token/{kind}/{id}',
     ...options,
   });
 
@@ -2601,7 +2601,7 @@ export const removePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Get list of requests
  *
- * Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.
+ * Returns a list of submitted requests of every kind: contact form, newsletter, and waitlist.
  *
  * **GET /requests** ·· [listRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· _requests · cella_
  *
@@ -2632,7 +2632,7 @@ export const listRequests = <ThrowOnError extends boolean = true>(
  *
  * @param {createRequestData} options
  * @param {string} options.body.email - `string`
- * @param {enum} options.body.type - `enum`
+ * @param {enum} options.body.kind - `enum`
  * @param {string | null} options.body.message - `string | null`
  * @returns Possible status codes: 204, 400, 413, 429
  */

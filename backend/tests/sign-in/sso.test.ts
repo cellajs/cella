@@ -482,7 +482,7 @@ describe('SSO sign-in through an institution', async () => {
       expect(sent.response.status).toBe(200);
       expect(sent.data).toEqual({ email: studentEmail });
       expect(await magicTokensOf(user.id)).toMatchObject([
-        { type: 'magic', email: studentEmail, redirectPath: `/account?connect=${connection.id}#authentication` },
+        { kind: 'magic', email: studentEmail, redirectPath: `/account?connect=${connection.id}#authentication` },
       ]);
 
       // Spent by asking: another link takes another sign-in at the institution.
@@ -516,7 +516,7 @@ describe('SSO sign-in through an institution', async () => {
       // The same person under a new subject collides with their own account; having signed in there, the link goes out.
       await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
       expect((await recover()).response.status).toBe(200);
-      expect(await magicTokensOf(user.id)).toMatchObject([{ type: 'magic', email: studentEmail }]);
+      expect(await magicTokensOf(user.id)).toMatchObject([{ kind: 'magic', email: studentEmail }]);
     });
 
     it('does not lift the policy for a sign-in through another institution', async () => {

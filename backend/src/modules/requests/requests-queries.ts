@@ -14,14 +14,14 @@ const { invitedAt, ...requestColumns } = getColumns(requestsTable);
 
 interface InsertRequestOpts {
   email: string;
-  type: RequestModel['type'];
+  kind: RequestModel['kind'];
   message?: string | null;
 }
 
 /** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
-export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
+export const insertRequest = async (ctx: DbContext, { email, kind, message }: InsertRequestOpts) => {
   const { db } = ctx.var;
-  const [created] = await db.insert(requestsTable).values({ email, type, message }).onConflictDoNothing().returning(requestColumns);
+  const [created] = await db.insert(requestsTable).values({ email, kind, message }).onConflictDoNothing().returning(requestColumns);
   return created;
 };
 
@@ -42,7 +42,7 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   const orderBy = getOrderColumns({
     sort,
     order,
-    columns: pick(requestsTable, ['id', 'email', 'createdAt', 'type']),
+    columns: pick(requestsTable, ['id', 'email', 'createdAt', 'kind']),
     tieBreaker: requestsTable.id,
   });
 
@@ -83,5 +83,5 @@ export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: Sta
   return db
     .update(requestsTable)
     .set({ invitedAt: getIsoDate() })
-    .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'), isNull(requestsTable.invitedAt)));
+    .where(and(eq(requestsTable.email, email), eq(requestsTable.kind, 'waitlist'), isNull(requestsTable.invitedAt)));
 };

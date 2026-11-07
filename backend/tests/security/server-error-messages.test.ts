@@ -16,7 +16,7 @@ const failQueryIn = async (mode: typeof appConfig.mode) => {
   const response = await baseApp.request('/requests', {
     method: 'POST',
     headers: defaultHeaders,
-    body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `failing:${marker}` }),
+    body: JSON.stringify({ email: `${nanoid(8)}@example.test`, kind: 'contact', message: `failing:${marker}` }),
   });
   const text = await response.text();
   return { status: response.status, text, marker, body: JSON.parse(text) as ErrorResponse };

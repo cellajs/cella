@@ -421,7 +421,7 @@ describe('OAuth Authentication', async () => {
       const ended = await connectCallback();
       await expectRefusal(ended, 401, 'oauth-connect_not_found');
       expect(await identitiesOf(user.id)).toHaveLength(0);
-      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-connect'))).toHaveLength(0);
 
       // A new pin of a live session connects (positive control).
       await pinConnect(user);
@@ -437,7 +437,7 @@ describe('OAuth Authentication', async () => {
       const replay = await connectCallback();
 
       await expectRefusal(replay, 401, 'oauth-connect_not_found');
-      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-connect'))).toHaveLength(0);
     });
 
     it('starts a connect only with a pin of the signed-in account, and keeps any user id out of the state', async () => {
@@ -523,7 +523,7 @@ describe('OAuth Authentication', async () => {
 
       await expectRefusal(replay, 401, 'oauth-verification_not_found');
       expect(cookieChange(replay.response, 'session')).toBeUndefined();
-      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'))).toHaveLength(0);
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-verification'))).toHaveLength(0);
     });
 
     it('refuses when another account took the address after the connect started', async () => {
@@ -787,7 +787,7 @@ describe('OAuth Authentication', async () => {
 
       // The sign-up waits on the mail to the invited address; completing it claims the invitation with the account.
       expect(mailsTo(providerEmail)).toHaveLength(1);
-      const pending = await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'));
+      const pending = await db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-verification'));
       expect(pending).toEqual([
         expect.objectContaining({
           email: providerEmail,
@@ -863,7 +863,7 @@ describe('OAuth Authentication', async () => {
     };
 
     const accountsFor = (email: string) => db.select().from(usersTable).where(eq(usersTable.email, email));
-    const verificationTokens = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'));
+    const verificationTokens = () => db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-verification'));
 
     it('must not create an account via an OAuth sign-up whose address is unproven', async () => {
       const { response: res } = await signUpCallback();
@@ -1021,7 +1021,7 @@ describe('OAuth Authentication', async () => {
       const tokens = await db
         .select()
         .from(tokensTable)
-        .where(and(eq(tokensTable.type, 'oauth-verification'), eq(tokensTable.email, providerEmail)));
+        .where(and(eq(tokensTable.kind, 'oauth-verification'), eq(tokensTable.email, providerEmail)));
       expect(tokens).toHaveLength(1);
     });
   });

@@ -37,7 +37,7 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
     const entity = await resolveEntity(txCtx, { entityType: invitation.channelType, identifier: invitation.channelId });
     if (!entity) return null;
 
-    const { token, rawToken } = await issueToken(txCtx, { type: 'invitation', email, userId: user.id, inactiveMembershipId, createdBy });
+    const { token, rawToken } = await issueToken(txCtx, { kind: 'invitation', email, userId: user.id, inactiveMembershipId, createdBy });
     return { entityName: entity.name, tokenId: token.id, rawToken };
   });
 

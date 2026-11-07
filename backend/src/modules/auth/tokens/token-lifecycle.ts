@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import type { Context } from 'hono';
-import { appConfig, type TokenType } from 'shared';
+import { appConfig, type TokenKind } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -8,7 +8,7 @@ import { baseDb, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
-import { type CodeTokenType, type CookieTokenType, type HeldLinkType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { type CodeTokenKind, type CookieTokenKind, type HeldLinkKind, type LinkTokenKind, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { InsertTokenModel } from '#/modules/auth/tokens/tokens-db';
 import {
   deleteBoundToken,
@@ -41,7 +41,7 @@ const newHashedCode = () => {
 };
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
-export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
+export type NewToken = Pick<InsertTokenModel, 'kind' | 'email'> &
   Partial<
     Pick<
       InsertTokenModel,
@@ -60,7 +60,7 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
   >;
 
 /**
- * Issues tokens: a random raw value per token, stored only as its hash, expiring after its type's `ttl`. Each first
+ * Issues tokens: a random raw value per token, stored only as its hash, expiring after its kind's `ttl`. Each first
  * deletes the tokens it replaces (`deleteReplacedTokens`). Pass the caller's transaction in `ctx` when the issue must
  * commit with other writes.
  * @returns Per token, in the given order: the stored row and the raw value. The raw value exists only here; it goes
@@ -74,12 +74,12 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
   const issued = tokens.map((token) => ({
     token,
     id: token.id ?? generateId(),
-    ...(tokenPolicies[token.type].carrier === 'code' ? newHashedCode() : newHashedToken()),
+    ...(tokenPolicies[token.kind].carrier === 'code' ? newHashedCode() : newHashedToken()),
   }));
   const rows = await insertTokens(ctx, {
     values: issued.map(({ token, id, hash }) => ({
       id,
-      type: token.type,
+      kind: token.kind,
       email: token.email,
       userId: token.userId ?? null,
       createdBy: token.createdBy ?? null,
@@ -92,7 +92,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       authStrategy: token.authStrategy ?? null,
       connectionId: token.connectionId ?? null,
       secret: hash,
-      expiresAt: isoDateIn(tokenPolicies[token.type].ttl),
+      expiresAt: isoDateIn(tokenPolicies[token.kind].ttl),
     })),
   });
 
@@ -112,23 +112,23 @@ export const issueToken = async (ctx: DbContext, token: NewToken) => {
 
 /**
  * Issues a cookie-carried token (a second-factor challenge, a connect pin) and sets its cookie on this response for the
- * type's `ttl`. The raw value lives only in that cookie.
+ * kind's `ttl`. The raw value lives only in that cookie.
  */
-export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { type: CookieTokenType }) => {
+export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { kind: CookieTokenKind }) => {
   const { token: record, rawToken } = await issueToken(dbCtx, token);
-  setAuthCookie(ctx, token.type, rawToken, tokenPolicies[token.type].ttl);
+  setAuthCookie(ctx, token.kind, rawToken, tokenPolicies[token.kind].ttl);
   return record;
 };
 
 /** An expired token's refusal names it by id, so an error page can offer a new link; never by its raw value. */
-const expired = (token: TokenRecord) => new AppError(401, `${token.type}_expired`, 'warn', { meta: { tokenId: token.id } });
+const expired = (token: TokenRecord) => new AppError(401, `${token.kind}_expired`, 'warn', { meta: { tokenId: token.id } });
 
 /**
  * The refusal of a redeemed link this browser does not hold. An invitation is refused as opened, not expired, while its
  * own lifetime runs: the redemption shortened `expiresAt` to the single-use window, and a fresh link still works.
  */
 const refuseRedeemed = (token: TokenRecord) => {
-  if (token.type !== 'invitation') return expired(token);
+  if (token.kind !== 'invitation') return expired(token);
   const lifetimeEnd = new Date(token.createdAt).getTime() + tokenPolicies.invitation.ttl.milliseconds();
   if (Date.now() >= lifetimeEnd) return expired(token);
   return new AppError(401, 'invitation_opened', 'warn', { meta: { tokenId: token.id } });
@@ -139,8 +139,8 @@ const refuseRedeemed = (token: TokenRecord) => {
  * account belongs to the account holding its address by now (a new account when nobody does), except an invitation not
  * yet bound to a user: any signed-in account opens it, and only one holding its address accepts it.
  */
-const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token: TokenRecord) => {
-  if (!token.userId && type === 'invitation') return;
+const refuseOtherAccount = async (ctx: Context<Env>, kind: LinkTokenKind, token: TokenRecord) => {
+  if (!token.userId && kind === 'invitation') return;
 
   const signedIn = await findSession(ctx);
   if (!signedIn) return;
@@ -151,11 +151,11 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
 };
 
 /**
- * The token, read fresh, when this browser holds its own single-use cookie. A cookie of the type's name proves nothing
- * by itself: it may come from another link of the same type.
+ * The token, read fresh, when this browser holds its own single-use cookie. A cookie of the kind's name proves nothing
+ * by itself: it may come from another link of the same kind.
  */
 const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
-  const cookie = getAuthCookie(ctx, token.type);
+  const cookie = getAuthCookie(ctx, token.kind);
   if (!cookie) return null;
 
   const held = await findTokenBySingleUse(dbCtx, { id: token.id, cookie });
@@ -169,7 +169,7 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
 type ClaimTokenHolder = (tx: Tx, token: TokenRecord) => Promise<string>;
 
 interface InvokeTokenOpts {
-  type: LinkTokenType;
+  kind: LinkTokenKind;
   /** The raw value in the link's URL; the database holds only its hash. */
   rawToken: string;
   /** For a link issued without an account (a sign-up link); runs only in the redemption that wins. */
@@ -180,11 +180,11 @@ interface InvokeTokenOpts {
  * The link a raw value names, refused as redeeming it would refuse it; `redeemed` when this browser redeemed it before
  * and holds its single-use cookie, which a fresh read checks against the stored hash.
  */
-const checkLinkToken = async (ctx: Context<Env>, type: LinkTokenType, rawToken: string) => {
-  const token = await findLinkToken(dbCtx, { type, rawToken });
-  if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
+const checkLinkToken = async (ctx: Context<Env>, kind: LinkTokenKind, rawToken: string) => {
+  const token = await findLinkToken(dbCtx, { kind, rawToken });
+  if (!token) throw new AppError(401, `${kind}_not_found`, 'warn');
 
-  await refuseOtherAccount(ctx, type, token);
+  await refuseOtherAccount(ctx, kind, token);
 
   if (token.invokedAt) {
     const held = await heldByThisBrowser(ctx, token);
@@ -198,19 +198,19 @@ const checkLinkToken = async (ctx: Context<Env>, type: LinkTokenType, rawToken: 
 
 /**
  * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
- * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
+ * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its kind's single-use window and this
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
  * holding that cookie. A link issued without an account gets its holder from `claimHolder`, committed with the
  * redemption.
  * @returns The redeemed token.
- * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 401
+ * @throws AppError 401 `<kind>_not_found`, 401 `<kind>_expired` (expired, or redeemed by another browser), 401
  *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
  *   to another account, or what `claimHolder` throws.
  */
-export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
-  const { singleUseWindow } = tokenPolicies[type];
+export const invokeToken = async (ctx: Context<Env>, { kind, rawToken, claimHolder }: InvokeTokenOpts): Promise<TokenRecord> => {
+  const { singleUseWindow } = tokenPolicies[kind];
 
-  const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, type, rawToken);
+  const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, kind, rawToken);
   if (redeemedBefore) return token;
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
@@ -230,7 +230,7 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
         });
 
   if (redeemed) {
-    setAuthCookie(ctx, type, singleUse.raw, singleUseWindow);
+    setAuthCookie(ctx, kind, singleUse.raw, singleUseWindow);
     return redeemed;
   }
 
@@ -240,22 +240,22 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimHold
   return held;
 };
 
-/** How long a link opened in a browser waits there, in its `<type>-pending` cookie, for its holder to confirm it. */
+/** How long a link opened in a browser waits there, in its `<kind>-pending` cookie, for its holder to confirm it. */
 export const heldLinkLifetime = new TimeSpan(10, 'm');
 
 /**
  * Opens an invitation or verification link on a GET, which redeems nothing (RFC 9110 §9.2.1), so a mail scanner that
  * fetches the link leaves it unused. A link this browser redeemed before comes back to go on with; any other one that
- * redeeming would accept is held in this browser's `<type>-pending` cookie until the app's page confirms it with a
+ * redeeming would accept is held in this browser's `<kind>-pending` cookie until the app's page confirms it with a
  * POST (`redeemHeldLink`).
  * @returns The token this browser redeemed before, or null once the link is held.
  * @throws What `invokeToken` throws, before anything is held.
  */
-export const holdLinkToken = async (ctx: Context<Env>, type: HeldLinkType, rawToken: string): Promise<TokenRecord | null> => {
-  const { token, redeemed } = await checkLinkToken(ctx, type, rawToken);
+export const holdLinkToken = async (ctx: Context<Env>, kind: HeldLinkKind, rawToken: string): Promise<TokenRecord | null> => {
+  const { token, redeemed } = await checkLinkToken(ctx, kind, rawToken);
   if (redeemed) return token;
 
-  setAuthCookie(ctx, `${type}-pending`, rawToken, heldLinkLifetime);
+  setAuthCookie(ctx, `${kind}-pending`, rawToken, heldLinkLifetime);
   return null;
 };
 
@@ -264,61 +264,61 @@ export const holdLinkToken = async (ctx: Context<Env>, type: HeldLinkType, rawTo
  * @throws AppError 401 `link_not_held` when this browser holds none (the hold lapsed while the page stayed open, or a
  *   sign-out cleared it), whatever state the link is in, else what `invokeToken` throws.
  */
-export const redeemHeldLink = async (ctx: Context<Env>, type: HeldLinkType): Promise<TokenRecord> => {
-  const rawToken = getAuthCookie(ctx, `${type}-pending`);
+export const redeemHeldLink = async (ctx: Context<Env>, kind: HeldLinkKind): Promise<TokenRecord> => {
+  const rawToken = getAuthCookie(ctx, `${kind}-pending`);
   if (!rawToken) throw new AppError(401, 'link_not_held', 'info');
 
-  const token = await invokeToken(ctx, { type, rawToken });
-  deleteAuthCookie(ctx, `${type}-pending`);
+  const token = await invokeToken(ctx, { kind, rawToken });
+  deleteAuthCookie(ctx, `${kind}-pending`);
   return token;
 };
 
-/** The link types whose request the asking browser remembers, in a cookie named after the type. */
-type RequestedLinkType = 'magic';
+/** The link kinds whose request the asking browser remembers, in a cookie named after the kind. */
+type RequestedLinkKind = 'magic';
 
 /**
  * Remembers, in the browser that asked, which link it asked for, as long as the link lives: opening the link there
  * counts as the asking browser. The cookie is Lax (`cookie.ts`), since the click from the mail is a navigation another
  * site starts.
  */
-export const rememberLinkRequest = (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) =>
-  setAuthCookie(ctx, `${type}-requested`, tokenId, tokenPolicies[type].ttl);
+export const rememberLinkRequest = (ctx: Context<Env>, kind: RequestedLinkKind, tokenId: string) =>
+  setAuthCookie(ctx, `${kind}-requested`, tokenId, tokenPolicies[kind].ttl);
 
-/** Whether this browser asked for the link: its marker for the type names the token. */
-export const isRequestedHere = (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) => getAuthCookie(ctx, `${type}-requested`) === tokenId;
+/** Whether this browser asked for the link: its marker for the kind names the token. */
+export const isRequestedHere = (ctx: Context<Env>, kind: RequestedLinkKind, tokenId: string) => getAuthCookie(ctx, `${kind}-requested`) === tokenId;
 
 /** Drops the marker once the link is used: it has nothing left to say. */
-export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) => deleteAuthCookie(ctx, `${type}-requested`);
+export const forgetLinkRequest = (ctx: Context<Env>, kind: RequestedLinkKind) => deleteAuthCookie(ctx, `${kind}-requested`);
 
-/** The token this browser's cookie of `type` binds it to, whatever its state; undefined without one. */
-const findCookieBoundToken = async (ctx: Context<Env>, type: TokenType) => {
-  const cookie = getAuthCookie(ctx, type);
-  return cookie ? findBoundToken(dbCtx, { type, cookie }) : undefined;
+/** The token this browser's cookie of `kind` binds it to, whatever its state; undefined without one. */
+const findCookieBoundToken = async (ctx: Context<Env>, kind: TokenKind) => {
+  const cookie = getAuthCookie(ctx, kind);
+  return cookie ? findBoundToken(dbCtx, { kind, cookie }) : undefined;
 };
 
 /**
- * The live token this browser's cookie of `type` binds it to: a redeemed link (invitation, verification) or a
+ * The live token this browser's cookie of `kind` binds it to: a redeemed link (invitation, verification) or a
  * cookie-carried token (a second-factor challenge), for a flow that cannot go on without it. Reads only; nothing is
  * spent.
- * @throws AppError 401 `<type>_not_found` without a cookie or for a value that names no row, 401 `<type>_expired` once
- *   expired: one shape for a link and a cookie-carried type alike.
+ * @throws AppError 401 `<kind>_not_found` without a cookie or for a value that names no row, 401 `<kind>_expired` once
+ *   expired: one shape for a link and a cookie-carried kind alike.
  */
-export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord> => {
-  const token = await findCookieBoundToken(ctx, type);
-  if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
+export const readBoundToken = async (ctx: Context<Env>, kind: TokenKind): Promise<TokenRecord> => {
+  const token = await findCookieBoundToken(ctx, kind);
+  if (!token) throw new AppError(401, `${kind}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   return token;
 };
 
 /** {@link readBoundToken} for a flow that goes on without the token: null when this browser binds no live one. */
-export const findLiveBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord | null> => {
-  const token = await findCookieBoundToken(ctx, type);
+export const findLiveBoundToken = async (ctx: Context<Env>, kind: TokenKind): Promise<TokenRecord | null> => {
+  const token = await findCookieBoundToken(ctx, kind);
   return token && !isExpiredDate(token.expiresAt) ? token : null;
 };
 
 interface IssueCodeTokenOpts {
-  type: CodeTokenType;
+  kind: CodeTokenKind;
   userId: string;
   email: string;
   /** The session that enters the code: the only one it serves. */
@@ -326,22 +326,22 @@ interface IssueCodeTokenOpts {
 }
 
 /**
- * Issues an emailed code for one session, replacing the session's earlier code of the type.
+ * Issues an emailed code for one session, replacing the session's earlier code of the kind.
  * @returns The stored row and the code, which exists only here and in the mail.
  */
-export const issueCodeToken = async ({ type, userId, email, sessionId }: IssueCodeTokenOpts) => {
-  const { token, rawToken } = await issueToken(dbCtx, { type, userId, email, createdBy: userId, sessionId });
+export const issueCodeToken = async ({ kind, userId, email, sessionId }: IssueCodeTokenOpts) => {
+  const { token, rawToken } = await issueToken(dbCtx, { kind, userId, email, createdBy: userId, sessionId });
   return { token, code: rawToken };
 };
 
 interface SpendCodeTokenOpts {
-  type: CodeTokenType;
+  kind: CodeTokenKind;
   sessionId: string;
   code: string;
 }
 
 /**
- * Spends the session's emailed code of `type` when `code` matches it. A wrong code leaves the token for the next try;
+ * Spends the session's emailed code of `kind` when `code` matches it. A wrong code leaves the token for the next try;
  * the caller's rate limiter counts the misses.
  * @returns The spent token, or null for a wrong, expired or never issued code.
  */
@@ -356,7 +356,7 @@ export const spendCodeToken = async (opts: SpendCodeTokenOpts): Promise<TokenRec
 type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-commit'; txCtx?: DbContext };
 
 /**
- * Spends the token this browser's cookie of `type` binds it to: deletes its row and, with `deleteCookie: 'now'`, the
+ * Spends the token this browser's cookie of `kind` binds it to: deletes its row and, with `deleteCookie: 'now'`, the
  * cookie. A flow that grants something for the spend, such as a session after a second factor, goes on only with the
  * returned row: of two concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed
  * attempt leaves the token for the next try.
@@ -366,15 +366,15 @@ type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-com
  */
 export const spendCookieToken = async (
   ctx: Context<Env>,
-  type: TokenType,
+  kind: TokenKind,
   opts: SpendCookieTokenOpts = { deleteCookie: 'now' },
 ): Promise<TokenRecord | null> => {
   const spendCtx = opts.deleteCookie === 'after-commit' ? (opts.txCtx ?? dbCtx) : dbCtx;
-  const cookie = getAuthCookie(ctx, type);
-  if (opts.deleteCookie === 'now') deleteAuthCookie(ctx, type);
+  const cookie = getAuthCookie(ctx, kind);
+  if (opts.deleteCookie === 'now') deleteAuthCookie(ctx, kind);
   if (!cookie) return null;
 
-  const spent = await deleteBoundToken(spendCtx, { type, cookie });
+  const spent = await deleteBoundToken(spendCtx, { kind, cookie });
   if (!spent || isExpiredDate(spent.expiresAt)) return null;
   if (spent.sessionId && !(await findLiveSession(spendCtx, { id: spent.sessionId }))) return null;
   return spent;
@@ -385,4 +385,4 @@ export const spendCookieToken = async (
  * single-use window: for a session end where the person leaves. An account holds one magic link at a time, as a new one
  * replaces the older, so this is the link any session of the user may have come from.
  */
-export const deleteOpenedMagicLink = (ctx: DbContext, userId: string) => deleteOpenedLinkTokens(ctx, { type: 'magic', userId });
+export const deleteOpenedMagicLink = (ctx: DbContext, userId: string) => deleteOpenedLinkTokens(ctx, { kind: 'magic', userId });

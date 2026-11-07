@@ -40,7 +40,7 @@ const serwist = new Serwist({
   ],
 });
 
-// English-only titles by design: the payload carries ids and a type, never localized content, so
+// English-only titles by design: the payload carries ids and a kind, never localized content, so
 // the closed-app toast stays generic and the app renders the localized inbox on open.
 const pushTitles: Record<string, string> = { mention: 'You were mentioned', reply: 'New reply', comment: 'New comment' };
 
@@ -58,7 +58,7 @@ self.addEventListener('push', (event) => {
 async function handleNotificationPush(data: NotificationPushPayload): Promise<void> {
   // Visible notification first (userVisibleOnly contract), collapsed per channel by tag: a
   // burst edits one toast in place.
-  await self.registration.showNotification(pushTitles[data.type] ?? 'New notification', {
+  await self.registration.showNotification(pushTitles[data.kind] ?? 'New notification', {
     tag: `notif-${data.channelId}`,
     data: { activityId: data.activityId, url: data.url },
   });

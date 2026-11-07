@@ -45,7 +45,7 @@ export async function buildDigestForUser(ctx: DbContext, { userId, since, before
     sections.push({
       channelId,
       channelName: channels.get(channelId)?.name ?? '',
-      lines: visible.map((row) => describeDigestRow(row.type, contextNames.get(row.contextId ?? '') ?? '', lng)),
+      lines: visible.map((row) => describeDigestRow(row.kind, contextNames.get(row.contextId ?? '') ?? '', lng)),
       overflow: Math.max(0, channelRows.length - visible.length),
     });
   }
