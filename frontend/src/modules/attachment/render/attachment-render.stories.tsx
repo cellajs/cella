@@ -202,19 +202,15 @@ export const Viewer: Story = {
 export const PageScrollWhileHovering: Story = {
   play: async ({ canvasElement }) => {
     const img = await within(canvasElement).findByRole('img', { name: 'attachment' });
-    const pageWheel = () => {
+    const scrollsPage = (target: Element) => {
       const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 100 });
-      document.body.dispatchEvent(event);
-      return event.defaultPrevented;
+      target.dispatchEvent(event);
+      return !event.defaultPrevented;
     };
 
-    // Starts from a leave: a browser cursor resting where the viewport mounts already blocks the page wheel
-    await userEvent.unhover(img);
-    await expect(pageWheel()).toBe(false);
-    await userEvent.hover(img);
-    await expect(pageWheel()).toBe(true);
-    await userEvent.unhover(img);
-    await expect(pageWheel()).toBe(false);
+    // Where the browser's own cursor rests plays no part: only a wheel over the viewer keeps the page still
+    await expect(scrollsPage(img)).toBe(false);
+    await expect(scrollsPage(document.body)).toBe(true);
   },
 };
 
