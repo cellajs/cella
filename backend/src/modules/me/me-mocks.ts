@@ -32,7 +32,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default') =>
         {
           id: mockUuid(),
           userId: mockUuid(),
-          type: 'regular' as const,
+          kind: 'regular' as const,
           createdAt: sessionCreatedAt.toISOString(),
           expiresAt: sessionExpiresAt.toISOString(),
           deviceName: faker.helpers.arrayElement(['Chrome on Mac', 'Firefox on Windows', 'Safari on iPhone']),

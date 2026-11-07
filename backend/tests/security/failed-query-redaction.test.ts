@@ -43,7 +43,7 @@ describe('failed queries in telemetry', () => {
     const response = await baseApp.request('/requests', {
       method: 'POST',
       headers: defaultHeaders,
-      body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `failing:${secret}` }),
+      body: JSON.stringify({ email: `${nanoid(8)}@example.test`, kind: 'contact', message: `failing:${secret}` }),
     });
     status = response.status;
     await otel.shutdown();

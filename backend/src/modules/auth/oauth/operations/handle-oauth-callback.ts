@@ -53,7 +53,7 @@ export const handleOAuthCallback = async (
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
 ): Promise<Response> => {
-  const { type, redirectAfter } = oauthPayload;
+  const { kind, redirectAfter } = oauthPayload;
 
   // The provider's subject is the identity; the asserted address is a snapshot that may have changed since linking.
   const identity = await findIdentityBySubject(dbCtx, { issuer: provider, subject: providerUser.id });
@@ -62,7 +62,7 @@ export const handleOAuthCallback = async (
 
   let result: OAuthFlowResult;
 
-  switch (type) {
+  switch (kind) {
     case 'connect':
       result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
       break;

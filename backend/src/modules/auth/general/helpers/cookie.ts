@@ -2,11 +2,11 @@ import { createHmac } from 'node:crypto';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
-import { appConfig, type TokenType } from 'shared';
+import { appConfig, type TokenKind } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
-import { isTokenType, type LinkTokenType, type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { isTokenKind, type LinkTokenKind, type TokenPolicy, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -24,26 +24,26 @@ const secure = appConfig.mode !== 'development';
 const prefix = secure ? ('host' as const) : undefined;
 
 export type CookieName =
-  | TokenType
+  | TokenKind
   | 'session'
   | 'session-step-up'
   | 'device-id'
   | 'totp-challenge'
   | 'passkey-challenge'
   | 'magic-requested'
-  | `${LinkTokenType}-pending`
+  | `${LinkTokenKind}-pending`
   | 'sso-recovery'
   | 'oauth-state';
 
 /**
  * Cookies read on a navigation another site started stay SameSite Lax: the OAuth state, plus the device id and the
  * magic-link request marker, which the OAuth callback and emailed links must see to recognize the browser. A token
- * type's own cookie follows its policy. All others, sessions included, are same-origin only.
+ * kind's own cookie follows its policy. All others, sessions included, are same-origin only.
  * @see handle-oauth-initiation.ts
  */
 const laxCookies = new Set<CookieName>(['oauth-state', 'device-id', 'magic-requested']);
 const isLaxCookie = (name: CookieName) => {
-  if (!isTokenType(name)) return laxCookies.has(name);
+  if (!isTokenKind(name)) return laxCookies.has(name);
   const policy: TokenPolicy = tokenPolicies[name];
   return policy.carrier !== 'code' && policy.sameSite === 'lax';
 };

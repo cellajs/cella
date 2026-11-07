@@ -6,7 +6,8 @@ export interface NotificationPushPayload {
   t: 'notif';
   activityId: string;
   channelId: string;
-  type: string;
+  /** The notification's kind, which picks the toast's title. */
+  kind: string;
   /** Self-describing `/n` link to the subject (ids only); the click handler opens it. */
   url?: string;
 }

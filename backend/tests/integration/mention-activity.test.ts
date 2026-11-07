@@ -51,7 +51,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
 
   const memberInbox = () =>
     db
-      .select({ type: notificationsTable.type })
+      .select({ kind: notificationsTable.kind })
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, attachmentId)));
 
@@ -108,6 +108,6 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
     expect(activities.map(({ changedFields }) => changedFields?.toSorted())).toEqual([['description', 'keywords', 'updatedAt', 'updatedBy']]);
     // Every integration file runs its own CDC worker on the one WAL, so a parallel run can fan this row
     // out more than once (a late create fan-out reads the edited body too); each row is a mention.
-    expect(new Set((await memberInbox()).map(({ type }) => type))).toEqual(new Set(['mention']));
+    expect(new Set((await memberInbox()).map(({ kind }) => kind))).toEqual(new Set(['mention']));
   });
 });

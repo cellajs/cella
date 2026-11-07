@@ -36,7 +36,7 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
   const openMagicLink = async (owner: { id?: string | null; email: string }, cookies: string[] = []) => {
     const { raw, row } = await insertTestToken('magic', owner);
     const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: [authCookie('magic-requested', row.id), ...cookies].join('; ') },
     });
     expect(response.status).toBe(302);
@@ -75,7 +75,7 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
 
     // The browser that opens the link holds no invitation cookie, only its own request marker.
     const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
+      path: { kind: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
     });
     expect(response.status).toBe(302);
@@ -99,7 +99,7 @@ describe('Accept the followed invitation at the magic-link sign-in', async () =>
       const [row] = await db
         .select()
         .from(tokensTable)
-        .where(and(eq(tokensTable.type, 'magic'), eq(tokensTable.email, invitedEmail)));
+        .where(and(eq(tokensTable.kind, 'magic'), eq(tokensTable.email, invitedEmail)));
       expect(row).toBeDefined();
       return row;
     });

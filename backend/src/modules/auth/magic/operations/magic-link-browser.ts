@@ -25,7 +25,7 @@ const openable = (token: TokenRecord | undefined): TokenRecord => {
 };
 
 /** The unopened, unexpired magic link a raw value names; any other is refused as {@link openable} says. */
-export const findOpenableMagicLink = async (rawToken: string) => openable(await findLinkToken(dbCtx, { type: 'magic', rawToken }));
+export const findOpenableMagicLink = async (rawToken: string) => openable(await findLinkToken(dbCtx, { kind: 'magic', rawToken }));
 
 /**
  * The raw value of the magic link this browser holds for confirmation.
@@ -45,7 +45,7 @@ export const readHeldMagicLink = (ctx: Context<Env>) => {
  */
 export const explainOpenedMagicLink = async (err: unknown, rawToken: string): Promise<never> => {
   if (err instanceof AppError && err.type === 'magic_expired') {
-    const token = await findLinkToken(dbCtx, { type: 'magic', rawToken });
+    const token = await findLinkToken(dbCtx, { kind: 'magic', rawToken });
     if (token?.invokedAt && !isExpiredDate(token.expiresAt)) throw new AppError(401, 'magic_opened', 'info');
   }
   throw err;
@@ -58,7 +58,7 @@ export const explainOpenedMagicLink = async (err: unknown, rawToken: string): Pr
  * scanner, signs nobody in and is not used up. Returns the redirect to that page, or null to open the link directly.
  */
 export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken: string) => {
-  const token = await findLinkToken(dbCtx, { type: 'magic', rawToken });
+  const token = await findLinkToken(dbCtx, { kind: 'magic', rawToken });
   // An unknown link takes the direct path, which refuses it the same way it always has. So does an opened one: only the
   // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
   if (!token || token.invokedAt) return null;
@@ -76,5 +76,5 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
  */
 export const dropHeldMagicLink = async (ctx: Context<Env>) => {
   const rawToken = getAuthCookie(ctx, 'magic-pending');
-  if (rawToken) await deleteUnopenedLinkToken(dbCtx, { type: 'magic', rawToken });
+  if (rawToken) await deleteUnopenedLinkToken(dbCtx, { kind: 'magic', rawToken });
 };

@@ -55,7 +55,7 @@ describe('invitation address handover', async () => {
     attackerBrowser.absorb(asked.response);
     const { token } = await vi.waitFor(() => mailedLink('magicLinkUrl'));
     const opened = await call(invokeToken, {
-      path: { type: 'magic', token },
+      path: { kind: 'magic', token },
       headers: { ...defaultHeaders, Cookie: attackerBrowser.header() },
     });
     attackerBrowser.absorb(opened.response);

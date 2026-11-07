@@ -18,7 +18,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
 
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
-  const uninvited = selected.filter((request) => request.type === 'waitlist' && !request.wasInvited);
+  const uninvited = selected.filter((request) => request.kind === 'waitlist' && !request.wasInvited);
 
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 

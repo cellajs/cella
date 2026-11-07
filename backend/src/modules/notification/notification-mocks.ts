@@ -3,7 +3,7 @@ import type { ProductEntityType } from 'shared';
 import { homeChannelOf } from '#/db/utils/home-channel';
 import type { NotificationSubjectRow } from '#/lib/module';
 import type { InsertNotificationModel } from '#/modules/notification/notification-db';
-import type { NotificationType } from '#/modules/notification/notification-types';
+import type { NotificationKind } from '#/modules/notification/notification-kinds';
 
 const dayMs = 24 * 60 * 60 * 1000;
 
@@ -23,13 +23,13 @@ function seedNotificationDate(subjectAt: string): string {
 /**
  * An inbox row for a seeded subject, shaped as the fan-out would write it: home channel is the
  * deepest non-null ancestor, `seed:<subjectId>` is the activity id the seed finds its rows by, and `emailedAt` is
- * stamped on every row, whatever its type, so no digest mails seeded activity. Seed scripts skip the actor themselves;
+ * stamped on every row, whatever its kind, so no digest mails seeded activity. Seed scripts skip the actor themselves;
  * this only shapes the row.
  */
 export function mockSeedNotification(
   entityType: ProductEntityType,
   subject: NotificationSubjectRow & { tenantId: string; createdAt: string },
-  type: NotificationType,
+  kind: NotificationKind,
   userId: string,
   actorId: string | null,
 ): InsertNotificationModel {
@@ -38,7 +38,7 @@ export function mockSeedNotification(
   return {
     userId,
     actorId,
-    type,
+    kind,
     entityType,
     subjectId: subject.id,
     contextId: subject.id,

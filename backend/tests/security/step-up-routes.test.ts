@@ -188,7 +188,7 @@ describe('account-security routes need a step-up', async () => {
   it('must not connect a provider via a stale session', async () => {
     const user = await createTestUser('connect@security-test.com');
     const session = await insertStaleSession(user);
-    const pins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
+    const pins = () => db.select().from(tokensTable).where(eq(tokensTable.kind, 'oauth-connect'));
 
     await expectStepUpRequired(await call(startOAuthConnect, { headers: session.headers }));
     expect(await pins()).toHaveLength(0);
@@ -347,7 +347,7 @@ describe('account-security routes need a step-up', async () => {
 
     // Positive control: a magic-link sign-in that completed MFA with the authenticator app a minute ago stands as its
     // proof; the mfa session carries the factor as its step-up, never as its method.
-    const mfa = await insertTestSession(user, { authStrategy: 'magic', type: 'mfa', steppedUpVia: 'totp', ageMs: 60 * 1000 });
+    const mfa = await insertTestSession(user, { authStrategy: 'magic', kind: 'mfa', steppedUpVia: 'totp', ageMs: 60 * 1000 });
     expect((await call(deleteTotp, { headers: asSession(mfa.id, mfa.cookie).headers })).response.status).toBe(204);
     expect(await totpsOf()).toHaveLength(0);
   });

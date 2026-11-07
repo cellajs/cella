@@ -15,7 +15,7 @@ app.openapi(requestRoutes.createRequest, async (ctx) => {
   const stored = createRequestOp(ctx, input);
   // A waitlist or newsletter answer waits for nothing: its time would tell an address with an account, or one listed
   // already, from a new one. A contact message is stored alike for every address, so its sender hears when that fails.
-  if (input.type === 'contact') await stored;
+  if (input.kind === 'contact') await stored;
   else stored.catch((err) => log.error('Failed to store a request', { err }));
   return ctx.body(null, 204);
 });

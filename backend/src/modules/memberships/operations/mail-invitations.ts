@@ -43,7 +43,7 @@ export async function mailInvitations(ctx: DbContext, { ids, organization }: Mai
       const links = await issueTokens(
         txCtx,
         group.flatMap(({ id, email, userId, createdBy }) =>
-          userId ? [] : [{ type: 'invitation' as const, email, createdBy, inactiveMembershipId: id }],
+          userId ? [] : [{ kind: 'invitation' as const, email, createdBy, inactiveMembershipId: id }],
         ),
       );
       const linkById = new Map(links.map(({ token, rawToken }) => [token.inactiveMembershipId, rawToken]));

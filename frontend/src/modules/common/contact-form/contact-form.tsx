@@ -40,7 +40,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
-    defaultValues: { email: user?.email ?? '', message: '', type: 'contact' },
+    defaultValues: { email: user?.email ?? '', message: '', kind: 'contact' },
   };
 
   const form = useFormWithDraft<FormValues>('contact-form', { formOptions });

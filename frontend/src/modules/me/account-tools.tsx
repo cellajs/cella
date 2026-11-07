@@ -84,9 +84,9 @@ export function AccountAuthenticationCard() {
     onError: () => setConnecting(null),
   });
 
-  const connectTo = (id: string, signInUrl: (search: { type: 'connect'; redirectAfter: string }) => string) => {
+  const connectTo = (id: string, signInUrl: (search: { kind: 'connect'; redirectAfter: string }) => string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    startConnect({ id, url: signInUrl({ type: 'connect', redirectAfter: window.location.pathname + window.location.hash }) });
+    startConnect({ id, url: signInUrl({ kind: 'connect', redirectAfter: window.location.pathname + window.location.hash }) });
   };
 
   return (

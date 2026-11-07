@@ -1,0 +1,234 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "0d75e64a-07cc-4bf5-83d1-88da65dc3d3f",
+  "prevIds": [
+    "cf6a7044-c76f-4f09-9dcc-c8e7d4f47948"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "sessions",
+        "type"
+      ],
+      "writes": [
+        "s|col|public.sessions.type",
+        "n|col|public.sessions.type",
+        "s|col|public.sessions.kind",
+        "n|col|public.sessions.kind"
+      ],
+      "reads": [
+        "n|tbl|public.sessions",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "tokens",
+        "type"
+      ],
+      "writes": [
+        "s|col|public.tokens.type",
+        "n|col|public.tokens.type",
+        "s|col|public.tokens.kind",
+        "n|col|public.tokens.kind"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "notifications",
+        "type"
+      ],
+      "writes": [
+        "s|col|public.notifications.type",
+        "n|col|public.notifications.type",
+        "s|col|public.notifications.kind",
+        "n|col|public.notifications.kind"
+      ],
+      "reads": [
+        "n|tbl|public.notifications",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "requests",
+        "type"
+      ],
+      "writes": [
+        "s|col|public.requests.type",
+        "n|col|public.requests.type",
+        "s|col|public.requests.kind",
+        "n|col|public.requests.kind"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_secret_type_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_secret_type_idx",
+        "n|idx|public.tokens_secret_type_idx",
+        "n|rel|public.tokens_secret_type_idx",
+        "s|idx|public.tokens_secret_kind_idx",
+        "n|idx|public.tokens_secret_kind_idx",
+        "n|rel|public.tokens_secret_kind_idx"
+      ],
+      "reads": [
+        "e|tbl|public.tokens",
+        "n|sch|public",
+        "e|col|public.tokens.secret",
+        "e|col|public.tokens.kind"
+      ]
+    },
+    {
+      "statementType": "rename_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "requests",
+        "requests_unique_signup_email_type"
+      ],
+      "writes": [
+        "s|idx|public.requests_unique_signup_email_type",
+        "n|idx|public.requests_unique_signup_email_type",
+        "n|rel|public.requests_unique_signup_email_type",
+        "s|idx|public.requests_unique_signup_email_kind",
+        "n|idx|public.requests_unique_signup_email_kind",
+        "n|rel|public.requests_unique_signup_email_kind"
+      ],
+      "reads": [
+        "e|tbl|public.requests",
+        "n|sch|public",
+        "e|col|public.requests.kind"
+      ]
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "requests",
+        "requests_unique_signup_email_kind"
+      ],
+      "writes": [
+        "s|idx|public.requests_unique_signup_email_kind",
+        "n|idx|public.requests_unique_signup_email_kind",
+        "e|idx|public.requests_unique_signup_email_kind",
+        "n|rel|public.requests_unique_signup_email_kind"
+      ],
+      "reads": [
+        "n|tbl|public.requests",
+        "n|sch|public",
+        "n|col|public.requests.kind"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "7e0862f5b4dfd62b"
+    },
+    {
+      "statementType": "recreate_index",
+      "statementTarget": [
+        "index",
+        "public",
+        "tokens",
+        "tokens_step_up_session_id_idx"
+      ],
+      "writes": [
+        "s|idx|public.tokens_step_up_session_id_idx",
+        "n|idx|public.tokens_step_up_session_id_idx",
+        "e|idx|public.tokens_step_up_session_id_idx",
+        "n|rel|public.tokens_step_up_session_id_idx"
+      ],
+      "reads": [
+        "n|tbl|public.tokens",
+        "n|sch|public",
+        "n|col|public.tokens.session_id"
+      ],
+      "sharedWrites": [],
+      "sqlHash": "4880a294652d7efd"
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"sessions\",\"type\"]",
+      "set": {
+        "name": "kind"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"tokens\",\"type\"]",
+      "set": {
+        "name": "kind"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"notifications\",\"type\"]",
+      "set": {
+        "name": "kind"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"requests\",\"type\"]",
+      "set": {
+        "name": "kind"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"tokens_secret_type_idx\"]",
+      "set": {
+        "name": "tokens_secret_kind_idx"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "indexes\u0000[\"public\",\"requests_unique_signup_email_type\"]",
+      "set": {
+        "name": "requests_unique_signup_email_kind"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"requests_unique_signup_email_kind\"]",
+      "set": {
+        "where": "\"kind\" in ('waitlist', 'newsletter')"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "indexes\u0000[\"public\",\"tokens_step_up_session_id_idx\"]",
+      "set": {
+        "where": "\"kind\" = 'step-up'"
+      }
+    }
+  ]
+}

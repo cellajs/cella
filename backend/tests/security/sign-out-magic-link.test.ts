@@ -29,7 +29,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
   const call = await createAppClient();
 
   const openLink = (raw: string, cookie: string) =>
-    call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookie } });
+    call(invokeToken, { path: { kind: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookie } });
 
   it("must not sign the next person in as the owner via the owner's opened magic link after sign-out", async () => {
     const owner = await createTestUser(`shared-computer-${nanoid(6)}@security-test.com`.toLowerCase());
@@ -162,7 +162,7 @@ describe('Sign-out after opening an invitation', async () => {
     const session = await insertSession(user);
     const browser = `${session.cookie}; ${authCookie('invitation', singleUse)}`;
     const readInvitation = (cookie: string) =>
-      call(getTokenData, { path: { type: 'invitation', id: row.id }, headers: { ...defaultHeaders, Cookie: cookie } });
+      call(getTokenData, { path: { kind: 'invitation', id: row.id }, headers: { ...defaultHeaders, Cookie: cookie } });
 
     // Positive control: until sign-out this browser reads the invitation.
     const before = await readInvitation(browser);

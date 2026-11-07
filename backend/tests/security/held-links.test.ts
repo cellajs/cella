@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { HeldLinkType } from '#/modules/auth/tokens/token-policies';
+import type { HeldLinkKind } from '#/modules/auth/tokens/token-policies';
 import { cookieChange, createTestOrganization, createTestUser, insertTestToken, linkIdentity, openHeldLink, tokenRow } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { setTestConfig } from '../test-utils';
@@ -26,7 +26,7 @@ describe('invitation and verification links fetched by a scanner', () => {
   const address = (label: string) => `${label}-${nanoid(6)}@security-test.com`.toLowerCase();
 
   /** A scanner's HEAD and GET of the link: each answers with the confirm page and redeems nothing. */
-  const scan = async (type: HeldLinkType, rawToken: string) => {
+  const scan = async (type: HeldLinkKind, rawToken: string) => {
     const { baseApp } = await import('#/routes');
     for (const method of ['HEAD', 'GET']) {
       const response = await baseApp.request(`/auth/invoke-token/${type}/${rawToken}`, { method, headers: scannerHeaders });

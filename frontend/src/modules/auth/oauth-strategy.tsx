@@ -53,12 +53,12 @@ export function useOAuthAlternatives(authStep: AuthStep): AuthAlternative[] {
 
     if (tokenId && inviteOtherAccount) {
       // Another account: a plain sign-in back to the confirm step, since the invite flow requires the invited address.
-      params.set('type', 'auth');
+      params.set('kind', 'auth');
       params.set('redirectAfter', invitationResumePath(tokenId));
     } else if (tokenId) {
       params.set('tokenId', tokenId);
-      params.set('type', 'invite');
-    } else params.set('type', 'auth');
+      params.set('kind', 'invite');
+    } else params.set('kind', 'auth');
 
     window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params}`);
   };

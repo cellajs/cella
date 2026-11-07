@@ -232,7 +232,7 @@ export const config = {
    * a worked example.
    */
   federations: {} as Record<string, FederationConfig>,
-  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
+  tokenKinds: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

@@ -26,7 +26,7 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Sign in through an institution',
     description:
-      "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
+      "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `kind=connect` links the institution account to the signed-in user instead; other types are refused.",
     request: { params: ssoConnectionParamSchema, query: oauthQuerySchema },
     responses: { 302: { description: 'Redirect to the federation', headers: locationSchema }, ...errors(401, 403, 404) },
   }),

@@ -11,7 +11,7 @@ import { log } from '#/utils/logger';
 import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../../../../emails';
 
 const addressMailLimits = { points: 1, duration: 60 * 60 * 24 };
-/** One mail per address a day from the form, whatever its type: anyone may type anyone's address into it. */
+/** One mail per address a day from the form, whatever its kind: anyone may type anyone's address into it. */
 const addressMails = getRateLimiterInstance({ keyPrefix: 'requestFormMail', ...addressMailLimits });
 const mayMail = async (email: string) => (await reserveAttempt(addressMails, subjectSegment('email', email), addressMailLimits)).granted;
 
@@ -26,10 +26,10 @@ type CreateRequestInput = z.infer<typeof requestCreateBodySchema>;
  */
 export async function createRequestOp(ctx: DbContext, input: CreateRequestInput) {
   // The body schema trims and lowercases the address.
-  const { email: normalizedEmail, type, message } = input;
+  const { email: normalizedEmail, kind, message } = input;
   const lng = appConfig.defaultLanguage;
 
-  if (type === 'waitlist') {
+  if (kind === 'waitlist') {
     const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
     if (existingUser) {
       if (await mayMail(normalizedEmail)) {
@@ -44,13 +44,13 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   // Taken before the insert, so a stored request and a dropped repeat cost the same statements.
   const confirms = await mayMail(normalizedEmail);
   // The unique index drops a repeat of a waitlist or newsletter request, concurrent ones included.
-  const createdRequest = await insertRequest(ctx, { email: normalizedEmail, type, message });
+  const createdRequest = await insertRequest(ctx, { email: normalizedEmail, kind, message });
   if (!createdRequest) return;
 
   let textMessage: string;
   let title: string;
 
-  switch (type) {
+  switch (kind) {
     case 'waitlist':
       textMessage = `New Waitlist Request\nEmail: ${normalizedEmail}`;
       title = 'Join waitlist request';
@@ -65,7 +65,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
       break;
   }
 
-  const staticProps = { type, message };
+  const staticProps = { kind, message };
 
   sendMatrixMessage(textMessage)
     .then((sent) => {
@@ -82,6 +82,6 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
 
   if (!confirms) return;
   mailer
-    .sendEmails(requestResponseEmail, { type }, [{ email: normalizedEmail, lng }])
+    .sendEmails(requestResponseEmail, { kind }, [{ email: normalizedEmail, lng }])
     .catch((err) => log.error('Failed to send request confirmation', { err }));
 }

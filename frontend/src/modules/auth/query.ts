@@ -13,11 +13,11 @@ import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
 
-type TokenType = GetTokenDataData['path']['type'];
+type TokenKind = GetTokenDataData['path']['kind'];
 
 const authKeys = {
   health: ['auth', 'health'] as const,
-  token: (type: TokenType, tokenId?: string) => ['auth', 'token', type, tokenId] as const,
+  token: (kind: TokenKind, tokenId?: string) => ['auth', 'token', kind, tokenId] as const,
   pendingMagicLink: ['auth', 'magic', 'pending'] as const,
   pendingMfa: ['auth', 'mfa', 'pending'] as const,
   ssoEntry: (connectionId?: string) => ['auth', 'sso-entry', connectionId] as const,
@@ -40,10 +40,10 @@ export const authHealthQueryOptions = queryOptions({
 });
 
 /** What a token stands for; disabled without an id. It may name another address than the one signed in here: it stays out of the local database. */
-export const tokenDataQueryOptions = (type: TokenType, tokenId?: string) =>
+export const tokenDataQueryOptions = (kind: TokenKind, tokenId?: string) =>
   queryOptions({
-    queryKey: authKeys.token(type, tokenId),
-    queryFn: () => getTokenData({ path: { type, id: tokenId ?? '' } }),
+    queryKey: authKeys.token(kind, tokenId),
+    queryFn: () => getTokenData({ path: { kind, id: tokenId ?? '' } }),
     enabled: !!tokenId,
     gcTime: 0,
     meta: { persist: false },
@@ -93,7 +93,7 @@ export const useDecideConsentMutation = (uid: string) =>
 export const useRedeemHeldLinkMutation = () =>
   useMutation({
     mutationKey: authKeys.redeemLink,
-    mutationFn: (type: RedeemLinkTokenData['path']['type']) => redeemLinkToken({ path: { type } }),
+    mutationFn: (kind: RedeemLinkTokenData['path']['kind']) => redeemLinkToken({ path: { kind } }),
     onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
     meta: { suppressGlobalErrorToast: true },
   });

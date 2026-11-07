@@ -46,7 +46,7 @@ Each row names its answers per level ([Sync engine](../../../../cella/SYNC_ENGIN
 
 - [notification-module.ts](./notification-module.ts): registers the routes, the two signals and the hourly digest job.
 - [notification-db.ts](./notification-db.ts): the inbox table, partitioned by creation time, and the preferences table with its defaults.
-- [notification-types.ts](./notification-types.ts): the template's and the app's notification types, and which of them mail at once.
+- [notification-kinds.ts](./notification-kinds.ts): the template's and the app's notification kinds, and which of them mail at once.
 - [notification-sources.ts](./notification-sources.ts): the sources product modules declare, and the reads of their subject rows and context names.
 - [notification-listeners.ts](./notification-listeners.ts): runs the fan-out for each product create and update on the activity bus.
 - [notification-queries.ts](./notification-queries.ts): the reads and writes of both tables, with the membership check every read applies.

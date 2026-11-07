@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { requestsTable, requestTypeEnum } from '#/modules/requests/requests-db';
+import { requestKinds, requestsTable } from '#/modules/requests/requests-db';
 import { mockRequestResponse } from '#/modules/requests/requests-mocks';
 import { listQuerySchema, orderByQuerySchema, validEmailSchema } from '#/schemas';
 
 export const requestSchema = createSelectSchema(requestsTable)
   .omit({ invitedAt: true })
-  .extend({ type: z.enum(requestTypeEnum), wasInvited: z.boolean() })
+  .extend({ kind: z.enum(requestKinds), wasInvited: z.boolean() })
   .openapi('Request', {
     description:
       'A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.',
@@ -17,9 +17,9 @@ export const requestSchema = createSelectSchema(requestsTable)
 
 export const requestCreateBodySchema = z.object({
   email: validEmailSchema,
-  type: requestSchema.shape.type,
+  kind: requestSchema.shape.kind,
   /** A contact message runs to a few paragraphs; a waitlist or newsletter request has none. */
   message: z.string().max(5000).nullable(),
 });
 
-export const requestListQuerySchema = listQuerySchema.extend({ orderBy: orderByQuerySchema(['id', 'email', 'type', 'createdAt'], 'createdAt desc') });
+export const requestListQuerySchema = listQuerySchema.extend({ orderBy: orderByQuerySchema(['id', 'email', 'kind', 'createdAt'], 'createdAt desc') });

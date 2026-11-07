@@ -14,7 +14,7 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Start connecting a provider',
     description:
-      "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+      "Pins this browser's next provider sign-in with `kind=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
     responses: { 204: { description: 'Connect pinned', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
   }),
   github: xRoute({

@@ -20,7 +20,7 @@ describe('Invitation token data', async () => {
     const other = await createInvitation({ email: 'other@example.com', organization, createdBy: inviter.id });
 
     const { response, error } = await call(getTokenData, {
-      path: { type: 'invitation', id: other.token.id },
+      path: { kind: 'invitation', id: other.token.id },
       headers: { ...defaultHeaders, Cookie: held.invitationCookie },
     });
 

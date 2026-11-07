@@ -45,7 +45,7 @@ describe('device id on sign-in', async () => {
 
     const first = await signIn(user);
     const [firstSession] = await sessionsOf(user.id);
-    expect(firstSession.type).toBe('mfa');
+    expect(firstSession.kind).toBe('mfa');
     expect(firstSession.deviceIdHash).toBeTruthy();
 
     const deviceCookie = setCookiePair(first, 'device-id');

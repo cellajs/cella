@@ -8,6 +8,7 @@ import type { ActivityRow, ProductActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { toUser } from '#/modules/entities/stream/audiences';
 import { sendSignal } from '#/modules/entities/stream/send-signal';
+import type { NotificationKind } from '#/modules/notification/notification-kinds';
 import {
   getUserAccess,
   insertNotificationsIgnoringDuplicates,
@@ -15,12 +16,11 @@ import {
   type WrittenNotification,
 } from '#/modules/notification/notification-queries';
 import { getNotificationSource, loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
-import type { NotificationType } from '#/modules/notification/notification-types';
 import { sendInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { log } from '#/utils/logger';
 
-type Candidate = { userId: string; type: NotificationType };
+type Candidate = { userId: string; kind: NotificationKind };
 
 /** The ids every row of one event shares. */
 interface EventIds {
@@ -99,9 +99,9 @@ async function fanOutRow(
 
   const candidates = new Map<string, Candidate>();
   // First writer wins, so a mention outranks the activity classification for the same user.
-  const add = (userId: string | null | undefined, type: NotificationType) => {
+  const add = (userId: string | null | undefined, kind: NotificationKind) => {
     if (!userId || userId === actorId) return;
-    if (!candidates.has(userId)) candidates.set(userId, { userId, type });
+    if (!candidates.has(userId)) candidates.set(userId, { userId, kind });
   };
 
   if (readsMentions) for (const mentioned of deriveDocument(row.description).mentions) add(mentioned, 'mention');
@@ -109,7 +109,7 @@ async function fanOutRow(
   const { resolveRecipients, resolveContextId } = source.declaration;
   if (resolveRecipients) {
     const recipients = await tenantReadById(tenantId, (tx) => resolveRecipients(tx, row));
-    for (const recipient of recipients) add(recipient.userId, recipient.type);
+    for (const recipient of recipients) add(recipient.userId, recipient.kind);
   }
 
   if (candidates.size === 0) return [];
@@ -122,7 +122,7 @@ async function fanOutRow(
   const told = await insertNotificationsIgnoringDuplicates(dbCtx, {
     rows: allowed.map<NotificationInsert>((recipient) => ({
       userId: recipient.userId,
-      type: recipient.type,
+      kind: recipient.kind,
       entityType,
       subjectId: row.id,
       contextId,
@@ -144,7 +144,7 @@ async function fanOutRow(
   // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this costs one subscription
   // lookup. `sendNotificationPush` never throws.
   if (isPushSendConfigured()) {
-    const primaryType = told.some((recipient) => recipient.type === 'mention') ? 'mention' : told[0].type;
+    const primaryKind = told.some((recipient) => recipient.kind === 'mention') ? 'mention' : told[0].kind;
     const url = buildNotificationLink(appConfig.frontendUrl, {
       tenantId,
       organizationId,
@@ -156,7 +156,7 @@ async function fanOutRow(
     });
     await sendNotificationPush(
       told.map((recipient) => recipient.userId),
-      { t: 'notif', activityId, channelId: channel.id, type: primaryType, url },
+      { t: 'notif', activityId, channelId: channel.id, kind: primaryKind, url },
     );
   }
   return told;
@@ -186,7 +186,7 @@ async function filterByReadAccess(
   return known.flatMap(({ candidate, access }, index) => {
     if (!decisions[index]) return [];
     // A mention is addressed to the user, so a muted membership never silences it.
-    if (candidate.type === 'mention') return [candidate];
+    if (candidate.kind === 'mention') return [candidate];
 
     const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
     return muted ? [] : [candidate];

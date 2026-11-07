@@ -40,7 +40,7 @@ const getMagicToken = (userId: string) =>
     const [token] = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.userId, userId), eq(tokensTable.type, 'magic')));
+      .where(and(eq(tokensTable.userId, userId), eq(tokensTable.kind, 'magic')));
     expect(token).toBeDefined();
     return token;
   });
@@ -84,7 +84,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme?tab=files');
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -97,7 +97,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -112,7 +112,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -125,7 +125,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, `${appConfig.defaultRedirectPath}?foo=bar`);
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -141,7 +141,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -155,7 +155,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, 'https://evil.example/phish');
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -171,7 +171,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -193,7 +193,7 @@ describe('Magic link authentication', async () => {
       const { rawToken, requestedHere } = await createMagicToken(user, resumePath);
 
       const { response: res } = await call(invokeToken, {
-        path: { type: 'magic', token: rawToken },
+        path: { kind: 'magic', token: rawToken },
         headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
@@ -214,7 +214,7 @@ describe('Magic link authentication', async () => {
       db
         .select()
         .from(tokensTable)
-        .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'magic')));
+        .where(and(eq(tokensTable.email, email), eq(tokensTable.kind, 'magic')));
     /** Sends a link request for an address that gets none, and waits for its work after the answer to end. */
     const requestNoLink = async (email: string) => {
       const logged = vi.spyOn(log, 'info');
@@ -279,10 +279,10 @@ describe('Magic link authentication', async () => {
     });
   });
 
-  describe('Invoke token type restriction', () => {
+  describe('Invoke token kind restriction', () => {
     it('should reject invoking a confirm-mfa token', async () => {
       // confirm-mfa lives only in a cookie; the invoke route's param schema excludes it. Raw
-      // request because the generated SDK already rejects the type client-side.
+      // request because the generated SDK already rejects the kind client-side.
       const { baseApp } = await import('#/routes');
       const res = await baseApp.request(`/auth/invoke-token/confirm-mfa/${nanoid(40)}`, { headers: defaultHeaders });
 
