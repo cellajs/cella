@@ -261,11 +261,12 @@ export const holdLinkToken = async (ctx: Context<Env>, type: HeldLinkType, rawTo
 
 /**
  * Redeems the link this browser holds (`holdLinkToken`), on the POST from the app's page, and drops the hold.
- * @throws AppError 401 `<type>_expired` when this browser holds none, else what `invokeToken` throws.
+ * @throws AppError 401 `link_not_held` when this browser holds none (the hold lapsed while the page stayed open, or a
+ *   sign-out cleared it), whatever state the link is in, else what `invokeToken` throws.
  */
 export const redeemHeldLink = async (ctx: Context<Env>, type: HeldLinkType): Promise<TokenRecord> => {
   const rawToken = getAuthCookie(ctx, `${type}-pending`);
-  if (!rawToken) throw new AppError(401, `${type}_expired`, 'warn');
+  if (!rawToken) throw new AppError(401, 'link_not_held', 'info');
 
   const token = await invokeToken(ctx, { type, rawToken });
   deleteAuthCookie(ctx, `${type}-pending`);
