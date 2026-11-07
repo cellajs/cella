@@ -21,6 +21,18 @@ import { runWithLogContext } from '#/utils/logger';
 /** The consent page's decision; a missing `accept` refuses. */
 const decisionBodySchema = z.object({ accept: z.boolean().optional() });
 
+/**
+ * Where the authorization code goes, as the consent page names it: the host of a web or loopback redirect, and the
+ * whole URI without its query for an app's private-use scheme (RFC 8252 §7.1), which often has no host.
+ */
+const redirectTarget = (redirectUri: string) => {
+  const url = new URL(redirectUri);
+  if (url.protocol === 'http:' || url.protocol === 'https:') return url.host;
+  url.search = '';
+  url.hash = '';
+  return url.href;
+};
+
 /** The details route's 401 body: no session is present, and the page sends the person to sign in. */
 type SignedOutConsentDetails = Omit<ConsentDetails, 'user'> & { user: null };
 
@@ -131,7 +143,7 @@ async function loadInteraction(provider: Provider, c: Context<Env>) {
         ? { id: clientId, name: new URL(clientId).host, logoUri: null, kind: 'cimd' }
         : { id: clientId, name: client.clientName ?? clientId, logoUri: client.logoUri ?? null, kind: 'registered' },
     // The provider checked it against the client's registered URIs; a local program can still present another client's.
-    redirectHost: new URL(String(interaction.params.redirect_uri)).host,
+    redirectHost: redirectTarget(String(interaction.params.redirect_uri)),
     scopes: requested,
     resource,
     target,

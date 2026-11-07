@@ -7,7 +7,10 @@ export type UserGrantRefusal = 'unknown_user' | 'not_a_member' | 'app_not_instal
 /** What the authorization server's interaction route reports about a pending consent to a signed-in user. */
 export interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
-  /** The host of the redirect URI the authorization goes to, shown beside the client: a client's name proves nothing about it. */
+  /**
+   * The host of the redirect URI the authorization goes to, or the URI itself for an app's own scheme, shown beside the
+   * client: a client's name proves nothing about it.
+   */
   redirectHost: string;
   scopes: string[];
   resource: ResourceRef;
