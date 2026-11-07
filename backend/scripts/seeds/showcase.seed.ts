@@ -35,6 +35,7 @@ import { countersSeed } from './50-counters.seed';
 import { notificationsSeed } from './55-notifications.seed';
 import { textDocument } from './description-document';
 import { seedAssets } from './seed-assets';
+import { seedAppShowcase } from './showcase.app';
 import showcaseJson from './showcase.json' with { type: 'json' };
 
 setMockContext('script');
@@ -68,6 +69,12 @@ interface Showcase {
   }[];
 }
 type ShowcaseOrganization = Showcase['organizations'][number];
+
+/** What the app's `seedAppShowcase` gets: the organizations in `json/showcase.json` order, with their members in place. */
+export interface ShowcaseSeeded {
+  adminId: string;
+  organizations: ReturnType<typeof planOrganization>[];
+}
 
 const showcase: Showcase = showcaseJson;
 
@@ -104,8 +111,12 @@ const slug = (text: string) => slugify(text, { lower: true, strict: true });
 const refuseOwnDatabase = () => {
   const envFile = new URL('../../.env', import.meta.url);
   const fileEnv = existsSync(envFile) ? parseEnv(readFileSync(envFile, 'utf8')) : {};
-  if (env.DATABASE_ADMIN_URL === (fileEnv.DATABASE_ADMIN_URL ?? localDatabaseUrl('dev', 'postgres'))) {
-    throw new Error('the showcase refuses the database backend/.env names: set DATABASE_ADMIN_URL to a throwaway one.');
+  // The app's showcase rows go through its operations, which write on the runtime pool
+  const own =
+    env.DATABASE_ADMIN_URL === (fileEnv.DATABASE_ADMIN_URL ?? localDatabaseUrl('dev', 'postgres')) ||
+    env.DATABASE_URL === (fileEnv.DATABASE_URL ?? localDatabaseUrl('dev', 'runtime_role'));
+  if (own) {
+    throw new Error('the showcase refuses the database backend/.env names: set DATABASE_URL and DATABASE_ADMIN_URL to a throwaway one.');
   }
   if ((env.ADMIN_EMAIL ?? defaultAdminUser.email) !== showcase.admin.email) {
     throw new Error(`the showcase admin is ${showcase.admin.email}: export ADMIN_EMAIL=${showcase.admin.email}.`);
@@ -171,7 +182,7 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
       ),
     );
 
-    return { organization, channel, createdAt, adminMembership, members: [...people, ...generated] };
+    return { org, organization, channel, createdAt, adminMembership, members: [...people, ...generated] };
   });
 
 /** Attachments by the organization's members, most of them recent. */
@@ -227,9 +238,9 @@ const readAllBut = async (unread: number) => {
 };
 
 /**
- * Seeds the curated dataset of `showcase.json` that the marketing screenshots show, in place of the random seed:
- * a dozen organizations, their members and attachments, the admin's menu, unseen counts and inbox, and MFA. Runs only
- * when named, on an empty throwaway database.
+ * Seeds the curated dataset of `json/showcase.json` that the marketing screenshots show, in place of the random seed:
+ * a dozen organizations, their members and attachments, the app's own rows (`showcase.app.ts`), the admin's menu, unseen
+ * counts and inbox, and MFA. Runs only when named, on an empty throwaway database.
  */
 export const showcaseSeed = async () => {
   const [existing] = await db.select({ id: organizationsTable.id }).from(organizationsTable).limit(1);
@@ -241,8 +252,10 @@ export const showcaseSeed = async () => {
   let people = 0;
   let attachments = 0;
 
+  const seeded: ShowcaseSeeded['organizations'] = [];
   for (const [index, org] of showcase.organizations.entries()) {
-    const { organization, channel, createdAt, adminMembership, members } = planOrganization(org, 1 + index * 10);
+    const planned = planOrganization(org, 1 + index * 10);
+    const { organization, channel, adminMembership, members } = planned;
 
     await db.insert(tenantsTable).values({ id: channel.tenantId, name: org.name, createdBy: adminId });
     await db.insert(organizationsTable).values(organization);
@@ -252,8 +265,16 @@ export const showcaseSeed = async () => {
     for (const { user, lastSeenAt } of members) {
       if (lastSeenAt) await db.update(actorsTable).set({ lastSeenAt }).where(eq(actorsTable.id, user.id));
     }
+    seeded.push(planned);
+    people += members.length;
+  }
 
+  // Before the attachments: an app may home them in channels its own rows create
+  await seedAppShowcase({ adminId, organizations: seeded });
+
+  for (const { org, channel, createdAt, adminMembership, members } of seeded) {
     const homes = await seedAttachmentPlacements(db, [channel]);
+    if (!homes.length) continue;
     const records = planAttachments(
       org,
       homes,
@@ -273,7 +294,6 @@ export const showcaseSeed = async () => {
       if (seen.length) await db.transaction((tx) => insertSeenBy({ var: { db: tx } }, { userId: adminId, productType, productIds: seen }));
     }
 
-    people += members.length;
     attachments += records.length;
   }
 

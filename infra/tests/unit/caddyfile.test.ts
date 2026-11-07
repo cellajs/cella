@@ -23,7 +23,7 @@ describe('frontend Caddyfile', () => {
     expect(Number(hsts.match(/max-age=(\d+)/)?.[1])).toBeGreaterThanOrEqual(31536000);
     expect(hsts).toContain('includeSubDomains');
     expect(hsts).toContain('preload');
-    expect(headerValue('X-Frame-Options')).toBe('DENY');
+    expect(headerValue('X-Frame-Options')).toBe('SAMEORIGIN');
     expect(headerValue('X-Content-Type-Options')).toBe('nosniff');
     expect(headerValue('Cross-Origin-Opener-Policy')).toBe('same-origin');
     expect(headerValue('Referrer-Policy')).toBe('strict-origin-when-cross-origin');

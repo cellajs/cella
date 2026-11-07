@@ -2,7 +2,7 @@ import { getScrollParent, scrollTopOf, viewportTopOf } from '~/utils/scroll-pare
 
 /**
  * DOM id prefix (e.g. id="spy-intro") prevents auto-scroll on hash change. No element may carry the bare section id:
- * TanStack history patches replaceState, so each hash write runs the router's hash scroll, which jumps to that element.
+ * a load or history step to a URL with a hash runs the router's hash scroll, which jumps to that element.
  */
 export const spyPrefix = 'spy-';
 /** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
@@ -57,16 +57,19 @@ export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
 const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= topThreshold;
 
+/** Native replaceState with the router's state kept: the router's patched one runs a route load, which scrolls a hash-less URL to the top. */
+const replaceUrl = (url: string) => History.prototype.replaceState.call(history, history.state, '', url);
+
 const clearHash = () => {
   if (!location.hash) return;
-  history.replaceState(null, '', location.pathname + location.search);
+  replaceUrl(location.pathname + location.search);
 };
 
 /** Near the top the hash is dropped so a reload returns to the top; `currentSection` stays set for the TOC. */
 const writeHash = (id: string) => {
   if (!canWriteHash()) return;
   if (isAtTop()) clearHash();
-  else if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
+  else if (location.hash !== `#${id}`) replaceUrl(`#${id}`);
 };
 
 /** A user scroll releases the pin. The observer misses the final stretch back to the top, so this also clears the hash there. */
@@ -257,9 +260,7 @@ const performScroll = (element: HTMLElement, id: string) => {
   blockHashWrites(smooth ? 1200 : 500);
   pinnedSection = id;
 
-  if (location.hash !== `#${id}`) {
-    history.replaceState(null, '', `#${id}`);
-  }
+  if (location.hash !== `#${id}`) replaceUrl(`#${id}`);
 
   // Re-assert scroll across two frames to win the race against TanStack Router's async scrollRestoration.
   const applyScroll = () => scroller.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'instant' });
