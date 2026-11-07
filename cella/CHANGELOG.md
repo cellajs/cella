@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.40.0](https://github.com/cellajs/cella/compare/0.39.0...0.40.0) (2026-11-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* the protocol routes follow their standards: a step-up cookie, held mail links, a bearer challenge on every machine 401, MCP version negotiation, push topics and one-click unsubscribe ([#1742](https://github.com/cellajs/cella/issues/1742))
+* users and organizations name their fields as AEP does: givenName, familyName, languageCode, regionCode and timeZone ([#1741](https://github.com/cellajs/cella/issues/1741))
+* the REST API follows aep.dev: resource paths, custom methods, problem+json errors, token paging and ETags ([#1736](https://github.com/cellajs/cella/issues/1736))
+
+### 🎉 New features
+
+* the REST API follows aep.dev: resource paths, custom methods, problem+json errors, token paging and ETags ([#1736](https://github.com/cellajs/cella/issues/1736)) ([d5a0645](https://github.com/cellajs/cella/commit/d5a0645b68c86f3ba8bf70c8b74c8b334d34d7bc))
+* the selection bar reports what an action did with a way back, an alert can be a component, the scroll spy keeps the router's state, and the app may frame its own pages ([#1743](https://github.com/cellajs/cella/issues/1743)) ([d394ca3](https://github.com/cellajs/cella/commit/d394ca3d3555851b1784643e7198ce7ff52b3744))
+
+
+### 🐞 Bug fixes
+
+* the image viewer cancels the page wheel from its own viewport, so a cursor resting on it can no longer block page scroll ([#1744](https://github.com/cellajs/cella/issues/1744)) ([cf8d0c5](https://github.com/cellajs/cella/commit/cf8d0c598315035092bed1a53903f0c4833eed2f))
+* the protocol routes follow their standards: a step-up cookie, held mail links, a bearer challenge on every machine 401, MCP version negotiation, push topics and one-click unsubscribe ([#1742](https://github.com/cellajs/cella/issues/1742)) ([e6a3dcf](https://github.com/cellajs/cella/commit/e6a3dcf7eeed241293c39bbc5fcc8cc0f5a62c26))
+
+
+### 🔧 Small improvements
+
+* users and organizations name their fields as AEP does: givenName, familyName, languageCode, regionCode and timeZone ([#1741](https://github.com/cellajs/cella/issues/1741)) ([a717c43](https://github.com/cellajs/cella/commit/a717c432c855cd4ee07f719b6d2bf3bc514e8a47))
+
 ## [0.39.0](https://github.com/cellajs/cella/compare/0.38.0...0.39.0) (2026-11-06)
 
 
