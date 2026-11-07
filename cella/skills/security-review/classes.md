@@ -532,7 +532,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - Notification mails: `backend/src/modules/notification/emails/{mention,comment,digest}-email.tsx`, `operations/{run-digest,build-digest,send-instant-emails,fan-out,unsubscribe}.ts`, `helpers/{category-token,render-digest-html}.ts`.
   - `backend/src/modules/push/{push-sender,push-queries,push-schema,push-routes,push-handlers}.ts`, `helpers/push-service-endpoint.ts`.
   - `backend/src/modules/requests/helpers/send-matrix-message.ts` (caller `requests/operations/create-request.ts`).
-  - `mailer.sendEmails` callers: `send-invitation-mails.ts`, `send-magic-link.ts`, `send-step-up-code.ts`, `send-oauth-verification-email.ts`, `send-account-security-email.ts`, `confirm-invitation-address.ts`, `create-request.ts`, `remove-archived-tenants.ts`, `send-newsletter.ts`, `run-digest.ts`, `send-instant-emails.ts`.
+  - `mailer.sendEmails` callers: `send-invitation-mails.ts`, `send-magic-link.ts`, `send-step-up-code.ts`, `send-oauth-verification-email.ts`, `send-account-security-email.ts`, `confirm-invitation-address.ts`, `create-request.ts`, `remove-due-tenants.ts`, `send-newsletter.ts`, `run-digest.ts`, `send-instant-emails.ts`.
   - `sendInvitationMails` callers: `mail-invitations.ts`, `create-memberships.ts` (added members), `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
   - CSRF skip: `backend/src/middlewares/app.ts`. Limiters: `backend/src/middlewares/rate-limiter/limiters.ts` (`spamLimiter`), `core.ts`.
 - **Holds:**
@@ -604,7 +604,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - CDC: `cdc/src/pipeline/{replication,handle-message}.ts`, `cdc/src/services/{flush-buffer,replication-state,failure,setup-check,cdc-metrics,transaction-buffer}.ts`, `cdc/src/network/health-reporter.ts`. Yjs: `yjs/src/server/{upgrade,rate-limiter}.ts`, `yjs/src/data/permissions.ts`.
   - `shared/src/otel.ts`, `shared/src/pino.ts`, `backend/src/lib/tracing.ts`.
   - Migrations: `backend/scripts/migrations/{10-cdc,10-rls,10-immutability,10-unlogged,10-jobs,99-verify}.migration.ts`, `backend/tests/integration/schema-verification.test.ts`.
-  - Jobs: `backend/src/lib/{jobs,pg-boss,jobs-worker}.ts`; cron jobs `notification-digest`, `archived-tenants-removal`, `deleted-storage-cleanup` (in `*-module.ts`), `retryLimit: 0`. Retention is the `10-retention.migration.ts` partition procedure; no `sweepRules` job exists in this checkout.
+  - Jobs: `backend/src/lib/{jobs,pg-boss,jobs-worker}.ts`; cron jobs `notification-digest`, `tenants-removal`, `deleted-storage-cleanup` (in `*-module.ts`), `retryLimit: 0`. Retention is the `10-retention.migration.ts` partition procedure; no `sweepRules` job exists in this checkout.
 - **Holds:**
   - `step-up-db-failure`: an exhausted pool answers a step-up 503 `service_unavailable` and a deadlock 409 `write_conflict`, the session stays not stepped up, the same proof works after.
   - `server-error-messages`: a failed query in staging, tunnel and production answers `Internal server error` with no SQL (development shows it as control).

@@ -27,6 +27,12 @@ const statusTextClasses: Record<Tenant['status'], string> = {
   archived: 'text-muted-foreground',
 };
 
+const kindVariants: Record<Tenant['kind'], BadgeVariant> = {
+  live: 'success',
+  test: 'secondary',
+  demo: 'warning',
+};
+
 const subscriptionVariants: Record<Exclude<Tenant['subscriptionStatus'], 'none'>, BadgeVariant> = {
   trialing: 'default',
   active: 'success',
@@ -127,6 +133,17 @@ export const useColumns = () => {
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
     {
+      key: 'kind',
+      name: t('c:kind'),
+      minBreakpoint: 'md',
+      width: 100,
+      renderCell: ({ row }) => (
+        <Badge variant={kindVariants[row.kind]} soft>
+          {t(`c:${row.kind}`)}
+        </Badge>
+      ),
+    },
+    {
       key: 'subscriptionStatus',
       name: t('c:subscription'),
       minBreakpoint: 'md',
@@ -140,6 +157,7 @@ export const useColumns = () => {
         ),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
+    dateColumn('expiresAt', { name: t('c:expires_at'), sortable: false, hidden: true }),
   ];
 
   return useColumnVisibility(columns);

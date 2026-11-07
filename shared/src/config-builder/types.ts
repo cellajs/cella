@@ -90,6 +90,40 @@ export interface HasFlagsConfig {
   waitlist: boolean;
   uploadEnabled: boolean;
   chatSupport: boolean;
+  /** Visitors can take a demo (`createDemo`): a throwaway account with a `demo` tenant, signed in by a `demo` session. */
+  demos: boolean;
+}
+
+/**
+ * What a tenant is for: `live` serves customers, `test` serves staff and automated runs (the showcase seed, e2e and
+ * pentest runs), `demo` is a visitor's throwaway. Each kind's behavior comes from `tenantKinds`.
+ */
+export const tenantKindValues = ['live', 'test', 'demo'] as const;
+export type TenantKind = (typeof tenantKindValues)[number];
+
+/** What a tenant kind takes part in; `Q` names the keys a quota can take. */
+export interface TenantKindConfig<Q extends string = string> {
+  /** Shown in the admin lists of tenants and organizations when the request names no kind. */
+  listed: boolean;
+  /** Counted in the public counts, with the members such tenants alone hold. */
+  counted: boolean;
+  /** May invite, which mails third parties. */
+  invitations: boolean;
+  /** The operator hears of a tenant of this kind being created or removed. */
+  operatorNotices: boolean;
+  /** Laid over `defaultRestrictions` when a tenant of this kind is created. */
+  restrictions?: {
+    quotas?: Partial<Record<Q, number>>;
+    rateLimits?: Partial<{ apiPointsPerHour: number; invitationMailsPerDay: number }>;
+  };
+}
+
+/** A visitor's demo (`has.demos`). */
+export interface DemoConfig {
+  /** The reserved domain of a demo account's placeholder address, which no mail reaches. */
+  addressDomain: string;
+  /** Demos created a day across every visitor; past it `createDemo` answers 503. */
+  perDay: number;
 }
 
 /** A service of the app: whether it runs, and the port it listens on as app number 0 (`devAppIndex` moves it). */
@@ -141,6 +175,8 @@ export interface RetentionConfig {
   deletedItemsDays: number;
   /** An archived tenant (an organization deleted, or a contract ended), from the archiving; a system admin can restore it until then. */
   archivedTenantDays: number;
+  /** A demo tenant, from its creation; it goes with everything in it and the account that took it. */
+  demoTenantDays: number;
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
   deviceDaysUnseen: number;
@@ -297,6 +333,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     rateLimits: { apiPointsPerHour: number; invitationMailsPerDay: number };
   };
   selfServiceTenantsPerUser: number;
+  tenantKinds: Record<TenantKind, TenantKindConfig<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey'>>;
+  demo: DemoConfig;
   retention: RetentionConfig;
 
   systemRoles: T['systemRoles'];

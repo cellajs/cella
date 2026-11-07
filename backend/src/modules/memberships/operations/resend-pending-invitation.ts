@@ -4,6 +4,7 @@ import { isHeldInvitation } from '#/modules/memberships/helpers/membership-helpe
 import { findInactiveMembershipInOrg } from '#/modules/memberships/inactive-memberships-queries';
 import { mailInvitations } from '#/modules/memberships/operations/mail-invitations';
 import { type InvitationMailsContext, refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
+import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**
@@ -11,6 +12,7 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
  * on the invited channel. Every pending invitation answers 204 alike: one no account holds gets a fresh link that
  * retires the older ones, one an account holds gets its invitation email again, and a held one stays held until its
  * channel is published. A missing, foreign or rejected row is 404.
+ * @throws AppError 403 `restrict_by_tenant_kind` in a tenant whose kind invites no one.
  * @throws AppError 429 `invitation_limit_reached` past the tenant's daily mails, from {@link resendInvitation}.
  */
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
@@ -18,6 +20,7 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   if (!invitation || invitation.rejectedAt) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 
   const { entity } = await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
+  assertTenantInvites(ctx.var.tenant);
 
   // The publish of its channel sends a held invitation; a resend before it would let the invitee into the draft.
   if (isHeldInvitation(invitation.channelType, entity, invitation.role)) return;

@@ -12,7 +12,7 @@
       {
         "key": "x-enabled-by",
         "id": "xEnabledBy",
-        "description": "Config switch the endpoint belongs to: a service, a sign-in method or an OAuth provider; refused before the guards while it is off",
+        "description": "Config switch the endpoint belongs to: a service, a feature flag, a sign-in method or an OAuth provider; refused before the guards while it is off",
         "required": false,
         "kind": "metadata"
       },
@@ -96,6 +96,15 @@
               "mode": "limit",
               "points": 30,
               "duration": 3600
+            }
+          },
+          "demoLimiter": {
+            "name": "Demos",
+            "description": "Demos taken from each IP address a day; a browser that holds a demo gets it back without taking another.",
+            "policy": {
+              "mode": "limit",
+              "points": 5,
+              "duration": 86400
             }
           },
           "oneClickUnsubscribeLimiter": {
@@ -421,7 +430,7 @@
     },
     {
       "name": "tenants",
-      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds one organization and carries its quotas, rate limits and sign-in policy. System admins list and update tenants, a signed-in user creates one of their own, and an archived tenant is removed after the archived period.",
+      "description": "Tenants: the top-level isolation boundaries Row-Level Security (RLS) partitions data by. A tenant holds one organization and carries its quotas, rate limits and sign-in policy. Its kind says what it is for: live for customers, test for staff and automated runs, demo for a visitor's throwaway. System admins list and update tenants, a signed-in user creates one of their own, a visitor takes a demo, and a tenant archived past the archived period or past its expiry is removed with everything in it.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2104,7 +2113,7 @@
                 },
                 "authStrategy": {
                   "type": "string",
-                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "demo", "surfconext"]
                 },
                 "connectionId": {
                   "type": ["string", "null"],
@@ -3372,12 +3381,28 @@
             "type": "string",
             "maxLength": 255
           },
+          "kind": {
+            "type": "string",
+            "enum": ["live", "test", "demo"],
+            "description": "What the tenant is for: `live` serves customers, `test` staff and automated runs, `demo` a visitor."
+          },
           "status": {
             "type": "string",
             "enum": ["active", "suspended", "archived"]
           },
           "statusChangedAt": {
             "type": "string"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the tenant goes with everything in it; a demo always carries one."
           },
           "restrictions": {
             "type": "object",
@@ -3436,7 +3461,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "demo", "surfconext"]
             }
           },
           "subscriptionId": {
@@ -3586,8 +3611,10 @@
         "required": [
           "id",
           "name",
+          "kind",
           "status",
           "statusChangedAt",
+          "expiresAt",
           "restrictions",
           "authStrategies",
           "subscriptionId",
@@ -3603,8 +3630,10 @@
         "example": {
           "id": "ddoplg",
           "name": "Lubowitz, Waters and Haley",
+          "kind": "live",
           "status": "active",
           "statusChangedAt": "2024-08-10T00:42:04.704Z",
+          "expiresAt": null,
           "restrictions": {
             "quotas": {
               "user": 1000,
@@ -9038,7 +9067,7 @@
                           },
                           "authStrategy": {
                             "type": "string",
-                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "demo", "surfconext"]
                           },
                           "connectionId": {
                             "type": ["string", "null"],
@@ -11842,6 +11871,17 @@
             "required": false,
             "description": "Comma-separated values",
             "name": "include",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Tenant kinds a system admin's list across tenants covers, comma-separated; absent covers the kinds the app lists by default. A member's own list ignores it."
+            },
+            "required": false,
+            "description": "Tenant kinds a system admin's list across tenants covers, comma-separated; absent covers the kinds the app lists by default. A member's own list ignores it.",
+            "name": "kind",
             "in": "query"
           }
         ],
@@ -15335,7 +15375,7 @@
         "operationId": "listTenants",
         "tags": ["tenants", "cella"],
         "summary": "Get list of tenants",
-        "description": "Returns a paginated list of tenants. System admin access required.",
+        "description": "Returns a paginated list of tenants of the listed kinds, or of the kinds named. System admin access required.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["readLimiter"],
         "parameters": [
@@ -15407,6 +15447,17 @@
             "description": "Filter by status",
             "name": "status",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Kinds to list, comma-separated (`live`, `test`, `demo`); absent lists the kinds the app lists by default."
+            },
+            "required": false,
+            "description": "Kinds to list, comma-separated (`live`, `test`, `demo`); absent lists the kinds the app lists by default.",
+            "name": "kind",
+            "in": "query"
           }
         ],
         "responses": {
@@ -15419,8 +15470,10 @@
                     {
                       "id": "jbtqtl",
                       "name": "Predovic, Bahringer and Morar",
+                      "kind": "live",
                       "status": "active",
                       "statusChangedAt": "2024-10-17T20:38:21.060Z",
+                      "expiresAt": null,
                       "restrictions": {
                         "quotas": {
                           "user": 1000,
@@ -15460,8 +15513,10 @@
                     {
                       "id": "dbwf7b",
                       "name": "Crooks, Kuphal and Roob-Blick",
+                      "kind": "live",
                       "status": "active",
                       "statusChangedAt": "2024-04-30T09:09:16.797Z",
+                      "expiresAt": null,
                       "restrictions": {
                         "quotas": {
                           "user": 1000,
@@ -15548,7 +15603,7 @@
         "operationId": "createTenant",
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
-        "description": "Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.",
+        "description": "Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name. A demo session creates none.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "requestBody": {
@@ -15609,7 +15664,7 @@
         "operationId": "updateTenant",
         "tags": ["tenants", "cella"],
         "summary": "Update a tenant",
-        "description": "Updates a tenant by ID. System admin access required.",
+        "description": "Updates a tenant by ID. System admin access required. The kind moves between `live` and `test`; a demo stays a demo.",
         "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -15636,6 +15691,11 @@
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["live", "test", "demo"],
+                    "description": "`live` or `test`: a demo is never made or unmade by an update."
+                  },
                   "status": {
                     "type": "string",
                     "enum": ["active", "suspended", "archived"]
@@ -15656,9 +15716,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "demo", "surfconext"]
                     },
-                    "maxItems": 8
+                    "maxItems": 9
                   },
                   "restrictions": {
                     "type": "object",
@@ -15724,6 +15784,11 @@
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["live", "test", "demo"],
+                    "description": "`live` or `test`: a demo is never made or unmade by an update."
+                  },
                   "status": {
                     "type": "string",
                     "enum": ["active", "suspended", "archived"]
@@ -15744,9 +15809,9 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "demo", "surfconext"]
                     },
-                    "maxItems": 8
+                    "maxItems": 9
                   },
                   "restrictions": {
                     "type": "object",
@@ -15829,6 +15894,140 @@
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/demos": {
+      "post": {
+        "security": [],
+        "operationId": "createDemo",
+        "tags": ["tenants", "cella"],
+        "summary": "Take a demo",
+        "description": "Gives this browser a demo: a throwaway account signed in by a demo session, with a tenant of kind `demo` and the organization it administers, filled by the app. The tenant goes after the demo period with everything in it and the account. A demo session invites no one, creates no tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back.",
+        "x-enabled-by": {
+          "feature": "demos"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["demoLimiter"],
+        "responses": {
+          "200": {
+            "description": "Your demo",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "3yu7ph",
+                  "name": "Donnelly - Wisozk",
+                  "kind": "live",
+                  "status": "active",
+                  "statusChangedAt": "2024-12-04T09:29:12.309Z",
+                  "expiresAt": null,
+                  "restrictions": {
+                    "quotas": {
+                      "user": 1000,
+                      "organization": 1,
+                      "attachment": 100,
+                      "serviceAccount": 20,
+                      "apiKey": 100
+                    },
+                    "rateLimits": {
+                      "apiPointsPerHour": 1000,
+                      "invitationMailsPerDay": 250
+                    },
+                    "allowUnregisteredClients": true
+                  },
+                  "authStrategies": [],
+                  "createdBy": {
+                    "id": "5e502393-1195-4f13-8bcb-05c6902a0d1c",
+                    "kind": "user",
+                    "name": "Ryann Ledner",
+                    "slug": "ryann.ledner63",
+                    "thumbnailUrl": null
+                  },
+                  "updatedBy": null,
+                  "subscriptionId": null,
+                  "subscriptionStatus": "none",
+                  "subscriptionPlan": null,
+                  "createdAt": "2024-12-04T09:29:12.309Z",
+                  "updatedAt": "2024-12-18T15:41:18.821Z",
+                  "organization": {
+                    "id": "9fdbec58-a1cf-4af1-90b8-9514f014e85e",
+                    "name": "Donnelly - Wisozk",
+                    "slug": "donnelly---wisozk",
+                    "thumbnailUrl": null,
+                    "entityType": "organization"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created demo",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "3yu7ph",
+                  "name": "Donnelly - Wisozk",
+                  "kind": "live",
+                  "status": "active",
+                  "statusChangedAt": "2024-12-04T09:29:12.309Z",
+                  "expiresAt": null,
+                  "restrictions": {
+                    "quotas": {
+                      "user": 1000,
+                      "organization": 1,
+                      "attachment": 100,
+                      "serviceAccount": 20,
+                      "apiKey": 100
+                    },
+                    "rateLimits": {
+                      "apiPointsPerHour": 1000,
+                      "invitationMailsPerDay": 250
+                    },
+                    "allowUnregisteredClients": true
+                  },
+                  "authStrategies": [],
+                  "createdBy": {
+                    "id": "5e502393-1195-4f13-8bcb-05c6902a0d1c",
+                    "kind": "user",
+                    "name": "Ryann Ledner",
+                    "slug": "ryann.ledner63",
+                    "thumbnailUrl": null
+                  },
+                  "updatedBy": null,
+                  "subscriptionId": null,
+                  "subscriptionStatus": "none",
+                  "subscriptionPlan": null,
+                  "createdAt": "2024-12-04T09:29:12.309Z",
+                  "updatedAt": "2024-12-18T15:41:18.821Z",
+                  "organization": {
+                    "id": "9fdbec58-a1cf-4af1-90b8-9514f014e85e",
+                    "name": "Donnelly - Wisozk",
+                    "slug": "donnelly---wisozk",
+                    "thumbnailUrl": null,
+                    "entityType": "organization"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequestsError"
@@ -16414,6 +16613,25 @@
             },
             "required": false,
             "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false",
+              "description": "Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with."
+            },
+            "required": false,
+            "description": "Also lists the accounts without a proven address, such as a demo takes; a system admin alone may set it. Members always see every account they share an organization with.",
+            "name": "includeProvisional",
             "in": "query"
           }
         ],

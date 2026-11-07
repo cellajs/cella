@@ -64,9 +64,9 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
         shortName: item.name,
         slug: item.slug,
         tenantId,
-        languages: [appConfig.defaultLanguage],
+        languageCodes: [appConfig.defaultLanguage],
         welcomeText: defaultWelcomeText,
-        defaultLanguage: appConfig.defaultLanguage,
+        defaultLanguageCode: appConfig.defaultLanguage,
         createdBy: user.id,
         // A draft holds its invitations until it is published
         ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),

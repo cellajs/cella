@@ -28,6 +28,12 @@ export function PrivacyText() {
           keep it secure and reliable and count its use (legitimate interest, Art. 6(1)(f)). We do not sell your data, use it for advertising or make
           automated decisions about you.
         </p>
+        {appConfig.has.demos && (
+          <p>
+            A demo needs no email address: it runs on a throwaway account that only your browser can open. We keep no personal data of its own, and it
+            goes with everything you put in it after {appConfig.retention.demoTenantDays} days.
+          </p>
+        )}
         <ProcessedDataTypes />
       </LegalSection>
 

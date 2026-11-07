@@ -18,6 +18,7 @@ import { mailInvitations } from '#/modules/memberships/operations/mail-invitatio
 import { type PlannedAddress, planInvites, toInviteOutcome } from '#/modules/memberships/operations/plan-invites';
 import { sendInvitationMails } from '#/modules/memberships/operations/send-invitation-mails';
 import { refundInvitationMails, takeInvitationMails } from '#/modules/memberships/operations/take-invitation-mails';
+import { assertTenantInvites } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { assertRoleGrant } from '#/permissions/role-grant';
 import type { entityWithTypeSchema } from '#/schemas';
@@ -41,6 +42,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType });
 
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'update');
+  assertTenantInvites(ctx.var.tenant);
 
   // The memberships an accept brings along above the channel are checked here too: the accept has no inviter to ask.
   assertRoleGrant(ctx, { subject: buildSubjectFromEntity(entityType, entity), role, action: 'update' });

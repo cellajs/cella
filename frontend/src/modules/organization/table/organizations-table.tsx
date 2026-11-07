@@ -20,7 +20,7 @@ export function OrganizationsTable() {
 
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/_app/system/organizations' });
 
-  const { q, sort, order } = search;
+  const { q, kind, sort, order } = search;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
@@ -60,8 +60,8 @@ export function OrganizationsTable() {
             rowKeyGetter: rowKeyById,
             columns,
             enableVirtualization: true,
-            isFiltered: !!q,
-            onResetFilters: () => setSearch({ q: '' }),
+            isFiltered: !!q || kind.length > 0,
+            onResetFilters: () => setSearch({ q: '', kind: [] }),
             selectedRows: selectedRowIds,
             onSelectedRowsChange,
             sortColumns,

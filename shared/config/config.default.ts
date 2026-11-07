@@ -91,11 +91,27 @@ export const config = {
    */
   selfServiceTenantsPerUser: 10,
 
+  /**
+   * What each tenant kind takes part in. A `live` tenant serves customers. A `test` tenant (the showcase seed, e2e and
+   * pentest runs, staff trying a flow) stays out of the public counts and behind a kind filter in the admin lists. A
+   * `demo` tenant is a visitor's throwaway, which also invites no one, starts with its own restrictions and goes after
+   * `retention.demoTenantDays`.
+   */
+  tenantKinds: {
+    live: { listed: true, counted: true, invitations: true, operatorNotices: true },
+    test: { listed: false, counted: false, invitations: true, operatorNotices: false },
+    demo: { listed: false, counted: false, invitations: false, operatorNotices: false, restrictions: { quotas: { attachment: 1 } } },
+  },
+
+  /** A visitor's demo, taken through `createDemo` while `has.demos` is on. */
+  demo: { addressDomain: 'demo.invalid', perDay: 500 },
+
   /** How long data lives, in days: `apply_retention()` and the jobs apply it, the privacy page states it. */
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
     archivedTenantDays: 120,
+    demoTenantDays: 2,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
     deviceDaysUnseen: 400,
@@ -196,6 +212,7 @@ export const config = {
     waitlist: false,
     uploadEnabled: true,
     chatSupport: false,
+    demos: false,
   },
 
   // apiVersion guards the API envelope; cookieVersion invalidates all sessions.

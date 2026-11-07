@@ -53,6 +53,16 @@ function storedMutationState(state: DehydratedMutation['state']): DehydratedMuta
   return { ...state, isPaused: true, failureCount: Math.max(state.failureCount, 1) };
 }
 
+/**
+ * The meta a query or a queued mutation is stored with: a toast rule is a function, which the store refuses. A restored
+ * query takes its meta from the options that mount it; a replayed write that fails reports through the global toast.
+ */
+function storedMeta(meta: DehydratedQuery['meta']): DehydratedQuery['meta'] {
+  if (typeof meta?.suppressGlobalErrorToast !== 'function') return meta;
+  const { suppressGlobalErrorToast: _rule, ...stored } = meta;
+  return stored;
+}
+
 /** What a stored query is diffed by: its data timestamp and its refetch mark. */
 const versionOf = ({ dataUpdatedAt, isInvalidated }: DehydratedQuery['state']) => `${dataUpdatedAt}:${isInvalidated}`;
 
@@ -210,13 +220,13 @@ async function flush() {
     const { queries } = client.clientState;
     // Each queued mutation is stored with the version of its variables, which the restore reads.
     const mutations = client.clientState.mutations.map((mutation) =>
-      withVariablesVersion({ ...mutation, state: storedMutationState(mutation.state) }),
+      withVariablesVersion({ ...mutation, meta: storedMeta(mutation.meta), state: storedMutationState(mutation.state) }),
     );
 
     const productQueries: DehydratedQuery[] = [];
     const bundledQueries: DehydratedQuery[] = [];
     for (const query of queries) {
-      const stored = { ...query, state: storedState(query.state) };
+      const stored = { ...query, meta: storedMeta(query.meta), state: storedState(query.state) };
       if (productTypeOf(query.queryKey)) productQueries.push(stored);
       else bundledQueries.push(stored);
     }

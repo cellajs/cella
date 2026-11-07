@@ -53,6 +53,9 @@ import type {
   CreateConnectionData,
   CreateConnectionErrors,
   CreateConnectionResponses,
+  CreateDemoData,
+  CreateDemoErrors,
+  CreateDemoResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -361,6 +364,7 @@ import {
   zCountSystemInvitationsResponse,
   zCreateApiKeyResponse,
   zCreateConnectionResponse,
+  zCreateDemoResponse,
   zCreatePasskeyResponse,
   zCreatePushSubscriptionResponse,
   zCreateRequestResponse,
@@ -2373,6 +2377,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
+ * @param {string=} options.query.kind - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listOrganizations = <ThrowOnError extends boolean = true>(
@@ -3047,7 +3052,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
 /**
  * Get list of tenants
  *
- * Returns a paginated list of tenants. System admin access required.
+ * Returns a paginated list of tenants of the listed kinds, or of the kinds named. System admin access required.
  *
  * **GET /tenants** ·· [listTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· _tenants · cella_
  *
@@ -3058,6 +3063,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.status - `enum` (optional)
+ * @param {string=} options.query.kind - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listTenants = <ThrowOnError extends boolean = true>(
@@ -3073,7 +3079,7 @@ export const listTenants = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name.
+ * Creates a new tenant (workspace) for the authenticated user. A user may create several, up to the number the app allows; an org-less tenant from a prior failed attempt is reused, and takes the new name. A demo session creates none.
  *
  * **POST /tenants** ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· _tenants · cella_
  *
@@ -3098,13 +3104,14 @@ export const createTenant = <ThrowOnError extends boolean = true>(
 /**
  * Update a tenant
  *
- * Updates a tenant by ID. System admin access required.
+ * Updates a tenant by ID. System admin access required. The kind moves between `live` and `test`; a demo stays a demo.
  *
  * **PATCH /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PATCH/tenants/{tenantId}) ·· _tenants · cella_
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantId - `string`
  * @param {string=} options.body.name - `string` (optional)
+ * @param {enum=} options.body.kind - `enum` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
  * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
  * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
@@ -3125,6 +3132,26 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Take a demo
+ *
+ * Gives this browser a demo: a throwaway account signed in by a demo session, with a tenant of kind `demo` and the organization it administers, filled by the app. The tenant goes after the demo period with everything in it and the account. A demo session invites no one, creates no tenant, adds no sign-in method and hands out no lasting access. A browser that holds a demo gets it back.
+ *
+ * **POST /demos** ·· [createDemo](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/demos) ·· _tenants · cella_
+ *
+ * @param {createDemoData} options
+ * @returns Possible status codes: 200, 201, 400, 404, 409, 429
+ */
+export const createDemo = <ThrowOnError extends boolean = true>(
+  options?: Options<CreateDemoData, ThrowOnError>,
+): RequestResult<CreateDemoResponses, CreateDemoErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<CreateDemoResponses, CreateDemoErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zCreateDemoResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/demos',
+    ...options,
   });
 
 /**
@@ -3251,6 +3278,7 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum | boolean=} options.query.includeProvisional - `enum | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429
  */
 export const listUsers = <ThrowOnError extends boolean = true>(

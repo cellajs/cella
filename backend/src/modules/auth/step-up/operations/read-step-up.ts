@@ -57,11 +57,15 @@ export const readStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<
 };
 
 /**
- * Refuses an action of `tier` on a session that does not stand stepped up for it.
+ * Refuses an action of `tier` on a session that does not stand stepped up for it. A demo session never does: a demo
+ * account adds no sign-in method, proves no address, hands out no lasting access and is never deleted by hand, so it
+ * stays the throwaway its tenant's removal takes along.
  * @returns The step-up state, with the factor that proves the session.
- * @throws AppError 403 `step_up_required` with what the user can offer in `meta.methods`.
+ * @throws AppError 403 `demo_session_restricted` on a demo session, else 403 `step_up_required` with what the user can
+ * offer in `meta.methods`.
  */
 export const requireStepUp = async (ctx: StepUpContext, tier: StepUpTier): Promise<StepUpState> => {
+  if (ctx.var.session.authStrategy === 'demo') throw new AppError(403, 'demo_session_restricted', 'warn');
   const state = await readStepUp(ctx, tier);
   if (!state.steppedUp) throw new AppError(403, 'step_up_required', 'info', { meta: { methods: state.methods } });
   return state;
