@@ -10,8 +10,7 @@ import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { Spinner } from '~/modules/common/spinner';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
-import { canMove } from '~/modules/navigation/menu-sheet/helpers/can-move';
-import { canMute } from '~/modules/navigation/menu-sheet/helpers/can-mute';
+import { canMove, canMute } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import type { MenuRowMoves } from '~/modules/navigation/menu-sheet/helpers/use-menu-row-moves';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { Button } from '~/modules/ui/button';
@@ -96,8 +95,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
           description={isArchivable ? t(archived ? 'c:sortable_archived_menu_row.text' : 'c:sortable_menu_row.text') : undefined}
           className={cn(
             avatarBoxClass,
-            // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset
-            // clear over the row's fill.
+            // Any focus shows the outline, a click's too: the grip then takes the arrow keys. An outline keeps its offset clear over the row's fill.
             'group/drag focus-ring:focus:outline-2 focus-ring:focus:outline-ring focus-ring:focus:outline-solid focus-ring:focus:outline-offset-2 focus:bg-muted-hover group-hover/options-item:bg-muted-hover relative cursor-grab rounded-md outline-hidden active:cursor-grabbing',
           )}
         >

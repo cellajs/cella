@@ -49,9 +49,7 @@ function getSelectedCellColSpan<R, SR>({
   column: CalculatedColumn<R, SR>;
 }) {
   const topSummaryRowsCount = topSummaryRows?.length ?? 0;
-  if (rowIdx === mainHeaderRowIdx) {
-    return getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
-  }
+  if (rowIdx === mainHeaderRowIdx) return getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
 
   if (topSummaryRows && rowIdx > mainHeaderRowIdx && rowIdx <= topSummaryRowsCount + mainHeaderRowIdx) {
     return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: topSummaryRows[rowIdx + topSummaryRowsCount] });
@@ -62,9 +60,7 @@ function getSelectedCellColSpan<R, SR>({
     return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
   }
 
-  if (bottomSummaryRows) {
-    return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
-  }
+  if (bottomSummaryRows) return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
 
   return undefined;
 }
@@ -75,9 +71,7 @@ function findNextFocusableColumn<R, SR>(columns: readonly CalculatedColumn<R, SR
 
   while (idx >= 0 && idx <= maxIdx) {
     const column = columns[idx];
-    if (column.focusable !== false) {
-      return idx;
-    }
+    if (column.focusable !== false) return idx;
     idx += direction;
   }
 
@@ -170,9 +164,7 @@ export function getNextSelectedCellPosition<R, SR>({
   if (isCellWithinBounds(nextPosition)) {
     setColSpan(moveNext);
 
-    if (nextRowIdx < mainHeaderRowIdx) {
-      setHeaderGroupColAndRowSpan();
-    }
+    if (nextRowIdx < mainHeaderRowIdx) setHeaderGroupColAndRowSpan();
   }
 
   // Skip non-focusable columns when navigating horizontally
@@ -183,9 +175,7 @@ export function getNextSelectedCellPosition<R, SR>({
       const focusableIdx = findNextFocusableColumn(columns, nextIdx + direction, direction);
       if (focusableIdx >= 0 && focusableIdx < columnsCount) {
         nextIdx = focusableIdx;
-      } else {
-        nextIdx = currentIdx;
-      }
+      } else nextIdx = currentIdx;
     }
   }
 

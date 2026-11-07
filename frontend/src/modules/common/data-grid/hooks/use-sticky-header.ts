@@ -114,9 +114,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
         syncHorizontal(rect);
       } else if (!shouldStick && isSticky) {
         removeFixed();
-      } else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) {
-        syncHorizontal(rect);
-      }
+      } else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) syncHorizontal(rect);
     }
 
     const onScrollVertical = () => {

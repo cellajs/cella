@@ -7,11 +7,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 export type MutationData<T> = Omit<T, 'url'>;
 
 /** A list page as the API sends it, or a whole list read page by page, which names no next page. */
-export type QueryData<TItem> = {
-  results: TItem[];
-  totalSize: number;
-  nextPageToken?: string;
-};
+export type QueryData<TItem> = { results: TItem[]; totalSize: number; nextPageToken?: string };
 
 export type SortOrder = 'asc' | 'desc';
 

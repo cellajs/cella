@@ -23,9 +23,7 @@ export function DropdownerDrawer({ dropdown }: DropdownerDrawerProps) {
 
   useSwapMorph({ dropdownKey: dropdown.key, content, containerRef, contentRef, anchor: () => drawerAnchor, timing: drawerMorph });
 
-  const closeDropdown = () => {
-    dropdowner.getState().remove();
-  };
+  const closeDropdown = () => dropdowner.getState().remove();
 
   useEventListener('popstate', closeDropdown);
 

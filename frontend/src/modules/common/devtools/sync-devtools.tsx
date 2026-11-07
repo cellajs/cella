@@ -55,9 +55,7 @@ interface SpanListProps {
 function SpanList({ spans, filter }: SpanListProps) {
   const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
-  if (filtered.length === 0) {
-    return <div className={emptyClass}>No spans recorded yet</div>;
-  }
+  if (filtered.length === 0) return <div className={emptyClass}>No spans recorded yet</div>;
 
   return (
     <div>

@@ -156,13 +156,9 @@ export function useCalculatedColumns<R, SR>({
 
         columns.push(column);
 
-        if (frozen) {
-          lastFrozenColumnIndex += 1;
-        }
+        if (frozen) lastFrozenColumnIndex += 1;
 
-        if (level > headerRowsCount) {
-          headerRowsCount = level;
-        }
+        if (level > headerRowsCount) headerRowsCount = level;
       }
     }
 
@@ -184,9 +180,7 @@ export function useCalculatedColumns<R, SR>({
       column.idx = idx;
       updateColumnParent(column, idx, 0);
 
-      if (column.colSpan != null) {
-        colSpanColumns.push(column);
-      }
+      if (column.colSpan != null) colSpanColumns.push(column);
     });
 
     // Grouped by side and sorted by `order`, ties keeping column order; hosts always resolve because invalid rules were dropped above.
@@ -289,15 +283,11 @@ export function useCalculatedColumns<R, SR>({
 }
 
 function updateColumnParent<R, SR>(column: MutableCalculatedColumn<R, SR> | MutableCalculatedColumnParent<R, SR>, index: number, level: number) {
-  if (level < column.level) {
-    column.level = level;
-  }
+  if (level < column.level) column.level = level;
 
   if (column.parent !== undefined) {
     const { parent } = column;
-    if (parent.idx === -1) {
-      parent.idx = index;
-    }
+    if (parent.idx === -1) parent.idx = index;
     parent.colSpan += 1;
     updateColumnParent(parent, index, level - 1);
   }

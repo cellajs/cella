@@ -209,9 +209,7 @@ export function BoardLayout({
 
   // Clips without a scroll container, so section bars and card headers stay sticky to the window
   // isolate: the board stacks as one layer, so its sticky headers and rings stay under the page's search field and tabs
-  if (autoHeight) {
-    return <div className="isolate overflow-x-clip transition">{panelGroup}</div>;
-  }
+  if (autoHeight) return <div className="isolate overflow-x-clip transition">{panelGroup}</div>;
 
   // none on x: on auto the overscroll chains to the page, which Chrome slides sideways as a whole
   return (

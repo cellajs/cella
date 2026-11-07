@@ -110,9 +110,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
     mergeRange(existing, entry);
     // More news never postpones.
     existing.dueAt = Math.min(existing.dueAt, dueAt);
-  } else {
-    dirty.set(key, entry);
-  }
+  } else dirty.set(key, entry);
 
   installListeners();
   armTimer();
@@ -281,11 +279,8 @@ export function invalidateUndelivered(
 
 function advanceCaughtUp(entry: DirtyEntry): void {
   const store = syncStore.getState();
-  if (entry.channelId) {
-    store.setChannelSeq(entry.organizationId, entry.channelId, entry.entityType, entry.untilSeq);
-  } else {
-    store.setOrgSeq(entry.organizationId, entry.entityType, entry.untilSeq);
-  }
+  if (entry.channelId) store.setChannelSeq(entry.organizationId, entry.channelId, entry.entityType, entry.untilSeq);
+  else store.setOrgSeq(entry.organizationId, entry.entityType, entry.untilSeq);
 }
 
 function requeue(entry: DirtyEntry, delayMs: number): void {

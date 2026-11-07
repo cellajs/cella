@@ -17,9 +17,7 @@ export function useRowSelection() {
   const rowSelectionContext = useContext(RowSelectionContext);
   const rowSelectionChangeContext = useContext(RowSelectionChangeContext);
 
-  if (rowSelectionContext === undefined || rowSelectionChangeContext === undefined) {
-    throw new Error('useRowSelection must be used within renderCell');
-  }
+  if (rowSelectionContext === undefined || rowSelectionChangeContext === undefined) throw new Error('useRowSelection must be used within renderCell');
 
   return {
     isRowSelectionDisabled: rowSelectionContext.isRowSelectionDisabled,

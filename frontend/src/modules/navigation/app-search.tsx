@@ -93,12 +93,8 @@ export function AppSearch() {
     saveRecentSearch(searchValue);
     saveRecentSelection({ entityType: item.entityType, id: item.id }, (entry) => !memberships || !!resolveRecent(entry));
 
-    if (item.entityType === 'user') {
-      navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
-    } else {
-      const { to, params, search } = getChannelRoute(item);
-      navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
-    }
+    if (item.entityType === 'user') navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
+    else navigate({ ...getChannelRoute(item), ...pageTopHashNav, resetScroll: false });
 
     dialoger.getState().remove('search');
   };
@@ -111,11 +107,8 @@ export function AppSearch() {
       value={null}
       onValueChange={(selection) => {
         if (!selection) return;
-        if (isHistoryEntry(selection)) {
-          setSearchValue(selection.value);
-          return;
-        }
-        openItem(selection);
+        if (isHistoryEntry(selection)) setSearchValue(selection.value);
+        else openItem(selection);
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}

@@ -20,9 +20,8 @@ import { hasMutationOfRow, isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
 /** A remote write skips the row while this is true, so optimistic state survives; the row the server returns when the mutation settles replaces the cached one. */
-function hasPendingMutationForEntity(entityType: ProductEntityType, entityId: string): boolean {
-  return hasMutationOfRow(queryClient, entityType, entityId, isPending);
-}
+const hasPendingMutationForEntity = (entityType: ProductEntityType, entityId: string): boolean =>
+  hasMutationOfRow(queryClient, entityType, entityId, isPending);
 
 function isSoftDeleted(entity: ItemData): boolean {
   const deletedAt = asRecord(entity).deletedAt;
@@ -70,8 +69,8 @@ const isScalar = (value: unknown): value is string | number | boolean =>
  * with AND, so that one key excludes the row whatever `q` or the other filters say; a row without the field never
  * counts as excluded.
  */
-function filtersExcludeRow(filters: object[], row: Record<string, unknown>, equalityKeys: readonly string[]): boolean {
-  return filters
+const filtersExcludeRow = (filters: object[], row: Record<string, unknown>, equalityKeys: readonly string[]): boolean =>
+  filters
     .flatMap((filter) => Object.entries(filter))
     .some(([key, value]) => {
       if (!equalityKeys.includes(key) || !isScalar(value) || value === '') return false;
@@ -79,7 +78,6 @@ function filtersExcludeRow(filters: object[], row: Record<string, unknown>, equa
       if (rowValue === null) return true;
       return isScalar(rowValue) && String(rowValue) !== String(value);
     });
-}
 
 /**
  * Invalidates org-scoped lists whose key tail holds a filter object; canonical home lists have string-only tails and are patched directly.

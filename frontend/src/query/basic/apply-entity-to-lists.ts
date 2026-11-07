@@ -16,9 +16,8 @@ export function resolveHomeChannelId(entityType: string, entity: ItemData): stri
 }
 
 /** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
-export function matchesCanonicalHome(queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean {
-  return queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
-}
+export const matchesCanonicalHome = (queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean =>
+  queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
 
 /** Only the channel id columns both copies carry count, so a partial row never reads as moved. */
 function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {

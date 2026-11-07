@@ -6,14 +6,13 @@ import { getMenuSection } from '~/lib/entity-modules';
 import { CountBadge } from '~/modules/common/count-badge';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
-import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { menuOrganizations, useRouteOrganizationId } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { SidebarNavButton } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { TriggerOrganizationFn } from '~/modules/navigation/types';
-import { useRouteOrganizationId } from '~/modules/navigation/use-route-organization-id';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
@@ -37,9 +36,7 @@ function SidebarOrganizationButton({ organization, unseenCount, isActive, isCurr
     <SidebarNavButton
       ref={buttonRef}
       label={organization.name}
-      isCollapsed={isCollapsed}
-      isActive={isActive}
-      isCurrent={isCurrent}
+      {...{ isCollapsed, isActive, isCurrent }}
       onClick={() => onClick(organization, buttonRef)}
       className="relative"
       itemClassName="pb-0"
@@ -118,12 +115,9 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: SidebarOrga
         return (
           <SidebarOrganizationButton
             key={organization.id}
-            organization={organization}
+            {...{ organization, isActive, isCollapsed, onClick }}
             unseenCount={isFullMenuOpen || isActive ? 0 : (unseenCounts.get(organization.id) ?? 0)}
-            isActive={isActive}
             isCurrent={organization.id === routeOrganizationId}
-            isCollapsed={isCollapsed}
-            onClick={onClick}
           />
         );
       })}

@@ -88,15 +88,11 @@ export function PagesTable() {
       const original = pages.find((page) => page.id === row.id);
       if (!original) continue;
 
-      if (column.key === 'name' && row.name !== original.name) {
-        applyEdit(row.id, { name: row.name }, { title: row.name });
-      }
+      if (column.key === 'name' && row.name !== original.name) applyEdit(row.id, { name: row.name }, { title: row.name });
       if (column.key === 'renderMode' && row.renderMode !== original.renderMode) {
         applyEdit(row.id, { renderMode: row.renderMode }, { renderMode: row.renderMode });
       }
-      if (column.key === 'status' && row.draft !== original.draft) {
-        applyEdit(row.id, { draft: row.draft }, { draft: row.draft });
-      }
+      if (column.key === 'status' && row.draft !== original.draft) applyEdit(row.id, { draft: row.draft }, { draft: row.draft });
     }
   };
 

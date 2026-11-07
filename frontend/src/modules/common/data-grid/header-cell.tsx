@@ -114,9 +114,7 @@ export function HeaderCell<R, SR>({
         onDragLeave: () => setClosestEdge(null),
         onDrop: ({ source }) => {
           setClosestEdge(null);
-          if (isColumnDragData(source.data)) {
-            onColumnsReorder(source.data.columnKey, column.key);
-          }
+          if (isColumnDragData(source.data)) onColumnsReorder(source.data.columnKey, column.key);
         },
       }),
     );
@@ -137,21 +135,15 @@ export function HeaderCell<R, SR>({
         const nextSortColumns = [...sortColumns!];
         if (nextSortColumn) {
           nextSortColumns[sortIndex!] = nextSortColumn;
-        } else {
-          nextSortColumns.splice(sortIndex!, 1);
-        }
+        } else nextSortColumns.splice(sortIndex!, 1);
         onSortColumnsChange(nextSortColumns);
-      } else {
-        onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
-      }
+      } else onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
     }
   }
 
   function handleFocus(event: React.FocusEvent<HTMLDivElement>) {
     onFocus?.(event);
-    if (shouldFocusGrid) {
-      selectCell({ idx: 0, rowIdx });
-    }
+    if (shouldFocusGrid) selectCell({ idx: 0, rowIdx });
   }
 
   function onMouseDown() {
@@ -159,9 +151,7 @@ export function HeaderCell<R, SR>({
   }
 
   function onClick(event: React.MouseEvent<HTMLSpanElement>) {
-    if (sortable) {
-      onSort(event.ctrlKey || event.metaKey);
-    }
+    if (sortable) onSort(event.ctrlKey || event.metaKey);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLSpanElement>) {
@@ -183,9 +173,7 @@ export function HeaderCell<R, SR>({
       const { width } = event.currentTarget.getBoundingClientRect();
       const offset = key === 'ArrowLeft' ? -10 : 10;
       const newWidth = clampColumnWidth(width + offset, column);
-      if (newWidth !== width) {
-        onColumnResize(column, newWidth);
-      }
+      if (newWidth !== width) onColumnResize(column, newWidth);
     }
   }
 
@@ -228,9 +216,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   const initialLeftRef = useRef<number>(undefined);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
-      return;
-    }
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     // Fix column resizing on a draggable column in FF
     event.preventDefault();
@@ -251,9 +237,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
     const { width } = event.currentTarget.parentElement!.getBoundingClientRect();
     // Use initial left edge so left-side column shifts don't eat the drag delta
     const newWidth = event.clientX + offset - initialLeft;
-    if (width > 0 && newWidth !== width) {
-      onColumnResize(column, newWidth);
-    }
+    if (width > 0 && newWidth !== width) onColumnResize(column, newWidth);
   }
 
   function onLostPointerCapture() {

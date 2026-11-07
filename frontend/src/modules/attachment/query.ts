@@ -247,9 +247,7 @@ const attachmentDeleteOptions = (
   },
   onError: (error, _variables, context) => {
     handleError('delete', error);
-    if (context?.deletedAttachments) {
-      insertEntitiesIntoHome(queryClient, context.deletedAttachments);
-    }
+    if (context?.deletedAttachments) insertEntitiesIntoHome(queryClient, context.deletedAttachments);
   },
   onSuccess: (result, variables) => {
     const rejectedIds = result?.rejectedIds ?? [];

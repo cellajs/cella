@@ -102,9 +102,7 @@ function assertContextRoles(tool: Tool): void {
     const channelType = pair.slice(0, dot);
     const role = pair.slice(dot + 1);
     const roles = hierarchy.getRoles(channelType) as readonly string[];
-    if (!roles.includes(role)) {
-      throw new Error(`Tool '${tool.id}' declares invalid context-role pair '${pair}' (slot '${tool.slot}')`);
-    }
+    if (!roles.includes(role)) throw new Error(`Tool '${tool.id}' declares invalid context-role pair '${pair}' (slot '${tool.slot}')`);
   }
 }
 
@@ -207,9 +205,7 @@ export function assertSurfaceIds(candidateIdsBySlot: (slot: Slot) => readonly st
     if (!listed) continue;
     const available = new Set(candidateIdsBySlot(slot));
     for (const id of listed) {
-      if (!available.has(id)) {
-        throw new Error(`appConfig.surfaces['${slot}'] lists '${id}', which is no placement of that surface`);
-      }
+      if (!available.has(id)) throw new Error(`appConfig.surfaces['${slot}'] lists '${id}', which is no placement of that surface`);
     }
   }
 }

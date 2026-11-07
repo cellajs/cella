@@ -50,9 +50,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
       });
     }
 
-    if (newEntries.length > 0) {
-      await addNew(newEntries);
-    }
+    if (newEntries.length > 0) await addNew(newEntries);
 
     if (revivedIds.length > 0) {
       await attachmentsDb.downloadQueue.where('id').anyOf(revivedIds).modify({ status: 'pending' });

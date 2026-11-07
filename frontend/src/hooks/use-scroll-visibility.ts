@@ -62,9 +62,7 @@ export const useScrollVisibility = (enabled = true) => {
       if (delta < 0) {
         shownAtRef.current = Date.now();
         setIsVisible(true);
-      } else if (Date.now() - shownAtRef.current > minVisibleMs) {
-        setIsVisible(false);
-      }
+      } else if (Date.now() - shownAtRef.current > minVisibleMs) setIsVisible(false);
     };
 
     const handleScroll = () => {

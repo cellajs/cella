@@ -28,7 +28,6 @@ interface PreferenceSwitchProps {
   className?: string;
 }
 
-/** A switch with its label beside it. */
 export function PreferenceSwitch({ id, label, checked, onCheckedChange, className }: PreferenceSwitchProps) {
   return (
     <div className={cn('flex items-center gap-3 px-3', className)}>

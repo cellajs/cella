@@ -245,9 +245,7 @@ export const unregisterSections = (ids: readonly string[]) => {
       notify();
     }
     initTime = 0;
-  } else {
-    rebuild();
-  }
+  } else rebuild();
 };
 
 /** Scrolls the target to its scroll margin below the scroller's top, the line a hash on load brings it to. */
@@ -279,9 +277,7 @@ const performScroll = (element: HTMLElement, id: string) => {
 
 /** True when the element has real layout, so a queued scroll can't target a collapsed container. */
 const isLaidOut = (element: HTMLElement): boolean => {
-  if (typeof element.checkVisibility === 'function') {
-    return element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
-  }
+  if (typeof element.checkVisibility === 'function') return element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
   if (element.offsetParent === null) return false;
   return element.getBoundingClientRect().height > 0;
 };

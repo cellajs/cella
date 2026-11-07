@@ -13,21 +13,7 @@ interface SheeterDrawerProps {
 }
 
 export function SheeterDrawer({ sheet, onExited }: SheeterDrawerProps) {
-  const {
-    id,
-    side,
-    triggerRef,
-    description,
-    title,
-    titleContent = title,
-    titleAside,
-    headerClassName,
-    className,
-    content,
-    contentKey,
-    keepMounted,
-    open = true,
-  } = sheet;
+  const { id, side, title, titleContent = title, description, open = true } = sheet;
 
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
@@ -43,19 +29,19 @@ export function SheeterDrawer({ sheet, onExited }: SheeterDrawerProps) {
       {/* Touch keeps Base UI's default: focusing a trigger out of view would scroll the page under the finger */}
       <DrawerContent
         id={String(id)}
-        className={className}
-        keepMounted={keepMounted}
-        finalFocus={() => isTouchInteraction() || finalFocusFor(triggerRef, String(id))}
+        className={sheet.className}
+        keepMounted={sheet.keepMounted}
+        finalFocus={() => isTouchInteraction() || finalFocusFor(sheet.triggerRef, String(id))}
       >
         {/* p-3 and px-3 match the `container` inset of the content below */}
         {title && (
-          <DrawerHeader sticky closeButton={side === 'left' || side === 'right'} className={headerClassName}>
+          <DrawerHeader sticky closeButton={side === 'left' || side === 'right'} className={sheet.headerClassName}>
             <DrawerTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</DrawerTitle>
-            {titleAside}
+            {sheet.titleAside}
           </DrawerHeader>
         )}
         {description && <DrawerDescription className="px-3 pb-4">{description}</DrawerDescription>}
-        <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
+        <ContentKeyTransition contentKey={sheet.contentKey}>{sheet.content}</ContentKeyTransition>
       </DrawerContent>
     </Drawer>
   );

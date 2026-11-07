@@ -21,7 +21,6 @@ export type SheetData = {
   closeSheetOnRouteChange?: boolean;
   /** Key to identify content for animated transitions (used with AnimatePresence). */
   contentKey?: string;
-  /** Enable auto-scrolling when dragging elements near edges. */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   /** Closing hides the sheet without unmounting it until `unmount`, so a later `create` with its id reopens it without a mount. */
   keepMounted?: boolean;

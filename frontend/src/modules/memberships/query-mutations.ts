@@ -237,11 +237,7 @@ export const useChangeEntityRoleMutation = () =>
       }
 
       const { email } = getCurrentUser();
-      const result = await inviteMembers({
-        query: { entityId, entityType },
-        path: { tenantId, organizationId },
-        body: { emails: [email], role },
-      });
+      const result = await inviteMembers({ query: { entityId, entityType }, path: { tenantId, organizationId }, body: { emails: [email], role } });
 
       const created = result.data?.[0];
       if (!created || !hasPersonalView(created)) throw new Error('Failed to create membership');

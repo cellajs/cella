@@ -19,9 +19,7 @@ export function firstLineOf(node: Y.XmlFragment | Y.XmlElement): string | null {
           .map((op) => (typeof op.insert === 'string' ? op.insert : ''))
           .join('')
           .trim() || null;
-    } else if (child instanceof Y.XmlElement) {
-      text = firstLineOf(child);
-    }
+    } else if (child instanceof Y.XmlElement) text = firstLineOf(child);
     if (text) return text;
   }
   return null;

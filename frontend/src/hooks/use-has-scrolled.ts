@@ -24,9 +24,7 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (scrollKeys.includes(event.key)) {
-        handleScrollIntent();
-      }
+      if (scrollKeys.includes(event.key)) handleScrollIntent();
     };
 
     const cleanup = () => {
@@ -43,9 +41,7 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
 
     if (immediate) {
       startListening();
-    } else {
-      timer = setTimeout(startListening, delay);
-    }
+    } else timer = setTimeout(startListening, delay);
 
     return () => {
       if (timer) clearTimeout(timer);

@@ -92,17 +92,13 @@ export const useUIStore = create<UIStoreState>()(
         },
         lockUI: (source) => {
           set((state) => {
-            if (!state.uiLocks.includes(source)) {
-              state.uiLocks.push(source);
-            }
+            if (!state.uiLocks.includes(source)) state.uiLocks.push(source);
           });
         },
         unlockUI: (source) => {
           set((state) => {
             const index = state.uiLocks.indexOf(source);
-            if (index !== -1) {
-              state.uiLocks.splice(index, 1);
-            }
+            if (index !== -1) state.uiLocks.splice(index, 1);
           });
         },
       })),

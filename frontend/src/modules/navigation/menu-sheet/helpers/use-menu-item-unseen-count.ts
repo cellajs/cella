@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { seenGroupingChannelTypes } from 'shared';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
-import { organizationSections } from '~/modules/navigation/menu-sheet/helpers/organization-sections';
+import { menuOrganizations, organizationSections } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { sumUnseenCounts, useUnseenCount } from '~/modules/seen/use-unseen-count';
@@ -28,9 +27,7 @@ export const organizationUnseenChannelIds = (organization: UserMenuItem, menu: U
 ];
 
 /** The unseen count a menu row shows: its sub-rows' too while `submenuShown` is false, since those rows are not on screen to show theirs. */
-export function useMenuItemUnseenCount(item: UserMenuItem, submenuShown: boolean) {
-  return useUnseenCount(menuUnseenChannelIds(item, !submenuShown));
-}
+export const useMenuItemUnseenCount = (item: UserMenuItem, submenuShown: boolean) => useUnseenCount(menuUnseenChannelIds(item, !submenuShown));
 
 /** Unseen counts by organization id, read off the menu so the rail and the switcher add up to what each menu sheet shows. */
 export function useOrganizationUnseenCounts(menu: UserMenu) {

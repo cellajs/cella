@@ -42,10 +42,9 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     if (sheeter.getState().get(id)) return;
 
     const handleClose = (isCleanup?: boolean) => {
-      if (!isCleanup) {
-        onAfterClose?.(value);
-        close();
-      }
+      if (isCleanup) return;
+      onAfterClose?.(value);
+      close();
     };
 
     queueMicrotask(() => {

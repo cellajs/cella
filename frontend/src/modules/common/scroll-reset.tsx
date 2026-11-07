@@ -18,9 +18,7 @@ export function ScrollReset({ children }: ScrollResetProps) {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const rect = sentinel.getBoundingClientRect();
-    if (rect.top < 0) {
-      window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
-    }
+    if (rect.top < 0) window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
   };
 
   return (

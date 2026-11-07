@@ -1,8 +1,11 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
+import { RocketIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
 import { isUnpublishedDraft } from 'shared';
+import { ConfirmForm } from '~/modules/common/confirm-form';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
@@ -12,12 +15,36 @@ import { DraftBanner } from '~/modules/entities/draft-banner';
 import { useCan } from '~/modules/entities/use-can';
 import { useChannelTabOptions } from '~/modules/entities/use-channel-tab-options';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { PublishOrganizationForm } from '~/modules/organization/publish-organization-form';
-import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
+import { organizationQueryOptions, useOrganizationPublishMutation, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { findMembership } from '~/query/enrichment/helpers';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
+
+interface PublishOrganizationFormProps {
+  organization: Pick<Organization, 'id' | 'name' | 'tenantId'>;
+  close: () => void;
+}
+
+/** The publish confirmation; the toast says how many held invitations went out. */
+function PublishOrganizationForm({ organization, close }: PublishOrganizationFormProps) {
+  const { t } = useTranslation();
+  const { mutate, isPending } = useOrganizationPublishMutation();
+
+  const publish = () =>
+    mutate(
+      { path: { tenantId: organization.tenantId, organizationId: organization.id } },
+      {
+        onSuccess: ({ invitationsSent }) => {
+          const description = invitationsSent ? t('c:invitations_sent', { count: invitationsSent }) : undefined;
+          toaster.success(t('c:success.publish_resource', { name: organization.name }), { description });
+          close();
+        },
+      },
+    );
+
+  return <ConfirmForm icon={RocketIcon} label={t('c:publish')} pending={isPending} onConfirm={publish} onCancel={close} />;
+}
 
 interface OrganizationPageProps {
   organizationId: string;
@@ -37,19 +64,17 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
 
   const { mutate } = useOrganizationUpdateMutation();
 
-  const updateCover = (bannerUrl: string) => {
+  const updateCover = (bannerUrl: string) =>
     mutate(
       { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { bannerUrl } },
       { onSuccess: () => toaster.success(t('c:success.upload_cover')) },
     );
-  };
 
-  const deleteCover = () => {
+  const deleteCover = () =>
     mutate(
       { path: { tenantId: organization.tenantId, organizationId: organization.id }, body: { bannerUrl: null } },
       { onSuccess: () => toaster.success(t('c:success.delete_resource', { resource: t('c:cover') })) },
     );
-  };
 
   return (
     <>

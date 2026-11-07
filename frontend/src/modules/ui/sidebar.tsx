@@ -115,13 +115,9 @@ export function SidebarMenuButton({
     },
   });
 
-  if (!tooltip) {
-    return button;
-  }
+  if (!tooltip) return button;
 
-  if (typeof tooltip === 'string') {
-    tooltip = { children: tooltip };
-  }
+  if (typeof tooltip === 'string') tooltip = { children: tooltip };
 
   return (
     <Tooltip>

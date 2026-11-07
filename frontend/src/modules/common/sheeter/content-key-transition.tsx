@@ -12,10 +12,7 @@ interface ContentKeyTransitionProps {
   children: ReactNode;
 }
 
-/**
- * Fades in new content when `contentKey` changes; without a key the content renders as is. The old content fades out
- * first, at its own scroll position, and the new content then starts at the top.
- */
+/** On a `contentKey` change the old content fades out at its scroll position, then the new fades in at the top; no key renders as is. */
 export function ContentKeyTransition({ contentKey, children }: ContentKeyTransitionProps) {
   if (!contentKey) return children;
 

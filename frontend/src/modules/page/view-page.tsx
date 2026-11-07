@@ -74,9 +74,7 @@ function ChildPagesList({ parentSlug }: { parentSlug: string }) {
   const { t } = useTranslation();
   const childPages = useChildDocPages(parentSlug);
 
-  if (childPages.length === 0) {
-    return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;
-  }
+  if (childPages.length === 0) return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;
 
   return (
     <div className="not-prose mt-6 grid gap-3">

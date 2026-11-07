@@ -27,9 +27,7 @@ function getScrollingAncestor(element: Element | null): Element | null {
   while (current && current !== document.documentElement) {
     const style = getComputedStyle(current);
     const overflowY = style.overflowY;
-    if ((overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight) {
-      return current;
-    }
+    if ((overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight) return current;
     current = current.parentElement;
   }
   return null;

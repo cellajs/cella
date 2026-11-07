@@ -9,9 +9,7 @@ function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TO
   const merged = { ...older, ...newer };
   for (const [key, value] of Object.entries(newer)) {
     const existing = older[key];
-    if (isArrayDelta(value) && isArrayDelta(existing)) {
-      Object.assign(merged, { [key]: mergeArrayDeltas(existing, value) });
-    }
+    if (isArrayDelta(value) && isArrayDelta(existing)) Object.assign(merged, { [key]: mergeArrayDeltas(existing, value) });
   }
   return merged;
 }

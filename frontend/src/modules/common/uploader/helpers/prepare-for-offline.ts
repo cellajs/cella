@@ -25,9 +25,7 @@ export const prepareFilesForOffline = async (
 ): Promise<AssemblyResponse> => {
   const [resultStep] = uploadTemplates[templateId].use;
 
-  if (!organizationId) {
-    throw new Error('organizationId required for local storage');
-  }
+  if (!organizationId) throw new Error('organizationId required for local storage');
 
   await storeUploadBlobs(files, organizationId, templateId, uploadStatus);
 

@@ -16,9 +16,7 @@ interface LegalCrossLinkProps {
 export function LegalCrossLink({ subject, children }: LegalCrossLinkProps) {
   const navigateInDialog = use(LegalDialogNavContext);
 
-  if (navigateInDialog) {
-    return <InlineLinkButton onClick={() => navigateInDialog(subject)}>{children}</InlineLinkButton>;
-  }
+  if (navigateInDialog) return <InlineLinkButton onClick={() => navigateInDialog(subject)}>{children}</InlineLinkButton>;
 
   return (
     <Link to="/legal" hash={subject}>

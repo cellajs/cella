@@ -43,15 +43,7 @@ export function OrganizationsTable() {
 
   return (
     <>
-      <OrganizationsTableBar
-        queryKey={queryOptions.queryKey}
-        selected={selected}
-        columns={columns}
-        searchVars={search}
-        setSearch={setSearch}
-        setColumns={setColumns}
-        clearSelection={clearSelection}
-      />
+      <OrganizationsTableBar queryKey={queryOptions.queryKey} searchVars={search} {...{ selected, columns, setSearch, setColumns, clearSelection }} />
       <SearchScope q={q}>
         <DataTable<OrganizationRow>
           {...{

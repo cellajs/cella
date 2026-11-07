@@ -10,13 +10,9 @@ function CalendarRoot({ className, rootRef, ...props }: RootProps) {
 }
 
 function CalendarChevron({ className, orientation, ...props }: ChevronProps) {
-  if (orientation === 'left') {
-    return <ChevronLeftIcon className={cn('size-4', className)} {...props} />;
-  }
+  if (orientation === 'left') return <ChevronLeftIcon className={cn('size-4', className)} {...props} />;
 
-  if (orientation === 'right') {
-    return <ChevronRightIcon className={cn('size-4', className)} {...props} />;
-  }
+  if (orientation === 'right') return <ChevronRightIcon className={cn('size-4', className)} {...props} />;
 
   return <ChevronDownIcon className={cn('size-4', className)} {...props} />;
 }

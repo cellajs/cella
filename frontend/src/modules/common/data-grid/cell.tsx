@@ -55,9 +55,7 @@ function Cell<R, SR>({
     // Focus without scrolling so the cell's scroll margin cannot jump the page; the mousedown default must stay for row drag.
     event.currentTarget.focus({ preventScroll: true });
     onMouseDown?.(event);
-    if (!handleMouseEvent(event, onCellMouseDown)) {
-      selectCell({ rowIdx, idx: column.idx });
-    }
+    if (!handleMouseEvent(event, onCellMouseDown)) selectCell({ rowIdx, idx: column.idx });
   }
 
   function handleClick(event: MouseEvent<HTMLDivElement>) {
@@ -67,9 +65,7 @@ function Cell<R, SR>({
 
   function handleDoubleClick(event: MouseEvent<HTMLDivElement>) {
     onDoubleClick?.(event);
-    if (!handleMouseEvent(event, onCellDoubleClick)) {
-      selectCellWrapper(true);
-    }
+    if (!handleMouseEvent(event, onCellDoubleClick)) selectCellWrapper(true);
   }
 
   function handleContextMenu(event: MouseEvent<HTMLDivElement>) {
@@ -191,9 +187,7 @@ function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, 
 /** Renders cell content, falling back to placeholderValue when renderCell returns nullish */
 function renderCellContent<R, SR>(column: CellRendererProps<R, SR>['column'], props: Parameters<typeof column.renderCell>[0]) {
   const content = column.renderCell(props);
-  if (content == null && column.placeholderValue != null) {
-    return <span className="text-faint-foreground">{column.placeholderValue}</span>;
-  }
+  if (content == null && column.placeholderValue != null) return <span className="text-faint-foreground">{column.placeholderValue}</span>;
   return content;
 }
 

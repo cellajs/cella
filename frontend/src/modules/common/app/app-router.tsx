@@ -12,9 +12,7 @@ export function AppRouter() {
   // Subscribed, so pull-to-refresh comes back when the connection does
   const isOnline = useOnlineManager();
 
-  if (isRestoring && !isOnline) {
-    return <Spinner size="lg" className="mt-[45vh]" />;
-  }
+  if (isRestoring && !isOnline) return <Spinner size="lg" className="mt-[45vh]" />;
 
   const handleRefresh = async () => {
     console.debug('[AppRouter] Refreshing router');

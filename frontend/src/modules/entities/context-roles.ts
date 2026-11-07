@@ -14,9 +14,7 @@ export function heldContextRoles(entity: EnrichedChannel, memberships: Membershi
 
   const pairs = new Set<ContextRole>();
   for (const membership of memberships) {
-    if (idsByType[membership.channelType] === membership.channelId) {
-      pairs.add(`${membership.channelType}.${membership.role}`);
-    }
+    if (idsByType[membership.channelType] === membership.channelId) pairs.add(`${membership.channelType}.${membership.role}`);
   }
   return [...pairs];
 }

@@ -23,9 +23,7 @@ function getMatchedBreakpoint() {
   for (const breakpoint of sortedBreakpoints) {
     if (matchesBreakpoint(breakpoint)) {
       matched = breakpoint;
-    } else {
-      break;
-    }
+    } else break;
   }
   return matched;
 }

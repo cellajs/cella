@@ -12,7 +12,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { UserMenuItem } from '~/modules/me/types';
 import { menuColumnsClass, menuHairlineClass } from '~/modules/navigation/menu-sheet/helpers/menu-columns';
 import { menuOrganizations } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { useOrganizationUnseenCounts } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { closeNavSheet, showMenuOrganization } from '~/modules/navigation/nav-sheet';
@@ -76,8 +76,7 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
 
   const openOrganizationPage = () => {
     if (!navigationStore.getState().keepNavOpen) closeNavSheet();
-    const { to, params, search } = getChannelRoute(organization);
-    navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
+    navigate({ ...getChannelRoute(organization), ...pageTopHashNav, resetScroll: false });
   };
 
   // The create dialog opens over the page, as a section's create button does, since a phone's menu would hide it

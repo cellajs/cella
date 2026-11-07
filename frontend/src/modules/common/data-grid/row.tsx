@@ -41,9 +41,7 @@ function Row<R, SR>({
     const column = viewportColumns[index];
     const { idx } = column;
     const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-    if (colSpan !== undefined) {
-      index += colSpan - 1;
-    }
+    if (colSpan !== undefined) index += colSpan - 1;
 
     const isCellSelected = selectedCellIdx === idx;
 

@@ -1,7 +1,7 @@
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggable-item';
-import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { MenuSheetNoItems } from '~/modules/navigation/menu-sheet/items-list';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 
@@ -25,13 +25,11 @@ export function MenuSheetItemsListEdit({ items, isArchived, options, prepareArch
   return filteredItems.map((item) => (
     <MenuSheetDraggableItem
       key={item.id}
+      {...{ item, options, prepareArchive }}
       siblings={filteredItems}
       listItems={items}
-      item={item}
       isSubitem={isSubmenu}
-      options={options}
       isArriving={isShown}
-      prepareArchive={prepareArchive}
     />
   ));
 }

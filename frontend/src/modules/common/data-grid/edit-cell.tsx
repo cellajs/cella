@@ -29,9 +29,7 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
   function onClose(commitChanges = false, shouldFocusCell = true) {
     if (commitChanges) {
       onRowChange(row, true, shouldFocusCell);
-    } else {
-      closeEditor(shouldFocusCell);
-    }
+    } else closeEditor(shouldFocusCell);
   }
 
   // useEffectEvent keeps the useLayoutEffect from tearing down between renders, which would drop valid mousedowns.
@@ -66,15 +64,11 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
           .postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal })
           // ignore abort errors
           .catch(() => {});
-      } else {
-        frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
-      }
+      } else frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
     }
 
     function onWindowMouseDown(event: MouseEvent) {
-      if (captureEventRef.current === event) {
-        commitOnOutsideMouseDown();
-      }
+      if (captureEventRef.current === event) commitOnOutsideMouseDown();
     }
 
     addEventListener('mousedown', onWindowCaptureMouseDown, { capture: true });
@@ -110,9 +104,7 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
       onClose();
     } else if (event.key === 'Enter') {
       onClose(true);
-    } else if (onEditorNavigation(event)) {
-      navigate(event);
-    }
+    } else if (onEditorNavigation(event)) navigate(event);
   }
 
   function onEditorRowChange(row: R, commitChangesAndFocus = false) {

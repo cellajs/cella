@@ -52,9 +52,7 @@ export type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOpti
 
 export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
   if (event.target instanceof HTMLElement) {
-    if (triggerOnContentEditable) {
-      return !tagsToIgnore.includes(event.target.tagName);
-    }
+    if (triggerOnContentEditable) return !tagsToIgnore.includes(event.target.tagName);
     return !event.target.isContentEditable && !tagsToIgnore.includes(event.target.tagName);
   }
   return true;

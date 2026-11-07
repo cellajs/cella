@@ -84,6 +84,4 @@ export function reportCriticalError(name: string, error: unknown, attributes: Cl
   span.end();
 }
 
-if (isDebugMode) {
-  console.debug('[tracing] Frontend OTel tracing initialized');
-}
+if (isDebugMode) console.debug('[tracing] Frontend OTel tracing initialized');

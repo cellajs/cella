@@ -11,11 +11,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { getHasNavigated } from '~/utils/nav-transition';
 
-type PageAsideItem = Omit<PlacementDescriptor, 'label'> &
-  TabLabel & {
-    icon?: IconComponent;
-    className?: string;
-  };
+type PageAsideItem = Omit<PlacementDescriptor, 'label'> & TabLabel & { icon?: IconComponent; className?: string };
 
 interface PageAsideProps<T> {
   tabs: readonly T[];

@@ -7,8 +7,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { canMute } from '~/modules/navigation/menu-sheet/helpers/can-mute';
-import { isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/is-submenu-shown';
+import { canMute, isSubmenuShown } from '~/modules/navigation/menu-sheet/helpers/menu-rows';
 import { useMenuItemUnseenCount } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
 import { SubmenuConnector } from '~/modules/navigation/menu-sheet/submenu-connector';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
@@ -35,9 +34,6 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
   const hasSubmenu = isSubmenuShown(item);
   const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
 
-  // A parent's page holds no place for an archived sub-row, so it opens its own
-  const { to, params, search } = getChannelRoute(item, isSubitem && !item.membership.archived);
-
   return (
     <Link
       disabled={!canAccess}
@@ -49,9 +45,8 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
       data-subitem={isSubitem}
       aria-label={item.name}
       draggable={false}
-      to={to}
-      params={params}
-      search={search}
+      // A parent's page holds no place for an archived sub-row, so it opens its own
+      {...getChannelRoute(item, isSubitem && !item.membership.archived)}
       {...pageTopHashNav}
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}

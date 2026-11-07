@@ -35,9 +35,7 @@ let boundUserId: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
 /** The user whose database to bind; null while signed out. */
-function resolveLocalUserId(): string | null {
-  return userStore.getState().user?.id || null;
-}
+const resolveLocalUserId = (): string | null => userStore.getState().user?.id || null;
 
 /** The signed-in user id in a value the user store persisted; `null` when signed out, removed or unreadable. */
 function storedUserId(value: string | null): string | null {
@@ -94,9 +92,7 @@ function reconcileLocalUser(): void {
 }
 
 /** Resolves once `localUserDb` is open for the current user, all local user stores have rehydrated and the query cache is restored from it. */
-export function localUserStorageReady(): Promise<void> {
-  return readyPromise;
-}
+export const localUserStorageReady = (): Promise<void> => readyPromise;
 
 userStore.subscribe(reconcileLocalUser);
 reconcileLocalUser();

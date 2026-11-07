@@ -46,15 +46,9 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView }: O
 
       <SearchScope q={search.q}>
         <BaseEntityGrid
+          {...{ entities, isLoading, isFetching, error, hasNextPage, fetchMore, isFiltered }}
           label="c:organization"
           renderTile={(entity) => <ChannelTile entity={entity} hideOwnRole={ofAnotherUser} />}
-          entities={entities}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          error={error}
-          hasNextPage={hasNextPage}
-          fetchMore={fetchMore}
-          isFiltered={isFiltered}
           onResetFilters={() => setSearch({ q: '' })}
           queryKey={queryOptions.queryKey}
         />

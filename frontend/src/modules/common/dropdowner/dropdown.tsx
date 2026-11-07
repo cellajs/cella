@@ -74,9 +74,7 @@ export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
     if (!trigger) return;
 
     const observer = new MutationObserver(() => {
-      if (!document.body.contains(trigger)) {
-        dropdowner.getState().remove();
-      }
+      if (!document.body.contains(trigger)) dropdowner.getState().remove();
     });
 
     observer.observe(document.body, { childList: true, subtree: true });

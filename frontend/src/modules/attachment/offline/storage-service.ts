@@ -66,9 +66,7 @@ class AttachmentStorageService {
 
     for (const candidate of chain) {
       const blob = await this.getBlob(makeBlobKey(attachmentId, candidate));
-      if (blob) {
-        return { blob, actualVariant: candidate };
-      }
+      if (blob) return { blob, actualVariant: candidate };
     }
     return null;
   }
@@ -191,9 +189,7 @@ class AttachmentStorageService {
     uploadStatus: UploadStatus = 'pending',
     uploadContext?: UploadContext,
   ): Promise<AttachmentBlob> {
-    if (!file.data || !(file.data instanceof Blob)) {
-      throw new Error('File data must be a Blob');
-    }
+    if (!file.data || !(file.data instanceof Blob)) throw new Error('File data must be a Blob');
 
     const blob = file.data;
     const size = file.size ?? blob.size;

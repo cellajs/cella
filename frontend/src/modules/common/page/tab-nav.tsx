@@ -1,5 +1,4 @@
-import type { AnyRoute } from '@tanstack/react-router';
-import { Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
+import { type AnyRoute, Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -35,14 +34,10 @@ type DeclaredTab = Extract<PageTab, { label: TKey }>;
 // Cast: generated FileRoutesById is a closed interface without index signature
 const getRoutesById = () => getRouter().routesById as unknown as Record<string, AnyRoute>;
 
-function getChildRoutes(route: AnyRoute): AnyRoute[] {
-  return Array.isArray(route.children) ? route.children : [];
-}
+const getChildRoutes = (route: AnyRoute): AnyRoute[] => (Array.isArray(route.children) ? route.children : []);
 
 /** The tabs slot a parent route binds its bar to; every tabbed surface declares one. */
-function getTabsSlot(parentRouteId: string): Slot | undefined {
-  return getRoutesById()[parentRouteId]?.options?.staticData?.tabsSlot;
-}
+const getTabsSlot = (parentRouteId: string): Slot | undefined => getRoutesById()[parentRouteId]?.options?.staticData?.tabsSlot;
 
 /** The layout route whose bar shows `slot`'s tabs. */
 function getTabsRouteId(slot: Slot): string | undefined {
@@ -67,9 +62,8 @@ export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab[
 const toolParam = (params: unknown) => (params as { tool?: string } | undefined)?.tool;
 
 /** The candidate a location shows: registry tabs match on the `$tool` param, route tabs on the route path. */
-function findActiveTab(candidates: NavCandidate[], toolId: string | undefined, fullPath: string | undefined) {
-  return toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === fullPath);
-}
+const findActiveTab = (candidates: NavCandidate[], toolId: string | undefined, fullPath: string | undefined) =>
+  toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === fullPath);
 
 /**
  * Startup check, once the router exists so route tabs count: a layout whose child routes declare `navTab` but which names
@@ -165,9 +159,8 @@ export function resolveChannelTabs(
  * First visible tab path under a parent route: the default-tab redirect target for layout routes.
  * @public
  */
-export function defaultNavTabPath(parentRouteId: string, options?: ResolvePlacementOptions): string | undefined {
-  return resolveNavTabs(parentRouteId, options)[0]?.path;
-}
+export const defaultNavTabPath = (parentRouteId: string, options?: ResolvePlacementOptions): string | undefined =>
+  resolveNavTabs(parentRouteId, options)[0]?.path;
 
 /**
  * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, and a tab that

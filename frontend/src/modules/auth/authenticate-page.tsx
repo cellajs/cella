@@ -80,9 +80,7 @@ export function AuthenticatePage() {
 
     // An invitation pins the flow to its own step, unless the visitor chose to answer it with another account.
     if (!tokenData?.email || inviteOtherAccount) {
-      if (restrictedMode && step === 'checkEmail') {
-        setStep('signIn', '');
-      }
+      if (restrictedMode && step === 'checkEmail') setStep('signIn', '');
       return;
     }
     setStep('invitation', tokenData.email);
@@ -112,9 +110,7 @@ export function AuthenticatePage() {
   }
 
   // Signed in and holding a membership invitation: the confirm step accepts it as this account.
-  if (signedInUser && tokenData?.inactiveMembershipId) {
-    return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
-  }
+  if (signedInUser && tokenData?.inactiveMembershipId) return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
 
   // The steps that sign in or up; the invitation step lays out its own ways in.
   const isSigningIn = ['checkEmail', 'signIn', 'signUp'].includes(step);

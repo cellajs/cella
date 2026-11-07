@@ -68,10 +68,7 @@ export function AppNav() {
     const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
 
     // On desktop the menu button turns a sheet of one organization into the full menu; on mobile it holds the switcher
-    if (id === navSheetOpen && (isMobile || !navigationStore.getState().navSheetOrganizationId)) {
-      closeNavSheet();
-      return;
-    }
+    if (id === navSheetOpen && (isMobile || !navigationStore.getState().navSheetOrganizationId)) return closeNavSheet();
 
     const navItem: NavItem = navItems.find((item) => item.id === id)!;
 

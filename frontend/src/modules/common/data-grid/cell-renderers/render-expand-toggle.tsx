@@ -71,9 +71,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   const yMid = H / 2;
 
   // Continuous depth-1 trunk through deeper rows so depth-1 siblings stay connected.
-  if (g.parentTrunkContinues) {
-    paths.push({ d: `M ${solidX} 0 V ${H}`, thin: false });
-  }
+  if (g.parentTrunkContinues) paths.push({ d: `M ${solidX} 0 V ${H}`, thin: false });
 
   if (g.showLineAbove) {
     if (g.hasChildren) {
@@ -96,9 +94,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   }
 
   // Lower-half solid trunk on an expanded parent with children on the thin track, keeping the depth-1 line continuous to the next sibling.
-  if (g.solidTrunkBelow) {
-    paths.push({ d: elbowBelowPath(cx, solidX, H), thin: false });
-  }
+  if (g.solidTrunkBelow) paths.push({ d: elbowBelowPath(cx, solidX, H), thin: false });
 
   return paths;
 }

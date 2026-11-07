@@ -5,11 +5,23 @@ import { useTranslation } from 'react-i18next';
 import { CountBadge } from '~/modules/common/count-badge';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
-import { widenMotion } from '~/modules/navigation/menu-sheet/helpers/widen-motion';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
+
+/**
+ * Enter, exit and timing props for the icon buttons that appear beside a menu sheet section toggle once the section
+ * opens. Like `collapseMotion`, they run on a toggle only, so width and margin lay out on every screen size.
+ */
+const closed = { width: 0, marginLeft: 0, opacity: 0 };
+
+const widenMotion = {
+  initial: closed,
+  animate: { width: '2.5rem', marginLeft: '0.5rem', opacity: 1 },
+  exit: closed,
+  transition: { bounce: 0, duration: 0.2 },
+};
 
 interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;

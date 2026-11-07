@@ -6,9 +6,7 @@ export function markBundleStale(): void {
 }
 
 /** Whether this bundle is behind another tab and must stop persisting. */
-export function isBundleStale(): boolean {
-  return staleBundle;
-}
+export const isBundleStale = (): boolean => staleBundle;
 
 /** Test-only: clears the sticky stale flag between tests. */
 export function resetBundleStale(): void {

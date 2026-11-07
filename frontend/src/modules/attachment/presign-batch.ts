@@ -61,9 +61,7 @@ async function sendChunk(requests: PendingRequest[]) {
         request.resolve(url);
       } else if (rejected.has(request.attachmentId)) {
         request.reject(new PresignRejectedError(request.attachmentId));
-      } else {
-        request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
-      }
+      } else request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
     }
   } catch (error) {
     // Transport failure (offline, 401, rate limit): transient, unlike PresignRejectedError.

@@ -62,9 +62,7 @@ const sortResult = ({ outcomes, rejected, unsent, unparsed, held, role, entityTy
     } else if (outcome.role && role && entityType && hierarchy.outranks(entityType, role, outcome.role)) {
       // Asked for a higher role than a member holds: an invite never changes a role, so say which one stays.
       notSent.push({ id, tone, word, note: lowercaseLabel(t('c:invite_state_keeps_role', { role: t(`c:${outcome.role}`) })) });
-    } else {
-      notSent.push({ id, tone, word, note });
-    }
+    } else notSent.push({ id, tone, word, note });
   }
 
   return { notSent, invited, reminded, added };

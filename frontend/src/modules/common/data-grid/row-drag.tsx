@@ -53,16 +53,12 @@ function setRowDropEdge(rowEl: HTMLElement, zone: DropZone | null, prevRowElRef:
   }
 
   const prev = prevRowElRef.current;
-  if (prev && prev !== targetEl) {
-    prev.removeAttribute('data-drop-edge');
-  }
+  if (prev && prev !== targetEl) prev.removeAttribute('data-drop-edge');
   if (!targetEl) {
     prevRowElRef.current = null;
     return;
   }
-  if (targetEl.getAttribute('data-drop-edge') !== attrValue) {
-    targetEl.setAttribute('data-drop-edge', attrValue!);
-  }
+  if (targetEl.getAttribute('data-drop-edge') !== attrValue) targetEl.setAttribute('data-drop-edge', attrValue!);
   prevRowElRef.current = targetEl;
 }
 

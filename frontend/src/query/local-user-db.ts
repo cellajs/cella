@@ -154,9 +154,7 @@ export class LocalUserDatabase extends Dexie {
 }
 
 /** The currently bound per-user DB, or `null` while signed out. */
-export function getLocalUserDb(): LocalUserDatabase | null {
-  return currentDb;
-}
+export const getLocalUserDb = (): LocalUserDatabase | null => currentDb;
 
 /** Open (or reuse) the per-user DB for `userId`. Idempotent per user; closes another user's. */
 export function bindLocalUserDb(userId: string): LocalUserDatabase {

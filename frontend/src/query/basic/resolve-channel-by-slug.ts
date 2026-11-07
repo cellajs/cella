@@ -1,5 +1,4 @@
-import type { DefaultError, FetchQueryOptions, QueryKey } from '@tanstack/react-query';
-import { onlineManager } from '@tanstack/react-query';
+import { type DefaultError, type FetchQueryOptions, onlineManager, type QueryKey } from '@tanstack/react-query';
 import { writeKeepingMark } from '~/query/basic/cache-mutations';
 import { queryClient } from '~/query/query-client';
 import { redirectOnMissing } from '~/utils/redirect-on-missing';
@@ -11,7 +10,6 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   tenantId: string;
   /** Looks up a cached entity by id or slug (list cache), scoped to tenant. */
   findInCache: (idOrSlug: string, tenantId: string) => T | undefined;
-  /** Detail query options for the entity, keyed by id. */
   detailQueryOptions: (id: string) => FetchQueryOptions<T, DefaultError, T, TQueryKey>;
   /** Fetches the entity by slug when it isn't resolvable from cache. */
   fetchBySlug: () => Promise<T>;

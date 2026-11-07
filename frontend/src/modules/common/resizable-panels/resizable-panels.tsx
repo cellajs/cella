@@ -51,10 +51,7 @@ function clearCursorOverride() {
   }
 }
 
-/**
- * The ideal width of an expanded panel, as a factor of its `minWidth` (G6).
- * @public
- */
+/** The ideal width of an expanded panel, as a factor of its `minWidth` (G6). @public */
 export const idealWidthFactor = 1.25;
 
 /** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
@@ -375,9 +372,7 @@ export function ResizablePanelGroup({
       if (!isCollapsed(panel)) {
         chosenRef.current[panel.id] = widthOf(panel);
         autoCollapsedRef.current = autoCollapsedRef.current.filter((id) => id !== panel.id);
-      } else if (!autoCollapsedRef.current.includes(panel.id)) {
-        closeChosen(panel);
-      }
+      } else if (!autoCollapsedRef.current.includes(panel.id)) closeChosen(panel);
     }
   };
 
@@ -432,11 +427,7 @@ export function ResizablePanelGroup({
     applyWidths();
   };
 
-  const getWidths = (): Record<string, number> => {
-    const result: Record<string, number> = {};
-    for (const panel of panelsRef.current) result[panel.id] = widthOf(panel);
-    return result;
-  };
+  const getWidths = (): Record<string, number> => Object.fromEntries(panelsRef.current.map((panel) => [panel.id, widthOf(panel)]));
 
   // Mode detection (G6). Measures the parent: updateContainerWidth() can set min-width on the container.
   const computeAutoFill = () => {
@@ -692,17 +683,11 @@ export function ResizablePanelGroup({
     return separatorSpace;
   };
 
-  const getPanelSum = () => {
-    let sum = 0;
-    for (const panel of panelsRef.current) sum += widthOf(panel);
-    return sum;
-  };
+  const getPanelSum = () => panelsRef.current.reduce((sum, panel) => sum + widthOf(panel), 0);
 
   const getIdealPanelSum = () => {
-    let sum = 0;
     const factor = fitRef.current ? 1 : idealWidthFactor;
-    for (const panel of panelsRef.current) sum += isCollapsed(panel) ? panel.collapsedWidth : panel.minWidth * factor;
-    return sum;
+    return panelsRef.current.reduce((sum, panel) => sum + (isCollapsed(panel) ? panel.collapsedWidth : panel.minWidth * factor), 0);
   };
 
   const updateContainerWidth = () => {
@@ -932,6 +917,14 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
 
 const keyboardStep = 20;
 
+const separatorKeys: Record<string, (context: PanelGroupContextValue, index: number) => void> = {
+  ArrowLeft: (context, index) => context.applyKeyboardStep(index, -keyboardStep),
+  ArrowRight: (context, index) => context.applyKeyboardStep(index, keyboardStep),
+  Home: (context, index) => context.applyKeyboardStep(index, -keyboardStep, true),
+  End: (context, index) => context.applyKeyboardStep(index, keyboardStep, true),
+  Enter: (context, index) => context.toggleCollapseAtSeparator(index),
+};
+
 interface ResizableSeparatorProps {
   /** 0-based among the separators: separator i sits between panels i and i + 1 */
   index: number;
@@ -962,29 +955,10 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
-    if (!context) return;
-    switch (event.key) {
-      case 'ArrowLeft':
-        event.preventDefault();
-        context.applyKeyboardStep(index, -keyboardStep);
-        break;
-      case 'ArrowRight':
-        event.preventDefault();
-        context.applyKeyboardStep(index, keyboardStep);
-        break;
-      case 'Home':
-        event.preventDefault();
-        context.applyKeyboardStep(index, -keyboardStep, true);
-        break;
-      case 'End':
-        event.preventDefault();
-        context.applyKeyboardStep(index, keyboardStep, true);
-        break;
-      case 'Enter':
-        event.preventDefault();
-        context.toggleCollapseAtSeparator(index);
-        break;
-    }
+    const action = separatorKeys[event.key];
+    if (!context || !action) return;
+    event.preventDefault();
+    action(context, index);
   };
 
   return (

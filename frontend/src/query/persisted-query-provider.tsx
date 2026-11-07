@@ -27,9 +27,8 @@ function warnMutationsWithoutDefaults(): void {
     .getAll()
     .filter((mutation) => mutation.state.isPaused && !mutation.options.mutationFn)
     .map((mutation) => mutation.options.mutationKey);
-  if (keys.length > 0) {
-    console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
-  }
+  if (keys.length === 0) return;
+  console.warn('[QueryPersister] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
 }
 
 const unsubscribeEnrichment = initChannelEnrichment();

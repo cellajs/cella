@@ -33,7 +33,6 @@ function useCachedDetail({ entityType, id }: EnrichedChannel) {
   );
 }
 
-/** Opens a channel's pending invitations in a sheet. */
 export function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef: TriggerRef) {
   sheeter.getState().create(
     <div className="container">

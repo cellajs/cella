@@ -16,9 +16,7 @@ function createHLC(): string {
   if (now > lastTimestamp) {
     lastTimestamp = now;
     lastCounter = 0;
-  } else {
-    lastCounter++;
-  }
+  } else lastCounter++;
   return `${lastTimestamp}:${String(lastCounter).padStart(4, '0')}:${sourceHash}`;
 }
 

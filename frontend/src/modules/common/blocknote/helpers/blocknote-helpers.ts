@@ -7,9 +7,7 @@ import type { AnyBlockNoteEditor, CustomBlock } from '~/modules/common/blocknote
 // Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
 export const getHeadlessEditor = () => {
-  if (!headlessEditor) {
-    headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
-  }
+  if (!headlessEditor) headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
   return headlessEditor;
 };
 

@@ -16,25 +16,7 @@ interface SheeterSheetProps {
 }
 
 export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
-  const {
-    id,
-    modal,
-    side,
-    open,
-    triggerRef,
-    description,
-    title,
-    titleContent = title,
-    titleAside,
-    headerClassName,
-    className,
-    content,
-    closeSheetOnEsc = true,
-    disablePointerDismissal,
-    contentKey,
-    autoScrollOnDrag,
-    keepMounted,
-  } = sheet;
+  const { id, modal, title, titleContent = title, description, closeSheetOnEsc = true } = sheet;
 
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -51,11 +33,7 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
   };
 
   const handleOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
-    if (eventDetails.reason === 'escape-key') {
-      if (!closeSheetOnEsc || isHoverContentOpen()) return;
-      closeSheet();
-      return;
-    }
+    if (eventDetails.reason === 'escape-key' && (!closeSheetOnEsc || isHoverContentOpen())) return;
 
     if (eventDetails.reason === 'outside-press') {
       // An outside press on a dropdown or dialog must not close the sheet, the uploader's dialog included: it isn't in the dialoger
@@ -73,32 +51,32 @@ export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
 
   return (
     <Sheet
-      open={open}
+      open={sheet.open}
       onOpenChange={handleOpenChange}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
       modal={isPinned ? false : modal}
       // Also what stops a non-modal popup from closing when focus leaves it
-      disablePointerDismissal={isPinned || disablePointerDismissal}
+      disablePointerDismissal={isPinned || sheet.disablePointerDismissal}
     >
       <SheetContent
         ref={popupRef}
         id={String(id)}
-        side={side}
+        side={sheet.side}
         overlay={modal === true}
-        className={cn('items-start', className)}
+        className={cn('items-start', sheet.className)}
         initialFocus={() => touchInitialFocus(popupRef)}
-        finalFocus={() => finalFocusFor(triggerRef, String(id))}
-        autoScrollOnDrag={autoScrollOnDrag}
-        keepMounted={keepMounted}
+        finalFocus={() => finalFocusFor(sheet.triggerRef, String(id))}
+        autoScrollOnDrag={sheet.autoScrollOnDrag}
+        keepMounted={sheet.keepMounted}
       >
         {title && (
-          <SheetHeader sticky className={headerClassName}>
+          <SheetHeader sticky className={sheet.headerClassName}>
             <SheetTitle className="h-6 min-w-0 truncate leading-6">{titleContent}</SheetTitle>
-            {titleAside}
+            {sheet.titleAside}
           </SheetHeader>
         )}
         {description && <SheetDescription className="px-4 pb-4">{description}</SheetDescription>}
-        <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
+        <ContentKeyTransition contentKey={sheet.contentKey}>{sheet.content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>
   );

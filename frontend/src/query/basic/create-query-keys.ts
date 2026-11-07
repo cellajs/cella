@@ -17,23 +17,20 @@ type StandardEntityKeys<TFilters extends object> = {
 };
 
 /** Identifies default-filter views eligible for the live canonical home list. Not valid when a feed's default response carries implicit server filters absent from range-fetched rows. */
-export function isDefaultListView(filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean {
-  return Object.entries(filters).every(([key, value]) => value === undefined || value === '' || value === defaults[key]);
-}
+export const isDefaultListView = (filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean =>
+  Object.entries(filters).every(([key, value]) => value === undefined || value === '' || value === defaults[key]);
 
 /** Prefix-matchable keys with one canonical list per effective home channel. Live sync splices that list; cross-home and server-filtered lists use filtered keys and invalidate. */
-export function createEntityKeys<TFilters extends object>(entityType: EntityType): StandardEntityKeys<TFilters> {
-  return {
-    all: [entityType],
-    list: {
-      base: [entityType, 'list'],
-      org: (organizationId: string) => [entityType, 'list', organizationId],
-      filtered: (filters: TFilters) => [entityType, 'list', filters],
-      home: (organizationId: string, homeChannelId?: string) => [entityType, 'list', organizationId, homeChannelId ?? organizationId],
-    },
-    detail: { base: [entityType, 'detail'], byId: (id: string) => [entityType, 'detail', id] },
-    create: [entityType, 'create'],
-    update: [entityType, 'update'],
-    delete: [entityType, 'delete'],
-  };
-}
+export const createEntityKeys = <TFilters extends object>(entityType: EntityType): StandardEntityKeys<TFilters> => ({
+  all: [entityType],
+  list: {
+    base: [entityType, 'list'],
+    org: (organizationId: string) => [entityType, 'list', organizationId],
+    filtered: (filters: TFilters) => [entityType, 'list', filters],
+    home: (organizationId: string, homeChannelId?: string) => [entityType, 'list', organizationId, homeChannelId ?? organizationId],
+  },
+  detail: { base: [entityType, 'detail'], byId: (id: string) => [entityType, 'detail', id] },
+  create: [entityType, 'create'],
+  update: [entityType, 'update'],
+  delete: [entityType, 'delete'],
+});

@@ -4,14 +4,13 @@ import { getMenuSection } from '~/lib/entity-modules';
 import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { Spinner } from '~/modules/common/spinner';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { menuOrganizations, pickMenuOrganization } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
+import { menuOrganizations, pickMenuOrganization, useRouteOrganizationId } from '~/modules/navigation/menu-sheet/helpers/menu-organizations';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { MenuSheetOrganization } from '~/modules/navigation/menu-sheet/organization-menu';
 import { OrganizationSwitcher } from '~/modules/navigation/menu-sheet/organization-switcher';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useRouteOrganizationId } from '~/modules/navigation/use-route-organization-id';
 import { useUserStore } from '~/modules/user/user-store';
 
 const { navBar, menu: menuMode } = appConfig.navigation;

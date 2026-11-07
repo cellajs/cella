@@ -52,9 +52,7 @@ const renderableBlocks = (nodes: unknown, ctx: MediaRefContext): CustomBlock[] =
     ? nodes.flatMap((node) => {
         if (!isDocumentNode(node)) return [];
         const children = renderableBlocks(childNodes(node), ctx);
-        if (typeof node.type !== 'string' || !isSchemaBlockType(node.type) || isRefusedMediaBlock(node, ctx)) {
-          return children;
-        }
+        if (typeof node.type !== 'string' || !isSchemaBlockType(node.type) || isRefusedMediaBlock(node, ctx)) return children;
         // A node of a schema type keeps its own shape; BlockNote reads it as the block it names.
         return [{ ...node, children } as CustomBlock];
       })

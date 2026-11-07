@@ -2,8 +2,8 @@ import { hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
 /** True when an active list query carries the announced channel id. Prefetched queries have no observers and do not count as viewed. */
-export function isObservedChannel(channelId: string): boolean {
-  return queryClient
+export const isObservedChannel = (channelId: string): boolean =>
+  queryClient
     .getQueryCache()
     .findAll({ type: 'active' })
     .some((query) => {
@@ -11,7 +11,6 @@ export function isObservedChannel(channelId: string): boolean {
       if (kind !== 'list' || !hasEntityQueryKeys(entityType)) return false;
       return keyCarriesChannelId(query.queryKey, channelId);
     });
-}
 
 /** True when any segment past [entity, 'list'] is the id itself (scope key) or a filter object holding it. */
 function keyCarriesChannelId(queryKey: readonly unknown[], channelId: string): boolean {

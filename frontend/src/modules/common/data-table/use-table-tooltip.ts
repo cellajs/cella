@@ -79,11 +79,8 @@ export function useTableTooltip(gridElement: HTMLDivElement | null) {
 
       // Show instantly while one is already up, or shortly after one hid (pass-over across gaps).
       const skipDelay = shownCell !== null || Date.now() - lastHiddenAt < skipDelayWindow;
-      if (skipDelay) {
-        showTooltip(cell);
-      } else {
-        showTimeout = window.setTimeout(() => showTooltip(cell), showDelay);
-      }
+      if (skipDelay) showTooltip(cell);
+      else showTimeout = window.setTimeout(() => showTooltip(cell), showDelay);
     };
 
     const handleFocus = (event: FocusEvent) => {

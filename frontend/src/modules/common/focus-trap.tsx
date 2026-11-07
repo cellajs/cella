@@ -56,9 +56,7 @@ export function FocusTrap({ children, active = true, initialFocus = false, retur
     const trap = trapRef.current;
     if (!trap) return;
 
-    if (returnFocus && document.activeElement instanceof HTMLElement) {
-      previousFocusRef.current = document.activeElement;
-    }
+    if (returnFocus && document.activeElement instanceof HTMLElement) previousFocusRef.current = document.activeElement;
 
     if (initialFocus) {
       queueMicrotask(() => {

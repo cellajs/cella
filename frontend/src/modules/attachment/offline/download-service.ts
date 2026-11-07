@@ -79,9 +79,7 @@ class AttachmentDownloadService {
       if (!matchQuery({ queryKey: attachmentQueryKeys.list.base }, event.query)) return;
 
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
-      if (attachments.length > 0) {
-        this.queueForDownload(attachments);
-      }
+      if (attachments.length > 0) this.queueForDownload(attachments);
     });
 
     this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
@@ -186,9 +184,7 @@ class AttachmentDownloadService {
     await downloadQueue.enqueue(queueable, queueable[0].organizationId);
 
     // Call directly as well: enqueue may add no pending rows for the liveQuery to observe.
-    if (onlineManager.isOnline()) {
-      this.processQueueSoon();
-    }
+    if (onlineManager.isOnline()) this.processQueueSoon();
   }
 
   async processQueue(): Promise<void> {

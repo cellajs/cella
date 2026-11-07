@@ -23,6 +23,4 @@ export function setSyncWorkerAway(away: boolean): void {
  * StaleTime of the product queries the catchup pipeline covers, from the two flags the realtime stream sets: Infinity
  * while the stream is healthy and the server's worker reads, otherwise the 5 minute fallback.
  */
-export function syncStaleTime(): number {
-  return syncStreamHealthy && !syncWorkerAway ? syncTrustedStaleTime : syncFallbackStaleTime;
-}
+export const syncStaleTime = (): number => (syncStreamHealthy && !syncWorkerAway ? syncTrustedStaleTime : syncFallbackStaleTime);

@@ -86,9 +86,7 @@ function flattenMenuItems(menu: Record<string, UserMenuItem[]>): UserMenuItem[] 
     }
   }
 
-  for (const section of Object.values(menu)) {
-    collect(section);
-  }
+  for (const section of Object.values(menu)) collect(section);
 
   return items;
 }

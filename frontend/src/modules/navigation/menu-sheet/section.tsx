@@ -75,12 +75,8 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
       <MenuSheetSectionButton
-        items={items}
+        {...{ items, options, isEditing, isCollapsible, isSectionVisible }}
         channelIds={activeChannelIds}
-        options={options}
-        isEditing={isEditing}
-        isCollapsible={isCollapsible}
-        isSectionVisible={isSectionVisible}
         onToggleEditing={handleToggleEditing}
         onCreate={handleCreate}
       />

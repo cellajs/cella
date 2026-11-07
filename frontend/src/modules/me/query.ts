@@ -242,9 +242,7 @@ const applySettledInvitation = async (inactiveMembershipId: string | null, actio
       const results = oldData.results.filter((invite) => invite.inactiveMembership.id !== inactiveMembershipId);
       return { ...oldData, results, totalSize: oldData.totalSize - (oldData.results.length - results.length) };
     });
-  } else {
-    queryClient.invalidateQueries({ queryKey: meKeys.invites });
-  }
+  } else queryClient.invalidateQueries({ queryKey: meKeys.invites });
 
   toaster.success(t(action === 'accept' ? 'c:success.accept_invitation' : 'c:success.reject_invitation'));
 };

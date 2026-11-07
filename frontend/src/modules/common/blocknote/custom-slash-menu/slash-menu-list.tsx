@@ -41,9 +41,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
 
     if (itemTop < scrollTop) {
       menuContainer.scrollTop = itemTop;
-    } else if (itemBottom > scrollBottom) {
-      menuContainer.scrollTop = itemBottom - menuContainer.clientHeight;
-    }
+    } else if (itemBottom > scrollBottom) menuContainer.scrollTop = itemBottom - menuContainer.clientHeight;
   }, [selectedIndex]);
 
   return (

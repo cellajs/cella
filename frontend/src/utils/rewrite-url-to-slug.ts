@@ -16,7 +16,5 @@ export const rewriteUrlToSlug = <T extends Record<string, string>>(params: T, sl
     }
   }
 
-  if (hasChanges) {
-    throw redirect({ to: '.', params: newParams, search: true, hash: true, replace: true });
-  }
+  if (hasChanges) throw redirect({ to: '.', params: newParams, search: true, hash: true, replace: true });
 };

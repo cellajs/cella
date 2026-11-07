@@ -72,9 +72,7 @@ export function useColumnWidths<R, SR>(
 
       if (onColumnResize) {
         const newWidth = measureColumnWidth(gridRef, column.key);
-        if (newWidth !== undefined) {
-          onColumnResize(column, newWidth);
-        }
+        if (newWidth !== undefined) onColumnResize(column, newWidth);
       }
       return;
     }
@@ -100,9 +98,7 @@ export function useColumnWidths<R, SR>(
     const newColumnWidths = new Map(columnWidths);
     for (const col of columns) {
       const w = redistributed.get(col.key);
-      if (w !== undefined) {
-        newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
-      }
+      if (w !== undefined) newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
     }
 
     flushSync(() => {
@@ -143,15 +139,11 @@ function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: nu
 
   if (delta > 0) {
     shrinkColumns(rightCols, newWidths, delta);
-  } else if (delta < 0) {
-    growColumns(rightCols, newWidths, -delta);
-  }
+  } else if (delta < 0) growColumns(rightCols, newWidths, -delta);
 
   if (overflow > 0 && leftCols.length > 0) {
     const actualShrunk = shrinkColumns(leftCols, newWidths, overflow);
-    if (actualShrunk > 0) {
-      growColumns(rightCols, newWidths, actualShrunk);
-    }
+    if (actualShrunk > 0) growColumns(rightCols, newWidths, actualShrunk);
   }
 
   return newWidths;

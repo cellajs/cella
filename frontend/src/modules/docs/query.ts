@@ -15,9 +15,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(versionedUrl(url));
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   const contentType = response.headers.get('content-type');
-  if (!contentType?.includes('application/json')) {
-    throw new Error(`Expected JSON from ${url} but got ${contentType}`);
-  }
+  if (!contentType?.includes('application/json')) throw new Error(`Expected JSON from ${url} but got ${contentType}`);
   return response.json() as Promise<T>;
 }
 

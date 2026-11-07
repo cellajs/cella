@@ -45,10 +45,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const languagesId = useId();
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: formResolver(formSchema),
-    defaultValues: organization,
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: organization };
 
   const formContainerId = 'update-organization';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
@@ -62,7 +59,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
     if (zone) form.setValue('timeZone', zone, { shouldDirty: true });
   };
 
-  const onSubmit = (body: FormValues) => {
+  const onSubmit = (body: FormValues) =>
     mutate(
       { path: { tenantId: organization.tenantId, organizationId: organization.id }, body },
       {
@@ -74,7 +71,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         },
       },
     );
-  };
 
   return (
     <Form {...form}>

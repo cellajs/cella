@@ -41,9 +41,7 @@ export function mergeServerResponse<T extends { id: string; entityType: ProductE
 
   const serverUpdates: Record<string, unknown> = {};
   const derivedFrom = (mutated: string) => (mutated === 'description' ? getYjsOwnedFields(serverEntity.entityType) : (derivedKeys[mutated] ?? []));
-  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap(derivedFrom)]) {
-    if (!skipKeys.includes(key)) serverUpdates[key] = serverRow[key];
-  }
+  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap(derivedFrom)]) if (!skipKeys.includes(key)) serverUpdates[key] = serverRow[key];
 
   return {
     ...cached,

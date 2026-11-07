@@ -15,9 +15,7 @@ export function invalidateChannelList(channelType: ChannelEntityType | null): vo
   if (channelType && hasEntityQueryKeys(channelType)) {
     // The `list` prefix covers every filtered list variant for this channel type.
     queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(channelType).list.base, refetchType: 'active' });
-  } else {
-    invalidateAllChannelDetails();
-  }
+  } else invalidateAllChannelDetails();
 }
 
 /** Member lists and pending invitation lists, of one organization or, without one, of all. */

@@ -42,9 +42,7 @@ export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: Upl
       if (!hasCloudUpload) localStatus = 'local-only';
     }
   } catch (error) {
-    if (!(error instanceof Error && error.message.includes('Failed to fetch'))) {
-      console.error('Failed to get upload token:', error);
-    }
+    if (!(error instanceof Error && error.message.includes('Failed to fetch'))) console.error('Failed to get upload token:', error);
   }
 
   // Others read a public image from the public bucket, so a copy on this device serves no one

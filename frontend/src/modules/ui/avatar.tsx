@@ -66,9 +66,7 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
     setCount?.(count);
   }, [count, setCount]);
 
-  if (!limit || count <= limit) {
-    return <>{childArray}</>;
-  }
+  if (!limit || count <= limit) return <>{childArray}</>;
 
   return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
 }

@@ -53,10 +53,7 @@ export async function reportNetworkFailure(): Promise<void> {
   }
 }
 
-/**
- * The API answered a request or sent a stream event. While the browser reports no network the answer may predate its
- * `offline` event, so it proves nothing.
- */
+/** The API answered or sent a stream event; while the browser reports no network the answer may predate its `offline` event and proves nothing. */
 export function reportReachable(): void {
   if (!navigator.onLine) return;
   reachableAt = Date.now();
@@ -77,10 +74,7 @@ function scheduleRecheck() {
   recheckTimer = setTimeout(recheckNow, delay);
 }
 
-/**
- * Probe once now and bring the app online if the API answers, else keep re-checking.
- * @returns Whether the API answered.
- */
+/** Probe once now and bring the app online if the API answers, else keep re-checking; resolves whether the API answered. */
 export async function recheckNow(): Promise<boolean> {
   clearRecheck();
   const reachable = await isReachable();

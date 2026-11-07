@@ -31,10 +31,7 @@ export function rowOutsideRange(rows: ItemData[], { afterSeq, untilSeq }: SeqRan
   });
 }
 
-/**
- * Fetches one sequence range for catchup, optionally narrowed to a subtree. `query` holds the range and the chunk size,
- * ready to spread into the product's list request.
- */
+/** Fetches one sequence range for catchup, optionally narrowed to a subtree; `query` holds the range and chunk size for the product's list request. */
 export type RangeFetch = (request: {
   organizationId: string;
   tenantId: string;
@@ -92,18 +89,12 @@ export function hasEntityQueryKeys(entityType: unknown): entityType is EntityTyp
   return registered.has(entityType);
 }
 
-export function getRegisteredEntityTypes(): EntityType[] {
-  return Array.from(entityQueryKeysRegistry.keys());
-}
+export const getRegisteredEntityTypes = (): EntityType[] => Array.from(entityQueryKeysRegistry.keys());
 
-export function getRegisteredProductEntityTypes(): ProductEntityType[] {
-  return getRegisteredEntityTypes().filter(isProduct);
-}
+export const getRegisteredProductEntityTypes = (): ProductEntityType[] => getRegisteredEntityTypes().filter(isProduct);
 
 /** Undefined when the entity type does not support range fetching. */
-export function getEntityRangeFetch(entityType: ProductEntityType): RangeFetch | undefined {
-  return rangeFetchRegistry.get(entityType);
-}
+export const getEntityRangeFetch = (entityType: ProductEntityType): RangeFetch | undefined => rangeFetchRegistry.get(entityType);
 
 /**
  * Declares list filter keys a row matches only when its field of the same name equals the filter value, as `itemId` on a `{ itemId }`
@@ -114,6 +105,4 @@ export function registerEqualityFilterKeys(entityType: EntityType, filterKeys: r
 }
 
 /** Undefined when the entity type declared no equality filter keys: every filtered list refetches on a new row. */
-export function getEqualityFilterKeys(entityType: ProductEntityType): readonly string[] | undefined {
-  return equalityFilterKeysRegistry.get(entityType);
-}
+export const getEqualityFilterKeys = (entityType: ProductEntityType): readonly string[] | undefined => equalityFilterKeysRegistry.get(entityType);

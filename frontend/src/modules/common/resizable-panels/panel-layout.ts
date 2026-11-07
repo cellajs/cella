@@ -131,15 +131,11 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
   const victimIndices: number[] = [];
   if (draggingLeft) {
     for (let i = separatorIndex; i >= 0; i--) victimIndices.push(i);
-  } else {
-    for (let i = separatorIndex + 1; i < panels.length; i++) victimIndices.push(i);
-  }
+  } else for (let i = separatorIndex + 1; i < panels.length; i++) victimIndices.push(i);
 
   let remaining = absDx;
   // Overflow mode funds the expand from trailing gap (O2); autoFill makes victims fund it.
-  if (expandCost > 0 && !autoFill) {
-    remaining -= expandCost;
-  }
+  if (expandCost > 0 && !autoFill) remaining -= expandCost;
 
   let totalFreed = 0;
   let collapseFreed = 0;
@@ -173,9 +169,7 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
       if (!victim.collapsible) continue;
 
       // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
-      if (autoFill && !mustFit && isExpandingFromCollapsed && victimIndex === directVictimIndex && totalFreed < expandCost) {
-        continue;
-      }
+      if (autoFill && !mustFit && isExpandingFromCollapsed && victimIndex === directVictimIndex && totalFreed < expandCost) continue;
 
       const rawWidth = victim.minWidth - remaining;
 

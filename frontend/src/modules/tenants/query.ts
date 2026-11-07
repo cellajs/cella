@@ -55,19 +55,13 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
     ...tokenPaging((pageToken, signal) =>
-      listTenants({
-        query: { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) },
-        signal,
-      }),
+      listTenants({ query: { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
     ),
     refetchOnMount: true,
   });
 };
 
-/**
- * Takes a demo for this browser and opens its organization: the server set a demo session, so the app reloads on
- * the organization's page with it.
- */
+/** Takes a demo for this browser and opens its organization: the server set a demo session, so the app reloads on the organization's page with it. */
 export const useCreateDemoMutation = () =>
   useMutation<Tenant, ApiError>({
     mutationKey: tenantQueryKeys.createDemo,

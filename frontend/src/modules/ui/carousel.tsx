@@ -39,9 +39,7 @@ const dragOutsideHold = (_api: unknown, event: MouseEvent | TouchEvent) => !(eve
 function useCarousel() {
   const context = React.useContext(CarouselContext);
 
-  if (!context) {
-    throw new Error('useCarousel must be used within a <Carousel />');
-  }
+  if (!context) throw new Error('useCarousel must be used within a <Carousel />');
 
   return context;
 }
