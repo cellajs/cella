@@ -240,8 +240,8 @@ function syncSubtype(data: unknown): number | null {
  * The provider's WebSocket, which counts the Step2 and Update frames it sends into the connection's ledger. y-websocket
  * creates one per connection attempt, so each new socket starts the ledger afresh.
  */
-function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
-  return class LedgerSocket extends WebSocket {
+const ledgerSocket = (ledger: SocketLedger): typeof WebSocket =>
+  class LedgerSocket extends WebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
       Object.assign(ledger, freshLedger);
@@ -259,12 +259,8 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
       }
     }
   };
-}
 
-/**
- * True once the relay holds every edit of the document: the socket is open, its handshake Step2 was saved, and so was
- * every frame after it.
- */
+/** True once the relay holds every edit of the document: the socket is open, its handshake Step2 was saved, and so was every frame after it. */
 function isSocketClean(provider: WebsocketProvider, ledger: SocketLedger) {
   if (!provider.wsconnected || provider.ws?.readyState !== WebSocket.OPEN || ledger.handshakeAt === 0) return false;
   return ledger.saved === ledger.sent;

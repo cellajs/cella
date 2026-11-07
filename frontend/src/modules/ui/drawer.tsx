@@ -1,7 +1,6 @@
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import { XIcon } from 'lucide-react';
-import type * as React from 'react';
-import { createContext, useRef } from 'react';
+import { type ComponentProps, createContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStuck } from '~/hooks/use-stuck';
 import { Button } from '~/modules/ui/button';
@@ -150,17 +149,17 @@ export function DrawerHeader({ className, sticky, closeButton, children, ...prop
   );
 }
 
-export function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
+export function DrawerFooter({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="drawer-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
 /** A list of `Button variant="row"` rows on the sheet itself, without a fill of its own. */
-export function DrawerRowGroup({ className, ...props }: React.ComponentProps<'div'>) {
+export function DrawerRowGroup({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="drawer-row-group" className={cn('flex flex-col', className)} {...props} />;
 }
 
 /** The hairline between two groups of rows that do different kinds of things. */
-export function DrawerRowSeparator({ className, ...props }: React.ComponentProps<'hr'>) {
+export function DrawerRowSeparator({ className, ...props }: ComponentProps<'hr'>) {
   return <hr data-slot="drawer-row-separator" className={cn('border-border my-1.5 shrink-0', className)} {...props} />;
 }
 
@@ -171,7 +170,7 @@ export const DrawerLeadContext = createContext(false);
  * The sentence above a drawer's rows that names what they act on, such as a `NamedText`: the sheet covers the row it came
  * from. A name in it wraps with the words before it, so it never moves to a line of its own.
  */
-export function DrawerLead({ className, ...props }: React.ComponentProps<'p'>) {
+export function DrawerLead({ className, ...props }: ComponentProps<'p'>) {
   return (
     <DrawerLeadContext.Provider value={true}>
       <p data-slot="drawer-lead" className={cn('py-3 text-center text-sm text-balance', className)} {...props} />

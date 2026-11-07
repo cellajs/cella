@@ -63,7 +63,7 @@ export function OperationsPage() {
       <ScrollReset>
         {/* No gap: the sticky box's sentinel keeps the bar at the table view's height */}
         <FocusViewContainer className="gap-0">
-          <OperationsBar operations={operations} total={total} search={{ q, filter }} setSearch={setSearch} sticky />
+          <OperationsBar {...{ operations, total, setSearch }} search={{ q, filter }} sticky />
 
           <SearchScope q={q}>
             {sections.length > 0 ? (

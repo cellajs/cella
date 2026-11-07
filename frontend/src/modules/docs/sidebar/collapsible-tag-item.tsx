@@ -112,19 +112,16 @@ function CollapsibleTagItemBase<T>({
   );
 }
 
-function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: CollapsibleTagItemProps<T>) {
-  return (
-    prev.type === next.type &&
-    prev.isActive === next.isActive &&
-    prev.isAtTag === next.isAtTag &&
-    prev.isOnRoute === next.isOnRoute &&
-    prev.isHidden === next.isHidden &&
-    prev.isExpanded === next.isExpanded &&
-    prev.activeItemIndex === next.activeItemIndex &&
-    prev.tag === next.tag &&
-    prev.items === next.items
-  );
-}
+const collapsibleTagItemEqual = <T,>(prev: CollapsibleTagItemProps<T>, next: CollapsibleTagItemProps<T>) =>
+  prev.type === next.type &&
+  prev.isActive === next.isActive &&
+  prev.isAtTag === next.isAtTag &&
+  prev.isOnRoute === next.isOnRoute &&
+  prev.isHidden === next.isHidden &&
+  prev.isExpanded === next.isExpanded &&
+  prev.activeItemIndex === next.activeItemIndex &&
+  prev.tag === next.tag &&
+  prev.items === next.items;
 
 // memo doesn't preserve generics, so we cast
 export const CollapsibleTagItem = memo(CollapsibleTagItemBase, collapsibleTagItemEqual) as typeof CollapsibleTagItemBase;

@@ -72,7 +72,6 @@ function collapseProgress(panel: PanelConfig, rawWidth: number): number {
   return (panel.minWidth - rawWidth) / (panel.minWidth - snapPoint);
 }
 
-// Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses.
 /** Shares `available` by `weights`: whoever a share would take below `minWidth` holds it, and the others share the rest exactly. */
 export function distributeWidths(panels: PanelConfig[], weights: Record<string, number>, available: number): Record<string, number> {
   const widths: Record<string, number> = {};
@@ -102,6 +101,7 @@ export function distributeWidths(panels: PanelConfig[], weights: Record<string, 
   return widths;
 }
 
+/** Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses. */
 export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number): LayoutResult {
   const { separatorIndex, initialWidths, collapsedAtStart, autoFill, mustFit } = drag;
   const widths = { ...initialWidths };
@@ -165,8 +165,7 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
     for (const victimIndex of victimIndices) {
       const victim = panels[victimIndex];
       if (!victim || remaining <= 0) break;
-      if (collapsedAtStart.has(victim.id)) continue;
-      if (!victim.collapsible) continue;
+      if (collapsedAtStart.has(victim.id) || !victim.collapsible) continue;
 
       // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
       if (autoFill && !mustFit && isExpandingFromCollapsed && victimIndex === directVictimIndex && totalFreed < expandCost) continue;
@@ -213,8 +212,7 @@ export function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number
 
     // F7: not funded yet, so the gate holds
     if (mustFit && isExpandingFromCollapsed && totalFreed + collapseFreed < expandCost) {
-      const side = draggingLeft ? 'left' : 'right';
-      hints.push({ panelId: grower.id, side, mode: 'expand', progress: 1, reach: 0 });
+      hints.push({ panelId: grower.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress: 1, reach: 0 });
       const neighbour = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
       if (neighbour && !hints.some((hint) => hint.panelId === neighbour.id)) {
         hints.push({ panelId: neighbour.id, side: draggingLeft ? 'right' : 'left', mode: 'cover', progress: 1, reach: expandCost });

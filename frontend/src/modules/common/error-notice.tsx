@@ -26,8 +26,8 @@ interface ErrorNoticeProps {
   homePath?: string;
 }
 
-function errorDetailRows(error: ApiError) {
-  return [
+const errorDetailRows = (error: ApiError) =>
+  [
     ['c:request_id', error.instance],
     // A server error carries the moment it was raised; one made in the browser shows the time it renders.
     ['c:timestamp', new Date(error.timestamp ?? Date.now()).toUTCString()],
@@ -40,7 +40,6 @@ function errorDetailRows(error: ApiError) {
     ['c:server_version', error.version?.slice(0, __APP_VERSION__.length)],
     ['c:app_version', __APP_VERSION__],
   ] as const;
-}
 
 /**
  * `boundary` names the layout still standing around the notice, and so what the notice brings itself: root (none:
@@ -138,9 +137,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                   {t('c:sign_in_with_your_institution')}
                 </Button>
               )}
-              {children ? (
-                children
-              ) : (
+              {children || (
                 <>
                   <Button onClick={handleGoToHome} variant="secondary">
                     <HouseIcon />

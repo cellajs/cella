@@ -39,9 +39,7 @@ export function AttachmentDialogHandler() {
       );
     });
 
-    return () => {
-      dialoger.getState().remove(attachmentUrlDialogId, { isCleanup: true });
-    };
+    return () => dialoger.getState().remove(attachmentUrlDialogId, { isCleanup: true });
   }, [isOpen, organizationId]);
 
   return null;

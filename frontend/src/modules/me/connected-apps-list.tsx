@@ -13,9 +13,7 @@ import { dateShort } from '~/utils/date-short';
 /** The OAuth consents of the current user: MCP clients and registered apps. */
 export function ConnectedAppsList() {
   const { t } = useTranslation();
-  const {
-    data: { results: items },
-  } = useSuspenseQuery(meConnectedAppsQueryOptions());
+  const items = useSuspenseQuery(meConnectedAppsQueryOptions()).data.results;
   const { mutate: revoke, isPending, variables } = useRevokeConnectedAppMutation();
 
   const handleRevoke = (id: string) => {

@@ -65,17 +65,12 @@ export function InputFormField<TFieldValues extends FieldValues>({
             <FormControl>
               <InputComponent
                 className={cn(icon && 'pl-10', inputClassName)}
-                placeholder={placeholder}
-                onFocus={onFocus}
+                {...{ placeholder, onFocus, readOnly, autoComplete, autoFocus, disabled }}
                 onBlur={() => {
                   fieldOnBlur();
                   onBlur?.();
                 }}
-                readOnly={readOnly}
-                autoComplete={autoComplete}
-                autoFocus={autoFocus}
                 value={formFieldValue || ''}
-                disabled={disabled}
                 {...(type === 'textarea' ? { autoResize: true } : { type })}
                 {...rest}
               />

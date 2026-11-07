@@ -2,10 +2,7 @@ import './style/data-grid.css';
 
 export * from './cell-renderers';
 export * from './columns';
-export {
-  DataGrid,
-  type DataGridProps,
-} from './data-grid';
+export { DataGrid, type DataGridProps } from './data-grid';
 export type {
   ActiveModes,
   CellMouseArgs,

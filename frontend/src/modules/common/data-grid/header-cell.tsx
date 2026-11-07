@@ -1,8 +1,7 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { dropTargetForElements, draggable as makeDraggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DropIndicator } from '~/modules/common/drop-indicator';
@@ -25,9 +24,7 @@ const resizeHandleClassname =
 const draggableColumnType = 'grid-column';
 type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
 
-function isColumnDragData(data: Record<string, unknown>): data is ColumnDragData {
-  return data.type === draggableColumnType;
-}
+const isColumnDragData = (data: Record<string, unknown>): data is ColumnDragData => data.type === draggableColumnType;
 
 interface HeaderCellProps<R, SR> {
   sortColumns?: Maybe<readonly SortColumn[]>;
@@ -88,13 +85,12 @@ export function HeaderCell<R, SR>({
       makeDraggable({
         element: el,
         getInitialData: (): ColumnDragData => ({ type: draggableColumnType, columnKey: column.key }),
-        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+        onGenerateDragPreview: ({ nativeSetDragImage }) =>
           setCustomNativeDragPreview({
             nativeSetDragImage,
             getOffset: () => ({ x: 16, y: 16 }),
             render: ({ container }) => setPreview({ container }),
-          });
-        },
+          }),
         onDragStart: () => setIsDragging(true),
         onDrop: () => {
           setIsDragging(false);
@@ -133,9 +129,8 @@ export function HeaderCell<R, SR>({
       }
       if (ctrlClick) {
         const nextSortColumns = [...sortColumns!];
-        if (nextSortColumn) {
-          nextSortColumns[sortIndex!] = nextSortColumn;
-        } else nextSortColumns.splice(sortIndex!, 1);
+        if (nextSortColumn) nextSortColumns[sortIndex!] = nextSortColumn;
+        else nextSortColumns.splice(sortIndex!, 1);
         onSortColumnsChange(nextSortColumns);
       } else onSortColumnsChange(nextSortColumn ? [nextSortColumn] : []);
     }
@@ -191,13 +186,8 @@ export function HeaderCell<R, SR>({
         aria-rowspan={rowSpan}
         aria-selected={isCellSelected}
         aria-sort={ariaSort}
-        tabIndex={tabIndex}
-        className={className}
-        style={style}
-        onMouseDown={onMouseDown}
+        {...{ tabIndex, className, style, onMouseDown, onClick, onKeyDown }}
         onFocus={handleFocus}
-        onClick={onClick}
-        onKeyDown={onKeyDown}
       >
         {content}
 

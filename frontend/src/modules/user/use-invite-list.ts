@@ -8,14 +8,7 @@ import { isInviteEmail, parseInviteText } from '~/modules/user/invite-text';
  * Someone picked by name, so their chip shows the person, a restored draft too. The outcome is what the search's check
  * answered, which places them until the list's own check answers.
  */
-export type InvitePerson = {
-  id: string;
-  name: string;
-  email: string;
-  entityType: 'user';
-  thumbnailUrl?: string | null;
-  outcome?: InviteOutcome;
-};
+export type InvitePerson = { id: string; name: string; email: string; entityType: 'user'; thumbnailUrl?: string | null; outcome?: InviteOutcome };
 
 const shouldDirty = { shouldDirty: true };
 
@@ -110,21 +103,11 @@ export function useInviteList(form: InviteForm) {
       add(person.email);
     },
     remove: (address: string) => {
-      form.setValue(
-        'emails',
-        emails.filter((email) => email !== address),
-        shouldDirty,
-      );
-      form.setValue(
-        'unparsed',
-        unparsed.filter((item) => item !== address),
-        shouldDirty,
-      );
-      form.setValue(
-        'people',
-        picked.filter(({ email }) => email.toLowerCase() !== address),
-        shouldDirty,
-      );
+      const keep = (item: string) => item !== address;
+      const others = picked.filter(({ email }) => keep(email.toLowerCase()));
+      form.setValue('emails', emails.filter(keep), shouldDirty);
+      form.setValue('unparsed', unparsed.filter(keep), shouldDirty);
+      form.setValue('people', others, shouldDirty);
       setLast(null);
     },
     /** Replaces a near-miss with the corrected text. */

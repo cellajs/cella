@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
+import type { GenComponentSchema, GenOperationDetail, GenResponseSummary } from 'sdk/docs-types';
 import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
 import { getStatusColor } from '~/modules/docs/helpers/get-status-color';
 import { OperationSection } from '~/modules/docs/operations/operation-section';
@@ -17,13 +17,6 @@ const statusBadgeClass = tw('rounded px-2 py-0.5 font-mono font-semibold transit
 const triggerClass = tw(
   'focus-inset text-foreground-soft hover:text-foreground group-data-open/accordion-header:text-foreground py-2 font-normal hover:no-underline [&>svg]:size-4 [&>svg]:translate-y-1',
 );
-
-function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
-  if (response.schema) return response.schema;
-  // For error responses (no embedded schema), look up by name in schemas.gen.json
-  if (response.name) return schemas.find((schema) => schema.name === response.name)?.schema;
-  return undefined;
-}
 
 /** A response that refers to a shared error component, which the backend documents once for every route answering that status. */
 const isSharedError = (response: GenResponseSummary) => response.ref?.startsWith('#/components/responses/') ?? false;
@@ -172,8 +165,9 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   return (
     <Accordion defaultValue={examplesOnly && rows.length ? [String(rows[0].status)] : undefined}>
       {rows.map((response) => {
-        const schema = resolveResponseSchema(response, schemas);
         const namedBody = response.name ? schemas.find((entry) => entry.name === response.name) : undefined;
+        // For error responses (no embedded schema), look up by name in schemas.gen.json
+        const schema = response.schema ?? namedBody?.schema;
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
             <AccordionTrigger className={triggerClass}>
@@ -220,7 +214,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
           </AccordionItem>
         );
       })}
-      {errors.length > 0 && <ErrorsItem responses={errors} schemas={schemas} operationId={operationId} zodIndex={zodIndex} typesIndex={typesIndex} />}
+      {errors.length > 0 && <ErrorsItem responses={errors} {...{ schemas, operationId, zodIndex, typesIndex }} />}
     </Accordion>
   );
 }
@@ -237,13 +231,7 @@ export function OperationResponses({ detail }: OperationResponsesProps) {
   return (
     <OperationSection title={t('c:docs.responses')}>
       <div className="mt-2">
-        <ResponsesAccordion
-          responses={detail?.responses ?? []}
-          schemas={schemas}
-          operationId={detail?.operationId ?? ''}
-          zodIndex={zodIndex}
-          typesIndex={typesIndex}
-        />
+        <ResponsesAccordion responses={detail?.responses ?? []} operationId={detail?.operationId ?? ''} {...{ schemas, zodIndex, typesIndex }} />
       </div>
     </OperationSection>
   );

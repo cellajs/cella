@@ -1,4 +1,7 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { FilePanelExtension } from '@blocknote/core/extensions';
+import { useBlockNoteEditor, useExtension, useExtensionState } from '@blocknote/react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -18,6 +21,28 @@ export interface UploadHostApi {
 const UploadHostContext = createContext<UploadHostApi | null>(null);
 
 export const useUploadHost = () => useContext(UploadHostContext);
+
+interface FilePanelBridgeProps {
+  host: UploadHostApi;
+}
+
+/** Reports the block that opened the file panel and the live editor up to `UploadHostProvider`; closing is host-driven. */
+export function FilePanelBridge({ host }: FilePanelBridgeProps) {
+  const editor = useBlockNoteEditor(customSchema);
+  const filePanel = useExtension(FilePanelExtension);
+  const activeBlockId = useExtensionState(FilePanelExtension);
+
+  useEffect(() => {
+    host.registerEditor({ editor, closeFilePanel: () => filePanel.closeMenu() });
+    return () => host.registerEditor(null);
+  }, [editor, filePanel, host]);
+
+  useEffect(() => {
+    if (activeBlockId) host.openFor(activeBlockId);
+  }, [activeBlockId, host]);
+
+  return null;
+}
 
 interface UploadHostProviderProps {
   baseFilePanelProps: BaseUppyFilePanelProps;

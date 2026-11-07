@@ -98,9 +98,7 @@ class AttachmentUploadService {
     if (availability === 'unreachable') return;
 
     if (availability === 'unconfigured') {
-      for (const blob of blobs) {
-        await attachmentStorage.updateUploadStatus(blob.id, 'local-only');
-      }
+      for (const blob of blobs) await attachmentStorage.updateUploadStatus(blob.id, 'local-only');
       return;
     }
 

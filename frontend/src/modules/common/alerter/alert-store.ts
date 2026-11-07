@@ -18,10 +18,7 @@ interface AlertStoreState {
   reset: () => void;
 }
 
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = {
-  downAlert: false,
-  alertsSeen: [],
-};
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: false, alertsSeen: [] };
 
 /** The server's down alert and the dismissed banners. */
 export const useAlertStore = create<AlertStoreState>()(
@@ -30,11 +27,10 @@ export const useAlertStore = create<AlertStoreState>()(
       persist(
         (set, get) => ({
           ...initStore,
-          setAlertSeen: (alertId) => {
+          setAlertSeen: (alertId) =>
             set((state) => {
               state.alertsSeen.push(alertId);
-            });
-          },
+            }),
           setDownAlert: (downAlert) => {
             // Every API answer lands here, and each `set` writes the persisted store.
             if (downAlert === get().downAlert) return;
@@ -43,9 +39,7 @@ export const useAlertStore = create<AlertStoreState>()(
               state.downAlert = downAlert;
             });
           },
-          reset: () => {
-            set((state) => ({ ...state, ...initStore }), true);
-          },
+          reset: () => set((state) => ({ ...state, ...initStore }), true),
         }),
         {
           // Version 2 stores no down alert, so a reload never shows a stale one; the dismissed banners carry over.

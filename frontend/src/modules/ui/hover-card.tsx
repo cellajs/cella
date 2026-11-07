@@ -29,13 +29,7 @@ export function HoverCardContent({
   PositionedContentProps) {
   return (
     <PreviewCardPrimitive.Portal data-slot="hover-card-portal" container={container}>
-      <PreviewCardPrimitive.Positioner
-        align={align}
-        alignOffset={alignOffset}
-        side={side}
-        sideOffset={sideOffset}
-        className={cn('isolate z-200', positionerClassName)}
-      >
+      <PreviewCardPrimitive.Positioner {...{ align, alignOffset, side, sideOffset }} className={cn('isolate z-200', positionerClassName)}>
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
           className={cn(

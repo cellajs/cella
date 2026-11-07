@@ -34,9 +34,7 @@ interface ActiveItem {
 export function ApiKeysCard({ organization }: ApiKeysCardProps) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
-  const {
-    data: { results: accounts },
-  } = useSuspenseQuery(serviceAccountsQueryOptions(path));
+  const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results;
   const keyLists = useSuspenseQueries({ queries: accounts.map((account) => apiKeysQueryOptions(path, account.id)) });
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // Plaintext by key id, in component state only: it never enters the query cache, which persists.

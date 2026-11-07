@@ -6,10 +6,7 @@ interface RetryWaitProps {
   until: number;
 }
 
-/**
- * The wait of a rate-limited request as toast text: "try again in N minutes", counting down for as long as the toast
- * stays open and saying so once the wait is over.
- */
+/** A rate-limited request's wait as toast text, "try again in N minutes", counting down while the toast is open and saying when the wait is over. */
 export function RetryWait({ until }: RetryWaitProps) {
   const { t } = useTranslation();
   const [now, setNow] = useState(Date.now);

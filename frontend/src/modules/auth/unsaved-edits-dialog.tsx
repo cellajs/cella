@@ -38,10 +38,7 @@ function combine(stored: UnsavedYDoc[], unstored: UnstoredYDoc[]): UnsavedEdit[]
   return [...listed, ...inMemory];
 }
 
-/**
- * The edits sign-out would discard, live: the store's rows and the connections that keep saving on the sign-out page,
- * so the list shrinks as they save. Undefined until both sources answered.
- */
+/** The edits sign-out would discard, live from the store and the connections still saving, so the list shrinks; undefined until both answer. */
 export function useUnsavedEdits(): UnsavedEdit[] | undefined {
   const [stored, setStored] = useState<UnsavedYDoc[]>();
   const [unstored, setUnstored] = useState<UnstoredYDoc[]>();

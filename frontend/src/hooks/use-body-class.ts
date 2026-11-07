@@ -27,9 +27,7 @@ export function useBodyClass(classMappings: Record<string, boolean>) {
   useEffect(() => {
     return () => {
       const bodyClassList = document.body.classList;
-      for (const className of addedClassesRef.current) {
-        bodyClassList.remove(className);
-      }
+      for (const className of addedClassesRef.current) bodyClassList.remove(className);
       addedClassesRef.current.clear();
       prevRef.current = {};
     };

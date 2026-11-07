@@ -55,10 +55,7 @@ function getSelectedCellColSpan<R, SR>({
     return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: topSummaryRows[rowIdx + topSummaryRowsCount] });
   }
 
-  if (rowIdx >= 0 && rowIdx < rows.length) {
-    const row = rows[rowIdx];
-    return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
-  }
+  if (rowIdx >= 0 && rowIdx < rows.length) return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row: rows[rowIdx] });
 
   if (bottomSummaryRows) return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
 
@@ -120,9 +117,7 @@ export function getNextSelectedCellPosition<R, SR>({
     }
   };
 
-  const getParentRowIdx = (parent: CalculatedColumnParent<R, SR>) => {
-    return parent.level + mainHeaderRowIdx;
-  };
+  const getParentRowIdx = (parent: CalculatedColumnParent<R, SR>) => parent.level + mainHeaderRowIdx;
 
   const setHeaderGroupColAndRowSpan = () => {
     if (moveNext) {
@@ -173,9 +168,7 @@ export function getNextSelectedCellPosition<R, SR>({
     if (column.focusable === false) {
       const direction = moveNext ? 1 : -1;
       const focusableIdx = findNextFocusableColumn(columns, nextIdx + direction, direction);
-      if (focusableIdx >= 0 && focusableIdx < columnsCount) {
-        nextIdx = focusableIdx;
-      } else nextIdx = currentIdx;
+      nextIdx = focusableIdx >= 0 && focusableIdx < columnsCount ? focusableIdx : currentIdx;
     }
   }
 

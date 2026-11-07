@@ -33,23 +33,9 @@ export const typingPause = 250;
  * The input of an in-page search with words only: a list without filters, or a find in content. It applies the query once
  * typing pauses, follows the applied query from outside, and clears with its X or Escape (a second Escape leaves the field).
  */
-export function SearchField({
-  value,
-  onSearch,
-  label,
-  name,
-  id,
-  disabled,
-  isSearching = false,
-  count,
-  children,
-  onKeyDown,
-  hideClear,
-  ref,
-  className,
-}: SearchFieldProps) {
+export function SearchField({ value, label, isSearching = false, count, ...props }: SearchFieldProps) {
   const ownRef = useRef<HTMLInputElement>(null);
-  const inputRef = ref ?? ownRef;
+  const inputRef = props.ref ?? ownRef;
 
   const [inputValue, setInputValue] = useState(value);
   const typedValue = useDebounce(inputValue, typingPause);
@@ -57,7 +43,7 @@ export function SearchField({
 
   const send = (next: string) => {
     sentRef.current = next;
-    onSearch(next);
+    props.onSearch(next);
   };
 
   useEffect(() => {
@@ -77,23 +63,20 @@ export function SearchField({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    onKeyDown?.(event);
-    if (event.defaultPrevented) return;
-
-    if (event.key === 'Escape') {
-      if (inputValue) clear();
-      else event.currentTarget.blur();
-    }
+    props.onKeyDown?.(event);
+    if (event.defaultPrevented || event.key !== 'Escape') return;
+    if (inputValue) clear();
+    else event.currentTarget.blur();
   };
 
   return (
-    <InputGroup className={className}>
+    <InputGroup className={props.className}>
       <InputGroupInput
         ref={inputRef}
-        id={id}
-        name={name}
+        id={props.id}
+        name={props.name}
         className="pl-0!"
-        disabled={disabled}
+        disabled={props.disabled}
         placeholder={label}
         aria-label={label}
         value={inputValue}
@@ -112,8 +95,8 @@ export function SearchField({
             {inputValue && count}
           </span>
         )}
-        {inputValue && children}
-        {!hideClear && (
+        {inputValue && props.children}
+        {!props.hideClear && (
           <SearchClearButton
             className={cn(!inputValue && 'invisible')}
             onClick={() => {

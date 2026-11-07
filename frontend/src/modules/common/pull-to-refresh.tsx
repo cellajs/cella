@@ -25,8 +25,7 @@ type Phase = 'idle' | 'refreshing' | 'exiting';
 function getScrollingAncestor(element: Element | null): Element | null {
   let current = element;
   while (current && current !== document.documentElement) {
-    const style = getComputedStyle(current);
-    const overflowY = style.overflowY;
+    const { overflowY } = getComputedStyle(current);
     if ((overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight) return current;
     current = current.parentElement;
   }
@@ -107,10 +106,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       if (!touch) return;
 
       const rawDelta = touch.screenY - pullStartRef.current;
-      if (rawDelta < activationThreshold) {
-        setPull(0);
-        return;
-      }
+      if (rawDelta < activationThreshold) return setPull(0);
 
       setPull(Math.max(0, Math.min(rawDelta - activationThreshold, maximumPullLength)));
     };
@@ -129,11 +125,8 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
 
       Promise.resolve(refresh()).finally(() => {
         // Static routes have nothing to refetch, so skip the animation and hard-reload.
-        if (!sawFetchRef.current) {
-          void reloadApp();
-          return;
-        }
-        setPhase('exiting');
+        if (!sawFetchRef.current) void reloadApp();
+        else setPhase('exiting');
       });
     };
 

@@ -10,38 +10,36 @@ interface TagOperationsTableProps {
   onPrerender?: () => void;
 }
 
-function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
-  return [
-    {
-      key: 'method',
-      name: '',
-      width: 64,
-      renderCell: ({ row }) => <MethodLabel method={row.method} />,
-    },
-    {
-      key: 'path',
-      name: '',
-      minWidth: 200,
-      renderCell: ({ row, tabIndex }) => (
-        <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
-          &lrm;
-          <HighlightText text={row.path} />
-        </TagHashLink>
-      ),
-    },
-    {
-      key: 'id',
-      name: '',
-      minBreakpoint: 'md',
-      width: 200,
-      renderCell: ({ row }) => (
-        <code className="text-muted-foreground truncate text-xs">
-          <HighlightText text={row.id} />
-        </code>
-      ),
-    },
-  ];
-}
+const operationColumns = (tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] => [
+  {
+    key: 'method',
+    name: '',
+    width: 64,
+    renderCell: ({ row }) => <MethodLabel method={row.method} />,
+  },
+  {
+    key: 'path',
+    name: '',
+    minWidth: 200,
+    renderCell: ({ row, tabIndex }) => (
+      <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
+        &lrm;
+        <HighlightText text={row.path} />
+      </TagHashLink>
+    ),
+  },
+  {
+    key: 'id',
+    name: '',
+    minBreakpoint: 'md',
+    width: 200,
+    renderCell: ({ row }) => (
+      <code className="text-muted-foreground truncate text-xs">
+        <HighlightText text={row.id} />
+      </code>
+    ),
+  },
+];
 
 export function TagOperationsTable({ operations, tagName, onPrerender }: TagOperationsTableProps) {
   const columns = operationColumns(tagName);

@@ -12,10 +12,7 @@ export function Slider({ className, defaultValue, value, min = 0, max = 100, thu
   return (
     <SliderPrimitive.Root
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
+      {...{ defaultValue, value, min, max }}
       className={cn(
         'relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-44 data-vertical:w-auto data-vertical:flex-col',
         className,

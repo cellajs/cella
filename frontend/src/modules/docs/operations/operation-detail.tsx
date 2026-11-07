@@ -22,20 +22,18 @@ import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 
-export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
+export const openOperationSheet = (operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) =>
   openDocsSheet({
     id: `operation-${operation.id}`,
     title: i18n.t('c:docs.operation_detail'),
     trigger,
     content: <OperationDetail operation={operation} />,
   });
-}
 
 function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperationDetail) {
   const tagName = operation.tags[0] ?? '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
-  if (detail) return detail;
-  return tagDetails.find((entry) => entry.operationId === operation.id);
+  return detail ?? tagDetails.find((entry) => entry.operationId === operation.id);
 }
 
 /** Every OpenAPI tag by kind, as a bare value such as `product` says little alone. The owner comes last: most operations share it. */

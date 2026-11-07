@@ -27,25 +27,22 @@ export const useDraftStore = create<DraftStoreState>()(
     persist(
       (set, get) => ({
         ...initStore,
-        setForm: (key, values) => {
+        setForm: (key, values) =>
           set((state) => {
             state.forms[key] = values;
-          });
-        },
-        resetForm: (key: string) => {
+          }),
+        resetForm: (key: string) =>
           set((state) => {
             delete state.forms[key];
             delete state.dirtyForms[key];
-          });
-        },
+          }),
         getForm: (key) => get().forms[key],
         reset: () => set(initStore),
-        setFormDirty: (key: string, dirty: boolean) => {
+        setFormDirty: (key: string, dirty: boolean) =>
           set((state) => {
             if (dirty) state.dirtyForms[key] = true;
             else delete state.dirtyForms[key];
-          });
-        },
+          }),
         isFormDirty: (key: string) => !!get().dirtyForms[key],
       }),
       { version: 1, name: 'drafts', skipHydration: true, storage: createJSONStorage(() => idbKvStorage('drafts')) },

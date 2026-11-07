@@ -19,7 +19,6 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   const channelType = entity.entityType;
   const slot: `${C}.settings` = `${channelType}.settings`;
 
-  // Grants: every entity action the actor holds on this channel
   const can = useCan();
   const grants = appConfig.entityActions.filter((action) => can(action, channelType, entity));
 

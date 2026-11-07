@@ -44,10 +44,7 @@ interface InviteFieldLineProps {
   check: InviteCheck;
 }
 
-/**
- * The line under a field, shown only for text that is no address. What happened to an address is spoken only: its tile
- * rolls its count and its dot pulses. Stays mounted, so a change is announced.
- */
+/** The line under a field, visible only for text that is no address: an address's tile shows its outcome. Stays mounted, so a change is announced. */
 export function InviteFieldLine({ list, check }: InviteFieldLineProps) {
   const { t } = useTranslation();
   const { last, typedInvalid, people } = list;
@@ -118,10 +115,7 @@ interface InviteChipProps {
   onRemove: () => void;
 }
 
-/**
- * An address as a plain chip. A long one wraps its fact under it and is never cut. A person's chip shows their address
- * while the mouse is on it and after a press, at the width of the longer of the two, so the row never moves.
- */
+/** A long address wraps its fact under it. A person's chip shows the address on hover or press, as wide as the longer, so the row never moves. */
 function InviteChip({ address, person, fact, onRemove }: InviteChipProps) {
   const { t } = useTranslation();
   const [pinned, setPinned] = useState(false);

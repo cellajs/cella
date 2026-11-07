@@ -15,13 +15,7 @@ import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const openUpdateUserSheet = (user: BaseUser, triggerRef: TriggerRef) =>
-  openEditSheet({
-    id: 'update-user',
-    resource: 'c:user',
-    triggerRef,
-    className: 'container',
-    children: <UpdateUserForm user={user} sheet />,
-  });
+  openEditSheet({ id: 'update-user', resource: 'c:user', triggerRef, className: 'container', children: <UpdateUserForm user={user} sheet /> });
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -49,10 +43,7 @@ export const useColumns = () => {
         label: t('c:delete'),
         icon: TrashIcon,
         variant: 'destructive',
-        confirm: (row) => ({
-          title: <DeleteQuestion resource="c:user" name={row.name} />,
-          content: <DeleteUsers users={[row]} />,
-        }),
+        confirm: (row) => ({ title: <DeleteQuestion resource="c:user" name={row.name} />, content: <DeleteUsers users={[row]} /> }),
       },
     ]),
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true, cellClass: 'text-muted-foreground' }),

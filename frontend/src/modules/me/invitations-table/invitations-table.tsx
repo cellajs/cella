@@ -7,9 +7,7 @@ import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 
-function rowKeyGetter(row: Invitation) {
-  return row.inactiveMembership.id;
-}
+const rowKeyGetter = (row: Invitation) => row.inactiveMembership.id;
 
 export function InvitationsTable() {
   const { t } = useTranslation();

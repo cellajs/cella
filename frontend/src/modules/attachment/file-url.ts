@@ -16,9 +16,7 @@ export function getVariantKey(attachment: CloudKeyFields, variant: BlobVariant):
 }
 
 /** Public CDN URL for a file key, which skips the presigned URL endpoint. */
-export function getPublicFileUrl(key: string): string {
-  return `${appConfig.s3.publicCDNUrl}/${key}`;
-}
+export const getPublicFileUrl = (key: string): string => `${appConfig.s3.publicCDNUrl}/${key}`;
 
 /** Cloud URL for a variant: public keys become CDN URLs, private ones are signed server-side by id. Null when the variant has no cloud key. */
 export async function getCloudUrl(

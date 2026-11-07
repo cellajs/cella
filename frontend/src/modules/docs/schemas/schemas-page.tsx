@@ -75,7 +75,7 @@ function SchemaTagSection({ tag, schemas, tagKinds, isOpen, onPrerender }: Schem
       isOpen={isOpen}
       details={<TagSchemasList schemas={schemas} />}
     >
-      <TagSchemasTable schemas={schemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
+      <TagSchemasTable tagName={tag.name} {...{ schemas, tagKinds, onPrerender }} />
       <TagExpandLink
         isOpen={isOpen}
         to="."

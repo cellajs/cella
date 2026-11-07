@@ -1,5 +1,4 @@
-import type { CSSProperties } from 'react';
-import { useRef } from 'react';
+import { type CSSProperties, useRef } from 'react';
 import { create } from 'zustand';
 
 interface PrerenderState {

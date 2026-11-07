@@ -172,10 +172,9 @@ export function BlockNoteFullHtml({
   const fireReady = useEffectEvent(() => onReady?.());
   const readyFiredRef = useRef(false);
   useEffect(() => {
-    if (renderState.ready && !readyFiredRef.current) {
-      readyFiredRef.current = true;
-      fireReady();
-    }
+    if (!renderState.ready || readyFiredRef.current) return;
+    readyFiredRef.current = true;
+    fireReady();
   }, [renderState.ready]);
 
   useLayoutEffect(() => {

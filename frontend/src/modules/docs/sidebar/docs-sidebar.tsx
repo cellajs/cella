@@ -14,6 +14,8 @@ import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 
+const sectionComponents = { apiReference: ApiReferenceSection, pages: PagesSection, links: LinksSection };
+
 /** The sections `docsConfig` lists, in their array order; one with `visible: false` is left out. */
 export function DocsSidebar() {
   const { t } = useTranslation();
@@ -59,16 +61,8 @@ export function DocsSidebar() {
       {docsConfig.sections
         .filter((section) => section.visible)
         .map((section) => {
-          switch (section.id) {
-            case 'apiReference':
-              return <ApiReferenceSection key={section.id} label={section.label} />;
-            case 'pages':
-              return <PagesSection key={section.id} label={section.label} />;
-            case 'links':
-              return <LinksSection key={section.id} label={section.label} />;
-            default:
-              return null;
-          }
+          const Section = sectionComponents[section.id];
+          return <Section key={section.id} label={section.label} />;
         })}
     </SidebarContent>
   );

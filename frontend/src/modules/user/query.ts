@@ -61,9 +61,7 @@ const useUserUpdateMutation = () => {
       cacheUpdate(listKey, [updatedUser]);
       queryClient.invalidateQueries({ queryKey: keys.detail.base });
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
     gcTime: 1000 * 10,
   });
 };
@@ -92,14 +90,9 @@ export const useUserDeleteMutation = () => {
     },
     onSuccess: (_, users) => {
       cacheRemove(listKey, users);
-      removeDetailQueriesById(
-        queryClient,
-        keys.detail.base,
-        users.map(({ id }) => id),
-      );
+      const ids = users.map(({ id }) => id);
+      removeDetailQueriesById(queryClient, keys.detail.base, ids);
     },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, listKey);
-    },
+    onSettled: () => invalidateIfLastMutation(queryClient, keys.all, listKey),
   });
 };

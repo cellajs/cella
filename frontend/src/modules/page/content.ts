@@ -120,23 +120,10 @@ function parseIndex(index: DocsIndex): { pages: DocPage[]; config: DocsConfig | 
     parsed.push({ slug, path, meta: result.data, headings });
   }
 
-  const pages: DocPage[] = parsed.map(({ slug, meta, headings }) => {
+  const pages: DocPage[] = parsed.map(({ slug, meta: { title, order, ...frontmatter }, headings }) => {
     const dir = slug.includes('/') ? slug.slice(0, slug.lastIndexOf('/')) : null;
     const parentId = dir && slugs.has(dir) ? dir : null;
-    return {
-      id: slug,
-      parentId,
-      name: meta.title,
-      description: meta.description,
-      keywords: meta.keywords,
-      displayOrder: meta.order,
-      renderMode: meta.renderMode,
-      draft: meta.draft,
-      hidden: meta.hidden,
-      updatedAt: meta.updatedAt,
-      depth: slug.split('/').length - 1,
-      headings,
-    };
+    return { id: slug, parentId, name: title, displayOrder: order, ...frontmatter, depth: slug.split('/').length - 1, headings };
   });
   pages.sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 
@@ -182,9 +169,7 @@ export const getDocPages = () => useDocsIndexStore.getState().pages;
 
 export const getVisibleDocPages = () => useDocsIndexStore.getState().visiblePages;
 
-export function getDocPage(slug: string): DocPage | undefined {
-  return getDocPages().find((page) => page.id === slug);
-}
+export const getDocPage = (slug: string): DocPage | undefined => getDocPages().find((page) => page.id === slug);
 
 // Resolved ahead of render (docs route loader) so the body renders synchronously: a fresh Suspense boundary commits its fallback for a frame even on a cached chunk.
 const resolvedComponents = new Map<string, ComponentType>();

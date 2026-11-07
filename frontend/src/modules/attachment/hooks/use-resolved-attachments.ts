@@ -115,25 +115,24 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         }),
       );
 
-      if (!cancelled) {
-        const resolved = outcomes.flatMap((outcome) => ('data' in outcome ? [outcome.data] : []));
-        const errors = outcomes.flatMap((outcome) => ('errorId' in outcome ? [outcome.errorId] : []));
-        const hasTransientErrors = outcomes.some((outcome) => 'errorId' in outcome && !outcome.permanent);
+      if (cancelled) return;
+      const resolved = outcomes.flatMap((outcome) => ('data' in outcome ? [outcome.data] : []));
+      const errors = outcomes.flatMap((outcome) => ('errorId' in outcome ? [outcome.errorId] : []));
+      const hasTransientErrors = outcomes.some((outcome) => 'errorId' in outcome && !outcome.permanent);
 
-        for (const [id, url] of blobUrlsRef.current) {
-          if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
-        }
-        blobUrlsRef.current = newBlobUrls;
-        setResolvedItems(resolved);
-        setErrorIds(errors);
-        setIsLoading(false);
-        setResolvedKey(itemsKey);
+      for (const [id, url] of blobUrlsRef.current) {
+        if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
+      }
+      blobUrlsRef.current = newBlobUrls;
+      setResolvedItems(resolved);
+      setErrorIds(errors);
+      setIsLoading(false);
+      setResolvedKey(itemsKey);
 
-        // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
-        if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
-          retryCountRef.current += 1;
-          retryTimer = setTimeout(() => setRetrySignal((signal) => signal + 1), resolveRetryDelayMs);
-        }
+      // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
+      if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
+        retryCountRef.current += 1;
+        retryTimer = setTimeout(() => setRetrySignal((signal) => signal + 1), resolveRetryDelayMs);
       }
     };
 

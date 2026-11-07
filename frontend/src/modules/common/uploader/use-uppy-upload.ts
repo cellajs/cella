@@ -37,9 +37,7 @@ export function useUppyUpload() {
         localUppy = await createUppy(uppyOptions, { templateId, organizationId });
 
         localUppy
-          .on('error', (error) => {
-            console.error('Upload error:', error);
-          })
+          .on('error', (error) => console.error('Upload error:', error))
           .on('transloadit:complete', (assembly) => {
             // A failed assembly reports through the error event
             if (assembly.error) return;

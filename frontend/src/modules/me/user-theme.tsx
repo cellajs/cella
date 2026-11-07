@@ -70,9 +70,8 @@ export function UserTheme({ buttonClassName, tooltip = false }: UserThemeProps) 
 
     const items: ThemeItem[] = [
       ...modes.map((option) => ({
+        ...option,
         key: option.id,
-        label: option.label,
-        icon: option.icon,
         selected: currentMode === option.id,
         onSelect: () => {
           setMode(option.id);

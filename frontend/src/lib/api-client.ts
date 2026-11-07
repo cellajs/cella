@@ -7,11 +7,7 @@ import { recordReportedBudgets } from '~/lib/reported-budgets';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { reportNetworkFailure, reportReachable } from '~/query/offline/connectivity';
 
-/**
- * The error for a response without the API's error body, as a proxy or load balancer sends one. A gateway status reads
- * as the service being unavailable and any other 5xx as a server error; a 4xx gets no type, so it is described by what
- * its status means.
- */
+/** The error for a response without the API's error body, as a proxy or load balancer sends one; a 4xx gets no type, so its status describes it. */
 const apiErrorFromStatus = (status: number) => {
   const type = gatewayStatuses.has(status) ? 'service_unavailable' : status >= 500 ? 'server_error' : undefined;
   return new ApiError({ status: status as ApiErrorInit['status'], type, severity: status >= 500 ? 'error' : 'warn' });
@@ -25,10 +21,7 @@ const failedResponseError = async (response: Response) => {
   return error;
 };
 
-/**
- * A request without a response by then starts the connectivity probe, or fails when the app is offline already: a link
- * that drops packets fails no request, it leaves them waiting.
- */
+/** A request without a response by then starts the connectivity probe, or fails when offline: a link that drops packets leaves requests waiting. */
 const responseWaitMs = 8000;
 
 /** One abort per request still waiting for its response. */
@@ -71,10 +64,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   throw await failedResponseError(response);
 };
 
-/**
- * Runtime config for the generated API client (SDK output in /sdk/gen/).
- * @link https://heyapi.dev/openapi-ts/get-started
- */
+/** Runtime config for the generated API client (SDK output in /sdk/gen/): {@link https://heyapi.dev/openapi-ts/get-started} */
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,
   baseUrl: appConfig.backendUrl,

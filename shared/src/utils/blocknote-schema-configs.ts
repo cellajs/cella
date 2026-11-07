@@ -33,7 +33,7 @@ export const withAttachmentRef = <S extends { config: { propSchema: Record<strin
   config: { ...spec.config, propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema, ...mediaDimensionsPropSchema } },
 });
 
-/** Presentation lives in the frontend: icons and titles in notify-options, colors in the blocknote styles.css. */
+/** Presentation lives in the frontend: icons and titles in notify-block, colors in the blocknote styles.css. */
 const notifyTypeValues = ['warning', 'error', 'info', 'success'] as const;
 
 export type NotifyType = (typeof notifyTypeValues)[number];

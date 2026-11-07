@@ -72,11 +72,7 @@ export function CollaborativeBlockNote({
       <BlockNoteFullHtml
         id={`blocknote-${entityId}-static`}
         defaultValue={description ?? ''}
-        tenantId={tenantId}
-        organizationId={organizationId}
-        className={className}
-        dense={dense}
-        clickOpensPreview={clickOpensPreview}
+        {...{ tenantId, organizationId, className, dense, clickOpensPreview }}
       />
     </Suspense>
   );
@@ -91,7 +87,7 @@ export function CollaborativeBlockNote({
       staticView={staticView}
     />
   ) : (
-    <StandaloneHost {...blockNoteProps} entityId={entityId} description={description} updateData={updateData} />
+    <StandaloneHost {...blockNoteProps} {...{ entityId, description, updateData }} />
   );
 
   // The upload dialog renders above the editor so it survives an editor remount.

@@ -54,16 +54,8 @@ function HeaderRow<R, SR>({
       <HeaderCell<R, SR>
         key={column.key}
         column={column}
-        colSpan={colSpan}
-        rowIdx={rowIdx}
+        {...{ colSpan, rowIdx, onColumnResize, onColumnResizeEnd, onColumnsReorder, moveColumn, onSortColumnsChange, sortColumns, selectCell }}
         isCellSelected={selectedCellIdx === column.idx}
-        onColumnResize={onColumnResize}
-        onColumnResizeEnd={onColumnResizeEnd}
-        onColumnsReorder={onColumnsReorder}
-        moveColumn={moveColumn}
-        onSortColumnsChange={onSortColumnsChange}
-        sortColumns={sortColumns}
-        selectCell={selectCell}
         shouldFocusGrid={shouldFocusGrid && index === 0}
       />,
     );

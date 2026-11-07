@@ -72,15 +72,9 @@ export function AttachmentsTable({ channel }: AttachmentsTableProps) {
   return (
     <>
       <AttachmentsTableBar
-        channel={channel}
-        selected={selected}
         searchVars={{ q, sort, order }}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-        clearSelection={clearSelection}
-        canUpload={canUpload}
         queryKey={isDefaultView ? canonicalOptions.queryKey : queryOptions.queryKey}
+        {...{ channel, selected, setSearch, columns, setColumns, clearSelection, canUpload }}
       />
       <SearchScope q={q}>
         <DataTable<Attachment>

@@ -1,8 +1,7 @@
 import { ArrowRightIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthEmailButton } from '~/modules/auth/auth-email-button';
-import { AuthHeader } from '~/modules/auth/auth-header';
+import { AuthEmailButton, AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { authFieldClass } from '~/modules/auth/steps/email-field';

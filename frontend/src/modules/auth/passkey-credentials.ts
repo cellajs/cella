@@ -81,10 +81,7 @@ export const getPasskeyRegistrationCredential = async () => {
   return { attestation, nameOnDevice };
 };
 
-/**
- * Returns the passkey verify credential (assertion plus the challenge kind). Only an MFA challenge lists the account's
- * passkeys; otherwise the browser offers its discoverable ones.
- */
+/** Assertion plus challenge kind. Only an MFA challenge lists the account's passkeys; otherwise the browser offers its discoverable ones. */
 export const getPasskeyVerifyCredential = async ({ kind }: { kind: PasskeyVerifyKind }) => {
   const { challenge, credentials } = await getChallenge({ kind });
 

@@ -55,8 +55,8 @@ export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.reque
 };
 
 /** Public forms send one-shot requests: a failure shows at once, and the form never waits on offline replay. */
-export const useCreateRequestMutation = () => {
-  return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
+export const useCreateRequestMutation = () =>
+  useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create,
     mutationFn: (body) => createRequest({ body }),
     networkMode: 'always',
@@ -66,25 +66,21 @@ export const useCreateRequestMutation = () => {
       if (!(error instanceof ApiError)) toaster.error(t('c:server_unreachable.text'));
     },
   });
-};
 
 /** Approves waitlist requests: each address gets an invitation email, and the cached rows read invited. */
-export const useSendApprovalInviteMutation = () => {
-  return useMutation<InviteUsersResponse, ApiError, Request[]>({
+export const useSendApprovalInviteMutation = () =>
+  useMutation<InviteUsersResponse, ApiError, Request[]>({
     mutationKey: requestsKeys.approve,
     mutationFn: (requests) => inviteUsers({ body: { emails: requests.map(({ email }) => email) } }),
     onSuccess: (_, requests) => {
-      cacheUpdate(
-        requestsKeys.table.base,
-        requests.map((request) => ({ ...request, wasInvited: true })),
-      );
+      const invited = requests.map((request) => ({ ...request, wasInvited: true }));
+      cacheUpdate(requestsKeys.table.base, invited);
       toaster.success(t('c:success.users_invited'));
     },
   });
-};
 
-export const useDeleteRequestMutation = () => {
-  return useMutation<void, ApiError, Request[]>({
+export const useDeleteRequestMutation = () =>
+  useMutation<void, ApiError, Request[]>({
     mutationKey: requestsKeys.delete,
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
@@ -92,7 +88,6 @@ export const useDeleteRequestMutation = () => {
     },
     onSuccess: (_, requests) => cacheRemove(requestsKeys.table.base, requests),
   });
-};
 
 /** A page of requests for a table export. Bypasses cache. */
 export const fetchRequestsForExport = (filters: RequestFilters, page: PageRequest) => fetchRequestsPage(filters, page);

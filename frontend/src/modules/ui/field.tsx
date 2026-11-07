@@ -10,8 +10,6 @@ import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
 
-// Layout primitives (no RHF dependency)
-
 export function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
     <fieldset
@@ -168,8 +166,6 @@ export function FieldError({
   );
 }
 
-// RHF + base-ui Field integration
-
 export type LabelDirection = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirection>('top');
 
@@ -183,9 +179,7 @@ interface FieldStateContextValue {
 const FieldStateContext = React.createContext<FieldStateContextValue>({ invalid: false, isDirty: false, isTouched: false });
 
 /** Read RHF field state from within a FormField render prop tree. */
-function useFieldState() {
-  return React.useContext(FieldStateContext);
-}
+const useFieldState = () => React.useContext(FieldStateContext);
 
 type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
   TFieldValues,

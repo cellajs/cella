@@ -2,10 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { YjsDocScope } from 'shared';
 import { yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 
-/**
- * One entity's Yjs token while `enabled`, read by the connection layer from the same query, and a {@link yjsTokenRefusal}
- * as `denied` (view only) or `deleted`.
- */
+/** One entity's Yjs token while `enabled`, shared with the connection layer, and a {@link yjsTokenRefusal} as `denied` (view only) or `deleted`. */
 export function useYjsToken({ enabled, ...scope }: YjsDocScope & { enabled: boolean }) {
   const { data: token, error } = useQuery({ ...yjsTokenQueryOptions(scope), enabled });
   const refusal = yjsTokenRefusal(error);

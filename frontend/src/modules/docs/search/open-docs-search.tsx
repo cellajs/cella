@@ -6,8 +6,8 @@ import { tw } from '~/utils/tw';
 /** Fallback focus target when opened via hotkey (no triggering button). */
 const hotkeyTriggerRef: TriggerRef = { current: null };
 
-export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
-  return dialoger.getState().create(<DocsSearch />, {
+export const openDocsSearch = (triggerRef: TriggerRef = hotkeyTriggerRef) =>
+  dialoger.getState().create(<DocsSearch />, {
     id: docsSearchDialogId,
     triggerRef,
     title: i18n.t('c:search'),
@@ -16,7 +16,6 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
     drawerOnMobile: false,
     searchLayout: true,
   });
-}
 
 /** Hotkey handler: ⌘K/Ctrl-K toggles the dialog. */
 export function toggleDocsSearch() {

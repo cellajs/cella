@@ -96,23 +96,13 @@ function Cell<R, SR>({
     >
       {column.mergedSlots != null ? (
         <MergedCellContent
-          column={column}
+          {...{ column, row, rowIdx, onRowChange }}
           slots={column.mergedSlots}
-          row={row}
-          rowIdx={rowIdx}
           isCellEditable={isEditable}
           tabIndex={childTabIndex}
-          onRowChange={onRowChange}
         />
       ) : (
-        renderCellContent(column, {
-          column,
-          row,
-          rowIdx,
-          isCellEditable: isEditable,
-          tabIndex: childTabIndex,
-          onRowChange: handleRowChange,
-        })
+        renderCellContent(column, { column, row, rowIdx, isCellEditable: isEditable, tabIndex: childTabIndex, onRowChange: handleRowChange })
       )}
       {isEditable && (
         <PencilIcon className="text-muted-foreground pointer-events-none absolute top-2 right-2 hidden size-3 sm:group-hover/cell:block" />
@@ -192,6 +182,4 @@ function renderCellContent<R, SR>(column: CellRendererProps<R, SR>['column'], pr
 }
 
 export const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;
-export function defaultRenderCell<R, SR>(key: React.Key, props: CellRendererProps<R, SR>) {
-  return <CellComponent key={key} {...props} />;
-}
+export const defaultRenderCell = <R, SR>(key: React.Key, props: CellRendererProps<R, SR>) => <CellComponent key={key} {...props} />;

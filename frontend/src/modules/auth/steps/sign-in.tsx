@@ -7,11 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { sendMagicLink, signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
-import { AuthEmailButton } from '~/modules/auth/auth-email-button';
-import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
+import { AuthEmailButton, AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
-import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
+import { type ConditionalMediationResult, isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
@@ -83,11 +81,7 @@ export function SignInStep({ invitation }: SignInStepProps) {
     });
   };
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.

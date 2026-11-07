@@ -1,7 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
-import type * as React from 'react';
-import { createContext, use } from 'react';
+import { type ComponentProps, createContext, use } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -45,7 +44,7 @@ export function Alert({
   onClose,
   children,
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
+}: ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
   return (
     <AlertCloseContext.Provider value={onClose}>
       <div
@@ -63,11 +62,11 @@ export function Alert({
   );
 }
 
-export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
+export function AlertTitle({ className, ...props }: ComponentProps<'div'>) {
   return <div data-slot="alert-title" className={cn('col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight', className)} {...props} />;
 }
 
-export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
+export function AlertDescription({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-description"
@@ -78,7 +77,7 @@ export function AlertDescription({ className, ...props }: React.ComponentProps<'
 }
 
 /** The alert's button or link; from `sm` up it also holds the close button, square to the action's height. */
-export function AlertAction({ className, children, ...props }: React.ComponentProps<'div'>) {
+export function AlertAction({ className, children, ...props }: ComponentProps<'div'>) {
   const onClose = use(AlertCloseContext);
 
   return (

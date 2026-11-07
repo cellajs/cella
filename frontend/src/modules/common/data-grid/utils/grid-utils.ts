@@ -27,6 +27,5 @@ export function clampColumnWidth<R, SR>(width: number, { minWidth, maxWidth }: C
   return clampedWidth;
 }
 
-export function getHeaderCellRowSpan<R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number) {
-  return column.parent === undefined ? rowIdx : column.level - column.parent.level;
-}
+export const getHeaderCellRowSpan = <R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number) =>
+  column.parent === undefined ? rowIdx : column.level - column.parent.level;

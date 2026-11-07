@@ -2,10 +2,7 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import type { SortColumn } from '~/modules/common/data-grid';
 
 /** Comparable key from string values, `''` when missing or empty so the comparator can pin those last. */
-const arrayKey = (values: string[] | undefined): string => {
-  if (!values?.length) return '';
-  return [...values].sort().join(',');
-};
+const arrayKey = (values: string[] | undefined): string => (values?.length ? [...values].sort().join(',') : '');
 
 /** Dynamic tag (`tag-${kind}`) and extension columns sort by their joined sorted values. */
 const getSortValue = (row: GenOperationSummary, columnKey: string): string => {

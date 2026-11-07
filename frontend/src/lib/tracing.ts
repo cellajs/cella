@@ -5,17 +5,11 @@ import { spanStore, tracer } from '~/lib/otel';
 
 export type { SpanData };
 
-export function getSpans(): SpanData[] {
-  return spanStore.getSpans();
-}
+export const getSpans = (): SpanData[] => spanStore.getSpans();
 
-export function subscribeToSpans(callback: (spans: SpanData[]) => void): () => void {
-  return spanStore.subscribe(callback);
-}
+export const subscribeToSpans = (callback: (spans: SpanData[]) => void): (() => void) => spanStore.subscribe(callback);
 
-export function clearSpans(): void {
-  spanStore.clear();
-}
+export const clearSpans = (): void => spanStore.clear();
 
 function applyAttributes(span: Span, attributes: CleanSpanAttributes): void {
   for (const [key, value] of Object.entries(attributes)) {
@@ -35,8 +29,8 @@ function traceContext(span: Span): TraceContext {
 }
 
 /** @public */
-export async function withSpan<T>(name: string, attributes: CleanSpanAttributes, fn: (context: TraceContext) => Promise<T>): Promise<T> {
-  return tracer.startActiveSpan(name, async (span) => {
+export const withSpan = async <T>(name: string, attributes: CleanSpanAttributes, fn: (context: TraceContext) => Promise<T>): Promise<T> =>
+  tracer.startActiveSpan(name, async (span) => {
     applyAttributes(span, attributes);
     try {
       const result = await fn(traceContext(span));
@@ -49,7 +43,6 @@ export async function withSpan<T>(name: string, attributes: CleanSpanAttributes,
       span.end();
     }
   });
-}
 
 export function withSpanSync<T>(name: string, attributes: CleanSpanAttributes, fn: (context: TraceContext) => T): T {
   const span = tracer.startSpan(name);

@@ -19,9 +19,7 @@ export function Totp() {
   const { t } = useTranslation();
 
   const user = useCurrentUser();
-  const {
-    data: { totp },
-  } = useSuspenseQuery(meAuthQueryOptions());
+  const totp = useSuspenseQuery(meAuthQueryOptions()).data.totp;
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -38,14 +36,7 @@ export function Totp() {
       <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
         <TotpSetup />
       </Suspense>,
-      {
-        id: 'totp-setup',
-        title: t('c:totp_qr'),
-        description: t('c:totp_qr.text'),
-        triggerRef,
-        className: 'sm:max-w-md',
-        drawerOnMobile: false,
-      },
+      { id: 'totp-setup', title: t('c:totp_qr'), description: t('c:totp_qr.text'), triggerRef, className: 'sm:max-w-md', drawerOnMobile: false },
     );
   };
 

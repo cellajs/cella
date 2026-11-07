@@ -10,9 +10,9 @@ import { OperationResponses } from '~/modules/docs/operations/operation-response
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
-import { OperationItem } from '~/modules/docs/sidebar/operation-item';
+import { OperationItem } from '~/modules/docs/sidebar/operations-sidebar';
 import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-branch';
-import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
+import { SchemaItem } from '~/modules/docs/sidebar/schemas-sidebar';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { SidebarMenu } from '~/modules/ui/sidebar';

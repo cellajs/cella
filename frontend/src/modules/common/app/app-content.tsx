@@ -1,10 +1,22 @@
-import { Outlet } from '@tanstack/react-router';
+import { Outlet, useParams } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import { usePageChannelKey } from '~/hooks/use-page-channel-key';
+import { appConfig } from 'shared';
 import { Alerter } from '~/modules/common/alerter/alerter';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { focusTargets } from '~/modules/navigation/focus-bridge';
+import { channelRouteConfig } from '~/routes-config';
 import { getSkipPageEnter } from '~/utils/nav-transition';
+
+/** Composite key for the route's deepest channel, undefined outside channels. Stable across tab changes. */
+const usePageChannelKey = (): string | undefined => {
+  const params = useParams({ strict: false }) as Record<string, string | undefined>;
+
+  const parts = appConfig.channelEntityTypes
+    .map((type) => params[channelRouteConfig[type]?.paramName ?? ''])
+    .filter((value): value is string => !!value);
+
+  return parts.length ? parts.join('/') : undefined;
+};
 
 export function AppContent() {
   // The curtain masks the scroll-to-header travel of an entity navigation; a same-base forward nav (org to org) has none

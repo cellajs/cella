@@ -26,11 +26,7 @@ export function EntityChip({ type, id, name, url, icon, size = 'default', classN
       start={
         <EntityAvatar
           aria-hidden
-          type={type}
-          id={id}
-          name={name}
-          url={url}
-          icon={icon}
+          {...{ type, id, name, url, icon }}
           className={cn(size === 'lg' ? 'size-8' : 'size-6', !isUser && 'rounded-r-none')}
         />
       }

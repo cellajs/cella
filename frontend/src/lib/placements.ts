@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
-import type { ChannelEntityType, EntityActionType } from 'shared';
-import { hierarchy } from 'shared';
+import { type ChannelEntityType, type EntityActionType, hierarchy } from 'shared';
 import { allSlots, type Slot, surfaceOrder } from 'shared/placements';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import type { TKey } from '~/lib/i18n-locales';
@@ -38,13 +37,9 @@ export interface ChannelEntityByType {
 export type ChannelEntityContext<C extends ChannelEntityType> = EnrichedChannel &
   (C extends keyof ChannelEntityByType ? ChannelEntityByType[C] : unknown);
 
-type ChannelSettingsSlotContexts = {
-  [C in ChannelEntityType as `${C}.settings`]: ChannelEntityContext<C>;
-};
+type ChannelSettingsSlotContexts = { [C in ChannelEntityType as `${C}.settings`]: ChannelEntityContext<C> };
 
-type ChannelTabsSlotContexts = {
-  [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C>;
-};
+type ChannelTabsSlotContexts = { [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C> };
 
 /** Render context of the profile page body: the viewed user, the organization route it opened from, and whether it is a sheet. */
 export interface UserProfileContext {
@@ -124,9 +119,7 @@ export function getTools<S extends Slot>(slot: S): (ToolFor<S> & { order: number
 }
 
 /** Descriptors for a slot id known only at runtime; render context erased and `order` left raw. */
-export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
-  return bySlot.get(slot) ?? [];
-}
+export const getSlotDescriptors = (slot: string): (PlacementDescriptor & { slot: string })[] => bySlot.get(slot) ?? [];
 
 /** Stored ids first in stored order, unlisted placements appended by declared `order`, unmatched stored ids ignored. */
 function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(items: T[], slotConfig?: SlotToolsConfig): T[] {
@@ -153,10 +146,7 @@ export interface ResolvePlacementOptions {
   slotConfig?: SlotToolsConfig;
 }
 
-/**
- * Hiding only, no `requires`/`visibleTo` gating: the app left this id out of the slot's `surfaces`
- * list, or the channel's stored arrangement hides it (which `locked` is immune to).
- */
+/** Hiding only, no `requires`/`visibleTo` gating: the slot's `surfaces` list omits the id, or the channel's stored config hides an unlocked one. */
 export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {
   const listed = surfaceOrder(slot);
   if (listed && !listed.includes(item.id)) return true;
@@ -176,10 +166,7 @@ export function arrangePlacements<T extends PlacementDescriptor & { order: numbe
   return orderBySlotConfig(surfaced, slotConfig);
 }
 
-/**
- * {@link arrangePlacements} for the placements a viewer sees: channel-stored hiding (`locked` immune), then
- * `requires`/`visibleTo` leave a placement out.
- */
+/** {@link arrangePlacements} for what a viewer sees: channel-stored hiding (`locked` immune), then `requires`/`visibleTo` leave a placement out. */
 export function resolvePlacementList<T extends PlacementDescriptor & { order: number }>(
   slot: Slot,
   items: T[],
@@ -195,10 +182,7 @@ export function resolvePlacementList<T extends PlacementDescriptor & { order: nu
   return arrangePlacements(slot, visible, slotConfig);
 }
 
-/**
- * Startup check: every id an app lists must name a placement the slot actually has. Called once the
- * route tree exists, so route-declared tabs count too; a typo would otherwise hide a tab in silence.
- */
+/** Startup check, run once the route tree exists: every id an app lists names a placement of its slot, so a typo never hides a tab in silence. */
 export function assertSurfaceIds(candidateIdsBySlot: (slot: Slot) => readonly string[]): void {
   for (const slot of allSlots()) {
     const listed = surfaceOrder(slot);

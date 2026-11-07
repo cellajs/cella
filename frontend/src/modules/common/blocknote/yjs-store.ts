@@ -662,9 +662,7 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
 }
 
 /** The unsaved documents, live, for the sign-out dialog. */
-export function watchUnsavedYDocs(onChange: (docs: UnsavedYDoc[]) => void): () => void {
-  return watchLocalUserDb(readUnsaved, [], onChange);
-}
+export const watchUnsavedYDocs = (onChange: (docs: UnsavedYDoc[]) => void): (() => void) => watchLocalUserDb(readUnsaved, [], onChange);
 
 type StoredState = { stored: boolean; unsynced: boolean };
 

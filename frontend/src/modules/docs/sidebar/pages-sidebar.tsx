@@ -46,27 +46,19 @@ export function PagesSidebar() {
     setExpandedIds(expandAncestors(expandedIds, activePageId, pages));
   }
 
-  const togglePageExpanded = (id: string) => {
+  const togglePageExpanded = (id: string) =>
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else expandExclusive(next, id, effectiveParents(pages));
       return next;
     });
-  };
 
   return (
     <SidebarMenu className="no-focus-ring:gap-0 gap-1 p-0 pt-1">
       {pageTree.length > 0 ? (
         pageTree.map((node) => (
-          <PageBranch
-            key={node.page.id}
-            node={node}
-            variant="root"
-            activePageId={activePageId}
-            expandedIds={expandedIds}
-            onToggle={togglePageExpanded}
-          />
+          <PageBranch key={node.page.id} variant="root" {...{ node, activePageId, expandedIds }} onToggle={togglePageExpanded} />
         ))
       ) : (
         <SidebarMenuItem>

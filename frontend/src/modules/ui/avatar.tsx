@@ -62,9 +62,7 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   const childArray = React.Children.toArray(children);
   const count = childArray.length;
 
-  React.useEffect(() => {
-    setCount?.(count);
-  }, [count, setCount]);
+  React.useEffect(() => setCount?.(count), [count, setCount]);
 
   if (!limit || count <= limit) return <>{childArray}</>;
 

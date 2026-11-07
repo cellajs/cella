@@ -52,10 +52,8 @@ export function WordChip({ text, onPress, onRemove, size, className }: WordChipP
 
   return (
     <Chip
-      size={size}
-      onRemove={onRemove}
+      {...{ size, onRemove, onPress }}
       removeLabel={t('c:remove_resource', { resource: text })}
-      onPress={onPress}
       pressLabel={t('c:edit_resource', { resource: text })}
       className={cn('max-w-48 *:data-[slot=chip-value]:cursor-text', className)}
     >

@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
-import { isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
+import { isImageTemplate } from '~/modules/common/uploader/helpers/uppy-helpers';
 import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { uploader } from '~/modules/common/uploader/use-uploader';
 import { useUppyUpload } from '~/modules/common/uploader/use-uppy-upload';

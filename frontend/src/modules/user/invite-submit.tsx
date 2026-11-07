@@ -52,15 +52,14 @@ const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['ro
   hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
 
 /** The form every invite mode of one channel shares, so a switch of mode keeps the addresses. */
-export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
-  return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
+export const useInviteFormDraft = (entityId?: string, entityType?: ChannelEntityType) =>
+  useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: inviteDialogId,
     formOptions: {
       resolver: formResolver(inviteFormSchema),
       defaultValues: { emails: [], unparsed: [], typed: '', pasted: '', people: [], role: defaultInviteRole(entityType) },
     },
   });
-}
 
 export type InviteForm = ReturnType<typeof useInviteFormDraft>;
 

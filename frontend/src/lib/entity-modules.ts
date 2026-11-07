@@ -82,10 +82,7 @@ export function getChannelListQueries(): ChannelListQueryMap {
   return map;
 }
 
-/**
- * The search params that open this product: its own, and the one of the product that hosts it on
- * screen. A deep link may send both, since a route that declares neither strips both.
- */
+/** Search params that open this product: its own and its on-screen host's. A deep link may send both: a route that declares neither strips both. */
 export function getProductDeepLink(entityType: ProductEntityType): { param?: string; hostParam?: string } {
   const product = products.get(entityType);
   const host = product?.deepLinkHost;

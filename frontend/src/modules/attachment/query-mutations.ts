@@ -33,10 +33,8 @@ export async function createAttachmentsMutationFn({ tenantId, organizationId, da
   return batchCreateAttachments({ path: { tenantId, organizationId }, body });
 }
 
-export async function updateAttachmentMutationFn({ tenantId, organizationId, id, ops, stx }: UpdateAttachmentFullVars) {
-  return updateAttachment({ path: { tenantId, organizationId, attachmentId: id }, body: { ops, stx } });
-}
+export const updateAttachmentMutationFn = async ({ tenantId, organizationId, id, ops, stx }: UpdateAttachmentFullVars) =>
+  updateAttachment({ path: { tenantId, organizationId, attachmentId: id }, body: { ops, stx } });
 
-export async function deleteAttachmentsMutationFn({ tenantId, organizationId, rows, stx }: DeleteAttachmentVars) {
-  return batchDeleteAttachments({ path: { tenantId, organizationId }, body: { ids: rows.map((row) => row.id), stx } });
-}
+export const deleteAttachmentsMutationFn = async ({ tenantId, organizationId, rows, stx }: DeleteAttachmentVars) =>
+  batchDeleteAttachments({ path: { tenantId, organizationId }, body: { ids: rows.map((row) => row.id), stx } });

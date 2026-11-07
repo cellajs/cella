@@ -27,7 +27,7 @@ export interface DeleteItemsProps<TItem, TVariables> {
 
 /** Delete confirmation for a list of items: on success it closes its dropdown or dialog and reports the items to `callback`. */
 export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TVariables>) {
-  const { items, callback, callbackFirst, mutation, resource } = props;
+  const { items, callback, callbackFirst, mutation, resource, label, onCancel } = props;
   const { t } = useTranslation();
   const overlay = useOverlayClose();
 
@@ -56,12 +56,10 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
 
   return (
     <DeleteForm
-      resource={resource}
+      {...{ resource, label, onCancel }}
       count={items.length}
-      label={props.label}
       allowOfflineDelete={props.optimistic}
       onDelete={handleDelete}
-      onCancel={props.onCancel}
       pending={mutation.isPending}
     />
   );

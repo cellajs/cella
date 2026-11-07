@@ -15,9 +15,7 @@ export function PasskeysList() {
   const { mutate: createPasskey } = useCreatePasskeyMutation();
   const { mutate: deletePasskey, isPending, variables } = useDeletePasskeyMutation();
 
-  const {
-    data: { passkeys },
-  } = useSuspenseQuery(meAuthQueryOptions());
+  const passkeys = useSuspenseQuery(meAuthQueryOptions()).data.passkeys;
   const resource = t('c:passkey');
 
   const handleDeletePasskey = (id: string) => {

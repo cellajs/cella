@@ -21,21 +21,12 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: false,
   clientsClaim: true,
-  precacheOptions: {
-    cleanupOutdatedCaches: true,
-    // Number of parallel precache downloads during SW install
-    concurrency: 10,
-    navigateFallback: 'index.html',
-    navigateFallbackDenylist: navigationDenylist,
-  },
+  precacheOptions: { cleanupOutdatedCaches: true, concurrency: 10, navigateFallback: 'index.html', navigateFallbackDenylist: navigationDenylist },
   runtimeCaching: [
     {
       // Docs files keep stable names per release; the app appends ?v=<sha> so each release keys fresh cache entries.
       matcher: ({ url }) => url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || docsFiles.has(url.pathname)),
-      handler: new StaleWhileRevalidate({
-        cacheName: 'docs-gen',
-        plugins: [new ExpirationPlugin({ maxEntries: 40 })],
-      }),
+      handler: new StaleWhileRevalidate({ cacheName: 'docs-gen', plugins: [new ExpirationPlugin({ maxEntries: 40 })] }),
     },
   ],
 });
@@ -56,8 +47,7 @@ self.addEventListener('push', (event) => {
 });
 
 async function handleNotificationPush(data: NotificationPushPayload): Promise<void> {
-  // Visible notification first (userVisibleOnly contract), collapsed per channel by tag: a
-  // burst edits one toast in place.
+  // Visible notification first (userVisibleOnly contract), collapsed per channel by tag: a burst edits one toast in place.
   await self.registration.showNotification(pushTitles[data.kind] ?? 'New notification', {
     tag: `notif-${data.channelId}`,
     data: { activityId: data.activityId, url: data.url },

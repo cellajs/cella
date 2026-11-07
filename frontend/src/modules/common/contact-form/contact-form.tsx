@@ -47,7 +47,7 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const onSubmit: SubmitHandler<FormValues> = (body) => {
+  const onSubmit: SubmitHandler<FormValues> = (body) =>
     createRequest(body, {
       onSuccess: () => {
         toaster.success(t('c:success.send_message'));
@@ -56,7 +56,6 @@ export function ContactForm({ dialog: isDialog }: ContactFormProps) {
         form.reset();
       },
     });
-  };
 
   return (
     <div className="flex w-full flex-col gap-4 md:flex-row md:gap-10">

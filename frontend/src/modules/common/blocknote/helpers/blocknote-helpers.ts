@@ -51,9 +51,8 @@ export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
   editor: TEditor,
   block: Parameters<TEditor['updateBlock']>[0],
   update: Parameters<TEditor['updateBlock']>[1],
-) => {
+) =>
   editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
     tr.setMeta('addToHistory', false);
     editor.updateBlock(block, update);
   });
-};

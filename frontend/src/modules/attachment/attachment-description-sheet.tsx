@@ -71,16 +71,11 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
       <LazyCollaborativeBlockNote
         entityType="attachment"
         entityId={attachment.id}
-        tenantId={tenantId}
-        organizationId={organizationId}
-        canEdit={canEdit}
         editable={canEdit}
         description={attachment.description}
-        updateData={updateData}
-        members={members}
         autoFocus={canEdit && !isTouchInteraction()}
-        waitingFallback={waitingFallback}
         className="min-h-40"
+        {...{ tenantId, organizationId, canEdit, updateData, members, waitingFallback }}
       />
     </Suspense>
   );

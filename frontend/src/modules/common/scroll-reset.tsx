@@ -7,18 +7,13 @@ interface ScrollResetProps {
   children: ReactNode;
 }
 
-/**
- * Zero-height sentinel in document flow; any descendant calls `useScrollReset()` to scroll back to it.
- * Nestable. An inner `ScrollReset` overrides the outer context.
- */
+/** Zero-height sentinel in document flow that descendants scroll back to with `useScrollReset()`; an inner `ScrollReset` overrides the outer one. */
 export function ScrollReset({ children }: ScrollResetProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const rect = sentinel.getBoundingClientRect();
-    if (rect.top < 0) window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
+    const rect = sentinelRef.current?.getBoundingClientRect();
+    if (rect && rect.top < 0) window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
   };
 
   return (

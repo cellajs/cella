@@ -370,12 +370,7 @@ export function InlineSearchChips({
           {isConnected && (
             <ComboboxList className="max-h-[min(24rem,60dvh)] border-t p-0 [--search-icon-start:1rem]">
               <SearchOptionsList
-                pickingChip={pickingChip}
-                pickingGroup={pickingGroup}
-                typingWord={typingWord}
-                groups={groups}
-                recents={recents}
-                hasChips={hasChips}
+                {...{ pickingChip, pickingGroup, typingWord, groups, recents, hasChips }}
                 // A count in the field is already in view above the rows
                 resultCount={isCountInField ? undefined : resultCount}
                 isResultPending={isSearching || search.isPending}

@@ -76,9 +76,7 @@ function flush() {
   pending = [];
 
   for (const requests of groupBy(batch, (request) => `${request.tenantId}:${request.organizationId}`).values()) {
-    for (let i = 0; i < requests.length; i += maxItemsPerCall) {
-      void sendChunk(requests.slice(i, i + maxItemsPerCall));
-    }
+    for (let i = 0; i < requests.length; i += maxItemsPerCall) void sendChunk(requests.slice(i, i + maxItemsPerCall));
   }
 }
 

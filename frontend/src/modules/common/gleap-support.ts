@@ -19,10 +19,7 @@ function initGleap() {
   Gleap.showFeedbackButton(false);
 }
 
-onlineManager.subscribe((online) => {
-  if (online) initGleap();
-  else Gleap.destroy();
-});
+onlineManager.subscribe((online) => (online ? initGleap() : Gleap.destroy()));
 
 if (onlineManager.isOnline()) initGleap();
 
@@ -47,9 +44,7 @@ export function GleapSupport() {
       const { user } = userStore.getState();
       if (user && !Gleap.isUserIdentified()) setGleapUser(user);
 
-      const unsubscribe = userStore.subscribe((state) => {
-        const user = state.user;
-
+      const unsubscribe = userStore.subscribe(({ user }) => {
         if (user) return setGleapUser(user);
 
         window.Gleap?.clearIdentity();

@@ -77,16 +77,7 @@ export function ComboboxContent({
   Pick<ComboboxPrimitive.Positioner.Props, 'side' | 'align' | 'sideOffset' | 'alignOffset' | 'anchor' | 'collisionPadding'>) {
   return (
     <ComboboxPrimitive.Portal>
-      <ComboboxPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        anchor={anchor}
-        positionMethod="fixed"
-        collisionPadding={collisionPadding}
-        className="z-200"
-      >
+      <ComboboxPrimitive.Positioner {...{ side, sideOffset, align, alignOffset, anchor, collisionPadding }} positionMethod="fixed" className="z-200">
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(

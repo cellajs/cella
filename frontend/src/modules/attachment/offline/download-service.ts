@@ -123,12 +123,8 @@ class AttachmentDownloadService {
   /** Drops a deleted attachment's blobs and queue row: it is never re-downloaded, and its row would grow the dedupe registry. */
   private purge(ids: string[]): void {
     if (!ids.length || !getLocalUserDb()) return;
-    attachmentStorage.deleteBlobs(ids).catch((error) => {
-      console.error('[DownloadService] Failed to delete local blobs:', error);
-    });
-    downloadQueue.remove(ids).catch((error) => {
-      console.error('[DownloadService] Failed to remove queue entries:', error);
-    });
+    attachmentStorage.deleteBlobs(ids).catch((error) => console.error('[DownloadService] Failed to delete local blobs:', error));
+    downloadQueue.remove(ids).catch((error) => console.error('[DownloadService] Failed to remove queue entries:', error));
   }
 
   /**

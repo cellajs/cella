@@ -1,18 +1,30 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { RefreshCwIcon } from 'lucide-react';
+import { CircleAlertIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { SecretBox } from '~/modules/common/secret-box';
 import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
-import { WarningNote } from '~/modules/me/warning-note';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 /** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */
 const keyExpiryMs = 4.5 * 60 * 1000;
+
+/** A muted line behind a warning icon, for what the user should know before acting. */
+function WarningNote({ className, children, ...props }: ComponentProps<'p'>) {
+  return (
+    <p className={cn('text-muted-foreground flex items-start gap-2 text-sm font-normal', className)} {...props}>
+      <span className="flex h-lh shrink-0 items-center">
+        <CircleAlertIcon className="text-warning size-3.5" />
+      </span>
+      <span>{children}</span>
+    </p>
+  );
+}
 
 interface TotpSetupProps {
   /** After the key is confirmed. */
@@ -44,7 +56,7 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
 
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const openManualKey = () => {
+  const openManualKey = () =>
     dialoger.getState().create(<SecretBox value={data.manualKey} />, {
       id: 'totp-manual-key',
       triggerRef,
@@ -52,7 +64,6 @@ export function TotpSetup({ onDone, onCancel }: TotpSetupProps) {
       description: t('c:totp_manual.text'),
       className: 'sm:max-w-md',
     });
-  };
 
   return (
     <div className="flex flex-col gap-2">

@@ -5,20 +5,14 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import { cn } from '~/utils/cn';
 
-export function SidebarWrapper({ className, style, children, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div data-slot="sidebar-wrapper" style={style} className={cn('group/sidebar-wrapper flex min-h-svh w-full', className)} {...props}>
-      {children}
-    </div>
-  );
+export function SidebarWrapper({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="sidebar-wrapper" className={cn('group/sidebar-wrapper flex min-h-svh w-full', className)} {...props} />;
 }
 
 /** Mounts no `TooltipProvider`, so the nav tooltips share the app-wide delay group of `root.tsx`: the first waits, its neighbors open at once. */
-export function Sidebar({ className, children, ...props }: React.ComponentProps<'div'>) {
+export function Sidebar({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div data-slot="sidebar" className={cn('bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col', className)} {...props}>
-      {children}
-    </div>
+    <div data-slot="sidebar" className={cn('bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col', className)} {...props} />
   );
 }
 

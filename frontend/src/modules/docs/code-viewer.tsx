@@ -17,11 +17,7 @@ let highlighterPromise: Promise<HighlighterCore> | null = null;
 const getHighlighter = () => {
   highlighterPromise ??= Promise.all([import('@shikijs/core'), import('@shikijs/engine-javascript/raw')]).then(
     ([{ createHighlighterCore }, { createJavaScriptRawEngine }]) =>
-      createHighlighterCore({
-        themes: [codeTheme],
-        langs: [import('@shikijs/langs-precompiled/typescript')],
-        engine: createJavaScriptRawEngine(),
-      }),
+      createHighlighterCore({ themes: [codeTheme], langs: [import('@shikijs/langs-precompiled/typescript')], engine: createJavaScriptRawEngine() }),
   );
   return highlighterPromise;
 };

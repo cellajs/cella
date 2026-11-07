@@ -17,8 +17,6 @@ export const useBeforeUnload = (isChanged: boolean) => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isChanged]);
 };

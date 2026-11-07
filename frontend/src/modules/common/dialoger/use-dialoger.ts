@@ -86,10 +86,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   get: (id) => get().dialogs.find((dialog) => dialog.id === id),
 
-  scrollToTop: (id) => {
-    const popup = document.getElementById(String(id));
-    popup?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 });
-  },
+  scrollToTop: (id) => document.getElementById(String(id))?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 }),
 }));
 
 export { useDialoger as dialoger };

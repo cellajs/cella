@@ -20,9 +20,7 @@ export function IdentityTile({ value, icon, title, identity, via }: IdentityTile
 
   return (
     <ExpandableTile
-      value={value}
-      icon={icon}
-      title={title}
+      {...{ value, icon, title }}
       meta={identity.email ?? t('c:connected_on', { date: dateShort(identity.createdAt) })}
       details={
         <>

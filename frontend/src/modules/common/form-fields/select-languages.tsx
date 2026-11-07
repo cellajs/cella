@@ -59,10 +59,9 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
           className="group/language-option hover:bg-accent hover:text-accent-foreground active:bg-accent flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden select-none aria-selected:font-medium"
           onClick={() => toggleLanguage(option.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              toggleLanguage(option.value);
-            }
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            toggleLanguage(option.value);
           }}
           tabIndex={0}
         >

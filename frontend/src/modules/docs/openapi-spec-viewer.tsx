@@ -56,10 +56,8 @@ export function OpenApiSpecViewer() {
           // The tree's node toggles are named "Expand" too
           aria-label={isExpanded ? undefined : t('c:expand_all')}
           onClick={() => {
-            if (isExpanded) {
-              // Reset to default state by forcing re-mount
-              setResetKey((prev) => prev + 1);
-            }
+            // Reset to default state by forcing re-mount
+            if (isExpanded) setResetKey((prev) => prev + 1);
             setIsExpanded((value) => !value);
           }}
         >

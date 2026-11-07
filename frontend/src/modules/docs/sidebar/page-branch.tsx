@@ -113,14 +113,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
             <ul className="no-focus-ring:gap-0 flex flex-col gap-1 py-1">
               {children.map((child) => (
-                <PageBranch
-                  key={child.page.id}
-                  node={child}
-                  variant="parent"
-                  activePageId={activePageId}
-                  expandedIds={expandedIds}
-                  onToggle={onToggle}
-                />
+                <PageBranch key={child.page.id} node={child} variant="parent" {...{ activePageId, expandedIds, onToggle }} />
               ))}
             </ul>
           ) : (

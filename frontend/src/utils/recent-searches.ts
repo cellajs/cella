@@ -26,9 +26,8 @@ export function addRecentSearch(searches: string[], value: string): string[] {
 }
 
 /** Removes a query. Returns the original array if it holds no such entry. */
-export function withoutRecentSearch(searches: string[], value: string): string[] {
-  return searches.includes(value) ? searches.filter((entry) => entry !== value) : searches;
-}
+export const withoutRecentSearch = (searches: string[], value: string): string[] =>
+  searches.includes(value) ? searches.filter((entry) => entry !== value) : searches;
 
 /** Value a search input takes: a bare history index picks that entry, but only while the input was empty (the history list is showing). */
 export function resolveSearchInput(previous: string, next: string, searches: string[]): string {

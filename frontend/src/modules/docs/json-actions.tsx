@@ -30,9 +30,7 @@ export function JsonActions({ url, data, filename, resourceName, className }: Js
     toaster.success(t('c:success.copy_resource', { resource: resourceName }));
   };
 
-  const handleOpen = () => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+  const handleOpen = () => window.open(url, '_blank', 'noopener,noreferrer');
 
   return (
     <ButtonGroup className={className}>

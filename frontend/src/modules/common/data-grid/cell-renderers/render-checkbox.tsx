@@ -5,10 +5,6 @@ import type { RenderCheckboxProps } from '../types';
 export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
   const withShift = useRef(false);
 
-  const handleChange = (checked: boolean) => {
-    onChange(checked, withShift.current);
-  };
-
   return (
     <Checkbox
       {...props}
@@ -16,9 +12,7 @@ export function RenderCheckbox({ onChange, ...props }: RenderCheckboxProps) {
         withShift.current = e.nativeEvent.shiftKey;
         e.stopPropagation();
       }}
-      onCheckedChange={(checked) => {
-        handleChange(!!checked);
-      }}
+      onCheckedChange={(checked) => onChange(!!checked, withShift.current)}
     />
   );
 }

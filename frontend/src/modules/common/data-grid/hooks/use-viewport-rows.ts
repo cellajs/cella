@@ -100,9 +100,8 @@ export function useViewportRows<R>({
 
           if (currentOffset === offset) return middle;
 
-          if (currentOffset < offset) {
-            start = middle + 1;
-          } else if (currentOffset > offset) end = middle - 1;
+          if (currentOffset < offset) start = middle + 1;
+          else if (currentOffset > offset) end = middle - 1;
 
           if (start > end) return end;
         }

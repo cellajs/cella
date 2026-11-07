@@ -158,14 +158,12 @@ class AttachmentStorageService {
       }
 
       const rawBlob = await attachmentsDb.blobs.get(rawKey);
-      if (rawBlob) {
-        await attachmentsDb.blobs.delete(rawKey);
-        // A shared URL may have fallen back to the removed raw blob.
-        this.invalidateSharedBlobUrls(attachmentId);
-        console.debug(`[AttachmentStorage] Evicted raw blob for ${attachmentId}`);
-        return true;
-      }
-      return false;
+      if (!rawBlob) return false;
+      await attachmentsDb.blobs.delete(rawKey);
+      // A shared URL may have fallen back to the removed raw blob.
+      this.invalidateSharedBlobUrls(attachmentId);
+      console.debug(`[AttachmentStorage] Evicted raw blob for ${attachmentId}`);
+      return true;
     } catch (error) {
       console.error(`[AttachmentStorage] Failed to evict raw blob (${attachmentId}):`, error);
       return false;

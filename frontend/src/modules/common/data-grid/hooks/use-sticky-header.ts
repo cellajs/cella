@@ -1,5 +1,4 @@
-import type { RefObject } from 'react';
-import { useLayoutEffect } from 'react';
+import { type RefObject, useLayoutEffect } from 'react';
 import { stackOffset, stackOffsetCss } from '~/modules/common/sticky-box';
 import { getScrollParent } from '~/utils/scroll-parent';
 
@@ -26,12 +25,8 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
     let headerCells: HTMLElement[] = [];
     let originalStyles: { cssText: string }[] = [];
 
-    function getHeaderCells(): HTMLElement[] {
-      return Array.from(grid!.querySelectorAll<HTMLElement>('.rdg-header-row > .rdg-cell'));
-    }
-
     function applyFixed() {
-      headerCells = getHeaderCells();
+      headerCells = Array.from(grid!.querySelectorAll<HTMLElement>('.rdg-header-row > .rdg-cell'));
       originalStyles = headerCells.map((cell) => ({ cssText: cell.style.cssText }));
 
       // Measure each cell's bounding rect before changing position
@@ -55,9 +50,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
     }
 
     function removeFixed() {
-      for (let i = 0; i < headerCells.length; i++) {
-        headerCells[i].style.cssText = originalStyles[i].cssText;
-      }
+      for (let i = 0; i < headerCells.length; i++) headerCells[i].style.cssText = originalStyles[i].cssText;
       headerCells = [];
       originalStyles = [];
       isSticky = false;
@@ -91,14 +84,8 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       const measuringCells = grid!.querySelectorAll<HTMLElement>('[data-measuring-cell-key]');
       if (measuringCells.length === 0) return;
 
-      const widths: number[] = [];
-      for (const mc of measuringCells) {
-        widths.push(mc.getBoundingClientRect().width);
-      }
-
-      for (let i = 0; i < headerCells.length && i < widths.length; i++) {
-        headerCells[i].style.width = `${widths[i]}px`;
-      }
+      const widths = Array.from(measuringCells, (mc) => mc.getBoundingClientRect().width);
+      for (let i = 0; i < headerCells.length && i < widths.length; i++) headerCells[i].style.width = `${widths[i]}px`;
 
       syncHorizontal();
     }
@@ -112,9 +99,8 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       if (shouldStick && !isSticky) {
         applyFixed();
         syncHorizontal(rect);
-      } else if (!shouldStick && isSticky) {
-        removeFixed();
-      } else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) syncHorizontal(rect);
+      } else if (!shouldStick && isSticky) removeFixed();
+      else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) syncHorizontal(rect);
     }
 
     const onScrollVertical = () => {
@@ -145,9 +131,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
 
     // Watch measuring cells for width changes (triggered by column resize)
     const resizeObserver = new ResizeObserver(onResize);
-    for (const mc of grid.querySelectorAll('[data-measuring-cell-key]')) {
-      resizeObserver.observe(mc);
-    }
+    for (const mc of grid.querySelectorAll('[data-measuring-cell-key]')) resizeObserver.observe(mc);
 
     update();
 

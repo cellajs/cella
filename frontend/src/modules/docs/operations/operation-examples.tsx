@@ -10,14 +10,13 @@ interface OperationExamplesProps {
   tagName: string;
 }
 
-export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
+export const openExamplesSheet = (operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) =>
   openDocsSheet({
     id: `examples-${operation.id}`,
     title: i18n.t('c:docs.success_response'),
     trigger,
     content: <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />,
   });
-}
 
 /** Suspends until its four queries resolve; `openExamplesSheet` gives it the boundary. */
 export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
@@ -29,14 +28,5 @@ export function OperationExamples({ operationId, tagName }: OperationExamplesPro
   // The sheet is titled "Success response": error examples stay on the operation page.
   const successResponses = (detail?.responses ?? []).filter((response) => response.status >= 200 && response.status < 300);
 
-  return (
-    <ResponsesAccordion
-      examplesOnly
-      responses={successResponses}
-      schemas={schemas}
-      operationId={operationId}
-      zodIndex={zodIndex}
-      typesIndex={typesIndex}
-    />
-  );
+  return <ResponsesAccordion examplesOnly responses={successResponses} {...{ schemas, operationId, zodIndex, typesIndex }} />;
 }

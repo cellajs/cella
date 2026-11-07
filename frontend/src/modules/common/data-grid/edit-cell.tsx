@@ -27,15 +27,12 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
   const commitOnOutsideClick = column.editorOptions?.commitOnOutsideClick ?? true;
 
   function onClose(commitChanges = false, shouldFocusCell = true) {
-    if (commitChanges) {
-      onRowChange(row, true, shouldFocusCell);
-    } else closeEditor(shouldFocusCell);
+    if (commitChanges) onRowChange(row, true, shouldFocusCell);
+    else closeEditor(shouldFocusCell);
   }
 
   // useEffectEvent keeps the useLayoutEffect from tearing down between renders, which would drop valid mousedowns.
-  const commitOnOutsideMouseDown = useEffectEvent(() => {
-    onClose(true, false);
-  });
+  const commitOnOutsideMouseDown = useEffectEvent(() => onClose(true, false));
 
   function cancelTask() {
     captureEventRef.current = undefined;
@@ -59,11 +56,8 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
         const abortController = new AbortController();
         const { signal } = abortController;
         abortControllerRef.current = abortController;
-        // postTask runs the handler outside a React render and before the next paint.
-        scheduler
-          .postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal })
-          // ignore abort errors
-          .catch(() => {});
+        // postTask runs the handler outside a React render and before the next paint; the catch ignores abort errors.
+        scheduler.postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal }).catch(() => {});
       } else frameRequestRef.current = requestAnimationFrame(commitOnOutsideMouseDown);
     }
 
@@ -100,11 +94,9 @@ export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, clo
       if (cellEvent.isGridDefaultPrevented()) return;
     }
 
-    if (event.key === 'Escape') {
-      onClose();
-    } else if (event.key === 'Enter') {
-      onClose(true);
-    } else if (onEditorNavigation(event)) navigate(event);
+    if (event.key === 'Escape') onClose();
+    else if (event.key === 'Enter') onClose(true);
+    else if (onEditorNavigation(event)) navigate(event);
   }
 
   function onEditorRowChange(row: R, commitChangesAndFocus = false) {

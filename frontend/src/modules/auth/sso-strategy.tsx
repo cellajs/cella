@@ -41,10 +41,7 @@ interface SsoAlternatives {
   isLoading: boolean;
 }
 
-/**
- * The institution ways in; none when the strategy is off. An invitation in hand resumes after the sign-in, on the
- * confirm step, so SSO never runs the invite flow itself.
- */
+/** The institution ways in, none with the strategy off; an invitation in hand resumes on the confirm step: SSO never runs the invite flow. */
 export function useSsoAlternatives(connectionId?: string, federations: GetAuthHealthResponse['federations'] = []): SsoAlternatives {
   const { t } = useTranslation();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });

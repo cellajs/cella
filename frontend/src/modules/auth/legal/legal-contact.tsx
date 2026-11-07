@@ -6,7 +6,6 @@ interface SupportEmailLinkProps {
   className?: string;
 }
 
-/** The support address as a mail link. */
 export function SupportEmailLink({ className }: SupportEmailLinkProps) {
   const { supportEmail } = appConfig;
 

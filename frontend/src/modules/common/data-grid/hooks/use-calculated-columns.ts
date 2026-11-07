@@ -17,9 +17,7 @@ import type {
 } from '../types';
 import { breakpointOrder, clampColumnWidth, resolveMergeRule, resolveModeOverrides, warnInvalidMergeRule } from '../utils/grid-utils';
 
-type Mutable<T> = {
-  -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P];
-};
+type Mutable<T> = { -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P] };
 
 interface WithParent<R, SR> {
   readonly parent: MutableCalculatedColumnParent<R, SR> | undefined;
@@ -42,7 +40,6 @@ interface CalculatedColumnsArgs<R, SR> {
   defaultColumnOptions: DefaultColumnOptions<R, SR> | undefined | null;
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
   currentBreakpoint?: BreakpointKey;
-
   activeModes?: ActiveModes;
 }
 
@@ -51,7 +48,6 @@ export function useCalculatedColumns<R, SR>({
   defaultColumnOptions,
   getColumnWidth,
   currentBreakpoint = 'lg',
-
   activeModes = defaultActiveModes,
 }: CalculatedColumnsArgs<R, SR>) {
   const defaultWidth = defaultColumnOptions?.width ?? defaultColumnWidth;
@@ -166,10 +162,7 @@ export function useCalculatedColumns<R, SR>({
       if (aKey === selectColumnKey) return -1;
       if (bKey === selectColumnKey) return 1;
 
-      if (frozenA) {
-        if (frozenB) return 0;
-        return -1;
-      }
+      if (frozenA) return frozenB ? 0 : -1;
       if (frozenB) return 1;
 
       return 0;
@@ -196,8 +189,7 @@ export function useCalculatedColumns<R, SR>({
         hostSlots.sort((a, b) => {
           const orderA = a.rule.order ?? Number.POSITIVE_INFINITY;
           const orderB = b.rule.order ?? Number.POSITIVE_INFINITY;
-          if (orderA === orderB) return 0;
-          return orderA - orderB;
+          return orderA === orderB ? 0 : orderA - orderB;
         });
         const mergedSlots: Record<TileSide, MergedSlot<R, SR>[]> = { top: [], right: [], bottom: [], left: [] };
         for (const { column, rule } of hostSlots) {
@@ -285,10 +277,9 @@ export function useCalculatedColumns<R, SR>({
 function updateColumnParent<R, SR>(column: MutableCalculatedColumn<R, SR> | MutableCalculatedColumnParent<R, SR>, index: number, level: number) {
   if (level < column.level) column.level = level;
 
-  if (column.parent !== undefined) {
-    const { parent } = column;
-    if (parent.idx === -1) parent.idx = index;
-    parent.colSpan += 1;
-    updateColumnParent(parent, index, level - 1);
-  }
+  const { parent } = column;
+  if (parent === undefined) return;
+  if (parent.idx === -1) parent.idx = index;
+  parent.colSpan += 1;
+  updateColumnParent(parent, index, level - 1);
 }

@@ -18,8 +18,7 @@ import { checkedExtension } from '~/modules/common/blocknote/custom-elements/che
 import { headingLevelsExtension } from '~/modules/common/blocknote/custom-elements/heading-levels/heading-levels-extension';
 import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
-import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
-import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
+import { FilePanelBridge, useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { InlineUppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
@@ -262,11 +261,8 @@ export function BlockNote({
 
   return (
     <BlockNoteView
-      id={id}
+      {...{ id, editor, editable, autoFocus }}
       theme={mode}
-      editor={editor}
-      editable={editable}
-      autoFocus={autoFocus}
       ref={containerRef}
       className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)

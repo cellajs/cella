@@ -28,13 +28,9 @@ interface UploadStoreState {
 export const useUploader = create<UploadStoreState>((set) => ({
   uploadData: null,
 
-  create: (data) => {
-    set({ uploadData: data });
-  },
+  create: (data) => set({ uploadData: data }),
 
-  remove: () => {
-    set({ uploadData: null });
-  },
+  remove: () => set({ uploadData: null }),
 }));
 
 export { useUploader as uploader };

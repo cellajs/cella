@@ -11,9 +11,7 @@ export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed'
 export type BlobVariant = 'raw' | 'original' | 'converted' | 'preview' | 'thumbnail';
 
 /** Composite blob key, formatted `${attachmentId}:${variant}`. */
-export function makeBlobKey(attachmentId: string, variant: BlobVariant): string {
-  return `${attachmentId}:${variant}`;
-}
+export const makeBlobKey = (attachmentId: string, variant: BlobVariant): string => `${attachmentId}:${variant}`;
 
 /** Upload context stored with a blob, used when the upload service re-uploads it; the template decides the bucket. */
 export interface UploadContext {

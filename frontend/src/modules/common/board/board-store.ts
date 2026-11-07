@@ -42,41 +42,36 @@ export const useBoardStore = create<BoardUIState>()(
       immer((set, get) => ({
         ...initStore,
 
-        setPanelCollapsed: (panelId, collapsed) => {
+        setPanelCollapsed: (panelId, collapsed) =>
           set((state) => {
             const current = state.panelCollapseState[panelId] ?? false;
             if (collapsed === current) return;
             state.panelCollapseState[panelId] = collapsed;
-          });
-        },
+          }),
 
-        setActiveBoard: (boardId) => {
+        setActiveBoard: (boardId) =>
           set((state) => {
             state.activeBoardId = boardId;
-          });
-        },
+          }),
 
-        updateBoardLayout: (boardId, layout) => {
+        updateBoardLayout: (boardId, layout) =>
           set((state) => {
             state.boardLayouts[boardId] = layout;
-          });
-        },
+          }),
 
-        setBoardFit: (boardId, fit) => {
+        setBoardFit: (boardId, fit) =>
           set((state) => {
             if (fit) state.boardFits[boardId] = true;
             else delete state.boardFits[boardId];
-          });
-        },
+          }),
 
-        setPanelOrder: (boardId, panelId, displayOrder) => {
+        setPanelOrder: (boardId, panelId, displayOrder) =>
           set((state) => {
             const orders = state.boardPanelOrders[boardId] ?? {};
             if (orders[panelId] === displayOrder) return;
             orders[panelId] = displayOrder;
             state.boardPanelOrders[boardId] = orders;
-          });
-        },
+          }),
 
         prunePanelOrders: (boardId, knownPanelIds) => {
           const orders = get().boardPanelOrders[boardId];

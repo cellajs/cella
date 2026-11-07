@@ -16,11 +16,9 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { openPendingMembershipsSheet } from '~/modules/memberships/pending-memberships-count';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
-import { InviteBulkField } from '~/modules/user/invite-bulk-field';
-import { InviteEmailField } from '~/modules/user/invite-email-field';
+import { InviteBulkField, InviteEmailField, InviteSearchField } from '~/modules/user/invite-fields';
 import { InviteGroups } from '~/modules/user/invite-groups';
 import { focusOnMount, InviteResult, type InviteResultData } from '~/modules/user/invite-result';
-import { InviteSearchField } from '~/modules/user/invite-search-field';
 import {
   type InviteFieldProps,
   InviteFormFooter,
@@ -61,13 +59,7 @@ export function openInviteDialog({ channel, description, triggerRef, containerRe
 /** Per mode: its name on the chooser, its crumb in the dialog title, the situation it suits under its name, its icon and its field. */
 const inviteModes: Record<InviteMode, { label: TKey; crumb: TKey; text: TKey; icon: IconComponent; Field: ComponentType<InviteFieldProps> }> = {
   email: { label: 'c:invite_mode_email', crumb: 'c:email', text: 'c:invite_mode_email.text', icon: MailIcon, Field: InviteEmailField },
-  search: {
-    label: 'c:invite_mode_search',
-    crumb: 'c:people',
-    text: 'c:invite_mode_search.text',
-    icon: UsersRoundIcon,
-    Field: InviteSearchField,
-  },
+  search: { label: 'c:invite_mode_search', crumb: 'c:people', text: 'c:invite_mode_search.text', icon: UsersRoundIcon, Field: InviteSearchField },
   bulk: { label: 'c:invite_mode_bulk', crumb: 'c:paste', text: 'c:invite_mode_bulk.text', icon: ClipboardPasteIcon, Field: InviteBulkField },
 };
 

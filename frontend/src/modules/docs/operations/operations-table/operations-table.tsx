@@ -48,7 +48,7 @@ export function OperationsTable() {
 
       <ScrollReset>
         <FocusViewContainer>
-          <OperationsBar operations={operations} total={filteredOperations.length} search={{ q, filter }} {...{ setSearch, columns, setColumns }} />
+          <OperationsBar total={filteredOperations.length} search={{ q, filter }} {...{ operations, setSearch, columns, setColumns }} />
           <SearchScope q={q}>
             <DataTable<GenOperationSummary>
               columns={columns}

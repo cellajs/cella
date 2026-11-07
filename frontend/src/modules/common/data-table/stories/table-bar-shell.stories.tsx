@@ -9,7 +9,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
-import { PagesTableBar } from '~/modules/page/table/pages-bar';
+import { PagesTableBar } from '~/modules/page/table/pages-table';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { pendingSystemInvitesQueryOptions } from '~/modules/user/query';

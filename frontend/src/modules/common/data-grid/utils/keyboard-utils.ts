@@ -1,8 +1,6 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
 const nonInputKeys = new Set([
-  // Special keys
   'Unidentified',
-  // Modifier keys
   'Alt',
   'AltGraph',
   'CapsLock',
@@ -13,9 +11,7 @@ const nonInputKeys = new Set([
   'NumLock',
   'ScrollLock',
   'Shift',
-  // Whitespace keys
   'Tab',
-  // Navigation keys
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
@@ -24,16 +20,12 @@ const nonInputKeys = new Set([
   'Home',
   'PageDown',
   'PageUp',
-  // Editing
   'Insert',
-  // UI keys
   'ContextMenu',
   'Escape',
   'Pause',
   'Play',
-  // Device keys
   'PrintScreen',
-  // Function keys
   'F1',
   // 'F2', /!\ specifically allowed, do not edit
   'F3',
@@ -48,9 +40,7 @@ const nonInputKeys = new Set([
   'F12',
 ]);
 
-export function isCtrlKeyHeldDown(e: React.KeyboardEvent): boolean {
-  return (e.ctrlKey || e.metaKey) && e.key !== 'Control';
-}
+export const isCtrlKeyHeldDown = (e: React.KeyboardEvent): boolean => (e.ctrlKey || e.metaKey) && e.key !== 'Control';
 
 // event.keyCode stays stable across keyboard languages, and event.nativeEvent.code would break copy/paste on DVORAK.
 const vKey = 86;
@@ -69,6 +59,4 @@ export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivE
   return false;
 }
 
-export function getLeftRightKey() {
-  return { leftKey: 'ArrowLeft', rightKey: 'ArrowRight' } as const;
-}
+export const getLeftRightKey = () => ({ leftKey: 'ArrowLeft', rightKey: 'ArrowRight' }) as const;

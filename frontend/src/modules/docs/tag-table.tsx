@@ -21,8 +21,7 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
   return (
     <Link
       to="."
-      search={search}
-      hash={hash}
+      {...{ search, hash, tabIndex, title }}
       replace
       onClick={(event) => {
         if (isModifiedClick(event)) return;
@@ -32,8 +31,6 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
       }}
       resetScroll={false}
       draggable={false}
-      tabIndex={tabIndex}
-      title={title}
       className="group/link flex h-full min-w-0 flex-1 items-center font-mono text-sm outline-hidden"
     >
       {/* The underline sits on the text alone, while the whole cell takes the click */}
@@ -62,12 +59,9 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
     <div onMouseEnter={onPrerender} onFocus={onPrerender}>
       <DataTable<T>
         className="mb-0"
-        columns={columns}
-        rows={rows}
+        {...{ columns, rows, rowKeyGetter, hideHeader }}
         hasNextPage={false}
-        rowKeyGetter={rowKeyGetter}
         rowHeight={36}
-        hideHeader={hideHeader}
         enableVirtualization={false}
         hideEndMarker
       />

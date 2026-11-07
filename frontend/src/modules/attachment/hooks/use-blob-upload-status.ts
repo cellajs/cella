@@ -24,16 +24,14 @@ const defaultUploadInfo: BlobUploadInfo = {
   isLocalOnly: false,
 };
 
-function toUploadInfo(uploadStatus: UploadStatus): BlobUploadInfo {
-  return {
-    hasLocalBlob: true,
-    isUploaded: uploadStatus === 'uploaded',
-    isUploading: uploadStatus === 'uploading',
-    isFailed: uploadStatus === 'failed',
-    isPending: uploadStatus === 'pending',
-    isLocalOnly: uploadStatus === 'local-only',
-  };
-}
+const toUploadInfo = (uploadStatus: UploadStatus): BlobUploadInfo => ({
+  hasLocalBlob: true,
+  isUploaded: uploadStatus === 'uploaded',
+  isUploading: uploadStatus === 'uploading',
+  isFailed: uploadStatus === 'failed',
+  isPending: uploadStatus === 'pending',
+  isLocalOnly: uploadStatus === 'local-only',
+});
 
 const uploadedInfo = toUploadInfo('uploaded');
 
@@ -110,6 +108,5 @@ function subscribe(listener: () => void) {
 }
 
 /** Reactive upload status; falls back to the default "uploaded" info with no id or no blob. */
-export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
-  return useSyncExternalStore(subscribe, () => (attachmentId && infos.get(attachmentId)) || defaultUploadInfo);
-}
+export const useBlobUploadStatus = (attachmentId: string | null | undefined): BlobUploadInfo =>
+  useSyncExternalStore(subscribe, () => (attachmentId && infos.get(attachmentId)) || defaultUploadInfo);

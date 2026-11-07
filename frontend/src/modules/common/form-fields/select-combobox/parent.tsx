@@ -53,17 +53,11 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
 
   return (
     <ComboboxFormField
-      control={control}
-      name={name}
-      label={label}
-      required={required}
-      disabled={disabled}
-      options={options}
+      {...{ control, name, label, required, disabled, options, clearable }}
       onSelect={(nextValue) => {
         const selectedItem = items.find((item) => item.id === nextValue);
         if (selectedItem) onSelect?.(selectedItem);
       }}
-      clearable={clearable}
       placeholders={{ trigger: 'c:select_resource', resource: `c:${parentType}` }}
     />
   );

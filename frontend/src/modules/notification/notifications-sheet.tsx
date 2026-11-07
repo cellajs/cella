@@ -136,15 +136,7 @@ function NotificationRow({ notification, showOrganization, onOpen }: Notificatio
 
   return (
     <li>
-      <Link
-        to={route.to}
-        params={route.params}
-        search={route.search}
-        onClick={openNotification}
-        {...pageTopHashNav}
-        draggable={false}
-        className={className}
-      >
+      <Link {...route} onClick={openNotification} {...pageTopHashNav} draggable={false} className={className}>
         {content}
       </Link>
     </li>

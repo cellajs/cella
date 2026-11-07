@@ -13,9 +13,7 @@ import { Button } from '~/modules/ui/button';
 export function SessionsList() {
   const { t } = useTranslation();
 
-  const {
-    data: { sessions: allSessions },
-  } = useSuspenseQuery(meAuthQueryOptions());
+  const allSessions = useSuspenseQuery(meAuthQueryOptions()).data.sessions;
 
   const liveSessions = allSessions.filter(isLiveSession);
   const revocable = liveSessions.filter((session) => !session.isCurrent);

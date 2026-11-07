@@ -36,9 +36,7 @@ if (import.meta.hot) {
     if (!newModule?.locales) return;
     const updated = newModule.locales as typeof locales;
     for (const [language, namespaces] of Object.entries(updated)) {
-      for (const [namespace, resources] of Object.entries(namespaces)) {
-        i18n.addResourceBundle(language, namespace, resources, true, true);
-      }
+      for (const [namespace, resources] of Object.entries(namespaces)) i18n.addResourceBundle(language, namespace, resources, true, true);
     }
     // Trigger react-i18next re-render
     i18n.emit('languageChanged', i18n.language);

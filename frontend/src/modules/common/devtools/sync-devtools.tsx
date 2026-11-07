@@ -23,14 +23,9 @@ function formatTimeAgo(timestamp: number): string {
 const newestFirst = (spans: SpanData[], limit: number) => [...spans].sort((a, b) => b.startTime - a.startTime).slice(0, limit);
 
 function getStatusColorClass(status: SpanData['status']): string {
-  switch (status) {
-    case 'ok':
-      return 'bg-green-500';
-    case 'error':
-      return 'bg-red-500';
-    default:
-      return 'bg-muted-foreground';
-  }
+  if (status === 'ok') return 'bg-green-500';
+  if (status === 'error') return 'bg-red-500';
+  return 'bg-muted-foreground';
 }
 
 function getCategoryColorClass(name: string): string {

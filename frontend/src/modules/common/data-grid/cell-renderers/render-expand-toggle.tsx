@@ -74,23 +74,13 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   if (g.parentTrunkContinues) paths.push({ d: `M ${solidX} 0 V ${H}`, thin: false });
 
   if (g.showLineAbove) {
-    if (g.hasChildren) {
-      const xStart = g.lineAboveIsThin ? thinX : solidX;
-      paths.push({ d: elbowAbovePath(xStart, cx, H), thin: g.lineAboveIsThin });
-    } else {
-      const x = g.lineAboveIsThin ? thinX : solidX;
-      paths.push({ d: `M ${x} 0 V ${yMid}`, thin: g.lineAboveIsThin });
-    }
+    const x = g.lineAboveIsThin ? thinX : solidX;
+    paths.push({ d: g.hasChildren ? elbowAbovePath(x, cx, H) : `M ${x} 0 V ${yMid}`, thin: g.lineAboveIsThin });
   }
 
   if (g.showLineBelow) {
-    if (g.hasChildren) {
-      const xEnd = g.lineBelowIsThin ? thinX : solidX;
-      paths.push({ d: elbowBelowPath(cx, xEnd, H), thin: g.lineBelowIsThin });
-    } else {
-      const x = g.lineBelowIsThin ? thinX : solidX;
-      paths.push({ d: `M ${x} ${yMid} V ${H}`, thin: g.lineBelowIsThin });
-    }
+    const x = g.lineBelowIsThin ? thinX : solidX;
+    paths.push({ d: g.hasChildren ? elbowBelowPath(cx, x, H) : `M ${x} ${yMid} V ${H}`, thin: g.lineBelowIsThin });
   }
 
   // Lower-half solid trunk on an expanded parent with children on the thin track, keeping the depth-1 line continuous to the next sibling.
@@ -171,10 +161,8 @@ export function RenderExpandToggle({
           aria-label={label ?? (expanded ? t('c:collapse') : t('c:expand'))}
           draggable={false}
           className="relative size-5 rounded p-0"
-          onMouseDown={(e) => {
-            // Prevent the cell's mousedown from also toggling row selection.
-            e.stopPropagation();
-          }}
+          // Prevent the cell's mousedown from also toggling row selection.
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();

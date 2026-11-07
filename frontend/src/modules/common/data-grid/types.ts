@@ -58,15 +58,9 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly key: string;
   /** Reactively exclude this column independently of breakpoint visibility. */
   readonly hidden?: boolean;
-  /**
-   * Column width. If not specified, it will be determined automatically based on grid width and specified widths of other columns
-   * @default 'auto'
-   */
+  /** Column width; when unset it is determined from the grid width and the widths of the other columns. @default 'auto' */
   readonly width?: Maybe<number | string>;
-  /**
-   * Minimum column width in pixels
-   * @default 50
-   */
+  /** Minimum column width in pixels. @default 50 */
   readonly minWidth?: Maybe<number>;
   /** Maximum column width in pixels */
   readonly maxWidth?: Maybe<number>;
@@ -88,23 +82,13 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Mark cells as row drag sources; drop targets remain active on every column. */
   readonly rowDragHandle?: Maybe<boolean>;
   readonly sortDescendingFirst?: Maybe<boolean>;
-  /**
-   * Muted-text placeholder shown only when `renderCell` returns null/undefined.
-   * @example placeholderValue: '-'
-   */
+  /** Muted-text placeholder shown only when `renderCell` returns null/undefined. @example placeholderValue: '-' */
   readonly placeholderValue?: Maybe<string>;
   /** When false, Tab and Arrow keys skip this column (no keyboard focus). @default true */
   readonly focusable?: Maybe<boolean>;
-  /**
-   * Below this breakpoint the column is excluded. Evaluated against the grid's
-   * internal breakpoint; keep this static.
-   * @example minBreakpoint: 'md'  // Hidden on xs, sm
-   */
+  /** Below this breakpoint the column is excluded, judged by the grid's internal breakpoint; keep it static. @example 'md' hides it on xs, sm */
   readonly minBreakpoint?: BreakpointKey;
-  /**
-   * Above this breakpoint the column is excluded.
-   * @example maxBreakpoint: 'sm'  // Only visible on xs, sm (mobile-only)
-   */
+  /** Above this breakpoint the column is excluded. @example 'sm' shows it on xs and sm only (mobile-only) */
   readonly maxBreakpoint?: BreakpointKey;
 
   /** Wrap to a numeric line cap or effectively unlimited lines, expanding beyond base row height. */
@@ -116,20 +100,11 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly editorOptions?: Maybe<{
     /** Select a text or picker cursor for the cell editor affordance. */
     readonly editorType?: Maybe<'text' | 'select'>;
-    /**
-     * Also render the cell content while editing. Enable when the editor renders
-     * outside the grid (e.g. a modal/popover). @default false (content hidden while editing)
-     */
+    /** Also render the cell content while editing, for an editor outside the grid (a modal or popover). @default false (hidden while editing) */
     readonly displayCellContent?: Maybe<boolean>;
-    /**
-     * Commit changes when clicking outside the cell
-     * @default true
-     */
+    /** Commit changes when clicking outside the cell. @default true */
     readonly commitOnOutsideClick?: Maybe<boolean>;
-    /**
-     * Close the editor when the row value changes externally
-     * @default true
-     */
+    /** Close the editor when the row value changes externally. @default true */
     readonly closeOnExternalRowChange?: Maybe<boolean>;
   }>;
 }

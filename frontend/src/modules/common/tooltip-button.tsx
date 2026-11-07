@@ -12,12 +12,11 @@ interface TooltipButtonProps {
 }
 
 /** Whether a node renders text of its own; an icon-only trigger has none. */
-function hasText(node: ReactNode): boolean {
-  return Children.toArray(node).some(
+const hasText = (node: ReactNode): boolean =>
+  Children.toArray(node).some(
     (child) =>
       typeof child === 'string' || typeof child === 'number' || (isValidElement<{ children?: ReactNode }>(child) && hasText(child.props.children)),
   );
-}
 
 export function TooltipButton({
   children,

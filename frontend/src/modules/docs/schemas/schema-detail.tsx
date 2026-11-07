@@ -14,9 +14,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-function openSchemaSheet(schema: GenComponentSchema, trigger: HTMLAnchorElement) {
+const openSchemaSheet = (schema: GenComponentSchema, trigger: HTMLAnchorElement) =>
   openDocsSheet({ id: `schema-${schema.name}`, title: i18n.t('c:schema'), trigger, content: <SchemaDetail schema={schema} /> });
-}
 
 interface SchemaLinkProps {
   schema: GenComponentSchema;

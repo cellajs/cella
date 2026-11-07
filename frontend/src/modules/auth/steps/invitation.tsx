@@ -35,11 +35,7 @@ interface InvitationStepProps {
 export function InvitationStep({ tokenData, federations }: InvitationStepProps) {
   const { t } = useTranslation();
   const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
-    useShallow((state) => ({
-      setStep: state.setStep,
-      setMagicLinkSent: state.setMagicLinkSent,
-      setInviteOtherAccount: state.setInviteOtherAccount,
-    })),
+    useShallow((state) => ({ setStep: state.setStep, setMagicLinkSent: state.setMagicLinkSent, setInviteOtherAccount: state.setInviteOtherAccount })),
   );
   const { redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
@@ -50,10 +46,8 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
 
   const { mutate: sendLink, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email, redirect } }),
-    onSuccess: () => {
-      // An account may hold the invited address by now: the link then signs in.
-      setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup');
-    },
+    // An account may hold the invited address by now: the link then signs in.
+    onSuccess: () => setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup'),
     // The global handler toasts an ApiError; a failure without a server answer gets this toast
     onError: (error) => {
       if (!(error instanceof ApiError)) toaster.error(t('error:reported_try_later'));

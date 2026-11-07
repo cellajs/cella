@@ -52,9 +52,8 @@ export function FocusTrap({ children, active = true, initialFocus = false, retur
   const previousFocusRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!active) return;
     const trap = trapRef.current;
-    if (!trap) return;
+    if (!active || !trap) return;
 
     if (returnFocus && document.activeElement instanceof HTMLElement) previousFocusRef.current = document.activeElement;
 
@@ -62,10 +61,7 @@ export function FocusTrap({ children, active = true, initialFocus = false, retur
       queueMicrotask(() => {
         if (trap.contains(document.activeElement) && document.activeElement !== trap) return;
         // preventScroll: portaled content may still sit at (0,0), so focus would jump the page to the top
-        if (typeof initialFocus === 'object' && initialFocus.current) {
-          initialFocus.current.focus({ preventScroll: true });
-          return;
-        }
+        if (typeof initialFocus === 'object' && initialFocus.current) return initialFocus.current.focus({ preventScroll: true });
         // A `data-autofocus` element wins, so a confirmation can start on its safe option.
         const preferred = trap.querySelector<HTMLElement>('[data-autofocus]');
         // After touch the first element may be a text field, whose focus opens the on-screen keyboard.
@@ -83,9 +79,8 @@ export function FocusTrap({ children, active = true, initialFocus = false, retur
   }, [active]);
 
   useEffect(() => {
-    if (!active || !containFocus) return;
     const trap = trapRef.current;
-    if (!trap) return;
+    if (!active || !containFocus || !trap) return;
 
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
@@ -101,9 +96,8 @@ export function FocusTrap({ children, active = true, initialFocus = false, retur
 
   // Prevent Tab from escaping a trap with no focusable elements
   useEffect(() => {
-    if (!active) return;
     const trap = trapRef.current;
-    if (!trap) return;
+    if (!active || !trap) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Tab' && getFocusableElements(trap).length === 0) event.preventDefault();

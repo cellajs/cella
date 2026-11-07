@@ -32,13 +32,9 @@ const notify = () => {
 
 /** Toggles data-spy-active on matching data-spy-link elements, bypassing React to keep scrolling smooth. */
 const markActiveLinks = () => {
-  for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) {
-    delete element.dataset.spyActive;
-  }
+  for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) delete element.dataset.spyActive;
   if (currentSection) {
-    for (const element of document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
-      element.dataset.spyActive = '';
-    }
+    for (const element of document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`)) element.dataset.spyActive = '';
   }
 };
 
@@ -151,9 +147,7 @@ const rebuild = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        sections.set(entry.target.id.replace(spyPrefix, ''), entry.intersectionRatio);
-      }
+      for (const entry of entries) sections.set(entry.target.id.replace(spyPrefix, ''), entry.intersectionRatio);
 
       // Skip section updates during programmatic scroll to prevent indicator jank
       if (isProgrammaticScroll()) return;
@@ -214,9 +208,7 @@ export const registerSections = (ids: readonly string[]) => {
     markActiveLinks();
     notify();
     blockHashWrites(1000);
-    requestAnimationFrame(() => {
-      document.getElementById(`${spyPrefix}${hash}`)?.scrollIntoView({ behavior: 'instant' });
-    });
+    requestAnimationFrame(() => document.getElementById(`${spyPrefix}${hash}`)?.scrollIntoView({ behavior: 'instant' }));
     return;
   }
 

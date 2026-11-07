@@ -6,8 +6,7 @@ import { cellLinkTextClass } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
-import { extensionLabel } from '~/modules/docs/helpers/extension-label';
-import { extensionValue } from '~/modules/docs/helpers/extension-value';
+import { extensionLabel, extensionValue } from '~/modules/docs/helpers/extension-value';
 import { operationLinkOptions } from '~/modules/docs/helpers/reference-links';
 import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { AccessCell, type AccessValue } from '~/modules/docs/operations/access-explanation';
@@ -85,8 +84,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
     placeholderValue: '-',
     renderCell: ({ row }: { row: GenOperationSummary }) => {
       const values = row.tagsByKind[kind];
-      if (!values?.length) return null;
-      return <TagBadges kind={kind} values={values} />;
+      return values?.length ? <TagBadges kind={kind} values={values} /> : null;
     },
   }));
 

@@ -88,13 +88,8 @@ export function computeWrapTextRowHeight<R>(
     if (clamped > maxLines) maxLines = clamped;
   }
 
-  const tier = snapToTier(maxLines);
-  return tierToHeight(tier, baseHeight, lineHeight, padding);
+  return tierToHeight(snapToTier(maxLines), baseHeight, lineHeight, padding);
 }
 
-export function hasWrapTextColumns<R, SR>(columns: readonly Column<R, SR>[]): boolean {
-  return columns.some((col) => {
-    const lines = resolveWrapTextLines(col.wrapText);
-    return lines > 0;
-  });
-}
+export const hasWrapTextColumns = <R, SR>(columns: readonly Column<R, SR>[]): boolean =>
+  columns.some((col) => resolveWrapTextLines(col.wrapText) > 0);

@@ -45,9 +45,7 @@ subscribeLocalUserChange(() => {
 });
 
 /** Sends a message to the bound user's other tabs. */
-export function postTabMessage(message: TabMessage): void {
-  currentChannel()?.postMessage(message);
-}
+export const postTabMessage = (message: TabMessage): void => currentChannel()?.postMessage(message);
 
 /** Calls `handler` for each message another tab sends; returns the unsubscribe. */
 export function onTabMessage(handler: (message: TabMessage) => void): () => void {
