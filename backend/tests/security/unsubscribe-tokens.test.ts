@@ -93,7 +93,7 @@ describe('Unsubscribe links', () => {
 
   it("must not refuse a recipient's one-click unsubscribe via other recipients' dead links from the same mail provider", async () => {
     const reader = await signUp('one-click-reader');
-    // A mail provider posts every recipient's one-click from a few addresses, links that no longer verify among them.
+    // A mail provider posts every recipient's one-click from a few addresses, links whose HMAC fails among them.
     const provider = `198.51.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
     const deadLink = linkFor(reader.id, 'digest', '0'.repeat(64));
 

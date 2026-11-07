@@ -1,5 +1,6 @@
+import type { JsonValue, UserInfoResponse } from 'oauth4webapi';
 import slugify from 'slugify';
-import type { GithubUserEmailProps, GithubUserProps, GoogleUserProps, MicrosoftUserProps } from '#/modules/auth/oauth/helpers/providers';
+import type { GithubUserEmailProps, GithubUserProps } from '#/modules/auth/oauth/helpers/providers';
 import { slugFromEmail } from '#/utils/slug';
 
 /** A provider's profile in the shape a sign-up or connect reads; the address is lower-cased and trimmed. */
@@ -15,24 +16,33 @@ export type TransformedUser = {
   lastName: string;
 };
 
+/** The claims a Google or Microsoft sign-in verified, as its client returns them; Microsoft may name the names without an underscore. */
+type SocialClaims = Pick<UserInfoResponse, 'sub' | 'name' | 'given_name' | 'family_name' | 'email' | 'email_verified'> & {
+  /** The Google Workspace domain of the account; absent for a consumer account. */
+  hd?: JsonValue;
+  givenname?: JsonValue;
+  familyname?: JsonValue;
+};
+
 /** Normalizes Google/Microsoft OAuth profile data into a `TransformedUser`. Throws if no email. */
-export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserProps): TransformedUser => {
+export const transformSocialUserData = (user: SocialClaims): TransformedUser => {
   if (!user.email) throw new Error('no_email_found');
 
   const normalizedEmail = user.email.toLowerCase().trim();
 
-  const givenName = 'given_name' in user ? user.given_name : user.givenname || '';
-  const familyName = 'family_name' in user ? user.family_name : user.familyname || '';
+  const givenName = user.given_name ?? (typeof user.givenname === 'string' ? user.givenname : '');
+  const familyName = user.family_name ?? (typeof user.familyname === 'string' ? user.familyname : '');
   const name = user.name || `${givenName} ${familyName}`.trim();
+  const emailVerified = user.email_verified === true;
 
   return {
     id: user.sub,
     slug: slugFromEmail(normalizedEmail),
     email: normalizedEmail,
     // Google hosts Gmail and Workspace (`hd`) mailboxes; for any other address its flag dates from the account's creation.
-    provesAddress: 'email_verified' in user && user.email_verified && (normalizedEmail.endsWith('@gmail.com') || !!user.hd),
+    provesAddress: emailVerified && (normalizedEmail.endsWith('@gmail.com') || !!user.hd),
     name,
-    emailVerified: 'email_verified' in user ? user.email_verified : false,
+    emailVerified,
     firstName: givenName,
     lastName: familyName,
   };

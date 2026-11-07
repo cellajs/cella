@@ -7,10 +7,8 @@ import { readOAuthCookie } from '#/modules/auth/oauth/helpers/oauth-cookie';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
   githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
   microsoftAuth,
   OAuthCodeExchangeError,
   type ProviderGrant,
@@ -27,8 +25,11 @@ interface OAuthProviderEntry {
   fetchUser: (grant: ProviderGrant) => Promise<TransformedUser>;
 }
 
-/** An OIDC provider's profile: the claims its client verified. */
-const verifiedProfile = async ({ claims }: ProviderGrant) => transformSocialUserData(claims as GoogleUserProps | MicrosoftUserProps);
+/** An OIDC provider's profile: the claims its client verified, which a grant without them cannot give. */
+const verifiedProfile = async ({ claims }: ProviderGrant) => {
+  if (!claims) throw new OAuthCodeExchangeError(new Error('id_token claims missing'));
+  return transformSocialUserData(claims);
+};
 
 // `openid` is required for Google and Microsoft so the token endpoint returns an id_token, which carries the nonce validated on callback.
 const oauthProviders = {
