@@ -14,7 +14,7 @@ type LastUser = Pick<MeUser, 'id' | 'email'>;
 export const userStorageKey = `${appConfig.slug}-user`;
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
-const mirrorLanguage = (language?: User['language']) => {
+const mirrorLanguage = (language?: User['languageCode']) => {
   const lng = language || appConfig.defaultLanguage;
   if (i18n.language !== lng) i18n.changeLanguage(lng);
 };
@@ -54,7 +54,7 @@ export const useUserStore = create<UserStoreState>()(
             lastUser: { id: user.id, email: user.email },
           }));
 
-          mirrorLanguage(user.language);
+          mirrorLanguage(user.languageCode);
           mirrorContrast(user.contrast);
         },
         setMe: ({ user, isSystemAdmin }) => {
@@ -64,13 +64,15 @@ export const useUserStore = create<UserStoreState>()(
             state.lastUser = { id: user.id, email: user.email };
           });
 
-          mirrorLanguage(user.language);
+          mirrorLanguage(user.languageCode);
           mirrorContrast(user.contrast);
         },
         reset: () => set(initStore),
       })),
       {
-        version: 1,
+        // Version 2 renamed the user's name and language fields: an older stored state is dropped, and `/me` stores the user again
+        version: 2,
+        migrate: () => ({}),
         name: userStorageKey,
         partialize: (state) => ({
           user: state.user,

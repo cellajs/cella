@@ -8,11 +8,11 @@ type AccountSecurityType = Parameters<typeof accountSecurityEmail.translate>[1][
 
 /** Fire-and-forget: errors are logged, never thrown. */
 export const sendAccountSecurityEmail = (
-  recipient: { id?: string; email: string; name?: string; language?: string },
+  recipient: { id?: string; email: string; name?: string; languageCode?: string },
   type: AccountSecurityType,
   details?: Record<string, string | number>,
 ) => {
-  const lng = recipient.language ?? appConfig.defaultLanguage;
+  const lng = recipient.languageCode ?? appConfig.defaultLanguage;
 
   // A new sign-in notice is routine; every other type marks something an operator may want to look at. Addresses and
   // IPs stay in the mail: the type and the recipient's user id find it, and a mail without one keeps the request's ids.

@@ -119,8 +119,8 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
 
 /** No account until the provider's address is proven: the sign-up waits on its verification mail. */
 const pendingSignUp = (providerUser: TransformedUser, provider: EnabledOAuthProvider): OAuthFlowResult => {
-  const { name, slug, firstName, lastName } = providerUser;
-  const signUp = { issuer: provider, subject: providerUser.id, name, slug, firstName, lastName: lastName || undefined };
+  const { name, slug, givenName, familyName } = providerUser;
+  const signUp = { issuer: provider, subject: providerUser.id, name, slug, givenName, familyName: familyName || undefined };
   return { type: 'pending', signUp, email: providerUser.email };
 };
 
@@ -297,8 +297,8 @@ const completeSignUp = async ({
 
     await spendVerification(ctx, txCtx, verifyToken);
 
-    const { name, slug, firstName, lastName } = signUp;
-    const user = await createAccount(txCtx, { newUser: { email, name, slug, firstName, lastName }, via: provider });
+    const { name, slug, givenName, familyName } = signUp;
+    const user = await createAccount(txCtx, { newUser: { email, name, slug, givenName, familyName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
     const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };

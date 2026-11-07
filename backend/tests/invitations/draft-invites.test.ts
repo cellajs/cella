@@ -172,7 +172,7 @@ describe('Draft context invite deferral', async () => {
   });
 
   it.skipIf(!otherLanguage)("mails a held invitation in the organization's language at the publish", async () => {
-    const organization = await createTestOrganization({ publishedAt: null, defaultLanguage: otherLanguage });
+    const organization = await createTestOrganization({ publishedAt: null, defaultLanguageCode: otherLanguage });
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     await invite(organization, ['held@example.com'], memberRole, sessionCookie);
@@ -327,7 +327,7 @@ describe('Draft context invite deferral', async () => {
     // The invitee signs up before the context is published: the proven inbox binds the held invitation and ends its link.
     const account = await createAccount(
       { var: { db } },
-      { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', firstName: 'New', lastName: 'Comer' }, via: 'magic' },
+      { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', givenName: 'New', familyName: 'Comer' }, via: 'magic' },
     );
     const [bound] = await getInactiveRows(organization.id);
     expect(bound.userId).toBe(account.id);

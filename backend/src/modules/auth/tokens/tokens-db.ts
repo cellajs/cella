@@ -22,9 +22,9 @@ export type PendingSignUp = {
   subject: string;
   name: string;
   slug: string;
-  firstName: string;
+  givenName: string;
   /** Absent when the provider asserts none. */
-  lastName?: string;
+  familyName?: string;
 };
 
 /** One row per issued token, of any type in `appConfig.tokenTypes`. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */

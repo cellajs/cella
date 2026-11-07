@@ -7,9 +7,9 @@ import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 
 const actorExample = mockUserMinimalBase('notification-actor');
 const nullableActorSchema = z.union([
-  userMinimalBaseSchema.extend({ firstName: z.string().nullable() }).openapi({
-    description: 'The user who caused a notification, with the first name its sentence prefers; null when the user never set one.',
-    example: { ...actorExample, firstName: actorExample.name.split(' ')[0] ?? null },
+  userMinimalBaseSchema.extend({ givenName: z.string().nullable() }).openapi({
+    description: 'The user who caused a notification, with the given name its sentence prefers; null when the user never set one.',
+    example: { ...actorExample, givenName: actorExample.name.split(' ')[0] ?? null },
   }),
   z.null(),
 ]);

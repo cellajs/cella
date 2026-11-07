@@ -17,14 +17,14 @@ describe('Self update', async () => {
 
   it('merges a changed first name over the stored last name, as the admin update does', async () => {
     const user = await createTestUser('update-me-name@example.test');
-    await db.update(usersTable).set({ firstName: 'Ann', lastName: 'Smith', name: 'Ann Smith' }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ givenName: 'Ann', familyName: 'Smith', name: 'Ann Smith' }).where(eq(usersTable.id, user.id));
     const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
 
-    expect((await call(updateMe, { body: { firstName: 'Anna' }, headers })).response.status).toBe(200);
+    expect((await call(updateMe, { body: { givenName: 'Anna' }, headers })).response.status).toBe(200);
     expect(await nameOf(user.id)).toBe('Anna Smith');
 
     // A cleared first name leaves the name too.
-    expect((await call(updateMe, { body: { firstName: null }, headers })).response.status).toBe(200);
+    expect((await call(updateMe, { body: { givenName: null }, headers })).response.status).toBe(200);
     expect(await nameOf(user.id)).toBe('Smith');
   });
 });

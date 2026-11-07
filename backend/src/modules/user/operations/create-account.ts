@@ -19,7 +19,7 @@ interface CreateAccountOpts {
    * What a sign-up may set on the new account. A provider's avatar is left out on purpose: avatars are served from
    * the app's own CDN only, so a profile picture hosted elsewhere is never stored.
    */
-  newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'firstName' | 'lastName'>;
+  newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'givenName' | 'familyName'>;
   /** What proved the inbox before the account is created: a magic-link click, or a provider's verification mail. */
   via: EmailProof;
 }
@@ -40,12 +40,12 @@ export const createAccount = async (ctx: DbContext, { newUser, via }: CreateAcco
       users: [
         {
           slug,
-          firstName: newUser.firstName,
+          givenName: newUser.givenName,
           // Providers assert an empty string for a missing family name; the column holds null for "none".
-          lastName: newUser.lastName || null,
+          familyName: newUser.familyName || null,
           email: normalizedEmail,
           name: newUser.name,
-          language: appConfig.defaultLanguage,
+          languageCode: appConfig.defaultLanguage,
         },
       ],
     });

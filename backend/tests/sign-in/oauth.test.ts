@@ -67,8 +67,8 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
     name: 'Test User',
     emailVerified: true,
     thumbnailUrl: 'https://avatar.url',
-    firstName: 'Test',
-    lastName: 'User',
+    givenName: 'Test',
+    familyName: 'User',
   }),
   transformSocialUserData: vi.fn().mockImplementation((userData) => ({
     id: userData.id || 'google-user-id',
@@ -77,8 +77,8 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
     name: userData.name || 'Test User',
     emailVerified: true,
     thumbnailUrl: userData.picture || 'https://avatar.url',
-    firstName: userData.given_name || 'Test',
-    lastName: userData.family_name || 'User',
+    givenName: userData.given_name || 'Test',
+    familyName: userData.family_name || 'User',
   })),
 }));
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
@@ -752,7 +752,7 @@ describe('OAuth Authentication', async () => {
 
       const [account] = await db.select().from(usersTable).where(eq(usersTable.email, providerEmail));
       // The account starts with the provider's names. Its avatar is not taken over: avatars come from the app's CDN only.
-      expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
+      expect(account).toMatchObject({ name: 'Test User', givenName: 'Test', familyName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'google' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
@@ -774,8 +774,8 @@ describe('OAuth Authentication', async () => {
         email: providerEmail,
         name: 'Test User',
         emailVerified: false,
-        firstName: 'Test',
-        lastName: 'User',
+        givenName: 'Test',
+        familyName: 'User',
       });
 
       const { response: res } = await inviteCallback();
@@ -881,7 +881,7 @@ describe('OAuth Authentication', async () => {
           email: providerEmail,
           userId: null,
           identityId: null,
-          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id', firstName: 'Test', lastName: 'User' }),
+          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id', givenName: 'Test', familyName: 'User' }),
         }),
       ]);
       // The mail asks to finish signing up, not to connect a provider to an account the visitor does not have.
@@ -910,7 +910,7 @@ describe('OAuth Authentication', async () => {
 
       const [account] = await accountsFor(providerEmail);
       // The names the provider asserted at the start waited on the verification with the sign-up.
-      expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
+      expect(account).toMatchObject({ name: 'Test User', givenName: 'Test', familyName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
@@ -931,8 +931,8 @@ describe('OAuth Authentication', async () => {
         email: providerEmail,
         name: 'Someone',
         emailVerified: true,
-        firstName: 'Some',
-        lastName: 'One',
+        givenName: 'Some',
+        familyName: 'One',
       });
 
       const { response: res, error } = await verifyCallback();

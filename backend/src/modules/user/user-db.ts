@@ -30,9 +30,9 @@ export const usersTable = snakeCase.table(
     bannerUrl: varchar({ length: maxLength.url }),
     email: varchar({ length: maxLength.field }).notNull().unique(),
     mfaRequired: boolean().notNull().default(false),
-    firstName: varchar({ length: maxLength.field }),
-    lastName: varchar({ length: maxLength.field }),
-    language: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
+    givenName: varchar({ length: maxLength.field }),
+    familyName: varchar({ length: maxLength.field }),
+    languageCode: varchar({ enum: appConfig.languages }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     /** How much non-text contrast the UI draws. `system` follows the browser's `prefers-contrast`, `more` forces it on. */
     contrast: varchar({ enum: ['system', 'more'] })

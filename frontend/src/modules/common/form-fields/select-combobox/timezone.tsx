@@ -51,7 +51,7 @@ export function TimezoneFormField<TFieldValues extends FieldValues>({ country, .
         </>
       )}
       clearable
-      placeholders={{ trigger: 'c:placeholder.select_timezone', resource: 'c:timezone' }}
+      placeholders={{ trigger: 'c:placeholder.select_timezone', resource: 'c:time_zone' }}
     />
   );
 }

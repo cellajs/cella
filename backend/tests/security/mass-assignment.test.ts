@@ -53,9 +53,9 @@ describe('Columns outside the body pick', async () => {
     {
       route: 'updateMe',
       send: () =>
-        call(updateMe, { body: { firstName: 'Renamed', email: 'taken-over@security-test.com', mfaRequired: true } as never, headers: headers() }),
+        call(updateMe, { body: { givenName: 'Renamed', email: 'taken-over@security-test.com', mfaRequired: true } as never, headers: headers() }),
       row: async () => (await db.select().from(usersTable).where(eq(usersTable.id, admin.id)))[0],
-      changed: { firstName: 'Renamed' },
+      changed: { givenName: 'Renamed' },
       kept: () => ({ email: admin.email, mfaRequired: false }),
     },
     {

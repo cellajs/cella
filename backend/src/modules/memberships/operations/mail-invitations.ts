@@ -17,7 +17,7 @@ interface MailInvitationsOpts {
   /** Pending invitations of one organization. */
   ids: string[];
   /** Whose default language an address without an account reads, and whose name a mail about a channel below it gives. */
-  organization: { defaultLanguage: string; name: string };
+  organization: { defaultLanguageCode: string; name: string };
 }
 
 /**

@@ -10,8 +10,8 @@ export const loadtestOrganization = (): InsertOrganizationModel => {
     tenantId: TENANT_ID,
     name: 'Load Test Organization',
     slug: 'xbench-org',
-    defaultLanguage: 'en',
-    languages: ['en'],
+    defaultLanguageCode: 'en',
+    languageCodes: ['en'],
     chatSupport: false,
   };
 };

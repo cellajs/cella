@@ -64,7 +64,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
       };
       const recipient = {
         email: user.email,
-        lng: user.language,
+        lng: user.languageCode,
         name: user.name,
         subjectTitle: titles.get(contextOf(notification)) ?? '',
         excerpt: htmlToExcerpt(descriptionText(subject.description), excerptLength),

@@ -239,8 +239,8 @@ describe('Account enumeration', async () => {
       email,
       name: 'Prober',
       emailVerified: verified,
-      firstName: 'Pro',
-      lastName: 'Ber',
+      givenName: 'Pro',
+      familyName: 'Ber',
     });
     const state = nanoid();
     const stateCookie = authCookie('oauth-state', JSON.stringify({ state, provider: 'github', type, codeVerifier: 'verifier' }));

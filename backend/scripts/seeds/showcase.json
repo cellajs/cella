@@ -1,5 +1,5 @@
 {
-  "admin": { "firstName": "Mara", "lastName": "Visser", "email": "mara@northfield-robotics.eu", "age": "4y" },
+  "admin": { "givenName": "Mara", "familyName": "Visser", "email": "mara@northfield-robotics.eu", "age": "4y" },
   "mfaShare": 0.4,
   "unreadNotifications": 2,
   "organizations": [

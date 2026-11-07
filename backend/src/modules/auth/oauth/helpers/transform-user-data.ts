@@ -12,8 +12,8 @@ export type TransformedUser = {
   provesAddress?: boolean;
   name: string;
   emailVerified: boolean;
-  firstName: string;
-  lastName: string;
+  givenName: string;
+  familyName: string;
 };
 
 /** The claims a Google or Microsoft sign-in verified, as its client returns them; Microsoft may name the names without an underscore. */
@@ -43,8 +43,8 @@ export const transformSocialUserData = (user: SocialClaims): TransformedUser => 
     provesAddress: emailVerified && (normalizedEmail.endsWith('@gmail.com') || !!user.hd),
     name,
     emailVerified,
-    firstName: givenName,
-    lastName: familyName,
+    givenName,
+    familyName,
   };
 };
 
@@ -55,7 +55,7 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
 
   const normalizedEmail = primaryEmail.email.toLowerCase().trim();
   const slug = slugify(user.login, { lower: true, strict: true });
-  const { firstName, lastName } = splitFullName(user.name || slug);
+  const { givenName, familyName } = splitFullName(user.name || slug);
 
   return {
     id: String(user.id),
@@ -63,13 +63,13 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
     email: normalizedEmail,
     name: user.name || user.login,
     emailVerified: primaryEmail.verified,
-    firstName,
-    lastName,
+    givenName,
+    familyName,
   };
 };
 
 /** GitHub has one name string: the first word is the given name, everything after it the family name ("de Vries"). */
 const splitFullName = (name: string) => {
-  const [firstName = '', ...rest] = name.trim().split(/\s+/);
-  return { firstName, lastName: rest.join(' ') };
+  const [givenName = '', ...rest] = name.trim().split(/\s+/);
+  return { givenName, familyName: rest.join(' ') };
 };

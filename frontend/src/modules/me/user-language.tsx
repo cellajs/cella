@@ -15,7 +15,7 @@ export function UserLanguage() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const user = useUserStore((state) => state.user);
-  const currentLanguage = user?.language || i18n.languages[0];
+  const currentLanguage = user?.languageCode || i18n.languages[0];
   const { mutate: updateSelf } = useUpdateSelfMutation();
 
   const changeLanguage = (language: Language) => {
@@ -24,7 +24,7 @@ export function UserLanguage() {
     i18n.changeLanguage(language);
     dropdowner.getState().remove();
 
-    if (user) updateSelf({ language });
+    if (user) updateSelf({ languageCode: language });
   };
 
   if (appConfig.languages.length < 2) return null;

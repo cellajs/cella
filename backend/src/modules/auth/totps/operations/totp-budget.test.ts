@@ -18,7 +18,7 @@ const { appErrorHandler } = await import('#/lib/error');
 
 /** A check of `code` against a fresh account's pending secret, so no code is spent and no row is read. */
 function accountChecks() {
-  const user: TotpUser = { id: `user_${nanoid(8)}`, email: 'owner@example.com', name: 'Owner', language: 'en' };
+  const user: TotpUser = { id: `user_${nanoid(8)}`, email: 'owner@example.com', name: 'Owner', languageCode: 'en' };
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   app.post('/check', async (ctx) => {
