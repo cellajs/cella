@@ -9,8 +9,8 @@ export type TransformedUser = {
   email: string;
   name: string;
   emailVerified: boolean;
-  firstName: string;
-  lastName: string;
+  givenName: string;
+  familyName: string;
 };
 
 /** Normalizes Google/Microsoft OAuth profile data into a `TransformedUser`. Throws if no email. */
@@ -29,8 +29,8 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
     email: normalizedEmail,
     name,
     emailVerified: 'email_verified' in user ? user.email_verified : false,
-    firstName: givenName,
-    lastName: familyName,
+    givenName,
+    familyName,
   };
 };
 
@@ -41,7 +41,7 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
 
   const normalizedEmail = primaryEmail.email.toLowerCase().trim();
   const slug = slugify(user.login, { lower: true, strict: true });
-  const { firstName, lastName } = splitFullName(user.name || slug);
+  const { givenName, familyName } = splitFullName(user.name || slug);
 
   return {
     id: String(user.id),
@@ -49,13 +49,13 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
     email: normalizedEmail,
     name: user.name || user.login,
     emailVerified: primaryEmail.verified,
-    firstName,
-    lastName,
+    givenName,
+    familyName,
   };
 };
 
 /** GitHub has one name string: the first word is the given name, everything after it the family name ("de Vries"). */
 const splitFullName = (name: string) => {
-  const [firstName = '', ...rest] = name.trim().split(/\s+/);
-  return { firstName, lastName: rest.join(' ') };
+  const [givenName = '', ...rest] = name.trim().split(/\s+/);
+  return { givenName, familyName: rest.join(' ') };
 };

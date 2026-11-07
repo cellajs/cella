@@ -25,10 +25,10 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
   return {
     ...base,
     shortName: name.split(' ')[0],
-    country: faker.location.countryCode(),
-    timezone: faker.location.timeZone(),
-    defaultLanguage: appConfig.defaultLanguage,
-    languages: [appConfig.defaultLanguage] as Language[],
+    regionCode: faker.location.countryCode(),
+    timeZone: faker.location.timeZone(),
+    defaultLanguageCode: appConfig.defaultLanguage,
+    languageCodes: [appConfig.defaultLanguage] as Language[],
     notificationEmail: `notifications@${slug}.example`,
     color: faker.color.rgb().toLowerCase(),
     thumbnailUrl: null,
@@ -80,8 +80,8 @@ export const mockOrganizationPublishResponse = () => ({ organization: mockOrgani
 
 /** The update body a caller with a key or token sends: only the fields it changes. */
 export const mockUpdateOrganizationBody = () => {
-  const { name, timezone } = mockOrganizationResponse();
-  return { name: `${name} Group`, timezone };
+  const { name, timeZone } = mockOrganizationResponse();
+  return { name: `${name} Group`, timeZone };
 };
 
 export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);

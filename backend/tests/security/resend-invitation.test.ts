@@ -166,7 +166,7 @@ describe('Resend an invitation', async () => {
   });
 
   it("must not mail past its tenant's caps via resend-invitation, and mails in its organization's language", async () => {
-    const organization = await createTestOrganization({ defaultLanguage: 'nl' });
+    const organization = await createTestOrganization({ defaultLanguageCode: 'nl' });
     const restrictions = defaultRestrictions();
     await db
       .update(tenantsTable)

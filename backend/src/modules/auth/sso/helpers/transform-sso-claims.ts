@@ -16,17 +16,17 @@ export const assertedInstitution = (federation: Federation, claims: SsoClaims): 
 export interface SsoProfile {
   email?: string;
   name: string;
-  firstName: string;
-  lastName: string;
+  givenName: string;
+  familyName: string;
 }
 
 /** The profile the claims assert; without a name, one made from the address stands in, and without an address the subject. */
 export const transformSsoClaims = (claims: SsoClaims): SsoProfile => {
   const email = firstString(claims.email)?.toLowerCase();
-  const firstName = firstString(claims.given_name) ?? '';
-  const lastName = firstString(claims.family_name) ?? '';
-  const name = firstString(claims.name) ?? `${firstName} ${lastName}`.trim();
-  return { email, firstName, lastName, name: name || (email ? displayNameFromEmail(email) : claims.sub) };
+  const givenName = firstString(claims.given_name) ?? '';
+  const familyName = firstString(claims.family_name) ?? '';
+  const name = firstString(claims.name) ?? `${givenName} ${familyName}`.trim();
+  return { email, givenName, familyName, name: name || (email ? displayNameFromEmail(email) : claims.sub) };
 };
 
 /** The account a first sign-in creates: the profile with the slug its address gives. */
@@ -34,8 +34,8 @@ export const newUserFromProfile = (profile: SsoProfile & { email: string }) => (
   email: profile.email,
   name: profile.name,
   slug: slugFromEmail(profile.email),
-  firstName: profile.firstName,
-  lastName: profile.lastName,
+  givenName: profile.givenName,
+  familyName: profile.familyName,
 });
 
 /** The snapshot kept on the identity row: the federation's snapshot claims plus the authentication context, when present. */

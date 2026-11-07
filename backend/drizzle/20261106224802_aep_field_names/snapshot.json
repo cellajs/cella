@@ -1,0 +1,143 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "bfd1a082-9839-49f7-adf5-9a1770186fa6",
+  "prevIds": [
+    "27d65f22-3d72-4fa0-a505-7528be7981bf"
+  ],
+  "footprints": [
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "country"
+      ],
+      "writes": [
+        "s|col|public.organizations.country",
+        "n|col|public.organizations.country",
+        "s|col|public.organizations.region_code",
+        "n|col|public.organizations.region_code"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "timezone"
+      ],
+      "writes": [
+        "s|col|public.organizations.timezone",
+        "n|col|public.organizations.timezone",
+        "s|col|public.organizations.time_zone",
+        "n|col|public.organizations.time_zone"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "first_name"
+      ],
+      "writes": [
+        "s|col|public.users.first_name",
+        "n|col|public.users.first_name",
+        "s|col|public.users.given_name",
+        "n|col|public.users.given_name"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "last_name"
+      ],
+      "writes": [
+        "s|col|public.users.last_name",
+        "n|col|public.users.last_name",
+        "s|col|public.users.family_name",
+        "n|col|public.users.family_name"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "language"
+      ],
+      "writes": [
+        "s|col|public.users.language",
+        "n|col|public.users.language",
+        "s|col|public.users.language_code",
+        "n|col|public.users.language_code"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"organizations\",\"country\"]",
+      "set": {
+        "name": "region_code"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"organizations\",\"timezone\"]",
+      "set": {
+        "name": "time_zone"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"users\",\"first_name\"]",
+      "set": {
+        "name": "given_name"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"users\",\"last_name\"]",
+      "set": {
+        "name": "family_name"
+      }
+    },
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"users\",\"language\"]",
+      "set": {
+        "name": "language_code"
+      }
+    }
+  ]
+}

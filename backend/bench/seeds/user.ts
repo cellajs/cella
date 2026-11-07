@@ -12,10 +12,10 @@ export function loadtestUser(index: number): InsertUserModel {
     ...mockUser({ email }),
     id,
     name: `Load Test User ${index}`,
-    firstName: 'Load',
-    lastName: `User ${index}`,
+    givenName: 'Load',
+    familyName: `User ${index}`,
     slug: `xbench-user-${index}`,
-    language: 'en',
+    languageCode: 'en',
     newsletter: false,
   };
 }

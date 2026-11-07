@@ -6,7 +6,7 @@ export const getDictionary = () => {
   const user = userStore.getState().user;
   if (!user) return { ...en };
 
-  const locale = user.language in blocknoteLocales ? blocknoteLocales[user.language] : en;
+  const locale = user.languageCode in blocknoteLocales ? blocknoteLocales[user.languageCode] : en;
 
   return { ...locale };
 };

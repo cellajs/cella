@@ -29,7 +29,7 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
 
   const recipients = recipientsRecords.map(({ userId, ...recipient }) => ({
     ...recipient,
-    lng: user.language,
+    lng: user.languageCode,
     unsubscribeLink: buildUnsubscribeLink(userId, 'newsletter'),
   }));
 

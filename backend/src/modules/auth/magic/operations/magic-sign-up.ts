@@ -23,8 +23,8 @@ export const claimMagicLinkHolder = async (tx: Tx, token: TokenRecord): Promise<
   if (!(await maySignUp(txCtx, { email: token.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
   const name = displayNameFromEmail(token.email);
-  const [firstName, ...lastNames] = name.split(' ');
-  const newUser = { email: token.email, slug: slugFromEmail(token.email), name, firstName, lastName: lastNames.join(' ') || undefined };
+  const [givenName, ...familyNames] = name.split(' ');
+  const newUser = { email: token.email, slug: slugFromEmail(token.email), name, givenName, familyName: familyNames.join(' ') || undefined };
   const user = await createAccount(txCtx, { newUser, via: 'magic' });
 
   log.info('User created via magic link sign-up', { userId: user.id });

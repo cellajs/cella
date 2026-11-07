@@ -28,7 +28,7 @@ import { soleTimeZone } from '~/utils/time-zones';
 
 // welcomeText belongs to the details form
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
-  languages: z.array(z.enum(appConfig.languages)).min(1),
+  languageCodes: z.array(z.enum(appConfig.languages)).min(1),
   websiteUrl: z.string().max(2048).startsWith('https://').nullish(),
 });
 
@@ -55,11 +55,11 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
   useBeforeUnload(form.isDirty);
 
-  const country = useWatch({ control: form.control, name: 'country' });
+  const regionCode = useWatch({ control: form.control, name: 'regionCode' });
   const fillSoleTimezone = (code: string) => {
-    if (!code || form.getValues('timezone')) return;
+    if (!code || form.getValues('timeZone')) return;
     const zone = soleTimeZone(code, i18n.language);
-    if (zone) form.setValue('timezone', zone, { shouldDirty: true });
+    if (zone) form.setValue('timeZone', zone, { shouldDirty: true });
   };
 
   const onSubmit = (body: FormValues) => {
@@ -120,11 +120,11 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <InputFormField control={form.control} name="websiteUrl" label={t('c:website_url')} placeholder="https://" type="url" />
         <FormField
           control={form.control}
-          name="languages"
+          name="languageCodes"
           render={({ field }) => (
-            <FormItem name="languages">
+            <FormItem name="languageCodes">
               <FormLabel htmlFor={languagesId} required>
-                {t('c:languages')}
+                {t('c:language_codes')}
               </FormLabel>
               <SelectLanguages id={languagesId} value={field.value ?? []} onChange={field.onChange} />
               <FormMessage />
@@ -133,8 +133,8 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         />
         <DefaultLanguageField form={form} />
 
-        <CountryFormField control={form.control} name="country" label={t('c:country')} onSelect={fillSoleTimezone} />
-        <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} country={country} />
+        <CountryFormField control={form.control} name="regionCode" label={t('c:region_code')} onSelect={fillSoleTimezone} />
+        <TimezoneFormField control={form.control} name="timeZone" label={t('c:time_zone')} country={regionCode} />
 
         <FormActions>
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
@@ -149,21 +149,21 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
 function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDraft<FormValues>> }) {
   const { t } = useTranslation();
-  const languages = useWatch({ control: form.control, name: 'languages' }) || [];
+  const languages = useWatch({ control: form.control, name: 'languageCodes' }) || [];
 
   return (
     <FormField
       control={form.control}
-      name="defaultLanguage"
+      name="defaultLanguageCode"
       render={({ field }) => {
         if (form.loading) return <Spinner />;
 
         const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
 
         return (
-          <FormItem name="defaultLanguage">
-            <FormLabel help={t('c:default_language.text')} required>
-              {t('c:default_language')}
+          <FormItem name="defaultLanguageCode">
+            <FormLabel help={t('c:default_language_code.text')} required>
+              {t('c:default_language_code')}
             </FormLabel>
             <SelectLanguage options={languages} value={correctValue} onChange={field.onChange} />
             <FormMessage />

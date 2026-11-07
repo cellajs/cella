@@ -7,7 +7,7 @@ interface DispatchDeferredInvitesOpts {
   /** The channels whose held invitations go out: a published channel and its descendants. */
   channelIds: string[];
   /** The channels' organization: the language a mail to an address without an account takes, and the name a mail gives. */
-  organization: { defaultLanguage: string; name: string };
+  organization: { defaultLanguageCode: string; name: string };
 }
 
 /**

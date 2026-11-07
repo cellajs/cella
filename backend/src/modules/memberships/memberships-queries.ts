@@ -74,12 +74,12 @@ interface FindAccountNamesAndLanguagesOpts {
 
 /** Each account's name and language by its id, for a mail that greets an invited account and reads in its language. */
 export const findAccountNamesAndLanguages = async (ctx: DbContext, { userIds }: FindAccountNamesAndLanguagesOpts) => {
-  if (!userIds.length) return new Map<string, { name: string; language: string }>();
+  if (!userIds.length) return new Map<string, { name: string; languageCode: string }>();
   const rows = await ctx.var.db
-    .select({ id: usersTable.id, name: usersTable.name, language: usersTable.language })
+    .select({ id: usersTable.id, name: usersTable.name, languageCode: usersTable.languageCode })
     .from(usersTable)
     .where(inArray(usersTable.id, userIds));
-  return new Map(rows.map(({ id, name, language }) => [id, { name, language }]));
+  return new Map(rows.map(({ id, name, languageCode }) => [id, { name, languageCode }]));
 };
 
 interface FindMembershipByIdInOrgOpts {

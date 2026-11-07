@@ -40,7 +40,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
 
   const pendingFor = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
   const tokensFor = (email: string) => db.select().from(tokensTable).where(eq(tokensTable.email, email));
-  const newcomer = { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', firstName: 'Newcomer' };
+  const newcomer = { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', givenName: 'Newcomer' };
 
   it('binds every pending invitation when the proven account is created, not just one', async () => {
     await inviteToNewOrganization(1);
@@ -68,7 +68,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
 
   it('leaves invitations for other addresses untouched', async () => {
     await inviteToNewOrganization(1);
-    const someone = { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', firstName: 'Someone' };
+    const someone = { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', givenName: 'Someone' };
 
     await createAccount({ var: { db } }, { newUser: someone, via: 'magic' });
 
@@ -78,7 +78,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
   });
 
   it('names a taken address as email_exists', async () => {
-    const newUser = { email: 'taken@example.com', slug: 'taken', name: 'Taken', firstName: 'Taken' };
+    const newUser = { email: 'taken@example.com', slug: 'taken', name: 'Taken', givenName: 'Taken' };
     await createAccount({ var: { db } }, { newUser, via: 'magic' });
 
     await expect(createAccount({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' }, via: 'magic' })).rejects.toMatchObject({
@@ -88,7 +88,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
   });
 
   it('does not disguise another failure as a taken address', async () => {
-    const newUser = { email: 'fresh@example.com', slug: 'fresh', name: 'x'.repeat(2000), firstName: 'Fresh' };
+    const newUser = { email: 'fresh@example.com', slug: 'fresh', name: 'x'.repeat(2000), givenName: 'Fresh' };
 
     const failure = await createAccount({ var: { db } }, { newUser, via: 'magic' }).catch((error: unknown) => error);
 

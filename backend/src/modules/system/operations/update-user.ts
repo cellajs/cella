@@ -22,7 +22,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   const targetUser = await findUserById(ctx, { id });
   if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
 
-  const { bannerUrl, description, firstName, lastName, language, newsletter, thumbnailUrl, slug } = input;
+  const { bannerUrl, description, givenName, familyName, languageCode, newsletter, thumbnailUrl, slug } = input;
 
   if (slug && slug !== targetUser.slug) {
     const slugAvailable = await checkSlugAvailable(ctx, slug, 'user');
@@ -32,13 +32,13 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   const values = {
     bannerUrl,
     description,
-    firstName,
-    lastName,
-    language,
+    givenName,
+    familyName,
+    languageCode,
     newsletter,
     thumbnailUrl,
     slug,
-    name: nameAfterUpdate(targetUser, { firstName, lastName, slug }),
+    name: nameAfterUpdate(targetUser, { givenName, familyName, slug }),
     ...updateStamps(user.id),
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });

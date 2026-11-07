@@ -374,9 +374,9 @@ export type User = {
   bannerUrl: string | null;
   email: string;
   mfaRequired: boolean;
-  firstName: string | null;
-  lastName: string | null;
-  language: 'en' | 'nl';
+  givenName: string | null;
+  familyName: string | null;
+  languageCode: 'en' | 'nl';
   newsletter: boolean;
   contrast: 'system' | 'more';
   userFlags: {
@@ -623,10 +623,10 @@ export type Organization = {
   };
   path: string | null;
   shortName: string | null;
-  country: string | null;
-  timezone: string | null;
-  defaultLanguage: 'en' | 'nl';
-  languages: Array<'en' | 'nl'>;
+  regionCode: string | null;
+  timeZone: string | null;
+  defaultLanguageCode: 'en' | 'nl';
+  languageCodes: Array<'en' | 'nl'>;
   notificationEmail: string | null;
   color: string | null;
   logoUrl: string | null;
@@ -3312,9 +3312,9 @@ export type UpdateMeData = {
     bannerUrl?: string | null;
     contrast?: 'system' | 'more';
     description?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    language?: 'en' | 'nl';
+    givenName?: string | null;
+    familyName?: string | null;
+    languageCode?: 'en' | 'nl';
     newsletter?: boolean;
     thumbnailUrl?: string | null;
     slug?: string;
@@ -4673,7 +4673,7 @@ export type ListNotificationsResponses = {
       readAt: string | null;
       actor:
         | (UserMinimalBase & {
-            firstName: string | null;
+            givenName: string | null;
           })
         | null;
       channelName: string;
@@ -5179,13 +5179,13 @@ export type UpdateOrganizationData = {
     /**
      * ISO 3166-1 alpha-2 country code.
      */
-    country?: string | null;
+    regionCode?: string | null;
     /**
      * IANA time zone id.
      */
-    timezone?: string | null;
-    defaultLanguage?: 'en' | 'nl';
-    languages?: Array<'en' | 'nl'>;
+    timeZone?: string | null;
+    defaultLanguageCode?: 'en' | 'nl';
+    languageCodes?: Array<'en' | 'nl'>;
     notificationEmail?: string | null;
     color?: string | null;
     thumbnailUrl?: string | null;
@@ -6360,9 +6360,9 @@ export type UpdateUserData = {
   body: {
     bannerUrl?: string | null;
     description?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    language?: 'en' | 'nl';
+    givenName?: string | null;
+    familyName?: string | null;
+    languageCode?: 'en' | 'nl';
     newsletter?: boolean;
     thumbnailUrl?: string | null;
     slug?: string;

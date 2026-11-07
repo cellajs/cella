@@ -97,7 +97,7 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
       if (knowsAccount) throw new AppError(403, 'sso_required', 'warn', { meta: { connectionId, entryPath } });
       const statics = { name: existingUser.name, institution: displayName, entryUrl: `${appConfig.frontendUrl}${entryPath}` };
       mailer
-        .sendEmails(ssoRequiredEmail, statics, [{ email, lng: existingUser.language }])
+        .sendEmails(ssoRequiredEmail, statics, [{ email, lng: existingUser.languageCode }])
         .catch((err) => log.error('Failed to send SSO-required email', { err }));
       log.info('Magic link refused by the sign-in policy, institution entry mailed', { userId: existingUser.id, connectionId });
       return;
@@ -119,7 +119,7 @@ const mailMagicLink = async ({ email, redirectPath, assertedThrough, knowsAccoun
 
   // Only an account holder is greeted: an address alone names nobody.
   const staticProps = { magicLinkUrl, name: existingUser?.name ?? '', isNewUser: !existingUser, invited };
-  const recipients = [{ email, lng: existingUser?.language ?? appConfig.defaultLanguage }];
+  const recipients = [{ email, lng: existingUser?.languageCode ?? appConfig.defaultLanguage }];
 
   mailer.sendEmails(magicLinkEmail, staticProps, recipients).catch((err) => log.error('Failed to send magic link email', { err }));
 

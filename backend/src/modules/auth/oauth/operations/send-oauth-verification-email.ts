@@ -60,7 +60,7 @@ const verificationFor = async (props: Props) => {
     identityId: identity.id,
     redirectPath,
   };
-  return { token, name: user.name, lng: user.language, providerName: readableProviderName(identity.issuer), isNewUser: false };
+  return { token, name: user.name, lng: user.languageCode, providerName: readableProviderName(identity.issuer), isNewUser: false };
 };
 
 /**

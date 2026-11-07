@@ -29,11 +29,11 @@ describe('transformGithubUserData', () => {
     const primary = [ghEmail('primary@example.com', true, true)];
     const named = (name: string | null) => transformGithubUserData({ ...githubUser, name } as GithubUserProps, primary);
 
-    expect(named('Octo Cat')).toMatchObject({ firstName: 'Octo', lastName: 'Cat' });
-    expect(named('Sanne de Vries')).toMatchObject({ firstName: 'Sanne', lastName: 'de Vries' });
-    expect(named('Octo')).toMatchObject({ firstName: 'Octo', lastName: '' });
+    expect(named('Octo Cat')).toMatchObject({ givenName: 'Octo', familyName: 'Cat' });
+    expect(named('Sanne de Vries')).toMatchObject({ givenName: 'Sanne', familyName: 'de Vries' });
+    expect(named('Octo')).toMatchObject({ givenName: 'Octo', familyName: '' });
     // Without a profile name the login stands in as the given name.
-    expect(named(null)).toMatchObject({ firstName: 'octocat', lastName: '' });
+    expect(named(null)).toMatchObject({ givenName: 'octocat', familyName: '' });
   });
 });
 

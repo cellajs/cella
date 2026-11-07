@@ -18,7 +18,7 @@ export const userFlagsSchema = z.object(
   ),
 );
 
-export const userSchema = createSelectSchema(usersTable, { email: z.email(), language: languageSchema, userFlags: userFlagsSchema })
+export const userSchema = createSelectSchema(usersTable, { email: z.email(), languageCode: languageSchema, userFlags: userFlagsSchema })
   // A profile, not an audited row: who last changed it stays in the database.
   .omit({ updatedBy: true })
   .extend({
@@ -48,12 +48,12 @@ export const memberSchema = memberUserSchema.extend({
 });
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {
-  firstName: validNameSchema.nullable(),
-  lastName: validNameSchema.nullable(),
+  givenName: validNameSchema.nullable(),
+  familyName: validNameSchema.nullable(),
   slug: validSlugSchema,
   thumbnailUrl: validCDNUrlSchema.nullable(),
   bannerUrl: validCDNUrlSchema.nullable(),
-  language: languageSchema,
+  languageCode: languageSchema,
   contrast: z.enum(usersTable.contrast.enumValues),
   description: z.string().max(maxLength.html).nullable(),
 })
@@ -61,9 +61,9 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
     bannerUrl: true,
     contrast: true,
     description: true,
-    firstName: true,
-    lastName: true,
-    language: true,
+    givenName: true,
+    familyName: true,
+    languageCode: true,
     newsletter: true,
     thumbnailUrl: true,
     slug: true,

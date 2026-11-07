@@ -54,8 +54,8 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
       break;
     }
     try {
-      const { userId, language } = recipient;
-      const sections = await buildDigestForUser(dbCtx, { userId, since: recipient.windowStart, before: runAt, lng: language });
+      const { userId, languageCode } = recipient;
+      const sections = await buildDigestForUser(dbCtx, { userId, since: recipient.windowStart, before: runAt, lng: languageCode });
 
       // An empty window sends nothing (weekly is on by default) and is settled all the same, so it is not re-evaluated all day.
       if (sections.length === 0) {
@@ -64,9 +64,9 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
         await mailer.sendEmails(digestEmail, { daily: recipient.digest === 'daily' }, [
           {
             email: recipient.email,
-            lng: language,
+            lng: languageCode,
             name: recipient.name,
-            sectionsHtml: renderSectionsHtml(sections, language),
+            sectionsHtml: renderSectionsHtml(sections, languageCode),
             unsubscribeLink: buildUnsubscribeLink(userId, 'digest'),
           },
         ]);

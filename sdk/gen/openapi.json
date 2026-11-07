@@ -1762,14 +1762,14 @@
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
             "entityType": "user",
             "name": "Agnes Fritsch DVM",
-            "firstName": "Agnes",
-            "lastName": "Fritsch",
+            "givenName": "Agnes",
+            "familyName": "Fritsch",
             "email": "agnes_fritsch@hotmail.com",
             "slug": "agnesfritsch34",
             "description": null,
             "thumbnailUrl": null,
             "bannerUrl": null,
-            "language": "en",
+            "languageCode": "en",
             "newsletter": true,
             "contrast": "system",
             "mfaRequired": false,
@@ -1826,15 +1826,15 @@
           "mfaRequired": {
             "type": "boolean"
           },
-          "firstName": {
+          "givenName": {
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "lastName": {
+          "familyName": {
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "language": {
+          "languageCode": {
             "type": "string",
             "enum": ["en", "nl"]
           },
@@ -1875,9 +1875,9 @@
           "bannerUrl",
           "email",
           "mfaRequired",
-          "firstName",
-          "lastName",
-          "language",
+          "givenName",
+          "familyName",
+          "languageCode",
           "newsletter",
           "contrast",
           "userFlags",
@@ -1890,14 +1890,14 @@
           "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
           "name": "Isai Senger",
-          "firstName": "Isai",
-          "lastName": "Senger",
+          "givenName": "Isai",
+          "familyName": "Senger",
           "email": "isai_senger@hotmail.com",
           "slug": "isaisenger90",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
-          "language": "en",
+          "languageCode": "en",
           "newsletter": false,
           "contrast": "system",
           "mfaRequired": false,
@@ -2734,19 +2734,19 @@
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "country": {
+          "regionCode": {
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "timezone": {
+          "timeZone": {
             "type": ["string", "null"],
             "maxLength": 255
           },
-          "defaultLanguage": {
+          "defaultLanguageCode": {
             "type": "string",
             "enum": ["en", "nl"]
           },
-          "languages": {
+          "languageCodes": {
             "type": "array",
             "items": {
               "type": "string",
@@ -2877,10 +2877,10 @@
           "toolsConfig",
           "path",
           "shortName",
-          "country",
-          "timezone",
-          "defaultLanguage",
-          "languages",
+          "regionCode",
+          "timeZone",
+          "defaultLanguageCode",
+          "languageCodes",
           "notificationEmail",
           "color",
           "logoUrl",
@@ -2909,10 +2909,10 @@
           "toolsConfig": {},
           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
-          "country": "TD",
-          "timezone": "Europe/Vaduz",
-          "defaultLanguage": "en",
-          "languages": ["en"],
+          "regionCode": "TD",
+          "timeZone": "Europe/Vaduz",
+          "defaultLanguageCode": "en",
+          "languageCodes": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#cda6af",
           "logoUrl": null,
@@ -8191,19 +8191,19 @@
                     "type": ["string", "null"],
                     "maxLength": 1000000
                   },
-                  "firstName": {
+                  "givenName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "lastName": {
+                  "familyName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "language": {
+                  "languageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
@@ -8247,19 +8247,19 @@
                     "type": ["string", "null"],
                     "maxLength": 1000000
                   },
-                  "firstName": {
+                  "givenName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "lastName": {
+                  "familyName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "language": {
+                  "languageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
@@ -11095,21 +11095,21 @@
                                   {
                                     "type": "object",
                                     "properties": {
-                                      "firstName": {
+                                      "givenName": {
                                         "type": ["string", "null"]
                                       }
                                     },
-                                    "required": ["firstName"]
+                                    "required": ["givenName"]
                                   }
                                 ],
-                                "description": "The user who caused a notification, with the first name its sentence prefers; null when the user never set one.",
+                                "description": "The user who caused a notification, with the given name its sentence prefers; null when the user never set one.",
                                 "example": {
                                   "id": "8a2920be-f91b-4c46-a0df-ab1b4cf41f03",
                                   "name": "Nina Kub",
                                   "slug": "nina_kub12",
                                   "thumbnailUrl": null,
                                   "entityType": "user",
-                                  "firstName": "Nina"
+                                  "givenName": "Nina"
                                 },
                                 "x-tags": ["embedded", "users", "cella"]
                               },
@@ -11717,10 +11717,10 @@
                       "toolsConfig": {},
                       "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "shortName": "Anderson",
-                      "country": "BA",
-                      "timezone": "America/Moncton",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "regionCode": "BA",
+                      "timeZone": "America/Moncton",
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
                       "color": "#dfeb6e",
                       "logoUrl": null,
@@ -11781,10 +11781,10 @@
                       "toolsConfig": {},
                       "path": "772a771f-c150-465e-9635-46594859fc3d",
                       "shortName": "Wiegand,",
-                      "country": "AS",
-                      "timezone": "Europe/Gibraltar",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "regionCode": "AS",
+                      "timeZone": "Europe/Gibraltar",
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
                       "color": "#a3cb87",
                       "logoUrl": null,
@@ -11957,10 +11957,10 @@
                       "toolsConfig": {},
                       "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "shortName": "Conroy,",
-                      "country": "SJ",
-                      "timezone": "Asia/Kuala_Lumpur",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "regionCode": "SJ",
+                      "timeZone": "Asia/Kuala_Lumpur",
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
                       "color": "#dbcbc1",
                       "logoUrl": null,
@@ -12021,10 +12021,10 @@
                       "toolsConfig": {},
                       "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "shortName": "Lemke,",
-                      "country": "NR",
-                      "timezone": "America/Aruba",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
+                      "regionCode": "NR",
+                      "timeZone": "America/Aruba",
+                      "defaultLanguageCode": "en",
+                      "languageCodes": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
                       "color": "#2ad39a",
                       "logoUrl": null,
@@ -12180,10 +12180,10 @@
                           "toolsConfig": {},
                           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "shortName": "Spencer,",
-                          "country": "TD",
-                          "timezone": "Europe/Vaduz",
-                          "defaultLanguage": "en",
-                          "languages": ["en"],
+                          "regionCode": "TD",
+                          "timeZone": "Europe/Vaduz",
+                          "defaultLanguageCode": "en",
+                          "languageCodes": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                           "color": "#cda6af",
                           "logoUrl": null,
@@ -12462,7 +12462,7 @@
             "application/json": {
               "example": {
                 "name": "Spencer, Pouros and Bergnaum Group",
-                "timezone": "Europe/Vaduz"
+                "timeZone": "Europe/Vaduz"
               },
               "schema": {
                 "type": "object",
@@ -12485,24 +12485,24 @@
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "country": {
+                  "regionCode": {
                     "type": ["string", "null"],
                     "maxLength": 2,
                     "pattern": "^[A-Z]{2}$",
                     "description": "ISO 3166-1 alpha-2 country code.",
                     "example": "NL"
                   },
-                  "timezone": {
+                  "timeZone": {
                     "type": ["string", "null"],
                     "maxLength": 255,
                     "description": "IANA time zone id.",
                     "example": "Europe/Amsterdam"
                   },
-                  "defaultLanguage": {
+                  "defaultLanguageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
-                  "languages": {
+                  "languageCodes": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -12603,7 +12603,7 @@
             "application/merge-patch+json": {
               "example": {
                 "name": "Spencer, Pouros and Bergnaum Group",
-                "timezone": "Europe/Vaduz"
+                "timeZone": "Europe/Vaduz"
               },
               "schema": {
                 "type": "object",
@@ -12626,24 +12626,24 @@
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "country": {
+                  "regionCode": {
                     "type": ["string", "null"],
                     "maxLength": 2,
                     "pattern": "^[A-Z]{2}$",
                     "description": "ISO 3166-1 alpha-2 country code.",
                     "example": "NL"
                   },
-                  "timezone": {
+                  "timeZone": {
                     "type": ["string", "null"],
                     "maxLength": 255,
                     "description": "IANA time zone id.",
                     "example": "Europe/Amsterdam"
                   },
-                  "defaultLanguage": {
+                  "defaultLanguageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
-                  "languages": {
+                  "languageCodes": {
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -12854,10 +12854,10 @@
                     "toolsConfig": {},
                     "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                     "shortName": "Spencer,",
-                    "country": "TD",
-                    "timezone": "Europe/Vaduz",
-                    "defaultLanguage": "en",
-                    "languages": ["en"],
+                    "regionCode": "TD",
+                    "timeZone": "Europe/Vaduz",
+                    "defaultLanguageCode": "en",
+                    "languageCodes": ["en"],
                     "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                     "color": "#cda6af",
                     "logoUrl": null,
@@ -14845,19 +14845,19 @@
                     "type": ["string", "null"],
                     "maxLength": 1000000
                   },
-                  "firstName": {
+                  "givenName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "lastName": {
+                  "familyName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "language": {
+                  "languageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },
@@ -14889,19 +14889,19 @@
                     "type": ["string", "null"],
                     "maxLength": 1000000
                   },
-                  "firstName": {
+                  "givenName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "lastName": {
+                  "familyName": {
                     "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255,
                     "pattern": "^[^\\x00-\\x1F\\x7F-\\x9F<>]+$"
                   },
-                  "language": {
+                  "languageCode": {
                     "type": "string",
                     "enum": ["en", "nl"]
                   },

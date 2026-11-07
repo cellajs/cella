@@ -45,7 +45,7 @@ export async function confirmInvitationAddressOp(ctx: UserContext, tokenRecord: 
 
   const statics = { entityName: reissued.entityName, accountEmail: user.email, confirmUrl: tokenLinkUrl('invitation', reissued.rawToken) };
   mailer
-    .sendEmails(invitationAddressEmail, statics, [{ email, lng: user.language }])
+    .sendEmails(invitationAddressEmail, statics, [{ email, lng: user.languageCode }])
     .catch((err) => log.error('Failed to send invitation address confirmation', { err }));
 
   log.info('Invitation address confirmation sent', { inactiveMembershipId, tokenId: reissued.tokenId });

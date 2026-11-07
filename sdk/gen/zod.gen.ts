@@ -280,9 +280,9 @@ export const zUser = z.object({
   bannerUrl: z.string().max(2048).nullable(),
   email: z.email(),
   mfaRequired: z.boolean(),
-  firstName: z.string().max(255).nullable(),
-  lastName: z.string().max(255).nullable(),
-  language: z.enum(['en', 'nl']),
+  givenName: z.string().max(255).nullable(),
+  familyName: z.string().max(255).nullable(),
+  languageCode: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   contrast: z.enum(['system', 'more']),
   userFlags: z.object({
@@ -535,10 +535,10 @@ export const zOrganization = z.object({
   }),
   path: z.string().nullable(),
   shortName: z.string().max(255).nullable(),
-  country: z.string().max(255).nullable(),
-  timezone: z.string().max(255).nullable(),
-  defaultLanguage: z.enum(['en', 'nl']),
-  languages: z.array(z.enum(['en', 'nl'])).min(1),
+  regionCode: z.string().max(255).nullable(),
+  timeZone: z.string().max(255).nullable(),
+  defaultLanguageCode: z.enum(['en', 'nl']),
+  languageCodes: z.array(z.enum(['en', 'nl'])).min(1),
   notificationEmail: z.string().max(255).nullable(),
   color: z.string().max(255).nullable(),
   logoUrl: z.string().max(2048).nullable(),
@@ -1500,19 +1500,19 @@ export const zUpdateMeBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
   contrast: z.enum(['system', 'more']).optional(),
   description: z.string().max(1000000).nullish(),
-  firstName: z
+  givenName: z
     .string()
     .min(1)
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
-  lastName: z
+  familyName: z
     .string()
     .min(1)
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
-  language: z.enum(['en', 'nl']).optional(),
+  languageCode: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
   thumbnailUrl: z.string().max(2048).nullish(),
   slug: z
@@ -2041,7 +2041,7 @@ export const zListNotificationsResponse = z.object({
       actor: zUserMinimalBase
         .and(
           z.object({
-            firstName: z.string().nullable(),
+            givenName: z.string().nullable(),
           }),
         )
         .nullable(),
@@ -2274,14 +2274,14 @@ export const zUpdateOrganizationBody = z.object({
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
-  country: z
+  regionCode: z
     .string()
     .max(2)
     .regex(/^[A-Z]{2}$/)
     .nullish(),
-  timezone: z.string().max(255).nullish(),
-  defaultLanguage: z.enum(['en', 'nl']).optional(),
-  languages: z
+  timeZone: z.string().max(255).nullish(),
+  defaultLanguageCode: z.enum(['en', 'nl']).optional(),
+  languageCodes: z
     .array(z.enum(['en', 'nl']))
     .min(1)
     .max(64)
@@ -2688,19 +2688,19 @@ export const zGetUserResponse = zUserBase.and(
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
   description: z.string().max(1000000).nullish(),
-  firstName: z
+  givenName: z
     .string()
     .min(1)
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
-  lastName: z
+  familyName: z
     .string()
     .min(1)
     .max(255)
     .regex(/^[^\x00-\x1F\x7F-\x9F<>]+$/)
     .nullish(),
-  language: z.enum(['en', 'nl']).optional(),
+  languageCode: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
   thumbnailUrl: z.string().max(2048).nullish(),
   slug: z
