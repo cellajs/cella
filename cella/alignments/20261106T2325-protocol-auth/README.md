@@ -28,7 +28,7 @@ No script: manual.
 2. Pass `ctx` to `readStepUp` and `requireStepUp`; a route without `userGuard` passes `{ var: { session, stepUpCookie: getAuthCookie(ctx, 'session-step-up') } }`. Stamp a step-up with `stampStepUp`.
 3. An app test that steps up and then calls a guarded route sends the cookies the step-up response set (`keepCookiesOf` in `backend/tests/security/session-helpers.ts`).
 4. An app test that opens an invitation or verification link uses `openHeldLink` (`backend/tests/helpers.ts`), which answers the redeeming POST's `redirectTo`, and expects 303 from `confirmMagicLink`.
-5. An app link type of its own adds its entry to `redeemedLinkHandlers` in `open-link-token.ts`: typecheck flags it.
+5. An app link type of its own adds its entry to `redeemedLinkTargets` in `open-link-token.ts`: typecheck flags it.
 6. App code that reads a passkey challenge's `credentialIds` reads `credentials` (`{ id, transports? }`), and `findCredentialIdsByUser` is `findPasskeyCredentialsByUser`.
 
 ## Verify
