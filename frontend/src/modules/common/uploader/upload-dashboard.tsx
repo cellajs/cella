@@ -39,13 +39,8 @@ const generateRestrictionNote = ({ allowedFileTypes, maxNumberOfFiles, maxFileSi
   return parts.length ? `${parts.join(', ')}.` : '';
 };
 
-interface UploadDashboardProps {
-  uppy: CustomUppy;
-  autoOpen?: 'imageEditor' | null;
-}
-
 /** The Uppy Dashboard in the app's color mode, with a note on the restrictions its Uppy instance enforces. */
-export function UploadDashboard({ uppy, autoOpen }: UploadDashboardProps) {
+export function UploadDashboard({ uppy, autoOpen }: { uppy: CustomUppy; autoOpen?: 'imageEditor' | null }) {
   const mode = useUIStore((state) => state.mode);
 
   return (

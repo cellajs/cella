@@ -24,11 +24,6 @@ const formSchema = zUpdateTenantBody.pick({ name: true, kind: true, status: true
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface UpdateTenantFormProps {
-  tenant: Tenant;
-  sheet?: boolean;
-}
-
 export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 /** The kinds an admin moves a tenant between; a demo is made by its own route and stays one. */
@@ -36,7 +31,7 @@ const kindOptions = ['live', 'test'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 
-export function UpdateTenantForm({ tenant, sheet: isSheet }: UpdateTenantFormProps) {
+export function UpdateTenantForm({ tenant, sheet: isSheet }: { tenant: Tenant; sheet?: boolean }) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
 

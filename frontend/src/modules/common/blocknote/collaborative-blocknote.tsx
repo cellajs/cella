@@ -34,12 +34,8 @@ type CollaborativeHostProps = PassthroughProps & Pick<CollaborativeBlockNoteProp
 /** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
 const connectingNoticeMs = 1_000;
 
-interface SyncStatusProps {
-  text: string;
-}
-
 /** One line above the description saying why it is read-only, or what happens to its edits. */
-function SyncStatus({ text }: SyncStatusProps) {
+function SyncStatus({ text }: { text: string }) {
   return (
     <p role="status" className="text-muted-foreground mb-2 text-sm">
       {text}

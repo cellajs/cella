@@ -11,11 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-interface DialogerDialogProps {
-  dialog: InternalDialog;
-}
-
-export function DialogerDialog({ dialog }: DialogerDialogProps) {
+export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const { id, open, description, title, titleContent = title, outsideScroll = false, className, searchLayout, dock, layer } = dialog;
 
   // A container renders the dialog inline: the page keeps scrolling, and takes pointer input unless `overlay` dims it; focus stays in the dialog.

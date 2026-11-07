@@ -8,13 +8,8 @@ import { Button } from '~/modules/ui/button';
 import { useUpdateUser } from '~/modules/user/query';
 import { cn } from '~/utils/cn';
 
-interface ProfilePictureButtonProps {
-  user: Pick<UserBase, 'id' | 'thumbnailUrl'>;
-  className?: string;
-}
-
 /** A camera button on the corner of a user's avatar that uploads, changes or deletes their profile picture. */
-export function ProfilePictureButton({ user, className }: ProfilePictureButtonProps) {
+export function ProfilePictureButton({ user, className }: { user: Pick<UserBase, 'id' | 'thumbnailUrl'>; className?: string }) {
   const { t } = useTranslation();
   const { mutate: updateUser } = useUpdateUser(user.id);
 

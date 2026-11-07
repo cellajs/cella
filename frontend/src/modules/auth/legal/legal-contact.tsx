@@ -2,11 +2,7 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
-interface SupportEmailLinkProps {
-  className?: string;
-}
-
-export function SupportEmailLink({ className }: SupportEmailLinkProps) {
+export function SupportEmailLink({ className }: { className?: string }) {
   const { supportEmail } = appConfig;
 
   return (

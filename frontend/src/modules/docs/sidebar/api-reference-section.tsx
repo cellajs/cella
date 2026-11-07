@@ -12,12 +12,8 @@ import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
-interface ApiReferenceSectionProps {
-  label: string;
-}
-
 /** A group is open on its own route; its chevron, or its label on that route, overrides that per group until the pathname changes. */
-export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
+export function ApiReferenceSection({ label }: { label: string }) {
   const { t } = useTranslation();
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);

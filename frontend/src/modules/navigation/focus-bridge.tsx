@@ -80,12 +80,7 @@ const bridges = {
   'to-sidebar': { target: focusTargets.sidebar, label: 'c:go_to_navigation' },
 } as const;
 
-interface FocusBridgeProps {
-  direction: keyof typeof bridges;
-  className?: string;
-}
-
-export function FocusBridge({ direction, className }: FocusBridgeProps) {
+export function FocusBridge({ direction, className }: { direction: keyof typeof bridges; className?: string }) {
   const { t } = useTranslation();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const focusView = useUIStore((state) => state.focusView);

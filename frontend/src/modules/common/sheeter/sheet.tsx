@@ -10,12 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-interface SheeterSheetProps {
-  sheet: InternalSheet;
-  onExited?: () => void;
-}
-
-export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
+export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   const { id, modal, title, titleContent = title, description, closeSheetOnEsc = true } = sheet;
 
   const popupRef = useRef<HTMLDivElement>(null);

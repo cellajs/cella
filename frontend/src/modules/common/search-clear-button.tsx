@@ -31,13 +31,8 @@ export function SearchClearButton({ className, ...props }: ComponentProps<'butto
   );
 }
 
-interface SearchRecentRemoveButtonProps {
-  onRemove: () => void;
-  className?: string;
-}
-
 /** The X of a recent search, inside a `group/recent` row: it shows with the row's hover, and always where there is no hover. */
-export function SearchRecentRemoveButton({ onRemove, className }: SearchRecentRemoveButtonProps) {
+export function SearchRecentRemoveButton({ onRemove, className }: { onRemove: () => void; className?: string }) {
   const { t } = useTranslation();
 
   return (

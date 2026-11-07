@@ -2,12 +2,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
 
-interface SignUpDisabledProps {
-  onRequest: () => void;
-}
-
 /** Tells a visitor that sign-up is closed; with a waitlist it also offers the way to request an invitation. */
-export function SignUpDisabled({ onRequest }: SignUpDisabledProps) {
+export function SignUpDisabled({ onRequest }: { onRequest: () => void }) {
   const { t } = useTranslation();
 
   return (

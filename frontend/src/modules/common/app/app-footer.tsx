@@ -24,12 +24,7 @@ const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'legal', href: '/legal' },
 ];
 
-interface AppFooterLinksProps {
-  links?: FooterLinkProps[];
-  className?: string;
-}
-
-export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: AppFooterLinksProps) {
+export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: { links?: FooterLinkProps[]; className?: string }) {
   const { t } = useTranslation();
   const contactButtonRef = useRef<HTMLButtonElement>(null);
   const statusUrl = appConfig.statusUrl.trim();
@@ -53,11 +48,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
   );
 }
 
-interface AppFooterProps {
-  className?: string;
-}
-
-export function AppFooter({ className = '' }: AppFooterProps) {
+export function AppFooter({ className = '' }: { className?: string }) {
   const { t } = useTranslation();
   return (
     <footer className={cn('flex flex-col gap-2', className)}>

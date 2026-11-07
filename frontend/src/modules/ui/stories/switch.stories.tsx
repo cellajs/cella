@@ -3,9 +3,7 @@ import { expect, userEvent } from 'storybook/test';
 import { Label } from '~/modules/ui/label';
 import { Switch } from '~/modules/ui/switch';
 
-/**
- * A control that allows the user to toggle between checked and not checked.
- */
+/** A control that allows the user to toggle between checked and not checked. */
 const meta: Meta<typeof Switch> = {
   title: 'ui/Switch',
   component: Switch,
@@ -24,19 +22,13 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the switch.
- */
+/** The default form of the switch. */
 export const Default: Story = { args: { id: 'default-switch' } };
 
-/**
- * Use the `disabled` prop to disable the switch.
- */
+/** Use the `disabled` prop to disable the switch. */
 export const Disabled: Story = { args: { id: 'disabled-switch', disabled: true } };
 
-/**
- * Use the `size` prop for a smaller switch in dense lists.
- */
+/** Use the `size` prop for a smaller switch in dense lists. */
 export const Small: Story = { args: { id: 'small-switch', size: 'sm' } };
 
 export const ShouldToggle: Story = {

@@ -7,9 +7,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
-/**
- * Building forms with React Hook Form and Zod.
- */
+/** Building forms with React Hook Form and Zod. */
 const meta: Meta<typeof Form> = {
   title: 'ui/Form',
   component: Form,
@@ -51,9 +49,7 @@ function ProfileForm(args: Story['args']) {
   );
 }
 
-/**
- * The default form of the form.
- */
+/** The default form of the form. */
 export const Default: Story = {};
 
 export const ShouldSucceedOnSubmit: Story = {

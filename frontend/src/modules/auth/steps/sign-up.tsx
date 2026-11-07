@@ -16,16 +16,11 @@ import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 
-interface SignUpStepProps {
-  tokenData?: TokenData;
-  invitation?: TokenInvitation;
-}
-
 /**
  * Sign-up from the neutral sign-in step, on the address typed there. An invitation in hand is answered on its own step
  * (`InvitationStep`); here it only matters when the visitor signs up on another address than the invited one.
  */
-export function SignUpStep({ tokenData, invitation }: SignUpStepProps) {
+export function SignUpStep({ tokenData, invitation }: { tokenData?: TokenData; invitation?: TokenInvitation }) {
   const { t } = useTranslation();
 
   const email = useAuthStore((state) => state.email);

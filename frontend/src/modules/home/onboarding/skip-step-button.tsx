@@ -9,11 +9,7 @@ import { Button } from '~/modules/ui/button';
 
 const skipOrganizationDialogId = 'skip-org-creation';
 
-interface SkipOrganizationProps {
-  onComplete: () => void;
-}
-
-function SkipOrganization({ onComplete }: SkipOrganizationProps) {
+function SkipOrganization({ onComplete }: { onComplete: () => void }) {
   const { t } = useTranslation();
   const overlay = useOverlayClose();
 
@@ -25,12 +21,8 @@ function SkipOrganization({ onComplete }: SkipOrganizationProps) {
   return <ConfirmForm icon={RedoIcon} label={t('c:skip')} pending={false} allowOffline onConfirm={skip} />;
 }
 
-interface SkipStepButtonProps {
-  onComplete: () => void;
-}
-
 /** Skips an optional step; skipping the organization step asks first, and the confirmed skip ends onboarding through `onComplete`. */
-export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
+export function SkipStepButton({ onComplete }: { onComplete: () => void }) {
   const { nextStep, isOptionalStep, currentStep } = useStepper();
   const { t } = useTranslation();
 

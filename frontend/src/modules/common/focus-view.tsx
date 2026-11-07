@@ -10,11 +10,6 @@ import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
-interface FocusViewProps {
-  className?: string;
-  iconOnly?: boolean;
-}
-
 interface FocusViewContainerProps {
   children: ReactNode;
   className?: string;
@@ -22,7 +17,7 @@ interface FocusViewContainerProps {
 }
 
 /** Toggles focus view mode, which hides non-essential UI. */
-export function FocusView({ className = '', iconOnly }: FocusViewProps) {
+export function FocusView({ className = '', iconOnly }: { className?: string; iconOnly?: boolean }) {
   const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
   const setFocusView = useUIStore((state) => state.setFocusView);

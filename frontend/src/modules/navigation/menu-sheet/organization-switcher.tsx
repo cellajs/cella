@@ -108,12 +108,8 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
   );
 }
 
-interface OrganizationSwitcherProps {
-  organization: UserMenuItem;
-}
-
 /** Heads the mobile menu sheet: a row like the channel rows under it, which opens the organization switcher menu. */
-export function OrganizationSwitcher({ organization }: OrganizationSwitcherProps) {
+export function OrganizationSwitcher({ organization }: { organization: UserMenuItem }) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const { active, unseenCounts } = useSwitcherOrganizations();

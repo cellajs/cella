@@ -17,17 +17,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the progress.
- */
+/** The default form of the progress. */
 export const Default: Story = {};
 
-/**
- * When the progress is indeterminate.
- */
+/** When the progress is indeterminate. */
 export const Indeterminate: Story = { args: { value: undefined } };
 
-/**
- * When the progress is completed.
- */
+/** When the progress is completed. */
 export const Completed: Story = { args: { value: 100 } };

@@ -7,12 +7,7 @@ import { isTouchInteraction } from '~/utils/input-modality';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-interface SheeterDrawerProps {
-  sheet: InternalSheet;
-  onExited?: () => void;
-}
-
-export function SheeterDrawer({ sheet, onExited }: SheeterDrawerProps) {
+export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   const { id, side, title, titleContent = title, description, open = true } = sheet;
 
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);

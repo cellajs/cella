@@ -131,12 +131,8 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
   );
 }
 
-interface InvitationsStepProps {
-  children?: ReactNode;
-}
-
 /** Answers each pending invitation by an explicit click (one claimed by address was never opened by this user); moves on after the last. */
-function InvitationsStep({ children }: InvitationsStepProps) {
+function InvitationsStep({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 

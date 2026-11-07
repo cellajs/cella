@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { Calendar } from '~/modules/ui/calendar';
 
-/**
- * A date picker component built on react-day-picker with customizable styling and behavior.
- */
+/** A date picker component built on react-day-picker with customizable styling and behavior. */
 const meta = {
   title: 'ui/Calendar',
   component: Calendar,
@@ -24,9 +22,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default single date selection calendar.
- */
+/** Default single date selection calendar. */
 export const Default: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -34,9 +30,7 @@ export const Default: Story = {
   },
 };
 
-/**
- * Calendar with dropdown month/year selection.
- */
+/** Calendar with dropdown month/year selection. */
 export const WithDropdowns: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -53,9 +47,7 @@ export const WithDropdowns: Story = {
   },
 };
 
-/**
- * Calendar with disabled dates (past dates disabled).
- */
+/** Calendar with disabled dates (past dates disabled). */
 export const WithDisabledDates: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -74,9 +66,7 @@ export const WithDisabledDates: Story = {
   },
 };
 
-/**
- * Calendar with hidden outside days.
- */
+/** Calendar with hidden outside days. */
 export const HiddenOutsideDays: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -93,9 +83,7 @@ export const HiddenOutsideDays: Story = {
   },
 };
 
-/**
- * Multiple months view for extended date selection.
- */
+/** Multiple months view for extended date selection. */
 export const MultipleMonths: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -112,9 +100,7 @@ export const MultipleMonths: Story = {
   },
 };
 
-/**
- * Calendar with different button variants.
- */
+/** Calendar with different button variants. */
 export const DifferentButtonVariants: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -159,9 +145,7 @@ export const DifferentButtonVariants: Story = {
   },
 };
 
-/**
- * Calendar with week numbers.
- */
+/** Calendar with week numbers. */
 export const WithWeekNumbers: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -178,9 +162,7 @@ export const WithWeekNumbers: Story = {
   },
 };
 
-/**
- * Calendar with fixed week starts.
- */
+/** Calendar with fixed week starts. */
 export const FixedWeeks: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -190,9 +172,7 @@ export const FixedWeeks: Story = {
   },
 };
 
-/**
- * Disabled calendar state.
- */
+/** Disabled calendar state. */
 export const Disabled: Story = {
   render: function Render(args) {
     const [date] = useState<Date | undefined>(new Date());

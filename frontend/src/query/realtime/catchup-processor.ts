@@ -11,8 +11,7 @@ import { invalidateEmbeddingHosts, propagateEmbeddings } from '~/query/realtime/
 import { handleStreamSignal } from '~/query/realtime/signal-handlers';
 import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-
-const dayMs = 24 * 60 * 60 * 1000;
+import { dayMs } from '~/utils/date-mini';
 
 type PropagationHint = NonNullable<PostAppCatchupResponse['organizations'][string]['propagation']>[number];
 

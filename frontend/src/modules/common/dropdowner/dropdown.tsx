@@ -8,13 +8,9 @@ import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { isTouchInteraction } from '~/utils/input-modality';
 
-interface DropdownerDropdownProps {
-  dropdown: InternalDropdown;
-}
-
 const popupMorph: MorphTiming = { duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' };
 
-export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
+export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
   const trigger = dropdown.triggerRef?.current;
   const triggerFocusRef = useLatestRef(trigger ?? null);
   const popupRef = useRef<HTMLDivElement>(null);

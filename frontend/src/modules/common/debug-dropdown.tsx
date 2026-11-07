@@ -4,10 +4,6 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
-interface DebugDropdownProps {
-  className?: string;
-}
-
 // The library panels open through their own toggle buttons, which tailwind.css hides
 const clickHidden = (selector: string) => document.querySelector<HTMLElement>(selector)?.click();
 
@@ -21,7 +17,7 @@ const debugOptions = [
 ];
 
 /** 🐞 menu that toggles the panels mounted by `Devtools` and links to local dev tools. */
-export function DebugDropdown({ className }: DebugDropdownProps) {
+export function DebugDropdown({ className }: { className?: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" className={cn('size-12 print:hidden', className)} aria-label="toggle debug toolbar" />}>

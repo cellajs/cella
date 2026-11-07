@@ -22,13 +22,8 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { queryClient } from '~/query/query-client';
 import { dateShort } from '~/utils/date-short';
 
-interface WithdrawInvitationButtonProps {
-  channel: EnrichedChannel;
-  invitationId: string;
-}
-
 /** Withdraws a pending invitation, such as one sent to a mistyped address; inviting the address again undoes it. */
-function WithdrawInvitationButton({ channel, invitationId }: WithdrawInvitationButtonProps) {
+function WithdrawInvitationButton({ channel, invitationId }: { channel: EnrichedChannel; invitationId: string }) {
   const { t } = useTranslation();
   const { mutate, isPending } = useWithdrawInvitationMutation();
 
@@ -96,12 +91,8 @@ function PendingTile({ row, channel, onResent }: PendingTileProps) {
   );
 }
 
-interface PendingMembershipsListProps {
-  channel: EnrichedChannel;
-}
-
 /** A channel's pending invitations as tiles, newest first. */
-export function PendingMembershipsList({ channel }: PendingMembershipsListProps) {
+export function PendingMembershipsList({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
 
   const queryOptions = pendingMembershipsQueryOptions({

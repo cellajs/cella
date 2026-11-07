@@ -30,13 +30,8 @@ const withPasted = (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement
   return `${value.slice(0, selectionStart ?? value.length)}\n${event.clipboardData.getData('text')}\n${value.slice(selectionEnd ?? value.length)}`;
 };
 
-interface InviteFieldLineProps {
-  list: InviteList;
-  check: InviteCheck;
-}
-
 /** The line under a field, visible only for text that is no address: an address's tile shows its outcome. Stays mounted, so a change is announced. */
-function InviteFieldLine({ list, check }: InviteFieldLineProps) {
+function InviteFieldLine({ list, check }: { list: InviteList; check: InviteCheck }) {
   const { t } = useTranslation();
   const { last, typedInvalid, people } = list;
   const listed = last && !last.repeat && (list.emails.includes(last.address) || list.unparsed.includes(last.address)) ? last.address : null;

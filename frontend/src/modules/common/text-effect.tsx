@@ -1,11 +1,6 @@
 import { motion } from 'motion/react';
 
-interface TextEffectProps {
-  text: string;
-  className?: string;
-}
-
-export function TextEffect({ text, className }: TextEffectProps) {
+export function TextEffect({ text, className }: { text: string; className?: string }) {
   const variants = {
     hidden: { opacity: 0 },
     show: (index: number) => ({ y: 0, opacity: 1, transition: { delay: index * 0.02 } }),

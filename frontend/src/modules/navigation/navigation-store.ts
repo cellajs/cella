@@ -129,21 +129,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               if (organizationId) state.lastOrganizationId = organizationId;
             });
           },
-          setKeepNavOpen: (keepNavOpen) => {
-            set((state) => {
-              state.keepNavOpen = keepNavOpen;
-            });
-          },
-          setKeepOpenPreference: (keepOpenPreference) => {
-            set((state) => {
-              state.keepOpenPreference = keepOpenPreference;
-            });
-          },
-          setFloatingNavActive: (floatingNavActive) => {
-            set((state) => {
-              state.floatingNavActive = floatingNavActive;
-            });
-          },
+          setKeepNavOpen: (keepNavOpen) => set({ keepNavOpen }),
+          setKeepOpenPreference: (keepOpenPreference) => set({ keepOpenPreference }),
+          setFloatingNavActive: (floatingNavActive) => set({ floatingNavActive }),
           setSectionOpen: (sectionKey, open) => {
             set((state) => {
               state.activeSections = { ...state.activeSections, [sectionKey]: open };

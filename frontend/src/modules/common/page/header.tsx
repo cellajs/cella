@@ -60,13 +60,8 @@ export function PageHeader({ entity, panel, subline, avatarBadge, parents = [], 
   );
 }
 
-interface ContextLineProps {
-  type: (ChannelBase | UserBase)['entityType'];
-  ancestors: EnrichedChannel[];
-}
-
 /** The entity's type and where it sits: "Project in Course (Class, Group) by Organization"; a phone keeps the top channel only. */
-function ContextLine({ type, ancestors }: ContextLineProps) {
+function ContextLine({ type, ancestors }: { type: (ChannelBase | UserBase)['entityType']; ancestors: EnrichedChannel[] }) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
@@ -94,12 +89,7 @@ function ContextLine({ type, ancestors }: ContextLineProps) {
   );
 }
 
-interface ChannelTrailProps {
-  channel: EnrichedChannel;
-  subChannels: EnrichedChannel[];
-}
-
-function ChannelTrail({ channel, subChannels }: ChannelTrailProps) {
+function ChannelTrail({ channel, subChannels }: { channel: EnrichedChannel; subChannels: EnrichedChannel[] }) {
   return (
     <span className="flex min-w-0 items-center gap-1">
       <ContextLink channel={channel} className="max-w-48" />
@@ -119,12 +109,7 @@ function ChannelTrail({ channel, subChannels }: ChannelTrailProps) {
   );
 }
 
-interface ContextLinkProps {
-  channel: EnrichedChannel;
-  className?: string;
-}
-
-function ContextLink({ channel, className }: ContextLinkProps) {
+function ContextLink({ channel, className }: { channel: EnrichedChannel; className?: string }) {
   const route = getChannelRoute(channel);
   return (
     <Link

@@ -6,12 +6,8 @@ import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
 import type { DocHeading } from '~/modules/page/content';
 
-interface TocAsideProps {
-  headings: DocHeading[];
-}
-
 /** "On this page" nav: page headings with a cursor bar driven by the scroll spy store; view-page.tsx registers the sections. */
-export function TocAside({ headings }: TocAsideProps) {
+export function TocAside({ headings }: { headings: DocHeading[] }) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const layoutId = useId();

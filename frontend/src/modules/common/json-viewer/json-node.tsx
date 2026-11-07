@@ -68,11 +68,7 @@ const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidd
 
 const baseClass = tw('wrap-break-word whitespace-pre-line');
 
-interface InlinePrimitiveValueProps {
-  value: unknown;
-}
-
-function InlinePrimitiveValue({ value }: InlinePrimitiveValueProps) {
+function InlinePrimitiveValue({ value }: { value: unknown }) {
   if (value === null) return <span className={jsonViewerTheme.null}>null</span>;
   if (typeof value === 'boolean' || typeof value === 'number') {
     return (
@@ -181,11 +177,7 @@ function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount }: Collaps
   );
 }
 
-interface CopyNodeButtonProps {
-  value: unknown;
-}
-
-function CopyNodeButton({ value }: CopyNodeButtonProps) {
+function CopyNodeButton({ value }: { value: unknown }) {
   const { t } = useTranslation();
   const { copied, copyToClipboard } = useCopyToClipboard(2000);
 

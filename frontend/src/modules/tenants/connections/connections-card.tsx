@@ -56,13 +56,8 @@ const splitList = (value: string, separator: RegExp) =>
 /** The link an institution shares with its members: the entry page of its connection. */
 const entryLink = (connection: Connection) => `${appConfig.frontendUrl}/auth/sso/${connection.id}`;
 
-interface ConnectionsCardProps {
-  tenant: Tenant;
-  className?: string;
-}
-
 /** A tenant's SSO connection for system admins, and the form that adds one while the tenant has none. */
-export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
+export function ConnectionsCard({ tenant, className }: { tenant: Tenant; className?: string }) {
   const { t } = useTranslation();
   const { data: connections, isPending } = useQuery(connectionsQueryOptions(tenant.id));
   const { mutate: create, isPending: creating } = useConnectionCreateMutation();

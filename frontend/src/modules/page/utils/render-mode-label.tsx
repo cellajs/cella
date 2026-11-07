@@ -13,11 +13,7 @@ const renderModeLabelKeys = {
   nodeOnly: 'c:render_mode.node_only',
 } as const satisfies Record<DocRenderMode, TKey>;
 
-interface RenderModeLabelProps {
-  mode: DocRenderMode;
-}
-
-export function RenderModeLabel({ mode }: RenderModeLabelProps) {
+export function RenderModeLabel({ mode }: { mode: DocRenderMode }) {
   const { t } = useTranslation();
   const Icon = renderModeIcons[mode];
   return (

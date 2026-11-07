@@ -18,12 +18,8 @@ import { SidebarContent } from '~/modules/ui/sidebar';
 import { useUserStore } from '~/modules/user/user-store';
 import { tw } from '~/utils/tw';
 
-interface PagesSectionProps {
-  label: string;
-}
-
 /** Sidebar section with the docs pages tree (plus the admin manage-pages shortcut). */
-function PagesSection({ label }: PagesSectionProps) {
+function PagesSection({ label }: { label: string }) {
   const { t } = useTranslation();
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
 
@@ -45,13 +41,9 @@ function PagesSection({ label }: PagesSectionProps) {
   );
 }
 
-interface LinksSectionProps {
-  label: string;
-}
-
 const rowClass = tw('w-full justify-start');
 
-function LinksSection({ label }: LinksSectionProps) {
+function LinksSection({ label }: { label: string }) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement>(null);
   const hasStatusPage = !!appConfig.statusUrl.trim();

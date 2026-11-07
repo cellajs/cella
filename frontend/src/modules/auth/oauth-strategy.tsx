@@ -20,12 +20,8 @@ export const enabledOAuthProviders = appConfig.enabledOAuthProviders.map((id) =>
   icon: (() => <OAuthProviderIcon id={id} />) satisfies IconComponent,
 }));
 
-interface OAuthProviderIconProps {
-  id: EnabledOAuthProvider;
-}
-
 /** A provider's logo, beside text that names the provider. */
-export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
+export function OAuthProviderIcon({ id }: { id: EnabledOAuthProvider }) {
   return (
     <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" draggable={false} />
   );

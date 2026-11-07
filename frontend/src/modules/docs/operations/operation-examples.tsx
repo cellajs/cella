@@ -5,11 +5,6 @@ import { openDocsSheet } from '~/modules/docs/open-docs-sheet';
 import { ResponsesAccordion } from '~/modules/docs/operations/operation-responses';
 import { schemasQueryOptions, tagDetailsQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 
-interface OperationExamplesProps {
-  operationId: string;
-  tagName: string;
-}
-
 export const openExamplesSheet = (operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) =>
   openDocsSheet({
     id: `examples-${operation.id}`,
@@ -19,7 +14,7 @@ export const openExamplesSheet = (operation: GenOperationSummary, trigger: HTMLB
   });
 
 /** Suspends until its four queries resolve; `openExamplesSheet` gives it the boundary. */
-export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
+export function OperationExamples({ operationId, tagName }: { operationId: string; tagName: string }) {
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { zodIndex, typesIndex } = useDefinitionIndexes();

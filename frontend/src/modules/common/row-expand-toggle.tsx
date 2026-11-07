@@ -14,16 +14,11 @@ export function handleExpandKeys(event: KeyboardEvent, isExpanded: boolean, onTo
   onToggle();
 }
 
-interface RowExpandToggleProps {
-  isExpanded: boolean;
-  onToggle: () => void;
-}
-
 /**
  * The chevron at the end of a positioned `group/expand-row` whose label is a link: a click only opens or closes the row.
  * It stays out of the Tab order and the accessibility tree; the link carries `aria-expanded` and `handleExpandKeys`.
  */
-export function RowExpandToggle({ isExpanded, onToggle }: RowExpandToggleProps) {
+export function RowExpandToggle({ isExpanded, onToggle }: { isExpanded: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"

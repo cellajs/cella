@@ -20,13 +20,8 @@ const loadingSpinner = (
 /** Breathing room around each page, in px. */
 const pagePadding = 20;
 
-interface RenderPDFProps {
-  file: string;
-  className?: string;
-}
-
 /** Fits each page to the container width; the pages scroll vertically. */
-export function RenderPDF({ file, className }: RenderPDFProps) {
+export function RenderPDF({ file, className }: { file: string; className?: string }) {
   const [pageWidths, setPageWidths] = useState<number[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
 

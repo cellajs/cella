@@ -21,13 +21,8 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
 
-interface PublishOrganizationFormProps {
-  organization: Pick<Organization, 'id' | 'name' | 'tenantId'>;
-  close: () => void;
-}
-
 /** The publish confirmation; the toast says how many held invitations went out. */
-function PublishOrganizationForm({ organization, close }: PublishOrganizationFormProps) {
+function PublishOrganizationForm({ organization, close }: { organization: Pick<Organization, 'id' | 'name' | 'tenantId'>; close: () => void }) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationPublishMutation();
 
@@ -46,12 +41,7 @@ function PublishOrganizationForm({ organization, close }: PublishOrganizationFor
   return <ConfirmForm icon={RocketIcon} label={t('c:publish')} pending={isPending} onConfirm={publish} onCancel={close} />;
 }
 
-interface OrganizationPageProps {
-  organizationId: string;
-  tenantId: string;
-}
-
-export function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
+export function OrganizationPage({ organizationId, tenantId }: { organizationId: string; tenantId: string }) {
   const { t } = useTranslation();
 
   const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));

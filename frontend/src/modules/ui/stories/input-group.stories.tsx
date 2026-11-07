@@ -4,18 +4,14 @@ import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea } from '~/modules/ui/input-group';
 
-/**
- * Flexible input group components that combine inputs with addons, buttons, and text for enhanced form interactions.
- */
+/** Flexible input group components that combine inputs with addons, buttons, and text for enhanced form interactions. */
 const meta: Meta = { title: 'ui/InputGroup', component: InputGroup, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 
 type Story = StoryObj;
 
-/**
- * Basic input group with leading text.
- */
+/** Basic input group with leading text. */
 export const Default: Story = {
   render: () => (
     <InputGroup>
@@ -29,9 +25,7 @@ export const Default: Story = {
   ),
 };
 
-/**
- * Input group with trailing text.
- */
+/** Input group with trailing text. */
 export const TrailingText: Story = {
   render: () => (
     <InputGroup>
@@ -43,9 +37,7 @@ export const TrailingText: Story = {
   ),
 };
 
-/**
- * Input group with both leading and trailing addons.
- */
+/** Input group with both leading and trailing addons. */
 export const BothSides: Story = {
   render: () => (
     <InputGroup>
@@ -60,9 +52,7 @@ export const BothSides: Story = {
   ),
 };
 
-/**
- * Input group with button addon.
- */
+/** Input group with button addon. */
 export const WithButton: Story = {
   render: () => (
     <InputGroup>
@@ -76,9 +66,7 @@ export const WithButton: Story = {
   ),
 };
 
-/**
- * Input group with multiple buttons.
- */
+/** Input group with multiple buttons. */
 export const MultipleButtons: Story = {
   render: () => (
     <InputGroup>
@@ -100,9 +88,7 @@ export const MultipleButtons: Story = {
   ),
 };
 
-/**
- * Input group with block start addon (top).
- */
+/** Input group with block start addon (top). */
 export const BlockStart: Story = {
   render: () => (
     <InputGroup>
@@ -114,9 +100,7 @@ export const BlockStart: Story = {
   ),
 };
 
-/**
- * Input group with block end addon (bottom).
- */
+/** Input group with block end addon (bottom). */
 export const BlockEnd: Story = {
   render: () => (
     <InputGroup>
@@ -128,9 +112,7 @@ export const BlockEnd: Story = {
   ),
 };
 
-/**
- * Textarea input group.
- */
+/** Textarea input group. */
 export const TextareaGroup: Story = {
   render: () => (
     <InputGroup>
@@ -145,9 +127,7 @@ export const TextareaGroup: Story = {
   ),
 };
 
-/**
- * Password input with toggle visibility.
- */
+/** Password input with toggle visibility. */
 export const PasswordToggle: Story = {
   render: function Render() {
     const [showPassword, setShowPassword] = useState(false);
@@ -165,9 +145,7 @@ export const PasswordToggle: Story = {
   },
 };
 
-/**
- * Input group with error state.
- */
+/** Input group with error state. */
 export const WithError: Story = {
   render: () => (
     <div className="space-y-2">
@@ -184,9 +162,7 @@ export const WithError: Story = {
   ),
 };
 
-/**
- * Input group with different button sizes.
- */
+/** Input group with different button sizes. */
 export const ButtonSizes: Story = {
   render: () => (
     <div className="space-y-4">
@@ -220,9 +196,7 @@ export const ButtonSizes: Story = {
   ),
 };
 
-/**
- * Search input with filters.
- */
+/** Search input with filters. */
 export const SearchWithFilters: Story = {
   render: () => (
     <div className="space-y-4">
@@ -253,9 +227,7 @@ export const SearchWithFilters: Story = {
   ),
 };
 
-/**
- * URL input group.
- */
+/** URL input group. */
 export const UrlInput: Story = {
   render: () => (
     <div className="space-y-4">
@@ -282,9 +254,7 @@ export const UrlInput: Story = {
   ),
 };
 
-/**
- * Number input with controls.
- */
+/** Number input with controls. */
 export const NumberInput: Story = {
   render: function Render() {
     const [value, setValue] = useState('0');
@@ -310,9 +280,7 @@ export const NumberInput: Story = {
   },
 };
 
-/**
- * Date input group.
- */
+/** Date input group. */
 export const DateInput: Story = {
   render: () => (
     <InputGroup>
@@ -326,9 +294,7 @@ export const DateInput: Story = {
   ),
 };
 
-/**
- * Complex form with multiple input groups.
- */
+/** Complex form with multiple input groups. */
 export const ComplexForm: Story = {
   render: () => (
     <div className="w-full max-w-md space-y-4">

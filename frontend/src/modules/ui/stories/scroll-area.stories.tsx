@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
-/**
- * Augments native scroll functionality for custom, cross-browser styling.
- */
+/** Augments native scroll functionality for custom, cross-browser styling. */
 const meta = {
   title: 'ui/ScrollArea',
   component: ScrollArea,
@@ -21,22 +19,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the scroll area.
- */
+/** The default form of the scroll area. */
 export const Default: Story = {};
 
-/**
- * Use the `type` prop with `always` to always show the scroll area.
- */
+/** Use the `type` prop with `always` to always show the scroll area. */
 export const Always: Story = { args: {} };
 
-/**
- * Use the `type` prop with `hover` to show the scroll area on hover.
- */
+/** Use the `type` prop with `hover` to show the scroll area on hover. */
 export const Hover: Story = { args: {} };
 
-/**
- * Use the `type` prop with `scroll` to show the scroll area when scrolling.
- */
+/** Use the `type` prop with `scroll` to show the scroll area when scrolling. */
 export const Scroll: Story = { args: {} };

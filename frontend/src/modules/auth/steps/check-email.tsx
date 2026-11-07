@@ -14,11 +14,7 @@ import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 
-interface CheckEmailStepProps {
-  invitation?: TokenInvitation;
-}
-
-export function CheckEmailStep({ invitation }: CheckEmailStepProps) {
+export function CheckEmailStep({ invitation }: { invitation?: TokenInvitation }) {
   const { t } = useTranslation();
 
   const setStep = useAuthStore((state) => state.setStep);

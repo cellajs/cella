@@ -47,11 +47,7 @@ const serializeFloatingNavConfig = (matches: { pathname: string; staticData: Sta
 // No home button: the menu header links home. The footer items end the row, as they end the desktop nav bar.
 const barNavItems: NavItem[] = navItems.filter((item: NavItem) => (item.type === 'base' && item.id !== 'home') || item.type === 'footer');
 
-interface BottomBarNavProps {
-  onNavItemClick: TriggerNavItemFn;
-}
-
-function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
+function BottomBarNav({ onNavItemClick }: { onNavItemClick: TriggerNavItemFn }) {
   const { hasStarted } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const floatingNavActive = useNavigationStore((state) => state.floatingNavActive);

@@ -37,11 +37,7 @@ export const newsletterFormId = 'create-newsletter';
 const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.shape.subject.trim().min(1) });
 
 type FormValues = z.infer<typeof formSchema>;
-interface CreateNewsletterFormProps {
-  organizationIds: string[];
-}
-
-export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormProps) {
+export function CreateNewsletterForm({ organizationIds }: { organizationIds: string[] }) {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState(false);

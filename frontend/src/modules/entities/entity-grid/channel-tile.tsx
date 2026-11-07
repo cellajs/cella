@@ -84,13 +84,8 @@ function TileLink({ className, children }: { className?: string; children: React
   );
 }
 
-interface ChannelTileBannerProps {
-  overlay?: ReactNode;
-  children?: ReactNode;
-}
-
 /** Banner image (or the entity's color) with a bar holding `children`, by default the heading. */
-export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps) {
+export function ChannelTileBanner({ overlay, children }: { overlay?: ReactNode; children?: ReactNode }) {
   const entity = useTileEntity();
   return (
     <div className="relative">
@@ -112,24 +107,15 @@ export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps)
   );
 }
 
-interface ChannelTileRowProps {
-  children?: ReactNode;
-}
-
 /** A banner-less tile: one linked row holding `children`, by default the heading. */
-export function ChannelTileRow({ children }: ChannelTileRowProps) {
+export function ChannelTileRow({ children }: { children?: ReactNode }) {
   return (
     <TileLink className="hover:bg-hover flex w-full items-center gap-3 p-3 transition-colors sm:p-6">{children ?? <ChannelTileHeading />}</TileLink>
   );
 }
 
-interface ChannelTileHeadingProps {
-  leading?: ReactNode;
-  meta?: ReactNode;
-}
-
 /** Avatar (or `leading`), name with a draft badge, and the meta line (or `meta`, by default {@link ChannelTileStats}). */
-export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
+export function ChannelTileHeading({ leading, meta }: { leading?: ReactNode; meta?: ReactNode }) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   return (
@@ -242,12 +228,8 @@ export function ChannelTileMembers() {
   );
 }
 
-interface ChannelTileParentChipProps {
-  parent: EnrichedChannel | null | undefined;
-}
-
 /** Banner overlay: a chip linking to the channel this one sits in. */
-export function ChannelTileParentChip({ parent }: ChannelTileParentChipProps) {
+export function ChannelTileParentChip({ parent }: { parent: EnrichedChannel | null | undefined }) {
   const { t } = useTranslation();
   if (!parent) return null;
   return (
@@ -262,12 +244,8 @@ export function ChannelTileParentChip({ parent }: ChannelTileParentChipProps) {
   );
 }
 
-interface ChannelTileFooterProps {
-  children: ReactNode;
-}
-
 /** Area below the banner; disappears when its parts render nothing. */
-export function ChannelTileFooter({ children }: ChannelTileFooterProps) {
+export function ChannelTileFooter({ children }: { children: ReactNode }) {
   return <div className="flex grow flex-wrap content-between items-center gap-3 px-4 py-3 empty:hidden">{children}</div>;
 }
 

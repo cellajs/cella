@@ -10,12 +10,7 @@ import { UserProfile } from '~/modules/user/user-profile';
 import { useUserStore } from '~/modules/user/user-store';
 import { tw } from '~/utils/tw';
 
-interface UserSheetProps {
-  id: string;
-  organizationId: string | undefined;
-}
-
-function UserSheet({ id, organizationId }: UserSheetProps) {
+function UserSheet({ id, organizationId }: { id: string; organizationId: string | undefined }) {
   const isOnline = useOnlineManager();
   const isSelf = useUserStore((state) => state.user?.id === id);
 

@@ -17,16 +17,12 @@ import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 import { tw } from '~/utils/tw';
 
-interface AttachmentDescriptionFormProps {
-  attachment: Attachment;
-}
-
 /**
  * Collaborative description editor for one attachment, read-only without update permission. The mention audience comes
  * from the row's home channel (its deepest ancestor), so an app that re-homes attachments needs no change here. The
  * relay saves a collaborative session; with Yjs off, the update mutation saves.
  */
-function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescriptionFormProps) {
+function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Attachment }) {
   const { tenantId, organizationId } = openedRow;
   // The sheet content is built once, so the row is read live: the editor and the save compare with the stored text.
   const { data: liveRow } = useQuery({

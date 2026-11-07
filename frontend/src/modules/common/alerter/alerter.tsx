@@ -5,11 +5,7 @@ import { AlertBanner, type AlertContextMode } from '~/modules/common/alerter/ale
 /** An entry of `alertsConfig`: a banner, or a component that decides itself whether and how it shows. */
 type AppAlert = AlertBanner | { id: string; modes?: AlertContextMode[]; component: ComponentType };
 
-interface AlerterProps {
-  mode: AlertContextMode;
-}
-
-export function Alerter({ mode }: AlerterProps) {
+export function Alerter({ mode }: { mode: AlertContextMode }) {
   // Widened here, so an app whose config lists banners alone keeps compiling
   const alerts: readonly AppAlert[] = alertsConfig;
 

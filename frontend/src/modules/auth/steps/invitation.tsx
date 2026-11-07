@@ -19,18 +19,13 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 
-interface InvitationStepProps {
-  tokenData: TokenData;
-  federations?: GetAuthHealthResponse['federations'];
-}
-
 /**
  * Landing step for a signed-out visitor holding an invitation: who invited them to what, and the ways in. The emailed
  * link goes to the invited address, where it signs in or creates the account. The institution of the invited
  * organization comes first when it has one. A membership invitation can also be answered with an account on another
  * address: the visitor signs in first and the confirm step follows.
  */
-export function InvitationStep({ tokenData, federations }: InvitationStepProps) {
+export function InvitationStep({ tokenData, federations }: { tokenData: TokenData; federations?: GetAuthHealthResponse['federations'] }) {
   const { t } = useTranslation();
   const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
     useShallow((state) => ({ setStep: state.setStep, setMagicLinkSent: state.setMagicLinkSent, setInviteOtherAccount: state.setInviteOtherAccount })),

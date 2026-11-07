@@ -41,12 +41,8 @@ if (import.meta.hot) {
   });
 }
 
-interface PersistedQueryProviderProps {
-  children: ReactNode;
-}
-
 /** Provides the query client with its persisted cache, and starts the services that work from it. */
-export function PersistedQueryProvider({ children }: PersistedQueryProviderProps) {
+export function PersistedQueryProvider({ children }: { children: ReactNode }) {
   useEffect(() => startYjsStore(), []);
 
   useEffect(() => {

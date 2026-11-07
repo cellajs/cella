@@ -11,12 +11,8 @@ import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';
 
-interface ViewPageProps {
-  slug: string;
-}
-
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
-export function ViewPage({ slug }: ViewPageProps) {
+export function ViewPage({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const page = useDocPage(slug);
   const Content = getDocPageComponent(slug);

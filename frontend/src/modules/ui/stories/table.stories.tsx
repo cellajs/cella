@@ -8,9 +8,7 @@ const invoices = [
   { invoice: 'INV004', paymentStatus: 'Paid', totalAmount: '$450.00', paymentMethod: 'Credit Card' },
 ];
 
-/**
- * Powerful table and datagrids built using TanStack Table.
- */
+/** Powerful table and datagrids built using TanStack Table. */
 const meta = {
   title: 'ui/Table',
   component: Table,
@@ -44,7 +42,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the table.
- */
+/** The default form of the table. */
 export const Default: Story = {};

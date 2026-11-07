@@ -15,21 +15,8 @@ defineFrontendModule({
   scope: ['frontend', 'backend'],
   description: 'UI for current user profile, settings, and account management.',
   tools: [
-    {
-      slot: 'account.settings',
-      id: 'general',
-      label: 'c:general',
-      order: 10,
-      locked: true,
-      render: () => <AccountGeneralCard />,
-    },
-    {
-      slot: 'account.settings',
-      id: 'sessions',
-      label: 'c:sessions',
-      order: 20,
-      render: () => <AccountSessionsCard />,
-    },
+    { slot: 'account.settings', id: 'general', label: 'c:general', order: 10, locked: true, render: () => <AccountGeneralCard /> },
+    { slot: 'account.settings', id: 'sessions', label: 'c:sessions', order: 20, render: () => <AccountSessionsCard /> },
     ...(appConfig.enabledAuthStrategies.length
       ? [
           {
@@ -52,13 +39,6 @@ defineFrontendModule({
           } as const,
         ]
       : []),
-    {
-      slot: 'account.settings',
-      id: 'delete-account',
-      label: 'c:delete_account',
-      order: 90,
-      locked: true,
-      render: () => <AccountDeleteCard />,
-    },
+    { slot: 'account.settings', id: 'delete-account', label: 'c:delete_account', order: 90, locked: true, render: () => <AccountDeleteCard /> },
   ],
 });

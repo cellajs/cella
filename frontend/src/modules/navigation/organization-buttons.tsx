@@ -88,13 +88,8 @@ function SidebarCreateOrganizationButton({ isCollapsed, onClick }: SidebarCreate
   );
 }
 
-interface SidebarOrganizationButtonsProps {
-  isCollapsed: boolean;
-  onClick: TriggerOrganizationFn;
-}
-
 /** A rail button per active organization membership in menu order, scrolling on its own once the rail runs out of room. */
-export function SidebarOrganizationButtons({ isCollapsed, onClick }: SidebarOrganizationButtonsProps) {
+export function SidebarOrganizationButtons({ isCollapsed, onClick }: { isCollapsed: boolean; onClick: TriggerOrganizationFn }) {
   const user = useUserStore((state) => state.user);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const navSheetOrganizationId = useNavigationStore((state) => state.navSheetOrganizationId);

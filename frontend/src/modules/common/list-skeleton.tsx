@@ -1,12 +1,8 @@
 import { Skeleton } from '~/modules/ui/skeleton';
 import { cn } from '~/utils/cn';
 
-interface ListSkeletonProps {
-  className?: string;
-}
-
 /** Stacked card placeholders for card lists while their query is pending, so an empty state never flashes first. */
-export function ListSkeleton({ className }: ListSkeletonProps) {
+export function ListSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('fade-in animate-in flex flex-col gap-4 duration-300', className)}>
       {Array.from({ length: 3 }).map((_, index) => (

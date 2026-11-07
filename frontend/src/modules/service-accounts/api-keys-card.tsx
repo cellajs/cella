@@ -38,13 +38,8 @@ type FormValues = z.infer<typeof formSchema>;
 /** A key as the create response carries it: the one time it comes with its plaintext. */
 type CreatedApiKey = NonNullable<CreateServiceAccountResponse['apiKey']>;
 
-interface CreateApiKeyFormProps {
-  path: QueryOrgContext;
-  onCreated: (apiKey: CreatedApiKey) => void;
-}
-
 /** Creating a key makes a service account named after it, bound to this organization with its least privileged role. */
-function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
+function CreateApiKeyForm({ path, onCreated }: { path: QueryOrgContext; onCreated: (apiKey: CreatedApiKey) => void }) {
   const { t } = useTranslation();
   const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();
 
@@ -86,10 +81,6 @@ function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   );
 }
 
-interface ApiKeysCardProps {
-  organization: EnrichedOrganization;
-}
-
 /** A live key with its account, or an account without one. */
 interface ActiveItem {
   /** The key's id, or the account's when it has no live key. */
@@ -101,7 +92,7 @@ interface ActiveItem {
 }
 
 /** The organization's API keys, live ones first; Add API key opens the create dialog. */
-export function ApiKeysCard({ organization }: ApiKeysCardProps) {
+export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const accounts = useSuspenseQuery(serviceAccountsQueryOptions(path)).data.results;

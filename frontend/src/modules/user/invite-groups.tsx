@@ -38,13 +38,8 @@ const revealStep = 50;
 // More hidden than this at once would be a sudden wall of chips, so they come a step at a time.
 const revealAllUpTo = 100;
 
-interface EditableAddressProps {
-  value: string;
-  onFix: (text: string) => void;
-}
-
 /** A near-miss, corrected in place: Enter or leaving the field reads it again. */
-function EditableAddress({ value, onFix }: EditableAddressProps) {
+function EditableAddress({ value, onFix }: { value: string; onFix: (text: string) => void }) {
   const { t } = useTranslation();
   const [text, setText] = useState(value);
 

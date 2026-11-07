@@ -29,9 +29,7 @@ const singleSeriesConfig = {
   other: { label: 'Other', color: 'var(--chart-5)' },
 } satisfies ChartConfig;
 
-/**
- * Beautiful charts. Built using Recharts. Copy and paste into your apps.
- */
+/** Beautiful charts. Built using Recharts. Copy and paste into your apps. */
 const meta = {
   title: 'ui/Chart',
   component: ChartContainer,
@@ -46,9 +44,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Combine multiple Area components to create a stacked area chart.
- */
+/** Combine multiple Area components to create a stacked area chart. */
 export const StackedAreaChart: Story = {
   args: { config: multiSeriesConfig },
   render: (args) => (
@@ -67,9 +63,7 @@ export const StackedAreaChart: Story = {
   ),
 };
 
-/**
- * Combine multiple Bar components to create a stacked bar chart.
- */
+/** Combine multiple Bar components to create a stacked bar chart. */
 export const StackedBarChart: Story = {
   args: { config: multiSeriesConfig },
   render: (args) => (
@@ -88,9 +82,7 @@ export const StackedBarChart: Story = {
   ),
 };
 
-/**
- * Combine multiple Line components to create a single line chart.
- */
+/** Combine multiple Line components to create a single line chart. */
 export const MultiLineChart: Story = {
   args: { config: multiSeriesConfig },
   render: (args) => (
@@ -109,9 +101,7 @@ export const MultiLineChart: Story = {
   ),
 };
 
-/**
- * Combine Pie and Label components to create a doughnut chart.
- */
+/** Combine Pie and Label components to create a doughnut chart. */
 export const DoughnutChart: Story = {
   args: { config: singleSeriesConfig },
   render: (args) => {

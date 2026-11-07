@@ -32,9 +32,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the tabs list.
- */
+/** The default form of the tabs list. */
 export const Default: Story = {};
 
 export const ShouldChangeTabs: Story = {

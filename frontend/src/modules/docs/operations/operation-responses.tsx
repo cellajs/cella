@@ -235,11 +235,7 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   );
 }
 
-interface OperationResponsesProps {
-  detail?: GenOperationDetail;
-}
-
-export function OperationResponses({ detail }: OperationResponsesProps) {
+export function OperationResponses({ detail }: { detail?: GenOperationDetail }) {
   const { t } = useTranslation();
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { zodIndex, typesIndex } = useDefinitionIndexes();

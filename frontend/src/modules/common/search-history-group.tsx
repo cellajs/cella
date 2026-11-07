@@ -9,13 +9,8 @@ export type HistoryEntry = { kind: 'history'; value: string };
 
 export const isHistoryEntry = (selection: object): selection is HistoryEntry => 'kind' in selection && selection.kind === 'history';
 
-interface SearchHistoryGroupProps {
-  searches: string[];
-  onRemove: (value: string) => void;
-}
-
 /** Recent searches as combobox rows, each with its index (typed into the empty input, it picks the row) and a remove button. */
-export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupProps) {
+export function SearchHistoryGroup({ searches, onRemove }: { searches: string[]; onRemove: (value: string) => void }) {
   const { t } = useTranslation();
 
   return (

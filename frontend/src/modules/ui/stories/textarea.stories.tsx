@@ -3,9 +3,7 @@ import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { Textarea } from '~/modules/ui/textarea';
 
-/**
- * Displays a form textarea or a component that looks like a textarea.
- */
+/** Displays a form textarea or a component that looks like a textarea. */
 const meta = {
   title: 'ui/Textarea',
   component: Textarea,
@@ -18,14 +16,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the textarea.
- */
+/** The default form of the textarea. */
 export const Default: Story = {};
 
-/**
- * Use the `disabled` prop to disable the textarea.
- */
+/** Use the `disabled` prop to disable the textarea. */
 export const Disabled: Story = { args: { disabled: true } };
 
 /**

@@ -33,11 +33,7 @@ export const openOperationSheet = (operation: GenOperationSummary, trigger: HTML
     content: <OperationDetail operation={operation} />,
   });
 
-interface OperationRequestProps {
-  detail?: GenOperationDetail;
-}
-
-function OperationRequest({ detail }: OperationRequestProps) {
+function OperationRequest({ detail }: { detail?: GenOperationDetail }) {
   const { t } = useTranslation();
   const { zodIndex, typesIndex } = useDefinitionIndexes();
   const renderRef = useSchemaRefLink();
@@ -132,13 +128,8 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
   );
 }
 
-interface TagOperationsListProps {
-  operations: GenOperationSummary[];
-  tagName: string;
-}
-
 /** Fetches tag details once (not per-child) and registers all operation hashes with the scroll spy. */
-export function TagOperationsList({ operations, tagName }: TagOperationsListProps) {
+export function TagOperationsList({ operations, tagName }: { operations: GenOperationSummary[]; tagName: string }) {
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 

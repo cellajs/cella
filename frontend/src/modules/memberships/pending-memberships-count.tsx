@@ -49,11 +49,7 @@ export function openPendingMembershipsSheet(channel: EnrichedChannel, triggerRef
   );
 }
 
-interface PendingMembershipsCountProps {
-  channel: EnrichedChannel;
-}
-
-export function PendingMembershipsCount({ channel }: PendingMembershipsCountProps) {
+export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   // The prop is the row the bar was opened with, so an open sheet takes its count from the cached detail

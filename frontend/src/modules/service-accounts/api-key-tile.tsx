@@ -135,12 +135,8 @@ export function ApiKeyTile({ apiKey, account, path, secret, showActivity }: ApiK
   );
 }
 
-interface KeylessAccountTileProps {
-  account: ServiceAccount;
-}
-
 /** A service account without a live key: it stays listed, so an account nothing uses does not dangle unseen. */
-export function KeylessAccountTile({ account }: KeylessAccountTileProps) {
+export function KeylessAccountTile({ account }: { account: ServiceAccount }) {
   const { t } = useTranslation();
 
   return (

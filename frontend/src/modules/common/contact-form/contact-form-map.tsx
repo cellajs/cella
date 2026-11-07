@@ -54,12 +54,8 @@ function CompanyMarker() {
   );
 }
 
-interface CompanyMapProps {
-  styleUrl: string;
-}
-
 /** Interactive map centred on the company, drawn with the style for the current color mode. */
-function CompanyMap({ styleUrl }: CompanyMapProps) {
+function CompanyMap({ styleUrl }: { styleUrl: string }) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);

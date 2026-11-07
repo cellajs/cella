@@ -22,12 +22,8 @@ const UploadHostContext = createContext<UploadHostApi | null>(null);
 
 export const useUploadHost = () => useContext(UploadHostContext);
 
-interface FilePanelBridgeProps {
-  host: UploadHostApi;
-}
-
 /** Reports the block that opened the file panel and the live editor up to `UploadHostProvider`; closing is host-driven. */
-export function FilePanelBridge({ host }: FilePanelBridgeProps) {
+export function FilePanelBridge({ host }: { host: UploadHostApi }) {
   const editor = useBlockNoteEditor(customSchema);
   const filePanel = useExtension(FilePanelExtension);
   const activeBlockId = useExtensionState(FilePanelExtension);
@@ -44,13 +40,8 @@ export function FilePanelBridge({ host }: FilePanelBridgeProps) {
   return null;
 }
 
-interface UploadHostProviderProps {
-  baseFilePanelProps: BaseUppyFilePanelProps;
-  children: ReactNode;
-}
-
 /** Owns the Uppy dialog outside the editor subtree, so a mid-upload remount cannot tear it down; a `FilePanelBridge` reports the block and editor. */
-export function UploadHostProvider({ baseFilePanelProps, children }: UploadHostProviderProps) {
+export function UploadHostProvider({ baseFilePanelProps, children }: { baseFilePanelProps: BaseUppyFilePanelProps; children: ReactNode }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 

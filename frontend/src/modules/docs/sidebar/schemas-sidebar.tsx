@@ -9,12 +9,7 @@ import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item'
 import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 
-interface SchemaItemProps {
-  schema: GenComponentSchema;
-  isActive: boolean;
-}
-
-function SchemaItemBase({ schema, isActive }: SchemaItemProps) {
+function SchemaItemBase({ schema, isActive }: { schema: GenComponentSchema; isActive: boolean }) {
   return (
     <SidebarHashItem link={schemaLinkOptions(schema)} isActive={isActive}>
       <span className="truncate">{schema.name}</span>
@@ -27,12 +22,7 @@ export const SchemaItem = memo(SchemaItemBase);
 const itemKey = (schema: GenComponentSchema) => schema.name;
 const renderItem = (schema: GenComponentSchema, isActive: boolean) => <SchemaItem schema={schema} isActive={isActive} />;
 
-interface SchemasSidebarProps {
-  activeTag?: string;
-  isOnRoute: boolean;
-}
-
-export function SchemasSidebar({ activeTag, isOnRoute }: SchemasSidebarProps) {
+export function SchemasSidebar({ activeTag, isOnRoute }: { activeTag?: string; isOnRoute: boolean }) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('schemas');
 

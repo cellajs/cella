@@ -3,12 +3,8 @@ import { createContext, type ReactNode, useContext, useRef } from 'react';
 
 const ScrollResetContext = createContext<(() => void) | null>(null);
 
-interface ScrollResetProps {
-  children: ReactNode;
-}
-
 /** Zero-height sentinel in document flow that descendants scroll back to with `useScrollReset()`; an inner `ScrollReset` overrides the outer one. */
-export function ScrollReset({ children }: ScrollResetProps) {
+export function ScrollReset({ children }: { children: ReactNode }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {

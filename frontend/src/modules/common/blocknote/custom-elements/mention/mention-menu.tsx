@@ -39,12 +39,7 @@ function MentionMenuList({ items, selectedIndex, onItemClick }: SuggestionMenuPr
   );
 }
 
-interface MentionMenuProps {
-  members?: Member[];
-  editor: CustomBlockNoteEditor;
-}
-
-export function MentionMenu({ members, editor }: MentionMenuProps) {
+export function MentionMenu({ members, editor }: { members?: Member[]; editor: CustomBlockNoteEditor }) {
   if (!members?.length) return null;
   return (
     <SuggestionMenuController

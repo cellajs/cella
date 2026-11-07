@@ -21,9 +21,7 @@ import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { Textarea } from '~/modules/ui/textarea';
 
-/**
- * A collection of field components for building forms with consistent layout and behavior.
- */
+/** A collection of field components for building forms with consistent layout and behavior. */
 const meta = {
   title: 'ui/Fields',
   component: FieldLayout,
@@ -36,9 +34,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Basic field with vertical orientation and label.
- */
+/** Basic field with vertical orientation and label. */
 export const Default: Story = {
   render: () => (
     <FieldLayout>
@@ -50,9 +46,7 @@ export const Default: Story = {
   ),
 };
 
-/**
- * Field with horizontal orientation for compact layouts.
- */
+/** Field with horizontal orientation for compact layouts. */
 export const Horizontal: Story = {
   render: () => (
     <FieldLayout orientation="horizontal">
@@ -64,9 +58,7 @@ export const Horizontal: Story = {
   ),
 };
 
-/**
- * Field with responsive orientation that switches from vertical to horizontal on medium screens.
- */
+/** Field with responsive orientation that switches from vertical to horizontal on medium screens. */
 export const Responsive: Story = {
   render: () => (
     <FieldLayout orientation="responsive">
@@ -78,9 +70,7 @@ export const Responsive: Story = {
   ),
 };
 
-/**
- * Field with description text to provide additional context.
- */
+/** Field with description text to provide additional context. */
 export const WithDescription: Story = {
   render: () => (
     <FieldLayout>
@@ -93,9 +83,7 @@ export const WithDescription: Story = {
   ),
 };
 
-/**
- * Field with error message display.
- */
+/** Field with error message display. */
 export const WithError: Story = {
   render: () => (
     <FieldLayout>
@@ -108,9 +96,7 @@ export const WithError: Story = {
   ),
 };
 
-/**
- * Field with multiple error messages.
- */
+/** Field with multiple error messages. */
 export const WithMultipleErrors: Story = {
   render: function Render() {
     const errors = [{ message: 'Password is too short' }, { message: 'Must include uppercase letter' }, { message: 'Must include a number' }];
@@ -127,9 +113,7 @@ export const WithMultipleErrors: Story = {
   },
 };
 
-/**
- * Field with icon in the label for better visual communication.
- */
+/** Field with icon in the label for better visual communication. */
 export const WithIcon: Story = {
   render: () => (
     <FieldLayout>
@@ -144,9 +128,7 @@ export const WithIcon: Story = {
   ),
 };
 
-/**
- * FieldGroup for organizing multiple related fields.
- */
+/** FieldGroup for organizing multiple related fields. */
 export const FieldGroupExample: Story = {
   render: () => (
     <FieldGroup>
@@ -172,9 +154,7 @@ export const FieldGroupExample: Story = {
   ),
 };
 
-/**
- * FieldSet with legend for grouping related form controls.
- */
+/** FieldSet with legend for grouping related form controls. */
 export const FieldSetExample: Story = {
   render: () => (
     <FieldSet>
@@ -197,9 +177,7 @@ export const FieldSetExample: Story = {
   ),
 };
 
-/**
- * Field with separator to divide sections.
- */
+/** Field with separator to divide sections. */
 export const WithSeparator: Story = {
   render: () => (
     <FieldGroup>
@@ -220,9 +198,7 @@ export const WithSeparator: Story = {
   ),
 };
 
-/**
- * Field separator with content label.
- */
+/** Field separator with content label. */
 export const SeparatorWithContent: Story = {
   render: () => (
     <FieldGroup>
@@ -243,9 +219,7 @@ export const SeparatorWithContent: Story = {
   ),
 };
 
-/**
- * Field with checkbox group integration.
- */
+/** Field with checkbox group integration. */
 export const CheckboxGroup: Story = {
   render: () => (
     <FieldGroup data-slot="checkbox-group">
@@ -272,9 +246,7 @@ export const CheckboxGroup: Story = {
   ),
 };
 
-/**
- * Field with radio group integration.
- */
+/** Field with radio group integration. */
 export const RadioGroupExample: Story = {
   render: () => (
     <FieldGroup data-slot="radio-group">
@@ -320,9 +292,7 @@ export const RadioCards: Story = {
   ),
 };
 
-/**
- * Complex form example using multiple field components.
- */
+/** Complex form example using multiple field components. */
 export const ComplexForm: Story = {
   render: function Render() {
     const [selectedPlan, setSelectedPlan] = useState('basic');
@@ -384,9 +354,7 @@ export const ComplexForm: Story = {
   },
 };
 
-/**
- * Disabled field example.
- */
+/** Disabled field example. */
 export const Disabled: Story = {
   render: () => (
     <FieldLayout data-disabled="true">

@@ -14,13 +14,23 @@ import { uploadTemplates } from 'shared/transloadit-config';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { uploadStorage } from 'shared/utils/upload-visibility';
+import slugify from 'slugify';
 import { makeBlobKey, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
 import type { CustomUppy, CustomUppyFile, CustomUppyOptions, Plugins } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
-import { cleanFileName } from '~/utils/clean-file-name';
+
+/** Slugifies the base name and keeps the extension; empty input becomes "na". */
+const cleanFileName = (name: string): string => {
+  const originalName = name || 'na';
+  const lastDotIndex = originalName.lastIndexOf('.');
+  const hasExtension = lastDotIndex !== -1;
+  const baseName = hasExtension ? originalName.slice(0, lastDotIndex) : originalName;
+  const extension = hasExtension ? originalName.slice(lastDotIndex) : '';
+  return `${slugify(baseName, { lower: true, strict: true, replacement: '-' })}${extension}`;
+};
 
 /**
  * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit

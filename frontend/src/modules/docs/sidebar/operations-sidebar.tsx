@@ -20,12 +20,7 @@ function useOperationSearch(): OperationSearch {
   return { q, filter };
 }
 
-interface OperationItemProps {
-  operation: GenOperationSummary;
-  isActive: boolean;
-}
-
-function OperationItemBase({ operation, isActive }: OperationItemProps) {
+function OperationItemBase({ operation, isActive }: { operation: GenOperationSummary; isActive: boolean }) {
   const search = useOperationSearch();
 
   return (
@@ -41,12 +36,7 @@ export const OperationItem = memo(OperationItemBase);
 const itemKey = (op: GenOperationSummary) => op.hash;
 const renderItem = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
-interface OperationsSidebarProps {
-  activeTag?: string;
-  isOnRoute: boolean;
-}
-
-export function OperationsSidebar({ activeTag, isOnRoute }: OperationsSidebarProps) {
+export function OperationsSidebar({ activeTag, isOnRoute }: { activeTag?: string; isOnRoute: boolean }) {
   const layoutId = useId();
   const { prerender } = usePrerenderTrigger('operations');
 

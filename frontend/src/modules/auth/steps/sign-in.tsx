@@ -26,11 +26,7 @@ import { formResolver } from '~/utils/form-resolver';
 const passkeyEnabled = isStrategyEnabled('passkey');
 const magicLinkEnabled = isStrategyEnabled('magic');
 
-interface SignInStepProps {
-  invitation?: TokenInvitation;
-}
-
-export function SignInStep({ invitation }: SignInStepProps) {
+export function SignInStep({ invitation }: { invitation?: TokenInvitation }) {
   const { t } = useTranslation();
   const { email, resetAuthStore, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({

@@ -3,13 +3,8 @@ import type { ReactNode } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 
-interface OperationSectionProps {
-  title: string;
-  children: ReactNode;
-}
-
 /** A part of an operation's detail, such as its request or responses, open by default. */
-export function OperationSection({ title, children }: OperationSectionProps) {
+export function OperationSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Collapsible defaultOpen className="mt-5">
       <CollapsibleTrigger

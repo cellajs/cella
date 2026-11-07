@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 
-/**
- * An image element with a fallback for representing the user.
- */
+/** An image element with a fallback for representing the user. */
 const meta = {
   title: 'ui/Avatar',
   component: Avatar,
@@ -22,7 +20,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the avatar.
- */
+/** The default form of the avatar. */
 export const Default: Story = {};
