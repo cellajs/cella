@@ -130,8 +130,8 @@ export const createSession = async (
 };
 
 /**
- * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session this
- * browser held before ends, another account's too, since the new cookie overwrites the one that carried it.
+ * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. The session the
+ * request presents ends, another account's too; a provider callback arrives cross-site without the Strict cookie.
  */
 export const setUserSession = async (
   ctx: Context<Env>,
