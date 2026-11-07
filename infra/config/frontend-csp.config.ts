@@ -68,6 +68,7 @@ export function frontendCsp(appConfig: EngineConfig): string {
     `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
     `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
     `font-src 'self' data:`,
+    `frame-ancestors 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
