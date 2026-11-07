@@ -85,7 +85,6 @@ export function usePanZoom(onBackdropClick?: () => void) {
 
   useEffect(
     () => () => {
-      document.removeEventListener('wheel', blockPageWheel);
       cancelAnimationFrame(gestureFrameRef.current);
       cancelAnimationFrame(wheelFrameRef.current);
     },
@@ -204,9 +203,11 @@ export function usePanZoom(onBackdropClick?: () => void) {
         setView((prev) => zoomAt(prev, prev.zoom * factor, anchor));
       });
     },
-    // React wheel listeners are passive, so page scrolling is blocked from the document while hovering
-    onMouseEnter: () => document.addEventListener('wheel', blockPageWheel, { passive: false }),
-    onMouseLeave: () => document.removeEventListener('wheel', blockPageWheel),
+    // React wheel listeners are passive, so the viewport cancels the page scroll in a listener of its own
+    ref: (viewport: HTMLElement | null) => {
+      viewport?.addEventListener('wheel', blockPageWheel, { passive: false });
+      return () => viewport?.removeEventListener('wheel', blockPageWheel);
+    },
   };
 
   return {
