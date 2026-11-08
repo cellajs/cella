@@ -1,6 +1,6 @@
 # Observability
 
-This document explains how traces, metrics, and logs move between Cella's services, and how to
+This document explains how traces, metrics, and logs move between Cella's services and how to
 instrument a new worker. It assumes you know OpenTelemetry: traces and spans, metrics and the OTLP export ([opentelemetry.io](https://opentelemetry.io/docs/)).
 
 ### TL;DR
@@ -85,7 +85,7 @@ Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts)
 | `yjs.*` | Yjs | Open connections, documents and clients |
 | `sync.message.process`, `client.*` | Frontend | A sync message handled, a failure the app caught and continued from |
 
-A log record carries the fields of its log line as attributes, and the trace and span it was written in.
+A log record carries the trace and span it was written in. The fields of its log line become its attributes.
 
 No service serves a Prometheus scrape target. Metrics leave over OTLP. `/metrics/public` holds only the public counts the website shows.
 
