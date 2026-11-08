@@ -130,7 +130,7 @@ A subject's ancestor scope is **tri-state**: a channel id, `null` for explicitly
 
 Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set. The set is **closed** to `own` and `public` (`shared/src/permissions/row-conditions.ts`): every rule must be evaluable in JS, compiled SQL, the frontend, and by dispatch from the row alone, so no cross-row or app-defined conditions.
 
-Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The flag is row-local: the server copies the home channel's flag onto a new row, and it never cascades.
+Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The engine reads the flag on the row alone, so the server keeps each row's flag equal to its home channel's: a new or moved row takes the home's flag, and a change of the channel's flag rewrites the rows homed there in the same transaction, soft-deleted ones included, up to a row cap. Readers who had a row through its flag alone lose it when the channel goes private, as they lose a row that moves. The file of a public row signs for a visitor on the anonymous presign route, which the same grant decides, so an app that declares no public read on attachments signs nothing there.
 
 ### Drafts
 

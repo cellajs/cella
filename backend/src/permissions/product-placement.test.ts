@@ -63,12 +63,13 @@ describe('validatePlacement', () => {
 });
 
 describe('resolvePlacement', () => {
-  // The lookup is injected, so no connection is read.
-  const ctx = {} as OrgContext;
+  // The lookup is injected, so no connection is read; the organization row is looked up like any home.
+  const ctx = { var: { organization: { id: uuid(9) } } } as OrgContext;
   const channels: Record<string, Record<string, unknown>> = {
-    [uuid(3)]: { id: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) },
-    [uuid(2)]: { id: uuid(2), courseId: uuid(1) },
-    [uuid(4)]: { id: uuid(4), courseSectionId: null, courseId: uuid(1) },
+    [uuid(3)]: { id: uuid(3), courseSectionId: uuid(2), courseId: uuid(1), public: true },
+    [uuid(2)]: { id: uuid(2), courseId: uuid(1), public: false },
+    [uuid(4)]: { id: uuid(4), courseSectionId: null, courseId: uuid(1), public: false },
+    [uuid(9)]: { id: uuid(9), public: true },
   };
   const seen: [string, ChannelEntityType][] = [];
   const resolveHome = async (_ctx: OrgContext, id: string, type: ChannelEntityType) => {
@@ -76,24 +77,24 @@ describe('resolvePlacement', () => {
     return channels[id] as unknown as EntityModel<ChannelEntityType>;
   };
 
-  it('stamps the home and the chain above it from the home row, and nulls the levels below', async () => {
+  it('stamps the home, the chain above it and the public flag from the home row, and nulls the levels below', async () => {
     const section = await resolvePlacement(ctx, item, { courseSectionId: uuid(2), name: 'ignored' }, { hierarchy: anyDepth, resolveHome });
-    expect(section.columns).toEqual({ projectId: null, courseSectionId: uuid(2), courseId: uuid(1) });
+    expect(section.columns).toEqual({ projectId: null, courseSectionId: uuid(2), courseId: uuid(1), public: false });
     expect(section.home?.type).toBe('courseSection');
 
     const project = await resolvePlacement(ctx, item, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
-    expect(project.columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) });
+    expect(project.columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1), public: true });
   });
 
   it('keeps a null the home row holds for an ancestor of its own', async () => {
     const { columns } = await resolvePlacement(ctx, item, { projectId: uuid(4) }, { hierarchy: anyDepth, resolveHome });
-    expect(columns).toEqual({ projectId: uuid(4), courseSectionId: null, courseId: uuid(1) });
+    expect(columns).toEqual({ projectId: uuid(4), courseSectionId: null, courseId: uuid(1), public: false });
   });
 
   it('reads the chain above the home off the home row, one lookup per row', async () => {
     seen.length = 0;
     const { columns } = await resolvePlacement(ctx, item, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
-    expect(columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) });
+    expect(columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1), public: true });
     expect(seen).toEqual([[uuid(3), 'project']]);
   });
 
@@ -107,11 +108,11 @@ describe('resolvePlacement', () => {
     });
   });
 
-  it('homes a row without an id in the organization: every column null, no lookup', async () => {
+  it("homes a row without an id in the organization: every column null, the organization's flag, one lookup of its row", async () => {
     seen.length = 0;
     const placed = await resolvePlacement(ctx, item, {}, { hierarchy: anyDepth, resolveHome });
-    expect(placed).toEqual({ columns: { projectId: null, courseSectionId: null, courseId: null }, home: null });
-    expect(seen).toEqual([]);
+    expect(placed).toEqual({ columns: { projectId: null, courseSectionId: null, courseId: null, public: true }, home: null });
+    expect(seen).toEqual([[uuid(9), 'organization']]);
   });
 });
 

@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const presignAttachmentUrls = vi.fn();
-vi.mock('sdk/sdk.gen', () => ({ presignAttachmentUrls: (...args: unknown[]) => presignAttachmentUrls(...args) }));
+const presignPublicAttachmentUrls = vi.fn();
+const viewer = vi.hoisted(() => ({ signedIn: true }));
+vi.mock('sdk/sdk.gen', () => ({
+  presignAttachmentUrls: (...args: unknown[]) => presignAttachmentUrls(...args),
+  presignPublicAttachmentUrls: (...args: unknown[]) => presignPublicAttachmentUrls(...args),
+}));
+vi.mock('~/modules/user/user-store', () => ({ useUserStore: { getState: () => ({ user: viewer.signedIn ? { id: 'user-1' } : null }) } }));
 vi.mock('@tanstack/react-query', () => ({ onlineManager: { isOnline: () => true } }));
 
 const { getPresignedUrlBatched, PresignRejectedError, resetPresignBatch } = await import('~/modules/attachment/presign-batch');
@@ -19,6 +25,7 @@ const request = (id: string) => getPresignedUrlBatched(id, 'original', 'tenant-1
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
+  viewer.signedIn = true;
   signAllRequested();
 });
 
@@ -28,6 +35,21 @@ afterEach(() => {
 });
 
 describe('presign coalescer', () => {
+  it('signs through the public route while signed out', async () => {
+    viewer.signedIn = false;
+    presignPublicAttachmentUrls.mockResolvedValue({
+      data: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/public/att-1' }],
+      rejectedIds: [],
+    });
+
+    const pending = request('att-1');
+    await vi.runAllTimersAsync();
+
+    await expect(pending).resolves.toBe('https://signed.example/public/att-1');
+    expect(presignPublicAttachmentUrls).toHaveBeenCalledWith({ path: { tenantId: 'tenant-1', organizationId: 'org-1' }, body: expect.anything() });
+    expect(presignAttachmentUrls).not.toHaveBeenCalled();
+  });
+
   it('rejects server-rejected ids with PresignRejectedError and resolves the rest', async () => {
     presignAttachmentUrls.mockResolvedValue({
       data: [{ attachmentId: 'att-1', variant: 'original', url: 'https://signed.example/att-1/original' }],

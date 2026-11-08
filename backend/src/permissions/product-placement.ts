@@ -20,14 +20,15 @@ import { validUuidSchema } from '#/schemas';
 import type { EntityModel } from '#/tables';
 
 /**
- * The ancestor id columns of a product row below the organization, typed like its table columns: a strict ancestor
- * is `string`, a nullable one `string | null`. Empty for a product that lives in the organization.
+ * What a product row takes from its home: the ancestor id columns below the organization, typed like its table
+ * columns (a strict ancestor is `string`, a nullable one `string | null`, none for a product that lives in the
+ * organization), and the home channel's `public`, so the row reads as its channel does.
  */
 export type ResolvedPlacement<T extends ProductEntityType> = EntityIdColumns<
   Exclude<HomeChannelType<T>, NullableAncestorType<T>> & EntityType,
   string
 > &
-  EntityIdColumns<Extract<HomeChannelType<T>, NullableAncestorType<T>> & EntityType, string | null>;
+  EntityIdColumns<Extract<HomeChannelType<T>, NullableAncestorType<T>> & EntityType, string | null> & { public: boolean };
 
 /** The channel a product row lives in. */
 export interface PlacementHome {
@@ -96,20 +97,25 @@ interface ResolvePlacementOptions extends HierarchyOverrides {
   /** Refuses a row without a home id where the hierarchy would let it live in the organization. */
   requireChannel?: boolean;
   /**
-   * Looks the home channel up. The default checks existence and request scope and no permission, since the create
-   * check on the placed row decides whether the actor may write there; pass a lookup with a read check for a product
-   * whose home must be readable.
+   * Looks the home channel up, the organization included. The default checks existence and request scope and no
+   * permission, since the create check on the placed row decides whether the actor may write there, and holds the row
+   * `forShare`, so a toggle of its `public` waits for this write or this write for the toggle; pass a lookup with a
+   * read check for a product whose home must be readable.
    */
   resolveHome?: (ctx: OrgContext, id: string, type: ChannelEntityType) => Promise<EntityModel<ChannelEntityType>>;
 }
 
+const resolveHeldHome = (ctx: OrgContext, id: string, type: ChannelEntityType) => resolveChannelInScope(ctx, id, type, { forShare: true });
+
 /**
- * The ancestor columns of a row being created or moved, and the channel it lives in: the home id of `input`, resolved
- * to a channel row, plus that row's own ancestor ids. Nothing above the home comes from the client. Every other
- * ancestor column below the organization is null, and without an id the row lives in the organization (`home` is
- * null) where the hierarchy allows it.
+ * What a row being created or moved takes from its home, and the channel it lives in: the home id of `input`,
+ * resolved to a channel row, plus that row's own ancestor ids and its `public`. Nothing above the home comes from the
+ * client. Every other ancestor column below the organization is null, and without an id the row lives in the
+ * organization (`home` is null) where the hierarchy allows it, whose row is then looked up for its flag.
  *
- * A move resolves the new home the same way; run the create check on the row with the new columns before writing them.
+ * Call it in the write's transaction, where the home row stays held until the commit, so the flag the row takes is the
+ * one its channel has when it commits. A move resolves the new home the same way; run the create check on the row with
+ * the new columns before writing them.
  * @throws AppError 400 `ambiguous_placement` or `home_required` for an input {@link validatePlacement} refuses, so the
  * columns hold what their type says without the schema check; 404 `not_found` for a home that does not exist in the request scope.
  */
@@ -117,26 +123,28 @@ export const resolvePlacement = async <T extends ProductEntityType>(
   ctx: OrgContext,
   entityType: T,
   input: Record<string, unknown>,
-  { hierarchy = appHierarchy, requireChannel, resolveHome = resolveChannelInScope }: ResolvePlacementOptions = {},
+  { hierarchy = appHierarchy, requireChannel, resolveHome = resolveHeldHome }: ResolvePlacementOptions = {},
 ): Promise<{ columns: ResolvedPlacement<T>; home: PlacementHome | null }> => {
   const issue = validatePlacement(entityType, input, { hierarchy, requireChannel });
   if (issue) throw new AppError(400, issue.type, 'warn', { entityType, meta: { field: String(issue.path[0]) } });
 
   const ancestors = hierarchy.getOrderedAncestors(entityType).filter((type) => type !== 'organization');
   const stamped: Record<string, string | null> = Object.fromEntries(ancestors.map((type) => [entityIdColumnKey(type), null]));
-  // Cast: the columns are built per hierarchy level at runtime, which the mapped type cannot follow.
-  const columns = stamped as ResolvedPlacement<T>;
 
   const homeType = homeLevels(entityType, hierarchy).levels.find((type) => hasId(input, type));
-  if (!homeType) return { columns, home: null };
+  const homeId = homeType ? (input[entityIdColumnKey(homeType)] as string) : ctx.var.organization.id;
+  const entity = await resolveHome(ctx, homeId, homeType ?? 'organization');
 
-  const entity = await resolveHome(ctx, input[entityIdColumnKey(homeType)] as string, homeType);
-  const row: Record<string, unknown> = entity;
-  stamped[entityIdColumnKey(homeType)] = entity.id;
-  for (const ancestor of hierarchy.getOrderedAncestors(homeType)) {
-    if (ancestor === 'organization') break;
-    const id = row[entityIdColumnKey(ancestor)];
-    stamped[entityIdColumnKey(ancestor)] = typeof id === 'string' ? id : null;
+  if (homeType) {
+    const row: Record<string, unknown> = entity;
+    stamped[entityIdColumnKey(homeType)] = entity.id;
+    for (const ancestor of hierarchy.getOrderedAncestors(homeType)) {
+      if (ancestor === 'organization') break;
+      const id = row[entityIdColumnKey(ancestor)];
+      stamped[entityIdColumnKey(ancestor)] = typeof id === 'string' ? id : null;
+    }
   }
-  return { columns, home: { type: homeType, entity } };
+  // Cast: the columns are built per hierarchy level at runtime, which the mapped type cannot follow.
+  const columns = { ...stamped, public: entity.public } as ResolvedPlacement<T>;
+  return { columns, home: homeType ? { type: homeType, entity } : null };
 };

@@ -1015,6 +1015,38 @@ export const zBatchDeleteAttachmentsResponse = z.object({
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
+export const zPresignPublicAttachmentUrlsBody = z.object({
+  items: z
+    .array(
+      z.object({
+        attachmentId: z.uuid(),
+        variant: z.enum(['original', 'preview', 'thumbnail', 'converted']).optional().default('original'),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
+export const zPresignPublicAttachmentUrlsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Presigned URLs
+ */
+export const zPresignPublicAttachmentUrlsResponse = z.object({
+  data: z.array(
+    z.object({
+      attachmentId: z.uuid(),
+      variant: z.enum(['original', 'preview', 'thumbnail', 'converted']),
+      url: z.string(),
+    }),
+  ),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
 /**
  * Auth health status
  */

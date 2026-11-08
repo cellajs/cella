@@ -1458,6 +1458,63 @@ export type BatchDeleteAttachmentsResponses = {
 
 export type BatchDeleteAttachmentsResponse = BatchDeleteAttachmentsResponses[keyof BatchDeleteAttachmentsResponses];
 
+export type PresignPublicAttachmentUrlsData = {
+  body: {
+    items: Array<{
+      attachmentId: string;
+      variant?: 'original' | 'preview' | 'thumbnail' | 'converted';
+    }>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/public/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls';
+};
+
+export type PresignPublicAttachmentUrlsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type PresignPublicAttachmentUrlsError = PresignPublicAttachmentUrlsErrors[keyof PresignPublicAttachmentUrlsErrors];
+
+export type PresignPublicAttachmentUrlsResponses = {
+  /**
+   * Presigned URLs
+   */
+  200: {
+    data: Array<{
+      attachmentId: string;
+      variant: 'original' | 'preview' | 'thumbnail' | 'converted';
+      url: string;
+    }>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type PresignPublicAttachmentUrlsResponse = PresignPublicAttachmentUrlsResponses[keyof PresignPublicAttachmentUrlsResponses];
+
 export type GetAuthHealthData = {
   body?: never;
   path?: never;

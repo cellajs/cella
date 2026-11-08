@@ -250,6 +250,9 @@ import type {
   PresignAttachmentUrlsData,
   PresignAttachmentUrlsErrors,
   PresignAttachmentUrlsResponses,
+  PresignPublicAttachmentUrlsData,
+  PresignPublicAttachmentUrlsErrors,
+  PresignPublicAttachmentUrlsResponses,
   PublishOrganizationData,
   PublishOrganizationErrors,
   PublishOrganizationResponses,
@@ -428,6 +431,7 @@ import {
   zMarkSeenResponse,
   zPostAppCatchupResponse,
   zPresignAttachmentUrlsResponse,
+  zPresignPublicAttachmentUrlsResponse,
   zPublishOrganizationResponse,
   zPullYjsDocumentResponse,
   zPushYjsUpdateResponse,
@@ -665,6 +669,33 @@ export const batchDeleteAttachments = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zBatchDeleteAttachmentsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/tenants/{tenantId}/organizations/{organizationId}/attachments:batch-delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get presigned URLs as a visitor
+ *
+ * Signs download URLs for up to 50 attachment files of the organization that a reader without a sign-in may read: rows whose public flag is set, on an entity type the app opened with publicRead(). Missing and denied ids come back in one rejectedIds list, and the call succeeds even when every item is rejected; an app without public read on attachments rejects every id.
+ *
+ * **POST /public/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls** ·· [presignPublicAttachmentUrls](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/public/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls) ·· _attachments · cella · product_
+ *
+ * @param {presignPublicAttachmentUrlsData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {object[]} options.body.items - `object[]`
+ * @returns Possible status codes: 200, 400, 413, 429
+ */
+export const presignPublicAttachmentUrls = <ThrowOnError extends boolean = true>(
+  options: Options<PresignPublicAttachmentUrlsData, ThrowOnError>,
+): RequestResult<PresignPublicAttachmentUrlsResponses, PresignPublicAttachmentUrlsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PresignPublicAttachmentUrlsResponses, PresignPublicAttachmentUrlsErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zPresignPublicAttachmentUrlsResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/public/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls',
     ...options,
     headers: {
       'Content-Type': 'application/json',

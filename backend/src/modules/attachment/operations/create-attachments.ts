@@ -49,35 +49,34 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   }
   const storedSizes = await Promise.all(fresh.map(({ keys }) => storedFileSize(keys, storage.bucketName)));
 
-  const attachmentsToInsert: InsertAttachmentModel[] = [];
-  for (const [index, { stx, ...att }] of fresh.entries()) {
-    attachmentContract.assertBlockFields(att, organization.id);
-
-    // The ancestor columns come from the home channel's own row; a row in the organization carries none.
-    const { columns: placement, home } = await resolvePlacement(ctx, 'attachment', att);
-
-    const attachment = {
-      ...att,
-      ...storage,
-      size: storedSizes[index] ?? att.size,
-      // Public read is the home channel's decision, copied onto the row; a client cannot widen it.
-      public: home ? home.entity.public : organization.public,
-      convertedContentType: att.convertedContentType || null,
-      groupId: att.groupId || null,
-      ...placement,
-      tenantId: organization.tenantId,
-      organizationId: organization.id,
-      createdAt: now,
-      createdBy: ctx.var.actor.id,
-      stx: buildStx(stx),
-    };
-
-    // The create-check channel scope comes from the row's hierarchy ancestors.
-    canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
-    attachmentsToInsert.push(attachment);
-  }
-
   const createdAttachments = await tenantContext(ctx, async (txCtx) => {
+    const placeCtx: OrgContext = { var: { ...ctx.var, db: txCtx.var.db } };
+    const attachmentsToInsert: InsertAttachmentModel[] = [];
+    for (const [index, { stx, ...att }] of fresh.entries()) {
+      attachmentContract.assertBlockFields(att, organization.id);
+
+      // The ancestor columns and the public flag come from the home channel's own row, held until the insert commits.
+      const { columns: placement } = await resolvePlacement(placeCtx, 'attachment', att);
+
+      const attachment = {
+        ...att,
+        ...storage,
+        size: storedSizes[index] ?? att.size,
+        convertedContentType: att.convertedContentType || null,
+        groupId: att.groupId || null,
+        ...placement,
+        tenantId: organization.tenantId,
+        organizationId: organization.id,
+        createdAt: now,
+        createdBy: ctx.var.actor.id,
+        stx: buildStx(stx),
+      };
+
+      // The create-check channel scope comes from the row's hierarchy ancestors.
+      canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
+      attachmentsToInsert.push(attachment);
+    }
+
     const rows = await insertWithinTenantQuota(txCtx, 'attachment', () => insertAttachments(txCtx, { attachments: attachmentsToInsert }));
     // Inside the transaction, so mutation handlers join the write.
     await dispatchMutation(txCtx, 'attachment.created', { after: rows });

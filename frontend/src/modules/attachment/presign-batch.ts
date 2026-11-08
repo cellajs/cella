@@ -1,7 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { presignAttachmentUrls } from 'sdk/sdk.gen';
+import { presignAttachmentUrls, presignPublicAttachmentUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
 import { groupBy } from '~/modules/attachment/offline/group-by';
+import { useUserStore } from '~/modules/user/user-store';
 import { subscribeLocalUserChange } from '~/query/local-user-db';
 
 /** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
@@ -47,10 +48,10 @@ function subscribeLocalUserOnce() {
 async function sendChunk(requests: PendingRequest[]) {
   const { tenantId, organizationId } = requests[0];
   try {
-    const response = await presignAttachmentUrls({
-      path: { tenantId, organizationId },
-      body: { items: requests.map(({ attachmentId, variant }) => ({ attachmentId, variant })) },
-    });
+    const path = { tenantId, organizationId };
+    const body = { items: requests.map(({ attachmentId, variant }) => ({ attachmentId, variant })) };
+    // Signed out, the public route signs what a row's own flag opens to anyone.
+    const response = useUserStore.getState().user ? await presignAttachmentUrls({ path, body }) : await presignPublicAttachmentUrls({ path, body });
     const urlByPair = new Map(response.data.map((item) => [pairKey(item.attachmentId, item.variant), item.url]));
     const rejected = new Set(response.rejectedIds);
 
