@@ -4,7 +4,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 
 ### TL;DR
 
-Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. A schedule inside the Scaleway organization starts each deploy, so GitHub holds no key. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), and no machine holds one.
+Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. GitHub holds no key: a schedule inside the Scaleway organization starts each deploy. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), and no machine holds one.
 
 ## Overview
 
@@ -57,9 +57,9 @@ Resources and traffic flow:
 - **Database:** private, with logical replication on, exposed only by a break-glass action ([Runbooks](./deployment/RUNBOOKS.md)).
 - **Replication slot:** a stopped CDC worker's slot keeps WAL. The worker warns while that WAL has no bound.
 - **WAL bound:** set `max_slot_wal_keep_size` where the provider offers it.
-- **WAL on Scaleway:** unbounded, so it can fill the volume until a slot inactive for 24 hours is removed.
+- **WAL on Scaleway:** unbounded. It can fill the volume until a slot inactive for 24 hours is removed.
 - **Retention job:** the migrate companion schedules the nightly retention procedure in pg_cron.
-- **Retention on Scaleway:** unscheduled while the admin user may not use `cron`, so old rows stay.
+- **Retention on Scaleway:** unscheduled while the admin user may not use `cron`. Old rows stay.
 - **Buckets:** outside the VPC, read directly when public and by presigned URL when private.
 
 ## Deploys
@@ -88,7 +88,7 @@ Merging a line is not publishing a release. The file's rules:
 - **Releases only:** production and any other environment that follows the releases take only `releases` or a tag.
 - **Pinned:** a line holds its environment until it is removed, also past a newer release.
 - **Retry:** raising the retry counter asks for the same target once more.
-- **Default branch:** a scheduled run reads the file there, so a change counts from its merge.
+- **Default branch:** a change counts from its merge, since a scheduled run reads the file there.
 - **Unreadable file:** starts nothing.
 
 **Pausing staging.** Removing staging's line stops its deploys, not its cost. Its machines keep running. To stop the cost, tear staging down with `pnpm infra teardown --mode staging`.
@@ -118,7 +118,7 @@ The target's code never runs beside the deploy key. The builder evaluates the ta
 A run ends in one of five outcomes:
 
 - **Deployed:** the target serves.
-- **Unchanged:** every role served the target already, so nothing was built or made.
+- **Unchanged:** nothing was built or made, since every role served the target already.
 - **Blocked:** a required runtime value is missing or empty, before any machine booted ([A blocked deploy](./deployment/RUNBOOKS.md#a-blocked-deploy)).
 - **Apply needed:** the target describes the app otherwise, or the run ran outside the engine image ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)).
 - **Failed:** roles it did not switch keep their machines, and the target waits for a change in git or a start by hand.
@@ -129,17 +129,17 @@ A run ends in one of five outcomes:
 
 The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Show runs flags such a run.
 
-The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. So an app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
+The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
 ### The schedule
 
 Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts). A release waits at most that long for its deploy.
 
-A scheduled run first takes the lease, so one run looks at a time. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
+One run looks at a time: a scheduled run first takes the lease. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
 
-The records are the schedule's memory, so each target deploys once. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
+Each target deploys once: the records are the schedule's memory. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
 
-The schedule is part of the definition, so an apply writes it and nothing else needs setting up. A scheduled run that starts nothing leaves no record. **Show status** names a schedule that stopped, went missing or whose runs fail. Show runs says when the last scheduled run started.
+An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Show status** names a schedule that stopped, went missing or whose runs fail. Show runs says when the last scheduled run started.
 
 ### Run records
 
@@ -154,7 +154,7 @@ Every new machine also uploads a **boot account** at the end of its first boot: 
 
 **Show runs**, `pnpm infra runs` on the observer key, lists the last ten deploys and shows one in full. `--machines` shows each service's newest boot account. `--sha <sha>` shows every account of one release with the builder's report.
 
-Records, boot accounts and archives are kept for 60 days. The bucket keeps versions, so the deploy key cannot erase a record. Show runs flags three anomalies:
+Records, boot accounts and archives are kept for 60 days. The deploy key cannot erase a record, since the bucket keeps versions. Show runs flags three anomalies:
 
 - **Rewrite:** a version that does not grow the one before, written by the deploy key or a stolen copy.
 - **Interrupted:** a record that still says running while no deploy holds its lease.
@@ -170,7 +170,7 @@ When the boot-diag bucket lacks a release's manifest or one of its archives, the
 - **Checked archives:** the deploy checks every archive against the manifest.
 - **Plain files:** the deploy uploads the frontend and refuses any entry but a plain file in the output.
 - **Contained code:** the app's code runs only in containers that reach no machine metadata.
-- **Pinned images:** base images and BuildKit are pinned by digest, so a moved tag changes no build.
+- **Pinned images:** a moved tag changes no build, since base images and BuildKit are pinned by digest.
 
 A rollback to a release whose archives expired builds it again.
 
@@ -238,7 +238,7 @@ The new machine fetches the file once through a link in its user data and keeps 
 - **Kept until rotation:** a value that exists stays until a [rotation](./deployment/KEYS.md#rotation).
 - **No secret from a deploy:** an apply makes every value, through **Review & apply changes**.
 - **Uploads key:** written by Update identities.
-- **Values fixed at boot:** a reboot fetches nothing, so a changed value reaches only the next deploy's machines.
+- **Values fixed at boot:** a changed value reaches only the next deploy's machines, since a reboot fetches nothing.
 - **One line per value:** base64-encode a multi-line value and decode it in the service, as `DATABASE_SSL_CA` does.
 
 ## Load balancer and DNS
