@@ -10,6 +10,8 @@ Changing how an account is protected first asks the session to prove its user ag
 
 ## Sign-in methods
 
+The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
+
 | Method | What proves the person |
 | --- | --- |
 | Magic link | The inbox: a link mailed to the address, opened in the browser that asked for it |
@@ -18,13 +20,11 @@ Changing how an account is protected first asks the session to prove its user ag
 | Institutional sign-in | An account at the institution, asserted through an identity federation ([Institutional sign-in](./authentication/SSO.md)) |
 | TOTP | A code from an authenticator app, as a second factor only |
 
-Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes. A passkey or TOTP already set up can still be deleted.
-
-The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
-
-Microsoft sign-in can be narrowed to one Entra tenant.
+`appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes. A passkey or TOTP already set up can still be deleted.
 
 A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own. Signing out at the provider or the institution ends nothing here. The app does not ask it again while the session lasts.
+
+Microsoft sign-in can be narrowed to one Entra tenant.
 
 From an address outside `SYSTEM_ADMIN_IP_ALLOWLIST`, a system administrator can neither sign in nor act as one.
 
@@ -32,12 +32,12 @@ The API reads the client address from the last `X-Forwarded-For` entry. It must 
 
 ## Sign-up
 
+Sign-up needs open registration or a standing invitation, checked at the start and at completion. An account is identified by the proofs it holds, never by an address.
+
 An account exists only once its inbox is proven. The account is created at the proof, with its address and its waiting invitations:
 
 - **Magic link.** The click on a link to an unknown address.
 - **Provider.** The same provider account signing in again, in the browser that opened a mail to its address.
-
-Sign-up needs open registration or a standing invitation, checked at the start and at completion. An account is identified by the proofs it holds, never by an address.
 
 Holding an invitation link proves nothing, since it can be forwarded:
 
@@ -73,20 +73,20 @@ A planted link signs nobody in: opened anywhere else, the link waits on a page t
 
 ## Second factors and MFA
 
+MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in.
+
+A passkey sign-in needs no challenge. A passkey proves both factors itself, since every passkey registration and sign-in requires user verification. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it.
+
+Setting up a factor or connecting a provider sends a security mail to the account's address.
+
+The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
+
 - **One-time challenge.** A passkey challenge serves one purpose and answers at most once.
 - **Random, unstored user handle.** A sign-in finds the account by its credential id.
 - **Unknown passkeys.** A distinct refusal for them reveals no account, since a passkey names no address.
 - **No framed ceremony.** The frontend refuses to be framed by another origin.
 - **TOTP secret.** It is encrypted at rest under `DATA_ENCRYPTION_KEY`.
 - **Shared TOTP lockout.** Failed codes lock the account's TOTP in every process.
-
-MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in.
-
-A passkey sign-in needs no challenge. A passkey proves both factors itself, since every passkey registration and sign-in requires user verification. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it.
-
-The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
-
-Setting up a factor or connecting a provider sends a security mail to the account's address.
 
 ## Step-up
 
@@ -98,8 +98,6 @@ An account-security action needs a session that proved its user present within t
 | Set up a passkey or authenticator app, connect a provider, end another session, delete the account | factor | passes | emailed code |
 | Delete a passkey or the authenticator app, turn MFA on or off | factor | | |
 
-Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
-
 - **Factor**: a passkey or TOTP proven on this session within the window, by sign-in, step-up or setup.
 - **SSO factor**: an SSO sign-in counts when the institution asserted MFA within the window.
 - **Set up a factor**: the dialog adds a passkey or authenticator app, then runs the action.
@@ -109,6 +107,8 @@ Signing out, revoking a key or a connected app, disabling a service account and 
 - **With MFA on**: the other factor replaces the lost one.
 
 On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
+
+Signing out, revoking a key or a connected app, disabling a service account and leaving an organization need no step-up.
 
 ## Rate limits
 
