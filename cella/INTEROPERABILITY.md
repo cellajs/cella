@@ -4,48 +4,63 @@ This document covers how systems outside the browser act on your app: the faces 
 
 ### TL;DR
 
-Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. A caller is always an actor (a person or a service account), always holds role bindings the permission engine understands, and may carry access scopes that narrow what those bindings allow.
+Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. Every caller is an actor with role bindings the permission engine understands. Access scopes may narrow what those bindings allow.
 
 ## Who connects
 
 | Caller | Holds | Face |
 | --- | --- | --- |
 | A server or CI job you own | An API key of a service account | REST API |
-| An app a person consented to (a portfolio site, a partner integration) | An access token issued to that person | REST API, MCP |
-| An AI client (Claude Desktop, VS Code) | An access token issued to that person, obtained through consent | MCP |
-| A service acting on its own behalf | An access token from its API key (`client_credentials`) | REST API, MCP |
+| An app a person consented to, such as a partner integration | An access token issued to that person | REST API, MCP |
+| An AI client, such as Claude Desktop | An access token issued to that person, obtained through consent | MCP |
+| A service acting on its own behalf | An access token its API key gets through `client_credentials` | REST API, MCP |
 
-The OpenAPI contract and the generated SDK are the same for every caller; what differs is how the caller proves who it is.
+The OpenAPI contract and the generated SDK are the same for every caller. Only the proof of who it is differs.
 
 ## Face: REST API
 
-Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev). A path alternates literal collections and ids (`/tenants/{tenantId}/organizations/{organizationId}/attachments/{attachmentId}`). A `-` stands for any parent: `/tenants/-/organizations` lists the organizations of every tenant the caller sees. An update is a `PATCH` with JSON Merge Patch semantics (RFC 7396): an absent field stays, `null` clears it and an array is replaced whole. A product update is the exception: it sends field operations with their timestamps, which the sync engine merges field by field with concurrent edits. An action is a custom method at `<resource>:<verb>`, such as `POST …/organizations/{organizationId}:publish`. A create answers 201 with the resource, and a delete answers 204. The auth, OAuth and MCP routes, the app stream and the yjs routes follow the protocols they implement.
+Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev):
+
+- **Paths** alternate literal collections and ids, as `/tenants/{tenantId}/organizations/{organizationId}`.
+- **A `-`** stands for any parent: `/tenants/-/organizations` spans every tenant the caller sees.
+- **An update** is a `PATCH` with JSON Merge Patch semantics (RFC 7396).
+- **An action** is a custom method at `<resource>:<verb>`, such as `POST …/organizations/{organizationId}:publish`.
+- **A create** answers 201 with the resource, and a delete answers 204.
+
+In a merge patch, an absent field stays, `null` clears it and an array is replaced whole. A product update is the exception. It sends field operations with their timestamps, which the sync engine merges field by field with concurrent edits. The auth, OAuth and MCP routes, the app stream and the yjs routes follow the protocols they implement.
 
 A single channel or product answers `GET` and `PATCH` with a strong `ETag`. The tag versions the resource's own fields, not its `included` data or counts. Send it back in `If-Match` on a `PATCH` or a custom method, and the write applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
 
 A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged, except `maxPageSize` and `skip`. A token is opaque and bound to its list. A token that was altered, or sent with changed params, is refused as `invalid_page_token`. `skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`: a field, optionally followed by `asc` or `desc`.
 
-Four choices depart from those conventions. Field and parameter names are camelCase, where AEP-140 asks for snake_case. One spelling then runs from the table through the SDK into the frontend. A field AEP standardizes still takes its words, such as a person's `givenName` (AEP-148) or `languageCode` (AEP-143). Ids are UUID v7 that the client mints, since an offline create needs its id before the server answers. A batch create or delete applies what it can and lists the ids it rejected, where an AEP batch would fail whole. The membership routes name their channel in `entityType` and `entityId`, since channel types are app config.
+Four choices depart from those conventions:
 
-A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row, so it cannot read one by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
+- **camelCase names,** where AEP-140 asks for snake_case, so one spelling runs from table to frontend.
+- **Client-minted ids:** UUID v7, since an offline create needs its id before the server answers.
+- **Partial batches:** a batch create or delete applies what it can and lists the ids it rejected.
+- **Membership routes** name their channel in `entityType` and `entityId`, since channel types are app config.
 
-An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own, checked before the tenant row loads, so a key learns nothing about other tenants.
+A field AEP standardizes still takes its words, such as a person's `givenName` (AEP-148) or `languageCode` (AEP-143).
 
-A caller that mirrors products through range reads (`afterSeq`/`untilSeq`) reads them in full again after an absence longer than the activity window, since an expired tombstone sends nothing. A range read is a sync chunk, not a page: it takes no `pageToken` or `skip`, and the next chunk starts after the last position received.
+A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row to read by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
+
+An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF. It is refused when it carries a browser `Origin`, since keys are for servers. The tenant in the URL must be the key's own. That check runs before the tenant row loads, so a key learns nothing about other tenants.
+
+A caller can mirror products through range reads with `afterSeq` and `untilSeq`. After an absence longer than the activity window, it reads them in full again, since an expired tombstone sends nothing. A range read is a sync chunk, not a page. It takes no `pageToken` or `skip`, and the next chunk starts after the last position received.
 
 ## Face: OAuth
 
-The app is its own authorization server, on the same origin under `/oauth`. A person consents on a screen that names the client and the scopes it asks for, and the resulting token acts as that person, masked by those scopes, in one tenant. MCP clients, registered apps and service accounts each reach it in their own way, and people revoke their consents in their account settings.
+The app is its own authorization server, on the same origin under `/oauth`. A person consents on a screen that names the client and the scopes it asks for. The resulting token acts as that person in one tenant, masked by those scopes. People revoke their consents in their account settings.
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives and that it should start with the read scopes, consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives and to start with the read scopes. It consents through the OAuth face and comes back. MCP tools are routes that opted in. A call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
 
 ## The substrate
 
 ### Actors
 
-Every actor is a row in `actors`, a user or a service account, and the writer columns of channel and product rows reference it. A service account is tenant-scoped, holds role bindings like a member does, and is disabled, never deleted, so the rows it wrote keep pointing at it. Creating or managing one takes `update` on the organization, and nobody gives one, or a key for one, a role above their own. An account keeps working on its own bindings after its creator leaves, and the organization's remaining admins see and revoke it and its keys.
+Every actor is a row in `actors`, a user or a service account. The writer columns of channel and product rows reference it. A service account is tenant-scoped and holds role bindings like a member does. It is disabled, never deleted, so the rows it wrote keep pointing at it. Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
 
 A user and a service account are the only actor kinds. A person who acts without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a new actor kind, because every writer reference on the wire embeds an `ActorRef` and a third kind would change them all. A row's provenance is its writer actor: a sync or import that a connection runs acts as a service account of its own, so the rows it wrote name it, and no table carries a source or provenance column.
 
@@ -55,14 +70,21 @@ Only a key's hash is stored, with its prefix and last four characters for displa
 
 ### Access scopes
 
-The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else. An unknown scope fails closed; a session, and a key issued without scopes, are unmasked. A REST call outside the token's scopes answers as the request would for an actor without that permission, with no `insufficient_scope` challenge; the MCP face names the scope to step up to. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
+The scope vocabulary is derived from the policy matrix, never listed by hand. Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check:
+
+- **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
+- **Unknown scope:** fails closed.
+- **No mask:** a session, and a key issued without scopes, are unmasked.
+- **REST refusal:** answers as for an actor without the permission, with no `insufficient_scope` challenge.
+- **MCP refusal:** names the scope to step up to.
+- **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents and consent screen.
 
 ### Tokens
 
 Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. Revoking a grant or a key, or changing a membership, counts at the next request. An MCP tool call runs its REST route in the same process, so the token never travels to another resource server.
 
-A machine request the REST API refuses, with no proof or with a key or token that does not hold, names the tenant's metadata in its challenge. The REST API's resource identifier is the tenant URL, so its metadata names a prefix of the request URL, not the request URL itself.
+A machine request the REST API refuses for want of valid proof names the tenant's metadata in its challenge. The REST API's resource identifier is the tenant URL. Its metadata therefore names a prefix of the request URL, not the request URL itself.
 
 ### Quotas and limits
 
-Tenant restrictions cap the active service accounts and live API keys a tenant holds (`appConfig.defaultRestrictions`, `0` lifts a cap). Machine calls pass a per-second burst limit and, on routes that carry it, the tenant's hourly points budget, both per actor: an app acting on a person's consent spends that person's budget.
+Tenant restrictions cap the active service accounts and live API keys a tenant holds. Machine calls pass a per-second burst limit. Routes that carry it also spend an hourly points budget the tenant sets. Both count per actor, so an app acting on a person's consent spends that person's budget.
