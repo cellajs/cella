@@ -5,6 +5,8 @@
   "bad_request_action": "Request not processed",
   "body_too_large": "Too large to save",
   "body_too_large.text": "Shorten it or split it up.",
+  "channel_archived": "Archived",
+  "channel_archived.text": "This channel is archived, so nothing in it can change.",
   "confirm-mfa_expired": "Verification step expired",
   "confirm-mfa_expired.text": "Your verification token has expired or is invalid. Sign in again to continue.",
   "confirm-mfa_not_found": "Verification failed",

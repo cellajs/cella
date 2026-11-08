@@ -201,6 +201,7 @@ export const zChannelBase = z.object({
   slug: z.string(),
   thumbnailUrl: z.string().nullable(),
   bannerUrl: z.string().nullable(),
+  archived: z.boolean(),
 });
 
 /**
@@ -520,6 +521,7 @@ export const zOrganization = z.object({
   bannerUrl: z.string().max(2048).nullable(),
   publishedAt: z.string().nullable(),
   public: z.boolean(),
+  archived: z.boolean(),
   toolsConfig: z.object({
     'organization.settings': z
       .object({
@@ -1446,6 +1448,50 @@ export const zCheckSlugPath = z.object({
  * Slug is available
  */
 export const zCheckSlugResponse = z.void();
+
+export const zArchiveChannelBody = z.object({
+  channelType: z.unknown(),
+  channelId: z.string().max(50),
+  includeDescendants: z.boolean().optional(),
+});
+
+export const zArchiveChannelPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Channel archived
+ *
+ * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+ */
+export const zArchiveChannelResponse = z.object({
+  data: z.array(z.unknown()).max(0),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+export const zUnarchiveChannelBody = z.object({
+  channelType: z.unknown(),
+  channelId: z.string().max(50),
+  includeDescendants: z.boolean().optional(),
+});
+
+export const zUnarchiveChannelPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Channel unarchived
+ *
+ * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+ */
+export const zUnarchiveChannelResponse = z.object({
+  data: z.array(z.unknown()).max(0),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
 
 /**
  * SSE stream started

@@ -49,6 +49,7 @@ export {
   type AccessScopedEntityType,
   accessScopes,
   allActionsAllowed,
+  archiveVeto,
   buildSubject,
   buildSubjectFromEntity,
   checkAccess,

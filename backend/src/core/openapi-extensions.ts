@@ -35,8 +35,11 @@ export type ExtensionType = keyof typeof extensionMap;
 /** One OpenAPI security requirement alternative, e.g. `{ cookieAuth: [] }`. */
 export type SecurityRequirement = Record<string, string[]>;
 
-/** Request context one guard sets for the guards after it: who acts, a signed-in user's session (`userGuard` only), the tenant. */
-export type GuardContext = 'actor' | 'session' | 'tenant';
+/**
+ * Request context one guard sets for the guards after it: who acts, a signed-in user's session (`userGuard` only), the
+ * tenant, the organization with its archived channel ids.
+ */
+export type GuardContext = 'actor' | 'session' | 'tenant' | 'organization';
 
 /** A middleware marked by `setMiddlewareExtension`: its extension type, the statuses it refuses with and, for a guard, what it accepts, sets and reads. */
 export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {

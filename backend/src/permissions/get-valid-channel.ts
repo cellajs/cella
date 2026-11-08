@@ -5,6 +5,7 @@ import { AppError } from '#/core/error';
 import { checkPreconditions, type PreconditionContext } from '#/core/preconditions';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { type AccessContext, accessFrom } from '#/permissions/access';
+import { type ArchiveContext, assertNotArchived } from '#/permissions/archive';
 import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import type { EntityModel } from '#/tables';
 
@@ -51,19 +52,22 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
 };
 
 /**
- * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when `bySlug`); throws 404
- * when it is not found or the caller may not read it, 403 when the caller reads it but may not perform `action`. A
- * draft reads as missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
+ * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when `bySlug`). A draft
+ * reads as missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
  * `membership` may be `null` while allowed: system admins and admins of a higher-level entity pass without one. An
  * update that merges its change with the stored row reads it `forUpdate`, in the transaction of its write, so two
- * overlapping merges cannot each start from the row the other replaces.
+ * overlapping merges cannot each start from the row the other replaces. `ignoreArchive` skips the archive check, for
+ * the archive route alone, which must reach an archived channel to reopen it.
+ * @throws AppError 404 when the channel is not found or the caller may not read it.
+ * @throws AppError 403 `channel_archived` when the channel is archived and `action` is no read or delete.
+ * @throws AppError 403 `forbidden` when the caller reads the channel but may not perform `action`.
  */
 export const getValidChannel = async <T extends ChannelEntityType>(
-  ctx: DbContext & ScopeContext & AccessContext & PreconditionContext,
+  ctx: DbContext & ScopeContext & AccessContext & PreconditionContext & ArchiveContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
-  lookup: ChannelLookup = {},
+  { ignoreArchive = false, ...lookup }: ChannelLookup & { ignoreArchive?: boolean } = {},
 ): Promise<ValidChannelResult<T>> => {
   const entity = await resolveChannelInScope(ctx, entityId, entityType, lookup);
 
@@ -73,6 +77,7 @@ export const getValidChannel = async <T extends ChannelEntityType>(
   // A context without an actor (a public route) is anonymous here, as it is to `accessFrom`: it holds no grant.
   const readsAsMissing = !read.allowed || !draftChannelVisibleTo(entityType, entity, access);
   if (readsAsMissing) throw new AppError(404, 'not_found', 'warn', { entityType });
+  if (!ignoreArchive) assertNotArchived(ctx, action, subject);
 
   const { allowed, membership } = action === 'read' ? read : checkAccess(access, action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

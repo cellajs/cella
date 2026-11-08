@@ -45,6 +45,7 @@ const channelsTable = pgTable('test_channel_discovery_rows', {
   organizationId: varchar('organization_id').notNull(),
   courseId: varchar('course_id'),
   publishedAt: varchar('published_at'),
+  archived: boolean('archived').notNull().default(false),
 });
 
 /** Scratch membership table: the columns the list join and the scope resolver read. */
@@ -62,11 +63,15 @@ const PUBLISHED_AT = '2026-08-01T00:00:00Z';
 
 let rowCounter = 0;
 
-const insertChannel = async (opts: { courseId?: string | null; published?: boolean } = {}) => {
+const insertChannel = async (opts: { courseId?: string | null; published?: boolean; archived?: boolean } = {}) => {
   const id = `ch-${++rowCounter}`;
-  await seedDb
-    .insert(channelsTable)
-    .values({ id, organizationId: ORG_ID, courseId: opts.courseId ?? null, publishedAt: opts.published === false ? null : PUBLISHED_AT });
+  await seedDb.insert(channelsTable).values({
+    id,
+    organizationId: ORG_ID,
+    courseId: opts.courseId ?? null,
+    publishedAt: opts.published === false ? null : PUBLISHED_AT,
+    archived: opts.archived ?? false,
+  });
   return id;
 };
 
@@ -91,6 +96,7 @@ const insertMembership = async (
 interface ListOpts {
   courseId?: string;
   excludeHidden?: boolean;
+  includeArchived?: boolean;
   isSystemAdmin?: boolean;
 }
 
@@ -116,6 +122,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     // Keyed by a deep-fixture level the app's ChannelEntityType union does not know
     ancestorIdColumns: Object.fromEntries([['course', channelsTable.courseId]]),
     ...(opts.excludeHidden && { membershipHidden: membershipsTable.hidden }),
+    archived: channelsTable.archived,
   };
 
   const discoveryScope = resolveChannelCollectionReadScope(access, CHANNEL_TYPE, ORG_ID, {
@@ -123,7 +130,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     // The deep fixture's hierarchy has channel types the app's `EntityHierarchy` type does not name.
     hierarchy: deepHierarchy as unknown as EntityHierarchy,
   });
-  const scopeWhere = buildChannelListReadWhere(discoveryScope, readColumns);
+  const scopeWhere = buildChannelListReadWhere(discoveryScope, readColumns, { includeArchived: opts.includeArchived });
 
   const where: SQL[] = [
     eq(channelsTable.organizationId, ORG_ID),
@@ -149,7 +156,8 @@ beforeAll(async () => {
       id varchar primary key,
       organization_id varchar not null,
       course_id varchar,
-      published_at varchar
+      published_at varchar,
+      archived boolean not null default false
     )
   `);
   await seedDb.execute(sql`
@@ -240,5 +248,15 @@ describe('Channel list discovery rows', () => {
 
     expect(idsOf(await listChannels('student', { courseId: 'course-1' }))).toEqual([hidden, foreign].sort());
     expect(idsOf(await listChannels('student', { courseId: 'course-1', excludeHidden: true }))).toEqual([foreign]);
+  });
+
+  it('leaves an archived channel out unless the list asks for archived channels', async () => {
+    await insertMembership('student', 'course', 'course-1', 'student');
+    const live = await insertChannel({ courseId: 'course-1' });
+    const archived = await insertChannel({ courseId: 'course-1', archived: true });
+
+    expect(idsOf(await listChannels('student', { courseId: 'course-1' }))).toEqual([live]);
+    expect(idsOf(await listChannels('sysadmin', { isSystemAdmin: true }))).toEqual([live]);
+    expect(idsOf(await listChannels('student', { courseId: 'course-1', includeArchived: true }))).toEqual([live, archived].sort());
   });
 });

@@ -27,6 +27,7 @@ export const channelBaseSchema = z
     slug: z.string(),
     thumbnailUrl: z.string().nullable(),
     bannerUrl: z.string().nullable(),
+    archived: z.boolean().openapi({ description: 'Closed to writes: it reads and streams, and only an unarchive or a delete changes it.' }),
   })
   .openapi('ChannelBase', {
     description:

@@ -28,7 +28,8 @@ interface MaterializeDescriptionResult {
  * entity, through the entity's materializer, which runs the normal update operation and its permission check. When
  * no editor may, or the tenant is suspended or archived, the write is refused (403) and the relay keeps the edits. A server-origin row of the document's log
  * outside `serverRowIds` is an outside write committed after the relay read its window: the write is refused (409), so
- * it never overwrites that write, and the relay retries with a window that holds it.
+ * it never overwrites that write, and the relay retries with a window that holds it. An archived home channel refuses
+ * nothing here: the context holds no archived channel ids, so edits in flight when the channel was archived still save.
  */
 export async function materializeDescriptionOp(input: YjsMaterializeBody): Promise<MaterializeDescriptionResult> {
   const { entityType } = input;

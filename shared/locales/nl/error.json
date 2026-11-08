@@ -1,6 +1,8 @@
 {
   "ambiguous_placement": "Onduidelijke plaatsing",
   "ambiguous_placement.text": "Noem één plek, de diepste: de plekken erboven volgen daaruit.",
+  "channel_archived": "Gearchiveerd",
+  "channel_archived.text": "Dit kanaal is gearchiveerd, dus er kan niets in veranderen.",
   "demo_session_restricted": "Niet in een demo",
   "demo_session_restricted.text": "Een demo-account kan dit niet. Maak een eigen account aan om verder te gaan.",
   "demo_signed_in": "Al ingelogd",

@@ -12,6 +12,7 @@ import {
   toTableName,
   type YjsDocScope,
 } from 'shared';
+import { channelTables } from '#/db/channel-tables';
 import type { Tx } from '#/db/create-connection';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { getTableColumnNames } from '#/modules/yjs/yjs-queries';
@@ -59,6 +60,14 @@ async function findEntityScope(tx: Tx, entityType: ProductEntityType, entityId: 
   return rows[0] ?? null;
 }
 
+/** Whether the row's home channel, its deepest non-null ancestor, is archived. A row homed in the organization never is. */
+async function isHomeArchived(tx: Tx, entityType: ProductEntityType, entity: EntityScopeRow): Promise<boolean> {
+  const [home] = hierarchy.resolveNonNullAncestors(entityType, entity);
+  if (!home || home.id === entity.organizationId) return false;
+  const { rows } = await tx.execute<{ archived: boolean }>(sql`SELECT archived FROM ${channelTables[home.type]()} WHERE id = ${home.id} LIMIT 1`);
+  return rows[0]?.archived === true;
+}
+
 /** The verdict on a socket: the document's scope, as its entity row states it; `denied` (4003); or `deleted` (4410). */
 export type DocumentAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted';
 
@@ -71,8 +80,9 @@ export type DocumentAuthorization = { scope: YjsDocScope } | 'denied' | 'deleted
  * The row is read with soft-deleted rows included, so a deletion is told apart from a refusal:
  * - `deleted`: the row is soft-deleted and the user may update it, or no row exists in the token's tenant. The token
  *   proves the user could update the entity within its lifetime, so a missing row was deleted.
- * - `denied`: a row in another tenant or organization than the token names, a draft the user did not author, or a row
- *   the user may not update, deleted or not, so the close code tells no one without access that an entity exists.
+ * - `denied`: a row in another tenant or organization than the token names, a draft the user did not author, a row
+ *   homed in an archived channel, or a row the user may not update, deleted or not, so the close code tells no one
+ *   without access that an entity exists.
  *
  * @throws MissingAncestorError if the resolved entity is missing a required ancestor scope.
  */
@@ -90,6 +100,8 @@ export async function authorizeDocument(userId: string, requested: YjsDocScope):
 
       // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
       if (!draftVisibleTo(entity, userId)) return 'denied';
+      // An archived channel closes the products homed in it, as `archiveVeto` does for the API.
+      if (await isHomeArchived(tx, entityType, entity)) return 'denied';
 
       // The row itself goes into the subject: without it, every row-derived grant ('own', public read) fails closed.
       const subject = buildSubjectFromEntity(entityType, entity);

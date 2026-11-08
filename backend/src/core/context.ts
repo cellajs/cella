@@ -55,7 +55,7 @@ export type ScopeContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'o
  */
 export type ActorContext = {
   var: Pick<Env['Variables'], 'actor' | 'isSystemAdmin' | 'db' | 'tenantId' | 'tenant' | 'preconditions'> &
-    Partial<Pick<Env['Variables'], 'organization' | 'organizationId'>>;
+    Partial<Pick<Env['Variables'], 'organization' | 'organizationId' | 'archivedChannelIds'>>;
 };
 
 /** An actor inside a resolved organization: what `orgGuard` guarantees. */
@@ -83,6 +83,8 @@ export type Env = {
     /** `orgGuard` merges the config defaults under the row's sparse flags. */
     organization: OrganizationModel & { organizationFlags: OrganizationFlags; membership: MembershipBaseModel | null };
     organizationId: string;
+    /** The organization's archived channel ids (`orgGuard`), which refuse a write in them (`assertNotArchived`). */
+    archivedChannelIds?: ReadonlySet<string>;
     /** User-only sugar for `actor.bindings`, with the join time and the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdAt: string; createdBy: string | null })[];
     /** The authenticated session's facts (`userGuard` only). */

@@ -127,6 +127,8 @@ export interface ChannelListReadColumns {
   ancestorIdColumns: Partial<Record<ChannelEntityType, AnyColumn>>;
   /** Membership hidden column; set to compile `excludeHidden` against the LEFT join. */
   membershipHidden?: AnyColumn;
+  /** The listed table's `archived` column; set to leave archived channels out of a list that does not ask for them. */
+  archived?: AnyColumn;
 }
 
 /**
@@ -141,11 +143,18 @@ export interface ChannelListReadColumns {
  *   no organization.
  * - `excludeHidden` goes in WHERE through {@link excludeHiddenWhere}; in ON it would turn a hidden channel
  *   into a discovery row.
+ * - Pass the `archived` column, and `includeArchived` when the list asks for archived channels: without the column the
+ *   predicate leaves the archive state alone.
  * - Map the nested membership only when its id is non-NULL, and expect membership-sourced sort columns NULL for
  *   discovery rows (ASC puts NULLs last, members first).
  */
-export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, columns: ChannelListReadColumns): CollectionReadWhere => {
-  if (scope.orgWide === 'all') return { kind: 'all' };
+export const buildChannelListReadWhere = (
+  scope: ChannelCollectionReadScope,
+  columns: ChannelListReadColumns,
+  { includeArchived = false }: { includeArchived?: boolean } = {},
+): CollectionReadWhere => {
+  const live = columns.archived && !includeArchived ? eq(columns.archived, false) : undefined;
+  if (scope.orgWide === 'all') return live ? { kind: 'where', where: live } : { kind: 'all' };
 
   const branches: SQL[] = [isNotNull(columns.membershipUserId)];
   if (scope.orgWide === 'published') branches.push(isNotNull(columns.publishedAt));
@@ -160,7 +169,7 @@ export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, col
     }
   }
 
-  const where = or(...branches);
+  const where = and(or(...branches), live);
   return where ? { kind: 'where', where } : { kind: 'none' };
 };
 
