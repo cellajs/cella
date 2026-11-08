@@ -123,11 +123,12 @@ describe('runtime secret registry', () => {
 });
 
 describe('runtime secret schema alignment', () => {
-  // backend/src/env.ts derives these from the federation keys, so they never appear by name in its source.
   const federationEnvVars = Object.keys(config.federations).flatMap((key) => [
     `SSO_${key.toUpperCase()}_CLIENT_ID`,
     `SSO_${key.toUpperCase()}_CLIENT_SECRET`,
   ]);
+  // backend/src/env.ts derives these from the federation keys, and a new app declares none while the registry keeps the template's pair.
+  const isFederationEnvVar = (envVar: string) => /^SSO_[A-Z0-9_]+_CLIENT_(ID|SECRET)$/.test(envVar);
 
   it('delivers the client id and secret of every federation the app config declares', () => {
     for (const envVar of federationEnvVars) {
@@ -141,7 +142,7 @@ describe('runtime secret schema alignment', () => {
   it('maps each backend service secret env var to a declared service env schema', () => {
     for (const secret of runtimeSecrets) {
       for (const service of secret.services) {
-        if (service === 'mcp' || federationEnvVars.includes(secret.envVar)) continue;
+        if (service === 'mcp' || isFederationEnvVar(secret.envVar)) continue;
         if (!(service in envSources)) continue;
         const source = envSources[service as keyof typeof envSources];
         expect(source, `missing env schema fixture for ${service}`).toBeTruthy();

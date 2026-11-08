@@ -195,7 +195,9 @@ try {
   const apiFailures = [];
   page.on('pageerror', (error) => pageErrors.push(String(error)));
   page.on('requestfailed', (request) => {
-    if (request.url().startsWith(api)) apiFailures.push({ url: request.url(), failure: request.failure()?.errorText });
+    const failure = request.failure()?.errorText;
+    // A navigation cancels what the page it leaves had open, such as the app stream
+    if (request.url().startsWith(api) && failure !== 'net::ERR_ABORTED') apiFailures.push({ url: request.url(), failure });
   });
   page.on('response', (response) => {
     if (response.url().startsWith(api) && response.status() >= 500) apiFailures.push({ url: response.url(), status: response.status() });
