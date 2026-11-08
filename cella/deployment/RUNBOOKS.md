@@ -1,6 +1,6 @@
 # Runbooks
 
-This document collects the procedures for a running deployment: a failed or blocked deploy, one that needs an apply, a stale lease, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
+This document collects the procedures for a running deployment: a failed or blocked deploy, one that needs an apply, a rollback, a stale lease, GeoIP data, database access, a stopped CDC worker, seeding the admin, resetting or restoring the database, and tearing a stack down.
 
 ### TL;DR
 
@@ -10,7 +10,14 @@ cannot be made again, which a setup adopts; a clean slate deletes that too.
 
 ## Debug a failed deploy
 
-Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows the step that failed and a failed machine's boot error. A switch that times out waiting for the new machine to serve means its agent never answered 200: almost always a crash at boot, not the load balancer. The new machine was deleted and the old one kept serving; a role that switched before the failure serves the target, and the next run of the same target switches only the rest.
+**Deploy now** ends a run that did not deploy with one sentence on whose side the failure is, then the release your users still get; **Deploy logs** (`pnpm infra runs`, `--mode staging` for staging) shows the same sentence under a run's header, with the step that failed and a failed machine's boot error, and the home's **Last deploy** line says it too:
+
+- **Scaleway's side:** its API failed under the deploy, it had no machine of that type in stock, or a machine booted slower than its links lasted. Your code never ran there: **Deploy now** offers a retry, which usually passes. A quota that is reached is raised in the console (Organization → Quotas).
+- **The release's side:** its build failed, a new machine crashed at boot, or the smoke tests failed on it. The sentence names the report to read.
+- **Your side:** a value is missing ([A blocked deploy](#a-blocked-deploy)) or the release changes the infrastructure ([Apply needed](#apply-needed)).
+- **Not known:** the recorded error, or a new machine that never answered its health check, which is almost always a crash at boot.
+
+A switch that times out waiting for the new machine to serve means its agent never answered 200: almost always a crash at boot, not the load balancer. The new machine was deleted and the old one kept serving; a role that switched before the failure serves the target, and the next run of the same target switches only the rest.
 
 1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report: the boot phases, the migrate companion's output and a crashed container's output. "No account" means the agent never finished its boot; then the machine's serial console (Scaleway console → Instances → the machine → Console) shows how far it got. A deleted machine's console is gone with it: for a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
 2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` of the boot-diag bucket, and `docker run` it with a minimal valid environment: a failing import (`ERR_MODULE_NOT_FOUND`) shows in seconds.
@@ -19,28 +26,35 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
    - a secret value of several lines ([Runtime secret delivery](../DEPLOYMENT.md#runtime-secret-delivery))
    - an image older than a change to the database or the secrets it expects
    - node-postgres checking the TLS hostname against the IP it dialed
-   - a link that ended before the machine fetched it: a 403 at `fetch-env` or `load-images`, when the machine took longer than the link's minutes to boot
-   - an instance-type quota too low for a new machine beside the old one
    - "an apply makes it": the deploy found no reserved address, pool or security group it needs, as after an engine change or a new role: run **Review & apply changes**, then the same target
 
 ## A blocked deploy
 
-A blocked run booted no machine of the release, and the running release stays. `pnpm infra runs` names what it owes:
+A blocked run booted no machine of the release, and the running release stays. **Deploy now**, **Deploy logs** and the home's **Last deploy** line name the value it waits for:
 
-- **An empty required secret:** store it in **Env vars & secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
+- **An empty required secret:** **Env vars & secrets** (`pnpm infra secrets`) lists it first, as `missing · required`. Pick its row and set it: storing it starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
 No scheduled run starts a blocked target again: storing the value, or the apply, does.
 
 ## Apply needed
 
-A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). It stopped before it read a runtime value or booted a machine of the release, and the running release stays. `pnpm infra runs` shows the end, with the target's and the applied description's hashes.
+A run ends **apply needed** when its target describes the app otherwise than the engine the last apply published ([What needs an apply](./CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). It stopped before it read a runtime value or booted a machine of the release, and the running release stays. **Deploy logs** names the fields that differ, such as `services.search added`; a release whose build kept only the hash of its description shows the two hashes.
 
-1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`), which publishes that checkout's engine and starts the target again at its end.
+1. Check out the target's commit (production: its release tag) and run **Review & apply changes** (`pnpm infra apply --mode <env>`). Before it builds, it compares this checkout's description with the waiting release's: when they differ, it names the fields and stops, with the command that checks out the release (`git switch --detach <tag>`). From the right checkout it publishes that checkout's engine and starts the target again at its end.
 2. "did not start from the engine image an apply publishes" means the run started on a definition from before the applied engine: the apply in step 1 rewrites it.
-3. "reports no description" means the target is older than the applied engine, which cannot deploy it: pin a newer release, or roll forward.
+3. "reports no description" means the target is older than the applied engine, which cannot deploy it: deploy a newer release, or roll forward.
 4. "The image describes … the apply as …" during the apply's build: the shell the apply ran in overrides the config (`APP_ORIGIN`), or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
 
 **Full status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
+
+## Roll back
+
+No old machine is kept to switch back to: a rollback deploys an earlier release on the same forward path. `pnpm infra` → **Releases & roll back** (`pnpm infra releases`) lists the last ten releases, newest first, with when each merged, how its deploy ended and which one serves.
+
+1. Pick an earlier release. With your operator key it says whether the release's build is kept, which the deploy reuses (else the deploy builds it again), and whether the release describes the app as the applied engine does. One that does not needs an apply from a checkout at that release first ([Apply needed](#apply-needed)), and one older than the applied engine cannot be deployed: roll forward then.
+2. Confirm, and it deploys the release and follows it as **Deploy now** does.
+
+The environment stays on that release because a scheduled run never deploys a target again under a retry counter it already ran: production holds until the next release, staging until its branch moves. After 60 days the target's run records expire and the next scheduled run deploys the target again; to hold longer, add the line `<mode> <tag>` to `infra/environments`. A rotation of keys or secrets keeps the rollback: it deploys the live release again and starts the target only when the target has no run yet. To leave a release behind for good, commit a revert and publish the next release.
 
 ## A stale lease
 

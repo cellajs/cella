@@ -4,7 +4,7 @@ This document describes the Infra CLI: what it does, its commands and status che
 
 ### TL;DR
 
-The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting and manages it from one menu. A schedule in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
+The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in one guided sitting, then opens on a home screen that says whether the app serves and what to do next, above a menu by task. A schedule in the same Scaleway account deploys every release onto fresh machines and deletes the old ones once the new ones serve. Every change to the foundation is an apply you review first, each key does one kind of work, and no machine a deploy makes holds a key.
 
 ## What it does
 
@@ -12,7 +12,7 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 
 ## How a release flows
 
-**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
+**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting, along the launch checklist ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
 
 **Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**: the engine built from your checkout, with the **applied description** of the app, which every run of the main job starts from.
 
@@ -22,15 +22,25 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha> --retry <n>
 ```
 
-It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, and the apply from its checkout starts it again.
+It builds a release not built yet, switches every role to a machine of the release and deletes the old ones. A release whose own description of the app differs from the applied one ends **apply needed** before any value is read, naming the fields that differ, and the apply from its checkout starts it again.
 
 ## Commands
 
-`pnpm infra` opens the setup wizard on a fresh stack and the operator menu on an existing one: observe, change privileged resources, keys and secrets, reach the database, repair and tear down. Every menu action also runs alone as `pnpm infra <action> [--mode <production|staging>]`, and `pnpm infra help` lists them. An action that changes something asks a person at the prompt: there is no unattended mode. Each `pnpm infra` run first writes `compose.gen.yml` from the service registry.
+`pnpm infra` opens the setup wizard on a fresh stack, at its launch checklist, and the home screen on an existing one. The home says what serves and since when, how the last deploy went, the database, the security findings and anything else the checks flag, then **Up next**: the step it recommends, which leads the menu below. The menu lists its rows by task, each entered by its letter; a row with several actions opens a short pick:
+
+| Group | Rows |
+| --- | --- |
+| Deploys | `d` Deploy now, `r` Releases & roll back, `l` Deploy logs, `s` Full status |
+| Configure | `e` Env vars & secrets, `a` Infrastructure changes (Review & apply changes, Preview changes), `i` Update identities |
+| Database | `p` Open DB access (and Seed database) or Close DB access, whichever applies; `x` Reset database |
+| Account | `k` Keys & operators (Rotate keys, Rotate secrets, Set up operators, Set repository read key) |
+| More | `u` Repair (Unlock, Resume setup, Remove from state), `t` Tear down |
+
+Every action also runs alone as `pnpm infra <action> [--mode <production|staging>]`, and `pnpm infra help` lists them. An action that changes something asks a person at the prompt: there is no unattended mode. Only the actions that run Pulumi need its CLI installed; the others, `status` and `runs` among them, work without it. Each run keeps `compose.gen.yml` current with the service registry, and says so when it rewrote the file.
 
 ## Status
 
-`infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Full status**; standalone:
+`infra status` is a read-only health check of the whole lifecycle. The home screen is its compact report: one line each for what serves, the last deploy, the database and the security findings, one per other check that is not ok, and the next step. `pnpm infra` → **Full status** shows every check in one table; standalone:
 
 ```
 pnpm --filter infra status [--mode <production|staging>] [--json]
@@ -58,7 +68,7 @@ With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace: e
 
 `infra/.env.<mode>` holds this machine's observer key (`SCW_OBSERVER_*`); the environment's Scaleway project is committed in `infra/Pulumi.<mode>.yaml`, as `infra:projectId`. The file overrides the ambient environment, so a staging run cannot inherit production values, and the CLI keeps it at `0600`. A bare `infra/.env` is never read.
 
-The CLI drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, and the passphrase from Secret Manager with it.
+The CLI drops `PULUMI_CONFIG_PASSPHRASE` and `SCW_OWNER_*` from its environment with a notice. A one-day operator key comes from the prompt, or at a setup from its Owner moment, and the passphrase from Secret Manager with it.
 
 ## Add a service or a store
 
@@ -88,14 +98,15 @@ One name per concept across code and docs:
 | --- | --- |
 | **mode** | `production` or `staging`; also the Pulumi stack name. |
 | **release** | One git SHA baked into images and machines. |
+| **release name** | How the CLI names a commit on screen: the release tag that points at it (`0.34.0`), else `<branch>@<short id>` for a branch head (`main@c19588d`), else the short id. |
 | **deploy** | One run of the deploy command. |
-| **blocked** | How a run ends when a required runtime value is missing, which an operator stores. |
-| **apply needed** | How a run ends when its target describes the app otherwise than the applied description; the apply from its checkout starts it again. |
+| **blocked** | How a run ends when a required runtime value is missing, which an operator stores; the screen says which value it waits for and that **Env vars & secrets** stores it. |
+| **apply needed** | How a run ends when its target describes the app otherwise than the applied description; the screen says the release changes the infrastructure and waits for your go, and Deploy logs names the fields. The apply from its checkout starts it again. |
 | **unchanged** | How a run ends when every role served its target already, under the same retry counter and rotation. |
 | **main job** | An environment's Serverless Jobs definition, with its schedule; each of its runs deploys at most one target, on the engine image. |
 | **scheduled run** | A run of the main job its schedule starts at the environment's cadence: under the lease, it deploys the target when no run record names that target and retry counter, and otherwise ends within seconds. |
 | **engine image** | The engine an apply builds from the operator's checkout and pushes to the environment's registry; the main job names it by digest. |
-| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. Its hash is in `control/<mode>/applied.json` and the image's stamp. |
+| **applied description** | The app as the engine image describes it: the engine config's fields, every registry in `config/`, the boot plan's contract version, the root `package.json`'s Node, pnpm and repository. `control/<mode>/applied.json` keeps it beside its hash, and the image's stamp holds the hash. |
 | **run record** | A deploy's record and log in the boot-diag bucket, read by `pnpm infra runs`. |
 | **builder** | A machine a deploy makes to build a release not built yet, deleted after; it writes through links, holds no key, and reports the release's own description. |
 | **release archive** | An image of a release as `docker load` reads it, under `releases/<sha>/images/` of the boot-diag bucket, named with its digest in the release's manifest. |
@@ -110,8 +121,10 @@ One name per concept across code and docs:
 | **live record** | `control/<mode>/live.json` in the boot-diag bucket: per role the slot that serves, its machine, its commit, and the retry counter and rotation it was booted under. |
 | **lease** | `control/<mode>/lock.json` beside it: one deploy or operator action at a time. |
 | **setup / bootstrap** | The first-ever `pnpm infra` run for a stack: state storage, identities, base infrastructure; not a machine's boot. |
+| **launch checklist** | The steps of a setup (Tools, Repository, Domain, Sign in, Create, Connect, First release, First admin), each ticked from what exists, the first open one marked; a stack not set up yet opens on it. |
+| **recovery passphrase** | The Pulumi passphrase as the screen names it: a setup shows it once for your password manager, and that copy restores the one in Secret Manager. |
 | **Owner moment** | A run that writes IAM, with your own Owner API key made for the occasion. |
-| **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write, made in the console at each sitting. |
+| **operator key** | A one-day key of the `<app>-operator` application, or of a member of the `<app>-operators` group, for privileged work: no IAM write. A setup's Owner moment makes the first; later ones are made in the console at each sitting. |
 | **observer key** | The read-only `<app>-observer` key, from any address; kept in `infra/.env.<mode>`. |
 | **deploy key** | An environment's `<slug>-<mode>-ci-deploy` key, which its main job deploys with. |
 | **uploads key** | An environment's `<slug>-<mode>-uploads` key, which signs the backend's uploads and presigned URLs, kept in the runtime folder. |

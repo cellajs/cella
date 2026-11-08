@@ -33,7 +33,7 @@ Every key is named after its bearer, the way the Scaleway console shows it.
 | Key | Does | Works from | Lives in | Replaced by |
 | --- | --- | --- | --- | --- |
 | **Owner API key** (your own, as organization Owner) | Everything; the one key that writes IAM | Any address | Nowhere: typed at the prompt | Made per occasion with an expiry of hours, revoked after |
-| **Operator** (`<app>-operator`, or your own user in `<app>-operators`) | Every product in the app's projects, the engine image's push to the registry included, IAM read; no IAM write | Any address, within the day | Nowhere: made in the console at each sitting | Ends by itself; **Set up operators** rewrites the policies |
+| **Operator** (`<app>-operator`, or your own user in `<app>-operators`) | Every product in the app's projects, the engine image's push to the registry included, IAM read; no IAM write | Any address, within the day | Nowhere: made by a first setup, then in the console at each sitting | Ends by itself; **Set up operators** rewrites the policies |
 | **Deploy** (`<slug>-<mode>-ci-deploy`) | One environment's machines and their private NICs at the reserved addresses, which takes IPAM's write set, its boot-diag bucket but the final dumps; reads the load balancer and the runtime folder | Any address | `deploy-key` in the engine folder | **Rotate keys** |
 | **Observer** (`<app>-observer`) | Read-only on the app's projects, the boot accounts, run records and `control/` of the boot-diag bucket; no machine, archive, env file or state | Any address | `infra/.env.<mode>` (`SCW_OBSERVER_*`) | Deleted in the console; **Update identities** makes a machine a new one |
 | **Uploads** (`<slug>-<mode>-uploads`) | Objects of the two upload buckets: the backend's uploads and presigned URLs | Any address | The runtime folder, and the env file of each machine that signs uploads | **Rotate keys** |
@@ -74,13 +74,15 @@ On a shared host the services read one env file, so they share their secrets.
 
 ## Operator key
 
-A privileged action runs on a key that ends within a day: one of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. You make it in the console at the start of a sitting, and it dies by itself: nothing is stored, and nothing is revoked after.
+A privileged action runs on a key that ends within a day: one of the `<app>-operator` application, or your own as a member of the `<app>-operators` group. It dies by itself: nothing is stored, and nothing is revoked after.
 
 `pnpm infra` → **Keys & operators** → **Set up operators** (`pnpm infra operator-key`) runs once per app with your Owner API key (a first setup runs it for you). It makes the `<app>-operator` application and the `<app>-operators` group, and writes a policy for each with the same rules: every product of the app's projects, DNS in the serving zone's project, IAM read; no condition. The policies are written in place, so a key of either keeps working, and a new environment's setup adds its project to both. It makes no key. The name is production's slug, so staging and production share one set of operators.
 
-**A sitting.** In the console, IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most; or, as a member of `<app>-operators`, your user → API keys with the same expiration. Paste it at the first action that changes something. Members are added in IAM → Groups → `<app>-operators`; each then holds what the application holds.
+**The first key.** An environment's setup makes it in its Owner moment, once the operators are written: a key of `<app>-operator` that ends within the day, kept in memory for the rest of that run, of which the CLI prints only the access key. The operator part runs on it, so a setup asks for no operator key unless that key could not be made.
 
-**How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the key: access key and secret key. The CLI asks IAM who bears it, with the key itself: the operator application, or a user the operators group lists. A key of anyone else, and a key without an end date or with more than a day left, is refused with the console path above: a key that leaks must die within the day. The key stays in memory until you quit, and every action of the run uses it.
+**A sitting.** Later, you make the key in the console at the start of a sitting: IAM → Applications → `<app>-operator` → API keys → Generate API key, with an expiration of a day at most; or, as a member of `<app>-operators`, your user → API keys with the same expiration. Paste it at the first action that changes something. Members are added in IAM → Groups → `<app>-operators`; each then holds what the application holds.
+
+**How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the key at the **Operator key** prompt. One line above it says where the key comes from, with the console link. The access key shows the example `SCW10X9PSSZ7B106DZNY` until you type, and is checked for that form as you type: `SCW` and 17 capitals or digits. The secret key, masked, must be a UUID. The CLI asks IAM who bears the key, with the key itself: the operator application, or a user the operators group lists. A key of anyone else, and a key without an end date or with more than a day left, is refused with the console path above: a key that leaks must die within the day. For a key the setup just made, the CLI asks IAM again a few times, as a new key's policy holds only after a moment. The key stays in memory until you quit, and every action of the run uses it.
 
 **Buckets.** A bucket policy refuses every principal it does not name, your Owner API key included. Each one names the operator application and every member of the group in one statement, as the apply finds them in IAM, so the members never run into the ten statements a bucket policy holds. A member reaches the buckets after the first apply since they joined, which runs on the application's key or an admitted member's.
 
@@ -97,7 +99,7 @@ The token goes as a header with each fetch, in no URL and no file the build sees
 
 ## Rotation
 
-`pnpm infra` opens with the last rotation of each kind, and `status` lists every key's age; no age is a deadline. A rotation ends by deploying the release that is live again, which replaces every machine, so none keeps a key or a value from before, and then by starting the environment's target when it is another commit. The live release deployed once already, so a target that fails never leaves the machines on what the rotation replaced; a rotation before the first deploy starts the target alone. After a compromise, rotate keys first.
+**Full status** lists every key's age; no age is a deadline. A rotation ends by deploying the release that is live again, which replaces every machine, so none keeps a key or a value from before, and then by starting the environment's target when it is another commit with no run yet, so a rollback stays in place. The live release deployed once already, so a target that fails never leaves the machines on what the rotation replaced; a rotation before the first deploy starts the target alone. After a compromise, rotate keys first.
 
 ### Rotate secrets
 
