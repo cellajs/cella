@@ -67,13 +67,13 @@ Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the
 
 A guard verifies a token locally against the public signing keys, with no round trip to this worker and no row per token.
 
-A person's token rests on its grant, and a service account's on the API key it was minted with. The guard reads that at every request. Whatever ends a grant or a key, or changes a membership, stops or narrows its tokens at the next request, in every process.
+A person's token rests on its grant, and a service account's on the API key it was minted with. The guard reads that at every request. Anything that ends a grant or a key stops its tokens at the next request, in every process. A membership change counts just as fast.
 
 A change to anything else the grant policy reads, such as the user row, counts at once in the process that made it. Other processes see it within seconds.
 
 ## Keystore
 
-`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live. `current` signs, and `next` is published ahead of use, so verifiers know it when it takes over. A retired key keeps verifying for one access token lifetime, long enough for its last token to expire.
+`signing_keys` holds RS256 key pairs, with the private key encrypted at rest. Two are live. `current` signs, and `next` is published ahead of use. Verifiers already know `next` when it takes over. A retired key keeps verifying for one access token lifetime, long enough for its last token to expire.
 
 ## Store and sweep
 
@@ -84,7 +84,7 @@ A code or a refresh token is stored only as the hash of its value, so reading th
 ## Operational constraints
 
 - **Same origin.** Discovery, consent page and interaction cookies assume the issuer is on the app origin.
-- **Discovery.** Both documents live under `/oauth/.well-known/`, and the RFC 8414 root location answers too.
+- **Discovery.** Both documents live under `/oauth/.well-known/`. The RFC 8414 root location answers too.
 - **OpenID discovery.** Published for MCP clients that discover through it, though the server refuses `openid`.
 - **Reads the app database.** It reads sessions and memberships directly, so it needs the runtime role.
 - **Clients are read per request.** A disabled account or a changed redirect URI counts at once.
