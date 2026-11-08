@@ -15,15 +15,15 @@ export interface OperatorAction {
  */
 export const OPERATOR_ACTIONS = {
   status: {
-    label: 'Show status',
+    label: 'Full status',
     key: 'observer',
-    description: 'Health check: what is set up, what is live, and the next step. Read-only.',
+    description: 'Every check in one table: what is set up, what is live, the security findings and the next step. Read-only.',
   },
   runs: {
-    label: 'Show runs',
+    label: 'Deploy logs',
     key: 'observer',
     description:
-      "The environment's last deploys: when, which target, how each ended and where a failed one stopped, then one in full with the end of its log. Read-only.",
+      'The last deploys: when, which release, how each ended and where a failed one stopped, then one in full with the end of its log. Read-only.',
   },
   preview: {
     label: 'Preview changes',
@@ -46,7 +46,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
+      'Fresh database role passwords and rotatable generated secrets, in the runtime folder; then the live release is deployed again, so every machine runs on them, and the target started. Keys that protect stored data stay; third-party keys are pasted anew in "Env vars & secrets".',
   },
   'operator-key': {
     label: 'Set up operators',
@@ -61,10 +61,10 @@ export const OPERATOR_ACTIONS = {
       'Make the uploads application and its key, write the deploy, uploads and observer policies, put the observer key on this machine, and delete the retired admin and machine applications once nothing needs them. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   'start-deploy': {
-    label: 'Start a deploy',
+    label: 'Deploy now',
     key: 'operator',
     description:
-      "Start one run of the environment's main job for its target (the environments file's line, or production's newest release) and follow it until it is deployed, blocked or failed.",
+      "Deploy the environment's target now (production's newest release, or the environments file's line) and follow it step by step until it is deployed, blocked or failed.",
   },
   'repository-key': {
     label: 'Set repository read key',
@@ -73,14 +73,15 @@ export const OPERATOR_ACTIONS = {
       "Store, replace or remove the read-only GitHub key a private repository needs: a scheduled run reads the environments file and the release tags with it, the builder fetches a release's commit. A repository anyone may read needs none.",
   },
   secrets: {
-    label: 'Manage runtime secrets',
+    label: 'Env vars & secrets',
     key: 'operator',
-    description: 'List, set, rotate, or delete the runtime secrets, and mint managed keys.',
+    description:
+      'The values the services read at boot, in one table: set, rotate or delete one, and mint managed keys. A new value reaches the machines at the next deploy.',
   },
   'db-open': {
-    label: 'Open public DB access',
+    label: 'Open DB access',
     key: 'operator',
-    description: 'Open a temporary DB endpoint locked to your IP and print the admin connection string (close it after).',
+    description: 'Open a temporary public endpoint locked to your IP and print the admin connection string (close it after).',
   },
   'db-seed': {
     label: 'Seed database',
@@ -88,9 +89,9 @@ export const OPERATOR_ACTIONS = {
     description: 'Open the endpoint to your IP, run the backend seeds, and close it again. Never on production.',
   },
   'db-close': {
-    label: 'Close public DB access',
+    label: 'Close DB access',
     key: 'operator',
-    description: 'Close the temporary public DB endpoint.',
+    description: 'Close the temporary public endpoint.',
   },
   'db-reset': {
     label: 'Reset database',
@@ -98,9 +99,9 @@ export const OPERATOR_ACTIONS = {
     description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
   },
   unlock: {
-    label: 'Unlock stack',
+    label: 'Unlock',
     key: 'operator',
-    description: 'Clear a stale lease and review the operations an interrupted run left in the Pulumi state.',
+    description: 'Clear a stale lease (one deploy or action runs at a time) and review the operations an interrupted run left in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
@@ -113,7 +114,7 @@ export const OPERATOR_ACTIONS = {
     description: "Remove one resource from the stack's Pulumi state: one the program no longer declares and whose live object is gone already.",
   },
   teardown: {
-    label: 'Tear down stack',
+    label: 'Tear down',
     key: 'owner',
     description:
       "DESTRUCTIVE: delete everything that runs or costs, the environment's identities included, after a final dump of the database. Keeps the upload buckets, the boot-diag bucket, the state bucket and the keys that protect stored data, which a setup adopts again.",
@@ -124,11 +125,11 @@ export type OperatorActionId = keyof typeof OPERATOR_ACTIONS;
 
 /** The groups of the `pnpm infra` menu, in the order the menu lists them. */
 export const MENU_GROUPS = {
-  observe: 'Observe',
-  change: 'Change',
+  deploys: 'Deploys',
+  configure: 'Configure',
   database: 'Database',
-  recover: 'Recover',
-  rare: 'Rare',
+  account: 'Account',
+  more: 'More',
 } as const;
 
 export type MenuGroup = keyof typeof MENU_GROUPS;
@@ -139,97 +140,121 @@ export interface MenuRow {
   label: string;
   /** The actions behind the row; more than one opens a short pick. */
   actions: readonly OperatorActionId[];
-  /** The note on the right of the row: mostly the key the row needs. */
-  hint: string;
+  /** The letter that enters the row from the menu. */
+  hotkey: string;
   /** Shown under the menu while the row is highlighted. */
   description: string;
 }
 
 /**
- * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `repository-key`, `start-deploy`, `state-prune`) runs only by its command.
+ * The rows of the `pnpm infra` menu, in menu order, grouped by what a person comes to do. `db-open` and `db-close` share one place: the
+ * menu lists the one that applies. Every action has a row, so nothing of the CLI is reached by its command alone.
  */
 export const MENU_ROWS = {
-  status: {
-    group: 'observe',
-    label: OPERATOR_ACTIONS.status.label,
-    actions: ['status'],
-    hint: 'read-only',
-    description: OPERATOR_ACTIONS.status.description,
+  deploy: {
+    group: 'deploys',
+    label: OPERATOR_ACTIONS['start-deploy'].label,
+    actions: ['start-deploy'],
+    hotkey: 'd',
+    description: OPERATOR_ACTIONS['start-deploy'].description,
   },
   runs: {
-    group: 'observe',
+    group: 'deploys',
     label: OPERATOR_ACTIONS.runs.label,
     actions: ['runs'],
-    hint: 'read-only',
+    hotkey: 'l',
     description: OPERATOR_ACTIONS.runs.description,
   },
-  changes: {
-    group: 'observe',
-    label: OPERATOR_ACTIONS.apply.label,
-    actions: ['apply'],
-    hint: 'operator key',
-    description: OPERATOR_ACTIONS.apply.description,
-  },
-  rotate: {
-    group: 'change',
-    label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-secrets', 'operator-key'],
-    hint: 'keys, secrets, operators',
-    description: 'Replace every Scaleway key or every secret the engine makes, or set up the operator application and operators group.',
+  status: {
+    group: 'deploys',
+    label: OPERATOR_ACTIONS.status.label,
+    actions: ['status'],
+    hotkey: 's',
+    description: OPERATOR_ACTIONS.status.description,
   },
   secrets: {
-    group: 'change',
+    group: 'configure',
     label: OPERATOR_ACTIONS.secrets.label,
     actions: ['secrets'],
-    hint: 'operator key',
-    description: `${OPERATOR_ACTIONS.secrets.description} A new value takes effect at the next deploy.`,
+    hotkey: 'e',
+    description: OPERATOR_ACTIONS.secrets.description,
+  },
+  changes: {
+    group: 'configure',
+    label: 'Infrastructure changes',
+    actions: ['apply', 'preview'],
+    hotkey: 'a',
+    description:
+      'What differs between the code and the live foundation (database, network, load balancer, buckets, DNS, the main job): review and apply it, or only look.',
   },
   identity: {
-    group: 'change',
+    group: 'configure',
     label: OPERATOR_ACTIONS.identity.label,
     actions: ['identity'],
-    hint: 'Owner key',
+    hotkey: 'i',
     description: OPERATOR_ACTIONS.identity.description,
   },
   'db-open': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-open'].label,
     actions: ['db-open', 'db-seed'],
-    hint: 'operator key · temporary, locked to your IP',
-    description: 'Open a temporary DB endpoint locked to your IP: to connect yourself, or to run the backend seeds and close it again.',
+    hotkey: 'p',
+    description: 'Open a temporary public endpoint locked to your IP: to connect yourself, or to run the backend seeds and close it again.',
   },
   'db-close': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-close'].label,
     actions: ['db-close'],
-    hint: 'operator key',
+    hotkey: 'p',
     description: OPERATOR_ACTIONS['db-close'].description,
   },
   'db-reset': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-reset'].label,
     actions: ['db-reset'],
-    hint: 'operator key · DESTRUCTIVE',
+    hotkey: 'x',
     description: OPERATOR_ACTIONS['db-reset'].description,
   },
+  keys: {
+    group: 'account',
+    label: 'Keys & operators',
+    actions: ['rotate-keys', 'rotate-secrets', 'operator-key', 'repository-key'],
+    hotkey: 'k',
+    description:
+      'Replace every Scaleway key or every secret the engine makes, set up the operator application and operators group, or store the read key of a private repository.',
+  },
   repair: {
-    group: 'recover',
-    label: 'Repair stack',
-    actions: ['unlock', 'resume'],
-    hint: 'lease, setup',
-    description: 'Clear a stale lease, or re-sync the setup.',
+    group: 'more',
+    label: 'Repair',
+    actions: ['unlock', 'resume', 'state-prune'],
+    hotkey: 'u',
+    description: 'Clear a stale lease, continue an interrupted setup, or take a resource out of the Pulumi state.',
   },
   teardown: {
-    group: 'rare',
+    group: 'more',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'Owner key · DESTRUCTIVE',
+    hotkey: 't',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;
 
 export type MenuRowId = keyof typeof MENU_ROWS;
+
+/** The actions that run the Pulumi CLI: the ones that need it installed, at the SDK's version. */
+export const PULUMI_ACTIONS: readonly OperatorActionId[] = [
+  'apply',
+  'preview',
+  'resume',
+  'rotate-secrets',
+  'db-open',
+  'db-seed',
+  'db-close',
+  'db-reset',
+  'unlock',
+  'state-prune',
+  'teardown',
+];
 
 /** One action of the table under the shared shape. */
 function operatorAction(id: OperatorActionId): OperatorAction {

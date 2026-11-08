@@ -3,7 +3,7 @@ import { engineConfig as appConfig } from '../../config/engine-config';
 import type { InfraContext } from '../shared';
 
 const input = vi.fn();
-const keyPairOrPrompt = vi.fn();
+const keyPairPrompt = vi.fn();
 const assertIamManager = vi.fn();
 const spawn = vi.fn();
 const spawnSync = vi.fn();
@@ -19,10 +19,7 @@ vi.mock('node:child_process', async (original) => ({
   spawn: (...args: unknown[]) => spawn(...args),
   spawnSync: (...args: unknown[]) => spawnSync(...args),
 }));
-vi.mock('../shared', async (original) => ({
-  ...(await original<typeof import('../shared')>()),
-  keyPairOrPrompt: (...args: unknown[]) => keyPairOrPrompt(...args),
-}));
+vi.mock('../prompts/key-pair', () => ({ keyPairPrompt: (...args: unknown[]) => keyPairPrompt(...args) }));
 vi.mock('../../lib/scaleway/operator-identity', async (original) => ({
   ...(await original<typeof import('../../lib/scaleway/operator-identity')>()),
   assertIamManager: (...args: unknown[]) => assertIamManager(...args),
@@ -51,7 +48,7 @@ const expectUntouched = () => {
 
 beforeEach(() => {
   for (const method of ['info', 'warn', 'error'] as const) vi.spyOn(console, method).mockImplementation(() => {});
-  keyPairOrPrompt.mockResolvedValue({ accessKey: 'SCWOWNER', secretKey: 'owner-secret' });
+  keyPairPrompt.mockResolvedValue({ accessKey: 'SCWOWNER', secretKey: 'owner-secret' });
 });
 
 afterEach(() => {
@@ -64,7 +61,7 @@ describe('runTeardown', () => {
   it('must not ask for a key or touch anything without the typed environment name', async () => {
     input.mockResolvedValue(`${appConfig.slug}-staging`);
     await runTeardown(context);
-    expect(keyPairOrPrompt).not.toHaveBeenCalled();
+    expect(keyPairPrompt).not.toHaveBeenCalled();
     expectUntouched();
   });
 

@@ -27,7 +27,7 @@ Start with `pnpm infra runs` (`--mode staging` for staging): a failed run shows 
 
 A blocked run booted no machine of the release, and the running release stays. `pnpm infra runs` names what it owes:
 
-- **An empty required secret:** store it in **Manage runtime secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
+- **An empty required secret:** store it in **Env vars & secrets** (`pnpm infra secrets`), which starts the target again. A generated or database value is made by **Review & apply changes** (`pnpm infra apply`), the uploads key by **Update identities**.
 
 No scheduled run starts a blocked target again: storing the value, or the apply, does.
 
@@ -40,13 +40,13 @@ A run ends **apply needed** when its target describes the app otherwise than the
 3. "reports no description" means the target is older than the applied engine, which cannot deploy it: pin a newer release, or roll forward.
 4. "The image describes … the apply as …" during the apply's build: the shell the apply ran in overrides the config (`APP_ORIGIN`), or the description needs a file git does not track. Unset the override or `git add` the file, then apply again.
 
-**Show status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
+**Full status** compares the main job's image with the digest `applied.json` names in its **Main job** check.
 
 ## A stale lease
 
 A deploy or an operator action that dies holds its lease, `control/<mode>/lock.json` in the boot-diag bucket, until it lapses within minutes, and the next run waits for it. `pnpm infra status` reports it.
 
-1. `pnpm infra` → **Repair stack** → **Unlock stack** (`pnpm infra unlock`) removes an expired lease at once, and a live one only after you confirm. A live lease most likely belongs to a run that is still going: check `pnpm infra runs` first.
+1. `pnpm infra` → **Repair** → **Unlock** (`pnpm infra unlock`) removes an expired lease at once, and a live one only after you confirm. A live lease most likely belongs to a run that is still going: check `pnpm infra runs` first.
 2. A deploy that died mid-switch may have left a machine on the idle slot: the next deploy drains and deletes it before it boots there, so nothing is owed for it.
 3. Unlock then lists the operations an interrupted apply left in the Pulumi state. When all of them are creates, it offers to drop them and keeps a state export in `infra/.state-backups/` as the rollback. Check the Scaleway console for each resource first: a create that went through left a resource the state does not track.
 4. An interrupted update or delete stays: run the `pulumi refresh` that Unlock prints, logged in with the operator key and with the passphrase from the environment's `/engine/` secret folder.
@@ -89,9 +89,9 @@ The worker makes a new slot when it starts again, and every client refetches onc
 
 ## Seed the admin by hand
 
-A wrong admin email is fixed in **Manage runtime secrets**, then by a deploy that makes a new backend machine, such as **Rotate secrets**: a machine keeps the env file it booted with, and the new one's boot seeds the admin while the users table is empty.
+A wrong admin email is fixed in **Env vars & secrets**, then by a deploy that makes a new backend machine, such as **Rotate secrets**: a machine keeps the env file it booted with, and the new one's boot seeds the admin while the users table is empty.
 
-On staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and run the migrate companion, which seeds the admin on an empty users table, with the printed connection string:
+On staging, **Open DB access** → **Seed database** (`pnpm infra db-seed`) opens the database, seeds demo data with the admin and closes it in one go; it never runs on production. Elsewhere, [open the database](#open-the-database), build the backend and run the migrate companion, which seeds the admin on an empty users table, with the printed connection string:
 
 ```bash
 pnpm --filter backend build
@@ -135,7 +135,7 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>` and for an Owner API key that expires within a day, and nothing else: the Owner key holds every right, so the one key deletes the resources and the identities. It refuses a key the bucket policies do not name, before it touches anything: your user joins `<app>-operators`, and the next **Review & apply changes** names you.
+`pnpm infra` → **Tear down** asks you to type `<slug>-<mode>` and for an Owner API key that expires within a day, and nothing else: the Owner key holds every right, so the one key deletes the resources and the identities. It refuses a key the bucket policies do not name, before it touches anything: your user joins `<app>-operators`, and the next **Review & apply changes** names you.
 
 It deletes every machine the deploys and the builder made, the reserved addresses they held, the load balancer with its address, the DNS records, the private network, the security groups, the database, the main job, the registry namespace, every secret container but the keys that protect stored data, and the environment's identities: the deploy and uploads applications with their policies and keys, and the `<slug>-<mode>` group. The app's operators and observer stay: they serve the other environments.
 

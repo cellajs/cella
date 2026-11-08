@@ -100,7 +100,7 @@ export function deployFailureHint(err: unknown, mode: string): { description: st
   }
   if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: the live record says what serves.` };
   return {
-    description: `${where}Re-running is safe: a role that switched serves the target and is left as it is. The run's record names each new machine's boot account, and Show runs prints a failed one:`,
+    description: `${where}Re-running is safe: a role that switched serves the target and is left as it is. The run's record names each new machine's boot account, and Deploy logs prints a failed one:`,
     command: `pnpm infra runs --mode ${mode}`,
   };
 }

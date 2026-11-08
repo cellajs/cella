@@ -203,7 +203,7 @@ async function convergeOrExit(
 
 /**
  * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the operator key, print the admin DSN.
- * The endpoint is internet-reachable but restricted to the ACL; run "Close public DB access" when finished.
+ * The endpoint is internet-reachable but restricted to the ACL; run "Close DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim(`\n${actionLabel('db-open')}: add a scoped, temporary public endpoint for operator tasks.\n`));

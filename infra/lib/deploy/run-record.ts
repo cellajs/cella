@@ -37,7 +37,7 @@ export interface RunRecord {
   steps: RunStep[];
   failedStep?: string;
   error?: string;
-  /** Set when a switch failed: each role's account of the release, which Show runs prints for a failed boot. */
+  /** Set when a switch failed: each role's account of the release, which Deploy logs prints for a failed boot. */
   boot?: RunBootAccount[];
 }
 

@@ -30,7 +30,7 @@ It builds a release not built yet, switches every role to a machine of the relea
 
 ## Status
 
-`infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Show status**; standalone:
+`infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Full status**; standalone:
 
 ```
 pnpm --filter infra status [--mode <production|staging>] [--json]
@@ -52,7 +52,7 @@ Stable check `id`s:
 
 ## Deploy telemetry
 
-With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Storing the key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Manage runtime secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
+With the telemetry sink's ingest key, a deploy exports an OpenTelemetry trace: every pipeline step is a span, and each machine's boot joins it. Storing the key (`maple-secret-ingest-key`, sink in [config/telemetry.config.ts](config/telemetry.config.ts)) in **Env vars & secrets** turns export on for deploys and for the machines whose services consume it ([config/runtime-secrets.config.ts](config/runtime-secrets.config.ts)); `OTEL_EXPORTER_OTLP_*` variables reach no deploy. The agent replaces every secret value it handled, and any URL userinfo, in its output, its telemetry and every upload.
 
 ## Key files
 

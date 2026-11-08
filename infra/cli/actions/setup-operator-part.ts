@@ -86,7 +86,7 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
       const services = [...new Set(missing.flatMap((secret) => secret.services))].join(', ');
       console.warn(
         `  ${warningMark} Required runtime secret(s) not set yet: ${missing.map((secret) => secret.secretName).join(', ')}, which ${services} read. ` +
-          `The first deploy waits for them, blocked: storing them in "Manage runtime secrets" starts it again.`,
+          `The first deploy waits for them, blocked: storing them in "Env vars & secrets" starts it again.`,
       );
     }
   } catch {
@@ -144,7 +144,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     }
   }
 
-  // Lock provisioning against concurrent operators and deploys; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
+  // Lock provisioning against concurrent operators and deploys; every exit path releases it, and abandoned locks expire or clear with "Unlock".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
     accessKey: ctx.stateKey.accessKey,
@@ -259,7 +259,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
   const secrets = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId });
   await ensureSecrets({ client: secrets });
 
-  // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Manage runtime secrets".
+  // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Env vars & secrets".
   await seedOperatorSecrets({
     secretKey: ctx.secretKey,
     projectId: ctx.projectId,
@@ -286,7 +286,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   const operatorSecrets: OperatorSecretValues = { adminEmail: '', brevoApiKey: '' };
   if (firstSetup) {
     operatorSecrets.adminEmail = await inputOrDefault({
-      message: 'Admin email (optional, set later via "Manage runtime secrets")',
+      message: 'Admin email (optional, set later via "Env vars & secrets")',
       envName: 'INFRA_ADMIN_EMAIL',
     });
     operatorSecrets.brevoApiKey = operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';

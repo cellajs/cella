@@ -59,7 +59,7 @@ describe('runAction', () => {
       throw new Error('AccessDenied: the state bucket refused this key');
     });
     await expect(runAction('unlock', context, broken, (line) => lines.push(stripVTControlCharacters(line)))).resolves.toBe(1);
-    expect(lines[0]).toContain('Unlock stack failed: AccessDenied: the state bucket refused this key');
+    expect(lines[0]).toContain('Unlock failed: AccessDenied: the state bucket refused this key');
     expect(lines[1]).toContain('INFRA_DEBUG=true');
     expect(lines).toHaveLength(2);
   });

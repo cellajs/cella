@@ -115,7 +115,6 @@ export function loadModeEnvFile(mode: string, log: (message: string) => void = (
   }
   const { values, warnings } = modeEnvValues(parseEnvFile(modeEnvPath), mode);
   for (const [key, value] of Object.entries(values)) process.env[key] = value;
-  log(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`);
   return warnings;
 }
 

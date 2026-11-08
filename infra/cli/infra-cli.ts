@@ -1,22 +1,30 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
+import { writeCompose } from '../compose/synth';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
-import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, type OperatorActionId } from '../lib/operator-actions';
+import {
+  actionCommand,
+  actionLabel,
+  type MenuRowId,
+  menuRow,
+  OPERATOR_ACTIONS,
+  type OperatorActionId,
+  PULUMI_ACTIONS,
+} from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
-import { appPrincipalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { crossMark, DIVIDER, pc, printFailureHint, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runAction } from './actions';
-import { liveDbEndpoints } from './actions/db-exposure';
 import { installPassphraseCustody } from './actions/operator-unlock';
 import { parseCliArgs } from './args';
-import { BACK, disabledReason, formatAccessLines, formatStackLine, type MenuState, mainMenuItems, pickItems, QUIT, visibleRows } from './menu';
+import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
+import { BACK, disabledReason, formatStackLine, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import { setPassphraseCustody } from './session';
@@ -39,13 +47,11 @@ function printHelp(): void {
   const ids = Object.keys(OPERATOR_ACTIONS) as OperatorActionId[];
   const width = Math.max(...ids.map((id) => id.length));
   console.info('Usage: pnpm infra [action] [--mode production|staging] [--once] [--defaults]\n');
-  console.info('Without an action the menu opens; an action runs alone and exits with its result.\n');
+  console.info('Without an action the menu opens on the home screen; an action runs alone and exits with its result.\n');
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(
-    `\n  ${pc.dim("Releases deploy by themselves: the main job's schedule starts a run every few minutes; start-deploy starts one now.")}`,
-  );
+  console.info(`\n  ${pc.dim('Releases deploy by themselves within minutes of a merge; start-deploy deploys one now.')}`);
 }
 
 /**
@@ -63,13 +69,13 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
   const anyStackExists = environments.some((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   if (!anyStackExists && !autoAcceptDefaults()) {
     return select<Environment>({
-      message: 'Fresh install. Which mode do you want to set up?',
+      message: 'New app. Which environment do you want to set up?',
       default: 'production',
       choices: [
         {
           name: 'production',
           value: 'production',
-          description: 'Deploys every release.',
+          description: 'Deploys every release you publish.',
         },
         {
           name: 'staging (optional)',
@@ -84,7 +90,7 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
     if (autoAcceptDefaults()) {
       throw new Error('Both Pulumi.production.yaml and Pulumi.staging.yaml exist: pass --mode (or set INFRA_MODE).');
     }
-    return select<Environment>({ message: 'Which stack?', choices: existing.map((name) => ({ name, value: name })) });
+    return select<Environment>({ message: 'Which environment?', choices: existing.map((name) => ({ name, value: name })) });
   }
   return pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
 }
@@ -115,19 +121,21 @@ async function loadContext(environment: Environment, log?: (message: string) => 
   return context;
 }
 
-/** What the menu needs to say which entries can run. `liveEndpoints` comes from the header's read of the database instance. */
-function menuState(context: InfraContext, liveEndpoints?: string[]): MenuState {
+/** What the menu needs to say which entries can run, from the home screen's reads. */
+function menuState(context: InfraContext, home?: HomeFacts): MenuState {
   return {
     stackState: context.state,
     environment: context.environment,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
-    liveEndpoints,
+    liveEndpoints: home?.liveEndpoints,
+    upNext: home ? upNextOf(home.report) : undefined,
   };
 }
 
-/** The stack line, then the notices that hold for the whole run: key misconfigurations and deferred compute. Printed once. */
+/** The environment line with the app's address, then the notices that hold for the whole run: key misconfigurations and deferred compute. */
 function printStackNotices(context: InfraContext): void {
-  console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}\n`);
+  const url = context.appConfig.frontendUrl ? `  ${pc.underline(context.appConfig.frontendUrl)}` : '';
+  console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}${url}\n`);
 
   // One line per key misconfiguration (a superseded name in the env file, a key the CLI no longer reads, …) before any action trips over it.
   for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
@@ -135,66 +143,80 @@ function printStackNotices(context: InfraContext): void {
   const deferredSince = detectComputeDeferred(context.stackYaml);
   if (deferredSince) {
     console.warn(
-      `${warningMark} ${pc.bold('The first provisioning has not finished')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
-        '  A fresh provision sets this before its first `pulumi up`;\n' +
-        '  it clears automatically on the next successful provisioning `pulumi up`.\n',
+      `${warningMark} ${pc.bold('The first setup has not finished')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}: "${actionLabel('resume')}" continues it.\n`,
     );
   }
 }
 
-/**
- * What an operator wants to know before choosing: is the environment leased, what is live, which key this machine holds, and whether the
- * database has a public endpoint. One bounded, best-effort read; resolves to the live DB endpoints for the menu's DB access row.
- */
-async function printStackFacts(context: InfraContext): Promise<string[] | undefined> {
-  const identity = resolveOperatorIdentity();
-  let liveEndpoints: string[] | undefined;
-  if (context.state === 'bootstrapped') {
-    const { collectQuickFacts, formatQuickFacts } = await import('../tasks/status');
-    const [facts, endpoints] = await withSpinner('Reading the lock, the live release, the key and the database endpoint', () =>
-      Promise.all([
-        collectQuickFacts({ environment: context.environment, appConfig: context.appConfig, projectId: context.projectId || undefined }),
-        liveDbEndpoints(context),
-      ]),
-    );
-    liveEndpoints = endpoints;
-    const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
-    const observerApplication = appPrincipalNames(context.appConfig.appSlug).observer;
-    for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
-  }
-  const access = formatAccessLines({
-    stackState: context.state,
-    dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
-    liveEndpoints,
-  });
-  for (const line of access) console.info(line);
+/** The home screen: one round of reads under a spinner, then the lines. Resolves to what it read, for the menu. */
+async function printHome(context: InfraContext): Promise<HomeFacts | undefined> {
+  if (context.state !== 'bootstrapped') return undefined;
+  const home = await withSpinner(`Checking ${context.environment}`, () => collectHome(context));
+  for (const line of formatHome(home)) console.info(line);
   console.info('');
-  return liveEndpoints;
+  return home;
+}
+
+let pulumiLagShown = false;
+
+/**
+ * True when an action may run as far as Pulumi is concerned: one that runs no Pulumi always, one that does once the CLI is installed. A
+ * laptop whose CLI trails the SDK is told once: the main job runs the SDK's version, and a newer engine may write a state an older CLI
+ * refuses.
+ */
+function pulumiReady(action: OperatorActionId): boolean {
+  if (!PULUMI_ACTIONS.includes(action)) return true;
+  const installed = installedPulumiVersion();
+  if (!installed) {
+    printFailureHint(`"${actionLabel(action)}" runs Pulumi, which this machine does not have`, {
+      command: 'brew install pulumi/tap/pulumi',
+      description: 'reading (status, logs) works without it',
+    });
+    return false;
+  }
+  const lag = pulumiCliLagWarning(installed, sdkPulumiVersion());
+  if (lag && !pulumiLagShown) {
+    pulumiLagShown = true;
+    console.warn(`${warningMark} ${lag}`);
+  }
+  return true;
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
-let lastRow: MenuRowId = 'status';
+let lastRow: MenuRowId | typeof UP_NEXT = 'deploy';
 
 /** Rows whose action destroys data: the cursor never rests on one, so a stray Enter after it cannot start it again. */
 const DESTRUCTIVE_ROWS: readonly MenuRowId[] = ['db-reset', 'teardown'];
 
-/** The row the cursor starts on in this state: the last one, its DB access counterpart once the endpoint changed side, else the first. */
-function startRow(state: MenuState): MenuRowId {
+/** The row the cursor starts on in this state: the recommended step, else the last row, its DB access counterpart once the endpoint changed side, else the first. */
+function startRow(state: MenuState): MenuRowId | typeof UP_NEXT {
+  if (state.upNext) return UP_NEXT;
   const rows = visibleRows(state);
-  if (DESTRUCTIVE_ROWS.includes(lastRow)) return 'status';
+  if (lastRow === UP_NEXT || DESTRUCTIVE_ROWS.includes(lastRow)) return 'deploy';
   if (rows.includes(lastRow)) return lastRow;
-  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'status';
+  return lastRow === 'db-open' ? 'db-close' : lastRow === 'db-close' ? 'db-open' : 'deploy';
 }
 
 /**
- * The menu: one flat list of rows under group headings. A row with one action runs it; a row with several opens a short pick, where Esc or
- * Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run now stays listed with the reason.
+ * The menu: one flat list of rows under group headings, each with a letter that enters it. A row with one action runs it; a row with
+ * several opens a short pick, where Esc or Back returns to the list. Esc or `q` on the list leaves the CLI. A row that cannot run now
+ * stays listed with the reason.
  */
 async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof QUIT> {
   while (true) {
-    const picked = await menuSelect({ message: 'What do you want to do?', items: mainMenuItems(state), default: startRow(state), escape: 'quit' });
+    const picked = await menuSelect({
+      message: 'What do you want to do?',
+      items: mainMenuItems(state),
+      default: startRow(state),
+      escape: 'quit',
+      hotkeys: menuHotkeys(state),
+    });
     if (picked === ESCAPED || picked === QUIT) return QUIT;
     lastRow = picked;
+    if (picked === UP_NEXT) {
+      if (state.upNext) return state.upNext.action;
+      continue;
+    }
     const row = menuRow(picked);
     const [only] = row.actions;
     if (row.actions.length === 1 && only) return only;
@@ -202,8 +224,6 @@ async function chooseAction(state: MenuState): Promise<OperatorActionId | typeof
     if (action !== ESCAPED && action !== BACK) return action;
   }
 }
-
-printHeader('infra cli');
 
 if (args.help) {
   printHelp();
@@ -215,17 +235,10 @@ if (args.unknownAction) {
   process.exit(2);
 }
 
-const pulumiVersion = installedPulumiVersion();
-if (!pulumiVersion) {
-  failWithHint('pulumi CLI not found', {
-    command: 'brew install pulumi/tap/pulumi',
-    description: 'the infra CLI needs Pulumi for every stack operation',
-  });
-}
-// The main job runs the CLI at the SDK version; a laptop that trails it sees a nag from Pulumi and, in the worst case, a state written by a newer engine.
-const pulumiLag = pulumiCliLagWarning(pulumiVersion, sdkPulumiVersion());
-if (pulumiLag) console.warn(`${warningMark} ${pulumiLag}`);
+// The deploy reads the Compose file the service registry renders: kept current on every run, said only when it changed.
+if (writeCompose() === 'written') console.info(pc.dim('infra/compose.gen.yml follows the service registry again: commit it.'));
 
+console.info('');
 const environment = await resolveMode(args.mode);
 let context = await loadContext(environment, (message) => console.info(pc.dim(message)));
 
@@ -253,6 +266,7 @@ if (args.action) {
     console.error(`${crossMark} "${actionLabel(args.action)}" cannot run now: ${reason}.`);
     process.exit(1);
   }
+  if (!pulumiReady(args.action)) process.exit(1);
   process.exit(await runAction(args.action, context));
 }
 
@@ -260,13 +274,13 @@ if (args.action) {
 if (context.state === 'fresh') process.exit(await runAction('resume', context));
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
-const READ_ONLY: readonly OperatorActionId[] = ['status', 'preview'];
+const READ_ONLY: readonly OperatorActionId[] = ['status', 'runs', 'preview'];
 
-let liveEndpoints = await printStackFacts(context);
+let home = await printHome(context);
 while (true) {
-  const action = await chooseAction(menuState(context, liveEndpoints));
+  const action = await chooseAction(menuState(context, home));
   if (action === QUIT) break;
-  const code = await runAction(action, context);
+  const code = pulumiReady(action) ? await runAction(action, context) : 1;
   if (args.once) process.exit(code);
   console.info('');
   if (READ_ONLY.includes(action)) continue;
@@ -274,8 +288,8 @@ while (true) {
   // The action may have changed the stack file, the env file or the live stack: read all three again for the next round.
   console.info(pc.dim(DIVIDER));
   context = await loadContext(environment);
-  console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}\n`);
-  liveEndpoints = await printStackFacts(context);
+  printStackNotices(context);
+  home = await printHome(context);
 }
 console.info(pc.dim(`Run an action without the menu: ${actionCommand('status')}, or \`pnpm infra help\` for the list.`));
 process.exit(0);

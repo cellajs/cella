@@ -26,7 +26,7 @@ async function selectWithEscape<T extends string>(options: { message: string; ch
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager: it uses your operator key.'));
+  console.info(pc.dim('\n→ Env vars & secrets writes Secret Manager: it uses your operator key.'));
   const operator = await acquireOperatorKey(context);
   let identityKey: OwnerKey | undefined;
 

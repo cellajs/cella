@@ -50,7 +50,7 @@ describe('a main job run', () => {
     expect(calls[0]?.env).not.toHaveProperty('DEPLOY_KEY_JSON');
   });
 
-  it('ends as the deploy did: 0 deployed, 2 blocked (the apply and Show runs read it so), anything else failed', async () => {
+  it('ends as the deploy did: 0 deployed, 2 blocked (the apply and Deploy logs read it so), anything else failed', async () => {
     for (const [code, ended] of [
       [2, 2],
       [1, 1],

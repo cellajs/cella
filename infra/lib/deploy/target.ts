@@ -105,6 +105,20 @@ function releaseTags(refs: readonly RemoteRef[]): string[] {
   return [...new Set(refs.map((ref) => ref.ref.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')).filter((tag) => RELEASE_TAG.test(tag)))];
 }
 
+/**
+ * The name a person knows a commit by: its release tag (`0.34.0`), else the branch whose head it is as `<branch>@<short id>`, else its
+ * short id. `sha` may be abbreviated, as the live record keeps it. Without refs, the short id.
+ */
+export function commitName(refs: readonly RemoteRef[] | undefined, sha: string): string {
+  const short = sha.slice(0, 7);
+  if (!refs) return short;
+  const names = (commit: string | undefined) => commit !== undefined && (commit === sha || commit.startsWith(sha) || sha.startsWith(commit));
+  const tag = releaseTags(refs).find((candidate) => names(tagCommit(refs, candidate)));
+  if (tag) return tag;
+  const head = refs.find((ref) => ref.ref.startsWith('refs/heads/') && names(ref.sha));
+  return head ? `${head.ref.slice('refs/heads/'.length)}@${short}` : short;
+}
+
 /** An environment that follows the releases, in a repository that has published none yet: it has nothing to deploy. */
 export class NoReleaseError extends Error {}
 

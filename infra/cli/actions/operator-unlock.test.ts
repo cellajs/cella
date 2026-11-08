@@ -7,8 +7,14 @@ const input = vi.fn();
 const acquireOwnerKey = vi.fn();
 
 // The terminal prompts and the Owner key's own action: the effects a person answers. Scaleway is the fake below, behind fetch.
-vi.mock('../prompts/masked-secret', () => ({ maskedSecret: (...args: unknown[]) => maskedSecret(...args) }));
-vi.mock('@inquirer/prompts', () => ({ input: (...args: unknown[]) => input(...args) }));
+// The key prompt as the person answers it: the access key, then the secret key, as the two fakes resolve them.
+vi.mock('../prompts/key-pair', () => ({
+  keyPairPrompt: async (opts: unknown) => {
+    const accessKey = ((await input(opts)) as string).trim();
+    if (!accessKey) return undefined;
+    return { accessKey, secretKey: ((await maskedSecret(opts)) as string).trim() };
+  },
+}));
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
 const { acquireIdentityKey, acquireOperatorKey, refusalLines } = await import('./operator-unlock');
@@ -135,7 +141,7 @@ describe('acquireOperatorKey', () => {
       bearers.set('SCWOPERATOR', bearer);
       await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
       expect(errorsPrinted()).toContain('must die within the day');
-      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate API key, with an expiration");
+      expect(errorsPrinted()).toContain("IAM → Applications → 'cella-operator' → API keys → Generate, expiring within a day");
       expect(rememberedOperatorKey()).toBeUndefined();
     }
   });

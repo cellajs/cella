@@ -3,14 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   BACK,
   disabledReason,
-  formatAccessLines,
   formatStackLine,
   type MenuItem,
   type MenuState,
   mainMenuItems,
+  menuHotkeys,
   pickItems,
   QUIT,
   rowDisabledReason,
+  UP_NEXT,
   visibleRows,
 } from './menu';
 
@@ -28,60 +29,68 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists ten rows under five groups on a healthy stack, then Quit', () => {
+  it('lists eleven rows by task under five groups on a healthy stack, each with its letter, then Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
-      'Observe',
-      '  Show status              read-only',
-      '  Show runs                read-only',
-      '  Review & apply changes   operator key',
-      'Change',
-      '  Rotate keys & secrets ›  keys, secrets, operators',
-      '  Manage runtime secrets   operator key',
-      '  Update identities        Owner key',
+      'Deploys',
+      '  d  Deploy now',
+      '  l  Deploy logs',
+      '  s  Full status',
+      'Configure',
+      '  e  Env vars & secrets',
+      '  a  Infrastructure changes ›',
+      '  i  Update identities',
       'Database',
-      '  Open public DB access ›  operator key · temporary, locked to your IP',
-      '  Reset database           operator key · DESTRUCTIVE',
-      'Recover',
-      '  Repair stack ›           lease, setup',
-      'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '  p  Open DB access ›',
+      '  x  Reset database  destructive',
+      'Account',
+      '  k  Keys & operators ›',
+      'More',
+      '  u  Repair ›',
+      '  t  Tear down  destructive',
       '',
-      '  Quit',
+      '  q  Quit',
     ]);
   });
 
-  it('keeps every row on a partial stack and says why a row cannot run', () => {
+  it('leads with the recommended step when the home screen has one', () => {
+    const items = mainMenuItems({ ...bootstrapped, upNext: { action: 'start-deploy', description: 'Deploy 0.35.0 again' } });
+    expect(render(items).slice(0, 3)).toEqual(['', '  ▶  Up next: Deploy 0.35.0 again', 'Deploys']);
+    expect(items[1]).toMatchObject({ value: UP_NEXT });
+  });
+
+  it('keeps every row on a stack whose setup is unfinished and says why a row cannot run', () => {
     expect(render(mainMenuItems(partial))).toEqual([
-      'Observe',
-      '  Show status              read-only',
-      '  Show runs                read-only',
-      '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
-      'Change',
-      '  Rotate keys & secrets ›  keys, secrets, operators',
-      '  Manage runtime secrets   operator key',
-      '  Update identities        Owner key',
+      'Deploys',
+      '- Deploy now (needs a set-up environment: run "Resume setup")',
+      '  l  Deploy logs',
+      '  s  Full status',
+      'Configure',
+      '  e  Env vars & secrets',
+      '- Infrastructure changes › (needs a set-up environment: run "Resume setup")',
+      '  i  Update identities',
       'Database',
-      '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
-      '- Reset database (needs a bootstrapped stack: run "Resume setup")',
-      'Recover',
-      '  Repair stack ›           lease, setup',
-      'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '- Open DB access › (needs a set-up environment: run "Resume setup")',
+      '- Reset database (needs a set-up environment: run "Resume setup")',
+      'Account',
+      '  k  Keys & operators ›',
+      'More',
+      '  u  Repair ›',
+      '  t  Tear down  destructive',
       '',
-      '  Quit',
+      '  q  Quit',
     ]);
   });
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  Close public DB access (OPEN)  operator key');
-    expect(lines.some((line) => line.includes('Open public DB access'))).toBe(false);
+    expect(lines).toContain('  p  Close DB access (OPEN)');
+    expect(lines.some((line) => line.includes('Open DB access'))).toBe(false);
   });
 
   it('shows the close row for a live endpoint no exposure config accounts for, and names it', () => {
     const items = mainMenuItems({ ...bootstrapped, liveEndpoints: ['51.15.0.1:5432'] });
     const row = items.find((item) => 'value' in item && item.value === 'db-close');
-    expect(row && 'name' in row ? plain(row.name) : '').toContain('Close public DB access (OPEN)');
+    expect(row && 'name' in row ? plain(row.name) : '').toContain('Close DB access (OPEN)');
     expect(row && 'description' in row ? row.description : '').toContain('51.15.0.1:5432');
   });
 
@@ -110,28 +119,44 @@ describe('mainMenuItems', () => {
   });
 });
 
+describe('menuHotkeys', () => {
+  it('gives every listed row its own letter, the two DB access rows sharing theirs', () => {
+    const open = menuHotkeys(bootstrapped);
+    expect(Object.keys(open)).toHaveLength(visibleRows(bootstrapped).length);
+    expect(open.p).toBe('db-open');
+    expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).p).toBe('db-close');
+    expect(open.q).toBeUndefined();
+  });
+});
+
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
-    expect(render(pickItems('rotate', bootstrapped))).toEqual([
-      '  Rotate keys       Owner key',
-      '  Rotate secrets    operator key',
-      '  Set up operators  Owner key',
+    expect(render(pickItems('keys', bootstrapped))).toEqual([
+      '  Rotate keys              Owner key',
+      '  Rotate secrets           operator key',
+      '  Set up operators         Owner key',
+      '  Set repository read key  operator key',
       '  ← Back',
     ]);
-    expect(render(pickItems('repair', bootstrapped))).toEqual(['  Unlock stack  operator key', '  Resume setup  operator key', '  ← Back']);
+    expect(render(pickItems('repair', bootstrapped))).toEqual([
+      '  Unlock             operator key',
+      '  Resume setup       operator key',
+      '  Remove from state  operator key',
+      '  ← Back',
+    ]);
     expect(pickItems('repair', bootstrapped).at(-1)?.value).toBe(BACK);
   });
 
   it('disables seeding on production and leaves the plain open available', () => {
     expect(render(pickItems('db-open', { ...bootstrapped, environment: 'production' }))).toEqual([
-      '  Open public DB access  operator key',
+      '  Open DB access  operator key',
       '- Seed database (seed data never goes to production)',
       '  ← Back',
     ]);
   });
 
   it('ends every description with the key the action runs with', () => {
-    for (const id of ['rotate', 'db-open', 'repair'] as const) {
+    for (const id of ['keys', 'db-open', 'repair', 'changes'] as const) {
       for (const choice of pickItems(id, bootstrapped).filter((entry) => entry.value !== BACK)) {
         expect(choice.description).toMatch(
           /(Needs your operator key|Needs your Owner API key|Reads with the observer key|Works without a Scaleway key)\.$/,
@@ -148,7 +173,7 @@ describe('disabledReason', () => {
     expect(disabledReason('db-reset', production)).toBeUndefined();
   });
 
-  it('leaves the actions that repair a stack available on a partial one', () => {
+  it('leaves the actions that repair a stack available on an unfinished one', () => {
     for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'secrets', 'status'] as const) {
       expect(disabledReason(id, partial)).toBeUndefined();
     }
@@ -157,45 +182,20 @@ describe('disabledReason', () => {
 
 describe('rowDisabledReason', () => {
   it('disables a row only when every action behind it is blocked', () => {
-    expect(rowDisabledReason('changes', partial)).toBe('needs a bootstrapped stack: run "Resume setup"');
-    expect(rowDisabledReason('rotate', partial)).toBeUndefined();
+    expect(rowDisabledReason('changes', partial)).toBe('needs a set-up environment: run "Resume setup"');
+    expect(rowDisabledReason('keys', partial)).toBeUndefined();
     expect(rowDisabledReason('db-open', { ...bootstrapped, environment: 'production' })).toBeUndefined();
     expect(rowDisabledReason('repair', partial)).toBeUndefined();
   });
 });
 
 describe('formatStackLine', () => {
-  it('names the app, the mode, the state and the stack file', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'production', state: 'bootstrapped' }))).toBe(
-      'acme · production · bootstrapped (Pulumi.production.yaml)',
-    );
+  it('names the app and the mode, and says when the setup is unfinished', () => {
+    expect(plain(formatStackLine({ slug: 'acme', environment: 'production', state: 'bootstrapped' }))).toBe('⧈ acme · production');
+    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'partial' }))).toBe('⧈ acme · staging · setup not finished');
   });
 
-  it('names no stack file on a fresh install', () => {
-    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'fresh' }))).toBe('acme · staging · fresh');
-  });
-});
-
-describe('formatAccessLines', () => {
-  const lines = (facts: Parameters<typeof formatAccessLines>[0]) => formatAccessLines(facts).map(plain);
-
-  it('says nothing before the stack is bootstrapped', () => {
-    expect(lines({ stackState: 'partial', dbExposed: false })).toEqual([]);
-  });
-
-  it('reports a private database only when the instance was read', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: [] })).toEqual(['● DB access: private']);
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false })).toEqual([]);
-  });
-
-  it('reports an open endpoint and the action that closes it', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: true, liveEndpoints: ['51.15.0.1:5432'] })[0]).toBe(
-      '● DB access: OPEN at 51.15.0.1:5432; close it with "Close public DB access"',
-    );
-    expect(lines({ stackState: 'bootstrapped', dbExposed: false, liveEndpoints: ['51.15.0.1:5432'] })[0]).toContain('although exposure is off');
-  });
-
-  it('falls back to the exposure config when the instance was not read', () => {
-    expect(lines({ stackState: 'bootstrapped', dbExposed: true })[0]).toBe('● DB access: exposure is configured (the instance was not read)');
+  it('says new on a fresh install', () => {
+    expect(plain(formatStackLine({ slug: 'acme', environment: 'staging', state: 'fresh' }))).toBe('⧈ acme · staging · new');
   });
 });

@@ -51,7 +51,7 @@ The first setup has two parts. The **Owner moment** runs on the Owner API key yo
 The **operator part** runs on the one-day operator key you paste ([Operator key](./KEYS.md#operator-key)).
 
 1. Generates the Pulumi passphrase, shows it once and waits until you confirm it is in your password manager. Later runs fetch it from Secret Manager, and your copy restores that one if it is lost.
-2. Asks for the admin email and the mail key, both optional here: **Manage runtime secrets** sets them later.
+2. Asks for the admin email and the mail key, both optional here: **Env vars & secrets** sets them later.
 3. Creates state storage and initializes Pulumi.
 4. Offers the first apply: the database, the network, the load balancer with its DNS records and certificates, and the registry, but no machine yet. Once that `up` made the registry, it builds the engine image from your checkout, pushes it and runs a second `up` that makes the main job on that image, with the schedule that starts its runs. It stores the values step 2 asked for.
 
@@ -68,9 +68,9 @@ A second environment of the same app runs the same two parts: its Owner moment a
 
 ## 5. Sign in as first admin
 
-Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Check runtime secrets", before it makes any machine: setting it in **Manage runtime secrets** starts that deploy again.
+Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked at "Check runtime secrets", before it makes any machine: setting it in **Env vars & secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
-2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.
+2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Env vars & secrets**.
 
 GitHub sign-in takes a GitHub OAuth app whose callback is exactly `<backendAuthUrl>/github/callback`, with wildcard matching turned off in its settings: an app whose single callback dates from before 3 August 2026 also accepts every path below it, which lets GitHub send a code to another path of the API host.

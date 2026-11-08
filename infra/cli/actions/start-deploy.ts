@@ -85,7 +85,7 @@ async function followRun(auth: { secretKey: string }, region: string, started: J
  * and which action deploys the commit again, a failed one where its log is.
  * @param started what the run does, after "Run <id>".
  */
-async function deployAndFollow(
+export async function deployAndFollow(
   context: InfraContext,
   auth: { secretKey: string },
   definitionId: string,
@@ -173,7 +173,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
 
 /**
  * Start the environment's main job again for the target whose last deploy ended blocked or apply needed, on the operator key: the apply,
- * or Manage runtime secrets for a missing secret, does it at its end, as a scheduled run never starts a target and retry counter that have
+ * or Env vars & secrets for a missing secret, does it at its end, as a scheduled run never starts a target and retry counter that have
  * a record. The last deploy is the newest record, or a newer job run started by hand that exited blocked and wrote no record. Nothing while a
  * deploy holds the lease, or when the last deploy ended otherwise; a target that moved on since is the schedule's. The lease decides, not
  * the run list: a scheduled run looks for seconds every cadence and deploys nothing. A start by hand still queued holds no lease, so the

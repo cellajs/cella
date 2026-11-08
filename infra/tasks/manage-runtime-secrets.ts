@@ -119,7 +119,7 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   const version = await ctx.client.putSecretValue({
     secretId: container.id,
     value: generateRandomRuntimeSecret(),
-    description: 'Rotated by the infra CLI (Manage runtime secrets)',
+    description: 'Rotated by the infra CLI (Env vars & secrets)',
     disablePrevious: true,
   });
   ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`);
@@ -176,7 +176,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const version = await ctx.client.putSecretValue({
     secretId: container.id,
     value,
-    description: 'Updated by the infra CLI (Manage runtime secrets)',
+    description: 'Updated by the infra CLI (Env vars & secrets)',
     disablePrevious: true,
   });
   ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`);
@@ -261,7 +261,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   // Each handler returns here; "Exit" (or Esc) is the only way out.
   while (true) {
     const action = await options.prompts.select<Action>({
-      message: 'Manage runtime secrets',
+      message: 'Env vars & secrets',
       choices: [
         {
           name: 'List',
@@ -300,6 +300,6 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
 }
 
 if (isMain(import.meta.url)) {
-  process.stderr.write('Run this task through the infra CLI (Manage runtime secrets) so prompts and stack context stay aligned.\n');
+  process.stderr.write('Run this task through the infra CLI (Env vars & secrets) so prompts and stack context stay aligned.\n');
   process.exit(1);
 }
