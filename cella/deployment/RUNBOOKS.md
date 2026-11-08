@@ -147,7 +147,11 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 
-It deletes:
+Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there.
+
+When the dump fails, the teardown destroys nothing of the stack and says what it did before. Stop traffic first: a write the app takes after the dump is lost.
+
+The teardown deletes:
 
 - every machine the deploys and the builder made, with the reserved addresses they held
 - the load balancer with its address, and the DNS records
@@ -159,12 +163,6 @@ It deletes:
 
 The app's operators and observer stay, since they serve the other environments.
 
-Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there.
-
-When the dump fails, the teardown destroys nothing of the stack and says what it did before. Stop traffic first: a write the app takes after the dump is lost.
-
-A destroy that stops halfway leaves what it had not reached in the state. Tear down again to finish.
-
 It keeps these, with their contents:
 
 - the two upload buckets
@@ -175,6 +173,8 @@ It keeps these, with their contents:
 Each kept bucket keeps its policy. Without the two kept keys, the dump's encrypted and hashed fields no longer read. The live record goes with the machines it named. A setup again asks for third-party keys, since they go with the other secrets.
 
 The project id stays in `infra/.env.<mode>`. Commit the deletion of `infra/Pulumi.<mode>.yaml`. A setup again (`pnpm infra --mode <mode>`) runs in the same project. Its first apply changes nothing about what the teardown kept: the setup adopts them before that apply.
+
+A destroy that stops halfway leaves what it had not reached in the state. Tear down again to finish.
 
 ## Restore the final dump
 
