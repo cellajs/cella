@@ -43,14 +43,14 @@ describe('Organizations of another user (relatableUserId)', async () => {
 
   afterAll(async () => await clearSecurityTestData());
 
-  /** A membership of `userId` in `org`, with its own role, menu order and archive state. */
+  /** A membership of `userId` in `org`, with its own role, menu order and hidden state. */
   const createOrgMembership = async (
     userId: string,
     org: { id: string; tenantId: string },
     role: typeof memberRole,
     displayOrder: number,
-    archived = false,
-  ) => insertOrgMembership(userId, org, { role, displayOrder, archived });
+    hidden = false,
+  ) => insertOrgMembership(userId, org, { role, displayOrder, hidden });
 
   it("must not list another tenant's organization via relatableUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);
@@ -94,14 +94,14 @@ describe('Organizations of another user (relatableUserId)', async () => {
     for (const answer of [ownSlug, asAdmin]) await expectRefusal(answer, 400, 'form.invalid_format');
   });
 
-  it("must not filter another user's list by their archive or role via relatableUserId", async () => {
+  it("must not filter another user's list by their hidden rows or role via relatableUserId", async () => {
     // Two more organizations the viewer shares with the target, named against the target's menu order.
     const alpha = await createTestOrganization({ name: 'Alpha shared' });
     const bravo = await createTestOrganization({ name: 'Bravo shared' });
     for (const org of [alpha, bravo]) {
       await createOrgMembership(viewer.id, org, memberRole, 1);
     }
-    // The target archived Alpha, holds another role there, and put Bravo first in their menu.
+    // The target hid Alpha, holds another role there, and put Bravo first in their menu.
     await createOrgMembership(target.id, alpha, previewedRole, 2, true);
     await createOrgMembership(target.id, bravo, memberRole, 1);
     // Rows written directly: drop the cached sessions as a membership operation does.
@@ -112,8 +112,8 @@ describe('Organizations of another user (relatableUserId)', async () => {
       call(listOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     const idsOf = (data: unknown) => (data as OrgList).results.map((org) => org.id).filter((id) => pair.includes(id));
 
-    // The listed user's archive and role are not the viewer's to filter on: refused, never dropped.
-    const refused: Record<string, string>[] = [{ excludeArchived: 'true' }, { role: memberRole }];
+    // The listed user's hidden rows and role are not the viewer's to filter on: refused, never dropped.
+    const refused: Record<string, string>[] = [{ excludeHidden: 'true' }, { role: memberRole }];
     for (const query of refused) {
       const { data, error, response } = await listFor(query);
       await expectRefusal({ response, error }, 403, 'forbidden', JSON.stringify(query));
@@ -125,8 +125,8 @@ describe('Organizations of another user (relatableUserId)', async () => {
     expect(byMenu.response.status).toBe(200);
     expect(idsOf(byMenu.data)).toEqual(pair);
 
-    // The user's own list does follow their archive, role and menu order (positive control).
-    expect(idsOf((await listFor({ excludeArchived: 'true' }, target)).data)).toEqual([bravo.id]);
+    // The user's own list does follow their hidden rows, role and menu order (positive control).
+    expect(idsOf((await listFor({ excludeHidden: 'true' }, target)).data)).toEqual([bravo.id]);
     expect(idsOf((await listFor({ role: memberRole }, target)).data)).toEqual([bravo.id]);
     expect(idsOf((await listFor({ sort: 'displayOrder', order: 'asc' }, target)).data)).toEqual([bravo.id, alpha.id]);
   });

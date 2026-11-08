@@ -125,8 +125,8 @@ export interface ChannelListReadColumns {
   publishedAt: AnyColumn;
   /** The listed table's denormalized ancestor id columns (e.g. courseId, workspaceId). */
   ancestorIdColumns: Partial<Record<ChannelEntityType, AnyColumn>>;
-  /** Membership archived column; set to compile `excludeArchived` against the LEFT join. */
-  membershipArchived?: AnyColumn;
+  /** Membership hidden column; set to compile `excludeHidden` against the LEFT join. */
+  membershipHidden?: AnyColumn;
 }
 
 /**
@@ -139,7 +139,7 @@ export interface ChannelListReadColumns {
  *   as a role, makes it a list of memberships: skip the scope and INNER JOIN.
  * - AND the predicate with the organization the scope was resolved for: its membership and published branches name
  *   no organization.
- * - `excludeArchived` goes in WHERE through {@link excludeArchivedWhere}; in ON it would turn an archived channel
+ * - `excludeHidden` goes in WHERE through {@link excludeHiddenWhere}; in ON it would turn a hidden channel
  *   into a discovery row.
  * - Map the nested membership only when its id is non-NULL, and expect membership-sourced sort columns NULL for
  *   discovery rows (ASC puts NULLs last, members first).
@@ -164,8 +164,8 @@ export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, col
   return where ? { kind: 'where', where } : { kind: 'none' };
 };
 
-/** `excludeArchived` for the LEFT-join variant: a row the caller archived is hidden, not shown as a discovery row. */
-export const excludeArchivedWhere = (columns: ChannelListReadColumns): SQL | undefined => {
-  if (!columns.membershipArchived) return undefined;
-  return or(isNull(columns.membershipUserId), eq(columns.membershipArchived, false));
+/** `excludeHidden` for the LEFT-join variant: a row the caller hid stays out, not shown as a discovery row. */
+export const excludeHiddenWhere = (columns: ChannelListReadColumns): SQL | undefined => {
+  if (!columns.membershipHidden) return undefined;
+  return or(isNull(columns.membershipUserId), eq(columns.membershipHidden, false));
 };

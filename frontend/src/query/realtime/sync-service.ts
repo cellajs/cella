@@ -77,7 +77,7 @@ async function syncWithinBudget(item: UserMenuItem, signal: AbortSignal): Promis
  * @returns The seconds a rate limit asked to wait, when it refused a read; else 0.
  */
 async function syncMenuItem(item: UserMenuItem): Promise<number> {
-  if (item.membership.archived) return 0;
+  if (item.membership.hidden) return 0;
 
   const { organizationId } = item.membership;
   const queries = buildEntitySyncQueries({

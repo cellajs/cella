@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { ArchiveIcon, ArrowRightIcon, ChevronsUpDownIcon, PlusIcon } from 'lucide-react';
+import { ArrowRightIcon, ChevronsUpDownIcon, EyeOffIcon, PlusIcon } from 'lucide-react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -22,14 +22,14 @@ import { useUserStore } from '~/modules/user/user-store';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 
-/** The organizations of the signed-in user's menu in display order, active and archived apart, with their unseen counts. */
+/** The organizations of the signed-in user's menu in display order, active and hidden apart, with their unseen counts. */
 function useSwitcherOrganizations() {
   const user = useUserStore((state) => state.user);
   const { menu } = useMenu(user?.id);
   const organizations = menuOrganizations(menu);
   return {
     active: sortAndFilterMenu(organizations, false),
-    archived: sortAndFilterMenu(organizations, true),
+    hidden: sortAndFilterMenu(organizations, true),
     unseenCounts: useOrganizationUnseenCounts(menu),
   };
 }
@@ -45,10 +45,10 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpointBelow('sm', false);
-  const { active, archived, unseenCounts } = useSwitcherOrganizations();
+  const { active, hidden, unseenCounts } = useSwitcherOrganizations();
   const createOrganization = getMenuSection('organization')?.createAction;
-  // Folds again with every opening, as the menu remounts; open from the start when the sheet shows an archived one
-  const [showsArchived, setShowsArchived] = useState(organization.membership.archived);
+  // Folds again with every opening, as the menu remounts; open from the start when the sheet shows a hidden one
+  const [showsHidden, setShowsHidden] = useState(organization.membership.hidden);
 
   const openOrganizationPage = () => {
     if (!navigationStore.getState().keepNavOpen) closeNavSheet();
@@ -65,9 +65,9 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
     const unseenCount = unseenCounts.get(item.id) ?? 0;
     return (
       <DropdownSelectItem key={item.id} selected={item.id === organization.id} onSelect={() => showMenuOrganization(item)}>
-        <span className={cn('flex min-w-0 items-center gap-3', item.membership.archived && 'text-muted-foreground')}>
+        <span className={cn('flex min-w-0 items-center gap-3', item.membership.hidden && 'text-muted-foreground')}>
           <EntityAvatar
-            className={cn('size-6 shrink-0', item.membership.archived && 'opacity-70')}
+            className={cn('size-6 shrink-0', item.membership.hidden && 'opacity-70')}
             type={item.entityType}
             id={item.id}
             name={item.name}
@@ -87,13 +87,13 @@ function OrganizationSwitcherMenu({ organization, triggerRef }: OrganizationSwit
       </DropdownActionItem>
       <DropdownActionSeparator />
       {active.map(renderItem)}
-      {archived.length > 0 && <DropdownActionSeparator />}
-      {showsArchived
-        ? archived.map(renderItem)
-        : archived.length > 0 && (
-            <DropdownActionItem icon={ArchiveIcon} closeOnSelect={false} onSelect={() => setShowsArchived(true)}>
-              {t('c:show_archived')}
-              <span className="text-faint-foreground ml-auto text-xs">{archived.length}</span>
+      {hidden.length > 0 && <DropdownActionSeparator />}
+      {showsHidden
+        ? hidden.map(renderItem)
+        : hidden.length > 0 && (
+            <DropdownActionItem icon={EyeOffIcon} closeOnSelect={false} onSelect={() => setShowsHidden(true)}>
+              {t('c:show_hidden')}
+              <span className="text-faint-foreground ml-auto text-xs">{hidden.length}</span>
             </DropdownActionItem>
           )}
       {createOrganization && (

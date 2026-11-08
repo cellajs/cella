@@ -2,7 +2,7 @@ import { ChevronDownIcon, InfoIcon, PlusIcon, Settings2Icon } from 'lucide-react
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ChannelEntityType, isChannelArchivable } from 'shared';
+import { type ChannelEntityType, isChannelHideable } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
@@ -11,9 +11,9 @@ import { CountBadge } from '~/modules/common/count-badge';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
-import { MenuSheetArchivedGroup } from '~/modules/navigation/menu-sheet/archived-group';
 import { menuListMotion } from '~/modules/navigation/menu-sheet/helpers/menu-list-motion';
 import { activeUnseenChannelIds, menuUnseenChannelIds } from '~/modules/navigation/menu-sheet/helpers/use-menu-item-unseen-count';
+import { MenuSheetHiddenGroup } from '~/modules/navigation/menu-sheet/hidden-group';
 import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
@@ -67,7 +67,7 @@ function MenuSheetSectionButton({
   const { t } = useTranslation();
   const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
-  // Cumulative over the section's non-archived, non-muted items.
+  // Cumulative over the section's non-hidden, non-muted items.
   const sectionUnseenCount = useUnseenCount(channelIds);
 
   const createButtonRef = useRef<HTMLButtonElement>(null);
@@ -92,7 +92,7 @@ function MenuSheetSectionButton({
               {sectionUnseenCount > 0 ? (
                 <CountBadge count={sectionUnseenCount} className="inline-flex" />
               ) : (
-                items.filter((item) => !item.membership.archived).length
+                items.filter((item) => !item.membership.hidden).length
               )}
             </motion.span>
           </div>
@@ -149,15 +149,15 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
   const [isEditing, setIsEditing] = useState(false);
 
   // Own entries only: toggling one section re-renders that section alone
-  const archivedSectionKey = `${options.entityType}-archived`;
-  const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? true);
+  const hiddenSectionKey = `${options.entityType}-hidden`;
+  const isHiddenVisible = useNavigationStore((state) => state.activeSections?.[hiddenSectionKey] ?? true);
   // Beside other sections the organization one starts collapsed: users seldom navigate there
   const isOpenByDefault = options.entityType !== 'organization';
   const isSectionVisible = useNavigationStore((state) => !isCollapsible || (state.activeSections?.[options.entityType] ?? isOpenByDefault));
-  const archivedItems = items.filter((item) => item.membership.archived);
-  const archivedCount = archivedItems.length;
+  const hiddenItems = items.filter((item) => item.membership.hidden);
+  const hiddenCount = hiddenItems.length;
   const activeChannelIds = activeUnseenChannelIds(items);
-  const archivedChannelIds = archivedItems.flatMap((item) => menuUnseenChannelIds(item, true));
+  const hiddenChannelIds = hiddenItems.flatMap((item) => menuUnseenChannelIds(item, true));
 
   const handleCreate = options.createAction
     ? (ref: RefObject<HTMLButtonElement | null>) => {
@@ -168,15 +168,15 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
 
   const handleToggleEditing = () => setIsEditing(!isEditing);
 
-  const handleToggleArchived = () => setSectionOpen(archivedSectionKey, !isArchivedVisible);
+  const handleToggleHidden = () => setSectionOpen(hiddenSectionKey, !isHiddenVisible);
 
-  const prepareArchive = () => {
-    if (isArchivedVisible) return false;
-    setSectionOpen(archivedSectionKey, true);
-    return !!archivedCount;
+  const prepareHide = () => {
+    if (isHiddenVisible) return false;
+    setSectionOpen(hiddenSectionKey, true);
+    return !!hiddenCount;
   };
 
-  const hasArchivedGroup = !!archivedCount || (!!items.length && isEditing && isChannelArchivable(options.entityType));
+  const hasHiddenGroup = !!hiddenCount || (!!items.length && isEditing && isChannelHideable(options.entityType));
 
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
@@ -204,25 +204,25 @@ export function MenuSheetSection({ items, options, isCollapsible, organizationId
         {isSectionVisible && (
           <motion.ul key={options.entityType} {...menuListMotion}>
             {isEditing ? (
-              <MenuSheetItemsListEdit items={items} isArchived={false} options={options} prepareArchive={prepareArchive} />
+              <MenuSheetItemsListEdit items={items} isHidden={false} options={options} prepareHide={prepareHide} />
             ) : (
-              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} isHidden={false} options={options} />
             )}
-            {hasArchivedGroup && (
+            {hasHiddenGroup && (
               <li>
-                <MenuSheetArchivedGroup
-                  isOpen={isArchivedVisible}
-                  onToggle={handleToggleArchived}
-                  archivedCount={archivedCount}
-                  archivedChannelIds={archivedChannelIds}
+                <MenuSheetHiddenGroup
+                  isOpen={isHiddenVisible}
+                  onToggle={handleToggleHidden}
+                  hiddenCount={hiddenCount}
+                  hiddenChannelIds={hiddenChannelIds}
                   dropItems={isEditing ? items : undefined}
                 >
                   {isEditing ? (
-                    <MenuSheetItemsListEdit items={items} isArchived={true} options={options} />
+                    <MenuSheetItemsListEdit items={items} isHidden={true} options={options} />
                   ) : (
-                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} isArchived={true} />
+                    <MenuSheetItemsList entityType={options.entityType} items={items} options={options} isHidden={true} />
                   )}
-                </MenuSheetArchivedGroup>
+                </MenuSheetHiddenGroup>
               </li>
             )}
           </motion.ul>

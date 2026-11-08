@@ -376,7 +376,7 @@
     },
     {
       "name": "memberships",
-      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as archived or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
+      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as hidden or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -2414,7 +2414,7 @@
             "type": "string",
             "enum": ["admin", "member"]
           },
-          "archived": {
+          "hidden": {
             "type": "boolean"
           },
           "muted": {
@@ -2430,8 +2430,8 @@
             "format": "uuid"
           }
         },
-        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
-        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
+        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "hidden", "muted", "displayOrder", "organizationId"],
+        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
         "example": {
           "id": "ee163b99-3dce-4900-a23a-1256a303215e",
           "tenantId": "7om1aq",
@@ -2442,7 +2442,7 @@
           "role": "admin",
           "displayOrder": 38,
           "muted": false,
-          "archived": false
+          "hidden": false
         },
         "x-tags": ["embedded", "memberships", "cella"]
       },
@@ -2960,7 +2960,7 @@
               "role": "member",
               "displayOrder": 18,
               "muted": false,
-              "archived": false
+              "hidden": false
             },
             "counts": {
               "membership": {
@@ -9764,7 +9764,7 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "archived": {
+                          "hidden": {
                             "type": "boolean"
                           },
                           "muted": {
@@ -10095,7 +10095,7 @@
         "operationId": "updateMembership",
         "tags": ["memberships", "cella"],
         "summary": "Update membership",
-        "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.",
+        "description": "Updates a membership: its role, or the muted, hidden or display order status. Send at least one field. Muted, hidden and display order are set by the member only, and the response carries them only on the caller's own membership. A hide that sends no display order moves the row to the top of the hidden rows, a show to the bottom of the active ones. A channel type whose menu section sets `hideable: false` cannot be hidden. A role change, and any change to another member's membership, requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -10138,7 +10138,7 @@
                     "type": "string",
                     "enum": ["admin", "member"]
                   },
-                  "archived": {
+                  "hidden": {
                     "type": "boolean"
                   },
                   "muted": {
@@ -10160,7 +10160,7 @@
                     "type": "string",
                     "enum": ["admin", "member"]
                   },
-                  "archived": {
+                  "hidden": {
                     "type": "boolean"
                   },
                   "muted": {
@@ -10191,7 +10191,7 @@
                   "role": "member",
                   "displayOrder": 93,
                   "muted": false,
-                  "archived": false,
+                  "hidden": false,
                   "createdAt": "2024-10-28T10:38:59.996Z",
                   "createdBy": {
                     "id": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
@@ -10342,7 +10342,7 @@
                       "type": "string",
                       "format": "uuid"
                     },
-                    "archived": {
+                    "hidden": {
                       "type": "boolean"
                     },
                     "muted": {
@@ -10586,7 +10586,7 @@
                         "role": "admin",
                         "displayOrder": 10,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       }
                     },
                     {
@@ -10611,7 +10611,7 @@
                         "role": "admin",
                         "displayOrder": 6,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       }
                     }
                   ],
@@ -10664,7 +10664,7 @@
                                     "type": "string",
                                     "format": "uuid"
                                   },
-                                  "archived": {
+                                  "hidden": {
                                     "type": "boolean"
                                   },
                                   "muted": {
@@ -11859,7 +11859,7 @@
               "default": "false"
             },
             "required": false,
-            "name": "excludeArchived",
+            "name": "excludeHidden",
             "in": "query"
           },
           {
@@ -11932,7 +11932,7 @@
                           "role": "admin",
                           "displayOrder": 32,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -11996,7 +11996,7 @@
                           "role": "admin",
                           "displayOrder": 94,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12172,7 +12172,7 @@
                           "role": "admin",
                           "displayOrder": 45,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12236,7 +12236,7 @@
                           "role": "admin",
                           "displayOrder": 44,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12395,7 +12395,7 @@
                               "role": "member",
                               "displayOrder": 18,
                               "muted": false,
-                              "archived": false
+                              "hidden": false
                             },
                             "counts": {
                               "membership": {
@@ -13069,7 +13069,7 @@
                         "role": "member",
                         "displayOrder": 18,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       },
                       "counts": {
                         "membership": {

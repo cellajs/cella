@@ -2041,7 +2041,7 @@ export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.
+ * Updates a membership: its role, or the muted, hidden or display order status. Send at least one field. Muted, hidden and display order are set by the member only, and the response carries them only on the caller's own membership. A hide that sends no display order moves the row to the top of the hidden rows, a show to the bottom of the active ones. A channel type whose menu section sets `hideable: false` cannot be hidden. A role change, and any change to another member's membership, requires update permission on the channel.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PATCH/tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}) ·· _memberships · cella_
  *
@@ -2050,7 +2050,7 @@ export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.membershipId - `string`
  * @param {enum=} options.body.role - `enum` (optional)
- * @param {boolean=} options.body.archived - `boolean` (optional)
+ * @param {boolean=} options.body.hidden - `boolean` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
@@ -2375,7 +2375,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {string=} options.query.relatableUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
+ * @param {enum | boolean=} options.query.excludeHidden - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @param {string=} options.query.kind - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429

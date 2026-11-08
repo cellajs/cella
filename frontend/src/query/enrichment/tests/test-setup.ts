@@ -13,7 +13,7 @@ interface TestMembership {
   organizationId: string;
   channelType: string;
   channelId: string;
-  archived: boolean;
+  hidden: boolean;
   muted: boolean;
   displayOrder: number;
   role: string;
@@ -25,7 +25,7 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
     organizationId: entityId,
     channelType: 'organization',
     channelId: entityId,
-    archived: false,
+    hidden: false,
     muted: false,
     displayOrder: 0,
     role: 'member',

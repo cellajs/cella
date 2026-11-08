@@ -20,7 +20,7 @@ export const membershipBaseSelect: MembershipBaseSelect = pick(getColumns(member
 export const toMembershipBase = (membership: MembershipBaseModel): MembershipBaseModel => pick(membership, membershipBaseKeys);
 
 /**
- * A membership as the user `viewerId` may see it. Archive, mute and menu order are each member's own view of a channel,
+ * A membership as the user `viewerId` may see it. Hide, mute and menu order are each member's own view of a channel,
  * so a response keeps them on the viewer's own membership and leaves them out of anyone else's.
  */
 export const membershipAsSeenBy = <M extends Pick<MembershipBaseModel, 'userId' | PersonalViewKey>>(

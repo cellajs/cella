@@ -12,7 +12,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 type MemberRow = { id: string; email: string; membership: Record<string, unknown> };
 
-/** Archive, mute and menu order are each member's own view of a channel, so a members list shows them for the caller's row only. */
+/** Hide, mute and menu order are each member's own view of a channel, so a members list shows them for the caller's row only. */
 describe("A member's personal view in the members list", async () => {
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
@@ -31,20 +31,20 @@ describe("A member's personal view in the members list", async () => {
     organization = await createTestOrganization();
     viewer = await createOrgUser(call, organization.tenantId, organization.id, 'personal-view-viewer', adminRole);
     other = await createOrgUser(call, organization.tenantId, organization.id, 'personal-view-other', memberRole);
-    // The other member archived and muted the organization and moved it in their menu.
+    // The other member hid and muted the organization and moved it in their menu.
     await db
       .update(membershipsTable)
-      .set({ archived: true, muted: true, displayOrder: 42 })
+      .set({ hidden: true, muted: true, displayOrder: 42 })
       .where(and(eq(membershipsTable.userId, other.id), eq(membershipsTable.channelId, organization.id)));
   });
 
   afterAll(async () => await clearSecurityTestData());
 
-  it("must not show another member's archive, mute and order via getMembers", async () => {
+  it("must not show another member's hide, mute and order via getMembers", async () => {
     const items = await listMembers(viewer);
     const otherRow = items.find((item) => item.id === other.id);
     expect(otherRow?.membership).toBeDefined();
-    for (const field of ['archived', 'muted', 'displayOrder']) expect(otherRow?.membership).not.toHaveProperty(field);
+    for (const field of ['hidden', 'muted', 'displayOrder']) expect(otherRow?.membership).not.toHaveProperty(field);
     // The rest of the membership stays: members see each other's role.
     expect(otherRow?.membership).toMatchObject({ userId: other.id, role: memberRole });
   });
@@ -54,8 +54,8 @@ describe("A member's personal view in the members list", async () => {
     expect(admin?.email).toMatch(/@/);
   });
 
-  it("shows the caller's own archive, mute and order (positive control)", async () => {
+  it("shows the caller's own hide, mute and order (positive control)", async () => {
     const own = (await listMembers(other)).find((item) => item.id === other.id);
-    expect(own?.membership).toMatchObject({ archived: true, muted: true, displayOrder: 42 });
+    expect(own?.membership).toMatchObject({ hidden: true, muted: true, displayOrder: 42 });
   });
 });

@@ -56,18 +56,18 @@ export function isViewingChannel(organizationId: string, channelId: string | nul
   return isObservedChannel(channelId);
 }
 
-/** Membership `muted`/`archived` = the user declared "not urgent" for this scope. */
-function isMutedOrArchived(organizationId: string, channelId: string | null): boolean {
+/** Membership `muted`/`hidden` = the user declared "not urgent" for this scope. */
+function isMutedOrHidden(organizationId: string, channelId: string | null): boolean {
   const data = queryClient.getQueryData<ListMyMembershipsResponse>(meKeys.memberships);
   if (!data?.results) return false;
   const targetId = channelId ?? organizationId;
   const membership = data.results.find((item) => item.channelId === targetId);
-  return membership ? membership.muted || membership.archived : false;
+  return membership ? membership.muted || membership.hidden : false;
 }
 
 /** The one sync priority: viewed scopes live, muted scopes on open, the others in the background. */
 export function getSyncTier(organizationId: string, channelId: string | null): SyncTier {
   if (isViewingChannel(organizationId, channelId)) return tierViewing;
-  if (isMutedOrArchived(organizationId, channelId)) return tierOnOpen;
+  if (isMutedOrHidden(organizationId, channelId)) return tierOnOpen;
   return tierBackground;
 }

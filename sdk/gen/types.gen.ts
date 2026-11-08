@@ -503,7 +503,7 @@ export type UploadToken = {
 };
 
 /**
- * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
+ * A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export type MembershipBase = {
   id: string;
@@ -512,7 +512,7 @@ export type MembershipBase = {
   channelId: string;
   userId: string;
   role: 'admin' | 'member';
-  archived: boolean;
+  hidden: boolean;
   muted: boolean;
   displayOrder: number;
   organizationId: string;
@@ -4090,7 +4090,7 @@ export type InviteMembersResponses = {
       userId: string;
       role: 'admin' | 'member';
       organizationId: string;
-      archived?: boolean;
+      hidden?: boolean;
       muted?: boolean;
       displayOrder?: number;
     }>;
@@ -4230,7 +4230,7 @@ export type BatchDeleteMembershipsResponse = BatchDeleteMembershipsResponses[key
 export type UpdateMembershipData = {
   body: {
     role?: 'admin' | 'member';
-    archived?: boolean;
+    hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
   };
@@ -4322,7 +4322,7 @@ export type UpdateMembershipResponses = {
         }
       | null;
     organizationId: string;
-    archived?: boolean;
+    hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
   };
@@ -4437,7 +4437,7 @@ export type ListMembersResponses = {
           userId: string;
           role: 'admin' | 'member';
           organizationId: string;
-          archived?: boolean;
+          hidden?: boolean;
           muted?: boolean;
           displayOrder?: number;
         };
@@ -5023,7 +5023,7 @@ export type ListOrganizationsData = {
       | 'displayOrder desc';
     relatableUserId?: string;
     role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false' | boolean;
+    excludeHidden?: 'true' | 'false' | boolean;
     /**
      * Comma-separated values
      */

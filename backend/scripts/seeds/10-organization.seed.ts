@@ -108,7 +108,7 @@ export const organizationsSeed = async () => {
   }
 
   // One organization the seed admin administers starts as a draft, so publishing can be tried by hand
-  const draftOrganizationId = adminMemberships.find((membership) => !membership.archived)?.channelId;
+  const draftOrganizationId = adminMemberships.find((membership) => !membership.hidden)?.channelId;
   if (draftOrganizationId) {
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, draftOrganizationId));
   }
@@ -133,9 +133,9 @@ const addAdminMembership = (adminUser: UserModel, organization: OrganizationMode
   const membership = mockChannelMembership('organization', organization, adminUser);
 
   // Adjust the admin membership: an org admin wherever the membership is live, so the seed admin can
-  // administer every organization in their active menu; archived ones keep a random role
-  membership.archived = faker.datatype.boolean(0.5);
-  if (!membership.archived) membership.role = 'admin';
+  // administer every organization in their active menu; hidden ones keep a random role
+  membership.hidden = faker.datatype.boolean(0.5);
+  if (!membership.hidden) membership.role = 'admin';
   membership.displayOrder = 1 + adminMemberships.length * 10;
 
   // Add admin membership to the list

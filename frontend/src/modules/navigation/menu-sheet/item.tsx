@@ -29,7 +29,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
 
   const isOnline = useOnlineManager();
 
-  const canAccess = isOnline || !item.membership.archived;
+  const canAccess = isOnline || !item.membership.hidden;
 
   const hasSubmenu = isSubmenuShown(item);
   const unseenCount = useMenuItemUnseenCount(item, hasSubmenu);
@@ -38,15 +38,15 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
     <Link
       disabled={!canAccess}
       onClick={() => {
-        if (!canAccess) return toaster.warning(t('c:show_archived.offline.text'));
+        if (!canAccess) return toaster.warning(t('c:show_hidden.offline.text'));
         // A subitem may change only the search of the page it is on, which the route listener that closes sheets never sees
         if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       }}
       data-subitem={isSubitem}
       aria-label={item.name}
       draggable={false}
-      // A parent's page holds no place for an archived sub-row, so it opens its own
-      {...getChannelRoute(item, isSubitem && !item.membership.archived)}
+      // A parent's page holds no place for a hidden sub-row, so it opens its own
+      {...getChannelRoute(item, isSubitem && !item.membership.hidden)}
       {...pageTopHashNav}
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
@@ -55,7 +55,7 @@ export function MenuSheetItem({ item, isSubitem, isResting = false, icon: Icon }
     >
       <span className="bg-primary absolute inset-y-3 left-0 w-1 rounded-lg opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       {/* Every avatar gap is 1rem: half below the row above, half above this avatar */}
-      {isSubitem && !item.membership.archived && <SubmenuConnector className="-top-2 h-4" />}
+      {isSubitem && !item.membership.hidden && <SubmenuConnector className="-top-2 h-4" />}
       <span className="relative mx-3 my-2 size-8 shrink-0 group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className={cn(

@@ -181,7 +181,7 @@ try {
   ]);
   check('the seed created organizations', organizations.length > 0, { count: organizations.length });
   const [administered] = memberships
-    .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)
+    .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.hidden)
     .sort((a, b) => a.displayOrder - b.displayOrder);
   const organization = organizations.find(({ id }) => id === administered?.channelId) ?? organizations[0];
 

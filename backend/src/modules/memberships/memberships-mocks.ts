@@ -71,7 +71,7 @@ const generateMembershipBase = (options: MockMembershipBaseOptions = {}): Member
     role: options.role ?? faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
-    archived: false,
+    hidden: false,
   } as MembershipBase;
 };
 

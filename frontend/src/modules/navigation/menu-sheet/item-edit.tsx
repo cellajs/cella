@@ -1,8 +1,8 @@
-import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIcon } from 'lucide-react';
+import { BellIcon, BellOffIcon, EyeIcon, EyeOffIcon, GripVerticalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isChannelArchivable } from 'shared';
+import { isChannelHideable } from 'shared';
 import { env } from '~/env';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -35,8 +35,8 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
   const { t } = useTranslation();
   const [isTravelling, setIsTravelling] = useState(isArriving);
 
-  const { archived, muted } = item.membership;
-  const isArchivable = isChannelArchivable(item.entityType);
+  const { hidden, muted } = item.membership;
+  const isHideable = isChannelHideable(item.entityType);
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
   const isMovable = canMove(item, siblings);
 
@@ -44,7 +44,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
     <EntityAvatar
       // An icon avatar's tile would stand out on the row's fill
       className={cn(
-        'size-8 group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:size-6',
+        'size-8 group-data-[hidden=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:size-6',
         Icon && 'bg-transparent shadow-none',
       )}
       type={item.entityType}
@@ -60,7 +60,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       layoutId={`sheet-menu-item-${item.id}`}
       onLayoutAnimationComplete={() => setIsTravelling(false)}
       data-subitem={isSubitem}
-      data-archived={archived}
+      data-hidden={hidden}
       // Opaque, so a travelling row covers the rows it passes; height, gap and avatar box match item.tsx
       className={cn(
         'group/options-item hover:text-accent-foreground hover:before:bg-muted-hover relative flex h-12 w-full items-center gap-1 pr-2 before:absolute before:inset-0.5 before:rounded-sm before:bg-[color-mix(in_srgb,var(--muted)_70%,var(--card))] before:transition-colors data-[subitem=true]:h-10',
@@ -69,7 +69,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
       )}
     >
       {/* Drawn per row, so the dots travel with it while a move animates */}
-      {isSubitem && !archived && <SubmenuConnector className="-top-2 h-4" />}
+      {isSubitem && !hidden && <SubmenuConnector className="-top-2 h-4" />}
       {moves.isSaving && (
         <div className="absolute z-10">
           <Spinner className="text-muted-foreground m-1 mr-3 size-10 p-1 group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
@@ -83,16 +83,16 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
           index={index}
           total={siblings.length}
           onMove={moves.move}
-          onMovePastEnd={isArchivable ? moves.moveAcross : undefined}
+          onMovePastEnd={isHideable ? moves.moveAcross : undefined}
           menuItems={
-            isArchivable && (
-              <DropdownMenuItem onClick={moves.crossArchive}>
-                {archived ? <ArchiveRestoreIcon /> : <ArchiveIcon />}
-                {archived ? t('c:restore') : t('c:archive')}
+            isHideable && (
+              <DropdownMenuItem onClick={moves.crossHidden}>
+                {hidden ? <EyeIcon /> : <EyeOffIcon />}
+                {hidden ? t('c:show') : t('c:hide')}
               </DropdownMenuItem>
             )
           }
-          description={isArchivable ? t(archived ? 'c:sortable_archived_menu_row.text' : 'c:sortable_menu_row.text') : undefined}
+          description={isHideable ? t(hidden ? 'c:sortable_hidden_menu_row.text' : 'c:sortable_menu_row.text') : undefined}
           className={cn(
             avatarBoxClass,
             // Any focus shows the outline, a click's too: the grip then takes the arrow keys.
@@ -111,7 +111,7 @@ export function MenuSheetItemEdit({ item, siblings, isSubitem, icon: Icon, isArr
         <span className={avatarBoxClass}>{avatar}</span>
       )}
 
-      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[archived=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
+      <div className="text-md relative min-w-0 grow truncate text-left leading-5 font-medium group-data-[hidden=true]/options-item:opacity-70 group-data-[subitem=true]/options-item:text-sm group-data-[subitem=true]/options-item:font-normal">
         {item.name} {env.VITE_DEBUG && <span className="text-faint-foreground">#{item.membership.displayOrder}</span>}
       </div>
       {canMute(item) && (

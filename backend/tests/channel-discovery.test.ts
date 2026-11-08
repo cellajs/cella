@@ -9,7 +9,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
   buildChannelListReadWhere,
   type ChannelListReadColumns,
-  excludeArchivedWhere,
+  excludeHiddenWhere,
   resolveChannelCollectionReadScope,
 } from '#/permissions/channel-collection-scope';
 
@@ -55,7 +55,7 @@ const membershipsTable = pgTable('test_channel_discovery_memberships', {
   channelId: varchar('channel_id').notNull(),
   organizationId: varchar('organization_id').notNull(),
   role: varchar('role').notNull(),
-  archived: boolean('archived').notNull().default(false),
+  hidden: boolean('hidden').notNull().default(false),
 });
 
 const PUBLISHED_AT = '2026-08-01T00:00:00Z';
@@ -75,7 +75,7 @@ const insertMembership = async (
   channelType: string,
   channelId: string,
   role: string,
-  opts: { archived?: boolean; organizationId?: string } = {},
+  opts: { hidden?: boolean; organizationId?: string } = {},
 ) => {
   await seedDb.insert(membershipsTable).values({
     id: `mem-${++rowCounter}`,
@@ -84,13 +84,13 @@ const insertMembership = async (
     channelId,
     organizationId: opts.organizationId ?? ORG_ID,
     role,
-    archived: opts.archived ?? false,
+    hidden: opts.hidden ?? false,
   });
 };
 
 interface ListOpts {
   courseId?: string;
-  excludeArchived?: boolean;
+  excludeHidden?: boolean;
   isSystemAdmin?: boolean;
 }
 
@@ -115,7 +115,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     publishedAt: channelsTable.publishedAt,
     // Keyed by a deep-fixture level the app's ChannelEntityType union does not know
     ancestorIdColumns: Object.fromEntries([['course', channelsTable.courseId]]),
-    ...(opts.excludeArchived && { membershipArchived: membershipsTable.archived }),
+    ...(opts.excludeHidden && { membershipHidden: membershipsTable.hidden }),
   };
 
   const discoveryScope = resolveChannelCollectionReadScope(access, CHANNEL_TYPE, ORG_ID, {
@@ -129,7 +129,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     eq(channelsTable.organizationId, ORG_ID),
     ...(opts.courseId ? [eq(channelsTable.courseId, opts.courseId)] : []),
     ...(scopeWhere.kind === 'where' ? [scopeWhere.where] : []),
-    ...[excludeArchivedWhere(readColumns)].filter((c): c is SQL => c !== undefined),
+    ...[excludeHiddenWhere(readColumns)].filter((c): c is SQL => c !== undefined),
   ];
 
   return seedDb
@@ -160,7 +160,7 @@ beforeAll(async () => {
       channel_id varchar not null,
       organization_id varchar not null,
       role varchar not null,
-      archived boolean not null default false
+      hidden boolean not null default false
     )
   `);
 });
@@ -232,13 +232,13 @@ describe('Channel list discovery rows', () => {
     expect(await listChannels('outsider')).toEqual([]);
   });
 
-  it('hides an archived own membership under excludeArchived instead of showing it as a discovery row', async () => {
+  it('keeps a hidden own membership out under excludeHidden instead of showing it as a discovery row', async () => {
     await insertMembership('student', 'course', 'course-1', 'student');
-    const archived = await insertChannel({ courseId: 'course-1' });
-    await insertMembership('student', 'project', archived, 'owner', { archived: true });
+    const hidden = await insertChannel({ courseId: 'course-1' });
+    await insertMembership('student', 'project', hidden, 'owner', { hidden: true });
     const foreign = await insertChannel({ courseId: 'course-1' });
 
-    expect(idsOf(await listChannels('student', { courseId: 'course-1' }))).toEqual([archived, foreign].sort());
-    expect(idsOf(await listChannels('student', { courseId: 'course-1', excludeArchived: true }))).toEqual([foreign]);
+    expect(idsOf(await listChannels('student', { courseId: 'course-1' }))).toEqual([hidden, foreign].sort());
+    expect(idsOf(await listChannels('student', { courseId: 'course-1', excludeHidden: true }))).toEqual([foreign]);
   });
 });

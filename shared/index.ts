@@ -10,7 +10,7 @@ export type { ConfigMode } from './src/config-builder/types.ts';
 // `hierarchy` must override these from the same synthetic instance.
 export const { isChannel, isProduct } = hierarchy;
 
-export { isChannelArchivable } from './src/channel-archivable.ts';
+export { isChannelHideable } from './src/channel-hideable.ts';
 export type { EntityHierarchy, ResolvedAncestor } from './src/config-builder/entity-hierarchy.ts';
 export {
   createEntityHierarchy,

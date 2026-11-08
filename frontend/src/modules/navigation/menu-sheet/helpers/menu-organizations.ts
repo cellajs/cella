@@ -6,7 +6,7 @@ import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/menu-
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { channelRouteConfig } from '~/routes-config';
 
-/** The menu's organizations, archived ones included, whichever menu section lists them. */
+/** The menu's organizations, hidden ones included, whichever menu section lists them. */
 export const menuOrganizations = (menu: UserMenu): UserMenuItem[] =>
   Object.values(menu).flatMap((items) => items.filter((item) => item.entityType === 'organization'));
 
