@@ -4,10 +4,7 @@ This document walks through setting up a cella app's first environment on Scalew
 
 ### TL;DR
 
-A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard writes the identities in one
-Owner moment. Then it sets up state storage, the passphrase and the first infrastructure on a one-day operator key you
-make in the console. From then on the main job's schedule deploys every release. The first admin signs in with a magic
-link.
+A fresh install takes a domain, the Pulumi CLI, Docker and an Owner API key. The wizard writes the identities in one Owner moment, then sets up state storage, the passphrase and the first infrastructure on a one-day operator key. From then on the main job's schedule deploys every release, and the first admin signs in with a magic link.
 
 ## How the CLI runs
 
