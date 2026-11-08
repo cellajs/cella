@@ -26,7 +26,7 @@ An ended session keeps its row for the sessions list, stamped with who ended it 
 - a newer sign-in in the same browser
 - the session cap
 
-Its app streams close at once. Its collaborative editor sockets, and the editor tokens minted before the end, lapse within five minutes.
+Its app streams close at once. Its collaborative editor sockets lapse within five minutes. So do the editor tokens minted before the end.
 
 Ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-up), so a copied cookie cannot end each new sign-in of the owner. Signing out asks nothing.
 
@@ -45,10 +45,10 @@ A sign-in sets a long-lived `device-id` cookie and records its per-user hash in 
 ## Cookies
 
 - **Signed.** Every auth cookie is signed in every mode, over its name, expiry and content.
-- **Bound to its name.** A value moved to another cookie, or kept past its max age, reads as nothing.
-- **Rotatable secret.** `COOKIE_SECRET` takes a list, so a new secret rolls out before the old one retires.
+- **Bound to its name.** A value moved to another cookie reads as nothing. So does one kept past its max age.
+- **Rotatable secret.** A new cookie secret rolls out before the old one retires.
 - **Versioned names.** Bumping `cookieVersion` renames every cookie and so signs everyone out.
-- **Host-only.** Outside development the cookies carry the `__Host-` prefix, and all are `HttpOnly`.
+- **Host-only.** Outside development the cookies carry the `__Host-` prefix. All are `HttpOnly`.
 - **Lasting session.** The session cookie lasts as long as its session, so it survives a browser restart.
 
 | Cookie | Holds | SameSite |
