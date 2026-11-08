@@ -8,7 +8,7 @@ grep: scope-config, shots-config, shot-driver, session-lib, a11y/src/, pnpm a11y
 # The audit and the screenshots run from `@cellajs/cli`, with adapters in `cella/`
 
 The `a11y/` workspace and `cella/skills/screenshots/shot-driver.mjs` are gone: `pnpm cella a11y` (jobs `audit`,
-`report`, `decide`) and `pnpm cella screenshots [ids]` run on a testbed. The pinned `a11y/scope-config.ts` and
+`report`, `decide`) and `pnpm cella shoot [ids]` run on a testbed. The pinned `a11y/scope-config.ts` and
 `cella/skills/screenshots/shots-config.mjs` give way to the synced `cella/a11y.ts` and `cella/screenshots.ts` plus an
 optional `cella/a11y.app.ts` and `cella/screenshots.app.ts` that hold only what an app adds, removes or overrides.
 Scripts on `cella/skills/verify/session-lib.mjs` or `a11y/src/session.ts` move to `@cellajs/cli/drive`.
@@ -53,7 +53,7 @@ No script: manual.
    `apiClient(user)` from `./a11y.ts`. Then `git rm --ignore-unmatch cella/skills/screenshots/shots-config.mjs`.
 6. In app scripts and docs: `pnpm a11y:run` and `pnpm a11y` become `pnpm cella a11y`, `pnpm -C a11y report` and
    `decide` become `pnpm cella a11y report` and `decide`, `node cella/skills/screenshots/shot-driver.mjs` becomes
-   `pnpm cella screenshots`, with `--out <dir>` for `OUT_DIR=` and `--email` for `EMAIL=`.
+   `pnpm cella shoot`, with `--out <dir>` for `OUT_DIR=` and `--email` for `EMAIL=`.
 7. An app script that imports `session-lib.mjs` or `a11y/src/session.ts` imports `loadPlaywright`, `mintSession` and
    `signOut` from `@cellajs/cli/drive`: a session's `base` and `api` are `frontendUrl` and `backendUrl`.
 
@@ -61,6 +61,6 @@ No script: manual.
 
 ```sh
 pnpm cella a11y --states sign-in,home
-pnpm cella screenshots <one shot id> --out /tmp/shots
+pnpm cella shoot <one shot id> --out /tmp/shots
 pnpm check
 ```

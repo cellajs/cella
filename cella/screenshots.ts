@@ -63,7 +63,7 @@ export const tidyHeader = async (page: Page) => {
 const marketing = 'frontend/public/static/marketing/screenshots';
 
 /**
- * The template's marketing screenshots for `pnpm cella screenshots`, synced with the UI they show. An app adds, removes
+ * The template's marketing screenshots for `pnpm cella shoot`, synced with the UI they show. An app adds, removes
  * or overrides shots, devices and the format in `cella/screenshots.app.ts`.
  */
 export default defineScreenshotsBase({
