@@ -25,7 +25,7 @@ the route: its guards, limiters, cache and handler, as for a REST request
 
 The worker is a `SERVICE` of the backend image. The reverse proxy routes `/mcp/*` to it. It mounts the module routes for tool calls, but serves only the MCP routes.
 
-The code is in `backend/src/modules/mcp/`. `pnpm dev` starts the worker beside the API. Error codes, limits and schema details are documented there, at their declarations.
+`pnpm dev` starts the worker beside the API. Error codes, limits and schema details are documented there, at their declarations.
 
 ## Discovery and tokens
 
