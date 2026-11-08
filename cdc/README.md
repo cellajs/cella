@@ -104,7 +104,7 @@ A worker stuck on a failure for a while reports unhealthy. Its log names the pos
 
 A fix or a dropped slot ends the failure. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A worker that crash-loops never drops its slot: each restart starts the failure over. Only the WAL lag in its health answer shows it.
 
-Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)).
+Each row names its answers per level ([Sync engine](../cella/sync-engine/FAILURE_MODES.md)).
 
 | What fails | Core | Mid | Lost case |
 | --- | --- | --- | --- |
