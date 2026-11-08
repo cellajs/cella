@@ -87,7 +87,7 @@ export async function createDemoOp(ctx: Context<Env>) {
   const presented = await findSession(ctx);
   if (presented) {
     if (presented.session.authStrategy !== 'demo') throw new AppError(409, 'demo_signed_in', 'info');
-    const own = await findDemoTenant(dbCtx, { createdBy: presented.user.id });
+    const own = await findDemoTenant(dbCtx, { userId: presented.user.id });
     if (!own) throw new AppError(503, 'demo_unavailable', 'warn', { meta: { reason: 'demo_removed' } });
     return { tenant: await withActorRef(dbCtx, own), created: false };
   }
