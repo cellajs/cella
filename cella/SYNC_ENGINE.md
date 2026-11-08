@@ -94,7 +94,7 @@ When an update moves rows where a subscriber can no longer read them, that subsc
 
 **Row readability** decides whether a user may fetch a row. Every row read, change frames included, asks the permission engine about the full row. A grant reaches down, never up. An elevated role reads the rows below its channel, any other role only the rows homed at it.
 
-**Summary answerability** decides whether a user may see a view's frontier. A frontier reveals that activity exists, so it needs stronger proof. Catchup gives each view one status:
+**Summary answerability** decides whether a user may see a view's frontier. A frontier needs stronger proof, since it reveals that activity exists. Catchup gives each view one status:
 
 | Status | Meaning | Client behavior |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ A frame past a size bound names its rows by id alone, and past a larger bound na
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live. It runs only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts a view per product type of each of the user's organizations. The answer holds:
+Catchup runs on every connection before the stream goes live. A gap is fetched into the lists on disk, since catchup runs only after the persisted cache is restored. The client posts a view per product type of each of the user's organizations. The answer holds:
 
 - each view's status
 - an `ok` view's frontier
@@ -174,14 +174,14 @@ A product mutation patches the cache optimistically and reconciles with the stor
 
 An HTTP error settles at once. A replay that meets a gateway error stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
 
-The attachment module sends a tab's writes one at a time and in order. An online write therefore waits behind a queued one.
+The attachment module sends a tab's writes one at a time and in order. An online write waits behind a queued one.
 
 ### Merge metadata
 
 Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp per scalar field. The merge is deterministic last-writer-wins, not a causal clock. Array fields merge `{ add, remove }` deltas.
 
-- **Online write:** the server stamps a fresh HLC, so a device clock that runs behind cannot lose an edit.
-- **Replayed write:** keeps its intent time, so it loses to an edit made elsewhere while it was queued.
+- **Online write:** a device clock that runs behind cannot lose an edit, since the server stamps a fresh HLC.
+- **Replayed write:** loses to an edit made elsewhere while it was queued, since it keeps its intent time.
 - **No conflict response:** losing fields are skipped, and the server returns the stored row.
 - **Future stamp:** one too far ahead of the server's clock loses to the next write of its field.
 
@@ -189,7 +189,7 @@ Synced tables store the latest `stx` and a hybrid logical clock (HLC) timestamp 
 
 Paused mutations persist to IndexedDB and survive a reload. Their variables carry everything a replay needs, including the `stx` minted at intent time. Each tab keeps its own queue. A tab that starts takes over the queue of a closed one. The attachment module is the reference.
 
-A product's create, update and delete each carry one fixed shape, so the queue can reason about pending work:
+The queue can reason about pending work, since a product's create, update and delete each carry one fixed shape:
 
 - **Fold:** an edit of a row whose create was never sent folds into that create.
 - **Hold:** while a row has a pending mutation, remote changes and list reads leave it alone.
@@ -209,7 +209,7 @@ The REST API and the database work whatever the CDC worker does. The worker reco
 
 ### REST fallback
 
-Losing the stream costs live updates and nothing else. Synced queries go stale with time, so lists refetch when opened. The client reconnects with backoff. The next catchup fetches what its cursors miss.
+Losing the stream costs live updates and nothing else. Lists refetch when opened, since synced queries go stale with time. The client reconnects with backoff. The next catchup fetches what its cursors miss.
 
 ### What happens when
 
@@ -279,6 +279,6 @@ One leader tab holds the stream, runs catchup and forwards what it receives to t
 
 ### Yjs
 
-The template collaborates on attachment descriptions through the Yjs relay. With the relay on, a description saves through it, never as a REST write. It therefore never enters the replay queue.
+The template collaborates on attachment descriptions through the Yjs relay. With the relay on, a description saves through it, never as a REST write. It never enters the replay queue.
 
-The cache takes a description and its derived columns only from a server write of that field. A read that lags the relay therefore cannot undo a collaborative patch.
+A read that lags the relay cannot undo a collaborative patch. The cache takes a description and its derived columns only from a server write of that field.
