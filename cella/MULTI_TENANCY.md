@@ -10,7 +10,7 @@ content. It catches application mistakes but is not the main access-control laye
 
 ## Security contract
 
-Authorization must stay correct with RLS absent or misconfigured. Every entity lookup compares the row's tenant and organization with the request scope. Every organization-bound product query carries a tenant and organization predicate. Removing RLS thus broadens no application query.
+Authorization must stay correct with RLS absent or misconfigured. Removing RLS broadens no application query. Every entity lookup compares the row's tenant and organization with the request scope. Every organization-bound product query carries a tenant and organization predicate.
 
 The backend suite proves it by running twice with identical expectations: once with RLS bypassed, once as the RLS-bound runtime role ([Verification](#verification)).
 
@@ -23,7 +23,7 @@ The backend suite proves it by running twice with identical expectations: once w
 
 ## What RLS covers
 
-RLS is enabled on product tables and on resources that hold tenant data. It is never forced, so the owning `admin_role` bypasses it ([Database roles](#database-roles)). The template protects `attachments`, `yjs_documents` and `yjs_updates`.
+RLS is enabled on product tables and on resources that hold tenant data. The owning `admin_role` bypasses it, since it is never forced ([Database roles](#database-roles)). The template protects `attachments`, `yjs_documents` and `yjs_updates`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ RLS is enabled on product tables and on resources that hold tenant data. It is n
 | Memberships | No RLS | Membership operations and permissions |
 | Resources | RLS only when they hold tenant data and the migration lists them | Owning module and guards |
 
-The hierarchy rejects a product without a channel parent, so every product entity has a tenant and a home channel. The RLS migration thus protects every registered product table without per-table opt-in. Channel-entity and membership queries use `baseDb`. Product reads must enter a tenant helper.
+The RLS migration protects every registered product table without per-table opt-in. Every product entity has a tenant and a home channel: the hierarchy rejects a product without a channel parent. Channel-entity and membership queries use `baseDb`. Product reads must enter a tenant helper.
 
 ## Product reads
 
@@ -69,7 +69,7 @@ The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions 
 
 Only the admin connection can write `system_roles`. A system admin of the app is not `admin_role`. Their requests use the runtime connection and normal request scope.
 
-The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it, so its request handlers cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
+The admin credential serves migrations, seeds and job setup. An API that runs none of them serves without it. Its request handlers then cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
 ## Tenant kinds
 
