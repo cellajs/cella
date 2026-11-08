@@ -31,11 +31,11 @@ In a merge patch, an absent field stays, `null` clears it and an array is replac
 
 A single channel or product answers `GET` and `PATCH` with a strong `ETag`. The tag versions the resource's own fields, not its `included` data or counts.
 
-Send it back in `If-Match` on a `PATCH` or a custom method, and the write applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
+Send it back in `If-Match` on a `PATCH` or a custom method. The write then applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
 
-A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged, except `maxPageSize` and `skip`.
+A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged. Only `maxPageSize` and `skip` may change.
 
-A token is opaque and bound to its list. A token that was altered, or sent with changed params, is refused as `invalid_page_token`.
+A token is opaque and bound to its list. A request with an altered token or changed params is refused as `invalid_page_token`.
 
 `skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`: a field, optionally followed by `asc` or `desc`.
 
@@ -52,7 +52,7 @@ A route accepts a machine caller through its guard, `actorGuard` or `serviceGuar
 
 An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF. It is refused when it carries a browser `Origin`, since keys are for servers. The tenant in the URL must be the key's own. That check runs before the tenant row loads, so a key learns nothing about other tenants.
 
-A caller can mirror products through range reads with `afterSeq` and `untilSeq`. After an absence longer than the activity window, it reads them in full again, since an expired tombstone sends nothing. A range read is a sync chunk, not a page. It takes no `pageToken` or `skip`, and the next chunk starts after the last position received.
+A caller can mirror products through range reads with `afterSeq` and `untilSeq`. After an absence longer than the activity window, it reads them in full again, since an expired tombstone sends nothing. A range read is a sync chunk, not a page. It takes no `pageToken` or `skip`. The next chunk starts after the last position received.
 
 ## Face: OAuth
 
@@ -92,7 +92,7 @@ The scope vocabulary is derived from the policy matrix, never listed by hand. Ev
 
 - **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
 - **Unknown scope:** fails closed.
-- **No mask:** a session, and a key issued without scopes, are unmasked.
+- **No mask:** a session or a key issued without scopes is unmasked.
 - **REST refusal:** answers as for an actor without the permission, with no `insufficient_scope` challenge.
 - **MCP refusal:** names the scope to step up to.
 - **One list:** the same ids appear in the OpenAPI `oauth2` scheme, discovery documents and consent screen.
@@ -103,7 +103,7 @@ Access tokens are signed JWTs, each for one tenant's resource: that tenant's RES
 
 A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. An MCP tool call runs its REST route in the same process, so the token never travels to another resource server.
 
-A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. Revoking a grant or a key, or changing a membership, counts at the next request.
+A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. The next request sees a revoked grant or key and any membership change.
 
 A machine request the REST API refuses for want of valid proof names the tenant's metadata in its challenge. The REST API's resource identifier is the tenant URL. Its metadata therefore names a prefix of the request URL, not the request URL itself.
 
