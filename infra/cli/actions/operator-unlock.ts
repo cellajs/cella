@@ -1,4 +1,3 @@
-import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
 import { describeKey, durableKeyLife, type KeyDescription, type KeyPair } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
@@ -10,16 +9,19 @@ import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { moveSecretsOutOfPrefix } from '../../tasks/move-secret-paths';
 import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { maskedSecret } from '../prompts/masked-secret';
+import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOperatorKey, rememberedOperatorKey, rememberOperatorKey, setPassphraseCustody } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
 type StackRef = Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>;
 
+/** The console page where a person makes an application's key. */
+export const OPERATOR_KEYS_URL = 'https://console.scaleway.com/iam/applications';
+
 /** Where a person makes the key a session takes, for every refusal that sends them there. */
 export function oneDayKeyHowto(names: AppPrincipalNames): string {
-  return `Make a one-day key in the console: IAM → Applications → '${names.operator}' → API keys → Generate API key, with an expiration of a day at most; or, as a member of the group '${names.operators}', one of your own (your user → API keys) with the same expiration.`;
+  return `Make one in the console: IAM → Applications → '${names.operator}' → API keys → Generate, expiring within a day; or your own key as a member of '${names.operators}', with the same expiration.`;
 }
 
 /**
@@ -98,15 +100,13 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
   const names = appPrincipalNames(stack.appConfig.appSlug);
   let pair = rememberedOperatorKey();
   if (!pair) {
-    const label = `One-day operator key ('${names.operator}', or your own as a member of '${names.operators}')`;
-    const accessKey = (await input({ message: `${label}, access key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })).trim();
-    const secretKey = accessKey ? (await maskedSecret({ message: `${label}, secret key` })).trim() : '';
-    if (!accessKey || !secretKey) {
-      if (opts.optional && !accessKey) return undefined;
-      console.error(`${crossMark} No key given.`);
-      return endAction(1);
-    }
-    pair = { accessKey, secretKey };
+    pair = await keyPairPrompt({
+      label: 'Operator key',
+      howto: `Paste a key of '${names.operator}' that expires today, or your own as a member of '${names.operators}'.`,
+      url: OPERATOR_KEYS_URL,
+      optional: opts.optional,
+    });
+    if (!pair) return undefined;
   }
   let desc: KeyDescription;
   try {
@@ -206,7 +206,7 @@ export function installPassphraseCustody(stack: StackRef): void {
   };
   setPassphraseCustody({
     async read() {
-      const unlocked = await unlock(stack, { optional: 'Enter to type the Pulumi passphrase' });
+      const unlocked = await unlock(stack, { optional: 'Enter to type the recovery passphrase' });
       if (!unlocked) return undefined;
       return readCustodiedPassphrase({ ...custody, secretKey: unlocked.secret }).catch((error) => {
         console.warn(`${warningMark} Could not read the passphrase from Secret Manager (${errorMessage(error)}); type it once.`);

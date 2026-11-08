@@ -291,8 +291,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     });
     operatorSecrets.brevoApiKey = operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';
   }
-  const proceedWith = firstSetup ? `the first setup of ${environment}` : actionLabel('resume');
-  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
+  const question = firstSetup ? `Set up ${environment} now?` : `${actionLabel('resume')} of ${environment}?`;
+  if (!(await confirmOrDefault({ message: question, default: true }))) return;
 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
   // operator application lets it in first.
@@ -356,9 +356,11 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
 
   // Base infrastructure provisioning
-  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, load balancer; the deploys make the machines)`);
+  console.info(
+    `\n${pc.bold('Next: the foundation')} ${pc.dim('(database, network, load balancer, buckets, registry; a deploy makes the machines)')}`,
+  );
   const runNow = await confirmOrDefault({
-    message: firstSetup ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
+    message: firstSetup ? 'Create the database, network and load balancer now?' : 'Bring the foundation up to date now (pulumi up)?',
     default: firstSetup,
   });
   if (!runNow) {

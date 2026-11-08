@@ -10,11 +10,12 @@ import {
 import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
+import { keyPairPrompt } from '../prompts/key-pair';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
-import { endAction, keyPairOrPrompt } from '../shared';
+import { endAction } from '../shared';
 
-/** The prompt hint for an Owner API key. */
-const OWNER_KEY_HINT = 'console → your user → API keys, with an expiry of hours; any key holding IAMManager also works';
+/** Where a person makes an Owner API key: their own user's keys. */
+const OWNER_KEYS_URL = 'https://console.scaleway.com/iam/api-keys';
 
 export interface OwnerKey extends KeyPair {
   organizationId: string;
@@ -42,7 +43,14 @@ export async function acquireOwnerKey(opts: {
   const { names, projectId } = opts;
   // A key typed earlier in this run is used again, and validated again below: it may have been revoked since.
   const remembered = rememberedOwnerKey();
-  const pair = remembered ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
+  const pair =
+    remembered ??
+    (await keyPairPrompt({
+      label: 'Owner key',
+      howto: 'Paste a key of your own as an organization Owner, made for this and expiring within hours (any key holding IAMManager works).',
+      url: OWNER_KEYS_URL,
+    }));
+  if (!pair) return endAction(1);
 
   let organizationId: string;
   try {

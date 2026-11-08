@@ -150,8 +150,8 @@ export async function runOwnerMoment(context: InfraContext, mode: SetupMode): Pr
   const pair: KeyPair = { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey };
   const projectId =
     context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, secretKey: pair.secretKey, organizationId }));
-  const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
-  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
+  const question = mode === 'rotate-keys' ? `${actionLabel('rotate-keys')} of ${environment}?` : `Create ${environment}'s deploy keys?`;
+  if (!(await confirmOrDefault({ message: question, default: true }))) return undefined;
 
   // The uploads key goes to the runtime folder, where the deploy composes it into the backend's env file; a rotation makes it anew.
   if (declaresUploads()) {
