@@ -28,7 +28,7 @@ REST API (serviceGuard / actorGuard)   MCP endpoint (tokenGuard)
 
 The worker is a `SERVICE` of the backend image. The issuer shares the app origin with the API and the consent page: the reverse proxy routes `/oauth/*` to the worker. The provider runs on its own Postgres adapter, with no developer interactions and no ID tokens. The app is an authorization server, not an identity provider.
 
-The code is in `backend/src/modules/oauth-server/`. `pnpm dev` starts the worker beside the API. Claim names, limits and other details are documented there, at their declarations.
+`pnpm dev` starts the worker beside the API. Claim names, limits and other details are documented there, at their declarations.
 
 ## Clients and consent
 
@@ -56,14 +56,14 @@ Signing out of the app, ending one's other sessions or turning on MFA ends the p
 
 ## Tokens
 
+A token never crosses tenants. Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API, or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, as does an authorization request that names none.
+
 | Setting | Value |
 | --- | --- |
 | Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` (service accounts only) |
 | Access token | RS256 JWT bearer token, bound to no client key, 1 hour |
 | Refresh token | 30 days, rotated on use. Grants live 30 days. |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
-
-A token never crosses tenants. Every token names a resource (RFC 8707): `<backendUrl>/tenants/<tenant>` for the REST API, or `<mcpUrl>/tenants/<tenant>/organizations/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, as does an authorization request that names none.
 
 A guard verifies a token locally against the public signing keys, with no round trip to this worker and no row per token.
 
