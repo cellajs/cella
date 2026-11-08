@@ -6,8 +6,8 @@ This document covers the Yjs worker: a WebSocket relay for **real-time collabora
 
 During collaborative editing, the Yjs service saves the shared editing state. It starts each
 session from the stored description, sends edits to connected clients, and turns the merged result
-into normal stored entity data through the backend. A description written through the API joins the
-live document, so nobody's editing session ends.
+into normal stored entity data through the backend. A description written through the API ends nobody's editing
+session: it joins the live document.
 
 ## How it fits
 
@@ -34,7 +34,7 @@ The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves the 
 
 Limits, timings and protocol details are documented there, at their declarations; the message types, close codes and fragment name both sides read are in `shared/src/utils/yjs-protocol.ts`.
 
-The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own: a document's seed generation and the confirmation of a saved update. Their numbers stay clear of those y-websocket uses. A stock y-websocket client therefore syncs, but skips the generation check and reports every confirmation as a message it cannot read.
+The socket speaks the sync and awareness framing of y-protocols plus two message types of the relay's own: a document's seed generation and the confirmation of a saved update. Their numbers stay clear of those y-websocket uses. A stock y-websocket client syncs, but skips the generation check and reports every confirmation as a message it cannot read.
 
 ## Vocabulary
 
@@ -58,29 +58,29 @@ Editing needs a token. The backend issues one per entity, for five minutes, to a
 - **One origin.** A page on another origin than the app's cannot open a socket.
 - **No existence leak.** A refusal tells nobody whether the entity exists.
 - **Scope from the row.** The document's tenant and organization come from the entity row, never from the token.
-- **Five-minute bound.** A user who lost access or signed out gets no new token, so an editing session ends within five minutes.
+- **Five-minute bound.** The editing session of a user who lost access or signed out ends within five minutes: they get no new token.
 
 ### Presence
 
-A socket announces only its own cursors, so nobody moves or removes someone else's, and a socket's cursors leave with it.
+Nobody moves or removes someone else's cursors, since a socket announces only its own. A socket's cursors leave with it.
 
-Presence is cosmetic. Every peer's editor turns a cursor's colour into CSS. So the relay passes on a cursor only when its colour is a hex colour and its name is short text.
+Presence is cosmetic. The relay passes on a cursor only when its colour is a hex colour and its name is short text. Every peer's editor turns a cursor's colour into CSS.
 
-Within that, the name and colour are whatever the client sends, so they prove nothing about who edits. Every update is logged under the user its token names. A save credits one editor per window: the newest who may still update the entity.
+Within that, the name and colour prove nothing about who edits: they are whatever the client sends. Every update is logged under the user its token names. A save credits one editor per window: the newest who may still update the entity.
 
 ## Collab session lifecycle
 
 ### Seed
 
-The first time a description is opened for editing, over the socket or over HTTP, the server seeds its document from the stored description under a new seed generation. Concurrent first connections end up with the same seed. Seeding writes nothing to the log, so opening an untouched description never updates the entity.
+The first time a description is opened for editing, over the socket or over HTTP, the server seeds its document from the stored description under a new seed generation. Concurrent first connections end up with the same seed. Opening an untouched description never updates the entity, since seeding writes nothing to the log.
 
 ### Edit
 
 On connect, edits made while disconnected upload like any other.
 
-From then on the relay handles a socket's updates one at a time, in arrival order. Each update is appended to the log before it is sent to the other editors, so peers only ever see durable content and a client needs no final flush.
+From then on the relay handles a socket's updates one at a time, in arrival order. Peers only ever see durable content, and a client needs no final flush. Each update is appended to the log before it is sent to the other editors.
 
-The relay confirms every saved update to its sender, so a client knows when the relay holds all its edits.
+A client knows when the relay holds all its edits: the relay confirms every saved update to its sender.
 
 ### Save
 
@@ -88,7 +88,7 @@ After a pause in typing, the relay merges base and log and sends the result to t
 
 The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/SYNC_ENGINE.md)).
 
-The relay compacts a window only once the entity row holds it, so the log holds every edit the entity has not received yet. Compaction also drops the text of what was deleted, keeping only its length, so a sentence removed from a description does not stay in the stored document.
+The log holds every edit the entity has not received yet: the relay compacts a window only once the entity row holds it. A sentence removed from a description does not stay in the stored document. Compaction drops the text of what was deleted and keeps only its length.
 
 The template registers the attachment update operation as its materializer. An app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and only a product with a materializer persists collaborative content.
 
@@ -98,11 +98,11 @@ A description written by anything but the relay (a REST update, an MCP tool, an 
 
 ### Deletion
 
-A document is retired only together with its entity. It outlives its collab sessions, relay restarts and offline editors, so a client that returns merges into the same history.
+A document is retired only together with its entity. A client that returns merges into the same history: the document outlives its collab sessions, relay restarts and offline editors.
 
 ### Other writers
 
-Three other writers append to the log: outside writes, updates posted over HTTP and a second relay during a rollout. Each relay listens for Postgres notices of those appends and passes the new rows on to its editors. A notice can be missed, so every collab session also checks the log when a socket connects, before it compacts and periodically.
+Three other writers append to the log: outside writes, updates posted over HTTP and a second relay during a rollout. Each relay listens for Postgres notices of those appends and passes the new rows on to its editors. Every collab session also checks the log when a socket connects, before it compacts and periodically, since a notice can be missed.
 
 ### Over HTTP
 
