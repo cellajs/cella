@@ -105,5 +105,6 @@ The meta record's `schemaVersion` pointer is the global lens ordinal.
 1. **`lens:check`** runs in `pnpm check` and the CI lint job. It fails on:
    - a shipped lens module that changed or is impure
    - a lens on the frozen envelope or another reserved field
+   - a contract lens with no earlier expand lens on the same field
    - a configured entity type without an evolution contract
 2. **`schema-bust-gate`**: the [cache-bust](#cache-bust-interim) gate.

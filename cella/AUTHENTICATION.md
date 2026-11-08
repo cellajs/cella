@@ -20,7 +20,7 @@ Changing how an account is protected first asks the session to prove its user ag
 
 Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up. The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
 
-`MICROSOFT_TENANT_ID` can narrow Microsoft sign-in to `organizations`, `consumers` or one tenant's GUID. A tenant's domain name there fails every sign-in, since tokens name the tenant by its GUID.
+`MICROSOFT_TENANT_ID` can narrow Microsoft sign-in to `organizations`, `consumers` or one tenant's GUID.
 
 A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own. Signing out at the provider or the institution ends nothing here. The app does not ask it again while the session lasts.
 

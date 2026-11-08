@@ -178,7 +178,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
   },
   microsoftTenantId: {
     secretName: 'microsoft-tenant-id',
-    description: 'Microsoft Entra tenant the sign-in narrows to, or none for every tenant',
+    description:
+      'Microsoft Entra tenant the sign-in narrows to: organizations, consumers or a tenant GUID, never its domain name. None means every tenant',
     envVar: 'MICROSOFT_TENANT_ID',
     required: false,
     valueSource: 'operator',

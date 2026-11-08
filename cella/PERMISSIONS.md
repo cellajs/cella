@@ -106,7 +106,7 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 
 Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
 
-Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`. **Self** rows on the same channel say what the entity's own members may do to it. Product entities have only **home** rows, where `create` grants creating inside that channel.
+Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it. Product entities have only **home** rows, where `create` grants creating inside that channel.
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`. A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 

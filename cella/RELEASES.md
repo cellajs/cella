@@ -15,7 +15,7 @@ both. Merging it tags the release for production to deploy. Never set versions o
 
 ## Gating
 
-Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes. So a broken `main` blocks the release before anything is tagged or deployed.
+Feature PRs run the quick checks. The slow suites in [ci.yml](../.github/workflows/ci.yml) run on the release PR, which every merge refreshes. So a broken `main` blocks the release before anything is tagged or deployed. The release PR also fails while its description of the app differs from the last apply ([Pull request check](./deployment/CHANGING_INFRASTRUCTURE.md#pull-request-check)).
 
 ## Setup
 
