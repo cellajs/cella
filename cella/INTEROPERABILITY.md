@@ -19,40 +19,15 @@ The OpenAPI contract and the generated SDK are the same for every caller. Only t
 
 ## Face: REST API
 
-Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev):
+The REST API is the API the app's own frontend uses, described in one OpenAPI document that also generates the SDK. Resource routes follow the resource-oriented conventions of [aep.dev](https://aep.dev) as far as an offline-first app allows, and the API docs show every route's shape, status codes and limits. A machine caller proves itself with an API key or an access token and gets the same contract as a browser session, narrowed by its scopes.
 
-- **Paths** alternate literal collections and ids, as `/tenants/{tenantId}/organizations/{organizationId}`.
-- **A `-`** stands for any parent: `/tenants/-/organizations` spans every tenant the caller sees.
-- **An update** is a `PATCH` with JSON Merge Patch semantics (RFC 7396).
-- **An action** is a custom method at `<resource>:<verb>`, such as `POST …/organizations/{organizationId}:publish`.
-- **A create** answers 201 with the resource, and a delete answers 204.
+Three behaviors hold across the API, and a client codes against them:
 
-In a merge patch, an absent field stays, `null` clears it and an array is replaced whole. A product update is the exception. It sends field operations with their timestamps, which the sync engine merges field by field with concurrent edits. The auth, OAuth and MCP routes, the app stream and the yjs routes follow the protocols they implement.
+- **Concurrency.** A single channel or product answers with a strong `ETag`. A write that sends it back in `If-Match` applies only while nothing changed the resource since, else answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
+- **Paging.** A list answers a page with a `nextPageToken` while more follow, passed back as `pageToken`. A token is opaque and bound to its list; an altered one is refused as `invalid_page_token`.
+- **Mirroring.** Range reads with `afterSeq` and `untilSeq` return products in sync order, a chunk at a time, deletions as tombstones. After an absence longer than the activity window, a mirror reads everything again.
 
-A single channel or product answers `GET` and `PATCH` with a strong `ETag`. The tag versions the resource's own fields, not its `included` data or counts.
-
-Send it back in `If-Match` on a `PATCH` or a custom method. The write then applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
-
-A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged. Only `maxPageSize` and `skip` may change.
-
-A token is opaque and bound to its list. A request with an altered token or changed params is refused as `invalid_page_token`.
-
-`skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`: a field, optionally followed by `asc` or `desc`.
-
-Four choices depart from those conventions:
-
-- **camelCase names,** where AEP-140 asks for snake_case, so one spelling runs from table to frontend.
-- **Client-minted ids:** UUID v7, since an offline create needs its id before the server answers.
-- **Partial batches:** a batch create or delete applies what it can and lists the ids it rejected.
-- **Membership routes** name their channel in `entityType` and `entityId`, since channel types are app config.
-
-A field AEP standardizes still takes its words, such as a person's `givenName` (AEP-148) or `languageCode` (AEP-143).
-
-A route accepts a machine caller through its guard, `actorGuard` or `serviceGuard`. Its operation is typed on `ActorContext`, which has no user row to read by accident. Account-security routes ask a session that recently proved its user, so no key or token reaches them.
-
-An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF. It is refused when it carries a browser `Origin`, since keys are for servers. The tenant in the URL must be the key's own. That check runs before the tenant row loads, so a key learns nothing about other tenants.
-
-A caller can mirror products through range reads with `afterSeq` and `untilSeq`. After an absence longer than the activity window, it reads them in full again, since an expired tombstone sends nothing. A range read is a sync chunk, not a page. It takes no `pageToken` or `skip`. The next chunk starts after the last position received.
+Account-security routes take only a session that recently proved its user, so no key or token reaches them.
 
 ## Face: OAuth
 
@@ -81,6 +56,8 @@ A row's provenance is its writer actor. A sync or import that a connection runs 
 ### API keys
 
 Only a key's hash is stored, with its prefix and last four characters for display. The plaintext is shown once, at creation.
+
+A key travels as `Authorization: Bearer <key>` or `x-api-key`. The tenant in the URL must be the key's own, and a request that carries a browser `Origin` is refused, since keys are for servers.
 
 A key can expire, be rolled or be revoked. After a roll the old key keeps working for an overlap window. A revoked key keeps its row as the audit trail.
 
