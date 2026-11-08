@@ -18,13 +18,17 @@ Changing how an account is protected first asks the session to prove its user ag
 | Institutional sign-in | An account at the institution, asserted through an identity federation ([Institutional sign-in](./authentication/SSO.md)) |
 | TOTP | A code from an authenticator app, as a second factor only |
 
-Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up. The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
+Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up.
+
+The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
 
 `MICROSOFT_TENANT_ID` can narrow Microsoft sign-in to `organizations`, `consumers` or one tenant's GUID.
 
 A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own. Signing out at the provider or the institution ends nothing here. The app does not ask it again while the session lasts.
 
-A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`. The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Behind no proxy, or one that passes the client's header through, a client chooses the address the allowlist and rate limits read.
+A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`.
+
+The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Behind no proxy, or one that passes the client's header through, a client chooses the address the allowlist and rate limits read.
 
 ## Sign-up
 
@@ -42,7 +46,9 @@ An invitation link can be forwarded, so holding one proves nothing:
 - **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
 - **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
 
-A provisional account is the exception to a proven inbox. An external party asserts its identity. Its placeholder address on a reserved domain has no inbox. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one. An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). A provisional account proves an inbox only from a signed-in session, so no mailed link signs it in.
+A provisional account is the exception to a proven inbox. An external party asserts its identity. Its placeholder address on a reserved domain has no inbox. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one.
+
+An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). A provisional account proves an inbox only from a signed-in session, so no mailed link signs it in.
 
 ## Tokens
 
@@ -57,9 +63,13 @@ The `auth/tokens/` module issues, opens and spends every token, with one policy 
 | `oauth-connect` | cookie | Connecting a provider account to the signed-in account | minutes |
 | `step-up` | code | Proving presence again with an emailed code | minutes |
 
-Opening a link only holds it in the browser. A click on the app's page then redeems it with a POST, so a mail scanner or a link preview does not use it up. The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
+Opening a link only holds it in the browser. A click on the app's page then redeems it with a POST, so a mail scanner or a link preview does not use it up.
 
-A magic link is the one link that redeems on opening, and only in the browser that asked for it. A cookie set at the request proves that browser, so a crawler or a prefetch changes nothing. Opened anywhere else, the link waits on a page that names the address, so a planted link signs nobody in. A link of another account than the signed-in one is refused. An expired link leads to a page that offers a new one.
+The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
+
+A magic link is the one link that redeems on opening, and only in the browser that asked for it. A cookie set at the request proves that browser, so a crawler or a prefetch changes nothing.
+
+Opened anywhere else, the link waits on a page that names the address, so a planted link signs nobody in. A link of another account than the signed-in one is refused. An expired link leads to a page that offers a new one.
 
 ## Second factors and MFA
 
@@ -70,7 +80,11 @@ A magic link is the one link that redeems on opening, and only in the browser th
 - **TOTP secret.** It is encrypted at rest under `DATA_ENCRYPTION_KEY`.
 - **Shared TOTP lockout.** Failed codes lock the account's TOTP in every process.
 
-MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in. A passkey sign-in needs no challenge. Every passkey registration and sign-in requires user verification, so a passkey proves both factors itself. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it. The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
+MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in.
+
+A passkey sign-in needs no challenge. Every passkey registration and sign-in requires user verification, so a passkey proves both factors itself. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it.
+
+The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
 
 Setting up a factor or connecting a provider sends a security mail to the account's address.
 
@@ -98,7 +112,9 @@ On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required
 
 ## Rate limits
 
-Every read is paced per user or service account, or per IP address when anonymous. A route that declares a limiter of its own skips that pace. A write declares one in `xRateLimiter`. The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The read pace also reports what is left of its budget in `RateLimit` header fields.
+Every read is paced per user or service account, or per IP address when anonymous. A route that declares a limiter of its own skips that pace. A write declares one in `xRateLimiter`.
+
+The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The read pace also reports what is left of its budget in `RateLimit` header fields.
 
 - **Keyed pseudonyms.** An IP or email address enters a key as a keyed pseudonym, never in the clear.
 - **Shared counts.** Processes share counts, except while the database is unreachable.
