@@ -24,6 +24,8 @@ describe('reported budgets', () => {
   });
 
   it("must not read one policy's budget as another's via a field with several members", () => {
+    // A window ends `t` seconds from the moment the report comes in, so the clock stands still while it is read back.
+    vi.useFakeTimers({ toFake: ['Date'] });
     report('"points";r=0;t=60, "read";r=900;t=60', '"points";q=10;w=3600, "read";q=1000;w=300');
 
     expect(msUntilBudget('read', 0.3)).toBe(0);

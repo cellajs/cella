@@ -68,7 +68,8 @@ function BarFor({ bar, q, role, selected = [], isSheet, canUpdate = true, setSea
     clearSelection,
     selected: selected as never[],
   };
-  const searchVars = { q, role, limit: 20 } as never;
+  // A filter over a list of values reads the array its search param always parses to, picked or not.
+  const searchVars = { q, role, kind: [], accounts: [], limit: 20 } as never;
 
   if (bar === 'users') return <UsersTableBar {...common} searchVars={searchVars} />;
   if (bar === 'organizations') return <OrganizationsTableBar {...common} searchVars={searchVars} />;
@@ -137,7 +138,7 @@ export const UsersFiltered: Story = {
     // The embedded invite dialog mounts into an empty container right after the bar.
     await expect(canvasElement.querySelector('div.empty\\:hidden')).not.toBeNull();
 
-    await expectReset(canvasElement, args, { q: '', role: undefined });
+    await expectReset(canvasElement, args, { q: '', role: undefined, accounts: [] });
     await expect(args.clearSelection).toHaveBeenCalled();
   },
 };
@@ -164,6 +165,8 @@ export const OrganizationsExport: Story = {
     await expect(searchInput(canvasElement, 'organizationSearch')).not.toBeNull();
     await expect(canvas.getByRole('button', { name: 'create' })).toBeInTheDocument();
     await expect(await body().findByRole('button', { name: 'newsletter' })).toBeInTheDocument();
+    // No word typed and no kind picked: the count is the list's own, not what a search found.
+    await expect(canvas.getByText('2 organization')).toBeVisible();
 
     await userEvent.click(canvasElement.querySelector('.lucide-sliders-horizontal')?.closest('button') as HTMLElement);
     const menu = await body().findByRole('menu');
@@ -178,7 +181,7 @@ export const OrganizationsFiltered: Story = {
   args: { bar: 'organizations', q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(within(canvasElement).getByRole('button', { name: 'create' })).toBeInTheDocument();
-    await expectReset(canvasElement, args, { q: '' });
+    await expectReset(canvasElement, args, { q: '', kind: [] });
     await expect(args.clearSelection).toHaveBeenCalled();
   },
 };
@@ -255,7 +258,7 @@ export const Tenants: Story = {
   args: { bar: 'tenants', q: 'x' },
   play: async ({ canvasElement, args }) => {
     await expect(searchInput(canvasElement, 'tenantSearch')).not.toBeNull();
-    await expectReset(canvasElement, args, { q: '' });
+    await expectReset(canvasElement, args, { q: '', kind: [] });
     await expect(args.clearSelection).not.toHaveBeenCalled();
   },
 };

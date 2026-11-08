@@ -23,6 +23,7 @@ import {
   sessionRow,
   setCookiePair,
   totpCode,
+  waitForMail,
   wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -59,11 +60,11 @@ describe('brute-force budgets', async () => {
     // The sign-in page points at the links already sent by this type.
     expect((blocked.error as ErrorResponse | undefined)?.type).toBe('magic_link_recently_sent');
     // Each link goes out after its answer.
-    await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(3));
+    await waitForMail(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(3));
 
     // Another address is unaffected (positive control).
     expect((await request(other.email)).response.status).toBe(204);
-    await vi.waitFor(() => expect(magicLinkMailsTo(other.email)).toHaveLength(1));
+    await waitForMail(() => expect(magicLinkMailsTo(other.email)).toHaveLength(1));
   });
 
   it('must not tell an address with an account from one without via the magic link budget, once the owner opens a link', async () => {
@@ -73,11 +74,12 @@ describe('brute-force budgets', async () => {
 
     for (let attempt = 0; attempt < 3; attempt++) {
       await request(account);
+      // Each link goes out after its answer and deletes the one before, so the newest is the last one mailed.
+      await waitForMail(() => expect(magicLinkMailsTo(account)).toHaveLength(attempt + 1));
       await request(nobody);
     }
 
     // The owner opens the newest link in another browser and confirms it there, as the refusal's text suggests.
-    await vi.waitFor(() => expect(magicLinkMailsTo(account)).toHaveLength(3));
     const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: defaultHeaders });
     const held = setCookiePair(opened.response, 'magic-pending') ?? '';
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
@@ -96,7 +98,7 @@ describe('brute-force budgets', async () => {
       const sent = await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() });
       expect(sent.response.status).toBe(204);
       browser.absorb(sent.response);
-      await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(signIn + 1));
+      await waitForMail(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(signIn + 1));
 
       const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
       expect(cookieChange(opened.response, 'session')).toBe('set');
@@ -111,7 +113,7 @@ describe('brute-force budgets', async () => {
     const browser = new CookieJar();
     const inBrowser = () => ({ ...fromIp(randomIp()), Cookie: browser.header() });
     browser.absorb((await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() })).response);
-    await vi.waitFor(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(1));
+    await waitForMail(() => expect(magicLinkMailsTo(owner.email)).toHaveLength(1));
     const opened = await call(invokeToken, { path: { kind: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
     expect(cookieChange(opened.response, 'session')).toBe('set');
 

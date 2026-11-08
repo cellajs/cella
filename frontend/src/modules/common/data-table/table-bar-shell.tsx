@@ -29,7 +29,10 @@ export function useTableBarFilters<T extends { q?: string }>(options: TableBarFi
   const { searchVars, setSearch, clearSelection, reset } = options;
   const isFiltered = Object.entries(reset).some(([key, value]) => {
     const current = searchVars[key as keyof T];
-    return current !== undefined && current !== value;
+    if (current === undefined) return false;
+    // A filter over a list of values resets to an empty list, and no two empty lists are one object: its length decides.
+    if (Array.isArray(current)) return current.length > 0;
+    return current !== value;
   });
 
   const onSearch = (q: string) => {
