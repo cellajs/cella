@@ -203,8 +203,6 @@ Aggregates such as member counts, newest-post times and organization totals run 
 
 Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts. The next ones check that the actor is in the tenant and the organization the URL names.
 
-A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
-
 Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an API key or access token may call, `actorGuard` takes the place of `userGuard`. The user's own account runs behind `[userGuard]` alone.
 
 | Guard | Admits | Refuses with |
@@ -221,6 +219,8 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`. Where an 
 | `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin | 403 |
 
 A service account passes `tenantGuard` and `orgGuard` as a member does, since they read the actor's bindings. They turn away only an actor with no foothold at all. What a member may do with a row is the engine's answer, on the paths above. An actor bound to nothing in the organization gets `tenantGuard`'s 403, since a tenant holds one organization.
+
+A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
 
 ## Refusals
 
