@@ -4,7 +4,7 @@ This document explains how breaking changes to entity wire shapes ship without s
 
 ### TL;DR
 
-When the fields returned by the API change incompatibly, add one permanent conversion module, a **lens**, that describes the old and new forms. From it, Cella accepts both forms during rollout, converts writes to the current form, and updates data already cached in browsers. No lens has shipped yet, so until one does, use the interim [cache reset](#cache-bust-interim).
+When the fields returned by the API change incompatibly, add one permanent conversion module, a **lens**, that describes the old and new forms. From it, Cella accepts both forms during rollout, converts writes to the current form, and updates data already cached in browsers. Until the first lens ships, use the interim [cache reset](#cache-bust-interim).
 
 ## The lens model
 
@@ -88,9 +88,9 @@ export const organizationContract = evolutionContract.channel('organization', { 
 
 ### Server write path
 
-No middleware and no body re-parsing. During a lens's expand window the derived schemas accept both field names, so old-shape requests pass validation unchanged.
+No middleware and no body re-parsing. During a lens's expand window, old-shape requests pass validation unchanged: the derived schemas accept both field names.
 
-The contract's normalize step then maps `ops` and `stx.fieldTimestamps` to canonical keys, so the merge sees canonical keys only. It also **mirror-writes** the twin column, so a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
+The merge then sees canonical keys only: the contract's normalize step maps `ops` and `stx.fieldTimestamps` to them. The contract also **mirror-writes** the twin column: a write to `title` or `name` writes both. Reads need no transform, since the row carries both columns during expand.
 
 A later contract PR, made by hand for now, drops the old column. It waits until `X-Client-Version` shows every client past the expand lens for the whole expand window.
 
