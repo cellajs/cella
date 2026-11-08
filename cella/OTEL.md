@@ -40,7 +40,7 @@ A process exports when one of two variables is set. With neither, telemetry stay
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | All three signals go to this OTLP base URL, as JSON over HTTP. The Maple key is then ignored. |
 
 ```sh
-# backend/.env: a local Collector, or any backend that takes OTLP over HTTP
+# .env: a local Collector, or any backend that takes OTLP over HTTP
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 ```

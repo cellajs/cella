@@ -59,7 +59,7 @@ Each class goes through up to three agents, each writing one file into the untra
 
 ## Test isolation
 
-The shared test database belongs to every worktree. A builder whose branch has a migration gives itself a throwaway database first ([verify: a throwaway database](../verify/SKILL.md#a-throwaway-database), image `cella-db_test:latest`, the CDC flags `-c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10` added) and passes its port as `DB_TEST_PORT` in the command's environment: `DB_TEST_PORT=<port> pnpm -C <worktree>/backend exec cross-env TEST_MODE=core vitest run <files>`. Never root `pnpm test`, `pnpm docker:test` or `docker compose` from a worktree, and never a leading `cd`: every command takes an absolute path or `pnpm -C`, `git -C`.
+The shared test database belongs to every worktree. A builder whose branch has a migration gives itself a throwaway database first ([verify: a throwaway database](../verify/SKILL.md#a-throwaway-database), image `cella-db_test:latest`, the CDC flags `-c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10` added) and passes its port as `DATABASE_TEST_PORT` in the command's environment: `DATABASE_TEST_PORT=<port> pnpm -C <worktree>/backend exec cross-env TEST_MODE=core vitest run <files>`. Never root `pnpm test`, `pnpm docker:test` or `docker compose` from a worktree, and never a leading `cd`: every command takes an absolute path or `pnpm -C`, `git -C`.
 
 ## Budget
 

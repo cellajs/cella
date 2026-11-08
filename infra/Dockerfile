@@ -25,7 +25,7 @@ ARG DESCRIPTION_HASH
 RUN test -n "$ENGINE_MODE" && test -n "$DESCRIPTION_HASH" \
  && built="$(APP_MODE="$ENGINE_MODE" pnpm --silent --filter infra description-hash)" \
  && if [ "$built" != "$DESCRIPTION_HASH" ]; then \
-      echo "The image describes $ENGINE_MODE as $built, the apply as $DESCRIPTION_HASH: an env override in the apply's shell (APP_ORIGIN, SINGLE_VM), or a file the checkout does not track." >&2; \
+      echo "The image describes $ENGINE_MODE as $built, the apply as $DESCRIPTION_HASH: an env override in the apply's shell (APP_ORIGIN), or a file the checkout does not track." >&2; \
       exit 1; \
     fi \
  && printf '{"mode":"%s","descriptionHash":"%s"}\n' "$ENGINE_MODE" "$built" > /engine/stamp.json

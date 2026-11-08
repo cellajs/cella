@@ -9,5 +9,5 @@ Modules under `resources/` construct live Pulumi resources at import time, so th
 ## `tests/`: everything cross-cutting
 
 - **`tests/unit/`**: tests without a single owning module. Source-shape checks that read a file as text (`caddyfile`, `ci-workflows`, `no-unexpected-public`, `resource-contracts`, `engine-config`, `operator-actions`), and rules that span modules or packages (`runtime-secrets` reads each service's `env.ts`; `app-config-registry`, `managed-keys`, `internal-port`, `path-prefix`, `dns-cert-gates`).
-- **`tests/integration/`**: needs a live host or network; excluded from `pnpm test`, opt in with `pnpm test:integration` (`INTEGRATION=1`).
+- **`tests/integration/`**: needs a live host or network; excluded from `pnpm test`, opt in with `pnpm test:integration` (`INTEGRATION=true`).
 - **`tests/helpers/`**: shared fixtures and the Pulumi mock harness. Not tests.

@@ -40,7 +40,7 @@ export interface ProjectInputs {
   own?: string;
   /** The id the process env resolves to once the mode file is loaded. */
   resolved?: string;
-  /** The id that a file every mode reads names (backend/.env, the repo-root .env). */
+  /** The id that the file every mode reads names (the repo-root .env). */
   shared?: string;
   /** True when the mode's stack file exists. */
   hasStack: boolean;

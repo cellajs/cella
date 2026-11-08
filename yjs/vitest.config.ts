@@ -30,7 +30,6 @@ export default defineProject({
       YJS_RELAY_SECRET: 'test-yjs-relay-secret-for-unit-tests',
       // The relay connects as the RLS-subject runtime role in production; integration tests do the same.
       DATABASE_URL: testRuntimeDatabaseUrl,
-      YJS_PORT: '0',
     },
   },
 });

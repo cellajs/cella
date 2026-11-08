@@ -3,7 +3,6 @@ import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
 import type { AppPrincipalNames, PrincipalNames } from './principals';
-import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch } from './scw-fetch';
 
 export interface KeyPair {
@@ -102,7 +101,7 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
  * application key holds IAM read and no right over the Account API, so the last ways serve user keys.
  */
 export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
-  const fromEnv = resolveOrganizationIdFromEnv();
+  const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID;
   if (fromEnv) return fromEnv;
   const described = await describeKey(pair, opts).then(
     (desc) => desc.organizationId,

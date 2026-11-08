@@ -52,13 +52,13 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
     baseLog.info('Jobs worker disabled by appConfig');
     return;
   }
-  const port = options.port ?? env.PORT;
+  const port = options.port ?? appConfig.services.jobs.port;
 
   if (!options.inProcess) {
     otel.start();
     otel.verifyConnection();
     // The API installs the job store at boot in development; production installs it from the migrate companion.
-    if (env.NODE_ENV === 'development') await waitForBackend({ apiPort: appConfig.services.backend.port });
+    if (env.NODE_ENV === 'development') await waitForBackend();
   }
 
   const boss = await startMaintainer();

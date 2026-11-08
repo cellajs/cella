@@ -14,7 +14,7 @@ if (mode !== 'template' && mode !== 'app') {
 
 /** Read before the swap: compose names the test database by slug and binds it by port, so another slug or app number starts a second container. */
 const { slug } = config;
-const testDatabaseEnv = { ...process.env, DB_TEST_PORT: String(localDatabasePort('test')) };
+const testDatabaseEnv = { ...process.env, DATABASE_TEST_PORT: String(localDatabasePort('test')) };
 
 const repoRoot = join(import.meta.dirname, '..', '..');
 const configDir = join(repoRoot, 'shared/config');

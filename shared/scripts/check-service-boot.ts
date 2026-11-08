@@ -19,7 +19,7 @@ const { Client } = createRequire(join(repoRoot, 'backend/package.json'))('pg') a
 };
 
 /** The values every service starts with: the example env, so a developer's own keys and endpoints stay out. */
-const exampleEnv = parseEnv(readFileSync(join(repoRoot, 'backend/.env.example'), 'utf8'));
+const exampleEnv = parseEnv(readFileSync(join(repoRoot, '.env.example'), 'utf8'));
 
 /** The services boot on the test database server, on a scratch database of their own. */
 const dbPort = localDatabasePort('test');
@@ -47,12 +47,7 @@ const serviceEnv: NodeJS.ProcessEnv = {
   DATABASE_CDC_URL: localDatabaseUrl('test', 'admin_role', database),
   // Production migrates as SERVICE=migrate before the API starts; so does this check.
   RUN_MIGRATIONS_ON_BOOT: 'false',
-  SINGLE_VM: 'false',
   GEOIP_SOURCE_URL: 'off',
-  PORT: String(ports.api),
-  INTERNAL_PORT: String(ports.internal),
-  CDC_HEALTH_PORT: String(ports.cdcHealth),
-  YJS_PORT: String(ports.yjs),
   BACKEND_INTERNAL_URL: `http://localhost:${ports.internal}`,
 };
 

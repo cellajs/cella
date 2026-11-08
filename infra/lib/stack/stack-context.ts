@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../../config/engine-config';
-import { resolveProjectId } from '../scaleway/provider-env';
 import { loadModeEnvFile, ownProjectId, sharedFileProjectId } from '../utils/env-files';
 import { infraDir } from '../utils/paths';
 import { detectStackState, type Environment, type StackState } from './bootstrap-stack-state';
@@ -38,13 +37,13 @@ export async function loadStackContext(environment: Environment, log?: (message:
   const project = resolveModeProject({
     stack: stackFileProjectId(stackYaml),
     own: ownProjectId(environment),
-    resolved: resolveProjectId(),
+    resolved: process.env.SCW_DEFAULT_PROJECT_ID,
     shared: sharedFileProjectId(),
     hasStack: stackYaml !== undefined,
   });
   // A mode without a stack does not take the project of a file every mode reads: nothing later in this run may resolve it either.
-  if (project.dropShared) delete process.env.SCW_PROJECT_ID;
-  // The stack file decides over backend/.env, which every mode reads, for all this run's tasks.
-  if (project.projectId) process.env.SCW_PROJECT_ID = project.projectId;
+  if (project.dropShared) delete process.env.SCW_DEFAULT_PROJECT_ID;
+  // The stack file decides over the repo-root `.env` and any export in this shell, for all this run's tasks.
+  if (project.projectId) process.env.SCW_DEFAULT_PROJECT_ID = project.projectId;
   return { environment, stackPath, stackYaml, state, appConfig, projectId: project.projectId, projectIdSource: project.source, envWarnings };
 }

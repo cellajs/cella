@@ -109,14 +109,14 @@ const slug = (text: string) => slugify(text, { lower: true, strict: true });
 
 /** Refuses a database someone works in: the admin gets factors nobody holds, and the data would mix with theirs. */
 const refuseOwnDatabase = () => {
-  const envFile = new URL('../../.env', import.meta.url);
+  const envFile = new URL('../../../.env', import.meta.url);
   const fileEnv = existsSync(envFile) ? parseEnv(readFileSync(envFile, 'utf8')) : {};
   // The app's showcase rows go through its operations, which write on the runtime pool
   const own =
     env.DATABASE_ADMIN_URL === (fileEnv.DATABASE_ADMIN_URL ?? localDatabaseUrl('dev', 'postgres')) ||
     env.DATABASE_URL === (fileEnv.DATABASE_URL ?? localDatabaseUrl('dev', 'runtime_role'));
   if (own) {
-    throw new Error('the showcase refuses the database backend/.env names: set DATABASE_URL and DATABASE_ADMIN_URL to a throwaway one.');
+    throw new Error('the showcase refuses the database .env names: set DATABASE_URL and DATABASE_ADMIN_URL to a throwaway one.');
   }
   if ((env.ADMIN_EMAIL ?? defaultAdminUser.email) !== showcase.admin.email) {
     throw new Error(`the showcase admin is ${showcase.admin.email}: export ADMIN_EMAIL=${showcase.admin.email}.`);

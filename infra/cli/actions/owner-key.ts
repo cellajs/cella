@@ -50,7 +50,7 @@ export async function acquireOwnerKey(opts: {
   } catch (error) {
     forgetOwnerKey();
     console.error(
-      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
+      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_DEFAULT_ORGANIZATION_ID (.env) and re-run.`,
     );
     endAction(1);
   }
