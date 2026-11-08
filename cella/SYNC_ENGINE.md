@@ -115,8 +115,6 @@ A change frame names each changed row with its sequence position and the write t
 
 A frame past a size bound names its rows by id alone, and past a larger bound names none. The client then fetches the range or refetches the lists.
 
-A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
-
 ### Catchup
 
 Catchup runs on every connection before the stream goes live. It runs only after the persisted cache is restored, so a gap is fetched into the lists on disk. The client posts a view per product type of each of the user's organizations. The answer holds:
