@@ -95,7 +95,7 @@ When an update moves products to a path a subscriber can no longer read, that su
 
 ### Changes
 
-A change frame names each changed row with its sequence position and the write that changed it. The client fetches created and updated rows and patches them into its caches. A delete only marks the row's lists for a refetch, since no row is left to fetch. A move-out drops the row at once. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
+A change frame names each changed row with its sequence position and the write that changed it. The client fetches created and updated rows and patches them into its caches. A delete only marks the row's lists for a refetch, since no row is left to fetch. A move-out drops the row at once. A frame past a size bound names its rows by id alone, and past a larger bound names none. The client then fetches the range or refetches the lists. An echo of the tab's own write fetches nothing, since the write's answer brings the stored row. A row is an echo only when it carries the tab's source id and names the signed-in user as its writer. The source id alone proves nothing, since anyone who reads the row can copy it.
 
 ### Catchup
 
