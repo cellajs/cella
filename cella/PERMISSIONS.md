@@ -106,11 +106,17 @@ export const { policyMatrix, publicReadGrants, accessScopes } = configurePermiss
 
 Omitted actions and missing role/channel rows deny, so policies only declare grants. `'own'` is the built-in owner condition.
 
-Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it. Product entities have only **home** rows, where `create` grants creating inside that channel.
+Channel entities have two row kinds. **Elevation** rows on an ancestor channel say what a parent's member may do to the child, and only they grant `create`, since nobody is a member of a channel that does not exist yet. **Self** rows on the same channel say what the entity's own members may do to it.
 
-A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`. A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+Product entities have only **home** rows, where `create` grants creating inside that channel.
 
-A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync. The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
+A row's home is the product's declared parent, or a channel above it when the hierarchy declares the parent's id nullable in `nullableAncestors`.
+
+A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there. An elevated role's grants reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
+
+A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync.
+
+The only derived memberships are the ones a membership brings along above its channel: the organization's, and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
 
 A channel declares its roles from most to least privileged, and that order decides who may grant what:
 
@@ -143,13 +149,19 @@ A missing scope never defaults to unscoped, which would bypass permissions.
 
 ## Row conditions
 
-Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set. The set is **closed** to `own` and `public`. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch. So no cross-row or app-defined condition exists.
+Two mechanisms read the row's own columns. A **row condition** in a policy cell grants only on matching rows, where a `1` grants on every row in channel scope. **Public read** widens `read`, and nothing else, to rows whose `public` flag is set.
+
+The set is **closed** to `own` and `public`. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch. So no cross-row or app-defined condition exists.
 
 Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The flag is row-local and never cascades. The server copies the home channel's flag onto a new row.
 
 ### Drafts
 
-A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone. A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish. Those for its `prepareRoles` go out at once, so those people can set it up.
+A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone.
+
+A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type.
+
+A draft channel's invitations wait for the publish. Those for its `prepareRoles` go out at once, so those people can set it up.
 
 ## Archived channels
 
@@ -165,7 +177,9 @@ Like a draft, an archive is checked before the engine, on the container's own fl
 
 ## In the interface
 
-The frontend asks the engine. The backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships. A control with no row, such as a create button, asks about a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
+The frontend asks the engine. The backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships. A control with no row, such as a create button, asks about a new row of that type homed at the channel.
+
+`useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay does. `useCan` also applies the archive veto from the cached channel rows. `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
 A route gate, `requireEntityAction`, asks the same question before the page loads. When the memberships cannot be read, as offline with none cached, the gate lets the user through and the server decides.
 
@@ -187,7 +201,9 @@ Aggregates such as member counts, newest-post times and organization totals run 
 
 ### Guards
 
-Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts. The next ones check that the actor is in the tenant and the organization the URL names. A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
+Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts. The next ones check that the actor is in the tenant and the organization the URL names.
+
+A guard declares what it reads of an earlier one. A route that lists them out of order fails when its module loads.
 
 Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `actorGuard` in place of `userGuard` where an API key or access token may call too. The user's own account runs behind `[userGuard]` alone.
 
@@ -208,7 +224,11 @@ Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, with `act
 
 ## Refusals
 
-One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn`: a warning toast and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone. The members an answer names beside its type, such as `resource`, are top-level members of the error body.
+One answer per situation, so no route, app or test meets two shapes for one cause.
+
+A refusal the caller's request or state brings about carries severity `warn`: a warning toast and no log id. Severity `error` is kept for the app's own faults, such as a row that must exist and is gone.
+
+The members an answer names beside its type, such as `resource`, are top-level members of the error body.
 
 | Situation | Answer | Why |
 | --- | --- | --- |
@@ -232,13 +252,27 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 
 ## What members see
 
-Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one. Resending an invitation takes `update` on that channel. The privacy statement tells users the same, so a change here changes that text too.
+Users who share an organization see each other's `UserBase` fields, email address included. They see them in member lists, through `getUser` and in `listUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing.
+
+Co-members also see `lastSeenAt`, when the user was last active in any of their tenants. The user's own GET requests stamp it.
+
+A member also sees the addresses invited to a channel they read, never the account behind one. Resending an invitation takes `update` on that channel.
+
+The privacy statement tells users the same, so a change here changes that text too.
 
 ## System admins
 
-A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership. So a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities. A system admin never reaches a user's account security, inbox, menu or preferences. They join a collaborative description with only their own account's access.
+A system admin holds the `admin` system role, which counts only on a request from an allowed address ([Authentication](./AUTHENTICATION.md)). The permission engine allows them every action. Every guard but `serviceGuard` lets them through without a membership.
 
-Support reads before it writes, in the users table and the organization's members page. To see a page as a given role sees it, invite an account with no system role at that role, and remove it after the case. The organization's admins can read both moves as activities. Make the change as yourself and tell the user what changed. Never hand anyone a session. A user recovers from account-security trouble, such as a lost factor, through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
+So a system admin opens any organization from the system panel and sees the pages a member sees, with every control. Nobody acts as another user. A support change runs as the admin and shows under the admin's name in the organization's activities.
+
+A system admin never reaches a user's account security, inbox, menu or preferences. They join a collaborative description with only their own account's access.
+
+Support reads before it writes, in the users table and the organization's members page. To see a page as a given role sees it, invite an account with no system role at that role, and remove it after the case. The organization's admins can read both moves as activities.
+
+Make the change as yourself and tell the user what changed. Never hand anyone a session.
+
+A user recovers from account-security trouble, such as a lost factor, through the step-up and recovery paths. No system admin route ends a user's sessions: only deleting the account does, or a `cookieVersion` bump for everyone.
 
 ## Behavior
 
