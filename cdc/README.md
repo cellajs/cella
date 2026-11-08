@@ -60,9 +60,9 @@ The worker reads one publication through one replication slot. It tracks the tab
 
 ### Collect
 
-The worker holds a source transaction until its commit, so it can drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush. A flush takes whole source transactions in commit order. One flush runs at a time.
+The worker holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush. A flush takes whole source transactions in commit order. One flush runs at a time.
 
-A worker that falls behind stops reading until its pending changes are flushed, so the backlog waits in Postgres and not in the worker.
+A backlog waits in Postgres and not in the worker. A worker that falls behind stops reading until its pending changes are flushed.
 
 ### Record
 
@@ -100,11 +100,11 @@ Failure handling has three levels:
 
 The slot is the only durable buffer. It advances only after a flush committed. Delivery is **at least once**, recording is **once**. A change delivered again changes no activity, counter or sequence value. Its message goes out again with the sequence value its row already holds.
 
-A failure reports degraded at first. A deploy that brings a change the worker can never process therefore warns in its smoke step and stays deployed.
+A deploy that brings a change the worker can never process warns in its smoke step and stays deployed. A failure reports degraded at first.
 
 A worker stuck on a failure for a while reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on.
 
-A fix or a dropped slot ends the failure. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
+A fix or a dropped slot ends the failure. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A worker that crash-loops never drops its slot: each restart starts the failure over. Only the WAL lag in its health answer shows it.
 
 Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)).
 
@@ -158,9 +158,9 @@ In a lost case, rows changed between the old slot's last acknowledged position a
 - **Drafts on a product table:** add its `publishedAt` column, then rerun the CDC migration.
 - **Mismatch:** until the migration reruns, the worker reads nothing and reports unhealthy with the cause.
 - **`REPLICA IDENTITY FULL` is mandatory:** changed fields and a deleted row come from the old row.
-- **Large columns:** the worker strips them from the row data, so a consumer must tolerate their absence.
+- **Large columns:** a consumer must tolerate their absence, since the worker strips them from the row data.
 - **Only one worker may read the slot.**
-- **Transaction size:** one past the limit can never be processed, so write a backfill in smaller ones.
+- **Transaction size:** write a backfill in smaller transactions, since one past the limit can never be processed.
 - **WAL retention is the recovery margin:** a worker that is down, waits for the API or is stuck on setup keeps WAL.
 - **Unbounded WAL** grows until the disk is full ([Deployment](../cella/DEPLOYMENT.md#overview)).
 - **Worker role:** needs `REPLICATION` and an RLS bypass ([Database roles](../cella/MULTI_TENANCY.md#database-roles)).
