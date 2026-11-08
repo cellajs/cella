@@ -86,7 +86,7 @@ JSON-RPC 2.0 over Streamable HTTP, with JSON responses:
 
 ## Operational constraints
 
-- **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
+- **Needs the OAuth worker.** Without `services.oauth` every call is a 401, since no token can exist.
 - **Limits.** A tool call spends the route's limits, plus the endpoint's own limit per account.
 - **No internals.** A server error reaches the model without its message.
 - **Tool descriptions are model-facing English.** They are not translated.
