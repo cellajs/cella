@@ -30,9 +30,13 @@ Its app streams close at once. Its collaborative editor sockets, and the editor 
 
 Ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-up), so a copied cookie cannot end each new sign-in of the owner. Signing out asks nothing.
 
-A sign-out ends the session and any sign-in in progress before it clears a cookie. A failed sign-out thus leaves the browser signed in. The sign-out page then offers to try again. A sign-out also clears an opened invitation, so the next person at the browser cannot read it. It sends no `Clear-Site-Data`. The app clears its own data for the account that signs out, since the header would also take other accounts' offline work and the device cookie.
+A sign-out ends the session and any sign-in in progress before it clears a cookie. A failed sign-out thus leaves the browser signed in. The sign-out page then offers to try again.
 
-A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone. Any other 401 refuses a proof while signed in. A session route's 401 to a request with a session cookie carries no `WWW-Authenticate`, since no HTTP authentication scheme names a cookie session. The body's `type` says what ended or failed.
+A sign-out also clears an opened invitation, so the next person at the browser cannot read it. It sends no `Clear-Site-Data`. The app clears its own data for the account that signs out, since the header would also take other accounts' offline work and the device cookie.
+
+A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone. Any other 401 refuses a proof while signed in.
+
+A session route's 401 to a request with a session cookie carries no `WWW-Authenticate`, since no HTTP authentication scheme names a cookie session. The body's `type` says what ended or failed.
 
 ## Devices
 
