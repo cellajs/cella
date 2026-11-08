@@ -18,7 +18,6 @@ import {
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
 import { allPrincipalNames } from '../lib/scaleway/principals';
-import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
@@ -35,7 +34,7 @@ import { loadStackContext } from '../lib/stack/stack-context';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { loadBaseEnvFiles } from '../lib/utils/env-files';
+import { loadRootEnvFile } from '../lib/utils/env-files';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { within } from '../lib/utils/retry';
@@ -70,7 +69,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
       ? { accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY }
       : undefined;
   const key = identity.observer ?? identity.ambient ?? aws;
-  const projectId = ctx.projectId ?? resolveProjectId();
+  const projectId = ctx.projectId ?? process.env.SCW_DEFAULT_PROJECT_ID;
   const accessKey = key?.accessKey;
   const secretKey = key?.secretKey;
   const scalewayKeyAvailable = Boolean(accessKey && secretKey);
@@ -242,7 +241,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const mode = (flagMode as 'production' | 'staging' | undefined) ?? pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   const json = argv.includes('--json');
 
-  loadBaseEnvFiles();
+  loadRootEnvFile();
   const { appConfig, state: stackState, stackYaml, projectId } = await loadStackContext(mode);
   const report = await withSpinner('Checking infra status', () =>
     buildReport({ mode, appConfig, stackState, stackYaml, projectId: projectId || undefined }),

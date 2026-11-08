@@ -165,12 +165,12 @@ export const config = {
   /**
    * The services this app runs, each with the port it listens on, as app number 0 has them: the Vite proxy targets in
    * development, the deploy's container ports, and the folded workers' ports under `singleVM`. A mode file flips a
-   * flag, e.g. mcp on in staging only. `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback
+   * flag, e.g. mcp on in staging only. `frontend` is the Vite fallback
    * for when the origin carries no port (tunnel mode); otherwise the origin's port wins.
    */
   services: {
     frontend: { enabled: true, port: 3000 },
-    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
+    // `internalPort`: the backend's internal listener, which the cdc and yjs workers dial.
     backend: { enabled: true, port: 4000, internalPort: 4005 },
     // The port is its health endpoint.
     cdc: { enabled: true, port: 4001 },
@@ -322,7 +322,6 @@ export const config = {
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
   // OpenFreeMap: free, no key, no cookies. Any MapLibre style URL works; its origin is added to the CSP.
   mapStyleUrls: { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' },
-  matrixURL: 'https://matrix-client.matrix.org',
   maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),

@@ -122,7 +122,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; secretKe
     console.info(`  ${changeMark} Created project ${project.name} (${project.id})`);
     projectId = project.id;
   }
-  process.env.SCW_PROJECT_ID = projectId;
+  process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   return projectId;
 }
 

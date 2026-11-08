@@ -57,13 +57,13 @@ export async function reviewPlan(
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
 
-  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else what IAM says about the key.
+  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_DEFAULT_ORGANIZATION_ID from the env, else what IAM says about the key.
   let organizationId: string;
   try {
     organizationId = await organizationIdOfKey(key, projectId);
   } catch (error) {
     console.error(
-      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
+      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_DEFAULT_ORGANIZATION_ID (.env) and re-run.`,
     );
     endAction(1);
   }

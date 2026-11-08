@@ -1,19 +1,15 @@
 import process from 'node:process';
 import { appConfig } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
-import { loadBackendDotenv } from 'shared/utils/worker-env';
+import { parseEnv } from 'shared/utils/parse-env';
+import { loadRootEnv } from 'shared/utils/worker-env';
 import { z } from 'zod';
 
-// The app's own overrides and its cookie secret; absent in CI.
-loadBackendDotenv();
+// The app's cookie secret; absent in CI.
+loadRootEnv(import.meta.url);
 
-/** Bench's variables, from the shell or backend/.env; a service port defaults to `appConfig.services`. */
+/** Bench's variables, from the shell or the repo's `.env`. */
 const envSchema = z.object({
-  // The app's backend port, from backend/.env.
-  PORT: z.coerce.number().default(appConfig.services.backend.port),
-  // The cdc worker's and the relay's overrides, read as those services read them.
-  CDC_HEALTH_PORT: z.coerce.number().default(appConfig.services.cdc.port),
-  YJS_PORT: z.coerce.number().default(appConfig.services.yjs.port),
   YJS_DOCS: z.coerce.number().default(20),
   YJS_TYPERS: z.coerce.number().default(3),
   YJS_DURATION_S: z.coerce.number().default(120),
@@ -38,18 +34,18 @@ const envSchema = z.object({
 
 /** Parsed at import: a malformed variable stops bench with its name before anything runs. */
 // biome-ignore lint/style/noProcessEnv: bench reads its environment here, once.
-const env = envSchema.parse(process.env);
+const env = parseEnv(envSchema, process.env);
 
-/** Derived from `appConfig.services` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
+/** Derived from `appConfig.services` so bench follows the app's port offset. Dev-only, local stack. */
 // Measures the backend port directly: the Vite proxy serializes requests and resets connections. The configured mount path is preserved so API routes resolve.
 const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
-export const BACKEND_PORT = env.PORT;
+export const BACKEND_PORT = appConfig.services.backend.port;
 export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
-export const CDC_HEALTH_PORT = env.CDC_HEALTH_PORT;
+export const CDC_HEALTH_PORT = appConfig.services.cdc.port;
 export const CDC_HEALTH_URL = `http://localhost:${CDC_HEALTH_PORT}/health?depth=full`;
 
-export const YJS_PORT = env.YJS_PORT;
+export const YJS_PORT = appConfig.services.yjs.port;
 /** The relay directly, like BASE_URL: the Vite proxy's `/yjs` path would add a hop to every frame. */
 export const YJS_URL = `ws://localhost:${YJS_PORT}`;
 export const YJS_HEALTH_URL = `http://localhost:${YJS_PORT}/health?depth=full`;
@@ -70,7 +66,7 @@ export const YJS_TYPING = {
 
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 
-/** Signs the bench session cookies like the app does; read from backend/.env. */
+/** Signs the bench session cookies like the app does; read from the repo's `.env`. */
 export const COOKIE_SECRET = env.COOKIE_SECRET;
 
 /** How long an SSE benchmark subscriber remains connected. */

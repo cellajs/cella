@@ -149,7 +149,7 @@ export async function createDbRoles() {
   const runtime = parseCredentials(env.DATABASE_URL);
 
   // For admin_role in dev, use a dedicated env var or fall back to same password as runtime
-  const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
+  const adminPassword = env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
   const createRolesSql = buildCreateRolesSql(runtime.password, adminPassword);
 

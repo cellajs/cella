@@ -20,7 +20,7 @@ export const appServices = defineServices({
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     // The managed instance's admin user is no superuser, so it may not read `cron.database_name`: the migrate step is told pg_cron's database.
-    release: { env: { SERVICE: 'migrate', PG_CRON_DATABASE: CRON_HOME_DATABASE }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
+    release: { env: { SERVICE: 'migrate', PG_CRON_DATABASE: CRON_HOME_DATABASE } },
     primaryRollout: true,
     drainSeconds: 10,
     // Reached at https://<app-host>/api/... through an LB path-begin route; the backend self-mounts '/api', so the LB strips nothing.
@@ -28,7 +28,6 @@ export const appServices = defineServices({
     pathPrefix: '/api',
     // The internal listener (the CDC socket, the Yjs relay's routes): only the private ACL-guarded LB frontend forwards
     // to it, so in-network consumers dial a stable address that follows every switch and the public pool never can.
-    // The synth passes it to the container as INTERNAL_PORT.
     internalPort: 4005,
     // Attachment uploads and presigned URLs are signed with the uploads key, which the deploy puts in this service's env file.
     s3Access: true,
@@ -151,5 +150,5 @@ export const appServices = defineServices({
   },
 });
 
-/** Env keys selecting a container's process identity: which service of the backend image to boot (`SERVICE`), which also picks its port. Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
-export const processIdentityEnv = ['SERVICE', 'PORT'] as const;
+/** Env keys selecting a container's process identity: which service of the backend image to boot, which also picks its port. Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
+export const processIdentityEnv = ['SERVICE'] as const;

@@ -84,7 +84,7 @@ export default defineScenario({
   signs bench user 0 in, starts each scenario from cleared rate limits and a settled CDC worker, and checks what the
   worker recorded after it.
 - `scenarios/` holds one module per scenario, `seeds/` the bench data ([seed registry](./seeds/README.md)).
-- `config.ts` reads the ports, URLs and the `YJS_*` shape of a run from the environment and `backend/.env`.
+- `config.ts` takes the ports and URLs from `appConfig.services` and the `YJS_*` shape of a run from the environment and `.env`.
 
 ## Checks
 

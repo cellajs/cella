@@ -14,7 +14,7 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 - A healthy dev stack in the checkout under test, its stdout captured ([verify, Launch](../verify/SKILL.md#launch)). The driver reads that checkout's URL and cookie name.
 - The description experiment needs the relay (`appConfig.services.yjs.enabled`, on by default).
-- Postgres probes: `psql <DATABASE_ADMIN_URL from backend/.env>` (e.g. a row's `seq`, `deleted_at` or `description` after an action).
+- Postgres probes: `psql <DATABASE_ADMIN_URL from .env>` (e.g. a row's `seq`, `deleted_at` or `description` after an action).
 - Never act in the org a human is testing in (watch the request log for their active org); pick another seeded org.
 
 ## Auth: a minted session
@@ -47,7 +47,7 @@ Writes `evidence.json` (every console line / range fetch / assert, ms timestamps
 
 Writes `description-evidence.json` and `shots/*.png`, about two minutes for the whole matrix. User A acts, user B keeps the description of `ROW` (the first row by default) open and observes; server truth is read through the API. It ends with the count of passed asserts and exits 1 when one failed.
 
-A relay change in a worktree runs beside the main stack, with no stack of its own: start that checkout's relay alone, pointed at the main backend (`BACKEND_INTERNAL_URL=<the main backend's internal URL> pnpm --filter yjs-worker dev`; it listens on the worktree's own relay port and, with the same `backend/.env` values, shares the database and the token key), then run the driver from the main checkout with `RELAY=ws://localhost:<that port>`. Every editor socket of the run goes to that relay, and the main stack serves the rest.
+A relay change in a worktree runs beside the main stack, with no stack of its own: start that checkout's relay alone, pointed at the main backend (`BACKEND_INTERNAL_URL=<the main backend's internal URL> pnpm --filter yjs-worker dev`; it listens on the worktree's own relay port and, with the same `.env` values, shares the database and the token key), then run the driver from the main checkout with `RELAY=ws://localhost:<that port>`. Every editor socket of the run goes to that relay, and the main stack serves the rest.
 
 ## Reading the evidence: entity changes
 

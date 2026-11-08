@@ -1,9 +1,10 @@
 import { appConfig } from 'shared';
 import { localDatabaseUrl } from 'shared/local-database';
-import { loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
+import { parseEnv } from 'shared/utils/parse-env';
+import { loadRootEnv, workerEnvBase } from 'shared/utils/worker-env';
 import { z } from 'zod';
 
-loadBackendDotenv();
+loadRootEnv(import.meta.url);
 
 const envSchema = workerEnvBase.extend({
   // Reads the replication stream and writes what a change leaves: its role needs REPLICATION and an effective RLS
@@ -14,8 +15,7 @@ const envSchema = workerEnvBase.extend({
   BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.services.backend.internalPort}`),
   // Authenticates the worker on that socket.
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
-  CDC_HEALTH_PORT: z.coerce.number().default(appConfig.services.cdc.port),
 });
 
 /** The worker's environment, validated when the module loads: a missing or malformed variable stops it at start. */
-export const env = envSchema.parse(process.env);
+export const env = parseEnv(envSchema, process.env);

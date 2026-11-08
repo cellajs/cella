@@ -387,11 +387,11 @@ One class is one review iteration. The scout verifies every path below at the re
 
 ### C5 Server-side requests and outbound trust
 - **Gain:** secret exposure (cloud metadata), reads of internal services.
-- **Merges:** the seven server-side `fetch` sites (client metadata for CIMD, the provider round trip, Brevo, Matrix, geoip, the health probe, the relay's materialize call), federation metadata, Transloadit and Companion fetching a user's URL for `@uppy/url`, the planned link cards (in-app fetch of user URLs) and webhooks (outbound to user URLs), the metadata address (infra M3), DNS rebinding, redirects followed, size and time caps, TLS verification.
+- **Merges:** the six server-side `fetch` sites (client metadata for CIMD, the provider round trip, Brevo, geoip, the health probe, the relay's materialize call), federation metadata, Transloadit and Companion fetching a user's URL for `@uppy/url`, the planned link cards (in-app fetch of user URLs) and webhooks (outbound to user URLs), the metadata address (infra M3), DNS rebinding, redirects followed, size and time caps, TLS verification.
 - **Advisories:** 1 (i18next-http-backend).
 - **Files:**
   - `frontend/src/modules/common/uploader/helpers/uppy-helpers.ts`: `@uppy/url` with `COMPANION_URL` and `COMPANION_ALLOWED_HOSTS` from `@uppy/transloadit`; used by `open-image-upload.ts` and `blocknote/custom-file-panel/uppy-upload-panel.tsx`.
-  - `backend/src/lib/health-probe.ts` (caller `backend/src/lib/health.ts`), `backend/src/lib/geoip.ts`, `backend/src/lib/mailer.ts` (Brevo), `backend/src/modules/requests/helpers/send-matrix-message.ts`, `yjs/src/sync/materialize.ts` (the relay's materialize call), CIMD and provider fetches in `backend/src/modules/oauth-server/`.
+  - `backend/src/lib/health-probe.ts` (caller `backend/src/lib/health.ts`), `backend/src/lib/geoip.ts`, `backend/src/lib/mailer.ts` (Brevo), `yjs/src/sync/materialize.ts` (the relay's materialize call), CIMD and provider fetches in `backend/src/modules/oauth-server/`.
   - No outbound wrapper exists in `backend/src/lib`. `backend/src/utils/ip-subnet.ts` is client-address subnetting, not an outbound check.
   - The worker code is `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts` and `backend/src/modules/mcp/worker/mcp-worker-entry.ts`, each a `SERVICE` of the backend image (`waitForBackend` in `shared/src/utils/wait-for-backend.ts`). `mcp-tools.ts` uses an in-process `app.fetch`, not a network call.
   - `cdc/` has only a WebSocket client (`cdc/src/network/websocket-client.ts`). `backend/src/lib/transloadit.ts` only signs params. S3: `backend/src/lib/object-storage.ts` builds a client for `https://${appConfig.s3.host}`.
@@ -531,7 +531,6 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/utils/sanitize-email-subject.ts` (control characters to a space, 150 characters).
   - Notification mails: `backend/src/modules/notification/emails/{mention,comment,digest}-email.tsx`, `operations/{run-digest,build-digest,send-instant-emails,fan-out,unsubscribe}.ts`, `helpers/{category-token,render-digest-html}.ts`.
   - `backend/src/modules/push/{push-sender,push-queries,push-schema,push-routes,push-handlers}.ts`, `helpers/push-service-endpoint.ts`.
-  - `backend/src/modules/requests/helpers/send-matrix-message.ts` (caller `requests/operations/create-request.ts`).
   - `mailer.sendEmails` callers: `send-invitation-mails.ts`, `send-magic-link.ts`, `send-step-up-code.ts`, `send-oauth-verification-email.ts`, `send-account-security-email.ts`, `confirm-invitation-address.ts`, `create-request.ts`, `remove-due-tenants.ts`, `send-newsletter.ts`, `run-digest.ts`, `send-instant-emails.ts`.
   - `sendInvitationMails` callers: `mail-invitations.ts`, `create-memberships.ts` (added members), `resend-invitation.ts`, `create-invite.ts`. `sendAccountSecurityEmail` callers: `handle-oauth-callback.ts`, `totp-budget.ts`, `totps-handlers.ts`, `passkeys-handlers.ts`, `connect-sso-identity.ts`, `notify-sign-in.ts`, `toggle-mfa.ts`. `sendSecurityInboxEmail` callers: `sys-admin-guard.ts`, `notify-sign-in.ts`, `create-tenant.ts`, `system-listeners.ts`.
   - CSRF skip: `backend/src/middlewares/app.ts`. Limiters: `backend/src/middlewares/rate-limiter/limiters.ts` (`spamLimiter`), `core.ts`.
@@ -597,7 +596,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `backend/src/lib/error.ts` (`toClientError`, `appErrorHandler`, pool timeout to 503).
   - Health: `backend/src/lib/{health,health-helpers,health-probe,jobs-health}.ts`, `shared/src/health-app.ts`, `shared/src/health-status.ts`, `cdc/src/network/health.ts`, `yjs/src/server/ws-server.ts`, `backend/src/modules/oauth-server/server.ts`; tests `backend/tests/health.test.ts`, `backend/tests/health-helpers.test.ts`, `backend/tests/integration/jobs-store.test.ts`.
   - Limiter store failure: `backend/src/middlewares/rate-limiter/{helpers,tiers,core}.ts`.
-  - Mail and Matrix: `backend/src/lib/mailer.ts` (`sendBatch`, `postToBrevo`), `backend/src/modules/requests/helpers/send-matrix-message.ts`.
+  - Mail: `backend/src/lib/mailer.ts` (`sendBatch`, `postToBrevo`).
   - Storage: `backend/src/lib/object-storage.ts`, `modules/attachment/helpers/stored-file.ts`, `operations/{create-attachments,link-attachment-keys}.ts`, `signed-url.ts`, `backend/src/lib/transloadit.ts`, `modules/me/operations/get-upload-token.ts`.
   - OAuth: `backend/src/modules/oauth-server/{verify-access-token,keystore,grant-policy}.ts`, `backend/src/middlewares/guard/{token-grant-cache,service-guard}.ts`.
   - Sessions: `backend/src/modules/auth/sessions/operations/{resolve-session,create-session}.ts`, `notify-sign-in.ts`.
@@ -650,10 +649,10 @@ One class is one review iteration. The scout verifies every path below at the re
   - `frontend/vitest.config.ts` (storybook project in headless Chromium via the playwright provider).
   - `backend/scripts/drizzle-studio/start.ts` (`pnpm studio`; port is the frontend port + 983; runs `drizzle-kit studio --port` with no `--host`; the studio page is a website talking to the local port).
   - `shared/README.md` (dev ports).
-  - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `backend/.env.example` (postgres superuser, `runtime_role`, `admin_role`).
+  - `backend/compose.yaml` (services `db`, `db_test`, `db_testbed`; no `network_mode: host`); `.env.example` (postgres superuser, `runtime_role`, `admin_role`).
   - Listeners: API `serveApi` and internal `serveInternal` in `backend/src/lib/listeners.ts` (default `0.0.0.0`), called from `backend/src/main.api.ts`; relay `yjs/src/server/ws-server.ts`; cdc health `cdc/src/index.ts`; mcp `backend/src/modules/mcp/worker/mcp-worker-entry.ts`; jobs health `backend/src/lib/jobs-worker.ts`.
   - Seeds: `backend/scripts/seeds/00-init.seed.ts` (admin user is magic link by email, no password); `backend/scripts/mint-session.ts` (mints a signed cookie, refuses outside development and test); `backend/src/routes.ts` mounts `/dev/emails` whenever mode is not production.
-  - `pnpm cella testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DB_TESTBED_PORT`), `backend/bench/config.ts` (default admin URL).
+  - `pnpm cella testbed` in `@cellajs/cli` (ports shifted by 70, its own database `DATABASE_TESTBED_PORT`), `backend/bench/config.ts` (default admin URL).
 - **Holds:**
   - Vite's default `allowedHosts` refuses a non-IP, non-localhost `Host`: DNS rebinding of an attacker name to the dev server answers 403.
   - Vite `server.fs.strict: true` and the `.env*`, `*.pem`, `*.key` deny list are the unmodified defaults; `vite.config.ts` does not set `fs`.

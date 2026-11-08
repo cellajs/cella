@@ -27,7 +27,7 @@ const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/star
 await registerOpenApiDocs(app);
 
 const main = async () => {
-  const port = env.PORT;
+  const { port, internalPort } = appConfig.services.backend;
   console.info(`${timestamp()} [startup] mode=${appConfig.mode} nodb=${env.NODB} port=${port}`);
 
   try {
@@ -51,7 +51,7 @@ const main = async () => {
   stops.push(startGeoipRefresh());
 
   // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
-  internalListener = serveInternal({ port: env.INTERNAL_PORT });
+  internalListener = serveInternal({ port: internalPort });
 
   server = serveApi({ fetch: app.fetch, port }, async () => {
     // Every API process serves the relay's materialize route, so each one warns.
@@ -72,8 +72,7 @@ const main = async () => {
         stops.push(yjs.shutdownYjsWorker);
         await yjs.startYjsWorker({ inProcess: true });
       }
-      // Folded workers listen on their own ports (the LB routes each path to the host VM on that port); the API
-      // process keeps PORT for itself.
+      // Folded workers listen on their own ports (the LB routes each path to the host VM on that port).
       if (appConfig.services.mcp.enabled) {
         const mcp = await import('#/modules/mcp/worker/mcp-worker-entry');
         stops.push(mcp.shutdownMcpWorker);

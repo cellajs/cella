@@ -4,7 +4,7 @@ export const processServices = ['api', 'mcp', 'oauth', 'jobs', 'migrate'] as con
 export type ProcessService = (typeof processServices)[number];
 
 /** Secrets only some services read; `serviceSecrets` names those services. */
-export const serviceSecretNames = [
+const serviceSecretNames = [
   'CDC_SECRET',
   'YJS_TOKEN_PRIVATE_KEY',
   'YJS_RELAY_SECRET',

@@ -16,10 +16,8 @@ describe('internal listener routing', () => {
     for (const service of services) expect(service.healthPort, service.slug).not.toBe(internalPort);
   });
 
-  it('publishes the internal listener and tells the backend its port', () => {
-    const backend = composeConfig.services.backend;
-    expect(backend?.ports).toContain('4005:4005');
-    expect(backend?.environment?.INTERNAL_PORT).toBe('4005');
+  it('publishes the internal listener', () => {
+    expect(composeConfig.services.backend?.ports).toContain('4005:4005');
   });
 
   it('must not let the cdc or yjs worker reach the backend through its public URL', () => {

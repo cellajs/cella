@@ -13,36 +13,31 @@ export function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
-/** The env files every mode reads, in loading order. */
-const baseEnvFiles = (): string[] => [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')];
+/** The env file every mode reads. */
+const rootEnvFile = (): string => resolve(infraDir, '..', '.env');
 
-/** Load backend/.env before the root fallback so infra tasks share the app's local config. Existing environment variables keep precedence over both files. */
-export function loadBaseEnvFiles(): void {
-  for (const envFile of baseEnvFiles()) {
-    if (existsSync(envFile)) process.loadEnvFile(envFile);
-  }
+/** Load the repo-root `.env` so infra tasks share the app's local config. Existing environment variables keep precedence over the file. */
+export function loadRootEnvFile(): void {
+  if (existsSync(rootEnvFile())) process.loadEnvFile(rootEnvFile());
 }
 
-/** The project id that a file every mode reads names. Such an id belongs to no single environment. */
+/** The project id the file every mode reads names. Such an id belongs to no single environment. */
 export function sharedFileProjectId(): string | undefined {
-  for (const envFile of baseEnvFiles()) {
-    const id = existsSync(envFile) ? parseEnvFile(envFile).SCW_PROJECT_ID?.trim() : undefined;
-    if (id) return id;
-  }
-  return undefined;
+  const id = existsSync(rootEnvFile()) ? parseEnvFile(rootEnvFile()).SCW_DEFAULT_PROJECT_ID?.trim() : undefined;
+  return id || undefined;
 }
 
 /** The project id a mode's env file still names: the CLI moves it to the mode's stack file. */
 export function ownProjectId(mode: string): string | undefined {
   const path = modeEnvPath(mode);
-  return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
+  return (existsSync(path) ? parseEnvFile(path).SCW_DEFAULT_PROJECT_ID?.trim() : undefined) || undefined;
 }
 
 /** Take the project id out of a mode's env file, once the stack file holds it; a file left with no line is deleted. */
 export function removeModeProjectId(mode: string): void {
   if (!ownProjectId(mode)) return;
   const path = modeEnvPath(mode);
-  writeEnvValues(path, {}, { remove: ['SCW_PROJECT_ID'] });
+  writeEnvValues(path, {}, { remove: ['SCW_DEFAULT_PROJECT_ID'] });
   if (readFileSync(path, 'utf8').trim() === '') rmSync(path);
 }
 

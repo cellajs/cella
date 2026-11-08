@@ -22,13 +22,13 @@ Each app on a machine has its own number, `devAppIndex`, so apps run side by sid
 | Test database | 5434 + 10N | 5434 | 5444 | 5454 |
 | Testbed database | 5470 + 10N | 5470 | 5480 | 5490 |
 
-Storybook and Drizzle Studio follow the frontend port (`src/utils/tool-ports.ts`). The database ports follow the number too (`src/local-database.ts`): `pnpm docker` hands them to Docker Compose, and a local stack's database URLs default to them, so `backend/.env` names no port. `DB_PORT`, `DB_TEST_PORT` and `DB_TESTBED_PORT` in the environment point one purpose at another server. The numbers run from 0 to 9 without 4, whose internal listener would sit on a port that `fetch` refuses. The config refuses such a port at startup.
+Storybook and Drizzle Studio follow the frontend port (`src/utils/tool-ports.ts`). The database ports follow the number too (`src/local-database.ts`): `pnpm docker` hands them to Docker Compose, and a local stack's database URLs default to them, so `.env` names no port. `DATABASE_PORT`, `DATABASE_TEST_PORT` and `DATABASE_TESTBED_PORT` in the environment point one purpose at another server. The numbers run from 0 to 9 without 4, whose internal listener would sit on a port that `fetch` refuses. The config refuses such a port at startup.
 
 A second checkout of the same app gets a further offset. `src/config-builder/app-config.ts` adds it to every service port and to the `localhost` origin, in development and tunnel mode:
 
 - The main checkout keeps the configured ports.
 - A linked git worktree claims one of nine slots, 100 ports apart: 3100 and 4100-4106, then 3200 and 4200-4206, and so on. The claim is a file in `dev-port-slots/` of the shared git directory. It is kept between runs and freed when the worktree is removed. Once all nine are held, a new worktree takes the slot whose stack started longest ago.
-- `DEV_PORT_OFFSET` sets the offset by hand, `0` for the configured ports. It is read from the process environment only: `backend/.env` loads after the config is built. The database is shared: the offset never moves it.
+- `DEV_PORT_OFFSET` sets the offset by hand, `0` for the configured ports. It is read from the process environment only: `.env` loads after the config is built. The database is shared: the offset never moves it.
 - The configured ports are the developer's, in the main checkout too. A second stack beside theirs, an agent's or a test's, runs with `DEV_PORT_OFFSET=50` (the next with `60`) and ends with `DEV_PORT_OFFSET=50 pnpm killports` when done. `pnpm cella testbed` takes offset 70 on top of the checkout's. One CDC worker reads a database's replication slot: on the shared database, the stack that starts second waits for the slot and shows no live updates until the first stops.
 
 `appConfig.devPortOffset` reports the result, and `appConfig.frontendUrl` is where that checkout's app runs. Generated files read the same in every checkout: `backend/openapi.cache.json`, and the SDK and docs generated from it, are written with the configured URLs.

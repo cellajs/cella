@@ -23,7 +23,7 @@ describe('6.2 Pool behavior', () => {
   });
 
   it('concurrent withRlsTx calls up to pool max', async () => {
-    const concurrency = 20; // matches YJS_DB_POOL_MAX default
+    const concurrency = 20; // above the default YJS_DATABASE_POOL_MAX of 10, so calls queue for a connection
 
     const results = await Promise.all(
       Array.from({ length: concurrency }, (_, i) =>

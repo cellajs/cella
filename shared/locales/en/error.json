@@ -164,7 +164,7 @@
   "oauth_failed": "Sign-in failed",
   "oauth_failed.text": "Try again or use another method.",
   "oauth_not_configured": "Provider not set up",
-  "oauth_not_configured.text": "This app has no keys for this sign-in provider yet. Use another method, or add the provider's client id and secret to backend/.env.",
+  "oauth_not_configured.text": "This app has no keys for this sign-in provider yet. Use another method, or add the provider's client id and secret to .env at the repo root.",
   "oauth_wrong_email": "Email doesn't match",
   "oauth_wrong_email.text": "It's not possible to link accounts with different emails while accepting an invitation. Use another authentication method.",
   "oauth-connect_expired": "Connecting expired",

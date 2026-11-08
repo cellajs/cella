@@ -34,7 +34,7 @@ re-shoot changes the pixels the UI changed and the dates. To change what the sho
 
 The app's own seed, faker data and bench rows serve development and the other testbed tools, and never reach the shots:
 a testbed that switches between the seed and the showcase seeds a new database, and one that holds the showcase serves
-no other tool. The showcase seed refuses the database `backend/.env` names, since its admin's factors would lock that
+no other tool. The showcase seed refuses the database `.env` names, since its admin's factors would lock that
 account out.
 
 An app's seed can be heavy, so shoot one app at a time, and shoot its tables with a wait for what they fill in last

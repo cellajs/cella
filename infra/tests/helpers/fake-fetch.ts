@@ -22,13 +22,12 @@ export function makeFetch(routes: Array<{ method: string; match: string; body?: 
 }
 
 /**
- * Clears both organization-id names the resolver reads for each test of the calling file, so the Account API fallback
- * under test is not short-circuited by the ambient env; a test sets one with `vi.stubEnv`.
+ * Clears the organization id for each test of the calling file, so the Account API fallback under test is not
+ * short-circuited by the ambient env; a test sets one with `vi.stubEnv`.
  */
 export function clearOrganizationEnv(): void {
   beforeEach(() => {
     vi.stubEnv('SCW_DEFAULT_ORGANIZATION_ID', undefined);
-    vi.stubEnv('SCW_ORGANIZATION_ID', undefined);
   });
   afterEach(() => {
     vi.unstubAllEnvs();

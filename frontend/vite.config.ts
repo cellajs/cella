@@ -116,7 +116,7 @@ const metadataProxy = (name: 'oauth-authorization-server' | 'oauth-protected-res
 };
 
 const viteConfig = {
-  logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
+  logLevel: isDev ? 'info' : 'warn',
   server: {
     // Loopback unless DEV_HOST names an address: `DEV_HOST=0.0.0.0` opens the dev server to other devices.
     host: process.env.DEV_HOST || '127.0.0.1',
@@ -211,7 +211,7 @@ const viteConfig = {
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
             {

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { config } from 'shared/config/config.default';
 import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
 import { serviceSecrets } from '../../../backend/src/env-service-secrets';
@@ -122,10 +123,25 @@ describe('runtime secret registry', () => {
 });
 
 describe('runtime secret schema alignment', () => {
+  // backend/src/env.ts derives these from the federation keys, so they never appear by name in its source.
+  const federationEnvVars = Object.keys(config.federations).flatMap((key) => [
+    `SSO_${key.toUpperCase()}_CLIENT_ID`,
+    `SSO_${key.toUpperCase()}_CLIENT_SECRET`,
+  ]);
+
+  it('delivers the client id and secret of every federation the app config declares', () => {
+    for (const envVar of federationEnvVars) {
+      expect(
+        runtimeSecretsForConsumer('backend').map((secret) => secret.envVar),
+        envVar,
+      ).toContain(envVar);
+    }
+  });
+
   it('maps each backend service secret env var to a declared service env schema', () => {
     for (const secret of runtimeSecrets) {
       for (const service of secret.services) {
-        if (service === 'mcp') continue;
+        if (service === 'mcp' || federationEnvVars.includes(secret.envVar)) continue;
         if (!(service in envSources)) continue;
         const source = envSources[service as keyof typeof envSources];
         expect(source, `missing env schema fixture for ${service}`).toBeTruthy();

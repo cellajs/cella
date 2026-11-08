@@ -9,7 +9,7 @@ import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/
 import { environments, writeStackFileProjectId } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { dropPromptOnlyEnv, loadBaseEnvFiles, removeModeProjectId } from '../lib/utils/env-files';
+import { dropPromptOnlyEnv, loadRootEnvFile, removeModeProjectId } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runAction } from './actions';
@@ -23,8 +23,8 @@ import { setPassphraseCustody } from './session';
 import type { InfraContext } from './shared';
 import { autoAcceptDefaults } from './shared';
 
-// Load backend/.env before the root fallback so infra child tasks share the app's local config; ambient env keeps precedence over both files.
-loadBaseEnvFiles();
+// Load the repo-root .env so infra child tasks share the app's local config; ambient env keeps precedence over the file.
+loadRootEnvFile();
 
 // A privileged key or the passphrase in the environment would let the CLI run with nobody at the prompt: they are dropped here and asked for.
 const droppedFromEnv = dropPromptOnlyEnv();
@@ -52,7 +52,7 @@ function printHelp(): void {
  * The target mode. `--mode` or INFRA_MODE selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
  * otherwise the only existing stack file wins silently, two existing stack files ask once (under `--defaults` they need `--mode`), and with no stack
  * file an interactive install asks, defaulting to production.
- * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
+ * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from the repo-root .env.
  */
 async function resolveMode(flag: string | undefined): Promise<Environment> {
   const raw = flag ?? process.env.INFRA_MODE;
@@ -242,7 +242,7 @@ let context = await loadContext(environment, (message) => console.info(pc.dim(me
 printStackNotices(context);
 if (droppedFromEnv.length > 0) {
   console.warn(
-    `${warningMark} ${droppedFromEnv.join(', ')} ${droppedFromEnv.length === 1 ? 'is' : 'are'} set in this shell or in backend/.env and not read: the CLI asks for a privileged key at the prompt and fetches the passphrase with it.\n`,
+    `${warningMark} ${droppedFromEnv.join(', ')} ${droppedFromEnv.length === 1 ? 'is' : 'are'} set in this shell or in .env and not read: the CLI asks for a privileged key at the prompt and fetches the passphrase with it.\n`,
   );
 }
 

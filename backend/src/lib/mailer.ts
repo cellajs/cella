@@ -112,12 +112,10 @@ interface Batch {
 }
 
 /**
- * Sends one batch of message versions through Brevo, each with its plain-text part. Sends nothing without a Brevo key,
- * or in test mode unless `TEST_SEND_EMAILS` is set.
+ * Sends one batch of message versions through Brevo, each with its plain-text part. Sends nothing without a Brevo key.
  */
 async function sendBatch({ subject, html, versions, replyTo, htmlParams, headers }: Batch): Promise<void> {
   if (!env.BREVO_API_KEY) return;
-  if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
   const params = Object.keys(versions[0]?.params ?? {});
   const placeholders = { params, htmlParams: Object.keys(htmlParams).filter((key) => htmlParams[key]) };
