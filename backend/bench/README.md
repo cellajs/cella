@@ -121,9 +121,9 @@ The summary at the end has a row per endpoint, the scenario's own numbers, every
 
 ## Baselines and logs
 
-Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
-
 A passing full run appends to `baselines/<scenario>.json`. The next run compares its `primary` latency with it, by default the p95 response time. A scenario can pick another, such as `yjs-typing`'s peer latency. `logs/` keeps the recent logs per scenario.
+
+Baselines and logs live in `cella-bench/` inside the git directory that `git rev-parse --git-common-dir` prints. Every worktree of the clone shares it, and `git status` never shows it.
 
 ## Interpreting results
 
