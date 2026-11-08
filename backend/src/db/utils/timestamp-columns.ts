@@ -39,4 +39,8 @@ export const isoTimestamp = () => new IsoTimestampStringBuilder('', true, undefi
 export const isoTimestampWithoutZone = () => new IsoTimestampStringBuilder('', false, undefined);
 
 /** The stamps of rows without a writer (sessions, tokens, proofs); rows with a writer spread `auditColumns()`. */
-export const timestampColumns = { createdAt: isoTimestamp().defaultNow().notNull(), updatedAt: isoTimestamp(), expiresAt: isoTimestamp().notNull() };
+export const timestampColumns = {
+  createdAt: isoTimestamp().defaultNow().notNull(),
+  updatedAt: isoTimestamp(),
+  expiresAt: isoTimestamp().notNull(),
+};

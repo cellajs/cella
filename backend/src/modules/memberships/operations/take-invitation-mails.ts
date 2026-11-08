@@ -53,7 +53,9 @@ export async function takeInvitationMails(
   const total = await reserveAttempt(tenantMails, tenantId, { points: budget, duration: day }, count);
   if (total.granted) return heldBack;
 
-  for (const { email, reservation } of reservations) if (reservation.granted) await refundAttempt(reservation.store, addressKey(tenantId, email));
+  for (const { email, reservation } of reservations) {
+    if (reservation.granted) await refundAttempt(reservation.store, addressKey(tenantId, email));
+  }
   throw new AppError(429, 'invitation_limit_reached', 'warn', { meta: { retryAfter: getRetryAfter(total.state.msBeforeNext) } });
 }
 

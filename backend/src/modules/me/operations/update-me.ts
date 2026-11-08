@@ -19,7 +19,8 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   const { slug, givenName, familyName } = input;
 
   if (slug && slug !== user.slug) {
-    if (!(await checkSlugAvailable(ctx, slug, 'user'))) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
+    const slugAvailable = await checkSlugAvailable(ctx, slug, 'user');
+    if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
   }
 
   const values = { ...input, name: nameAfterUpdate(user, { givenName, familyName, slug }), ...updateStamps(user.id) };

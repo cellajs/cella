@@ -12,7 +12,9 @@ export const arrayDeltaSchema = <T extends z.ZodType<string>>(itemSchema: T, max
 
   return z.object({ add: itemsSchema.default([]), remove: itemsSchema.default([]) }).superRefine(({ add, remove }, ctx) => {
     const removed = new Set(remove);
-    if (add.some((item) => removed.has(item))) ctx.addIssue({ code: 'custom', message: 'The same item cannot be added and removed' });
+    if (add.some((item) => removed.has(item))) {
+      ctx.addIssue({ code: 'custom', message: 'The same item cannot be added and removed' });
+    }
   });
 };
 

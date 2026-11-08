@@ -16,5 +16,6 @@ export const canCreateEntity = (ctx: ActorContext, subject: SubjectForPermission
   // Defense in depth: a subject scoped to an organization must name the organization of the request.
   const { organization } = ctx.var;
   const organizationId = subject.channelIds.organization;
-  if (organization && organizationId && organizationId !== organization.id) throw new AppError(409, 'organization_mismatch', 'error', { entityType });
+  const namesOtherOrganization = organization && organizationId && organizationId !== organization.id;
+  if (namesOtherOrganization) throw new AppError(409, 'organization_mismatch', 'error', { entityType });
 };

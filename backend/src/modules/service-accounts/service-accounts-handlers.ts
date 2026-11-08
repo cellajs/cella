@@ -24,7 +24,8 @@ app.openapi(serviceAccountRoutes.updateServiceAccount, async (ctx) => {
 });
 
 app.openapi(serviceAccountRoutes.listApiKeys, async (ctx) => {
-  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), (page) => getApiKeysOp(ctx, ctx.req.valid('param').serviceAccountId, page)), 200);
+  const { serviceAccountId } = ctx.req.valid('param');
+  return ctx.json(await readListPage(ctx, ctx.req.valid('query'), (page) => getApiKeysOp(ctx, serviceAccountId, page)), 200);
 });
 
 app.openapi(serviceAccountRoutes.createApiKey, async (ctx) => {

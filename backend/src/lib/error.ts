@@ -47,11 +47,14 @@ const pgConstraintMap: Record<string, { status: AppErrorStatus; type: ErrorKey; 
 
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 
+const hasPgCode = (value: unknown): value is PgErrorInfo =>
+  typeof value === 'object' && value !== null && 'code' in value && typeof value.code === 'string';
+
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
 export function extractPgError(err: unknown): PgErrorInfo | null {
-  if (err instanceof Error && 'code' in err && typeof err.code === 'string') return err as Error & PgErrorInfo;
+  if (err instanceof Error && hasPgCode(err)) return err;
   const cause = err instanceof Error ? err.cause : undefined;
-  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') return cause as PgErrorInfo;
+  if (hasPgCode(cause)) return cause;
   return null;
 }
 

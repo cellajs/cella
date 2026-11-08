@@ -13,6 +13,7 @@ const mountedPrefixes = [servicePaths.backend, servicePaths.mcp];
 
 /** The Fetch standard's forbidden methods: `new Request` throws on them, and no route serves them. */
 const forbiddenMethods = new Set(['CONNECT', 'TRACE', 'TRACK']);
+const isForbiddenMethod = (method: string) => forbiddenMethods.has(method.toUpperCase());
 
 const startsWithMountedPrefix = (path: string) => mountedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 
@@ -43,7 +44,7 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
   app.mount(prefix, (request, env, executionCtx) => app.fetch(request, env, executionCtx), {
     replaceRequest: (request) => {
       const path = app.getPath(request).slice(prefix.length) || '/';
-      if (startsWithMountedPrefix(path) || forbiddenMethods.has(request.method.toUpperCase())) throw new AppError(404, 'route_not_found', 'warn');
+      if (startsWithMountedPrefix(path) || isForbiddenMethod(request.method)) throw new AppError(404, 'route_not_found', 'warn');
       return requestAtPath(request, path);
     },
   });
@@ -57,7 +58,7 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
 function routeCustomMethods(app: OpenAPIHono<Env>) {
   app.use('*', async (ctx, next) => {
     const path = routablePath(new URL(ctx.req.url).pathname);
-    if (!path || forbiddenMethods.has(ctx.req.method.toUpperCase())) return next();
+    if (!path || isForbiddenMethod(ctx.req.method)) return next();
     return app.fetch(requestAtPath(ctx.req.raw, path), ctx.env);
   });
 }

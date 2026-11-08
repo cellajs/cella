@@ -39,7 +39,12 @@ vi.mock('#/lib/mailer', async (importOriginal) => {
 // delete succeeds. A test of a missing object or a failed delete overrides one function with `vi.mocked`.
 vi.mock('#/lib/object-storage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/lib/object-storage')>();
-  return { ...actual, storedObjectSize: vi.fn(async () => 1), deleteStoredObjects: vi.fn(async () => {}), deleteStoredPrefix: vi.fn(async () => 0) };
+  return {
+    ...actual,
+    storedObjectSize: vi.fn(async () => 1),
+    deleteStoredObjects: vi.fn(async () => {}),
+    deleteStoredPrefix: vi.fn(async () => 0),
+  };
 });
 
 // The app's outbound requests get an empty 200 (a Request's own JSON body as the answer), so no test reaches the

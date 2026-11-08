@@ -9,7 +9,10 @@ describe('rejection utils', () => {
     const limited = takeWithRestriction(filtered.items, 1, 'org_limit_reached', filtered.rejectionState);
 
     expect(limited.items).toEqual([{ id: 'a' }]);
-    expect(limited.rejectionState).toEqual({ rejectedIds: ['b', 'c'], rejectionReasons: { slug_exists: ['b'], org_limit_reached: ['c'] } });
+    expect(limited.rejectionState).toEqual({
+      rejectedIds: ['b', 'c'],
+      rejectionReasons: { slug_exists: ['b'], org_limit_reached: ['c'] },
+    });
   });
 
   it('takes nothing when the restriction is below zero', () => {

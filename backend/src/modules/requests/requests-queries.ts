@@ -12,6 +12,8 @@ import { searchFilter } from '#/utils/sql';
 /** A request's columns as responses carry them: `invitedAt` travels as `wasInvited`. */
 const { invitedAt, ...requestColumns } = getColumns(requestsTable);
 
+const requestOrderColumns = pick(requestsTable, ['id', 'email', 'createdAt', 'kind']);
+
 interface InsertRequestOpts {
   email: string;
   kind: RequestModel['kind'];
@@ -37,7 +39,7 @@ export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, li
 
   const filter = searchFilter([requestsTable.email], q);
 
-  const orderBy = getOrderColumns({ sort, order, columns: pick(requestsTable, ['id', 'email', 'createdAt', 'kind']), tieBreaker: requestsTable.id });
+  const orderBy = getOrderColumns({ sort, order, columns: requestOrderColumns, tieBreaker: requestsTable.id });
 
   const itemsQuery = db
     .select({ ...requestColumns, wasInvited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('wasInvited') })

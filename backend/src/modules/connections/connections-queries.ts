@@ -162,7 +162,12 @@ export const findUserSsoConnection = async (ctx: DbContext, { userId, tenantId }
  */
 export const findAddressGovernance = async (ctx: DbContext, { email }: { email: string }) => {
   const [row] = await ctx.var.db
-    .select({ connectionId: connectionsTable.id, ...pick(connectionsTable, ['displayName', 'status']), authStrategies: tenantsTable.authStrategies })
+    .select({
+      connectionId: connectionsTable.id,
+      displayName: connectionsTable.displayName,
+      status: connectionsTable.status,
+      authStrategies: tenantsTable.authStrategies,
+    })
     .from(emailsTable)
     .innerJoin(
       identitiesTable,

@@ -66,6 +66,8 @@ export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: { ids: st
     .from(attachmentsTable)
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
 
+const attachmentOrderColumns = pick(attachmentsTable, ['name', 'createdAt', 'contentType']);
+
 interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
   /** The caller's request scope and read scope, from guarded context and the permission layer. */
@@ -97,9 +99,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const search = searchFilter([attachmentsTable.name, attachmentsTable.filename, attachmentsTable.contentType, attachmentsTable.keywords], q);
   if (search) filters.push(search);
 
-  const orderBy =
-    rangeRead.orderBy ??
-    getOrderColumns({ sort, order, columns: pick(attachmentsTable, ['name', 'createdAt', 'contentType']), tieBreaker: attachmentsTable.id });
+  const orderBy = rangeRead.orderBy ?? getOrderColumns({ sort, order, columns: attachmentOrderColumns, tieBreaker: attachmentsTable.id });
 
   const whereClause = and(...filters);
 

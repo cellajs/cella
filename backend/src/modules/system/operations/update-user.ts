@@ -25,7 +25,8 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   const { bannerUrl, description, givenName, familyName, languageCode, newsletter, thumbnailUrl, slug } = input;
 
   if (slug && slug !== targetUser.slug) {
-    if (!(await checkSlugAvailable(ctx, slug, 'user'))) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
+    const slugAvailable = await checkSlugAvailable(ctx, slug, 'user');
+    if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'user', meta: { slug } });
   }
 
   const values = {

@@ -12,8 +12,8 @@ export async function checkSlugAvailable(ctx: DbContext, slug: string, entityTyp
 
 /** Returns a Map of slug to availability; true means free. */
 export async function checkSlugsAvailable(ctx: DbContext, slugs: string[], entityType: EntityTypeWithSlug) {
-  const results = await Promise.all(slugs.map(async (slug) => ({ slug, available: await checkSlugAvailable(ctx, slug, entityType) })));
-  return new Map(results.map(({ slug, available }) => [slug, available]));
+  const checks = slugs.map(async (slug) => [slug, await checkSlugAvailable(ctx, slug, entityType)] as const);
+  return new Map(await Promise.all(checks));
 }
 
 /** Whether a channel slug is free, for a client that checks before it creates or renames. */

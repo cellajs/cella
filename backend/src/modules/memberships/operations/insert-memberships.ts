@@ -42,7 +42,9 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
   // Ahead of the order baseline: a resolver may insert memberships, whose order this run then continues from.
   const items: Array<InsertMultipleProps<T>> = [];
-  for (const item of givenItems) items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
+  for (const item of givenItems) {
+    items.push({ ...item, extraFields: item.extraFields ?? (await resolveModuleColumns(ctx, item)) });
+  }
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
