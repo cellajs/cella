@@ -5,7 +5,7 @@ This document explains how a tenant connects an institution and what a sign-in t
 ### TL;DR
 
 Institutions sign their members in through an identity federation (`sso`), SURFconext first. A tenant trusts an
-institution through a connection, and a first sign-in can create the account and its membership. A tenant can require
+institution through a connection. A first sign-in can create the account and its membership. A tenant can require
 the people it knows through that connection to sign in this way.
 
 ## Vocabulary
@@ -25,7 +25,7 @@ The institution proves an address only on the connection's domains or their subd
 
 A first sign-in with any other address is refused with the offer below. A magic link then proves the inbox before an account holds it. An eduID account, whose address can have any domain, proves none this way.
 
-With `jitProvisioning` the account becomes a member of the tenant's organization, unless an invitation there already names the role. The session records the federation and the connection. The tenant's sign-in policy counts it only through the tenant's own connection.
+With `jitProvisioning` the account becomes a member of the tenant's organization. When an invitation there already names the role, the membership waits until the invitation is accepted. The session records the federation and the connection. The tenant's sign-in policy counts it only through the tenant's own connection.
 
 A connect links the institution account to a signed-in user, as a provider connect does. With `jitProvisioning` it grants that membership too. A changed address the institution proves joins the account's addresses, on a connect or a later sign-in.
 
@@ -66,6 +66,6 @@ The policy guards tenant routes only. Under a refused method the person still re
 - `/me/memberships`: their memberships
 - `GET /users/{id}`: the profiles of their co-members
 
-An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address, and the account gets a mail pointing to its institution's sign-in.
+An address proven through a federation inherits the policy for magic links. While the tenant excludes `magic`, no magic link is sent for that address. The request answers 204 as for any address. The account gets a mail pointing to its institution's sign-in.
 
 Only a browser that signed in to that account before gets `sso_required`. The user keeps every other method and address. The recovery link above is the one exception, since it takes the institution account and the mailbox together.
