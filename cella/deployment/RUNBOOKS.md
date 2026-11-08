@@ -10,7 +10,11 @@ cannot be made again for the next setup. A clean slate deletes that too.
 
 ## Debug a failed deploy
 
-Start with `pnpm infra runs`, adding `--mode staging` for staging. A failed run shows the step that failed and a failed machine's boot error. A switch that times out waiting for the new machine means its agent never answered 200. That is almost always a crash at boot, not the load balancer. The deploy deleted the new machine, and the old one kept serving. A role that switched before the failure serves the target. The next run of the same target switches only the rest.
+Start with `pnpm infra runs`, adding `--mode staging` for staging. A failed run shows the step that failed and a failed machine's boot error.
+
+A switch that times out waiting for the new machine means its agent never answered 200. That is almost always a crash at boot, not the load balancer.
+
+The deploy deleted the new machine, and the old one kept serving. A role that switched before the failure serves the target. The next run of the same target switches only the rest.
 
 1. **Read the boot accounts first.** `pnpm infra runs --sha <sha>` prints each machine's boot account of that release with the builder's report, a crashed container's output included. "No account" means the agent never finished its boot. The machine's serial console then shows how far it got: Scaleway console → Instances → the machine → Console. A deleted machine's console is gone with it. For a boot that never reports, start the same target with a raised retry counter and read the console while the deploy waits.
 2. **Reproduce locally.** Build the image at the release's commit, or `docker load` its archive from `releases/<sha>/images/` in the boot-diag bucket. `docker run` it with a minimal valid environment. A failing import such as `ERR_MODULE_NOT_FOUND` shows in seconds.
@@ -139,7 +143,9 @@ UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1)
 
 ## Teardown
 
-`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The Owner key holds every right, so the one key deletes the resources and the identities. Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
+`pnpm infra` → **Tear down stack** asks you to type `<slug>-<mode>`. It asks for one key and nothing else: an Owner API key that expires within a day. The Owner key holds every right, so the one key deletes the resources and the identities.
+
+Before it touches anything, it refuses a key the bucket policies do not name. Your user is named once it joins `<app>-operators` and the next **Review & apply changes** runs.
 
 It deletes:
 
@@ -153,7 +159,9 @@ It deletes:
 
 The app's operators and observer stay, since they serve the other environments.
 
-Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there. When the dump fails, the teardown destroys nothing of the stack and says what it did before. A write the app takes after the dump is lost, so stop traffic first.
+Before the database goes, the teardown writes a **final dump** into the boot-diag bucket under `dumps/<mode>/<time>`. The dump comes from a backup Scaleway makes and keeps a few days. Neither the uploads key nor the observer reads there.
+
+When the dump fails, the teardown destroys nothing of the stack and says what it did before. A write the app takes after the dump is lost, so stop traffic first.
 
 A destroy that stops halfway leaves what it had not reached in the state. Tear down again to finish.
 
