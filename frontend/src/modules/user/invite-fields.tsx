@@ -32,7 +32,10 @@ const withPasted = (event: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement
   return `${before}\n${event.clipboardData.getData('text')}\n${after}`;
 };
 
-/** The line under a field, visible only for text that is no address: an address's tile shows its outcome. Stays mounted, so a change is announced. */
+/**
+ * The line under a field, shown only for text that is no address. What happened to an address is spoken only: its tile
+ * rolls its count and its dot pulses. Stays mounted, so a change is announced.
+ */
 function InviteFieldLine({ list, check }: { list: InviteList; check: InviteCheck }) {
   const { t } = useTranslation();
   const { last, typedInvalid, people, emails, unparsed } = list;

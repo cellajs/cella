@@ -50,12 +50,11 @@ export const tenantsListQueryOptions = (params: TenantFilters & { limit?: number
     limit = appConfig.requestLimits.users,
   } = params;
   const filters = { q, status, kind, sort, order };
+  const query = { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order) };
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
-    ...tokenPaging((pageToken, signal) =>
-      listTenants({ query: { q, status, kind: tenantKindsParam(kind), orderBy: orderByParam(sort, order), ...pageQuery(limit, pageToken) }, signal }),
-    ),
+    ...tokenPaging((pageToken, signal) => listTenants({ query: { ...query, ...pageQuery(limit, pageToken) }, signal })),
     refetchOnMount: true,
   });
 };

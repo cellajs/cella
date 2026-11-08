@@ -65,7 +65,9 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       const items: AccessValue[] = [
         { value: 'tool', name: t('c:docs.tool'), description: t('c:docs.tool_description.text', { description: row.tool.description }) },
       ];
-      if (row.tool.approvalRequired) items.push({ value: 'approval', name: t('c:docs.needs_approval'), description: t('c:docs.tool_approval.text') });
+      if (row.tool.approvalRequired) {
+        items.push({ value: 'approval', name: t('c:docs.needs_approval'), description: t('c:docs.tool_approval.text') });
+      }
       return <AccessCell label="MCP" items={items} tabIndex={tabIndex} />;
     },
   };

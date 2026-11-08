@@ -260,7 +260,9 @@ export function createHttpLink(conn: YjsConnection, handlers: HttpLinkHandlers):
       }
     }
     if (!(await post(update, session))) return false;
-    if (conn.yDoc === doc) conn.writer?.prove(proof).catch((error) => console.error('[yjs] Storing the HTTP handshake proof failed', error));
+    if (conn.yDoc === doc) {
+      conn.writer?.prove(proof).catch((error) => console.error('[yjs] Storing the HTTP handshake proof failed', error));
+    }
     if (session === currentSession) handshake = 'proven';
     return isCurrent(session);
   };

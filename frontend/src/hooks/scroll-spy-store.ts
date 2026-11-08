@@ -34,7 +34,8 @@ const notify = () => {
 const markActiveLinks = () => {
   for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) delete element.dataset.spyActive;
   if (currentSection) {
-    for (const element of document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`)) element.dataset.spyActive = '';
+    const sectionLinks = document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`);
+    for (const element of sectionLinks) element.dataset.spyActive = '';
   }
 };
 
@@ -269,7 +270,9 @@ const performScroll = (element: HTMLElement, id: string) => {
 
 /** True when the element has real layout, so a queued scroll can't target a collapsed container. */
 const isLaidOut = (element: HTMLElement): boolean => {
-  if (typeof element.checkVisibility === 'function') return element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
+  if (typeof element.checkVisibility === 'function') {
+    return element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
+  }
   if (element.offsetParent === null) return false;
   return element.getBoundingClientRect().height > 0;
 };

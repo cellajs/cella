@@ -121,7 +121,8 @@ function parseIndex(index: DocsIndex): { pages: DocPage[]; config: DocsConfig | 
   const pages: DocPage[] = parsed.map(({ slug, meta: { title, order, ...frontmatter }, headings }) => {
     const dir = slug.includes('/') ? slug.slice(0, slug.lastIndexOf('/')) : null;
     const parentId = dir && slugs.has(dir) ? dir : null;
-    return { id: slug, parentId, name: title, displayOrder: order, ...frontmatter, depth: slug.split('/').length - 1, headings };
+    const depth = slug.split('/').length - 1;
+    return { id: slug, parentId, name: title, displayOrder: order, ...frontmatter, depth, headings };
   });
   pages.sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 

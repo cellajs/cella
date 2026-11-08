@@ -31,7 +31,10 @@ export function rowOutsideRange(rows: ItemData[], { afterSeq, untilSeq }: SeqRan
   });
 }
 
-/** Fetches one sequence range for catchup, optionally narrowed to a subtree; `query` holds the range and chunk size for the product's list request. */
+/**
+ * Fetches one sequence range for catchup, optionally narrowed to a subtree. `query` holds the range and the chunk size,
+ * ready to spread into the product's list request.
+ */
 type RangeFetch = (request: {
   organizationId: string;
   tenantId: string;

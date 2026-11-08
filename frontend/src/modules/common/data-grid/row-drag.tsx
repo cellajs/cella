@@ -163,7 +163,11 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
       element: handle ?? el,
       getInitialData: (): RowDragData => ({ type: rowDragType, rowIdx }),
       onGenerateDragPreview: ({ nativeSetDragImage }) =>
-        setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) }),
+        setCustomNativeDragPreview({
+          nativeSetDragImage,
+          getOffset: () => ({ x: 16, y: 16 }),
+          render: ({ container }) => setPreview({ container }),
+        }),
       onDragStart: () => setIsDragging(true),
       onDrop: () => {
         setIsDragging(false);

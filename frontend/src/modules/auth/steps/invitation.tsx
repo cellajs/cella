@@ -4,7 +4,6 @@ import { MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type GetAuthHealthResponse, sendMagicLink } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
-import { useShallow } from 'zustand/react/shallow';
 import { ApiError } from '~/lib/api';
 import { type AuthAlternative, AuthAlternatives } from '~/modules/auth/auth-alternatives';
 import { AuthHeader, InvitationAvatar } from '~/modules/auth/auth-header';
@@ -27,9 +26,9 @@ import { Button } from '~/modules/ui/button';
  */
 export function InvitationStep({ tokenData, federations }: { tokenData: TokenData; federations?: GetAuthHealthResponse['federations'] }) {
   const { t } = useTranslation();
-  const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
-    useShallow((state) => ({ setStep: state.setStep, setMagicLinkSent: state.setMagicLinkSent, setInviteOtherAccount: state.setInviteOtherAccount })),
-  );
+  const setStep = useAuthStore((state) => state.setStep);
+  const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
+  const setInviteOtherAccount = useAuthStore((state) => state.setInviteOtherAccount);
   const { redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { email, invitation, inviterName, ssoConnectionId } = tokenData;

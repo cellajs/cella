@@ -45,7 +45,9 @@ function getSelectedCellColSpan<R, SR>({
 
   if (rowIdx >= 0 && rowIdx < rows.length) return getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row: rows[rowIdx] });
 
-  if (bottomSummaryRows) return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
+  if (bottomSummaryRows) {
+    return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
+  }
 
   return undefined;
 }

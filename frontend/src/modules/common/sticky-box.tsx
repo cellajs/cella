@@ -85,10 +85,11 @@ export function useStackedPin(ref: RefObject<HTMLElement | null>, enabled: boole
 type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
 
 /**
- * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should use plain sticky CSS. The bar pins at the larger of
- * `--sticky-stack-top` (section bars, which fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that publishes one
- * of those variables never consumes it, since it would inherit its own value back from the parent it publishes on. Variable changes animate with the
- * ancestor bar's transition.
+ * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should use plain sticky CSS.
+ * The bar pins at the larger of `--sticky-stack-top` (section bars, which fold the nav offset in) and
+ * `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that publishes one of those variables never consumes it,
+ * since it would inherit its own value back from the parent it publishes on. Variable changes animate with the ancestor
+ * bar's transition.
  */
 export function StickyBox({ offsetTop = 0, hideWhenOutOfView, publishVar, children, className, style, ...rest }: StickyBoxProps) {
   const barRef = useRef<HTMLDivElement>(null);

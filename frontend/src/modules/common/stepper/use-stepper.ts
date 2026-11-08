@@ -20,6 +20,7 @@ export const StepperContext = createContext<StepperContextValue>({
 export const useStepper = () => {
   const context = useContext(StepperContext);
   const currentStep = context.steps[context.activeStep];
+  const isLastStep = context.activeStep === context.steps.length - 1;
 
-  return { ...context, currentStep, isOptionalStep: !!currentStep?.optional, isLastStep: context.activeStep === context.steps.length - 1 };
+  return { ...context, currentStep, isOptionalStep: !!currentStep?.optional, isLastStep };
 };

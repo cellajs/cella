@@ -113,7 +113,9 @@ export function useColumnWidths<R, SR>(
 
     // Promote measured → resized to prevent jump on drop
     const newColumnWidths = new Map<string, ColumnWidth>();
-    for (const [key, value] of columnWidths) newColumnWidths.set(key, value.type === 'measured' ? { type: 'resized', width: value.width } : value);
+    for (const [key, value] of columnWidths) {
+      newColumnWidths.set(key, value.type === 'measured' ? { type: 'resized', width: value.width } : value);
+    }
     onColumnWidthsChange(newColumnWidths);
   }
 
