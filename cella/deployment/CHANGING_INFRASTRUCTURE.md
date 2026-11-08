@@ -52,19 +52,19 @@ The database access actions and the seed run an `up` that keeps the main job's i
 
 Every pull request gets the keyless `privileged-changes` check. Its summary names what merging owes. An application or a policy that is new, gone or changed owes **Update identities**. A resource of the program or a change of the applied description owes an apply.
 
-A head that cannot render fails the check and blocks the merge. The check reads code only, so drift made outside Pulumi shows in an apply's plan and not here.
+A head that cannot render fails the check and blocks the merge. Drift made outside Pulumi shows in an apply's plan and not here, since the check reads code only.
 
 On the release PR, the check also fails while the release describes the app otherwise than the last apply of an environment that follows the releases. That release merges only after its apply, since merging it first would end **apply needed**.
 
-GitHub holds no key to read `applied.json`. So each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`. It then runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
+Each apply sets the repository variable `INFRA_APPLIED_DESCRIPTION_<MODE>` to its description's hash with your `gh`, since GitHub holds no key to read `applied.json`. The apply then runs a failed check of the open release PR again. An apply without `gh` prints the command that sets the variable.
 
 ## Identities
 
 An environment declares two identities. One is the deploy key's application. The other, where a service sets `s3Access` in [config/services.config.ts](../../infra/config/services.config.ts), is the uploads application. Its policy reaches the objects of the upload buckets.
 
-No machine and no builder has an identity, as they fetch and write through links the deploy key signs. So no identity changes when you toggle `enabled` or `singleVM` or change a runtime secret's consumers.
+No machine and no builder has an identity, as they fetch and write through links the deploy key signs. No identity changes when you toggle `enabled` or `singleVM` or change a runtime secret's consumers.
 
-Identities are IAM, so only an Owner moment writes them. A deploy does not read identities. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included.
+Only an Owner moment writes identities, since they are IAM. A deploy does not read identities. The setup writes them first. **Update identities** (`pnpm infra identity`) writes them after an upgrade that changes a declared policy, the deploy key's included.
 
 It makes the uploads application and its key, and writes that key into the runtime folder. It deletes the retired machine identities with their keys. It reads what differs with the observer key, and asks for an Owner API key only when something has to change.
 
