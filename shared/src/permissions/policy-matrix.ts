@@ -75,18 +75,14 @@ export const configurePermissions = (
       entityType,
       channels,
       publicRead: () => {
-        if (publicReadGrants[entityType]) {
-          throw new Error(`[Permission] publicRead() called twice for "${entityType}"`);
-        }
+        if (publicReadGrants[entityType]) throw new Error(`[Permission] publicRead() called twice for "${entityType}"`);
         publicReadGrants[entityType] = true;
       },
     };
 
     callback(config);
 
-    if (entries.length > 0) {
-      policies[entityType] = entries;
-    }
+    if (entries.length > 0) policies[entityType] = entries;
   }
 
   return { policyMatrix: policies, publicReadGrants, accessScopes: deriveAccessScopes(policies) };

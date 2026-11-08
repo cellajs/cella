@@ -81,9 +81,7 @@ export const buildTestEntityHierarchyPlan = ({
     const ancestorColumns: TestChannelColumn[] = [];
     for (let cursor: ChannelEntityType | null = parentChannelType; cursor; ) {
       const ancestorId = channelIdsByType[cursor];
-      if (!ancestorId) {
-        throw new Error(`Cannot seed ${channelType}: missing ancestor channel id for ${cursor}`);
-      }
+      if (!ancestorId) throw new Error(`Cannot seed ${channelType}: missing ancestor channel id for ${cursor}`);
       ancestorColumns.push(channelColumn(cursor, ancestorId));
       cursor = hierarchy.getParent(cursor);
     }
@@ -101,9 +99,7 @@ export const buildTestEntityHierarchyPlan = ({
 
   const sqlChannelColumns = ancestors.map((channelType) => {
     const id = channelIdsByType[channelType];
-    if (!id) {
-      throw new Error(`Missing channel id for ${channelType}`);
-    }
+    if (!id) throw new Error(`Missing channel id for ${channelType}`);
     return channelColumn(channelType, id);
   });
 

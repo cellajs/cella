@@ -69,13 +69,9 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
 
   function addSpan(span: SpanData): void {
     spans.push(span);
-    if (spans.length > maxSpans) {
-      spans.splice(0, spans.length - maxSpans);
-    }
+    if (spans.length > maxSpans) spans.splice(0, spans.length - maxSpans);
     const snapshot = [...spans];
-    for (const subscriber of subscribers) {
-      subscriber(snapshot);
-    }
+    for (const subscriber of subscribers) subscriber(snapshot);
   }
 
   function getSpans(): SpanData[] {
@@ -90,9 +86,7 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
 
   function clear(): void {
     spans.length = 0;
-    for (const subscriber of subscribers) {
-      subscriber([]);
-    }
+    for (const subscriber of subscribers) subscriber([]);
   }
 
   return { addSpan, getSpans, subscribe, clear };
@@ -119,9 +113,7 @@ export function computeSpanStats(spans: SpanData[]): SpanStats {
   }
 
   const avgDurationMs: Record<string, number> = {};
-  for (const [prefix, { sum, count }] of Object.entries(durations)) {
-    avgDurationMs[prefix] = Math.round(sum / count);
-  }
+  for (const [prefix, { sum, count }] of Object.entries(durations)) avgDurationMs[prefix] = Math.round(sum / count);
 
   return { total: spans.length, byPrefix, avgDurationMs, errorCount };
 }

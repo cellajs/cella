@@ -156,9 +156,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       meterProvider,
       start: () => {},
       shutdown: () => (flushOnShutdown ? meterProvider.shutdown() : Promise.resolve()),
-      verifyConnection: async () => {
-        console.info(exportOffMsg);
-      },
+      verifyConnection: async () => console.info(exportOffMsg),
     };
   }
 

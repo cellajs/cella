@@ -24,6 +24,4 @@ export interface HealthResponse {
 export const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
 
 /** Return the worse (higher-severity) of two statuses. */
-export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
-  return statusRank[a] >= statusRank[b] ? a : b;
-}
+export const worstStatus = (a: HealthStatus, b: HealthStatus): HealthStatus => (statusRank[a] >= statusRank[b] ? a : b);

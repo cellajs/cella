@@ -18,9 +18,7 @@ export const buildSubject = (
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     const value = ancestorChannelIds[appConfig.entityIdColumnKeys[ancestor]];
-    if (value !== undefined) {
-      channelIds[ancestor] = value;
-    }
+    if (value !== undefined) channelIds[ancestor] = value;
   }
 
   const subject: SubjectForPermission = {

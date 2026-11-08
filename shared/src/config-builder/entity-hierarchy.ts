@@ -291,12 +291,8 @@ class EntityHierarchyBuilder<
   }
 
   private validateName(name: string): void {
-    if (this.entities.has(name)) {
-      throw new Error(`EntityHierarchy: entity "${name}" already defined`);
-    }
-    if (name === 'user') {
-      throw new Error('EntityHierarchy: "user" is reserved, use user() method');
-    }
+    if (this.entities.has(name)) throw new Error(`EntityHierarchy: entity "${name}" already defined`);
+    if (name === 'user') throw new Error('EntityHierarchy: "user" is reserved, use user() method');
   }
 
   private validateParent(name: string, parent: string | null, kind: 'channel' | 'product'): void {
@@ -314,9 +310,7 @@ class EntityHierarchyBuilder<
   }
 
   private validateRoles(name: string, roles: readonly string[]): void {
-    if (roles.length === 0) {
-      throw new Error(`EntityHierarchy: channel "${name}" must have at least one role`);
-    }
+    if (roles.length === 0) throw new Error(`EntityHierarchy: channel "${name}" must have at least one role`);
 
     const validRoles = new Set(this.roles.all);
     for (const role of roles) {
@@ -474,9 +468,7 @@ export class EntityHierarchy<
   }
 
   /** Undefined for a type the hierarchy does not declare. */
-  readonly getKind = (entityType: string): EntityKind | undefined => {
-    return this.entities.get(entityType)?.kind;
-  };
+  readonly getKind = (entityType: string): EntityKind | undefined => this.entities.get(entityType)?.kind;
 
   readonly isChannel = (entityType: string | null | undefined): entityType is TChannels => {
     return !!entityType && this.getKind(entityType) === 'channel';
@@ -700,9 +692,7 @@ export class EntityHierarchy<
     if (root === undefined) return `"id"::text`;
 
     const parts = [`"${entityIdColumnName(root)}"::text`];
-    for (const ancestor of deeper) {
-      parts.push(`COALESCE('/' || "${entityIdColumnName(ancestor)}"::text, '')`);
-    }
+    for (const ancestor of deeper) parts.push(`COALESCE('/' || "${entityIdColumnName(ancestor)}"::text, '')`);
     if (appendOwnId) parts.push(`'/' || "id"::text`);
     return parts.join(' || ');
   };
