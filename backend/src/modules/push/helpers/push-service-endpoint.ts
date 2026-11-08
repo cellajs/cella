@@ -9,9 +9,9 @@ function normalizeHost(host: string): string {
 }
 
 /**
- * Whether `endpoint` is an https URL on a host in `appConfig.pushServiceHosts`, on the default port. web-push connects
- * to the host Node's legacy `url.parse` reads, which ends at characters the WHATWG parser keeps (`;`, `%`, quotes), so
- * the endpoint must also be canonical and its host plain labels: then both parsers name the host that was checked.
+ * Whether `endpoint` is an https URL on a host in `appConfig.pushServiceHosts`, on the default port. The legacy
+ * `url.parse` ends a host at characters the WHATWG parser keeps (`;`, `%`, quotes), so the endpoint must also be
+ * canonical and its host plain labels: then either parser, whichever web-push connects with, names the host checked here.
  */
 export function isPushServiceEndpoint(endpoint: string): boolean {
   const url = URL.parse(endpoint);

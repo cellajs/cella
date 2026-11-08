@@ -36,7 +36,7 @@ const endpointsOf = async (userId: string) =>
 /**
  * The server POSTs every push to the endpoint its subscription names, so a user who could register any URL would make
  * the server send requests to a host of their choosing: an internal listener, a cloud metadata address. Registration
- * takes only https on a `pushServiceHosts` host and the default port, read the same by `url.parse`, which web-push uses.
+ * takes only https on a `pushServiceHosts` host and the default port, read the same by `URL` and the legacy `url.parse`.
  */
 describe('Push subscription endpoints', async () => {
   const call = await createAppClient();

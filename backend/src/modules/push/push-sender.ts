@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { appConfig } from 'shared';
 import type { NotificationPushPayload } from 'shared/push-payload';
-import webpush, { type RequestOptions, type WebPushError } from 'web-push';
+import { getVapidHeaders, type RequestOptions, sendNotification, WebPushError } from 'web-push';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { streamSubscriberManager, userTopic } from '#/modules/entities/stream/subscriber-manager';
@@ -53,7 +53,7 @@ function getVapid(): VapidDetails | null {
   const subject = env.VAPID_SUBJECT ?? appConfig.frontendUrl;
   try {
     // web-push checks the subject and both keys whenever it signs a token: this one is never sent.
-    webpush.getVapidHeaders('https://push.example', subject, publicKey, privateKey, 'aes128gcm');
+    getVapidHeaders('https://push.example', subject, publicKey, privateKey, 'aes128gcm');
     vapid = { subject, publicKey, privateKey };
   } catch (error) {
     log.error('Push sending is off: the VAPID keys or subject are invalid', {
@@ -97,7 +97,7 @@ const defaultDeps: PushSendDeps = {
   send: async ({ endpoint, p256dh, auth }, payload, topic) => {
     const vapidDetails = getVapid();
     if (!vapidDetails) throw new Error('Push sending is off');
-    await webpush.sendNotification({ endpoint, keys: { p256dh, auth } }, payload, { TTL: 60 * 60 * 24, timeout: sendTimeoutMs, topic, vapidDetails });
+    await sendNotification({ endpoint, keys: { p256dh, auth } }, payload, { TTL: 60 * 60 * 24, timeout: sendTimeoutMs, topic, vapidDetails });
   },
   findSubscriptions: (userIds) => findSubscriptionsByUserIds(dbCtx, { userIds }),
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(dbCtx, { endpoints }),
@@ -158,7 +158,7 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
             await deps.send(subscription, body, topic);
           } catch (error) {
             // A timeout or connection error has no status code; the error says what happened.
-            if (!(error instanceof webpush.WebPushError)) {
+            if (!(error instanceof WebPushError)) {
               log.warn('Push delivery failed', { error, activityId: payload.activityId });
               return;
             }

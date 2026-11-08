@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import webpush from 'web-push';
+import { WebPushError } from 'web-push';
 import { type NotificationPushPayload, type PushSendDeps, sendNotificationPush } from './push-sender';
 
 const payload: NotificationPushPayload = { t: 'notif', activityId: 'act-1', channelId: 'chan-1', kind: 'mention' };
@@ -30,7 +30,7 @@ function makeDeps(overrides: Partial<PushSendDeps> = {}) {
 }
 
 const statusError = (statusCode: number, headers = {}) =>
-  new webpush.WebPushError('Received unexpected response code', statusCode, headers, '', 'https://push.test');
+  new WebPushError('Received unexpected response code', statusCode, headers, '', 'https://push.test');
 
 afterEach(() => vi.useRealTimers());
 
