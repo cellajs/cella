@@ -46,7 +46,6 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
         container={containerElement}
         {...{ layer, outsideScroll, dock }}
         viewportClassName={searchLayout ? searchDialogLayout.viewportClassName : undefined}
-        overlayClassName={searchLayout ? searchDialogLayout.overlayClassName : undefined}
         className={cn(className, searchLayout && searchDialogLayout.className, containerElement && (container?.overlay ? spotlightLift : 'z-40'))}
         initialFocus={() => touchInitialFocus(popupRef)}
         finalFocus={() => finalFocusFor(dialog.triggerRef, String(id))}

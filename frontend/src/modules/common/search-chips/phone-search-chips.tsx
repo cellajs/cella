@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
@@ -49,6 +49,13 @@ export function PhoneSearchChips({
   const { pickingKey, setPickingKey, pickingChip, pickingGroup, hasAlternatives, applyOption } = useChipPicking(chips, groups);
 
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed');
+  const [fieldRise, setFieldRise] = useState<string>();
+
+  // The dialog's bar (h-12, under the safe area) starts and ends centered on the field or the icon button, so the field lifts to the top
+  const riseFromField = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    return rect && `max(0px, calc(${rect.top + rect.height / 2}px - env(safe-area-inset-top) - 1.5rem))`;
+  };
 
   const hasChips = chips.length > 0 || words.length > 0;
   const hasSearch = hasChips || !!typingWord;
@@ -58,10 +65,17 @@ export function PhoneSearchChips({
   const open = (pickedChipKey: string | null = null) => {
     // Rendered within the tap, so the input takes focus inside the gesture: iOS opens its keyboard for no later focus
     flushSync(() => {
+      setFieldRise(riseFromField());
       setPickingKey(pickedChipKey);
       setPhase('open');
     });
     if (!pickedChipKey) inputRef.current?.focus({ preventScroll: true });
+  };
+
+  // Measured again: the field may have replaced the icon button while the dialog was open
+  const close = () => {
+    setFieldRise(riseFromField());
+    setPhase('closing');
   };
 
   // A render after the close, so the search it remembers holds what the pick or commit just changed
@@ -80,7 +94,7 @@ export function PhoneSearchChips({
       applyOption(selection.group, selection.option);
       search.abandonDraft();
     }
-    setPhase('closing');
+    close();
   };
 
   const pressFilterChip = (chip: SearchChip) => {
@@ -99,7 +113,7 @@ export function PhoneSearchChips({
     if (event.key === 'Enter' && !highlightedRef.current) {
       event.preventDefault();
       search.commitDraft();
-      setPhase('closing');
+      close();
     } else if (event.key === 'Backspace' && !draft) {
       // Else the key goes on to delete the word's last character
       if (search.takeBackLastWord()) event.preventDefault();
@@ -177,13 +191,14 @@ export function PhoneSearchChips({
         onOpenChange={(next) => {
           if (next) return;
           search.abandonDraft();
-          setPhase('closing');
+          close();
         }}
       >
         <DialogContent
           ref={popupRef}
           {...searchDialogLayout}
-          className={cn(searchDialogLayout.className, 'p-0 data-closed:animate-none! data-open:animate-none!')}
+          className={cn(searchDialogLayout.className, 'p-0')}
+          style={fieldRise ? ({ '--phone-rise': fieldRise } as CSSProperties) : undefined}
           initialFocus={() => (pickingKey ? popupRef.current : inputRef.current)}
           finalFocus={triggerRef}
         >

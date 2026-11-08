@@ -9,7 +9,17 @@ import { tw } from '~/utils/tw';
 
 // Below `sm` a dialog that is neither docked nor inline fills the screen above the keyboard
 const phoneScreenClass = tw(
-  'max-sm:data-closed:slide-out-to-bottom max-sm:data-open:slide-in-from-bottom max-sm:m-0 max-sm:h-(--visual-viewport-height,100dvh) max-sm:max-h-none max-sm:w-full max-sm:content-start max-sm:self-start max-sm:overflow-y-auto max-sm:rounded-none max-sm:border-0 max-sm:pt-[calc(1rem+env(safe-area-inset-top))] max-sm:shadow-none max-sm:ring-0',
+  'max-sm:m-0 max-sm:h-(--visual-viewport-height,100dvh) max-sm:max-h-none max-sm:w-full max-sm:content-start max-sm:self-start max-sm:overflow-y-auto max-sm:rounded-none max-sm:border-0 max-sm:pt-[calc(1rem+env(safe-area-inset-top))] max-sm:shadow-none max-sm:ring-0',
+);
+
+// A transition, so a close during the enter reverses from where the dialog is
+const phoneMotionClass = tw(
+  'max-sm:transition-[transform,opacity] max-sm:duration-350 max-sm:ease-out max-sm:data-closed:animate-none max-sm:data-ending-style:opacity-0 max-sm:data-ending-style:duration-250 max-sm:data-open:animate-none max-sm:data-starting-style:opacity-0 max-sm:starting:opacity-0',
+);
+
+// `--phone-rise` is where the dialog comes from and goes back to; a caller's inline value wins over the 144px default
+const phoneRiseClass = tw(
+  'max-sm:[--phone-rise:144px] max-sm:data-ending-style:transform-[translateY(var(--phone-rise))] max-sm:data-starting-style:transform-[translateY(var(--phone-rise))] max-sm:motion-reduce:data-ending-style:transform-none max-sm:motion-reduce:data-starting-style:transform-none max-sm:starting:transform-[translateY(var(--phone-rise))] max-sm:motion-reduce:starting:transform-none',
 );
 
 /** Writes the visual viewport's height on its dialog, so a full screen dialog ends at the keyboard's edge; kept off :root, a keyboard opening restyles only that subtree. */
@@ -66,7 +76,6 @@ export function DialogContent({
   layer,
   outsideScroll = false,
   viewportClassName,
-  overlayClassName,
   dock,
   ...props
 }: DialogPrimitive.Popup.Props & {
@@ -76,13 +85,12 @@ export function DialogContent({
   /** Scroll tall content inside the popup by default, or outside through the viewport. */
   outsideScroll?: boolean;
   viewportClassName?: string;
-  overlayClassName?: string;
   /** Sits at the bottom edge and rises from below the screen. */
   dock?: 'bottom';
 }) {
   return (
     <DialogPortal container={container || layer || undefined}>
-      {!container && <DialogOverlay className={cn(layer && 'absolute', overlayClassName)} />}
+      {!container && <DialogOverlay className={cn(layer && 'absolute', !dock && phoneMotionClass)} />}
       <DialogPrimitive.Viewport
         data-slot="dialog-viewport"
         className={cn(
@@ -108,7 +116,7 @@ export function DialogContent({
               : 'sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
             // A container owns the scroll, so the popup only clips
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',
-            !dock && !container && phoneScreenClass,
+            !dock && !container && [phoneScreenClass, phoneMotionClass, phoneRiseClass],
             className,
           )}
           {...props}
