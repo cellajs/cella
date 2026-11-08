@@ -77,7 +77,7 @@ The manifest holds no secret: only the role, the release and the drain order the
 
 Every Pulumi run of the stack needs **the Pulumi passphrase**, the key to the stack's secrets. A first setup shows it once, for your password manager. From then on the CLI reads it from the engine folder with your operator key. Your copy restores the engine folder's when it is lost.
 
-Only the operator reads the state, and the state holds no machine and no secret value. So a leaked passphrase opens nothing.
+Only the operator reads the state. The state holds no machine and no secret value. So a leaked passphrase opens nothing.
 
 On an operator machine, `infra/.env.<mode>` holds the observer key and nothing a change needs. The CLI reads no privileged key and no passphrase from a file or the environment. So nothing on the machine changes infrastructure with nobody at the prompt.
 
@@ -129,7 +129,7 @@ The inventory in **Show status** names a key of the operator application that ou
 
 The builder fetches the target commit from the repository the root `package.json` names. The main job reads the environments file and lists the release tags there, with the same key. A public repository needs nothing. A private one needs a read-only key in each environment before its first deploy:
 
-1. Make a fine-grained GitHub token for that repository only, with **Contents: read** and nothing else, and an expiry.
+1. Make a fine-grained GitHub token with an expiry for that repository only. Give it **Contents: read** and nothing else.
 2. Run `pnpm infra repository-key` on your operator key. It checks that the repository answers to the token. Then it stores the token in the environment's runtime folder, where the next scheduled run reads it.
 
 The token goes as a header with each fetch, in no URL and no file the build sees. Run the action again to replace it before it expires. An empty answer removes it.
@@ -174,7 +174,7 @@ A person who only read holds the observer key of their own machine. Delete that 
 
 A person who ran privileged actions did so on one-day keys, each gone within its day. Meanwhile they could read every secret of the app's projects. When they leave:
 
-1. Remove them from `<app>-operators` in IAM → Groups, and from the Scaleway organization, which ends their user's keys. Revoke a key of `<app>-operator` made that day, in IAM → Applications → `<app>-operator` → API keys.
+1. Remove them from `<app>-operators` in IAM → Groups and from the Scaleway organization. Removal from the organization ends their user's keys. Revoke a key of `<app>-operator` made that day, in IAM → Applications → `<app>-operator` → API keys.
 2. **Rotate keys**, then **Rotate secrets**, in each environment. `data-encryption-key` and `pii-hash-secret` do not rotate here ([Rotate secrets](#rotate-secrets)).
 3. Delete their machine's observer key, as above.
 4. Remove the person from the repository.
