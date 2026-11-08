@@ -55,13 +55,11 @@ A row's provenance is its writer actor. A sync or import that a connection runs 
 
 ### API keys
 
-Only a key's hash is stored, with its prefix and last four characters for display. The plaintext is shown once, at creation.
+"Create API key" in organization settings makes a service account named after the key, as a member of the organization. The plaintext is shown once, at creation. Only its hash is stored.
 
 A key travels as `Authorization: Bearer <key>` or `x-api-key`. The tenant in the URL must be the key's own, and a request that carries a browser `Origin` is refused, since keys are for servers.
 
-A key can expire, be rolled or be revoked. After a roll the old key keeps working for an overlap window. A revoked key keeps its row as the audit trail.
-
-"Create API key" in organization settings makes a service account named after the key, as a member of the organization. An app that needs other roles or several keys per account builds on the same routes.
+A key can expire, be rolled or be revoked. After a roll the old key keeps working for an overlap window. A revoked key keeps its row as the audit trail. An app that needs other roles or several keys per account builds on the same routes.
 
 ### Access scopes
 
