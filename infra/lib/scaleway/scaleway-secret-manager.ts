@@ -12,6 +12,8 @@ export interface SecretManagerSecret {
   version_count?: number;
   status?: string;
   region?: string;
+  /** When Secret Manager last changed the secret, ISO 8601. */
+  updated_at?: string;
 }
 
 export interface SecretManagerSecretVersion {

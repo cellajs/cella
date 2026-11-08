@@ -240,19 +240,20 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
  * deploy holds the lease, or when the last deploy ended otherwise; a target that moved on since is the schedule's. The lease decides, not
  * the run list: a scheduled run looks for seconds every cadence and deploys nothing. A start by hand still queued holds no lease, so the
  * target can deploy twice, and the second deploy ends unchanged.
+ * @returns Whether it started a run.
  */
-export async function startBlockedTarget(context: InfraContext, key: KeyPair): Promise<void> {
+export async function startBlockedTarget(context: InfraContext, key: KeyPair): Promise<boolean> {
   const auth = { secretKey: key.secretKey };
   const { naming, region } = deriveInfra(context.appConfig);
   const definitionId = await findJobDefinition(auth, { region, projectId: context.projectId, name: naming.resource('main') });
-  if (!definitionId) return;
+  if (!definitionId) return false;
   const state = stateKeyOf(key, context.projectId);
   const held = await peekLock(
     await makeControlClient(context.appConfig.s3.region, state.accessKey, state.secretKey),
     naming.bootDiagBucket,
     lockKey(context.environment),
   );
-  if (held && Date.parse(held.expiresAt) > Date.now() && leaseDeploys(held)) return;
+  if (held && Date.parse(held.expiresAt) > Date.now() && leaseDeploys(held)) return false;
   const store = bucketRunStore(await makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey), naming.bootDiagBucket);
   const [newest] = await store.listRuns(1);
   const record = newest ? await store.currentRecord(newest) : undefined;
@@ -264,9 +265,10 @@ export async function startBlockedTarget(context: InfraContext, key: KeyPair): P
     : record && (record.outcome === 'blocked' || record.outcome === 'apply needed')
       ? { target: record.target, retry: String(record.retry ?? 0), outcome: record.outcome }
       : undefined;
-  if (!last) return;
+  if (!last) return false;
   const run = await startJobRun(auth, { region, definitionId, values: { TARGET_SHA: last.target, RETRY: last.retry } });
   console.info(
     `${checkMark} The last deploy was ${last.outcome}: run ${run.id} deploys ${last.target.slice(0, 10)} again (\`${actionCommand('runs')}\` shows how it ends).`,
   );
+  return true;
 }
