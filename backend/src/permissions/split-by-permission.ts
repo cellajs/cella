@@ -12,6 +12,7 @@ import { AppError } from '#/core/error';
 import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
+import { isArchivedFor } from '#/permissions/archive';
 import { type DraftChannelRow, draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import { inRequestScope } from '#/permissions/get-valid-channel';
 
@@ -22,9 +23,9 @@ const draftShowsTo = (ctx: ActorContext, entityType: ChannelEntityType | Product
 /**
  * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may `action`: the batch twin of
  * `getValidProduct` and `getValidChannel`. An id is rejected when it does not resolve, resolves outside the request's
- * tenant or organization, names a draft that does not show to the caller, or names a row the caller may not read or
- * may not `action` on. A bulk call never acts on such a row, and `rejectedIds` keeps the request order, so the answer
- * tells none of these apart.
+ * tenant or organization, names a draft that does not show to the caller, names a row the caller may not read or may
+ * not `action` on, or names a row an archived channel closes to `action` (`isArchivedFor`). A bulk call never acts on
+ * such a row, and `rejectedIds` keeps the request order, so the answer tells none of these apart.
  * @throws AppError 403 if no entities are allowed.
  */
 export const splitByPermission = async (
@@ -56,7 +57,11 @@ export const partitionByPermission = async (
   const decisions = actions.map((asked) => checkAccessBatch(access, asked, subjects));
 
   // A uuid column matches an id in any letter case, so a requested id is compared in the case the row stores.
-  const allowed = new Set(entities.map((entity) => entity.id).filter((id) => decisions.every((results) => results.get(id)?.allowed)));
+  const allowed = new Set(
+    entities
+      .filter((entity, i) => !isArchivedFor(ctx, action, subjects[i]) && decisions.every((results) => results.get(entity.id)?.allowed))
+      .map((entity) => entity.id),
+  );
   const allowedIds: string[] = [];
   const rejectedIds: string[] = [];
   for (const id of new Set(ids)) {

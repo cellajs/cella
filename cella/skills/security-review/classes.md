@@ -218,7 +218,7 @@ One class is one review iteration. The scout verifies every path below at the re
   - `mass-assignment`: `updateMe` with `email` and `mfaRequired` beside `givenName`, `updateOrganization` with another `tenantId` and `createdBy`; the row keeps both.
   - `response-secrets`: nine routes searched for every stored value of a secret column and every secret column name.
   - `user-mfa-visibility`: a co-member and an admin of another org reading `mfaRequired` on `getUser` and `listMembers`; the field is absent without `include=mfa`.
-  - `member-personal-view`: another member's archive, mute and order in `listMembers`; pins that email is shown org-wide.
+  - `member-personal-view`: another member's hide, mute and order in `listMembers`; pins that email is shown org-wide.
   - `profile-image-urls`: an avatar or banner pointed at another host. `trace-redaction`: a token in a request span and in the request log line (D1).
   - `cdc/src/tests/secret-columns.test.ts`: a new column matching the secret pattern in neither map.
 - **Asks:** per update route the writable columns against its schema, read from the OpenAPI document as request-bodies.test does; per response schema the fields and the relation that may see them; the values `changedFields` carries.
@@ -512,7 +512,7 @@ One class is one review iteration. The scout verifies every path below at the re
 - **Holds:**
   - `account-enumeration`: an email in the passkey challenge body changing the answer; a passkey no account holds naming an email (same 404 for account and stranger); `recognized` true for an address the prober's browser never signed in to; a waitlist form answering account, stranger and repeat differently. The owner's browser still learns `recognized: true` (positive control).
   - `product-existence`: getAttachment and updateAttachment confirming an unreadable id (404 for missing and unreadable; 403 only for a readable row).
-  - `relatable-organizations`: organizations of another user across tenants, a malformed `relatableUserId` reaching the database, role and archive filters on another user's list.
+  - `relatable-organizations`: organizations of another user across tenants, a malformed `relatableUserId` reaching the database, role and hidden filters on another user's list.
   - `pending-invitations`: the pending list, resend, invite response and invite check telling an account from a new address.
   - `tenant-access`: missing, inactive and foreign tenants told apart; `checkSlug` 204/409.
   - `brute-force-limits`: mailing one address forever, the magic budget telling account from none, check-email lookups without end.

@@ -1,6 +1,7 @@
 export { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 export type { AccessScope, AccessScopedEntityType } from './access-scopes.ts';
 export { allActionsAllowed } from './action-helpers.ts';
+export { archiveVeto } from './archive-veto.ts';
 export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
 export { type Access, checkAccess, checkAccessBatch, checkAccessFanout, checkRoleGrant, type PermissionResult } from './check-access.ts';
 export { getAllDecisions } from './engine/check.ts';

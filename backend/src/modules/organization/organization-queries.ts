@@ -77,7 +77,7 @@ interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizatio
   q?: string;
   offset: number;
   limit: number;
-  excludeArchived?: boolean;
+  excludeHidden?: boolean;
   role?: EntityRole;
   /** Limits the list to organizations of tenants of these kinds; unset lists every kind. */
   tenantKinds?: TenantKind[];
@@ -90,7 +90,7 @@ interface FindOrganizationsPaginatedOpts extends Pick<z.infer<typeof organizatio
  */
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeArchived, role, tenantKinds, includeCounts } = opts;
+  const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeHidden, role, tenantKinds, includeCounts } = opts;
 
   const entityType = 'organization';
 
@@ -100,11 +100,8 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     eq(membershipsTable.channelType, entityType),
   );
 
-  // Membership filters (role/archived) in JOIN ON so they only control whether the membership row is present.
-  const membershipFilterOn = and(
-    ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
-    ...(role ? [eq(membershipsTable.role, role)] : []),
-  );
+  // Membership filters (role/hidden) in JOIN ON so they only control whether the membership row is present.
+  const membershipFilterOn = and(...(excludeHidden ? [eq(membershipsTable.hidden, false)] : []), ...(role ? [eq(membershipsTable.role, role)] : []));
 
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 

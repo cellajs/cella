@@ -16,7 +16,8 @@ export function requireSystemAdmin(): void {
 /**
  * Redirect unless the actor's grants on the channel and above it allow the action on the channel itself, or on a new
  * `entityType` row homed at it. The guard reads the actor's memberships itself: on a cold load they may not be cached
- * yet. Where they cannot be read (offline with none cached) the caller passes: the server decides.
+ * yet. Where they cannot be read (offline with none cached) the caller passes: the server decides. It asks about grants
+ * alone, never whether the channel is archived, so the settings page of an archived channel stays reachable to unarchive it.
  */
 export async function requireEntityAction(
   channel: CanRow,

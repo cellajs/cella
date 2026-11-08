@@ -4,6 +4,7 @@
  * the stored signal versions stay string-keyed, since a tab older than the server must take a type it does not know.
  */
 export interface StreamSignalTypes {
+  'channel.archived': true;
   'channel.deleted': true;
   'membership.changed': true;
   'notification.created': true;

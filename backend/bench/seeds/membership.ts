@@ -9,7 +9,7 @@ export const loadtestOrgMembership = (userIndex: number): InsertMembershipModel 
     role: 'admin',
     createdBy: userId(0),
     displayOrder: userIndex + 1,
-    archived: false,
+    hidden: false,
     muted: false,
   };
 };

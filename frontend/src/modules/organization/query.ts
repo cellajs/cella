@@ -61,10 +61,10 @@ const withDefaults = ({
   sort = organizationsSearchDefaults.sort,
   order = organizationsSearchDefaults.order,
   relatableUserId,
-  excludeArchived,
+  excludeHidden,
   role,
   kind = [],
-}: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeArchived, role, kind });
+}: OrganizationFilters) => ({ q, sort, order, relatableUserId, excludeHidden, role, kind });
 
 // Cache enrichment adds the ancestor slugs.
 const fetchOrganizationsPage = async (

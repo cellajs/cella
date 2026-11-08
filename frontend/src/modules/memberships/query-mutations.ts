@@ -2,7 +2,7 @@ import { onlineManager, type QueryKey, useMutation } from '@tanstack/react-query
 import { t } from 'i18next';
 import type { InviteMembersResponse, MembershipBase, UpdateMembershipResponse } from 'sdk';
 import { batchDeleteMemberships, deleteInvitation, inviteMembers, updateMembership } from 'sdk';
-import { getArchiveMoveOrder } from 'shared/utils/display-order';
+import { getHideMoveOrder } from 'shared/utils/display-order';
 import type { ApiError } from '~/lib/api';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
@@ -112,8 +112,8 @@ export const useWithdrawInvitationMutation = () =>
     onSuccess: (_, { channel }) => invalidateInvites(channel),
   });
 
-/** A restored channel's content is not kept for offline use, so a restore needs a connection: without one this warns and answers false. */
-export const canRestoreNow = () => {
+/** A hidden channel's content is not kept for offline use, so showing it needs a connection: without one this warns and answers false. */
+export const canShowNow = () => {
   if (onlineManager.isOnline()) return true;
   toastOffline();
   return false;
@@ -128,17 +128,17 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, membershipId: id } = path;
       const membershipInfo = { id, ...body };
 
-      const { archived, displayOrder } = body;
+      const { hidden, displayOrder } = body;
       const myMemberships = getCachedMemberships();
-      const wasArchived = myMemberships?.find((membership) => membership.id === id)?.archived;
-      if (myMemberships && displayOrder === undefined && archived !== undefined && archived !== wasArchived) {
-        membershipInfo.displayOrder = getArchiveMoveOrder(myMemberships, channelType, archived);
+      const wasHidden = myMemberships?.find((membership) => membership.id === id)?.hidden;
+      if (myMemberships && displayOrder === undefined && hidden !== undefined && hidden !== wasHidden) {
+        membershipInfo.displayOrder = getHideMoveOrder(myMemberships, channelType, hidden);
       }
 
       const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_resource', { resource: t('c:membership') }) };
 
-      if (body?.archived !== undefined) {
-        context.toastMessage = t(`c:success.${body.archived ? 'archive' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
+      if (body?.hidden !== undefined) {
+        context.toastMessage = t(`c:success.${body.hidden ? 'hide' : 'show'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.muted !== undefined) {
         context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.role) {
@@ -212,9 +212,9 @@ const updateMembers = (members: Member[], updatedMembership: { id: string } & Re
     member.membership.id === updatedMembership.id ? { ...member, membership: { ...member.membership, ...updatedMembership } } : member,
   );
 
-/** Archive, mute and menu order: a response carries them on the caller's own membership only. */
+/** Hide, mute and menu order: a response carries them on the caller's own membership only. */
 const hasPersonalView = (membership: Partial<MembershipBase>): membership is MembershipBase =>
-  membership.archived !== undefined && membership.muted !== undefined && membership.displayOrder !== undefined;
+  membership.hidden !== undefined && membership.muted !== undefined && membership.displayOrder !== undefined;
 
 /** Sets the caller's own role on a channel, joining it without a membership; answers the membership. */
 export const useChangeEntityRoleMutation = () =>

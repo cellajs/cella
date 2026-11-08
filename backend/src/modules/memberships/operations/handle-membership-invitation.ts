@@ -31,7 +31,7 @@ interface HandleMembershipInvitationOpts {
  * Answers an invitation for the signed-in user. Accepting makes them a member of its channel, or spends it when they
  * are one already; rejecting declines it. Either way its links go, and the answer is its organization as `ChannelBase`.
  * @throws AppError 404 `not_found` for a missing, rejected or another user's invitation alike, 409 `user_mismatch` when
- * a token accept loses the bind to another account.
+ * a token accept loses the bind to another account, 403 `channel_archived` for an accept into an archived channel.
  */
 export async function handleMembershipInvitationOp(
   ctx: InvitationAnswerContext,
@@ -58,6 +58,8 @@ export async function handleMembershipInvitationOp(
 
       const entity = await resolveEntity(txCtx, { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId });
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.channelType });
+      // Joining is a create inside the channel, which an archive refuses; the invitation waits for the unarchive.
+      if (entity.archived) throw new AppError(403, 'channel_archived', 'warn', { entityType: inactiveMembership.channelType });
 
       // Invited on another address while already a member: the invitation is spent, the membership stays as it is.
       const alreadyMember = ctx.var.memberships.some((m) => m.channelId === inactiveMembership.channelId);

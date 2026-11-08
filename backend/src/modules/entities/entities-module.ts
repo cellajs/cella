@@ -13,6 +13,11 @@ defineBackendModule({
   // Hourly, at the three-quarter offset clear of the digest's tick.
   jobs: [{ name: 'deleted-storage-cleanup', cron: '45 * * * *', run: () => clearDeletedStorage() }],
   routes: [{ path: '/', app: entityHandlers }],
-  // Sent by the entities stream listeners when a channel below the organization is deleted (`versionedSignalsOf`).
-  signals: [{ type: 'channel.deleted', audiences: ['readers'] }],
+  // `channel.deleted`: sent by the entities stream listeners when a channel below the organization is deleted
+  // (`versionedSignalsOf`). `channel.archived`: sent by the archive route to the channel's readers, unversioned, since a
+  // client that was away refetches its channel lists at catchup.
+  signals: [
+    { type: 'channel.deleted', audiences: ['readers'] },
+    { type: 'channel.archived', audiences: ['readers'] },
+  ],
 });

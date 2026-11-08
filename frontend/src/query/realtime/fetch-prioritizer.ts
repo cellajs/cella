@@ -67,7 +67,7 @@ function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: numbe
   return Math.min(Math.max(tier.min, spread), tier.max);
 }
 
-/** Enqueue an announced seq range for lazy fetching; a muted or archived scope waits until it is opened. */
+/** Enqueue an announced seq range for lazy fetching; a muted or hidden scope waits until it is opened. */
 export function enqueueRange(input: EnqueueInput): void {
   enqueueWithTier(input, getSyncTier(input.organizationId, input.channelId));
 }

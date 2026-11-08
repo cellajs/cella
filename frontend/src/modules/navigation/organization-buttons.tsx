@@ -105,7 +105,7 @@ export function SidebarOrganizationButtons({ isCollapsed, onClick }: { isCollaps
 
   return (
     <SidebarMenu className="no-scrollbar min-h-0 gap-0 overflow-y-auto">
-      {sortAndFilterMenu(organizations, false).map((organization) => {
+      {sortAndFilterMenu(organizations, 'active').map((organization) => {
         const isActive = navSheetOpen === 'menu' && navSheetOrganizationId === organization.id;
         return (
           <SidebarOrganizationButton

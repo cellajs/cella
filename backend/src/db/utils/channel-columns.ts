@@ -1,4 +1,4 @@
-import { jsonb, varchar } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
 import { maxLength } from '#/db/utils/constraints';
@@ -7,7 +7,7 @@ import { publicColumn } from '#/db/utils/public-column';
 import { channelPublishedColumn } from '#/db/utils/published-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 
-/** The columns of every channel table: the tenant entity columns, slug, images, publication, `public`, tools and path. */
+/** The columns of every channel table: the tenant entity columns, slug, images, publication, `public`, archive state, tools and path. */
 export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
   ...tenantEntityColumns(entityType),
   slug: varchar({ length: maxLength.field }).unique().notNull(),
@@ -15,6 +15,8 @@ export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
   bannerUrl: varchar({ length: maxLength.url }),
   ...channelPublishedColumn,
   ...publicColumn,
+  /** Closes the channel to writes. The organization's stays false: its tenant archives, and the archive route refuses it. */
+  archived: boolean().notNull().default(false),
   /** Per-channel tool arrangement per placement slot. Stored sparse: a missing slot renders manifest defaults. */
   toolsConfig: jsonb().$type<ToolsConfig>().notNull().default({}),
   ...channelPathColumn(entityType),

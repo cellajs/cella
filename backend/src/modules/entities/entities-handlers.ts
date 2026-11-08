@@ -10,6 +10,7 @@ import { entityRoutes } from '#/modules/entities/entities-routes';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams } from '#/modules/entities/helpers/session-streams';
 import { appCatchupOp } from '#/modules/entities/operations/app-catchup';
+import { archiveChannelOp } from '#/modules/entities/operations/archive-channel';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { ensureAppStreamSessionSweep } from '#/modules/entities/operations/stream-session-sweep';
 import { keepAlive, writeOffset } from '#/modules/entities/stream/helpers';
@@ -25,6 +26,14 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
   const { slug, entityType } = ctx.req.valid('json');
   const result = await checkSlugOp(ctx, slug, entityType);
   return result.available ? ctx.body(null, 204) : ctx.body(null, 409);
+});
+
+app.openapi(entityRoutes.archiveChannel, async (ctx) => {
+  return ctx.json(await archiveChannelOp(ctx, { ...ctx.req.valid('json'), archived: true }), 200);
+});
+
+app.openapi(entityRoutes.unarchiveChannel, async (ctx) => {
+  return ctx.json(await archiveChannelOp(ctx, { ...ctx.req.valid('json'), archived: false }), 200);
 });
 
 // Caps bound memory and dispatch CPU for the single-process stream; both reject with 429 so

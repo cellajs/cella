@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { type MembershipColumnsResolver, type MembershipEntity, onBackendModuleRegister } from '#/lib/module';
 import { channelIdColumnsOf, findMenuParent, membershipsBroughtAlong } from '#/modules/memberships/helpers/membership-helpers';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -24,7 +25,7 @@ interface InsertMultipleProps<T> {
   userId: string;
   role: MembershipModel['role'];
   entity: T;
-  createdBy: string;
+  createdBy: ActorId;
   /** Extra columns to set on the target membership row, such as an app's own. */
   extraFields?: Partial<InsertMembershipModel>;
 }

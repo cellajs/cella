@@ -9,10 +9,10 @@ import { createTestOrganization, expectRefusal, rawJsonRequest } from '../helper
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser, orgMembershipOf } from './helpers';
 
-const personalView = ['archived', 'muted', 'displayOrder'];
+const personalView = ['hidden', 'muted', 'displayOrder'];
 
 /**
- * Archive, mute and order are a member's own view of a channel: nobody sets them for someone else, whatever their
+ * Hide, mute and order are a member's own view of a channel: nobody sets them for someone else, whatever their
  * role, and a response shows them on the caller's own membership only. A role change is an admin's act on the channel
  * and needs `update` there, also on one's own membership.
  */
@@ -70,12 +70,12 @@ describe('Membership updates', async () => {
     expect(await membershipOf(member.id)).toEqual(target);
   });
 
-  it("must not read another member's archive, mute and order via updateMembership", async () => {
+  it("must not read another member's hide, mute and order via updateMembership", async () => {
     const { admin, member, membershipOf, updateRaw } = await orgWithAdminAndMember();
-    // The member archived and muted the organization and moved it in their menu.
+    // The member hid and muted the organization and moved it in their menu.
     await db
       .update(membershipsTable)
-      .set({ archived: true, muted: true, displayOrder: 42 })
+      .set({ hidden: true, muted: true, displayOrder: 42 })
       .where(eq(membershipsTable.id, (await membershipOf(member.id)).id));
     const target = await membershipOf(member.id);
 
@@ -86,22 +86,22 @@ describe('Membership updates', async () => {
     expect((await membershipOf(member.id)).role).toBe(adminRole);
   });
 
-  it("returns the caller's own archive, mute and order (positive control)", async () => {
+  it("returns the caller's own hide, mute and order (positive control)", async () => {
     const { member, membershipOf, updateRaw } = await orgWithAdminAndMember();
     const own = await membershipOf(member.id);
 
     const { status, body } = await updateRaw(member, own.id, { muted: true });
     expect(status).toBe(200);
-    expect(body).toMatchObject({ id: own.id, archived: false, muted: true, displayOrder: own.displayOrder });
+    expect(body).toMatchObject({ id: own.id, hidden: false, muted: true, displayOrder: own.displayOrder });
   });
 
-  it("must not mute or archive another member's membership via updateMembership", async () => {
+  it("must not mute or hide another member's membership via updateMembership", async () => {
     const { admin, member, membershipOf, update } = await orgWithAdminAndMember();
     const target = await membershipOf(admin.id);
 
-    const { error, response } = await update(member, target.id, { muted: true, archived: true });
+    const { error, response } = await update(member, target.id, { muted: true, hidden: true });
     await expectRefusal({ response, error }, 403, 'forbidden');
-    expect(await membershipOf(admin.id)).toMatchObject({ muted: false, archived: false });
+    expect(await membershipOf(admin.id)).toMatchObject({ muted: false, hidden: false });
   });
 
   it("must not set another member's personal view even as an admin", async () => {

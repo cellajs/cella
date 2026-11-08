@@ -52,7 +52,7 @@ decides whether an upgrade touches it; the app's `cella/cella.config.ts` lists `
    allow, `0` deny, `'own'` creator only). A type without a case is denied to every role, and nothing
    reports it. The model: [Permissions](../../PERMISSIONS.md).
 3. `shared/config/config.default.ts`: the opt-ins of step 6; a channel also goes in `menuStructure`, with
-   `archivable: false` when it only groups others and has no life of its own to archive.
+   `hideable: false` when it only groups others and has no life of its own for a member to hide.
 4. `pnpm --filter backend ts`. The registries typed `satisfies Record<…EntityType, …>` fail on the
    new type: `channel-tables.ts` or `product-tables.ts`, and the product mock registry (filled in
    `app-product-mocks.ts`). The other backend errors follow from those and close with them. The

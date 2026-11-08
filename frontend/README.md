@@ -34,13 +34,13 @@ A feature folder in `src/modules/<name>/` registers itself in `<name>-module.ts`
 
 **Tools and slots.** A page that shows content from many modules is a consumer, and each place on it that takes such content is a slot. A module adds a tool to a slot: an id, a label, an order and a `render` that returns the slot's full content, lazy-loading heavy UI. Every channel type has a `<type>.settings` and a `<type>.tabs` slot; `account.settings`, `account.preferences`, `home.sections`, `user.profile` and `system.tabs` exist once. An app types its channels' render context by augmenting `ChannelEntityByType`.
 
-**Who sees a tool.** `requires` names a grant the consumer has to pass, and `visibleTo` lists context-role pairs such as `organization.admin`, matched over the entity and its ancestors. Both only hide UI: the backend decides what data a viewer gets.
+**Who sees a tool.** `requires` names a grant the consumer has to pass, and `visibleTo` lists context-role pairs such as `organization.admin`, matched over the entity and its ancestors. Both only hide UI: the backend decides what data a viewer gets. An archived channel grants no `update`: its settings hide the tools that need it and keep those that need `delete` or `archive`, the grant to update it whatever its archived state.
 
 **Arrangement.** The app's `appConfig.surfaces` comes first, one list of ids per slot: a listed slot shows exactly those tools in that order, an unlisted one every tool in its declared order. Then the channel row's `toolsConfig` applies the channel's own order and hidden ids. It is reconciled fail-closed: an unknown id drops, a new tool joins at its default order, and a `locked` tool cannot be hidden by a channel. The app refuses to start when `surfaces` lists an id no tool or tab has.
 
 **Page tabs.** A layout route names its tabs slot in `staticData.tabsSlot`, and its bar merges child routes that declare `staticData.navTab` with that slot's tools, rendered through a one-line `$tool` route. An entity link targets the layout route without a tab: the layout redirects to the first visible tab, and so does a navigation to a hidden one.
 
-**Adding content.** A settings tool is a card built from the tool bases in `modules/entities/channel-settings-tools.tsx` (the danger zone is `dangerToolBase` with `DeleteToolCard`), on a settings route that renders `<ChannelSettingsPage entity={...} />`. A tabs tool needs only its channel's `$tool` route. `ToolCard` and `TabsArrangementCard` are the card shells.
+**Adding content.** A settings tool is a card built from the tool bases in `modules/entities/channel-settings-tools.tsx` (the danger zone is `dangerToolBase` with `DeleteToolCard`, and a channel below the organization archives through `archiveToolBase` with `ArchiveToolCard`), on a settings route that renders `<ChannelSettingsPage entity={...} />`. Such a channel's page shows `ArchivedBanner` under its header while it is archived. A tabs tool needs only its channel's `$tool` route. `ToolCard` and `TabsArrangementCard` are the card shells.
 
 ## UI styling
 

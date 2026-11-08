@@ -94,8 +94,8 @@ this skill inside the raak checkout, whose shot list writes the four files to it
   open" on (`isDesktop` in `app-nav.tsx`); below it the sheet covers a table's first column. A shot with the menu open
   takes the `pcWide` device, kept at the first 16:9 size above `2xl`: every pixel wider draws the UI smaller in the
   mockup. "Keep menu open" lives in the per-user IndexedDB store, so it is set through its own switch.
-- The menu lists archived entities open by default (`activeSections` in the navigation store, same IndexedDB store).
-  `openMenu` folds them through the section's own "Archived" row.
+- The menu lists hidden entities open by default (`activeSections` in the navigation store, same IndexedDB store).
+  `openMenu` folds them through the section's own "Hidden" row.
 - While the sheet is open the page behind it is out of the accessibility tree: `getByRole` finds nothing there and
   reports no error. Reach for the page with a CSS or text locator.
 - A development build prints the entity id after the crumbs of a page header, and an admin gets an "Upload cover"

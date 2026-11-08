@@ -15,6 +15,7 @@ export const mockChannelBase = (key = 'context-entity:default') =>
       slug: faker.helpers.slugify(name).toLowerCase(),
       thumbnailUrl: null,
       bannerUrl: null,
+      archived: false,
     };
   });
 

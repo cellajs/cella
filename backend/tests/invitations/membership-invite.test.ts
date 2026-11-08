@@ -195,7 +195,7 @@ describe('Membership Invitation', async () => {
     expect(request.invitedAt).not.toBeNull();
   });
 
-  it('returns the membership a system admin joins by inviting themself, archive, mute and order included', async () => {
+  it('returns the membership a system admin joins by inviting themself, hide, mute and order included', async () => {
     const organization = await createTestOrganization();
     const sysAdmin = await createSystemAdminUser('sysadmin@example.com');
 
@@ -209,7 +209,7 @@ describe('Membership Invitation', async () => {
     expect(res.status).toBe(200);
     // Their own membership: the client files it with their other memberships, menu order included.
     const [joined] = (data as { data: Record<string, unknown>[] }).data;
-    expect(joined).toMatchObject({ userId: sysAdmin.id, role: memberRole, archived: false, muted: false });
+    expect(joined).toMatchObject({ userId: sysAdmin.id, role: memberRole, hidden: false, muted: false });
     expect(joined.displayOrder).toEqual(expect.any(Number));
   });
 });

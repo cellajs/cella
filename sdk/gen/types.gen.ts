@@ -245,6 +245,10 @@ export type ChannelBase = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
+  /**
+   * Closed to writes: it reads and streams, and only an unarchive or a delete changes it.
+   */
+  archived: boolean;
 };
 
 /**
@@ -503,7 +507,7 @@ export type UploadToken = {
 };
 
 /**
- * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
+ * A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export type MembershipBase = {
   id: string;
@@ -512,7 +516,7 @@ export type MembershipBase = {
   channelId: string;
   userId: string;
   role: 'admin' | 'member';
-  archived: boolean;
+  hidden: boolean;
   muted: boolean;
   displayOrder: number;
   organizationId: string;
@@ -612,6 +616,7 @@ export type Organization = {
   bannerUrl: string | null;
   publishedAt: string | null;
   public: boolean;
+  archived: boolean;
   toolsConfig: {
     'organization.settings'?: {
       order?: Array<string>;
@@ -3067,6 +3072,144 @@ export type CheckSlugResponses = {
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 
+export type ArchiveChannelData = {
+  body: {
+    channelType: never;
+    channelId: string;
+    /**
+     * Also changes the channels inside it that the caller may update. Off by default.
+     */
+    includeDescendants?: boolean;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/channels:archive';
+};
+
+export type ArchiveChannelErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type ArchiveChannelError = ArchiveChannelErrors[keyof ArchiveChannelErrors];
+
+export type ArchiveChannelResponses = {
+  /**
+   * Channel archived
+   *
+   * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type ArchiveChannelResponse = ArchiveChannelResponses[keyof ArchiveChannelResponses];
+
+export type UnarchiveChannelData = {
+  body: {
+    channelType: never;
+    channelId: string;
+    /**
+     * Also changes the channels inside it that the caller may update. Off by default.
+     */
+    includeDescendants?: boolean;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/organizations/{organizationId}/channels:unarchive';
+};
+
+export type UnarchiveChannelErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden
+   */
+  403: ForbiddenError;
+  /**
+   * Not found
+   */
+  404: NotFoundError;
+  /**
+   * Payload too large
+   */
+  413: PayloadTooLargeError;
+  /**
+   * Too many requests
+   */
+  429: TooManyRequestsError;
+};
+
+export type UnarchiveChannelError = UnarchiveChannelErrors[keyof UnarchiveChannelErrors];
+
+export type UnarchiveChannelResponses = {
+  /**
+   * Channel unarchived
+   *
+   * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type UnarchiveChannelResponse = UnarchiveChannelResponses[keyof UnarchiveChannelResponses];
+
 export type GetAppStreamData = {
   body?: never;
   path?: never;
@@ -4090,7 +4233,7 @@ export type InviteMembersResponses = {
       userId: string;
       role: 'admin' | 'member';
       organizationId: string;
-      archived?: boolean;
+      hidden?: boolean;
       muted?: boolean;
       displayOrder?: number;
     }>;
@@ -4230,7 +4373,7 @@ export type BatchDeleteMembershipsResponse = BatchDeleteMembershipsResponses[key
 export type UpdateMembershipData = {
   body: {
     role?: 'admin' | 'member';
-    archived?: boolean;
+    hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
   };
@@ -4322,7 +4465,7 @@ export type UpdateMembershipResponses = {
         }
       | null;
     organizationId: string;
-    archived?: boolean;
+    hidden?: boolean;
     muted?: boolean;
     displayOrder?: number;
   };
@@ -4437,7 +4580,7 @@ export type ListMembersResponses = {
           userId: string;
           role: 'admin' | 'member';
           organizationId: string;
-          archived?: boolean;
+          hidden?: boolean;
           muted?: boolean;
           displayOrder?: number;
         };
@@ -5023,7 +5166,7 @@ export type ListOrganizationsData = {
       | 'displayOrder desc';
     relatableUserId?: string;
     role?: 'admin' | 'member';
-    excludeArchived?: 'true' | 'false' | boolean;
+    excludeHidden?: 'true' | 'false' | boolean;
     /**
      * Comma-separated values
      */

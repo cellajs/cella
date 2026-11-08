@@ -82,8 +82,8 @@ export const membershipChannelColumns = (): MembershipChannelColumns => {
 };
 
 /**
- * One `(<channel>_id, user_id, archived)` index per sub-organization channel, named
- * `<table>_<channel>_user_archived_idx`, for member lookups scoped to a channel. Empty for an
+ * One `(<channel>_id, user_id, hidden)` index per sub-organization channel, named
+ * `<table>_<channel>_user_hidden_idx`, for member lookups scoped to a channel. Empty for an
  * organization-only hierarchy, so cella's own tables are unchanged.
  */
 export const membershipChannelIndexes = (tableName: string, table: Record<string, PgColumn>) =>
@@ -91,7 +91,7 @@ export const membershipChannelIndexes = (tableName: string, table: Record<string
     .filter((channelType) => channelType !== 'organization')
     .map((channelType) => {
       const channel = entityIdColumnName(channelType).replace(/_id$/, '');
-      return index(`${tableName}_${channel}_user_archived_idx`).on(table[appConfig.entityIdColumnKeys[channelType]], table.userId, table.archived);
+      return index(`${tableName}_${channel}_user_hidden_idx`).on(table[appConfig.entityIdColumnKeys[channelType]], table.userId, table.hidden);
     });
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */

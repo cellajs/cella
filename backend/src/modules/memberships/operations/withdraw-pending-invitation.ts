@@ -13,7 +13,8 @@ export async function withdrawPendingInvitationOp(ctx: UserContext, id: string) 
   const invitation = await findInactiveMembershipInOrg(ctx, { id });
   if (!invitation || invitation.rejectedAt) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 
-  await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
+  // Withdrawing removes a row, as removing a member does, so an archived channel allows it.
+  await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update', { ignoreArchive: true });
 
   await deleteInactiveMembership(ctx, { id: invitation.id });
 

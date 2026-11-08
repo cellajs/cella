@@ -56,7 +56,7 @@ interface Showcase {
     name: string;
     age: string;
     /** The admin's membership; without one the admin is outside the organization. */
-    membership?: { role: string; archived?: boolean };
+    membership?: { role: string; hidden?: boolean };
     /** Members per role, the admin and `people` included; generated members take the other seats. */
     roles: Record<string, number>;
     attachments: number;
@@ -160,7 +160,7 @@ const planOrganization = (org: ShowcaseOrganization, adminOrder: number) =>
     const adminMembership = org.membership && {
       ...mockChannelMembership('organization', channel, { id: adminId }),
       role: takeSeat(org.membership.role),
-      archived: org.membership.archived ?? false,
+      hidden: org.membership.hidden ?? false,
       displayOrder: adminOrder,
       createdAt,
     };
@@ -289,7 +289,7 @@ export const showcaseSeed = async () => {
     if (adminMembership && isSeenTracked(productType)) {
       const seen = records
         .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
-        .slice(adminMembership.archived ? 0 : (org.unseen ?? 0))
+        .slice(adminMembership.hidden ? 0 : (org.unseen ?? 0))
         .filter(({ createdAt }) => createdAt > seenFrom)
         .map(({ id }) => id);
       if (seen.length) await db.transaction((tx) => insertSeenBy({ var: { db: tx } }, { userId: adminId, productType, productIds: seen }));
