@@ -37,7 +37,7 @@ Sign-up needs open registration or a standing invitation, checked at the start a
 
 An invitation link can be forwarded, so holding one proves nothing:
 
-- **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail.
+- **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail, since a provider's verified flag may predate a change of hands.
 - **Accepting.** The account holds the invited address, or opens a link mailed to that inbox for this account.
 - **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
 - **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
