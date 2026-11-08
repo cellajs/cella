@@ -47,7 +47,8 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
       `\n${actionLabel('start-deploy')}: one run of ${environment}'s main job, for ${target.sha.slice(0, 10)} (${target.source}, retry ${target.retry}).\n`,
     ),
   );
-  if (!opts.asked && !(await confirmOrDefault({ message: `Deploy ${target.sha.slice(0, 10)} to ${environment}?`, default: true }))) return;
+  const name = commitName(await commitRefs(), target.sha);
+  if (!opts.asked && !(await confirmOrDefault({ message: `Deploy ${name} to ${environment}?`, default: true }))) return;
 
   const operator = await acquireOperatorKey(context);
   const auth = { secretKey: operator.secretKey };
