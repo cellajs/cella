@@ -1,23 +1,54 @@
+import { sql } from 'drizzle-orm';
 import type { ActorContext } from '#/core/context';
 import { transactionOpenedWith } from '#/db/create-connection';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { type TenantSessionVars, tenantTransactionOpening } from '#/db/tenant-transaction-opening';
+
+/** What each live tenant transaction runs as, so a nested request for the same tenant joins it on its connection. */
+const openTransactions = new WeakMap<DbOrTx, TenantSessionVars & { readOnly: boolean }>();
 
 /**
  * A transaction on the runtime pool that starts with the session variables the RLS policies read.
  * @throws A tenant id outside the id alphabet, before a connection is taken.
  */
 const tenantTransaction = async <T>(vars: TenantSessionVars, readOnly: boolean, fn: (tx: Tx) => Promise<T>): Promise<T> =>
-  transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), fn);
+  transactionOpenedWith(baseDb, tenantTransactionOpening(vars, readOnly), (tx) => {
+    openTransactions.set(tx, { ...vars, readOnly });
+    return fn(tx);
+  });
 
-/** A tenant transaction for a request: `fn` gets a clone of the context whose `db` is the transaction. */
-const requestTransaction = <T>(
+/** `set_config` is transaction-local; inside a savepoint it reverts on rollback but survives release. */
+const setIncludeDeleted = (tx: DbOrTx, value: boolean) => tx.execute(sql`SELECT set_config('app.include_deleted', ${String(value)}, true)`);
+
+/**
+ * A tenant transaction for a request: `fn` gets a clone of the context whose `db` is the transaction. A context already
+ * inside a tenant transaction for the same tenant joins it as a savepoint, so `fn` sees the open transaction's
+ * uncommitted rows and a throw above it still rolls everything back; this is what lets a module hook, such as
+ * `onDemoCreated`, call an operation that opens its own transaction.
+ * @throws When the open transaction belongs to another tenant, or is read only while the request is not.
+ */
+const requestTransaction = async <T>(
   ctx: ActorContext,
   tenantId: string,
   includeDeleted: boolean,
   readOnly: boolean,
   fn: (txCtx: ActorContext) => Promise<T>,
-) => tenantTransaction({ tenantId, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
+): Promise<T> => {
+  const open = openTransactions.get(ctx.var.db);
+  if (!open) return tenantTransaction({ tenantId, includeDeleted }, readOnly, (tx) => fn({ var: { ...ctx.var, db: tx } }));
+
+  if (open.tenantId !== tenantId) throw new Error('Tenant transaction refused: the open transaction belongs to another tenant');
+  if (open.readOnly && !readOnly) throw new Error('Tenant transaction refused: the open transaction is read only');
+
+  return ctx.var.db.transaction(async (tx) => {
+    openTransactions.set(tx, { ...open, includeDeleted });
+    if (open.includeDeleted !== includeDeleted) await setIncludeDeleted(tx, includeDeleted);
+    const result = await fn({ var: { ...ctx.var, db: tx } });
+    // A rolled-back savepoint reverts the setting itself; a released one keeps it, so the outer value goes back by hand.
+    if (open.includeDeleted !== includeDeleted) await setIncludeDeleted(tx, open.includeDeleted);
+    return result;
+  });
+};
 
 /**
  * Read-only RLS transaction for code with no request behind it, such as a CDC listener or a
