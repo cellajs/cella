@@ -39,7 +39,7 @@ An account exists only once its inbox is proven. The account is created at the p
 
 Sign-up needs open registration or a standing invitation, checked at the start and at completion. An account is identified by the proofs it holds, never by an address.
 
-An invitation link can be forwarded, so holding one proves nothing:
+Holding an invitation link proves nothing, since it can be forwarded:
 
 - **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail. Elsewhere a provider's verified flag may predate a change of hands.
 - **Accepting.** The account holds the invited address, or opens a link mailed to that inbox for this account.
@@ -48,7 +48,7 @@ An invitation link can be forwarded, so holding one proves nothing:
 
 A provisional account is the exception to a proven inbox. An external party asserts its identity. Its placeholder address on a reserved domain has no inbox. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is one.
 
-An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). A provisional account proves an inbox only from a signed-in session, so no mailed link signs it in.
+An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)). No mailed link signs a provisional account in: it proves an inbox only from a signed-in session.
 
 ## Tokens
 
@@ -63,13 +63,13 @@ The `auth/tokens/` module issues, opens and spends every token, with one policy 
 | `oauth-connect` | cookie | Connecting a provider account to the signed-in account | minutes |
 | `step-up` | code | Proving presence again with an emailed code | minutes |
 
-Opening a link only holds it in the browser. A click on the app's page then redeems it with a POST, so a mail scanner or a link preview does not use it up.
+Opening a link only holds it in the browser. A mail scanner or a link preview does not use it up: a click on the app's page then redeems it with a POST.
 
 The first redemption wins. The token then works for a short while in that browser alone, until that browser signs out. An opened magic link also goes when its account signs out anywhere, ends another session or turns MFA on. A token or code issued for a session serves that session alone and dies with it.
 
-A magic link is the one link that redeems on opening, and only in the browser that asked for it. A cookie set at the request proves that browser, so a crawler or a prefetch changes nothing.
+A magic link is the one link that redeems on opening, and only in the browser that asked for it. A crawler or a prefetch changes nothing: a cookie set at the request proves that browser.
 
-Opened anywhere else, the link waits on a page that names the address, so a planted link signs nobody in. A link of another account than the signed-in one is refused. An expired link leads to a page that offers a new one.
+A planted link signs nobody in: opened anywhere else, the link waits on a page that names the address. A link of another account than the signed-in one is refused. An expired link leads to a page that offers a new one.
 
 ## Second factors and MFA
 
@@ -82,7 +82,7 @@ Opened anywhere else, the link waits on a page that names the address, so a plan
 
 MFA needs both a passkey and an authenticator app. When one is lost, the other still signs in.
 
-A passkey sign-in needs no challenge. Every passkey registration and sign-in requires user verification, so a passkey proves both factors itself. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it.
+A passkey sign-in needs no challenge. A passkey proves both factors itself, since every passkey registration and sign-in requires user verification. Any other sign-in of such an account issues a `confirm-mfa` challenge. Only a passkey or an authenticator code completes it.
 
 The tenant's sign-in policy and step-up read the sign-in method and factor that the session records. In NIST SP 800-63B terms a magic link is a recovery link, not an authenticator. An account that needs AAL2 turns MFA on.
 
@@ -90,7 +90,7 @@ Setting up a factor or connecting a provider sends a security mail to the accoun
 
 ## Step-up
 
-An account-security action needs a session that proved its user present within the last ten minutes. A step-up also sets a cookie of its own. Only a browser holding it counts as stepped up, so a session cookie copied before the proof stays unproven. How much proof an action asks depends on what it does:
+An account-security action needs a session that proved its user present within the last ten minutes. A step-up also sets a cookie of its own. Only a browser holding it counts as stepped up. A session cookie copied before the proof stays unproven. How much proof an action asks depends on what it does:
 
 | Action | Holds a passkey or TOTP | No factor, recent sign-in | No factor, older sign-in |
 | --- | --- | --- | --- |
@@ -103,9 +103,9 @@ Signing out, revoking a key or a connected app, disabling a service account and 
 - **Factor**: a passkey or TOTP proven on this session within the window, by sign-in, step-up or setup.
 - **SSO factor**: an SSO sign-in counts when the institution asserted MFA within the window.
 - **Set up a factor**: the dialog adds a passkey or authenticator app, then runs the action.
-- **Emailed code**: mailed for this session and typed into the same dialog, so any device can read the mail.
+- **Emailed code**: mailed for this session and typed into the same dialog. Any device can read the mail.
 - **Not a factor**: an emailed code is only as strong as the mailbox. Its misses are capped per day only.
-- **A lost factor**: with MFA off the mailbox signs in anyway, so an emailed code may set up a new one.
+- **A lost factor**: an emailed code may set up a new one, since with MFA off the mailbox signs in anyway.
 - **With MFA on**: the other factor replaces the lost one.
 
 On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required` refusal it opens the "Confirm it's you" dialog and runs the action once more.
