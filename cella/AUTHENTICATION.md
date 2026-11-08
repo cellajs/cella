@@ -18,17 +18,17 @@ Changing how an account is protected first asks the session to prove its user ag
 | Institutional sign-in | An account at the institution, asserted through an identity federation ([Institutional sign-in](./authentication/SSO.md)) |
 | TOTP | A code from an authenticator app, as a second factor only |
 
-Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes, except deleting a passkey or TOTP already set up.
+Each method is a sub-module of `backend/src/modules/auth/`. `appConfig.enabledAuthStrategies` says which are on. A method that is off refuses its routes. A passkey or TOTP already set up can still be deleted.
 
 The sign-in page first asks whether the address is known. Only a browser that signed in to that account before learns the answer. Every other browser gets the same neutral step, account or not.
 
-`MICROSOFT_TENANT_ID` can narrow Microsoft sign-in to `organizations`, `consumers` or one tenant's GUID.
+Microsoft sign-in can be narrowed to one Entra tenant.
 
 A sign-in ends in a [session](./authentication/SESSIONS.md), after an MFA challenge when the account requires one. A provider or institutional sign-in starts a session of the app's own. Signing out at the provider or the institution ends nothing here. The app does not ask it again while the session lasts.
 
-A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`.
+From an address outside `SYSTEM_ADMIN_IP_ALLOWLIST`, a system administrator can neither sign in nor act as one.
 
-The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Behind no proxy, or one that passes the client's header through, a client chooses the address the allowlist and rate limits read.
+The API reads the client address from the last `X-Forwarded-For` entry. It must run behind exactly one proxy that appends the connecting peer's address, as the template's load balancer does. Without that proxy, a client can choose the address the allowlist and rate limits read.
 
 ## Sign-up
 
@@ -41,7 +41,7 @@ Sign-up needs open registration or a standing invitation, checked at the start a
 
 An invitation link can be forwarded, so holding one proves nothing:
 
-- **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail, since a provider's verified flag may predate a change of hands.
+- **Provider sign-up.** It skips the mail only when the provider hosts the address, as Google hosts Gmail. Elsewhere a provider's verified flag may predate a change of hands.
 - **Accepting.** The account holds the invited address, or opens a link mailed to that inbox for this account.
 - **Address stays off.** Accepting grants the membership and never adds the invited address to the account.
 - **One disclosure.** Accepting tells a signed-in link holder whether another account holds that one address.
@@ -102,9 +102,9 @@ Signing out, revoking a key or a connected app, disabling a service account and 
 
 - **Factor**: a passkey or TOTP proven on this session within the window, by sign-in, step-up or setup.
 - **SSO factor**: an SSO sign-in counts when the institution asserted MFA within the window.
-- **Set up a factor**: the dialog adds a passkey or authenticator app, and the action runs right after.
+- **Set up a factor**: the dialog adds a passkey or authenticator app, then runs the action.
 - **Emailed code**: mailed for this session and typed into the same dialog, so any device can read the mail.
-- **Not a factor**: an emailed code is as strong as the mailbox, and its misses are capped per day only.
+- **Not a factor**: an emailed code is only as strong as the mailbox. Its misses are capped per day only.
 - **A lost factor**: with MFA off the mailbox signs in anyway, so an emailed code may set up a new one.
 - **With MFA on**: the other factor replaces the lost one.
 
@@ -112,19 +112,18 @@ On the frontend, wrap the action in `withStepUp(action)`. On a `step_up_required
 
 ## Rate limits
 
-Every read is paced per user or service account, or per IP address when anonymous. A route that declares a limiter of its own skips that pace. A write declares one in `xRateLimiter`.
+Every read runs through a default limiter, keyed per user or service account, or per IP address when anonymous. A route that declares its own limiter replaces it. A write declares one in `xRateLimiter`.
 
-The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The read pace also reports what is left of its budget in `RateLimit` header fields.
+The OpenAPI docs show each limiter with its budget. A refusal is a 429 with `Retry-After`. The default read limiter also reports what is left of its budget in `RateLimit` header fields.
 
 - **Keyed pseudonyms.** An IP or email address enters a key as a keyed pseudonym, never in the clear.
-- **Shared counts.** Processes share counts, except while the database is unreachable.
+- **Shared counts.** Processes share counts. While the database is unreachable, each process counts on its own.
 - **Lost on a crash.** A database crash or failover clears every count.
 
 Mail and failed proofs carry limits of their own:
 
-- **Mail.** Sends count per user, or per IP when anonymous.
 - **Typed addresses.** A mail to an address someone else typed is also capped per address.
-- **Failed proofs.** They count per client address, and failed second factors per account too.
+- **Failed proofs.** They count per client address even for a signed-in user. Failed second factors also count per account.
 - **Daily tier.** Every failure budget also has one, which slows a patient guesser.
-- **Weeks for second factors.** Their failures also count over weeks, and a correct code never resets that.
+- **Weeks for second factors.** Their failures also count over weeks. A correct code never resets that count.
 - **Self-lifting block.** It lifts once the weeks pass, where NIST SP 800-63B disables the authenticator.
