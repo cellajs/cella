@@ -46,7 +46,7 @@ Five state owners. `localUserDb` is the per-user database described [below](#the
 - **Filtered product lists**: server-side search and sort results. A new row marks them for a refetch.
 - **Session queries**: `me`, memberships, invites, unseen counts.
 
-Each entity module registers its query keys and range fetch once in its `query.ts`. Generic cache and realtime code therefore never import entity modules. Staleness follows the stream. Sync deliveries are plain cache writes: upserts, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list they cannot patch.
+Generic cache and realtime code never import entity modules: each one registers its query keys and range fetch once in its `query.ts`. Staleness follows the stream. Sync deliveries are plain cache writes: upserts, or a [refetch mark](./SYNC_ENGINE.md#freshness) on a list they cannot patch.
 
 A synced list read belongs to the cache, not to the screen that started it. A screen that leaves never aborts it.
 
@@ -83,9 +83,9 @@ An attachment row is an ordinary product in the query cache. Its bytes live in t
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so an unchanged list is not rewritten. A refetch that gets no response or a server error keeps the last data on disk, restored marked.
+The persister snapshots the cache into the per-user database and restores it on boot. An unchanged list is not rewritten, since each product query is its own record. A refetch that gets no response or a server error keeps the last data on disk, restored marked.
 
-Paused mutations are persisted too. A running write is persisted only when it carries an `stx`, so one cut off by a closed tab or a reload is sent again as a replay.
+Paused mutations are persisted too. A running write is persisted only when it carries an `stx`. One cut off by a closed tab or a reload is then sent again as a replay.
 
 A query opts out with `meta: { persist: false }`.
 
