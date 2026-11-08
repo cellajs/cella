@@ -12,7 +12,7 @@ Without a local `Pulumi.<mode>.yaml`, `pnpm infra` runs the install wizard. On a
 
 ## 1. Prerequisites
 
-1. A domain, set as `appConfig.domain`, registered as external at https://console.scaleway.com/domains/external.
+1. A domain registered as external at https://console.scaleway.com/domains/external, set as `appConfig.domain`.
 2. The Pulumi CLI, at least the version of `@pulumi/pulumi` in `infra/package.json`:
 
    ```bash
@@ -51,9 +51,9 @@ The **operator part** runs on the one-day operator key you paste ([Operator key]
 1. Generates the Pulumi passphrase, shows it once and waits until you confirm it is in your password manager. Later runs fetch it from Secret Manager. Your copy restores that one if it is lost.
 2. Asks for the admin email and the mail key, both optional here. **Manage runtime secrets** sets them later.
 3. Creates state storage and initializes Pulumi.
-4. Offers the first apply. It makes the database, the network, the load balancer with its DNS records and certificates, and the registry, but no machine yet. It then builds the engine image from your checkout and pushes it. A second `up` makes the main job on that image, with the schedule that starts its runs. It stores the values step 2 asked for.
+4. Offers the first apply. It makes the database, the network, the load balancer with its DNS records and certificates, and the registry. It makes no machine yet. It then builds the engine image from your checkout and pushes it. A second `up` makes the main job on that image, with the schedule that starts its runs. It stores the values step 2 asked for.
 
-A second environment of the same app runs the same two parts. Its Owner moment adds the environment to the operators' reach, and its operator part asks for a one-day operator key. A setup of an environment torn down before runs in the project its teardown left in `infra/.env.<mode>`. It adopts what the teardown kept before its first apply ([Teardown](./RUNBOOKS.md#teardown)).
+A second environment of the same app runs the same two parts. Its Owner moment adds the environment to the operators' reach. Its operator part asks for a one-day operator key. A setup of an environment torn down before runs in the project its teardown left in `infra/.env.<mode>`. It adopts what the teardown kept before its first apply ([Teardown](./RUNBOOKS.md#teardown)).
 
 ## 4. The first deploy
 
@@ -69,6 +69,6 @@ A second environment of the same app runs the same two parts. Its Owner moment a
 Every boot of the backend machine seeds one admin from the **required** `admin-email` runtime secret while the users table is empty. Until that secret has a value, the first deploy ends blocked before it makes any machine. Setting it in **Manage runtime secrets** starts that deploy again.
 
 1. Open the app and request a magic link for the admin email.
-2. Sign in. If magic links do not arrive, store the Brevo API key, or your email provider's, in **Manage runtime secrets**.
+2. Sign in. If magic links do not arrive, store the API key of Brevo or your own email provider in **Manage runtime secrets**.
 
 GitHub sign-in takes a GitHub OAuth app whose callback is exactly `<backendAuthUrl>/github/callback`. Turn wildcard matching off in its settings. An app whose single callback dates from before 3 August 2026 also accepts every path below it. GitHub could then send a code to another path of the API host.
