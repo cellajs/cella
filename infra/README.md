@@ -8,13 +8,13 @@ The Infra CLI sets up a cella app on [Scaleway](https://www.scaleway.com/) in on
 
 ## What it does
 
-`infra/` is the deploy engine the apps built from cella share through template upgrades: a Pulumi program for the foundation (network, database, load balancer, buckets, secret containers, DNS and the main job with its schedule), the deploy that makes and deletes the machines through the Scaleway API, the agent every machine runs, and the CLI an operator runs on their own machine. The engine names no app: what an app deploys is in the registries under [config/](config/), which an upgrade merges like every other template file.
+`infra/` is the deploy engine that apps built from cella share through template upgrades. A Pulumi program holds the foundation: network, database, load balancer, buckets, secret containers, DNS, and the main job with its schedule. The deploy makes and deletes the machines through the Scaleway API. Every machine runs the agent, and an operator runs the CLI on their own machine. The engine names no app. What an app deploys lives in the registries under [config/](config/), which an upgrade merges like every other template file.
 
 ## How a release flows
 
 **Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a provisioned environment in one sitting ([fresh installation](../cella/deployment/FRESH_INSTALLATION.md)).
 
-**Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**: the engine built from your checkout, with the **applied description** of the app, which every run of the main job starts from.
+**Apply** (`pnpm infra apply`) changes the foundation and publishes the **engine image**. That image holds the engine built from your checkout, with the **applied description** of the app. Every run of the main job starts from it.
 
 **Deploy**: the main job's schedule starts a run every few minutes, at the cadence [config/general.config.ts](config/general.config.ts) sets per environment. When the environment's target has no run yet, that run deploys it with one command of the engine image:
 
@@ -40,7 +40,7 @@ Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, prod
 
 Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure: a check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
 
-The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in: undeclared applications, keys and policies, a person's key without an end date, a machine the live record does not name that is older than a run of the main job may last, a main job that runs another image than the digest the last apply recorded, or another command, schedule, env or secret references. It reads the live machines from the live record, which the deploy key writes, so it finds what an intruder did not disguise. The observer key reads no machine, so `inventory.machines` reads with the operator key once a session holds it, and is `unknown` without it. **Rotate keys** replaces the environment's keys, deletes the others and prints the inventory; a key of the operator application that outlives a day is deleted in the console; **Update identities** deletes a policy, or a key, beside the declared one, and the retired machine identities. Remove anything else in the console once you know who made it.
+The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in. They flag what nobody declared, such as an extra key or policy. They also flag a person's key without an end date. They read the live machines from the live record, which the deploy key writes. So they find only what an intruder did not disguise. `inventory.machines` needs the operator key and is `unknown` without it. **Rotate keys** replaces the environment's keys and deletes the others. **Update identities** deletes a policy or key beside the declared one, and the retired machine identities. In the console, delete a key of the operator application that outlives a day. Remove anything else in the console once you know who made it.
 
 Stable check `id`s:
 
