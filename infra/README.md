@@ -52,13 +52,13 @@ pnpm --filter infra status [--mode <production|staging>] [--json]
 
 Without `--mode` it reads `INFRA_MODE`, else the first stack file it finds, production first. `--json` prints the report as JSON, shaped as [lib/status/types.ts](lib/status/types.ts) declares it.
 
-Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure. A check that needs a Scaleway key degrades without one, so the command always completes. `nextAction` is the highest-priority pending step with an exact command.
+Each check reports `ok | warn | missing | error | unknown`. `unknown` means "could not be evaluated", never a failure. The command always completes: a check that needs a Scaleway key degrades without one. `nextAction` is the highest-priority pending step with an exact command.
 
 The **inventory** checks compare what exists with what the environment declares, as an Owner checks after a suspected break-in. They flag what nobody declared, such as an extra key or policy.
 
 They also flag a person's key without an end date, a machine the live record does not name, and a main job whose image, command, schedule or env differs from the last apply.
 
-They read the live machines from the live record, which the deploy key writes. So they find only what an intruder did not disguise. `inventory.machines` needs the operator key and is `unknown` without it.
+They find only what an intruder did not disguise: they read the live machines from the live record, which the deploy key writes. `inventory.machines` needs the operator key and is `unknown` without it.
 
 To clear what they flag:
 
@@ -112,7 +112,7 @@ To add a store:
 2. Export it from `catalog.ts`.
 3. Add an entry to [config/stores.config.ts](config/stores.config.ts).
 
-Every registry is part of the applied description, so either change deploys after an apply.
+Either change deploys after an apply, since every registry is part of the applied description.
 
 ## File map
 
