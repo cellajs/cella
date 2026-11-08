@@ -3,11 +3,11 @@ import { listMyMemberships, listOrganizations } from '../sdk/gen/index.ts';
 import { apiClient, finishOnboarding } from './a11y.ts';
 
 /**
- * Archived entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
+ * Hidden entities fold away: the list a visitor reads is the active one, and the row keeps its count. A fold takes
  * its row out of the match, so the loop asks for the first one each time.
  */
-const foldArchived = async (page: Page) => {
-  const unfolded = page.locator('#nav-sheet [data-archived-visible="true"][data-has-archived="true"] > div button');
+const foldHidden = async (page: Page) => {
+  const unfolded = page.locator('#nav-sheet [data-hidden-visible="true"][data-has-hidden="true"] > div button');
   while (await unfolded.count()) await unfolded.first().click();
 };
 
@@ -29,7 +29,7 @@ export const openMenu = async (page: Page) => {
   if ((await keepOpen.getAttribute('aria-checked')) !== 'true') await keepOpen.click();
   await preferences.click();
   await keepOpen.waitFor({ state: 'hidden' });
-  await foldArchived(page);
+  await foldHidden(page);
 };
 
 /**
@@ -63,7 +63,7 @@ export const tidyHeader = async (page: Page) => {
 const marketing = 'frontend/public/static/marketing/screenshots';
 
 /**
- * The template's marketing screenshots for `pnpm cella screenshots`, synced with the UI they show. An app adds, removes
+ * The template's marketing screenshots for `pnpm cella shoot`, synced with the UI they show. An app adds, removes
  * or overrides shots, devices and the format in `cella/screenshots.app.ts`.
  */
 export default defineScreenshotsBase({
@@ -105,7 +105,7 @@ export default defineScreenshotsBase({
       const published = organizations.filter(({ publishedAt }) => publishedAt);
       const organization =
         memberships
-          .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)
+          .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.hidden)
           .sort((a, b) => a.displayOrder - b.displayOrder)
           .map((membership) => published.find(({ id }) => id === membership.channelId))
           .find(Boolean) ?? published[0];
@@ -184,7 +184,7 @@ export default defineScreenshotsBase({
         await tidyHeader(page);
         await page.keyboard.press('Alt+M');
         await page.locator('#nav-sheet').waitFor();
-        await foldArchived(page);
+        await foldHidden(page);
         await hideDevUi(page);
       },
     },

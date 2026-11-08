@@ -5,7 +5,7 @@
   "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
-      // `pnpm cella align --run` runs each alignment's codemod by path, and `pnpm cella a11y`, `pnpm cella screenshots` and
+      // `pnpm cella align --run` runs each alignment's codemod by path, and `pnpm cella a11y`, `pnpm cella shoot` and
       // `pnpm cella pentest` load their adapters by path, so nothing imports them.
       "entry": [
         "cella/cella.config.ts",

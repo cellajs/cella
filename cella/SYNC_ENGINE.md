@@ -107,7 +107,7 @@ Beside change and signal frames the stream sends a periodic `ping`, which also s
 
 ### Fetch prioritization
 
-An announced range is queued, not fetched at once. A viewed channel fetches immediately, a muted or archived one when it is opened, and any other in the background, spread over a window that grows with the organization's online audience.
+An announced range is queued, not fetched at once. A viewed channel fetches immediately, a muted or hidden one when it is opened, and any other in the background, spread over a window that grows with the organization's online audience.
 
 Apps derive per-user state from `query/realtime/sync-events.ts`, never from queue logic. It announces every readable change, ids only, before any tier decision, and delivers each fetched range's rows. A frame past the id bound announces none: a create's or update's rows still arrive with its fetched range, and after a delete or a move-out the lists refetch.
 

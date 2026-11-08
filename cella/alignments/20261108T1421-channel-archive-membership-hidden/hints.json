@@ -1,0 +1,5 @@
+[
+  { "type": "rename", "kind": "column", "from": ["public", "memberships", "archived"], "to": ["public", "memberships", "hidden"] },
+  { "type": "create", "kind": "foreign key", "entity": ["public", "memberships", "memberships_created_by_actors_id_fkey"] },
+  { "type": "create", "kind": "foreign key", "entity": ["public", "memberships", "memberships_updated_by_actors_id_fkey"] }
+]

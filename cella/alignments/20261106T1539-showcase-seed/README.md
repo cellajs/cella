@@ -8,7 +8,7 @@ grep: showcase:mfa, showcase-mfa
 # The marketing screenshots seed from an app-owned json/showcase.json
 
 `pnpm seed showcase` seeds the dataset the marketing screenshots show from `json/showcase.json`, a file the app owns and
-pins, and `pnpm cella screenshots` shoots on a testbed seeded with it. `pnpm --filter backend showcase:mfa` is gone: its
+pins, and `pnpm cella shoot` shoots on a testbed seeded with it. `pnpm --filter backend showcase:mfa` is gone: its
 passkey, authenticator app and MFA flags are part of the seed. A pinned file never arrives through an upgrade, so `backend/scripts/seeds/showcase.seed.ts` fails the typecheck
 until the app pins `json/showcase.json` and creates it, from the template's copy with its own names.
 
@@ -32,7 +32,7 @@ No script: manual.
 
 1. Add `'json/showcase.json'` to `overrides.pinned` in `cella/cella.config.ts`.
 2. Copy `json/showcase.json` from the template, then give it the app's own organization names, people, email domain and admin address; role names are the app's organization roles.
-3. Re-shoot with `pnpm cella screenshots`: it seeds a testbed with the showcase and signs in as its admin.
+3. Re-shoot with `pnpm cella shoot`: it seeds a testbed with the showcase and signs in as its admin.
 
 ## Verify
 

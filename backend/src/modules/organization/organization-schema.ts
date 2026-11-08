@@ -127,7 +127,7 @@ export const organizationListQuerySchema = listQuerySchema.extend({
   orderBy: orderByQuerySchema(['id', 'name', 'createdAt', 'displayOrder'], 'displayOrder asc'),
   relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
-  excludeArchived: booleanTransformSchema,
+  excludeHidden: booleanTransformSchema,
   include: includeQuerySchema,
   kind: tenantKindsQuerySchema.describe(
     "Tenant kinds a system admin's list across tenants covers, comma-separated; absent covers the kinds the app lists by default. A member's own list ignores it.",

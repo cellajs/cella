@@ -1,5 +1,6 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
+import { loadArchivedChannelIds } from '#/middlewares/guard/archived-channels-cache';
 import { missingRouteParam } from '#/middlewares/guard/route-target';
 import { isMembershipRow } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
@@ -9,7 +10,7 @@ import { loadOrganization } from '#/modules/organization/load-organization';
  * Resolves the URL's organization in the tenant the actor was admitted to, for a system admin and for anyone bound
  * inside it, at organization level or in a channel below. An outsider of the tenant's one organization was refused by
  * `tenantGuard`; a tenant creator admitted by the no-organization foothold meets this check. A refused caller gets the
- * answer a missing organization gets, so an id is never confirmed.
+ * answer a missing organization gets, so an id is never confirmed. Sets the organization and its archived channel ids.
  */
 export const orgGuard = xMiddleware(
   {
@@ -17,6 +18,7 @@ export const orgGuard = xMiddleware(
     type: 'x-guard',
     errors: [404],
     requires: ['actor', 'tenant'],
+    provides: ['organization'],
     name: 'Organization',
     description: 'Requires membership in this organization or in a channel inside it. System admins also pass.',
   },
@@ -50,6 +52,7 @@ export const orgGuard = xMiddleware(
     // in channels below the organization
     ctx.set('organization', orgWithMembership);
     ctx.set('organizationId', orgWithMembership.id);
+    ctx.set('archivedChannelIds', await loadArchivedChannelIds(ctx, { tenantId, organizationId: orgWithMembership.id }));
 
     await next();
   },

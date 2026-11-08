@@ -113,7 +113,7 @@ commit; `--json` lists `{ path, status }` per file). Follow-up triage commits ma
 | Finding | Action |
 |---|---|
 | No fork marker, no known axis | Accidental drift: revert the file to upstream. |
-| Generic improvement the app authored | Contribute upstream; do not protect. Nothing to run in the app: the template maintainers adopt it from the app's trunk with `pnpm cella contributions`, a template-side command that needs `forks` in the config. |
+| Generic improvement the app authored | Contribute upstream; do not protect. Nothing to run in the app: the template maintainers adopt it from the app's trunk with `pnpm cella adopt`, a template-side command that needs `forks` in the config. |
 | App payload inside a cella-owned barrel/registry | Move the payload to a fork-owned file, import it directly, revert the barrel. |
 | Real fork axis on a cella-owned file | Every delta gets a `// fork:` marker. Pin only after auto-merge has mangled the file at least once. |
 | App identity (brand, locales, release config, root docs) | Add to `ignored` (never merged) or `pinned` (brand files whose upstream fixes you adopt by hand). |

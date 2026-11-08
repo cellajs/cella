@@ -9,7 +9,7 @@ import { useChannelListQueries } from '~/query/basic/use-channel-list-queries';
 /**
  * The menu, rebuilt whenever one of its entity lists or the user's memberships change. It is built from the query
  * results themselves, never from a cache read keyed on their update times: the React Compiler drops a value that only
- * sits in a dependency array, and the menu then stays as it was after a mute, an archive or a reorder.
+ * sits in a dependency array, and the menu then stays as it was after a mute, a hide or a reorder.
  */
 export function useMenu(userId: string | undefined) {
   const lists = useChannelListQueries(menuEntityTypes, { relatableUserId: userId ?? '' }, !!userId);

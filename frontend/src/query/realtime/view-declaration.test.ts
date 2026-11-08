@@ -18,7 +18,7 @@ const orgMembership = (organizationId: string, role: 'admin' | 'member') => ({
   channelId: organizationId,
   userId: 'user-1',
   role,
-  archived: false,
+  hidden: false,
   muted: false,
   displayOrder: 0,
   organizationId,

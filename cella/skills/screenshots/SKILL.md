@@ -9,17 +9,17 @@ The images in `frontend/public/static/marketing/` are shipped files, not generat
 the day someone shot them. Re-shoot when the UI they show has moved: navigation, tables, the settings page, the theme.
 
 `cella/screenshots.ts` lists what the template shoots, and `cella/screenshots.app.ts` what an app adds, removes or
-overrides; `pnpm cella screenshots` handles the mechanics. Picking the state and judging the result is this skill's job,
+overrides; `pnpm cella shoot` handles the mechanics. Picking the state and judging the result is this skill's job,
 and the command cannot do it: run it, then **look at every image**.
 
 ## Run
 
-- `pnpm cella screenshots` shoots on a testbed seeded with the app's showcase: this checkout's running one, else one it
+- `pnpm cella shoot` shoots on a testbed seeded with the app's showcase: this checkout's running one, else one it
   starts and stops after. It signs in as the showcase's admin, writes both modes of every shot over the files the app
   ships, and prints each one's pixel and file size. Hold one (`pnpm cella testbed --showcase`) through a review loop, so
   a re-shoot skips its start.
-- A trial run that leaves the working tree alone: `pnpm cella screenshots --out <dir>`.
-- One shot at a time, which is what the review loop uses: `pnpm cella screenshots settings`.
+- A trial run that leaves the working tree alone: `pnpm cella shoot --out <dir>`.
+- One shot at a time, which is what the review loop uses: `pnpm cella shoot settings`.
 - `format` is the file type of every shot. `'webp'` needs the `cwebp` encoder on the PATH, and the command stops before
   the testbed starts without it. It is written lossless, so the pixels are the screenshot's own; Chromium's own lossless
   WebP weighs about what the PNG does.
@@ -94,8 +94,8 @@ this skill inside the raak checkout, whose shot list writes the four files to it
   open" on (`isDesktop` in `app-nav.tsx`); below it the sheet covers a table's first column. A shot with the menu open
   takes the `pcWide` device, kept at the first 16:9 size above `2xl`: every pixel wider draws the UI smaller in the
   mockup. "Keep menu open" lives in the per-user IndexedDB store, so it is set through its own switch.
-- The menu lists archived entities open by default (`activeSections` in the navigation store, same IndexedDB store).
-  `openMenu` folds them through the section's own "Archived" row.
+- The menu lists hidden entities open by default (`activeSections` in the navigation store, same IndexedDB store).
+  `openMenu` folds them through the section's own "Hidden" row.
 - While the sheet is open the page behind it is out of the accessibility tree: `getByRole` finds nothing there and
   reports no error. Reach for the page with a CSS or text locator.
 - A development build prints the entity id after the crumbs of a page header, and an admin gets an "Upload cover"

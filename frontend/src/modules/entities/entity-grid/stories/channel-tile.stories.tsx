@@ -40,6 +40,7 @@ const organization: ChannelTileEntity = {
   updatedAt: null,
   thumbnailUrl: null,
   bannerUrl: null,
+  archived: false,
   publishedAt: '2026-01-10T09:00:00Z',
   included: {
     counts: {

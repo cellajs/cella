@@ -1,6 +1,7 @@
 import { boolean, doublePrecision, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { writerColumn } from '#/db/utils/audit-columns';
 import { membershipChannelColumns, membershipChannelIndexes } from '#/db/utils/channel-relation-columns';
 import { tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -28,14 +29,10 @@ export const membershipsTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     role: varchar({ enum: roles.all }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
-    createdBy: uuid()
-      .references(() => usersTable.id, { onDelete: 'set null' })
-      .$type<UserId>(),
+    createdBy: writerColumn(),
     updatedAt: timestampColumns.updatedAt,
-    updatedBy: uuid()
-      .references(() => usersTable.id, { onDelete: 'set null' })
-      .$type<UserId>(),
-    archived: boolean().default(false).notNull(),
+    updatedBy: writerColumn(),
+    hidden: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
     organizationId: uuid().notNull(),

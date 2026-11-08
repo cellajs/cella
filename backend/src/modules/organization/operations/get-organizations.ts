@@ -15,11 +15,11 @@ import type { PageWindow } from '#/utils/list-page';
 /**
  * A page of the caller's organizations, or with `relatableUserId` of that user's, limited to the ones the caller shares
  * unless the caller is a system admin. Without `relatableUserId` a system admin lists every organization.
- * @throws 403 `forbidden` when `role` or `excludeArchived` filters another user's list.
+ * @throws 403 `forbidden` when `role` or `excludeHidden` filters another user's list.
  */
 export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>, { offset, limit }: PageWindow) {
   const { user, memberships } = ctx.var;
-  const { q, orderBy, relatableUserId, role, excludeArchived, include, kind } = input;
+  const { q, orderBy, relatableUserId, role, excludeHidden, include, kind } = input;
   const { sort, order } = orderBy;
 
   const entityType = 'organization';
@@ -32,9 +32,9 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
   const sharedWithCaller =
     ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((membership) => membership.organizationId))] : undefined;
 
-  // The listed user's archive and role are theirs alone: as a filter on another user's list they are refused, never
+  // The listed user's hidden rows and role are theirs alone: as a filter on another user's list they are refused, never
   // dropped. The menu-order default names the caller's own menu, so another user's list comes by name.
-  if (ofAnotherUser && (role || excludeArchived)) {
+  if (ofAnotherUser && (role || excludeHidden)) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'other_user_membership' } });
   }
 
@@ -51,7 +51,7 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
     order,
     offset,
     limit,
-    excludeArchived,
+    excludeHidden,
     role,
     // The kind filter is for the list across tenants: a member's own list holds whatever they belong to.
     tenantKinds: isSystemAdmin ? (kind.length ? kind : listedTenantKinds()) : undefined,

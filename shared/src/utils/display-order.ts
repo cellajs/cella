@@ -28,21 +28,21 @@ export const getEdgeOrder = (existingOrders: number[], edge: 'top' | 'bottom', a
 };
 
 /**
- * Order of a membership an archive or restore moves when the request names none: the top of the archive or the bottom of
+ * Order of a membership a hide or show moves when the request names none: the top of the hidden rows or the bottom of
  * the active rows, next to the line it crossed, so the opposite move undoes it. The server writes it and the client
  * predicts it, so a moved menu row moves once.
  */
-export const getArchiveMoveOrder = (
-  memberships: { channelType: string; archived: boolean; displayOrder: number }[],
+export const getHideMoveOrder = (
+  memberships: { channelType: string; hidden: boolean; displayOrder: number }[],
   channelType: string,
-  archived: boolean,
+  hidden: boolean,
 ): number =>
   getEdgeOrder(
     memberships
-      .filter((membership) => membership.channelType === channelType && membership.archived === archived)
+      .filter((membership) => membership.channelType === channelType && membership.hidden === hidden)
       // Rounded outward so a fractional displayOrder doesn't squeeze a future insert
-      .map((membership) => (archived ? Math.floor(membership.displayOrder) : Math.ceil(membership.displayOrder))),
-    archived ? 'top' : 'bottom',
+      .map((membership) => (hidden ? Math.floor(membership.displayOrder) : Math.ceil(membership.displayOrder))),
+    hidden ? 'top' : 'bottom',
   );
 
 /**

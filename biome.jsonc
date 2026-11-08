@@ -171,7 +171,7 @@
         "**/drizzle.config.ts",
         "**/svgo.config.mjs",
         "cella/cella.config.ts",
-        // `pnpm cella a11y`, `pnpm cella screenshots` and `pnpm cella pentest` load each adapter's default export.
+        // `pnpm cella a11y`, `pnpm cella shoot` and `pnpm cella pentest` load each adapter's default export.
         "cella/a11y*.ts",
         "cella/screenshots*.ts",
         "cella/pentest*.ts",

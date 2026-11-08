@@ -34,7 +34,7 @@ interface NavigationStoreState {
   keepOpenPreference: boolean; // User preference behind keepNavOpen
   setKeepOpenPreference: (keepOpenPreference: boolean) => void;
 
-  activeSections: Record<string, boolean> | null; // Expanded state per section the user toggled, including archived ones
+  activeSections: Record<string, boolean> | null; // Expanded state per section the user toggled, including hidden ones
   setSectionOpen: (sectionKey: string, open: boolean) => void;
   resetSections: () => void;
 

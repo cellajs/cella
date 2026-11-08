@@ -110,6 +110,8 @@ Channel entities have two row kinds. **Elevation** rows on an ancestor channel s
 
 A row's home is the product's declared parent, or a channel above it when the hierarchy lets the parent's id be null (`nullableAncestors`). A role's product grants reach only rows homed at its own channel, unless the hierarchy declares the role `elevated` there: then they reach the channel's whole subtree. No grant reaches rows homed above its channel. Channel subjects are never home-scoped, so a grant above a channel counts in full for it.
 
+A membership is a fact, written through a path that whoever manages its channel allows: an invitation, a direct add, a self-join, a sign-in through a connection or a sync. The only derived memberships are those a membership brings along above its channel: the organization's (`organizationRoles`), and the menu parent's where the menu nests the channel under another. No other ancestor gets one.
+
 A channel declares its roles from most to least privileged, and that order decides who may grant what. Nobody hands out a role above their own on the channel, nor demotes or removes a member who holds one. An invitation is refused too when its accept would bring a membership above the channel at a role above the inviter's own there. The accept has no inviter to ask. Anyone may give the least-privileged role. A system admin gives any role, as does anyone whose `update` or `delete` grant reaches the channel from an ancestor. Service accounts follow the same rule when someone creates one, issues or rolls its keys, or re-enables it.
 
 ## The permission returned
@@ -134,9 +136,15 @@ Public read is declared per subject with `publicRead()` and holds for any actor,
 
 A row whose `publishedAt` is null is a draft, checked before the engine. A product draft shows to its author alone. A channel starts as a draft only when its hierarchy entry declares `drafts: { prepareRoles }` and the create asks for one. It then shows to its own members and to a grant above it that holds `update` on its type. Its invitations wait for the publish, except those for its `prepareRoles`, which go out at once so those people can set it up.
 
+## Archived channels
+
+A channel below the organization can be archived, which closes it. An archived channel refuses every write to itself, every create inside it and every change to a product homed in it, to everyone, system admins included. It still reads and streams as before, a list shows it when asked to, and a member can still be removed or leave, so nobody is stuck in an archive. The archived channel itself can still be deleted or unarchived with the matching grant, `delete` or `update`. Channels inside it keep their own state: the archive action offers to include them, with a default each app sets. The organization is never archived; its tenant is.
+
+Like a draft, an archive is checked before the engine. The check reads the container's own flag: the channel row for a write to a channel, the home channel for a product, and for a create the channel the new row would be homed in. No flag is derived from the channels above, so a live channel inside an archived one works as any live channel.
+
 ## In the interface
 
-The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone.
+The frontend asks the engine; the backend decides. A control calls `can(action, entityType, row)` from `useCan`, which runs `checkAccess` over the user's memberships: on the row itself, or, for a control with no row such as a create button, on a new row of that type homed at the channel. `useCan({ asMember: true })` leaves out the system-admin bypass, as the Yjs relay authorizes a session by memberships alone. `useCan` also applies the archive veto from the cached channel rows; `useCan({ ignoreArchive: true })` leaves it out, for the Settings tab and the unarchive control, which must stay reachable on an archived channel.
 
 A route gate (`requireEntityAction`) asks the same question before the page loads. Where the memberships cannot be read (offline with none cached), the gate lets the user through, and the server decides.
 
@@ -186,6 +194,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | The tenant: missing, inactive, none of the actor's, or not an API key's own | 403 `forbidden`, `resource: 'tenant'` | A tenant id is no secret: every member knows it, and the one answer only says "not yours" |
 | Anything under a tenant the caller may not read, missing and unreadable alike: an organization the tenant does not hold, a channel or product, a home channel named in a list query, an invitation | 404 `not_found` with `entityType` | A 403 would confirm the id. A key or token without the entity's scope reads it as missing too |
 | An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, `action` | The caller already knows the row |
+| A write in an archived channel, or into one | 403 `channel_archived` with `entityType` | The caller reads the channel, so the answer names the state that refuses, not the id |
 | A role above the caller's own on the channel: granted, brought along by an accept, held by the member or service account acted on | 403 `forbidden`, `reason: 'role_exceeds_actor'`, `role` | The caller may act on the channel, so the answer names the role it may not hand out |
 | A list option the caller may not use, such as another user's role filter | 403 `forbidden`, `reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list |
 | Another user the caller shares no organization with, missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | One answer hides existence, as a 404 would |

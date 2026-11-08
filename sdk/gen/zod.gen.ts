@@ -201,6 +201,7 @@ export const zChannelBase = z.object({
   slug: z.string(),
   thumbnailUrl: z.string().nullable(),
   bannerUrl: z.string().nullable(),
+  archived: z.boolean(),
 });
 
 /**
@@ -416,7 +417,7 @@ export const zUploadToken = z.object({
 });
 
 /**
- * A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
+ * A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.
  */
 export const zMembershipBase = z.object({
   id: z.uuid(),
@@ -425,7 +426,7 @@ export const zMembershipBase = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  archived: z.boolean(),
+  hidden: z.boolean(),
   muted: z.boolean(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.uuid(),
@@ -520,6 +521,7 @@ export const zOrganization = z.object({
   bannerUrl: z.string().max(2048).nullable(),
   publishedAt: z.string().nullable(),
   public: z.boolean(),
+  archived: z.boolean(),
   toolsConfig: z.object({
     'organization.settings': z
       .object({
@@ -1447,6 +1449,50 @@ export const zCheckSlugPath = z.object({
  */
 export const zCheckSlugResponse = z.void();
 
+export const zArchiveChannelBody = z.object({
+  channelType: z.unknown(),
+  channelId: z.string().max(50),
+  includeDescendants: z.boolean().optional(),
+});
+
+export const zArchiveChannelPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Channel archived
+ *
+ * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+ */
+export const zArchiveChannelResponse = z.object({
+  data: z.array(z.unknown()).max(0),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+export const zUnarchiveChannelBody = z.object({
+  channelType: z.unknown(),
+  channelId: z.string().max(50),
+  includeDescendants: z.boolean().optional(),
+});
+
+export const zUnarchiveChannelPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Channel unarchived
+ *
+ * `rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.
+ */
+export const zUnarchiveChannelResponse = z.object({
+  data: z.array(z.unknown()).max(0),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
 /**
  * SSE stream started
  *
@@ -1773,7 +1819,7 @@ export const zInviteMembersResponse = z.object({
       userId: z.uuid(),
       role: z.enum(['admin', 'member']),
       organizationId: z.uuid(),
-      archived: z.boolean().optional(),
+      hidden: z.boolean().optional(),
       muted: z.boolean().optional(),
       displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
     }),
@@ -1830,7 +1876,7 @@ export const zBatchDeleteMembershipsResponse = z.object({
 
 export const zUpdateMembershipBody = z.object({
   role: z.enum(['admin', 'member']).optional(),
-  archived: z.boolean().optional(),
+  hidden: z.boolean().optional(),
   muted: z.boolean().optional(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
 });
@@ -1890,7 +1936,7 @@ export const zUpdateMembershipResponse = z.object({
     ])
     .nullable(),
   organizationId: z.uuid(),
-  archived: z.boolean().optional(),
+  hidden: z.boolean().optional(),
   muted: z.boolean().optional(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
 });
@@ -1954,7 +2000,7 @@ export const zListMembersResponse = z.object({
           userId: z.uuid(),
           role: z.enum(['admin', 'member']),
           organizationId: z.uuid(),
-          archived: z.boolean().optional(),
+          hidden: z.boolean().optional(),
           muted: z.boolean().optional(),
           displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
         }),
@@ -2177,7 +2223,7 @@ export const zListOrganizationsQuery = z.object({
     .default('displayOrder asc'),
   relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
-  excludeArchived: z
+  excludeHidden: z
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),

@@ -7,7 +7,7 @@ defineBackendModule({
   scope: ['frontend', 'backend'],
   description: `Endpoints for managing memberships, which represent one-to-one relationships between a
     user and a channel entity such as an organization. Each membership includes role information and
-    status flags such as archived or muted. Memberships can also reference parent entities to easily have a
+    status flags such as hidden or muted. Memberships can also reference parent entities to easily have a
     hierarchical context available.`,
   routes: [{ path: '/tenants/:tenantId/organizations/:organizationId', app: membershipHandlers }],
   // Sent by the entities stream listeners, which keep each open stream's memberships current in the same step: to the

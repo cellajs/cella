@@ -48,24 +48,24 @@ export const membershipBaseSchema = membershipSchema
   .omit({ createdAt: true, createdBy: true, updatedAt: true, updatedBy: true })
   .openapi('MembershipBase', {
     description:
-      "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
+      "A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
     example: mockMembershipBase(),
     'x-tags': schemaTags('embedded', 'memberships', 'cella'),
   });
 
-/** Archive, mute and menu order: each member's own view of a channel, never set or shown for anyone else. */
-export const personalViewKeys = ['archived', 'muted', 'displayOrder'] as const;
+/** Hide, mute and menu order: each member's own view of a channel, never set or shown for anyone else. */
+export const personalViewKeys = ['hidden', 'muted', 'displayOrder'] as const;
 export type PersonalViewKey = (typeof personalViewKeys)[number];
 const personalViewMask = recordFromKeys(personalViewKeys, () => true as const);
 const optionalPersonalView = membershipBaseSchema.pick(personalViewMask).partial().shape;
 
 /**
  * A membership in a response that may be about another member (the members list, the memberships an invitation
- * creates): archive, mute and menu order are each member's own view, so they come with the caller's own row only.
+ * creates): hide, mute and menu order are each member's own view, so they come with the caller's own row only.
  */
 export const memberMembershipSchema = membershipBaseSchema.omit(personalViewMask).extend(optionalPersonalView);
 
-/** An updated membership with its audit fields; archive, mute and menu order as in `memberMembershipSchema`. */
+/** An updated membership with its audit fields; hide, mute and menu order as in `memberMembershipSchema`. */
 export const updatedMembershipSchema = membershipSchema.omit(personalViewMask).extend(optionalPersonalView);
 
 export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50), role: entityRoleSchema });

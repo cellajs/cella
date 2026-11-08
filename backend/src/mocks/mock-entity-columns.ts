@@ -75,6 +75,7 @@ type MockChannelColumns<T extends ChannelEntityType> = MockTenantEntityColumns<T
   updatedBy: string | null;
   publishedAt: string | null;
   public: boolean;
+  archived: boolean;
   toolsConfig: ToolsConfig;
   path: string | null;
 };
@@ -95,6 +96,7 @@ export const mockChannelColumns = <T extends ChannelEntityType>(entityType: T, o
     updatedBy: options.updatedBy ?? null,
     publishedAt: options.publishedAt === undefined ? base.createdAt : options.publishedAt,
     public: options.public ?? false,
+    archived: options.archived ?? false,
     toolsConfig: options.toolsConfig ?? {},
     path: hierarchy.computeChannelPath(entityType, { id: base.id, ...options.channelIds }),
   };

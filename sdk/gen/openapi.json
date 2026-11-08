@@ -376,7 +376,7 @@
     },
     {
       "name": "memberships",
-      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as archived or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
+      "description": "Endpoints for managing memberships, which represent one-to-one relationships between a user and a channel entity such as an organization. Each membership includes role information and status flags such as hidden or muted. Memberships can also reference parent entities to easily have a hierarchical context available.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1535,9 +1535,13 @@
           },
           "bannerUrl": {
             "type": ["string", "null"]
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Closed to writes: it reads and streams, and only an unarchive or a delete changes it."
           }
         },
-        "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl"],
+        "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl", "archived"],
         "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
         "example": {
           "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
@@ -1548,7 +1552,8 @@
           "entityType": "organization",
           "slug": "hamill---price",
           "thumbnailUrl": null,
-          "bannerUrl": null
+          "bannerUrl": null,
+          "archived": false
         },
         "x-tags": ["embedded", "entities", "cella"]
       },
@@ -2414,7 +2419,7 @@
             "type": "string",
             "enum": ["admin", "member"]
           },
-          "archived": {
+          "hidden": {
             "type": "boolean"
           },
           "muted": {
@@ -2430,8 +2435,8 @@
             "format": "uuid"
           }
         },
-        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
-        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
+        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "hidden", "muted", "displayOrder", "organizationId"],
+        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own hide, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
         "example": {
           "id": "ee163b99-3dce-4900-a23a-1256a303215e",
           "tenantId": "7om1aq",
@@ -2442,7 +2447,7 @@
           "role": "admin",
           "displayOrder": 38,
           "muted": false,
-          "archived": false
+          "hidden": false
         },
         "x-tags": ["embedded", "memberships", "cella"]
       },
@@ -2708,6 +2713,9 @@
           "public": {
             "type": "boolean"
           },
+          "archived": {
+            "type": "boolean"
+          },
           "toolsConfig": {
             "type": "object",
             "properties": {
@@ -2902,6 +2910,7 @@
           "bannerUrl",
           "publishedAt",
           "public",
+          "archived",
           "toolsConfig",
           "path",
           "shortName",
@@ -2934,6 +2943,7 @@
           "updatedBy": null,
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "public": false,
+          "archived": false,
           "toolsConfig": {},
           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
@@ -2960,7 +2970,7 @@
               "role": "member",
               "displayOrder": 18,
               "muted": false,
-              "archived": false
+              "hidden": false
             },
             "counts": {
               "membership": {
@@ -7888,6 +7898,248 @@
         }
       }
     },
+    "/tenants/{tenantId}/organizations/{organizationId}/channels:archive": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
+          }
+        ],
+        "operationId": "archiveChannel",
+        "tags": ["entities", "cella"],
+        "summary": "Archive channel",
+        "description": "Archives a channel below the organization, which closes it: nobody changes it, creates anything in it or changes a product homed in it, system admins included, until it is unarchived. It still reads and streams, a list shows it when asked to, and a member can still be removed or leave. The channels inside it keep their own state unless `includeDescendants` archives them too. Requires update permission on the channel. The organization is never archived; its tenant is.",
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelType": {
+                    "type": "string",
+                    "enum": []
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "includeDescendants": {
+                    "type": "boolean",
+                    "description": "Also changes the channels inside it that the caller may update. Off by default."
+                  }
+                },
+                "required": ["channelType", "channelId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Channel archived\n\n`rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {},
+                      "maxItems": 0
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/organizations/{organizationId}/channels:unarchive": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
+          }
+        ],
+        "operationId": "unarchiveChannel",
+        "tags": ["entities", "cella"],
+        "summary": "Unarchive channel",
+        "description": "Reopens an archived channel below the organization. The channels inside it keep their own state unless `includeDescendants` unarchives them too. Requires update permission on the channel.",
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["serviceBurstLimiter", "pointsLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelType": {
+                    "type": "string",
+                    "enum": []
+                  },
+                  "channelId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "includeDescendants": {
+                    "type": "boolean",
+                    "description": "Also changes the channels inside it that the caller may update. Off by default."
+                  }
+                },
+                "required": ["channelType", "channelId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Channel unarchived\n\n`rejectedIds` lists the channels inside it that the caller reads but may not update, which stay as they were.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {},
+                      "maxItems": 0
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/entities/app/stream": {
       "get": {
         "security": [
@@ -8692,7 +8944,8 @@
                         "entityType": "organization",
                         "slug": "macgyver-llc",
                         "thumbnailUrl": null,
-                        "bannerUrl": null
+                        "bannerUrl": null,
+                        "archived": false
                       },
                       "inactiveMembership": {
                         "id": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
@@ -8726,7 +8979,8 @@
                         "entityType": "organization",
                         "slug": "kutch---bernier",
                         "thumbnailUrl": null,
-                        "bannerUrl": null
+                        "bannerUrl": null,
+                        "archived": false
                       },
                       "inactiveMembership": {
                         "id": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
@@ -9634,7 +9888,7 @@
         "operationId": "inviteMembers",
         "tags": ["memberships", "cella"],
         "summary": "Invite members",
-        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.",
+        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "parameters": [
@@ -9764,7 +10018,7 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "archived": {
+                          "hidden": {
                             "type": "boolean"
                           },
                           "muted": {
@@ -10095,7 +10349,7 @@
         "operationId": "updateMembership",
         "tags": ["memberships", "cella"],
         "summary": "Update membership",
-        "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.",
+        "description": "Updates a membership: its role, or the muted, hidden or display order status. Send at least one field. Muted, hidden and display order are set by the member only, and the response carries them only on the caller's own membership. A hide that sends no display order moves the row to the top of the hidden rows, a show to the bottom of the active ones. A channel type whose menu section sets `hideable: false` cannot be hidden. A role change, and any change to another member's membership, requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "parameters": [
@@ -10138,7 +10392,7 @@
                     "type": "string",
                     "enum": ["admin", "member"]
                   },
-                  "archived": {
+                  "hidden": {
                     "type": "boolean"
                   },
                   "muted": {
@@ -10160,7 +10414,7 @@
                     "type": "string",
                     "enum": ["admin", "member"]
                   },
-                  "archived": {
+                  "hidden": {
                     "type": "boolean"
                   },
                   "muted": {
@@ -10191,7 +10445,7 @@
                   "role": "member",
                   "displayOrder": 93,
                   "muted": false,
-                  "archived": false,
+                  "hidden": false,
                   "createdAt": "2024-10-28T10:38:59.996Z",
                   "createdBy": {
                     "id": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
@@ -10342,7 +10596,7 @@
                       "type": "string",
                       "format": "uuid"
                     },
-                    "archived": {
+                    "hidden": {
                       "type": "boolean"
                     },
                     "muted": {
@@ -10586,7 +10840,7 @@
                         "role": "admin",
                         "displayOrder": 10,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       }
                     },
                     {
@@ -10611,7 +10865,7 @@
                         "role": "admin",
                         "displayOrder": 6,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       }
                     }
                   ],
@@ -10664,7 +10918,7 @@
                                     "type": "string",
                                     "format": "uuid"
                                   },
-                                  "archived": {
+                                  "hidden": {
                                     "type": "boolean"
                                   },
                                   "muted": {
@@ -11859,7 +12113,7 @@
               "default": "false"
             },
             "required": false,
-            "name": "excludeArchived",
+            "name": "excludeHidden",
             "in": "query"
           },
           {
@@ -11906,6 +12160,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-11-21T01:19:53.533Z",
                       "public": false,
+                      "archived": false,
                       "toolsConfig": {},
                       "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "shortName": "Anderson",
@@ -11932,7 +12187,7 @@
                           "role": "admin",
                           "displayOrder": 32,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -11970,6 +12225,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-10-29T04:35:17.725Z",
                       "public": false,
+                      "archived": false,
                       "toolsConfig": {},
                       "path": "772a771f-c150-465e-9635-46594859fc3d",
                       "shortName": "Wiegand,",
@@ -11996,7 +12252,7 @@
                           "role": "admin",
                           "displayOrder": 94,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12146,6 +12402,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-04-18T21:12:59.543Z",
                       "public": false,
+                      "archived": false,
                       "toolsConfig": {},
                       "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "shortName": "Conroy,",
@@ -12172,7 +12429,7 @@
                           "role": "admin",
                           "displayOrder": 45,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12210,6 +12467,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-02-24T16:36:46.247Z",
                       "public": false,
+                      "archived": false,
                       "toolsConfig": {},
                       "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "shortName": "Lemke,",
@@ -12236,7 +12494,7 @@
                           "role": "admin",
                           "displayOrder": 44,
                           "muted": false,
-                          "archived": false
+                          "hidden": false
                         },
                         "counts": {
                           "membership": {
@@ -12369,6 +12627,7 @@
                           "updatedBy": null,
                           "publishedAt": "2024-12-25T15:04:42.969Z",
                           "public": false,
+                          "archived": false,
                           "toolsConfig": {},
                           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "shortName": "Spencer,",
@@ -12395,7 +12654,7 @@
                               "role": "member",
                               "displayOrder": 18,
                               "muted": false,
-                              "archived": false
+                              "hidden": false
                             },
                             "counts": {
                               "membership": {
@@ -13043,6 +13302,7 @@
                     "updatedBy": null,
                     "publishedAt": "2024-12-25T15:04:42.969Z",
                     "public": false,
+                    "archived": false,
                     "toolsConfig": {},
                     "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                     "shortName": "Spencer,",
@@ -13069,7 +13329,7 @@
                         "role": "member",
                         "displayOrder": 18,
                         "muted": false,
-                        "archived": false
+                        "hidden": false
                       },
                       "counts": {
                         "membership": {

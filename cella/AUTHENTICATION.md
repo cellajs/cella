@@ -36,6 +36,8 @@ An account exists only once its inbox is proven. The account, its proven address
 
 An account is identified by the proofs it holds (`identities`, `emails`), never by an address.
 
+A provisional account is the exception to a proven inbox: an identity that an external party asserts proves it, and it holds a placeholder address on a reserved domain with no inbox behind it. The account of a [demo tenant](./MULTI_TENANCY.md#tenant-kinds) is the first kind; an LTI launch whose address the platform cannot prove is the planned second. `users.email` stays a non-null string for every account, provisional ones included. An address an external party asserts becomes proven only under its connection's address rule ([Institutional sign-in](./authentication/SSO.md)), never on the party's word alone. A provisional account proves an inbox only from a signed-in session: no link mailed to an unproven address signs it in.
+
 ## Tokens
 
 One module, `auth/tokens/`, issues, opens and spends every token, with one policy per type. Only a hash is stored; the raw value exists only in the link, the cookie or the mailed code that carries it.

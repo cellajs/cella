@@ -1,0 +1,205 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "cc7d7d9e-1cd7-47af-8574-4ec79d1ab95a",
+  "prevIds": [
+    "0d75e64a-07cc-4bf5-83d1-88da65dc3d3f"
+  ],
+  "footprints": [
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "memberships"
+      ],
+      "writes": [
+        "s|fk|public.memberships.memberships_created_by_users_id_fkey",
+        "n|fk|public.memberships.memberships_created_by_users_id_fkey",
+        "e|fk|public.memberships.memberships_created_by_users_id_fkey",
+        "n|con|public.memberships.memberships_created_by_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "e|col|public.memberships.created_by"
+      ]
+    },
+    {
+      "statementType": "drop_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "memberships"
+      ],
+      "writes": [
+        "s|fk|public.memberships.memberships_updated_by_users_id_fkey",
+        "n|fk|public.memberships.memberships_updated_by_users_id_fkey",
+        "e|fk|public.memberships.memberships_updated_by_users_id_fkey",
+        "n|con|public.memberships.memberships_updated_by_users_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "e|col|public.memberships.updated_by"
+      ]
+    },
+    {
+      "statementType": "rename_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "memberships",
+        "archived"
+      ],
+      "writes": [
+        "s|col|public.memberships.archived",
+        "n|col|public.memberships.archived",
+        "s|col|public.memberships.hidden",
+        "n|col|public.memberships.hidden"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "organizations",
+        "archived"
+      ],
+      "writes": [
+        "s|col|public.organizations.archived",
+        "n|col|public.organizations.archived",
+        "e|col|public.organizations.archived"
+      ],
+      "reads": [
+        "n|tbl|public.organizations",
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "memberships"
+      ],
+      "writes": [
+        "s|fk|public.memberships.memberships_created_by_actors_id_fkey",
+        "n|fk|public.memberships.memberships_created_by_actors_id_fkey",
+        "e|fk|public.memberships.memberships_created_by_actors_id_fkey",
+        "n|con|public.memberships.memberships_created_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.memberships.created_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "memberships"
+      ],
+      "writes": [
+        "s|fk|public.memberships.memberships_updated_by_actors_id_fkey",
+        "n|fk|public.memberships.memberships_updated_by_actors_id_fkey",
+        "e|fk|public.memberships.memberships_updated_by_actors_id_fkey",
+        "n|con|public.memberships.memberships_updated_by_actors_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.memberships",
+        "n|sch|public",
+        "n|tbl|public.actors",
+        "n|sch|public",
+        "n|col|public.memberships.updated_by",
+        "n|col|public.actors.id",
+        "e|uniqueness|public.actors.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "rename",
+      "key": "columns\u0000[\"public\",\"memberships\",\"archived\"]",
+      "set": {
+        "name": "hidden"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "organizations",
+        "name": "archived",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "memberships",
+        "name": "memberships_created_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "memberships",
+        "name": "memberships_updated_by_actors_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "updated_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "actors",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "NO ACTION",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"memberships\",\"memberships_created_by_users_id_fkey\"]"
+    },
+    {
+      "op": "drop",
+      "key": "fks\u0000[\"public\",\"memberships\",\"memberships_updated_by_users_id_fkey\"]"
+    }
+  ]
+}

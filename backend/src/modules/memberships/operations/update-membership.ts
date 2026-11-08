@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
-import { buildSubjectFromEntity, hierarchy, isChannelArchivable } from 'shared';
-import { getArchiveMoveOrder } from 'shared/utils/display-order';
+import { buildSubjectFromEntity, hierarchy, isChannelHideable } from 'shared';
+import { getHideMoveOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
@@ -17,13 +17,13 @@ type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
 
 /**
  * Updates a membership's role, which needs `update` on its channel and neither the new nor the old role above the
- * actor's own (`assertRoleGrant`), or the member's own archive, mute and menu order. User-only: `memberships.updatedBy`
- * references `users`, so a service account never edits a membership.
- * @throws 400 `invalid_request` when archiving a channel type whose menu section sets `archivable: false`.
+ * actor's own (`assertRoleGrant`), or the member's own hide, mute and menu order. Its route admits sessions only, so a
+ * service account never edits a membership.
+ * @throws 400 `invalid_request` when hiding a channel type whose menu section sets `hideable: false`.
  */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
   const actorId = ctx.var.user.id;
-  const { role, archived, muted, displayOrder } = input;
+  const { role, hidden, muted, displayOrder } = input;
 
   const setsPersonalView = personalViewKeys.some((key) => input[key] !== undefined);
   // Refused here as well as by the body schema, so the rule holds for every caller of the operation.
@@ -33,7 +33,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   if (!membershipToUpdate) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
 
-  // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
+  // Hide, mute and order are the member's own view of the channel: nobody sets them for someone else.
   const isActorsMembership = membershipToUpdate.userId === actorId;
   if (setsPersonalView && !isActorsMembership) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { membership: membershipId } });
@@ -41,8 +41,8 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   const updatedType = membershipToUpdate.channelType;
 
-  if (archived && !isChannelArchivable(updatedType)) {
-    throw new AppError(400, 'invalid_request', 'warn', { entityType: updatedType, meta: { reason: 'not_archivable' } });
+  if (hidden && !isChannelHideable(updatedType)) {
+    throw new AppError(400, 'invalid_request', 'warn', { entityType: updatedType, meta: { reason: 'not_hideable' } });
   }
 
   if (role !== undefined && !hierarchy.getRoles(updatedType).includes(role)) {
@@ -61,15 +61,15 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   }
 
   const orderToUpdate =
-    displayOrder === undefined && archived !== undefined && archived !== membershipToUpdate.archived
-      ? getArchiveMoveOrder(ctx.var.memberships, updatedType, archived)
+    displayOrder === undefined && hidden !== undefined && hidden !== membershipToUpdate.hidden
+      ? getHideMoveOrder(ctx.var.memberships, updatedType, hidden)
       : displayOrder;
 
   const values = {
     ...(role !== undefined && { role }),
     ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
     ...(muted !== undefined && { muted }),
-    ...(archived !== undefined && { archived }),
+    ...(hidden !== undefined && { hidden }),
     ...updateStamps(actorId),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });

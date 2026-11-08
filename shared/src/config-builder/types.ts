@@ -265,8 +265,8 @@ export interface MenuStructureItem<C extends string = string, S extends string =
    * refuses an invitation whose carried role outranks the inviter's own on the parent.
    */
   carryRole?: boolean;
-  /** `false`: nobody archives a membership of `entityType`, for a channel that only groups others. On by default. */
-  archivable?: boolean;
+  /** `false`: nobody hides a membership of `entityType`, for a channel that only groups others. On by default. */
+  hideable?: boolean;
 }
 
 /** All readonly string-array config properties, grouped as one generic parameter so literal types survive. */

@@ -16,7 +16,7 @@ type TestMembership = {
   role: EntityRole;
   displayOrder: number;
   muted: boolean;
-  archived: boolean;
+  hidden: boolean;
   organizationId: string;
   workspaceId: string | null;
   projectId: string | null;
@@ -46,7 +46,7 @@ const createMemberships = (count: number): TestMembership[] =>
     role: i % 3 === 0 ? ('admin' as const) : memberRole,
     displayOrder: 0,
     muted: false,
-    archived: false,
+    hidden: false,
     workspaceId: null,
     projectId: null,
   }));

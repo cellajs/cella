@@ -9,6 +9,9 @@ import type {
   AcceptInvitationTokenData,
   AcceptInvitationTokenErrors,
   AcceptInvitationTokenResponses,
+  ArchiveChannelData,
+  ArchiveChannelErrors,
+  ArchiveChannelResponses,
   BatchCreateAttachmentsData,
   BatchCreateAttachmentsErrors,
   BatchCreateAttachmentsResponses,
@@ -316,6 +319,9 @@ import type {
   ToggleMfaData,
   ToggleMfaErrors,
   ToggleMfaResponses,
+  UnarchiveChannelData,
+  UnarchiveChannelErrors,
+  UnarchiveChannelResponses,
   UnsubscribeNotificationsData,
   UnsubscribeNotificationsErrors,
   UnsubscribeNotificationsResponses,
@@ -350,6 +356,7 @@ import type {
 import {
   zAcceptInvitationResponse,
   zAcceptInvitationTokenResponse,
+  zArchiveChannelResponse,
   zBatchCreateAttachmentsResponse,
   zBatchCreateOrganizationsResponse,
   zBatchDeleteAttachmentsResponse,
@@ -442,6 +449,7 @@ import {
   zStartOAuthConnectResponse,
   zStepUpResponse,
   zToggleMfaResponse,
+  zUnarchiveChannelResponse,
   zUnsubscribeNotificationsResponse,
   zUpdateAttachmentResponse,
   zUpdateConnectionResponse,
@@ -1514,6 +1522,64 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Archive channel
+ *
+ * Archives a channel below the organization, which closes it: nobody changes it, creates anything in it or changes a product homed in it, system admins included, until it is unarchived. It still reads and streams, a list shows it when asked to, and a member can still be removed or leave. The channels inside it keep their own state unless `includeDescendants` archives them too. Requires update permission on the channel. The organization is never archived; its tenant is.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/channels:archive** ·· [archiveChannel](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/tenants/{tenantId}/organizations/{organizationId}/channels:archive) ·· _entities · cella_
+ *
+ * @param {archiveChannelData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {enum} options.body.channelType - `enum`
+ * @param {string} options.body.channelId - `string`
+ * @param {boolean=} options.body.includeDescendants - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const archiveChannel = <ThrowOnError extends boolean = true>(
+  options: Options<ArchiveChannelData, ThrowOnError>,
+): RequestResult<ArchiveChannelResponses, ArchiveChannelErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<ArchiveChannelResponses, ArchiveChannelErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zArchiveChannelResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/channels:archive',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Unarchive channel
+ *
+ * Reopens an archived channel below the organization. The channels inside it keep their own state unless `includeDescendants` unarchives them too. Requires update permission on the channel.
+ *
+ * **POST /tenants/{tenantId}/organizations/{organizationId}/channels:unarchive** ·· [unarchiveChannel](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/tenants/{tenantId}/organizations/{organizationId}/channels:unarchive) ·· _entities · cella_
+ *
+ * @param {unarchiveChannelData} options
+ * @param {string} options.path.tenantId - `string`
+ * @param {string} options.path.organizationId - `string`
+ * @param {enum} options.body.channelType - `enum`
+ * @param {string} options.body.channelId - `string`
+ * @param {boolean=} options.body.includeDescendants - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 413, 429
+ */
+export const unarchiveChannel = <ThrowOnError extends boolean = true>(
+  options: Options<UnarchiveChannelData, ThrowOnError>,
+): RequestResult<UnarchiveChannelResponses, UnarchiveChannelErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<UnarchiveChannelResponses, UnarchiveChannelErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zUnarchiveChannelResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/tenants/{tenantId}/organizations/{organizationId}/channels:unarchive',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * App SSE stream
  *
  * SSE stream of what changed for the current user, with ids only: a `change` event for product rows it may read, a `signal` event for anything else, such as its own memberships and inbox.
@@ -1953,7 +2019,7 @@ export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = t
 /**
  * Invite members
  *
- * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, archived and display order only when it is the caller's own.
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a higher role replaces a lower one), an organization member added at once, or a member left out. A declined invitation stays declined for `retention.declinedInvitationHoldDays` and only then opens again. A tenant mails an address at most once a day: an address it mailed within the day gets no mail and no new link, and the link it holds keeps working. Past the tenant's daily invitation mails (`invitationMailsPerDay`) the request answers 429 and changes nothing. A created membership carries muted, hidden and display order only when it is the caller's own.
  *
  * **POST /tenants/{tenantId}/organizations/{organizationId}/memberships:invite** ·· [inviteMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/tenants/{tenantId}/organizations/{organizationId}/memberships:invite) ·· _memberships · cella_
  *
@@ -2041,7 +2107,7 @@ export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. An archive that sends no display order moves the row to the top of the archived rows, a restore to the bottom of the active ones. A channel type whose menu section sets `archivable: false` cannot be archived. A role change, and any change to another member's membership, requires update permission on the channel.
+ * Updates a membership: its role, or the muted, hidden or display order status. Send at least one field. Muted, hidden and display order are set by the member only, and the response carries them only on the caller's own membership. A hide that sends no display order moves the row to the top of the hidden rows, a show to the bottom of the active ones. A channel type whose menu section sets `hideable: false` cannot be hidden. A role change, and any change to another member's membership, requires update permission on the channel.
  *
  * **PATCH /tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PATCH/tenants/{tenantId}/organizations/{organizationId}/memberships/{membershipId}) ·· _memberships · cella_
  *
@@ -2050,7 +2116,7 @@ export const batchDeleteMemberships = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationId - `string`
  * @param {string} options.path.membershipId - `string`
  * @param {enum=} options.body.role - `enum` (optional)
- * @param {boolean=} options.body.archived - `boolean` (optional)
+ * @param {boolean=} options.body.hidden - `boolean` (optional)
  * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 413, 429
@@ -2375,7 +2441,7 @@ export const resubscribeNotifications = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.orderBy - `enum` (optional)
  * @param {string=} options.query.relatableUserId - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum | boolean=} options.query.excludeArchived - `enum | boolean` (optional)
+ * @param {enum | boolean=} options.query.excludeHidden - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @param {string=} options.query.kind - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 429

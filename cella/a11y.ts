@@ -55,7 +55,7 @@ export default defineA11yBase({
         listMyMemberships({ client, query: { maxPageSize: 1000 } }),
       ]);
       const [administered] = memberships
-        .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.archived)
+        .filter((membership) => membership.channelType === 'organization' && membership.role === 'admin' && !membership.hidden)
         .sort((a, b) => a.displayOrder - b.displayOrder);
       const organization = organizations.find(({ id }) => id === administered?.channelId) ?? organizations[0];
       return organization ? `/${organization.tenantId}/${organization.slug}` : null;

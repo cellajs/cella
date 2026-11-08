@@ -58,14 +58,14 @@
     {
       "name": "Marlowe Architects",
       "age": "3y",
-      "membership": { "role": "admin", "archived": true },
+      "membership": { "role": "admin", "hidden": true },
       "roles": { "admin": 2, "member": 9 },
       "attachments": 22
     },
     {
       "name": "Ember Theatre Group",
       "age": "20mo",
-      "membership": { "role": "member", "archived": true },
+      "membership": { "role": "member", "hidden": true },
       "roles": { "admin": 1, "member": 6 },
       "attachments": 4
     },

@@ -7,6 +7,7 @@ import { tenantReadUnlessInTransaction } from '#/db/tenant-context';
 import { requestScope } from '#/db/utils/request-scope';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { accessFrom } from '#/permissions/access';
+import { assertNotArchived } from '#/permissions/archive';
 import type { EntityModel } from '#/tables';
 
 export interface ValidProductResult<K extends ProductEntityType> {
@@ -14,15 +15,16 @@ export interface ValidProductResult<K extends ProductEntityType> {
 }
 
 /**
- * Checks whether the user may perform `action` on a product entity resolved by `id`; throws 404
- * when it is not found or the caller may not read it, 403 when the caller reads it but may not
- * perform `action`. Every product carries `tenantId` and `organizationId`, and the row must match
- * the request scope set by the guard chain, so the answer is the same with RLS bypassed.
- * System-admin bypass sits inside `checkAccess` and never widens that scope.
+ * Checks whether the user may perform `action` on a product entity resolved by `id`. Every product carries `tenantId`
+ * and `organizationId`, and the row must match the request scope set by the guard chain, so the answer is the same
+ * with RLS bypassed. System-admin bypass sits inside `checkAccess` and never widens that scope.
  *
  * `forUpdate` locks the row until the caller's transaction ends. An update that merges its change with the stored row
  * (field timestamps, list deltas) reads it this way: without the lock two overlapping updates each merge with the row
  * the other is about to replace, and the later write drops what the earlier one merged.
+ * @throws AppError 404 when the product is not found or the caller may not read it.
+ * @throws AppError 403 `channel_archived` when its home channel is archived and `action` is no read.
+ * @throws AppError 403 `forbidden` when the caller reads it but may not perform `action`.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
   ctx: ActorContext,
@@ -53,6 +55,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // A row the caller may not read reads as missing too: a 403 would confirm the id. 403 is for an action denied on a
   // row the caller reads.
   if (!checkAccess(access, 'read', subject).allowed) throw notFound();
+  assertNotArchived(ctx, action, subject);
   if (action !== 'read' && !checkAccess(access, action, subject).allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
   }
