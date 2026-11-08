@@ -6,17 +6,6 @@ This document covers how systems outside the browser act on your app: who they a
 
 Systems outside the browser act on your app through the REST API and an MCP endpoint per organization, with tokens from the app's own OAuth server. Every caller is an actor with role bindings the permission engine understands. Access scopes may narrow what those bindings allow.
 
-## Who connects
-
-| Caller | Holds | Calls |
-| --- | --- | --- |
-| A server or CI job you own | An API key of a service account | REST API |
-| An app a person consented to, such as a partner integration | An access token issued to that person | REST API, MCP |
-| An AI client, such as Claude Desktop | An access token issued to that person, obtained through consent | MCP |
-| A service acting on its own behalf | An access token its API key gets through `client_credentials` | REST API, MCP |
-
-The OpenAPI contract and the generated SDK are the same for every caller. Only the proof of who it is differs.
-
 ## Actors
 
 Every actor is a row in `actors`, a user or a service account. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
@@ -27,7 +16,7 @@ A service account is disabled, never deleted. The rows it wrote keep pointing at
 
 ## Proving who you are
 
-A machine caller proves itself with an API key or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
+Every caller gets the same OpenAPI contract and SDK. Only the proof of who it is differs: an API key, or an access token. A request without valid proof is refused with a challenge that names the tenant's metadata. That metadata names a prefix of the request URL, not the request URL itself, since the REST API's resource identifier is the tenant URL.
 
 ### API keys
 
