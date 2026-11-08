@@ -5348,6 +5348,154 @@
         }
       }
     },
+    "/public/tenants/{tenantId}/organizations/{organizationId}/attachments:presign-urls": {
+      "post": {
+        "security": [],
+        "operationId": "presignPublicAttachmentUrls",
+        "tags": ["attachments", "cella", "product"],
+        "summary": "Get presigned URLs as a visitor",
+        "description": "Signs download URLs for up to 50 attachment files of the organization that a reader without a sign-in may read: rows whose public flag is set, on an entity type the app opened with publicRead(). Missing and denied ids come back in one rejectedIds list, and the call succeeds even when every item is rejected; an app without public read on attachments rejects every id.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["presignedUrlLimiter"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "items": [
+                  {
+                    "attachmentId": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+                    "variant": "thumbnail"
+                  }
+                ]
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "attachmentId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "variant": {
+                          "type": "string",
+                          "enum": ["original", "preview", "thumbnail", "converted"],
+                          "default": "original"
+                        }
+                      },
+                      "required": ["attachmentId"]
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": ["items"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URLs",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "attachmentId": "4380b296-f3c4-4dff-b2fe-77a8fb8a8a44",
+                      "variant": "thumbnail",
+                      "url": "https://attachments.s3.nl-ams.scw.cloud/uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml?X-Amz-Signature=…"
+                    },
+                    {
+                      "attachmentId": "e5ea44c3-c32a-4472-930f-592f25efbf32",
+                      "variant": "thumbnail",
+                      "url": "https://attachments.s3.nl-ams.scw.cloud/uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4?X-Amz-Signature=…"
+                    }
+                  ],
+                  "rejectedIds": []
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "attachmentId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "variant": {
+                            "type": "string",
+                            "enum": ["original", "preview", "thumbnail", "converted"]
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["attachmentId", "variant", "url"]
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLargeError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/health": {
       "get": {
         "security": [],

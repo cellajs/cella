@@ -153,7 +153,11 @@ Two mechanisms read the row's own columns. A **row condition** in a policy cell 
 
 The set is **closed** to `own` and `public`, and no cross-row or app-defined condition exists. Every rule must be evaluable from the row alone, in JS, compiled SQL, the frontend and dispatch.
 
-Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The flag is row-local and never cascades. The server copies the home channel's flag onto a new row.
+Public read is declared per subject with `publicRead()` and holds for any actor, anonymous included. The engine reads the flag on the row alone.
+
+The server keeps each row's flag equal to its home channel's. A new or moved row takes the home's flag. A change of the channel's flag rewrites the rows homed there in the same transaction, soft-deleted ones included, up to a row cap.
+
+Readers who had a row through its flag alone lose it when the channel goes private, as they lose a row that moves. The file of a public row signs for a visitor on the anonymous presign route, which the same grant decides. An app that declares no public read on attachments signs nothing there.
 
 ### Drafts
 

@@ -147,8 +147,14 @@ interface ResolveEntityOpts<T extends EntityType> {
   entityType: T;
   identifier: string;
   bySlug?: boolean;
-  /** Locks the row until the caller's transaction ends; needs a read-write transaction. */
+  /**
+   * Locks the row until the caller's transaction ends; needs a read-write transaction. A channel is locked `FOR
+   * UPDATE`, so a create that holds its home's `public` under `forShare` waits for the write or the write for it; a
+   * product `FOR NO KEY UPDATE`, so inserts that reference it do not wait.
+   */
   forUpdate?: boolean;
+  /** Holds the row against a `forUpdate` of a channel until the caller's transaction ends, for the create that reads its home's `public`. */
+  forShare?: boolean;
 }
 
 /**
@@ -158,7 +164,7 @@ interface ResolveEntityOpts<T extends EntityType> {
  */
 export const resolveEntity = async <T extends EntityType>(
   ctx: DbContext,
-  { entityType, identifier, bySlug = false, forUpdate = false }: ResolveEntityOpts<T>,
+  { entityType, identifier, bySlug = false, forUpdate = false, forShare = false }: ResolveEntityOpts<T>,
 ): Promise<EntityModel<T> | undefined> => {
   const table = getEntityTable(entityType);
 
@@ -172,8 +178,8 @@ export const resolveEntity = async <T extends EntityType>(
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
     .where(condition);
-  // The lock an UPDATE of non-key columns takes: writers of the row wait, inserts that reference it do not.
-  const [entity] = forUpdate ? await query.for('no key update') : await query;
+  const lock = forUpdate ? (isProduct(entityType) ? 'no key update' : 'update') : forShare ? 'key share' : undefined;
+  const [entity] = lock ? await query.for(lock) : await query;
   return entity as EntityModel<T> | undefined;
 };
 

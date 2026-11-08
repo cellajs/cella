@@ -7,12 +7,9 @@ import { tw } from '~/utils/tw';
 
 /** A search dialog's layout below `sm`: the dialog's full screen, with the results scrolling under a field that stays at its top edge. */
 export const searchDialogLayout = {
-  className: tw(
-    'max-sm:data-closed:slide-out-to-top-2 max-sm:data-open:slide-in-from-top-2 max-sm:flex max-sm:flex-col max-sm:overflow-hidden max-sm:pt-[env(safe-area-inset-top)]',
-  ),
+  className: tw('max-sm:flex max-sm:flex-col max-sm:overflow-hidden max-sm:pt-[env(safe-area-inset-top)]'),
   // A drag here would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed
   viewportClassName: 'max-sm:touch-none',
-  overlayClassName: 'max-sm:hidden',
 };
 
 interface SearchDialogBarProps {

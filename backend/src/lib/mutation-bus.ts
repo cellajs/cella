@@ -30,7 +30,11 @@ onBackendModuleRegister((module) => {
   }
 });
 
-/** Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. */
+/**
+ * Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. A
+ * channel's `.updated` is dispatched inside the write's transaction, opened with `tenantContextIncludingDeleted`, so a
+ * handler that rewrites the channel's rows reaches soft-deleted ones and commits or rolls back with the write.
+ */
 export async function dispatchMutation<E extends TrackedEventType>(ctx: ActorContext, event: E, payload: MutationPayload<E> = {}): Promise<void> {
   for (const handler of handlers.get(event) ?? []) await handler(ctx, payload);
 }

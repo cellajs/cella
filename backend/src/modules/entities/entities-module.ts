@@ -1,6 +1,7 @@
 import { defineBackendModule } from '#/lib/module';
 import { entityHandlers } from '#/modules/entities/entities-handlers';
 import { clearDeletedStorage } from '#/modules/entities/operations/clear-deleted-storage';
+import { publicCascadeHandlers } from '#/permissions/public-cascade';
 
 defineBackendModule({
   name: 'entities',
@@ -13,6 +14,8 @@ defineBackendModule({
   // Hourly, at the three-quarter offset clear of the digest's tick.
   jobs: [{ name: 'deleted-storage-cleanup', cron: '45 * * * *', run: () => clearDeletedStorage() }],
   routes: [{ path: '/', app: entityHandlers }],
+  // A product with a public read grant follows its home channel's `public`; none in the template, so no handler.
+  onMutation: publicCascadeHandlers(),
   // `channel.deleted`: sent by the entities stream listeners when a channel below the organization is deleted
   // (`versionedSignalsOf`). `channel.archived`: sent by the archive route to the channel's readers, unversioned, since a
   // client that was away refetches its channel lists at catchup.
