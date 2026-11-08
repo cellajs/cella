@@ -18,7 +18,7 @@ vi.mock('../prompts/key-pair', () => ({
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
 const { acquireIdentityKey, acquireOperatorKey, refusalLines } = await import('./operator-unlock');
-const { forgetSession, rememberedOperatorKey } = await import('../session');
+const { forgetSession, rememberedOperatorKey, rememberOperatorKey } = await import('../session');
 
 const stack = {
   appConfig: { slug: 'cella', appSlug: 'cella', s3: { region: 'nl-ams' } },
@@ -193,6 +193,40 @@ describe('acquireOperatorKey', () => {
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(maskedSecret).not.toHaveBeenCalled();
     expect(keyReads).toEqual([]);
+  });
+});
+
+describe('acquireOperatorKey with the key a setup minted', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    rememberOperatorKey({ accessKey: 'SCWMINTED', secretKey: 'minted-secret' }, { minted: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reads it again while IAM refuses it: a new key and its policy take up to a minute to hold', async () => {
+    bearers.set('SCWMINTED', 403);
+    const pending = acquireOperatorKey(stack);
+    await vi.advanceTimersByTimeAsync(20_000);
+    bearers.set('SCWMINTED', { application: 'cella-operator', expiresAt: inHours(23) });
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await expect(pending).resolves.toMatchObject({ accessKey: 'SCWMINTED' });
+    expect(input).not.toHaveBeenCalled();
+  });
+
+  it('ends with the refusal of a pasted key once the minute is over', async () => {
+    bearers.set('SCWMINTED', 401);
+    const ended = expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    await ended;
+    expect(keyReads).toHaveLength(7);
+    expect(errorsPrinted()).toContain('Scaleway does not know that secret key.');
+    expect(rememberedOperatorKey()).toBeUndefined();
   });
 });
 

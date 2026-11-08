@@ -22,6 +22,7 @@ import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runAction } from './actions';
 import { installPassphraseCustody } from './actions/operator-unlock';
+import { printLaunchChecklist } from './actions/setup-checklist';
 import { parseCliArgs } from './args';
 import { collectHome, formatHome, type HomeFacts, upNextOf } from './home';
 import { BACK, disabledReason, formatStackLine, type MenuState, mainMenuItems, menuHotkeys, pickItems, QUIT, UP_NEXT, visibleRows } from './menu';
@@ -148,9 +149,15 @@ function printStackNotices(context: InfraContext): void {
   }
 }
 
-/** The home screen: one round of reads under a spinner, then the lines. Resolves to what it read, for the menu. */
+/**
+ * The home screen: one round of reads under a spinner, then the lines. Resolves to what it read, for the menu. A stack not set up yet gets
+ * the launch checklist.
+ */
 async function printHome(context: InfraContext): Promise<HomeFacts | undefined> {
-  if (context.state !== 'bootstrapped') return undefined;
+  if (context.state !== 'bootstrapped') {
+    await printLaunchChecklist(context);
+    return undefined;
+  }
   const home = await withSpinner(`Checking ${context.environment}`, () => collectHome(context));
   for (const line of formatHome(home)) console.info(line);
   console.info('');

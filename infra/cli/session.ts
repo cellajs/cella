@@ -16,6 +16,8 @@ const session: {
   passphrase?: string;
   ownerKey?: KeyPair;
   operatorKey?: KeyPair;
+  /** The operator key was minted by this run's setup, so IAM may refuse it until its policy holds. */
+  operatorKeyMinted?: boolean;
   passphraseCustody?: PassphraseCustody;
 } = {};
 
@@ -44,9 +46,15 @@ export function forgetOwnerKey(): void {
   session.ownerKey = undefined;
 }
 
-/** Keep the operator key once Scaleway took it: it serves every action of the session. */
-export function rememberOperatorKey(pair: KeyPair): void {
+/** Keep the operator key once Scaleway took it, or once the setup minted it: it serves every action of the session. */
+export function rememberOperatorKey(pair: KeyPair, opts: { minted?: boolean } = {}): void {
   session.operatorKey = { accessKey: pair.accessKey, secretKey: pair.secretKey };
+  session.operatorKeyMinted = opts.minted === true;
+}
+
+/** True when the remembered operator key was minted in this run and Scaleway has not taken it yet. */
+export function operatorKeyMintedThisRun(): boolean {
+  return session.operatorKeyMinted === true;
 }
 
 /** The operator key typed earlier in this run. */
@@ -57,6 +65,7 @@ export function rememberedOperatorKey(): KeyPair | undefined {
 /** Drop the operator key, so the next action asks again: one that Scaleway refused must not be offered again. */
 export function forgetOperatorKey(): void {
   session.operatorKey = undefined;
+  session.operatorKeyMinted = undefined;
 }
 
 /** Register how this run reads and writes the passphrase in Secret Manager; the CLI sets it once the stack context is loaded. */
@@ -74,5 +83,6 @@ export function forgetSession(): void {
   session.passphrase = undefined;
   session.ownerKey = undefined;
   session.operatorKey = undefined;
+  session.operatorKeyMinted = undefined;
   session.passphraseCustody = undefined;
 }

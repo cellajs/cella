@@ -1,9 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { confirm } from '@inquirer/prompts';
+import { confirm, input } from '@inquirer/prompts';
 import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -16,7 +15,7 @@ import { importPlan, keptResources } from '../../lib/stack/kept-resources';
 import { writeStackFileProjectId } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { forgetRetiredResources } from '../../lib/stack/retired-state';
-import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
@@ -29,18 +28,20 @@ import { maskedSecret } from '../prompts/masked-secret';
 import type { InfraContext } from '../shared';
 import {
   acquireStackLockOrExit,
+  autoAcceptDefaults,
   confirmOrDefault,
   createStepRunner,
   endAction,
   endActionWithHint,
   endsAction,
-  inputOrDefault,
   pulumiLoginUrl,
   resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
 import { admitOperatorOrExit } from './operator-apply';
 import type { OperatorKey } from './operator-unlock';
+import { printLaunchChecklist } from './setup-checklist';
+import { connectRepository, offerFirstDeploy } from './setup-connect';
 import type { OwnerMomentResult } from './setup-owner-moment';
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
@@ -69,29 +70,26 @@ interface SetupContext {
   must: ReturnType<typeof createStepRunner>['must'];
 }
 
-/** Optional operator secret values gathered at the first-setup prompts, seeded once the first `pulumi up` made their containers. */
+/** Operator secret values gathered at the first-setup prompts, seeded once the first `pulumi up` made their containers. */
 interface OperatorSecretValues {
   adminEmail: string;
   brevoApiKey: string;
 }
 
-/** Read-only warning about required operator-managed runtime secrets with no value. Non-fatal: the first `pulumi up` creates the containers. */
-async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
-  try {
-    const client = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId });
-    const existing = await client.listSecrets();
-    const versioned = new Set(existing.filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => secret.name));
-    const missing = operatorManagedRuntimeSecrets.filter((secret) => secret.required && !versioned.has(secret.secretName));
-    if (missing.length > 0) {
-      const services = [...new Set(missing.flatMap((secret) => secret.services))].join(', ');
-      console.warn(
-        `  ${warningMark} Required runtime secret(s) not set yet: ${missing.map((secret) => secret.secretName).join(', ')}, which ${services} read. ` +
-          `The first deploy waits for them, blocked: storing them in "Env vars & secrets" starts it again.`,
-      );
+/** The admin email, required at a first setup so the first deploy cannot end blocked on it; `--defaults` takes INFRA_ADMIN_EMAIL. */
+async function askAdminEmail(): Promise<string> {
+  const message = 'Admin email (the first account, signs in with a magic link)';
+  const fromEnv = process.env.INFRA_ADMIN_EMAIL?.trim();
+  if (autoAcceptDefaults()) {
+    if (!fromEnv?.includes('@')) {
+      console.error(`${crossMark} Under --defaults the admin email comes from INFRA_ADMIN_EMAIL, which holds no email address: set it there.`);
+      return endAction(1);
     }
-  } catch {
-    // Secret Manager unreachable (e.g. fresh project): skip the gap check.
+    console.info(pc.dim(`  [defaults] ${message} -> ${fromEnv}`));
+    return fromEnv;
   }
+  const email = await input({ message, default: fromEnv, validate: (value) => value.includes('@') || 'An email address, with an @.' });
+  return email.trim();
 }
 
 /**
@@ -272,7 +270,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 
 /**
  * The operator part of a setup, on the operator key: the passphrase and its custody, the state bucket and the stack, the first `pulumi up`
- * and the operator's secret values. It writes no IAM.
+ * and the operator's secret values. It writes no IAM. A first setup ends by connecting the repository and at the first deploy.
  */
 export async function runOperatorPart(context: InfraContext, operatorKey: OperatorKey, moment: OwnerMomentResult | undefined): Promise<void> {
   const { appConfig } = context;
@@ -285,11 +283,8 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   const { passphrase: pulumiPassphrase } = await resolveOrCreatePassphrase(context.stackYaml);
   const operatorSecrets: OperatorSecretValues = { adminEmail: '', brevoApiKey: '' };
   if (firstSetup) {
-    operatorSecrets.adminEmail = await inputOrDefault({
-      message: 'Admin email (optional, set later via "Env vars & secrets")',
-      envName: 'INFRA_ADMIN_EMAIL',
-    });
-    operatorSecrets.brevoApiKey = operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';
+    operatorSecrets.adminEmail = await askAdminEmail();
+    operatorSecrets.brevoApiKey = await optionalSecret('Brevo API key (optional)');
   }
   const question = firstSetup ? `Set up ${environment} now?` : `${actionLabel('resume')} of ${environment}?`;
   if (!(await confirmOrDefault({ message: question, default: true }))) return;
@@ -330,9 +325,6 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
   }
   writeStackFileProjectId(environment, projectId);
 
-  // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
-  if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
-
   // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
   await storeCustodiedPassphrase({
     secretKey: operatorKey.secretKey,
@@ -368,12 +360,11 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
     return;
   }
   await provisionBaseInfra(ctx, operatorSecrets);
-  if (firstSetup) {
-    console.info(
-      `\n${checkMark} ${environment} is provisioned. The first release is deployed like every other: the next scheduled run of the main job starts it, or \`${actionCommand('start-deploy')}\` starts it now.`,
-    );
-    console.info(`  ${pc.dim(`Commit infra/Pulumi.${environment}.yaml, so other checkouts see the stack set up; deploys do not need it.`)}`);
-  }
+  if (!firstSetup) return;
+  const setUp = { ...context, projectId };
+  await printLaunchChecklist(setUp);
+  await connectRepository(environment);
+  await offerFirstDeploy(setUp);
 }
 
 /**

@@ -76,15 +76,11 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
 
 /**
  * Make sure the app's operators reach this environment, at an Owner moment: the application, the group and both policies are written as
- * declared, with this environment's project added to the projects they reach today, so a key of either keeps working. An app that gets
- * them here, or a policy of them, is told that the operator part asks for a one-day key next, made in the console.
+ * declared, with this environment's project added to the projects they reach today, so a key of either keeps working.
  */
 export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<void> {
   const names = appPrincipalNames(context.appConfig.appSlug);
   const reach = operatorReach(context.environment, projectId, projectsOfOtherModes(context.environment));
-  const result = await writeOperators({ ...context, projectId }, ownerKey, reach);
+  await writeOperators({ ...context, projectId }, ownerKey, reach);
   console.info(`  ${checkMark} '${names.operator}' and '${names.operators}' reach ${context.environment}.`);
-  if (result.applicationPolicy === 'created' || result.groupPolicy === 'created') {
-    console.info(`  ${pc.bold('The operator part asks for a key next.')} ${oneDayKeyHowto(names)}`);
-  }
 }
