@@ -19,7 +19,13 @@ Verify every change with a Playwright run, a measurement or a hand check, and re
 
 Judge a test by what makes it fail. If only a change to the implementation does, drop it. The usual mirror is one `it` per method or branch. Branch tests that together guard one property, such as a cap, become one test of that property. A performance, UI or refactor PR adds no tests by default.
 
-A security test acts as the attacker. It signs in as one user, tries something that user may not do, and passes only when the app refuses. It asserts the exact refusal: the status code or Postgres error, no leaked rows, and side effects such as a revoked grant. A second test shows the rightful user still gets through. An endpoint that refuses everyone then fails. Name the test after the attack, such as `must not leak attachments via another tenant's id`. Route-level ones go in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
+A security test acts as the attacker. It signs in as one user, tries something that user may not do, and passes only when the app refuses. It asserts the exact refusal: the status code or Postgres error, no leaked rows, and side effects such as a revoked grant.
+
+A second test shows the rightful user still gets through. An endpoint that refuses everyone then fails.
+
+Name the test after the attack, such as `must not leak attachments via another tenant's id`. Route-level ones go in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit.
+
+The attacks we test against:
 
 - **Crossing a boundary:** another tenant's or organization's data, by API or in the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting a field the caller may not.
