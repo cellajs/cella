@@ -32,11 +32,11 @@ Ending another session asks this one for a [step-up](../AUTHENTICATION.md#step-u
 
 A sign-out ends the session and any sign-in in progress before it clears a cookie. A failed sign-out thus leaves the browser signed in. The sign-out page then offers to try again.
 
-A sign-out also clears an opened invitation, so the next person at the browser cannot read it. It sends no `Clear-Site-Data`. The app clears its own data for the account that signs out, since the header would also take other accounts' offline work and the device cookie.
+A sign-out also clears an opened invitation, so the next person at the browser cannot read it. It sends no `Clear-Site-Data`, so other accounts' offline work and the device cookie survive.
 
 A client learns of a lost session from four 401 types: `unauthorized`, `no_session`, `session_expired` and `session_revoked`. The frontend redirects to sign-in on these alone. Any other 401 refuses a proof while signed in.
 
-A session route's 401 to a request with a session cookie carries no `WWW-Authenticate`, since no HTTP authentication scheme names a cookie session. The body's `type` says what ended or failed.
+A session route's 401 to a request with a session cookie carries no `WWW-Authenticate`. The body's `type` says what ended or failed.
 
 ## Devices
 

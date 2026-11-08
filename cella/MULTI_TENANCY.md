@@ -47,7 +47,7 @@ Variants also read tombstones. Database work stays inside the callback. A helper
 
 ## Write-through policies
 
-The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions are `true`, since RLS denies an operation no policy allows. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
+The RLS migration installs INSERT, UPDATE and DELETE policies whose expressions are `true`. **The write policy supplies no authorization.** Permissions stay in the shared engine, and a contextless insert passes RLS.
 
 | Concern | Mechanism | Limit |
 | --- | --- | --- |

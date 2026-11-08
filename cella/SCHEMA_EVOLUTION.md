@@ -99,7 +99,7 @@ A later contract PR, made by hand for now, drops the old column. It waits until 
 The meta record's `schemaVersion` pointer is the global lens ordinal.
 
 - Pointer behind the bundle: one tab at a time migrates the persisted queries and queued mutations.
-- A pass cut short runs again, since the pointer advances only in the pass's final write.
+- A pass cut short runs again.
 - Pointer ahead of the bundle: the bundle marks itself stale, restores nothing and never writes.
 
 ### CI guards

@@ -129,7 +129,7 @@ A view behind its frontier hands the gap to the fetch prioritizer. A view withou
 
 Beside change and signal frames, the stream sends a periodic `ping` and an `error`. The `ping` says whether a CDC worker is reading. Every proxy on the way must keep an idle stream open longer than the ping interval.
 
-The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame, never a 204, since a stock EventSource would stop at the 401 its one reconnect gets.
+The `error` names why the server ends the stream. A stream ended for good still answers 200 and closes after its `error` frame.
 
 No frame carries an event id. A reconnecting client resumes through catchup from its cursors. Frame shapes: [API reference](/docs/schemas).
 
@@ -151,7 +151,7 @@ A list the engine cannot patch whole, such as an overflowed or a filtered list, 
 
 ### Unseen tracking
 
-Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale, since seen marks from other devices never enter CDC. The client counts only types every channel member may read. Their endpoint counts the others.
+Unseen badges count delivered rows with the server's own predicate. An exact server recount replaces them after catchup and when they go stale. The client counts only types every channel member may read. Their endpoint counts the others.
 
 ## Embeddings
 
