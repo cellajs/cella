@@ -72,7 +72,9 @@ Recording happens once per change, however often the change arrives.
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product, such as a membership, goes alone and in commit order, since its listeners act on that one row. Product rows go as one message per audience. Each row carries the activity it was recorded as, and so its own writer. The API turns those into change frames. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product, such as a membership, goes alone and in commit order, since its listeners act on that one row.
+
+Product rows go as one message per audience. Each row carries the activity it was recorded as, and so its own writer. The API turns those into change frames. Then the worker acknowledges the flush.
 
 For an app with product embeddings, the worker also takes a deleted row's id out of the hosts that referenced it. That write is its own and records no activity.
 
@@ -98,7 +100,11 @@ Failure handling has three levels:
 
 The slot is the only durable buffer. It advances only after a flush committed. Delivery is **at least once**, recording is **once**. A change delivered again changes no activity, counter or sequence value. Its message goes out again with the sequence value its row already holds.
 
-A failure reports degraded at first. A deploy that brings a change the worker can never process therefore warns in its smoke step and stays deployed. A worker stuck on a failure for a while reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on. A fix ends the failure, and so does a dropped slot. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
+A failure reports degraded at first. A deploy that brings a change the worker can never process therefore warns in its smoke step and stays deployed.
+
+A worker stuck on a failure for a while reports unhealthy. Its log names the position and the error. Live sync pauses meanwhile, and the REST API goes on.
+
+A fix ends the failure, and so does a dropped slot. An operator drops the slot, or the worker does once the WAL behind it reaches its bound. A restart starts the failure over, so a worker that crash-loops never drops its slot. Only the WAL lag in its health answer shows it.
 
 Each row names its answers per level ([Sync engine](../cella/SYNC_ENGINE.md#failure-modes)).
 
