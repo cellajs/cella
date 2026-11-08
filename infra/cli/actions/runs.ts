@@ -8,7 +8,7 @@ import {
   serviceAccountKeys,
 } from '../../lib/deploy/boot-accounts';
 import { classifyRun, scalewayStatus } from '../../lib/deploy/failure-class';
-import { listRemoteRefs } from '../../lib/deploy/git-remote';
+import { commitRefs } from '../../lib/deploy/git-remote';
 import {
   findJobDefinition,
   isScheduledRun,
@@ -19,7 +19,6 @@ import {
   readJobDefinition,
   runEnded,
 } from '../../lib/deploy/job-runs';
-import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { type Growth, type RunRecord, rewriteNote, runSummaryLine, stepLine, wroteRecord } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, type RemoteRef } from '../../lib/deploy/target';
@@ -265,9 +264,7 @@ export async function runRuns(context: InfraContext): Promise<void> {
       console.warn(`${warningMark} The main job's runs could not be read (${errorMessage(error)}): only runs with a record are listed.`);
       return { jobRuns: [] };
     }),
-    Promise.resolve()
-      .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: 4_000 })(['refs/tags/*', 'refs/heads/*']))
-      .catch(() => undefined),
+    commitRefs(),
   ]);
   const control = await makeControlClient(context.appConfig.s3.region, projectAccessKey(observer.accessKey, context.projectId), observer.secretKey);
   const lock = await peekLock(control, naming.bootDiagBucket, lockKey(context.environment)).catch(() => undefined);

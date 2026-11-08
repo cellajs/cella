@@ -1,7 +1,6 @@
-import { listRemoteRefs } from '../lib/deploy/git-remote';
+import { commitRefs } from '../lib/deploy/git-remote';
 import type { JobRun } from '../lib/deploy/job-runs';
 import type { LiveRecord } from '../lib/deploy/live-record';
-import { repositoryUrl } from '../lib/deploy/repository-key';
 import { commitName, type RemoteRef } from '../lib/deploy/target';
 import { actionCommand, isOperatorActionId, menuPath } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
@@ -25,7 +24,8 @@ export interface HomeFacts {
   keyConfigured: boolean;
 }
 
-const REFS_BUDGET_MS = 4_000;
+/** How long the home waits for a check before it reads unknown: a stalled endpoint must not keep the menu shut. */
+const HOME_BUDGET_MS = 12_000;
 
 /** Read everything the home screen shows, in one round of parallel reads on the observer key. */
 export async function collectHome(context: InfraContext): Promise<HomeFacts> {
@@ -38,10 +38,11 @@ export async function collectHome(context: InfraContext): Promise<HomeFacts> {
     projectId: context.projectId || undefined,
     operatorKey: rememberedOperatorKey(),
   });
-  const refs = Promise.resolve()
-    .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: REFS_BUDGET_MS })(['refs/tags/*', 'refs/heads/*']))
-    .catch(() => undefined);
-  const [report, remote, liveEndpoints] = await Promise.all([buildStatusReport(session), refs, liveDbEndpoints(context)]);
+  const [report, remote, liveEndpoints] = await Promise.all([
+    buildStatusReport(session, { budgetMs: HOME_BUDGET_MS }),
+    commitRefs(),
+    liveDbEndpoints(context),
+  ]);
   rememberReport(report);
   const facts = await session.scalewayFacts();
   const identity = resolveOperatorIdentity();
@@ -111,9 +112,12 @@ export function upNextOf(report: StatusReport): UpNext | undefined {
   return { action: 'status', description: `Read the ${findings.length === 1 ? 'security finding' : `${findings.length} security findings`}` };
 }
 
-/** A detail with every commit id in it named: `deployed c19588d491` reads `deployed 0.34.0`. */
+/** A check's detail with the commit it leads with named: `deployed c19588d491` reads `deployed 0.34.0`; free text after it stays. */
 function nameCommits(detail: string, refs: RemoteRef[] | undefined): string {
-  return detail.replace(/\b[0-9a-f]{7,40}\b/g, (sha) => commitName(refs, sha));
+  return detail.replace(
+    /^(deployed )?([0-9a-f]{7,40})\b/,
+    (_match, lead: string | undefined, sha: string) => `${lead ?? ''}${commitName(refs, sha)}`,
+  );
 }
 
 /** One home line: mark, label padded, detail. */

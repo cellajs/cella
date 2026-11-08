@@ -280,7 +280,7 @@ if (args.action) {
 }
 
 // A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup.
-if (context.state === 'fresh') process.exit(await runAction('resume', context));
+if (context.state === 'fresh') process.exit(pulumiReady('resume') ? await runAction('resume', context) : 1);
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
 const READ_ONLY: readonly OperatorActionId[] = ['status', 'runs', 'preview'];

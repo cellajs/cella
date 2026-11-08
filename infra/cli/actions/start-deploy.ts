@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { classifyRun } from '../../lib/deploy/failure-class';
-import { listRemoteRefs } from '../../lib/deploy/git-remote';
+import { commitRefs, listRemoteRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition, type JobRun, listJobRuns, readJobRun, runEnded, startJobRun } from '../../lib/deploy/job-runs';
 import { readLiveRecord } from '../../lib/deploy/live-record';
 import { mainJobOutcome } from '../../lib/deploy/main-job';
@@ -10,7 +10,7 @@ import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { type RunRecord, stepLine, wroteRecord } from '../../lib/deploy/run-record';
 import { bucketRunStore, commitRecords, type RunStore } from '../../lib/deploy/run-store';
 import { decideScheduledRun } from '../../lib/deploy/scheduled-run';
-import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, type RemoteRef, resolveTarget, type Target } from '../../lib/deploy/target';
+import { commitName, ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget, type Target } from '../../lib/deploy/target';
 import { machineRoles } from '../../lib/machine-roles';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -24,7 +24,6 @@ import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, sta
 import { acquireOperatorKey } from './operator-unlock';
 
 const POLL_MS = 5_000;
-const REFS_BUDGET_MS = 4_000;
 const MAX_TRIES = 3;
 
 /**
@@ -68,10 +67,17 @@ export async function runStartDeploy(context: InfraContext, opts: { asked?: bool
  * The environment's target, as the environments file of this checkout and the repository's refs say it; none for an environment other than
  * production without a line.
  */
-async function environmentTarget(context: InfraContext): Promise<Target | undefined> {
+/** How long a target read waits for the repository before it fails with a line, so a stalled remote never hangs an action. */
+const TARGET_REFS_TIMEOUT_MS = 20_000;
+
+export async function environmentTarget(context: InfraContext): Promise<Target | undefined> {
   const file = join(infraDir, '..', ENVIRONMENTS_FILE);
   const line = existsSync(file) ? parseEnvironmentsFile(readFileSync(file, 'utf8')).get(context.environment) : undefined;
-  return resolveTarget({ environment: context.environment, line, listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY) });
+  return resolveTarget({
+    environment: context.environment,
+    line,
+    listRemote: listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: TARGET_REFS_TIMEOUT_MS }),
+  });
 }
 
 /** This run's record: the one it names once found, else the newest of the last three that the run wrote. */
@@ -109,13 +115,6 @@ async function followRun(
     await sleep(POLL_MS);
     run = await readJobRun(auth, { region, runId: run.id });
   }
-}
-
-/** The repository's release tags and branch heads, which name a commit, when they answer within the budget. */
-function commitRefs(): Promise<RemoteRef[] | undefined> {
-  return Promise.resolve()
-    .then(() => listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY, { timeoutMs: REFS_BUDGET_MS })(['refs/tags/*', 'refs/heads/*']))
-    .catch(() => undefined);
 }
 
 /**
@@ -244,7 +243,7 @@ export async function redeployAfterRotation(context: InfraContext, key: KeyPair)
 async function targetHasRun(context: InfraContext, key: KeyPair, live: string, target: Target): Promise<boolean> {
   const state = stateKeyOf(key, context.projectId);
   const [refs, decision] = await Promise.all([
-    listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']).catch(() => undefined),
+    commitRefs(),
     makeS3Client(context.appConfig.s3.region, state.accessKey, state.secretKey)
       .then((s3) => commitRecords(bucketRunStore(s3, deriveInfra(context.appConfig).naming.bootDiagBucket), target.sha))
       .then((records) => decideScheduledRun(target, records))

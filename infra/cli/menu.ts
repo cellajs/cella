@@ -98,9 +98,13 @@ function entryName(id: MenuRowId): string {
   return `${pc.dim(menuRow(id).hotkey)}  ${rowLabel(id)}${destructive}`.replace('(OPEN)', pc.yellow('(OPEN)'));
 }
 
-/** The hotkeys of the rows a state lists, by letter: the two DB access rows share theirs, as one of them is listed. */
+/** The hotkeys of the rows a state lists and can run, by letter: the two DB access rows share theirs, as one of them is listed. */
 export function menuHotkeys(state: MenuState): Record<string, MainMenuValue> {
-  return Object.fromEntries(visibleRows(state).map((id) => [menuRow(id).hotkey, id]));
+  return Object.fromEntries(
+    visibleRows(state)
+      .filter((id) => !rowDisabledReason(id, state))
+      .map((id) => [menuRow(id).hotkey, id]),
+  );
 }
 
 /** The main menu: the recommended step first when there is one, then every row under its group heading, then the way out. */

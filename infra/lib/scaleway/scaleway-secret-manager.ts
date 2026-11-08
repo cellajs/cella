@@ -95,12 +95,12 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       });
     },
 
-    /** A secret's versions, newest first: when each value was written. */
+    /** A secret's versions, in the order Scaleway lists them: when each value was written. */
     async listSecretVersions(secretId: string): Promise<SecretManagerSecretVersion[]> {
       const response = await scwFetch<{ versions?: SecretManagerSecretVersion[] }>(
         auth,
         'GET',
-        `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions?page_size=100&order_by=revision_desc`,
+        `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions?page_size=100`,
       );
       return response.versions ?? [];
     },

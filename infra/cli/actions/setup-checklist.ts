@@ -5,6 +5,7 @@ import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { defaultRule, ENVIRONMENTS_FILE, parseEnvironmentsFile } from '../../lib/deploy/target';
 import { actionLabel } from '../../lib/operator-actions';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { RUNTIME_FOLDER } from '../../lib/scaleway/secret-paths';
 import { detectComputeDeferred, detectStackState, type StackState } from '../../lib/stack/bootstrap-stack-state';
@@ -164,7 +165,7 @@ export function defaultBranch(): string {
 }
 
 async function readAdminEmailSet(context: InfraContext, stackState: StackState): Promise<boolean | undefined> {
-  const key = rememberedOperatorKey();
+  const key = resolveOperatorIdentity().observer ?? rememberedOperatorKey();
   const secretName = runtimeSecrets.find((secret) => secret.id === 'adminEmail')?.secretName;
   if (!key || !secretName || stackState === 'fresh' || !context.projectId) return undefined;
   const client = createSecretManagerClient({ secretKey: key.secretKey, region: context.appConfig.s3.region, projectId: context.projectId });

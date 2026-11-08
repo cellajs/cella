@@ -303,7 +303,11 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     const setAt = await Promise.all(
       secrets.map(async (secret) => {
         if ((secret.version_count ?? 0) === 0) return undefined;
-        const [newest] = await reader.listSecretVersions(secret.id).catch(() => []);
+        const versions = await reader.listSecretVersions(secret.id).catch(() => []);
+        const newest = versions.reduce<(typeof versions)[number] | undefined>(
+          (best, version) => (!best || version.revision > best.revision ? version : best),
+          undefined,
+        );
         return newest?.created_at ?? undefined;
       }),
     );

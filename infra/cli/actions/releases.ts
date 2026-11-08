@@ -3,11 +3,10 @@ import { join } from 'node:path';
 import { appDescription } from '../../lib/deploy/app-description';
 import { APPLY_NEEDED, type AppliedEngine, descriptionHash, readAppliedEngine } from '../../lib/deploy/applied-engine';
 import { describeChanges } from '../../lib/deploy/description-diff';
-import { listRemoteRefs } from '../../lib/deploy/git-remote';
+import { commitRefs } from '../../lib/deploy/git-remote';
 import { findJobDefinition } from '../../lib/deploy/job-runs';
 import { readLiveRecord } from '../../lib/deploy/live-record';
 import { parseReleaseManifest, type ReleaseManifest, releaseManifestKey } from '../../lib/deploy/release-archives';
-import { repositoryUrl } from '../../lib/deploy/repository-key';
 import { type RunRecord, runOutcomeText } from '../../lib/deploy/run-record';
 import { bucketRunStore, type RunStore } from '../../lib/deploy/run-store';
 import { commitName, ENVIRONMENTS_FILE, type RemoteRef, sortedReleases } from '../../lib/deploy/target';
@@ -22,7 +21,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import { autoAcceptDefaults, confirmOrDefault, endAction, type InfraContext, stackNameFor } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
-import { deployAndFollow } from './start-deploy';
+import { deployAndFollow, environmentTarget } from './start-deploy';
 
 const LISTED_RELEASES = 10;
 /** How many of the newest runs are searched for a release's deploys. */
@@ -150,10 +149,16 @@ export async function runReleases(context: InfraContext): Promise<void> {
   const environment = context.environment;
   const diag = await bootDiagOn(context, observer);
   const [refs, live, applied] = await Promise.all([
-    listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*']),
+    commitRefs(),
     servingCommit(context, diag),
     readAppliedEngine(diag.control, diag.bucket, environment),
   ]);
+  if (!refs) {
+    console.error(
+      `${crossMark} The repository did not answer, so no release can be listed: check the repository in package.json, and the read key of a private one.`,
+    );
+    return endAction(1);
+  }
   const rows = await releaseRows(diag.store, refs);
   if (rows.length === 0) return console.info('The repository has no release yet: a tag such as 0.1.0 publishes one.');
   const serves = (row: ReleaseRow) => live !== undefined && row.sha.startsWith(live);
@@ -219,8 +224,18 @@ async function waitingRelease(
 export async function checkWaitingRelease(context: InfraContext, key: KeyPair): Promise<void> {
   const waiting = await waitingRelease(context, key).catch(() => undefined);
   if (!waiting) return;
-  const refs = await listRemoteRefs(repositoryUrl(), process.env.REPOSITORY_READ_KEY)(['refs/tags/*', 'refs/heads/*']).catch(() => undefined);
+  const refs = await commitRefs();
   const name = commitName(refs, waiting.sha);
+  // The schedule deploys the environment's target: a release that waited and was overtaken by a newer target is no longer what this apply serves.
+  const target = await environmentTarget(context).catch(() => undefined);
+  if (target && target.sha !== waiting.sha) {
+    console.info(
+      pc.dim(
+        `${name} waited for an apply, and the target moved on to ${commitName(refs, target.sha)}: this apply publishes this checkout's description.`,
+      ),
+    );
+    return;
+  }
   const here = await appDescription();
   if (descriptionHash(here) === waiting.hash) {
     console.info(`${checkMark} This checkout describes the app as ${name} does: this apply publishes it and starts ${name} again.`);
@@ -230,5 +245,6 @@ export async function checkWaitingRelease(context: InfraContext, key: KeyPair): 
   console.error(`${crossMark} ${name} waits for an apply, and this checkout describes the app otherwise than it does:`);
   console.error(`    ${describeChanges(here, waiting.describes).join(', ')}`);
   console.error(`  Check out ${ref} first: git switch --detach ${ref}, then apply from there.`);
+  if (await confirmOrDefault({ message: 'Apply from this checkout anyway?', default: false })) return;
   return endAction(1);
 }

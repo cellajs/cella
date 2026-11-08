@@ -2,9 +2,10 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { defaultRule, ENVIRONMENTS_FILE, parseEnvironmentsFile } from '../../lib/deploy/target';
+import { actionLabel } from '../../lib/operator-actions';
 import { changeMark, checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { confirmOrDefault, type InfraContext } from '../shared';
+import { ActionEnded, confirmOrDefault, type InfraContext } from '../shared';
 import { defaultBranch, environmentsTarget, gitFileState, gitOutput, newestReleaseTag, printLaunchChecklist, repoRoot } from './setup-checklist';
 import { runStartDeploy } from './start-deploy';
 
@@ -82,7 +83,13 @@ export async function offerFirstDeploy(context: InfraContext): Promise<void> {
       `\n${checkMark} ${environment} is set up. Publish your first release: merge the release PR; the first scheduled run deploys it within a minute, and ${pc.cyan('pnpm infra')} shows how it went.`,
     );
   } else if (target && (await confirmOrDefault({ message: `Deploy ${target} now and follow it?`, default: true }))) {
-    await runStartDeploy(context, { asked: true });
+    try {
+      await runStartDeploy(context, { asked: true });
+    } catch (error) {
+      // A first deploy that ends blocked or failed is read in Deploy logs; the setup itself is done.
+      if (!(error instanceof ActionEnded)) throw error;
+      console.warn(`${warningMark} The first deploy did not end deployed: "${actionLabel('runs')}" says why. The setup itself is done.`);
+    }
   }
   await printLaunchChecklist(context);
 }

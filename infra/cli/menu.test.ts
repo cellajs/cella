@@ -129,6 +129,12 @@ describe('menuHotkeys', () => {
     expect(menuHotkeys({ ...bootstrapped, dbExposed: true }).p).toBe('db-close');
     expect(open.q).toBeUndefined();
   });
+
+  it('gives no letter to a row that cannot run now', () => {
+    const letters = menuHotkeys(partial);
+    expect(letters.d).toBeUndefined();
+    expect(letters.l).toBe('runs');
+  });
 });
 
 describe('pickItems', () => {

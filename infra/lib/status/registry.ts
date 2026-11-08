@@ -1,3 +1,4 @@
+import { within } from '../utils/retry';
 import { componentsProvider } from './providers/components';
 import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
@@ -67,12 +68,16 @@ export function assembleReport(session: Pick<ProbeSession, 'mode' | 'stackState'
   };
 }
 
-/** Gather every provider in parallel and assemble the report. A gather failure degrades that domain to its undefined-facts evaluation. */
-export async function buildStatusReport(session: ProbeSession): Promise<StatusReport> {
+/**
+ * Gather every provider in parallel and assemble the report. A gather failure, or one that gives no answer within `budgetMs`, degrades
+ * that domain to its undefined-facts evaluation.
+ */
+export async function buildStatusReport(session: ProbeSession, opts: { budgetMs?: number } = {}): Promise<StatusReport> {
   const checks = (
     await Promise.all(
       statusProviders.map(async (provider) => {
-        const facts = await provider.gather(session).catch(() => undefined);
+        const gather = provider.gather(session).catch(() => undefined);
+        const facts = opts.budgetMs ? await within(opts.budgetMs, gather) : await gather;
         return provider.evaluate(facts, session);
       }),
     )

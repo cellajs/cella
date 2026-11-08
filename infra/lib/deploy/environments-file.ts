@@ -10,11 +10,11 @@ import { ENVIRONMENTS_FILE } from './target';
 export async function readEnvironmentsFile(opts: { repository: string; key: string | undefined; dir: string }): Promise<string> {
   const head = (await listRemoteRefs(opts.repository, opts.key)(['HEAD'])).find((ref) => ref.ref === 'HEAD')?.sha;
   if (!head) throw new Error(`${opts.repository} names no default branch`);
-  git(opts.key, ['init', '-q', '--bare', opts.dir]);
-  git(opts.key, ['-C', opts.dir, 'remote', 'add', 'origin', opts.repository]);
-  git(opts.key, ['-C', opts.dir, 'config', 'extensions.partialClone', 'origin']);
-  git(opts.key, ['-C', opts.dir, 'config', 'remote.origin.promisor', 'true']);
-  git(opts.key, ['-C', opts.dir, 'fetch', '-q', '--depth', '1', '--filter=blob:none', 'origin', head]);
-  const listed = git(opts.key, ['-C', opts.dir, 'ls-tree', head, ENVIRONMENTS_FILE]).trim();
+  await git(opts.key, ['init', '-q', '--bare', opts.dir]);
+  await git(opts.key, ['-C', opts.dir, 'remote', 'add', 'origin', opts.repository]);
+  await git(opts.key, ['-C', opts.dir, 'config', 'extensions.partialClone', 'origin']);
+  await git(opts.key, ['-C', opts.dir, 'config', 'remote.origin.promisor', 'true']);
+  await git(opts.key, ['-C', opts.dir, 'fetch', '-q', '--depth', '1', '--filter=blob:none', 'origin', head]);
+  const listed = (await git(opts.key, ['-C', opts.dir, 'ls-tree', head, ENVIRONMENTS_FILE])).trim();
   return listed ? git(opts.key, ['-C', opts.dir, 'cat-file', 'blob', `${head}:${ENVIRONMENTS_FILE}`]) : '';
 }
