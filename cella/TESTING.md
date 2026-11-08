@@ -98,8 +98,6 @@ On a fresh test database, run the backend suite first. It creates and migrates t
 
 ## Conventions
 
-The shared test database belongs to every worktree. A branch that adds migrations tests on a throwaway database. It runs a fresh container from the same image, on its own port passed as `DATABASE_TEST_PORT`.
-
 **Placement.** Pick by scope:
 
 - _Unit tests_: next to the code, or in the module's `tests/` folder when there are several, as [backend/src/lib/tests/](../backend/src/lib/tests/).
@@ -109,6 +107,8 @@ The shared test database belongs to every worktree. A branch that adds migration
 **Backend specifics.** Test env vars are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Use the `#/` import alias as in source.
 
 Backend test files run in parallel, each worker on its own database. Parallel files never see each other's rows. Never assume a worker's database is empty: it keeps rows from earlier files. Clean up with `clearDatabase()`. A test with its own connection takes the URL from `shared/test-db`.
+
+The shared test database belongs to every worktree. A branch that adds migrations tests on a throwaway database. It runs a fresh container from the same image, on its own port passed as `DATABASE_TEST_PORT`.
 
 **App config.** A template test also runs in every app, on that app's config such as its hierarchy and policies. A test that needs a particular value sets it with the helpers in `shared/testing/`, then restores the app's. A fixture row fills every ancestor column the app's hierarchy gives the product, not only the organization.
 
