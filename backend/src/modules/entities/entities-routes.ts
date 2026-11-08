@@ -7,7 +7,7 @@ import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import { appCatchupResponseSchema, streamCatchupBodySchema, tenantOnlyParamSchema } from '#/schemas';
 import { streamChangeSchema, streamErrorSchema, streamSignalSchema } from '#/schemas/stream-schemas';
 
-const entityRoutes = createXRoutes(['entities', 'cella'], {
+export const entityRoutes = createXRoutes(['entities', 'cella'], {
   checkSlug: xRoute({
     method: 'post',
     path: '/tenants/{tenantId}/~check-slug',
@@ -50,5 +50,3 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     responses: { 200: json('Catchup summary', appCatchupResponseSchema, mockCatchupResponse()) },
   }),
 });
-
-export { entityRoutes };

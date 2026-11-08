@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cookieChange, createUser, expectRefusal, sessionsOf } from '../helpers';
+import { cookieChange, createTestUser, expectRefusal, sessionsOf } from '../helpers';
 import { type PasskeyAssertion, type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn, passkeysOf } from './helpers';
@@ -15,7 +15,7 @@ describe('Passkey verification', () => {
   afterEach(async () => await clearSecurityTestData());
 
   async function userWithPasskey() {
-    const user = await createUser(`passkey-${nanoid(8)}@security-test.com`);
+    const user = await createTestUser(`passkey-${nanoid(8)}@security-test.com`);
     return { user, passkey: await insertPasskey(user) };
   }
 

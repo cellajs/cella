@@ -188,16 +188,13 @@ const authoringMistake = (problem: string) => {
   log.error(problem);
 };
 
+const invalidHeader = (name: string, message: string) => new AppError(400, 'invalid_request', 'warn', { meta: { header: name }, message });
+
 const readTagList = (ctx: Parameters<MiddlewareHandler<Env>>[0], name: string) => {
   const value = ctx.req.header(name);
   if (value === undefined) return undefined;
   const list = parseTagList(value);
-  if (!list) {
-    throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { header: name },
-      message: `${name} takes * or quoted entity tags, at most ${maxLength.field} characters.`,
-    });
-  }
+  if (!list) throw invalidHeader(name, `${name} takes * or quoted entity tags, at most ${maxLength.field} characters.`);
   return list;
 };
 
@@ -223,12 +220,7 @@ export const preconditionsMiddleware =
   ({ entityType, param, write, representation }: PreconditionTarget): MiddlewareHandler<Env> =>
   async (ctx, next) => {
     for (const name of unsupportedHeaders) {
-      if (ctx.req.header(name) !== undefined) {
-        throw new AppError(400, 'invalid_request', 'warn', {
-          meta: { header: name },
-          message: `${name} is not supported: send If-Match or If-None-Match.`,
-        });
-      }
+      if (ctx.req.header(name) !== undefined) throw invalidHeader(name, `${name} is not supported: send If-Match or If-None-Match.`);
     }
     const ifMatch = readTagList(ctx, 'If-Match');
     const ifNoneMatch = readTagList(ctx, 'If-None-Match');

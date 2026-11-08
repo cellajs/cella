@@ -11,7 +11,7 @@ import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { usersTable } from '#/modules/user/user-db';
 import { log } from '#/utils/logger';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken, setCookiePair } from '../helpers';
+import { authCookie, cookieChange, createTestOrganization, createTestUser, enableMFAForUser, insertTestToken, setCookiePair } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -50,7 +50,7 @@ describe('Magic link authentication', async () => {
 
   describe('Send magic link', () => {
     it('should store a validated redirect path on the token', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
 
       const { response: res } = await call(sendMagicLink, {
         body: { email: signUpUser.email, redirect: '/orgs/acme?tab=files#top' },
@@ -68,7 +68,7 @@ describe('Magic link authentication', async () => {
       { name: 'backend route', redirect: '/api/me' },
       { name: 'overlong path', redirect: `/${'a'.repeat(300)}` },
     ])('should drop an invalid redirect ($name)', async ({ redirect }) => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
 
       const { response: res } = await call(sendMagicLink, { body: { email: signUpUser.email, redirect }, headers: defaultHeaders });
 
@@ -79,7 +79,7 @@ describe('Magic link authentication', async () => {
 
   describe('Invoke magic link', () => {
     it('should redirect a returning user to the stored path', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       await markReturning(user.id);
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme?tab=files');
 
@@ -93,7 +93,7 @@ describe('Magic link authentication', async () => {
     });
 
     it('clears the request marker once the link has signed in, as the step-up link does', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
@@ -108,7 +108,7 @@ describe('Magic link authentication', async () => {
     });
 
     it('should let an explicit redirect win over the welcome page for a new user', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
       const { response: res } = await call(invokeToken, {
@@ -121,7 +121,7 @@ describe('Magic link authentication', async () => {
     });
 
     it('should append skipWelcome when the explicit redirect targets home', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user, `${appConfig.defaultRedirectPath}?foo=bar`);
 
       const { response: res } = await call(invokeToken, {
@@ -137,7 +137,7 @@ describe('Magic link authentication', async () => {
     });
 
     it('should fall back to welcome for a new user without a redirect', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
@@ -151,7 +151,7 @@ describe('Magic link authentication', async () => {
 
     it('should never redirect to a stored path that fails re-validation', async () => {
       // Defense in depth: a row written before validation rules tightened must not replay.
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user, 'https://evil.example/phish');
 
       const { response: res } = await call(invokeToken, {
@@ -166,7 +166,7 @@ describe('Magic link authentication', async () => {
     });
 
     it('should hand the redirect to the MFA page for an MFA user', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       await enableMFAForUser(user.id);
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
@@ -187,7 +187,7 @@ describe('Magic link authentication', async () => {
       expect(pending).toEqual({ email: user.email });
     });
     it('should carry an invitation resume path through the MFA challenge, query string intact', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       await enableMFAForUser(user.id);
       const resumePath = '/auth/authenticate?tokenId=00000000-0000-4000-8000-000000000001';
       const { rawToken, requestedHere } = await createMagicToken(user, resumePath);
@@ -226,7 +226,7 @@ describe('Magic link authentication', async () => {
     it('still lets an invited address sign up', async () => {
       closeRegistration();
       const organization = await createTestOrganization();
-      const inviter = await createUser('inviter@example.com');
+      const inviter = await createTestUser('inviter@example.com');
       await createInvitation({ organization, email: 'invited@example.com', createdBy: inviter.id });
 
       const { response: res } = await call(sendMagicLink, { body: { email: 'invited@example.com' }, headers: defaultHeaders });
@@ -250,7 +250,7 @@ describe('Magic link authentication', async () => {
     it('does not count a rejected invitation', async () => {
       closeRegistration();
       const organization = await createTestOrganization();
-      const inviter = await createUser('inviter@example.com');
+      const inviter = await createTestUser('inviter@example.com');
       const { inactiveMembership, token } = await createInvitation({ organization, email: 'declined@example.com', createdBy: inviter.id });
       await db
         .update(inactiveMembershipsTable)
@@ -267,7 +267,7 @@ describe('Magic link authentication', async () => {
 
   describe('Proven secondary address', () => {
     it('signs in to the account that proved the address, creating no second user', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       await addProvenEmail({ var: { db } }, { userId: user.id, email: 'work@example.com', via: 'github' });
 
       const { response: res } = await call(sendMagicLink, { body: { email: 'work@example.com' }, headers: defaultHeaders });

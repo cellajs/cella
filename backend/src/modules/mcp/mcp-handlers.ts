@@ -87,8 +87,7 @@ app.openapi(mcpRoutes.handleMcp, async (ctx): Promise<any> => {
 
   try {
     const response = await handleMcpMessage(ctx, body, tools);
-    if (!response) return ctx.body(null, 202);
-    return ctx.json(response, 200);
+    return response ? ctx.json(response, 200) : ctx.body(null, 202);
   } catch (error) {
     if (!(error instanceof InsufficientScopeError)) throw error;
     ctx.header('WWW-Authenticate', scopeChallenge(ctx.req.valid('param'), [error.scope]));

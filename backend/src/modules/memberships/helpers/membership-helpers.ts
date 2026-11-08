@@ -69,8 +69,7 @@ interface BroughtAlong<C extends string> {
 /**
  * The memberships above a channel that a membership in it at `role` brings along, inserted when the member lacks them:
  * the organization's, at the role the channel's `organizationRoles` names, and the menu parent's, at the role
- * `resolveAssociatedMembershipRole` gives it. A direct add and an accepted invitation both insert them.
- * @param hierarchy - Another hierarchy than the app's, for tests on a synthetic one.
+ * `resolveAssociatedMembershipRole` gives it.
  */
 export const membershipsBroughtAlong = <C extends string = ChannelEntityType>(
   channel: { entityType: string; organizationId?: unknown } & Record<string, unknown>,

@@ -35,10 +35,7 @@ describe('job declarations', () => {
   it('rejects a dead-letter target that is not declared', () => {
     expect(() => validateJobDeclarations(preview, { jobs: [], queues: [queue('deliver', { deadLetter: 'deliver.dead' })] })).toThrow(/not declared/);
     expect(() =>
-      validateJobDeclarations(preview, {
-        jobs: [],
-        queues: [queue('deliver', { deadLetter: 'deliver.dead' }), queue('deliver.dead')],
-      }),
+      validateJobDeclarations(preview, { jobs: [], queues: [queue('deliver', { deadLetter: 'deliver.dead' }), queue('deliver.dead')] }),
     ).not.toThrow();
   });
 });

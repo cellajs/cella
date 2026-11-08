@@ -3,12 +3,8 @@ import type { DbContext } from '#/core/context';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 
-interface FindTotpOpts {
-  userId: string;
-}
-
 /** The account's authenticator app, with its secret still encrypted; undefined without one. */
-export const findTotp = async (ctx: DbContext, { userId }: FindTotpOpts) => {
+export const findTotp = async (ctx: DbContext, { userId }: { userId: string }) => {
   const [totp] = await ctx.var.db
     .select({ secret: totpsTable.secret, createdAt: totpsTable.createdAt, lastUsedStep: totpsTable.lastUsedStep })
     .from(totpsTable)
@@ -37,16 +33,11 @@ export const insertTotp = async (ctx: DbContext, { userId, secret, lastUsedStep 
   return stored;
 };
 
-interface UpdateTotpLastUsedStepOpts {
-  userId: string;
-  step: number;
-}
-
 /**
  * Moves the account's last used step forward to `step`; undefined when that step or a later one was used already. Of
  * two checks of one code, exactly one moves it.
  */
-export const updateTotpLastUsedStep = async (ctx: DbContext, { userId, step }: UpdateTotpLastUsedStepOpts) => {
+export const updateTotpLastUsedStep = async (ctx: DbContext, { userId, step }: { userId: string; step: number }) => {
   const [spent] = await ctx.var.db
     .update(totpsTable)
     .set({ lastUsedStep: step })
@@ -55,12 +46,8 @@ export const updateTotpLastUsedStep = async (ctx: DbContext, { userId, step }: U
   return spent;
 };
 
-interface DeleteTotpOpts {
-  userId: string;
-}
-
 /** Deletes the account's authenticator app; undefined when it holds none. */
-export const deleteTotp = async (ctx: DbContext, { userId }: DeleteTotpOpts) => {
+export const deleteTotp = async (ctx: DbContext, { userId }: { userId: string }) => {
   const [deleted] = await ctx.var.db.delete(totpsTable).where(eq(totpsTable.userId, userId)).returning({ id: totpsTable.id });
   return deleted;
 };

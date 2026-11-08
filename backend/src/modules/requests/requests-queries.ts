@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { type RequestModel, requestsTable } from '#/modules/requests/requests-db';
 import type { requestListQuerySchema } from '#/modules/requests/requests-schema';
 import { getIsoDate } from '#/utils/iso-date';
@@ -12,6 +12,8 @@ import { searchFilter } from '#/utils/sql';
 /** A request's columns as responses carry them: `invitedAt` travels as `wasInvited`. */
 const { invitedAt, ...requestColumns } = getColumns(requestsTable);
 
+const requestOrderColumns = pick(requestsTable, ['id', 'email', 'createdAt', 'kind']);
+
 interface InsertRequestOpts {
   email: string;
   kind: RequestModel['kind'];
@@ -20,8 +22,7 @@ interface InsertRequestOpts {
 
 /** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
 export const insertRequest = async (ctx: DbContext, { email, kind, message }: InsertRequestOpts) => {
-  const { db } = ctx.var;
-  const [created] = await db.insert(requestsTable).values({ email, kind, message }).onConflictDoNothing().returning(requestColumns);
+  const [created] = await ctx.var.db.insert(requestsTable).values({ email, kind, message }).onConflictDoNothing().returning(requestColumns);
   return created;
 };
 
@@ -33,18 +34,12 @@ interface FindRequestsPaginatedOpts extends Pick<z.infer<typeof requestListQuery
 }
 
 /** A page of requests with `wasInvited`, and the total. */
-export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPaginatedOpts) => {
+export const findRequestsPaginated = async (ctx: DbContext, { q, sort, order, limit, offset }: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { q, sort, order, limit, offset } = opts;
 
   const filter = searchFilter([requestsTable.email], q);
 
-  const orderBy = getOrderColumns({
-    sort,
-    order,
-    columns: pick(requestsTable, ['id', 'email', 'createdAt', 'kind']),
-    tieBreaker: requestsTable.id,
-  });
+  const orderBy = getOrderColumns({ sort, order, columns: requestOrderColumns, tieBreaker: requestsTable.id });
 
   const itemsQuery = db
     .select({ ...requestColumns, wasInvited: sql<boolean>`${requestsTable.invitedAt} IS NOT NULL`.as('wasInvited') })
@@ -54,34 +49,16 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
     .limit(limit)
     .offset(offset);
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(requestsTable).where(filter);
-      return total;
-    },
-  });
+  return resolveListTotal(itemsQuery, exactTotal(db.select({ total: count() }).from(requestsTable).where(filter)));
 };
-
-interface DeleteRequestsByIdsOpts {
-  ids: string[];
-}
 
 /** Deletes requests by id. */
-export const deleteRequestsByIds = async (ctx: DbContext, { ids }: DeleteRequestsByIdsOpts) => {
-  const { db } = ctx.var;
-  return db.delete(requestsTable).where(inArray(requestsTable.id, ids));
-};
-
-interface StampWaitlistRequestInvitedOpts {
-  email: string;
-}
+export const deleteRequestsByIds = async (ctx: DbContext, { ids }: { ids: string[] }) =>
+  ctx.var.db.delete(requestsTable).where(inArray(requestsTable.id, ids));
 
 /** Stamps the address's waitlist request as invited now; a request invited before keeps its first time. */
-export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: StampWaitlistRequestInvitedOpts) => {
-  const { db } = ctx.var;
-  return db
+export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: { email: string }) =>
+  ctx.var.db
     .update(requestsTable)
     .set({ invitedAt: getIsoDate() })
     .where(and(eq(requestsTable.email, email), eq(requestsTable.kind, 'waitlist'), isNull(requestsTable.invitedAt)));
-};

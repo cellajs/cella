@@ -33,6 +33,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import { resolveCollectionReadFilter } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
+import { actorMembership } from './tests/actor-membership';
 
 const seedDb = getSeedDb();
 
@@ -365,15 +366,7 @@ const deepRows: DeepParityRow[] = [...users, null].flatMap((createdBy) =>
   })),
 );
 
-const deepMembership = (channelType: DeepChannelType, channelId: string, role: string): MembershipBaseModel =>
-  ({
-    id: `mem-${channelType}-${channelId}-${role}`,
-    userId: 'actor',
-    channelType,
-    channelId,
-    organizationId: rootId,
-    role,
-  }) as unknown as MembershipBaseModel;
+const deepMembership = (channelType: DeepChannelType, channelId: string, role: string) => actorMembership(channelType, channelId, role, rootId);
 
 interface DeepScenario {
   policies: PolicyMatrix;
@@ -549,15 +542,8 @@ describe('elevated-role parity: home-scoped grants agree between engine and SQL'
 });
 
 // Real-config scenarios must agree across collection SQL, single-row checks, and SSE dispatch.
-const realMembership = (channelType: ChannelEntityType, channelId: string, role: string, organizationId: string): MembershipBaseModel =>
-  ({
-    id: `mem-${channelType}-${channelId}-${role}`,
-    userId: 'actor',
-    channelType,
-    channelId,
-    organizationId,
-    role,
-  }) as unknown as MembershipBaseModel;
+const realMembership = (channelType: ChannelEntityType, channelId: string, role: string, organizationId: string) =>
+  actorMembership(channelType, channelId, role, organizationId);
 
 const randomRealScenario = (random: () => number): { memberships: MembershipBaseModel[]; userId: string; isSystemAdmin: boolean } => {
   const memberships: MembershipBaseModel[] = [];

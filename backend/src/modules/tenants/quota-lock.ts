@@ -8,7 +8,6 @@ import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
  * Runs a product create's `insert` in the caller's tenant transaction under a Postgres lock on the tenant's quota of
  * `entityType`, then counts the tenant's rows: creates of one tenant, in any process, count after each other's commit,
  * so concurrent requests cannot pass the quota together. The lock is held only where a quota applies.
- * @returns The rows `insert` returned.
  * @throws AppError 403 `restrict_by_app` when the inserted rows pass the quota; the throw rolls the insert back.
  */
 export async function insertWithinTenantQuota<T>(txCtx: ActorContext, entityType: ProductEntityType, insert: () => Promise<T[]>): Promise<T[]> {

@@ -17,8 +17,7 @@ import { log } from '#/utils/logger';
  * confirms that a hidden row exists.
  */
 export async function markSeenOp(ctx: UserContext, entityIds: string[], productType: SeenTrackedProductType) {
-  const user = ctx.var.user;
-  const organization = ctx.var.organization;
+  const { user, organization } = ctx.var;
 
   log.debug(`markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`);
 

@@ -14,8 +14,7 @@ import { log } from '#/utils/logger';
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
 /** Also the attachment's Yjs materializer: `materializeDescriptionOp` calls it for a collaborative description the relay posts. */
-export async function updateAttachmentOp(ctx: ActorContext, id: string, input: UpdateAttachmentInput) {
-  const { ops: rawOps, stx } = input;
+export async function updateAttachmentOp(ctx: ActorContext, id: string, { ops: rawOps, stx }: UpdateAttachmentInput) {
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {

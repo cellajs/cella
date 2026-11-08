@@ -7,9 +7,7 @@ import { filterNoOpFields, resolveFieldConflicts } from '#/core/stx/field-versio
 import { advanceClock, generateServerHLC } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-type ResolveDeltas<T> = {
-  [K in keyof T]: T[K] extends ArrayDelta | undefined ? string[] | Exclude<T[K], ArrayDelta> : T[K];
-};
+type ResolveDeltas<T> = { [K in keyof T]: T[K] extends ArrayDelta | undefined ? string[] | Exclude<T[K], ArrayDelta> : T[K] };
 
 interface ResolvedUpdate<T extends Record<string, unknown>> {
   changed: true;
@@ -18,11 +16,7 @@ interface ResolvedUpdate<T extends Record<string, unknown>> {
   stx: StxBase;
 }
 
-interface NoOpUpdate {
-  changed: false;
-}
-
-type UpdateResult<T extends Record<string, unknown>> = ResolvedUpdate<T> | NoOpUpdate;
+type UpdateResult<T extends Record<string, unknown>> = ResolvedUpdate<T> | { changed: false };
 
 interface PreparedOps {
   scalarOps: Record<string, unknown>;
@@ -50,8 +44,7 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
 
   const resolvedArrays: Record<string, string[]> = {};
   for (const [key, delta] of Object.entries(prepared.deltaOps)) {
-    const current = Array.isArray(entity[key]) ? entity[key] : [];
-    resolvedArrays[key] = applyArrayDelta(current, delta);
+    resolvedArrays[key] = applyArrayDelta(Array.isArray(entity[key]) ? entity[key] : [], delta);
   }
 
   const acceptedFieldNames = [...Object.keys(acceptedFields), ...Object.keys(prepared.deltaOps)];

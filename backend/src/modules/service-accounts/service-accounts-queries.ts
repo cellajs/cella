@@ -1,7 +1,7 @@
 import { and, count, desc, eq, getColumns, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
-import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
@@ -52,25 +52,15 @@ export async function findServiceAccountsPaginated(ctx: DbContext, { tenantId, q
     .orderBy(desc(serviceAccountsTable.createdAt))
     .limit(limit)
     .offset(offset);
-  const totalSource: ListTotalSource = {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await ctx.var.db
-        .select({ total: count() })
-        .from(serviceAccountsTable)
-        .where(and(...where));
-      return total;
-    },
-  };
-  return resolveListTotal(itemsQuery, totalSource);
-}
-
-interface InsertServiceAccountOpts {
-  values: InsertServiceAccountModel;
+  const totalQuery = ctx.var.db
+    .select({ total: count() })
+    .from(serviceAccountsTable)
+    .where(and(...where));
+  return resolveListTotal(itemsQuery, exactTotal(totalQuery));
 }
 
 /** The only way to insert a service account: its `actors` row of kind `service` goes first, in one transaction. */
-export async function insertServiceAccount(ctx: DbContext, { values }: InsertServiceAccountOpts): Promise<ServiceAccountModel> {
+export async function insertServiceAccount(ctx: DbContext, { values }: { values: InsertServiceAccountModel }): Promise<ServiceAccountModel> {
   const id = values.id ?? generateId();
   return ctx.var.db.transaction(async (tx) => {
     await insertActors({ var: { db: tx } }, { ids: [id], kind: 'service' });
@@ -99,26 +89,13 @@ export async function updateServiceAccount(ctx: DbContext, { id, tenantId, value
 
 /** Accounts are disabled, never deleted; only active ones count against the quota. */
 export async function countActiveServiceAccounts(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  const [{ total }] = await ctx.var.db
-    .select({ total: count() })
-    .from(serviceAccountsTable)
-    .where(and(eq(serviceAccountsTable.tenantId, tenantId), eq(serviceAccountsTable.status, 'active')));
-  return total;
+  return ctx.var.db.$count(serviceAccountsTable, and(eq(serviceAccountsTable.tenantId, tenantId), eq(serviceAccountsTable.status, 'active')));
 }
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */
 export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
-  const [{ total }] = await ctx.var.db
-    .select({ total: count() })
-    .from(apiKeysTable)
-    .where(
-      and(
-        eq(apiKeysTable.tenantId, tenantId),
-        isNull(apiKeysTable.revokedAt),
-        or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, sql`now()`)),
-      ),
-    );
-  return total;
+  const unexpired = or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, sql`now()`));
+  return ctx.var.db.$count(apiKeysTable, and(eq(apiKeysTable.tenantId, tenantId), isNull(apiKeysTable.revokedAt), unexpired));
 }
 
 interface FindApiKeyWithAccountOpts {
@@ -148,12 +125,8 @@ export async function findApiKeyWithAccount(ctx: DbContext, { key, actorId }: Fi
   return row;
 }
 
-interface FindApiKeysByActorOpts {
-  actorId: string;
-}
-
 /** The actor's keys without the hash, newest first; revoked and expired ones included. */
-export async function findApiKeysByActor(ctx: DbContext, { actorId }: FindApiKeysByActorOpts) {
+export async function findApiKeysByActor(ctx: DbContext, { actorId }: { actorId: string }) {
   return ctx.var.db.select(apiKeySafeColumns).from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId)).orderBy(desc(apiKeysTable.createdAt));
 }
 

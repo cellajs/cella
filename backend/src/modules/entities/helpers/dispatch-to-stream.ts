@@ -105,13 +105,16 @@ function rowReadDecisions(accesses: Access[], event: AppStreamProductEvent, row:
 
 /**
  * Whether one subscriber may read one row of a product event: a fan-out of one, so this and `readerFrames` cannot drift.
- * @param subscriber - Who to decide for.
- * @param event - The event the row belongs to.
- * @param row - The row's permission fields.
- * @returns Whether the subscriber may read the row.
  */
 export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent, row: PermissionRowData): boolean {
   return rowReadDecisions(accessesOf([subscriber]), event, row)[0];
+}
+
+/** The value `map` holds under `key`, made by `create` and stored on first use. */
+function getOrCreate<K, V>(map: Map<K, V>, key: K, create: () => V): V {
+  const value = map.get(key) ?? create();
+  map.set(key, value);
+  return value;
 }
 
 /**
@@ -125,17 +128,14 @@ export function readerFrames<S extends SubscriberAccess>(
   event: AppStreamProductEvent,
 ): { rows: ActivityRow[]; readers: S[] }[] {
   const accesses = accessesOf(subscribers);
-  const keys = new Map<string, number>();
-  const classes: { allowed: boolean[]; byAuthor: Map<number, boolean> }[] = [];
-  const classOf = event.rows.map(({ rowData }) => {
-    const key = decisionKey(rowData);
-    let at = keys.get(key);
-    if (at === undefined) {
-      at = classes.push({ allowed: rowReadDecisions(accesses, event, { ...rowData, createdBy: null }), byAuthor: new Map() }) - 1;
-      keys.set(key, at);
-    }
-    return classes[at];
-  });
+  const byKey = new Map<string, { allowed: boolean[]; byAuthor: Map<number, boolean> }>();
+  const classOf = event.rows.map(({ rowData }) =>
+    getOrCreate(byKey, decisionKey(rowData), () => ({
+      allowed: rowReadDecisions(accesses, event, { ...rowData, createdBy: null }),
+      byAuthor: new Map(),
+    })),
+  );
+  const classes = [...byKey.values()];
   const authors = new Set(event.rows.map(({ rowData }) => rowData.createdBy));
 
   const frames = new Map<string, { rows: ActivityRow[]; readers: S[] }>();
@@ -143,19 +143,10 @@ export function readerFrames<S extends SubscriberAccess>(
     const reads = ({ rowData }: ActivityRow, at: number): boolean => {
       const { allowed, byAuthor } = classOf[at];
       if (allowed[index] || rowData.createdBy !== subscriber.userId) return allowed[index];
-      let own = byAuthor.get(index);
-      if (own === undefined) {
-        own = rowReadDecisions([accesses[index]], event, rowData)[0];
-        byAuthor.set(index, own);
-      }
-      return own;
+      return getOrCreate(byAuthor, index, () => rowReadDecisions([accesses[index]], event, rowData)[0]);
     };
     const signature = authors.has(subscriber.userId) ? `author:${index}` : classes.map(({ allowed }) => (allowed[index] ? '1' : '0')).join('');
-    let frame = frames.get(signature);
-    if (!frame) {
-      frame = { rows: event.rows.filter(reads), readers: [] };
-      frames.set(signature, frame);
-    }
+    const frame = getOrCreate(frames, signature, () => ({ rows: event.rows.filter(reads), readers: [] }));
     frame.readers.push(subscriber);
   }
   return [...frames.values()].filter(({ rows }) => rows.length > 0);
@@ -163,7 +154,6 @@ export function readerFrames<S extends SubscriberAccess>(
 
 /**
  * Tells the app streams of a product event's organization the rows each may read.
- * @param event - A product change from the activity bus.
  */
 export async function dispatchChange(event: AppStreamProductEvent): Promise<void> {
   const subscribers = streamSubscriberManager.getByTopic(organizationTopic(event.organizationId));

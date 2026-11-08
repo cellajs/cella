@@ -74,10 +74,7 @@ describe('Revoke my sessions', async () => {
     const strangerSession = await insertTestSession(stranger);
     const headers = { ...defaultHeaders, Cookie: current.cookie };
 
-    const { data, response } = await call(revokeMySessions, {
-      body: { ids: [other.id, strangerSession.id] },
-      headers,
-    });
+    const { data, response } = await call(revokeMySessions, { body: { ids: [other.id, strangerSession.id] }, headers });
     expect(response.status).toBe(200);
     expect(data).toMatchObject({
       data: [{ id: other.id, revokedBy: user.id, revocationReason: 'other_session' }],

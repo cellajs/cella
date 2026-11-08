@@ -20,13 +20,12 @@ export type AppendResult =
 export interface AppendYjsUpdateOpts {
   /** The document the update extends, with the organization its log row carries. */
   doc: YjsDocScope;
-  /** The Yjs update to log. */
   update: Uint8Array;
   /** The client whose update this is, whom a materialization may credit; null for a server-origin row. */
   userId: UserId | null;
   /** The generation the update extends: a client's own, or the one an outside write just read. */
   generation: string;
-  /** False skips the notification: the relay announces its appends after they commit, batched. Default true. */
+  /** False skips the notification: the relay announces its appends after they commit, batched. */
   notify?: boolean;
 }
 
@@ -36,9 +35,7 @@ export interface AppendYjsUpdateOpts {
  * Then the document row of `generation` is held under FOR KEY SHARE until the caller's transaction ends, so a
  * retirement, which deletes that row first, waits for the insert and then deletes the log row too. The row is inserted
  * and, unless `notify` is false, announced on yjsLogChannel in the same transaction: relays hear of it at commit, and
- * never of a row that rolled back. The relay passes false: one notifying commit per keystroke would serialize its
- * appends, so it announces them after commit, batched. Runs under the document's tenant context, as `findYjsDocument`
- * does.
+ * never of a row that rolled back. Runs under the document's tenant context, as `findYjsDocument` does.
  */
 export async function appendYjsUpdate(
   ctx: DbContext,

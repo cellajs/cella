@@ -23,10 +23,6 @@ interface ListenOptions {
 /**
  * The public listener: the API routes and nothing else. No upgrade handler is attached, so an upgrade request is
  * answered like any other request, and `/internal/*` answers 404 whatever the path's encoding.
- * @param fetch - The API app's fetch handler.
- * @param options - Port and optional hostname.
- * @param onListening - Called once the port is bound.
- * @returns The HTTP server.
  */
 export function serveApi(
   { fetch, port, hostname = listenHost() }: ListenOptions & { fetch: FetchHandler },
@@ -45,8 +41,6 @@ export function serveApi(
  * over the private network or loopback, so a public address is refused before any route reads its secret: a VM port a
  * deploy exposes by mistake still answers only its own network. Forwarding headers are not read, so behind the
  * internal load balancer every peer is the balancer, and its ACL decides who reaches the listener.
- * @param remoteAddress - The peer's address as its socket reports it.
- * @returns The reason, or undefined for an admitted peer.
  */
 function internalSourceRefusal(remoteAddress: string | undefined): string | undefined {
   if (!remoteAddress) return 'no peer address';
@@ -78,8 +72,6 @@ const cdcPath = '/internal/cdc';
  * Whether an upgrade targets the CDC socket, by its raw request target up to the query string. A WHATWG-normalized
  * pathname would also match `/api/../internal/cdc` and `/api/%2e%2e/internal/cdc`, so a prefix-routing proxy in front
  * of the listener could alias another route to the socket.
- * @param rawUrl - The request target as received.
- * @returns Whether it is the socket's path.
  */
 export function isCdcUpgradePath(rawUrl: string | undefined): boolean {
   if (!rawUrl) return false;
@@ -97,8 +89,6 @@ function refuseUpgrade(socket: Duplex, status: 401 | 403 | 404): void {
  * The internal listener: server-to-server routes on their own port, which the infra routes only from the private
  * network (the internal load balancer pool, or loopback for co-hosted workers). The listener admits private-network
  * and loopback peers only, and each route still checks its own shared secret.
- * @param options - Port and optional hostname.
- * @param onListening - Called once the port is bound.
  * @returns The HTTP server and a close that also ends the CDC socket.
  */
 export function serveInternal(

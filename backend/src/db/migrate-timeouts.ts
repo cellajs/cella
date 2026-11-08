@@ -28,8 +28,6 @@ function sqlState(err: unknown): string | undefined {
 
 /**
  * Name the database wait behind a migrate failure.
- * @param err - The error the migrate companion caught.
- * @param timeouts - The session timeouts the failed run used.
  * @returns A sentence for the companion's output, or undefined when the error is not a session timeout.
  */
 export function describeMigrateTimeout(err: unknown, timeouts: SessionTimeouts = migrateSessionTimeouts): string | undefined {

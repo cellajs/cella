@@ -8,8 +8,7 @@ const dbCtx = { var: { db: baseDb } };
 /** The federations the generic entrance offers: this deployment holds a client for them and an institution is connected. */
 export const listSignInFederations = async () => {
   if (!isStrategyEnabled('sso')) return [];
-  const active = await findActiveSsoFederations(dbCtx);
-  return active
+  return (await findActiveSsoFederations(dbCtx))
     .filter((key): key is FederationKey => isFederationKey(key) && isFederationConfigured(key))
     .map((key) => ({ key, label: appConfig.federations[key].label }));
 };

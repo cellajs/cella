@@ -17,20 +17,12 @@ import { getEntityTable } from '#/tables';
 
 const hasSlug = (table: ResolvableTable): table is TableWithIdAndSlug => 'slug' in table;
 
-// Channel counter queries
-
-interface FindChannelCountersByKeysOpts {
-  keys: string[];
-}
-
 /** The counter rows of the given channel keys; a key without a row is left out. */
-export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: FindChannelCountersByKeysOpts) => {
-  const { db } = ctx.var;
-  return db
+export const findChannelCountersByKeys = async (ctx: DbContext, { keys }: { keys: string[] }) =>
+  ctx.var.db
     .select({ channelKey: channelCountersTable.channelKey, counts: channelCountersTable.counts })
     .from(channelCountersTable)
     .where(inArray(channelCountersTable.channelKey, keys));
-};
 
 /** Projects precomputed values from `channelCountersTable`, avoiding per-request aggregates. */
 export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
@@ -71,16 +63,9 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   return { countsSelect };
 };
 
-// Product view-count queries: product_counters lives here and every product module reuses these
-
-interface FindProductViewCountOpts {
-  productId: string;
-}
-
 /** How many users viewed a product; 0 before the first view. */
-export const findProductViewCount = async (ctx: DbContext, { productId }: FindProductViewCountOpts) => {
-  const { db } = ctx.var;
-  const [counters] = await db
+export const findProductViewCount = async (ctx: DbContext, { productId }: { productId: string }) => {
+  const [counters] = await ctx.var.db
     .select({ viewCount: productCountersTable.viewCount })
     .from(productCountersTable)
     .where(eq(productCountersTable.productId, productId))
@@ -94,17 +79,11 @@ export const productViewCountSelect = () => sql<number>`coalesce(${productCounte
 /** The join condition of `product_counters` on a product id column, for {@link productViewCountSelect}. */
 export const productViewCountJoin = (productIdColumn: AnyColumn) => eq(productCountersTable.productId, productIdColumn);
 
-interface GetChannelCountsOpts {
-  entityType: ChannelEntityType;
-  entityId: string;
-}
-
 /** The counts of one channel from its counter row; zeros while CDC has written none. */
-export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: GetChannelCountsOpts) => {
-  const { db } = ctx.var;
+export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }: { entityType: ChannelEntityType; entityId: string }) => {
   const { countsSelect } = getChannelCountsSelect(entityType);
 
-  const [counts] = await db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
+  const [counts] = await ctx.var.db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
   return counts ?? zeroChannelCounts(entityType);
 };
 
@@ -129,24 +108,19 @@ export const getOrganizationEntityCount = async (ctx: ActorContext, { organizati
     return tenantReadUnlessInTransaction(ctx, countRows);
   }
 
-  const { db } = ctx.var;
-  const [row] = await db
+  const [row] = await ctx.var.db
     .select({ count: sql<number>`${sql.raw(jsonbIntRaw('"channel_counters"."counts"', `e:c:${entityType}`))}` })
     .from(channelCountersTable)
     .where(eq(channelCountersTable.channelKey, organizationId));
   return row?.count ?? 0;
 };
 
-interface CountTenantEntityRowsOpts {
-  entityType: ChannelEntityType | ProductEntityType;
-}
-
 /**
  * The rows of `entityType` the context's tenant holds, drafts included and tombstones left out, counted on the table:
  * what a tenant quota compares with. A counter row would make the quota wait for the CDC worker. A product table sits
  * under RLS, so on one the count opens a tenant transaction unless the caller holds one.
  */
-export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: CountTenantEntityRowsOpts) => {
+export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: { entityType: ChannelEntityType | ProductEntityType }) => {
   const table: AnyPgTable & { tenantId: PgColumn } = getEntityTable(entityType);
   const countRows = async (readCtx: DbContext) => {
     const live = hasDeletedAt(table) ? isNull(table.deletedAt) : undefined;
@@ -159,20 +133,15 @@ export const countTenantEntityRows = async (ctx: ActorContext, { entityType }: C
   return isProduct(entityType) ? tenantReadUnlessInTransaction(ctx, countRows) : countRows(ctx);
 };
 
-// Sync state queries
-
 /**
  * The generation of the sync books. The CDC worker moves it on whenever it rebuilt them, and a client that holds
  * another one refetches.
- * @param ctx - Carries the connection to read on.
  * @returns The generation, 1 on a database whose books were never rebuilt.
  */
 export const findSyncGeneration = async (ctx: DbContext): Promise<number> => {
   const [state] = await ctx.var.db.select({ generation: syncStateTable.generation }).from(syncStateTable).limit(1);
   return state?.generation ?? 1;
 };
-
-// Entity resolution queries
 
 interface ResolveEntityOpts<T extends EntityType> {
   entityType: T;
@@ -191,7 +160,6 @@ export const resolveEntity = async <T extends EntityType>(
   ctx: DbContext,
   { entityType, identifier, bySlug = false, forUpdate = false }: ResolveEntityOpts<T>,
 ): Promise<EntityModel<T> | undefined> => {
-  const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
   // A slug names no row of a type without a slug column.
@@ -199,7 +167,7 @@ export const resolveEntity = async <T extends EntityType>(
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
   const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
-  const query = db
+  const query = ctx.var.db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
@@ -209,23 +177,17 @@ export const resolveEntity = async <T extends EntityType>(
   return entity as EntityModel<T> | undefined;
 };
 
-interface ResolveEntitiesOpts<T extends EntityType> {
-  entityType: T;
-  ids: string[];
-}
-
 /** @internal See {@link resolveEntity} for usage guidelines. */
 export const resolveEntities = async <T extends EntityType>(
   ctx: DbContext,
-  { entityType, ids }: ResolveEntitiesOpts<T>,
+  { entityType, ids }: { entityType: T; ids: string[] },
 ): Promise<Array<EntityModel<T>>> => {
-  const { db } = ctx.var;
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
   const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
-  const entities = await db
+  const entities = await ctx.var.db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
@@ -251,14 +213,13 @@ export const findChangedEntityDeltaIds = async (
   ctx: DbContext,
   { entityType, organizationId, afterSeq, readWhere, limit }: FindChangedEntityDeltaIdsOpts,
 ) => {
-  const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
   // Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back.
   const published = publishedRowsPredicate(table);
 
   // pg returns an int8 `seq` as text.
-  const result = await db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
+  const result = await ctx.var.db.execute<{ id: string; deletedAt: string | null; seq: string }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt", seq
     FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}${published ? sql` AND ${published}` : sql``}${readWhere ? sql` AND ${readWhere}` : sql``}
@@ -270,11 +231,7 @@ export const findChangedEntityDeltaIds = async (
   let untilSeq: number | null = null;
 
   for (const row of result.rows) {
-    if (row.deletedAt) {
-      deletedIds.push(row.id);
-    } else {
-      updatedIds.push(row.id);
-    }
+    (row.deletedAt ? deletedIds : updatedIds).push(row.id);
     untilSeq = Math.max(untilSeq ?? 0, Number(row.seq));
   }
 

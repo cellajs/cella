@@ -51,15 +51,12 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
 };
 
 /**
- * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when
- * `bySlug`); throws 404 when it is not found or the caller may not read it, 403 when the caller
- * reads it but may not perform `action` (the refusal rules in PERMISSIONS.md). A draft reads as
- * missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
- * `membership` may be `null` while allowed: system admins and admins of a higher-level entity
- * (`permissions-config`) pass without one. A write's `If-Match` and `If-None-Match` are checked against the row its
- * path names (`checkPreconditions`). An update that merges its change with the stored row reads it `forUpdate`, in
- * the transaction of its write, so two overlapping merges cannot each start from the row the other replaces.
- * @param ctx - Context with the actor's bindings and isSystemAdmin set by the guard chain.
+ * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when `bySlug`); throws 404
+ * when it is not found or the caller may not read it, 403 when the caller reads it but may not perform `action`. A
+ * draft reads as missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
+ * `membership` may be `null` while allowed: system admins and admins of a higher-level entity pass without one. An
+ * update that merges its change with the stored row reads it `forUpdate`, in the transaction of its write, so two
+ * overlapping merges cannot each start from the row the other replaces.
  */
 export const getValidChannel = async <T extends ChannelEntityType>(
   ctx: DbContext & ScopeContext & AccessContext & PreconditionContext,
@@ -74,9 +71,8 @@ export const getValidChannel = async <T extends ChannelEntityType>(
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);
   // A context without an actor (a public route) is anonymous here, as it is to `accessFrom`: it holds no grant.
-  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, accessFrom(ctx))) {
-    throw new AppError(404, 'not_found', 'warn', { entityType });
-  }
+  const readsAsMissing = !read.allowed || !draftChannelVisibleTo(entityType, entity, access);
+  if (readsAsMissing) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   const { allowed, membership } = action === 'read' ? read : checkAccess(access, action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

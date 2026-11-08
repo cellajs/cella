@@ -17,7 +17,7 @@ import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens/tokens
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { type OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
@@ -130,14 +130,6 @@ export async function rawJsonRequest(path: string, cookie: string, init: { metho
   return { status: response.status, body: await response.json() };
 }
 
-/** User with a verified email, for OAuth/passkey tests. */
-export async function createUser(email: string) {
-  const userRecord = mockUser({ email });
-  const [user] = await insertUsers({ var: { db } }, { users: [userRecord] });
-  await db.insert(emailsTable).values(mockEmail(user));
-  return user;
-}
-
 /** A second-factor challenge for `user`, as a first factor leaves it; returns the raw value its cookie carries. */
 /** A live MFA challenge for the user, as a sign-in with `authStrategy` issues it. */
 export async function createMfaToken(user: { id: string; email: string }, authStrategy: AuthStrategy = 'magic') {
@@ -164,6 +156,7 @@ export async function createTotpUser(email: string) {
   return user;
 }
 
+/** A user with a verified email address. */
 export async function createTestUser(email: string) {
   const userRecord = mockUser({ email });
   const [user] = await insertUsers({ var: { db } }, { users: [userRecord] });
@@ -195,24 +188,26 @@ export async function createOrganizationAdminUser(
   tenantId = 'test01', // Default test tenant
 ) {
   const user = await createTestUser(email);
-
-  const membership = {
-    id: generateId(),
-    userId: user.id,
-    channelId: organizationId || '',
-    organizationId: organizationId || '',
-    tenantId,
-    channelType: 'organization' as const,
-    role,
-    displayOrder: 1,
-    createdAt: mockPastIsoDate(),
-    createdBy: user.id,
-  };
-
-  await db.insert(membershipsTable).values([membership]);
-
+  await insertOrgMembership(user.id, { id: organizationId || '', tenantId }, { role, displayOrder: 1, createdAt: mockPastIsoDate() });
   return user;
 }
+
+/** Makes `userId` a member of `organization` by its own hand; `columns` give the role, menu order and any other column. */
+export const insertOrgMembership = (
+  userId: string,
+  organization: { id: string; tenantId: string },
+  columns: Pick<InsertMembershipModel, 'displayOrder'> & Partial<InsertMembershipModel>,
+) =>
+  db.insert(membershipsTable).values({
+    id: generateId(),
+    userId,
+    channelId: organization.id,
+    organizationId: organization.id,
+    tenantId: organization.tenantId,
+    channelType: 'organization',
+    createdBy: userId,
+    ...columns,
+  });
 
 export async function parseResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;

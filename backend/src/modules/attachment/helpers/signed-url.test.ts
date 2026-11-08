@@ -72,9 +72,6 @@ describe('getSignedUrlFromKey', () => {
     vi.doMock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: '', S3_ACCESS_KEY_SECRET: '' } }));
     const { getSignedUrlFromKey: signUnconfigured } = await import('./signed-url');
 
-    await expect(signUnconfigured('key.png', { ...bucket, contentType: 'image/png' })).rejects.toMatchObject({
-      status: 503,
-      type: 'server_error',
-    });
+    await expect(signUnconfigured('key.png', { ...bucket, contentType: 'image/png' })).rejects.toMatchObject({ status: 503, type: 'server_error' });
   });
 });

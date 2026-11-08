@@ -10,7 +10,6 @@ import { log } from '#/utils/logger';
 
 const columnResolvers: MembershipColumnsResolver[] = [];
 
-// Index the `membershipColumns` each backend module declares (see defineBackendModule).
 onBackendModuleRegister(({ membershipColumns }) => {
   if (membershipColumns) columnResolvers.push(membershipColumns);
 });
@@ -49,17 +48,13 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  // One query for per-user max(displayOrder), the baseline for the next order
   const maxOrderRows = await findMaxDisplayOrders(ctx, { userIds });
-
   const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder]));
 
   // Rows assigned per user in this run, to step the order by orderGap
   const assignedCounts = new Map<string, number>();
 
-  const prepared = items.map((info) => {
-    const { userId, role, entity, createdBy } = info;
-
+  const prepared = items.map(({ userId, role, entity, createdBy, extraFields }) => {
     const channelIdColumns = channelIdColumnsOf(entity);
 
     // Order per user: start at the global max and add orderGap per assignment, so a user's first membership takes `defaultOrder`.
@@ -72,7 +67,7 @@ export const insertMemberships = async <T extends MembershipEntity>(
 
     const baseMembership = { userId, role, createdBy, displayOrder: nextOrder } as const;
 
-    return { channelIdColumns, baseMembership, entity, extraFields: info.extraFields };
+    return { channelIdColumns, baseMembership, entity, extraFields };
   });
 
   // The memberships each new one brings along, inserted when missing. A parent row keeps the target's id columns other
@@ -106,9 +101,7 @@ export const insertMemberships = async <T extends MembershipEntity>(
     broughtAlongRows.length ? insertMissingMembershipRows(ctx, { values: broughtAlongRows }) : Promise.resolve(),
   ]);
 
-  if (insertedTarget.length) {
-    log.info('Memberships created', { count: insertedTarget.length });
-  }
+  if (insertedTarget.length) log.info('Memberships created', { count: insertedTarget.length });
 
   return insertedTarget;
 };

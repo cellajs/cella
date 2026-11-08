@@ -34,7 +34,6 @@ export interface SsoSignIn {
 export interface SsoSignInFacts {
   federation: Federation;
   connection: ConnectionModel;
-  /** Every verified claim of the sign-in: what `roleFromClaims` reads. */
   claims: SsoClaims;
   profile: SsoProfile;
   /** The claims kept on the identity row. */

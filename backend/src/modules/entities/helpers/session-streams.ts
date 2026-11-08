@@ -45,10 +45,8 @@ export async function endOrganizationStreams(organizationIds: string[], message:
   const streams = streamSubscriberManager.all().filter((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)));
   if (streams.length === 0) return;
   const payload: StreamErrorPayload = { code: 'access_changed', message };
-  await closeAppStreams(
-    streams.map((subscriber) => ({ subscriber, payload })),
-    'Failed to close a stream after a tenant status change',
-  );
+  const closing = streams.map((subscriber) => ({ subscriber, payload }));
+  await closeAppStreams(closing, 'Failed to close a stream after a tenant status change');
 }
 
 /**
@@ -59,9 +57,7 @@ export async function resyncAppStreams(): Promise<void> {
   const streams = streamSubscriberManager.all();
   if (streams.length === 0) return;
   const payload: StreamErrorPayload = { code: 'resync', message: 'Sync books were rebuilt' };
-  await closeAppStreams(
-    streams.map((subscriber) => ({ subscriber, payload })),
-    'Failed to close a stream for a resync',
-  );
+  const closing = streams.map((subscriber) => ({ subscriber, payload }));
+  await closeAppStreams(closing, 'Failed to close a stream for a resync');
   log.info('Closed every app stream for a resync', { closed: streams.length });
 }

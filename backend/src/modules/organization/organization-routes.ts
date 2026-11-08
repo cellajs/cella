@@ -18,7 +18,7 @@ import {
 } from '#/modules/organization/organization-schema';
 import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantOnlyParamSchema, tenantOrgParamSchema } from '#/schemas';
 
-const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
+export const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
   batchCreateOrganizations: xRoute({
     method: 'post',
     path: '/~batch-create',
@@ -82,5 +82,3 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
 });
-
-export { organizationRoutes };

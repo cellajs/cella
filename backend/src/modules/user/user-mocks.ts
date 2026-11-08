@@ -60,20 +60,18 @@ export const mockMemberUserResponse = (key = 'member-user:default') => {
 export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockMemberUserResponse, count);
 
 /** Fixed "Admin" user for default admin seeding. */
-export const mockAdmin = (id: string | undefined, email: string): InsertUserModel => {
-  return {
-    ...(id ? { id } : {}),
-    givenName: 'Admin',
-    familyName: 'User',
-    name: 'Admin User',
-    slug: 'admin-user',
-    email,
-    languageCode: appConfig.defaultLanguage,
-    thumbnailUrl: null,
-    newsletter: false,
-    createdAt: mockPastIsoDate(),
-  };
-};
+export const mockAdmin = (id: string | undefined, email: string): InsertUserModel => ({
+  ...(id ? { id } : {}),
+  givenName: 'Admin',
+  familyName: 'User',
+  name: 'Admin User',
+  slug: 'admin-user',
+  email,
+  languageCode: appConfig.defaultLanguage,
+  thumbnailUrl: null,
+  newsletter: false,
+  createdAt: mockPastIsoDate(),
+});
 
 export const mockEmail = (user: Pick<UserModel, 'id' | 'email'>): InsertEmailModel => {
   return { email: user.email, userId: user.id, verifiedAt: mockPastIsoDate() };

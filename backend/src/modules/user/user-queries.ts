@@ -3,7 +3,7 @@ import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import type { UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { updateStamps } from '#/db/utils/stamps';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
@@ -19,15 +19,13 @@ import { getOrderColumns } from '#/utils/order-column';
 import { searchFilter } from '#/utils/sql';
 
 /** EXISTS filter limiting user rows to members of one of `organizationIds`: defense in depth mirroring relatableGuard. */
-const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) => {
-  const { db } = ctx.var;
-  return exists(
-    db
+const sharesOrgFilter = (ctx: DbContext, organizationIds: string[]) =>
+  exists(
+    ctx.var.db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, organizationIds))),
   );
-};
 
 /** `EXISTS` on a proven address of the user row: what sets a real account apart from a provisional one (a demo's, a sample's). */
 export const hasProvenEmail = (userId: typeof usersTable.id): SQL =>
@@ -84,28 +82,18 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
     .limit(limit)
     .offset(offset);
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(usersTable)
-        .innerJoin(actorsTable, userActorJoin)
-        .leftJoin(systemRolesTable, systemRoleJoin)
-        .where(where);
-      return total;
-    },
-  });
+  const totalQuery = db
+    .select({ total: count() })
+    .from(usersTable)
+    .innerJoin(actorsTable, userActorJoin)
+    .leftJoin(systemRolesTable, systemRoleJoin)
+    .where(where);
+  return resolveListTotal(itemsQuery, exactTotal(totalQuery));
 };
 
-interface FindUserByEmailOpts {
-  email: string;
-}
-
 /** Resolves through emailsTable, the owner of address uniqueness; every row there is a proven inbox. */
-export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db
+export const findUserByEmail = async (ctx: DbContext, { email }: { email: string }) => {
+  const [user] = await ctx.var.db
     .select(userSelect)
     .from(usersTable)
     .innerJoin(actorsTable, userActorJoin)
@@ -115,14 +103,9 @@ export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmail
   return user;
 };
 
-interface FindUserByIdOpts {
-  id: string;
-}
-
 /** The user with the activity times of its `actors` row; undefined when no user has `id`. */
-export const findUserById = async (ctx: DbContext, { id }: FindUserByIdOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
+export const findUserById = async (ctx: DbContext, { id }: { id: string }) => {
+  const [user] = await ctx.var.db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, id)).limit(1);
   return user;
 };
 
@@ -136,10 +119,9 @@ interface FindMemberUserOpts {
 
 /** A user as members see them; undefined when none matches, which includes a user outside `memberOfAny`. */
 export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = false, memberOfAny }: FindMemberUserOpts) => {
-  const { db } = ctx.var;
   const filters: SQL[] = [bySlug ? eq(usersTable.slug, identifier) : eq(usersTable.id, identifier)];
   if (memberOfAny) filters.push(sharesOrgFilter(ctx, memberOfAny));
-  const [user] = await db
+  const [user] = await ctx.var.db
     .select(memberSelect)
     .from(usersTable)
     .innerJoin(actorsTable, userActorJoin)
@@ -148,12 +130,8 @@ export const findMemberUser = async (ctx: DbContext, { identifier, bySlug = fals
   return user;
 };
 
-interface FindUserForUpdateOpts {
-  id: string;
-}
-
 /** Locks the user's row for the rest of the transaction; returns the MFA switch the factor rules read under that lock. */
-export const findUserForUpdate = async (ctx: DbContext, { id }: FindUserForUpdateOpts) => {
+export const findUserForUpdate = async (ctx: DbContext, { id }: { id: string }) => {
   const [user] = await ctx.var.db
     .select({ id: usersTable.id, mfaRequired: usersTable.mfaRequired })
     .from(usersTable)
@@ -162,23 +140,14 @@ export const findUserForUpdate = async (ctx: DbContext, { id }: FindUserForUpdat
   return user;
 };
 
-interface FindLastSignInAtOpts {
-  userId: string;
-}
-
 /** The time of the user's last sign-in, null for a user who never signed in; undefined when no actor row exists. */
-export const findLastSignInAt = async (ctx: DbContext, { userId }: FindLastSignInAtOpts) => {
+export const findLastSignInAt = async (ctx: DbContext, { userId }: { userId: string }) => {
   const [actor] = await ctx.var.db.select({ lastSignInAt: actorsTable.lastSignInAt }).from(actorsTable).where(eq(actorsTable.id, userId));
   return actor?.lastSignInAt;
 };
 
-interface UpdateLastSignInAtOpts {
-  userId: string;
-  lastSignInAt: string;
-}
-
 /** Stamps the sign-in on the user's `actors` row, outside the CDC publication that carries `users`. */
-export const updateLastSignInAt = async (ctx: DbContext, { userId, lastSignInAt }: UpdateLastSignInAtOpts) => {
+export const updateLastSignInAt = async (ctx: DbContext, { userId, lastSignInAt }: { userId: string; lastSignInAt: string }) => {
   await ctx.var.db.update(actorsTable).set({ lastSignInAt }).where(eq(actorsTable.id, userId));
 };
 
@@ -212,12 +181,8 @@ export const insertUsers = async (ctx: DbContext, { users, onConflictDoNothing =
   });
 };
 
-interface FindEmailOpts {
-  email: string;
-}
-
 /** The email row of an address, whichever account holds it; undefined when none does. */
-export const findEmail = async (ctx: DbContext, { email }: FindEmailOpts) => {
+export const findEmail = async (ctx: DbContext, { email }: { email: string }) => {
   const [row] = await ctx.var.db.select().from(emailsTable).where(eq(emailsTable.email, email)).limit(1);
   return row;
 };
@@ -296,14 +261,12 @@ interface UserIdsOpts {
 }
 
 /** Full user rows by id. */
-export const findUserModelsByIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
-  return ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
-};
+export const findUserModelsByIds = async (ctx: DbContext, { ids }: UserIdsOpts) =>
+  ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
 
 /** The ids among `ids` that name a user. */
-export const findExistingUserIds = async (ctx: DbContext, { ids }: UserIdsOpts) => {
-  return ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
-};
+export const findExistingUserIds = async (ctx: DbContext, { ids }: UserIdsOpts) =>
+  ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
 
 /**
  * The ids among `ids` of provisional accounts nothing holds any more: no proven address and no membership left. A
@@ -349,12 +312,6 @@ export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts)
   return updated;
 };
 
-interface UpdateUserMfaOpts {
-  id: string;
-  mfaRequired: boolean;
-}
-
 /** Sets the user's MFA switch as their own write; the caller ends the sessions that turning it on replaces. */
-export const updateUserMfa = async (ctx: DbContext, { id, mfaRequired }: UpdateUserMfaOpts) => {
-  return updateUser(ctx, { id, values: { mfaRequired, ...updateStamps(id) } });
-};
+export const updateUserMfa = async (ctx: DbContext, { id, mfaRequired }: { id: string; mfaRequired: boolean }) =>
+  updateUser(ctx, { id, values: { mfaRequired, ...updateStamps(id) } });

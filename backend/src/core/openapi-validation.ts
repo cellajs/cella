@@ -85,7 +85,7 @@ const documentMergePatch = (doc: OpenApiDocument) => {
   }
 };
 
-/** Per `operationId`, the error statuses its route documents: `createXRoute` records them, the error handler reads them where authoring rules are checked. */
+/** Per `operationId`, the error statuses its route documents. */
 const documentedErrorStatuses = new Map<string, ReadonlySet<number>>();
 
 export const recordDocumentedErrors = (operationId: string, statuses: number[]) => {
@@ -149,8 +149,6 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   }
   if (node === null || typeof node !== 'object') return;
   const obj = node as Record<string, unknown>;
-  if (typeof obj.pattern === 'string' && flagSuffix.test(obj.pattern)) {
-    obj.pattern = obj.pattern.replace(flagSuffix, '');
-  }
+  if (typeof obj.pattern === 'string') obj.pattern = obj.pattern.replace(flagSuffix, '');
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };

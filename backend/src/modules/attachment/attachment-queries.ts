@@ -7,7 +7,7 @@ import { preconditionWhere } from '#/core/preconditions';
 import { channelTables } from '#/db/channel-tables';
 import { imageColumns } from '#/db/storage-columns';
 import type { ActorId } from '#/db/utils/ids';
-import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { deleteStamps } from '#/db/utils/stamps';
@@ -19,34 +19,23 @@ import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { getOrderColumns } from '#/utils/order-column';
+import { pick } from '#/utils/pick';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
 import { searchFilter } from '#/utils/sql';
 
 // Every attachment read and write below carries the request's tenant + organization predicate, so the result is the
 // same with RLS bypassed; the RLS transaction wrappers stay the backstop.
 
-interface InsertAttachmentsOpts {
-  attachments: InsertAttachmentModel[];
-}
-
 /** Inserts the rows and returns those it inserted: a row whose id exists is skipped and absent from the result. */
-export const insertAttachments = async (ctx: DbContext, { attachments }: InsertAttachmentsOpts) => {
-  const { db } = ctx.var;
-  return db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
-};
-
-interface UpdateAttachmentOpts {
-  id: string;
-  values: PgUpdateSetSource<typeof attachmentsTable>;
-}
+export const insertAttachments = async (ctx: DbContext, { attachments }: { attachments: InsertAttachmentModel[] }) =>
+  ctx.var.db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
 
 /**
  * Writes `values` to the attachment within the request's tenant and organization; undefined when no such row exists,
  * or when a write moved it past the request's preconditions (`preconditionWhere`).
  */
-export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
-  const { db } = ctx.var;
-  const [updated] = await db
+export const updateAttachment = async (ctx: ActorContext, { id, values }: { id: string; values: PgUpdateSetSource<typeof attachmentsTable> }) => {
+  const [updated] = await ctx.var.db
     .update(attachmentsTable)
     .set(values)
     .where(and(eq(attachmentsTable.id, id), requestScopeWhere(ctx, attachmentsTable), preconditionWhere(ctx, attachmentsTable)))
@@ -63,27 +52,21 @@ interface DeleteAttachmentsByIdsOpts {
 }
 
 /** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
-export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, stx }: DeleteAttachmentsByIdsOpts) => {
-  const { db } = ctx.var;
-  return db
+export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId, stx }: DeleteAttachmentsByIdsOpts) =>
+  ctx.var.db
     .update(attachmentsTable)
     .set({ ...deleteStamps(actorId), stx: stxWithIds(attachmentsTable.stx, stx) })
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
-};
-
-interface FindAttachmentsByIdsOpts {
-  ids: string[];
-}
 
 /** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
-export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttachmentsByIdsOpts) => {
-  const { db } = ctx.var;
-  return db
+export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: { ids: string[] }) =>
+  ctx.var.db
     .select()
     .from(attachmentsTable)
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
-};
+
+const attachmentOrderColumns = pick(attachmentsTable, ['name', 'createdAt', 'contentType']);
 
 interface FindAttachmentsPaginatedOpts extends Pick<z.infer<typeof attachmentListQuerySchema>['orderBy'], 'sort' | 'order'> {
   organizationId: string;
@@ -116,18 +99,10 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   const search = searchFilter([attachmentsTable.name, attachmentsTable.filename, attachmentsTable.contentType, attachmentsTable.keywords], q);
   if (search) filters.push(search);
 
-  const orderBy =
-    rangeRead.orderBy ??
-    getOrderColumns({
-      sort,
-      order,
-      columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
-      tieBreaker: attachmentsTable.id,
-    });
+  const orderBy = rangeRead.orderBy ?? getOrderColumns({ sort, order, columns: attachmentOrderColumns, tieBreaker: attachmentsTable.id });
 
   const whereClause = and(...filters);
 
-  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const itemsQuery = db
     .select({ ...getColumns(attachmentsTable), viewCount: productViewCountSelect() })
     .from(attachmentsTable)
@@ -141,13 +116,7 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     ? { kind: 'pageLength' }
     : orgWide && !search
       ? { kind: 'counter', getTotal: () => getOrganizationEntityCount(ctx, { organizationId, entityType: 'attachment' }) }
-      : {
-          kind: 'exact',
-          getTotal: async () => {
-            const [{ total }] = await db.select({ total: count() }).from(attachmentsTable).where(whereClause);
-            return total;
-          },
-        };
+      : exactTotal(db.select({ total: count() }).from(attachmentsTable).where(whereClause));
 
   return resolveListTotal(itemsQuery, totalSource);
 };

@@ -39,7 +39,6 @@ export type CookieName =
  * Cookies read on a navigation another site started stay SameSite Lax: the OAuth state, plus the device id and the
  * magic-link request marker, which the OAuth callback and emailed links must see to recognize the browser. A token
  * kind's own cookie follows its policy. All others, sessions included, are same-origin only.
- * @see handle-oauth-initiation.ts
  */
 const laxCookies = new Set<CookieName>(['oauth-state', 'device-id', 'magic-requested']);
 const isLaxCookie = (name: CookieName) => {
@@ -50,7 +49,7 @@ const isLaxCookie = (name: CookieName) => {
 
 const versionedCookieName = (name: CookieName) => `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
-/** Effective wire name: hono prepends `__Host-` when the prefix option is active. For consumers naming the cookie outside this helper. */
+/** Effective wire name: hono prepends `__Host-` when the prefix option is active. */
 export const authCookieName = (name: CookieName) => `${prefix === 'host' ? '__Host-' : ''}${versionedCookieName(name)}`;
 
 /** The MAC covers the cookie's name and expiry with its content: a value signed for one cookie never reads as another. */
@@ -80,8 +79,8 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
 
   const presented = sealed.slice(macAt + 1);
   const versionedName = versionedCookieName(name);
-  const valid = cookieSecrets.some((secret) => safeEqual(presented, cookieMac(secret, versionedName, expiresAt, content)));
-  return valid ? content : undefined;
+  const macMatches = cookieSecrets.some((secret) => safeEqual(presented, cookieMac(secret, versionedName, expiresAt, content)));
+  return macMatches ? content : undefined;
 };
 
 /** Sets a signed auth cookie; SameSite per `isLaxCookie`. */

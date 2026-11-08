@@ -26,7 +26,6 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
  * `seq`), the tenant, the creator with the organization (a creator's rows are read within a request's organization:
  * member counts, the replay check), the last editor, and the tombstones `apply_retention()` scans. A table lists its own
  * indexes after them.
- * @param tableName - The table's SQL name, the prefix of every index name.
  * @param table - The table's columns, as the index callback receives them.
  */
 export const productIndexes = (

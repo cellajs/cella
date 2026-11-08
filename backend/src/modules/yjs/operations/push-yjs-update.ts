@@ -20,8 +20,6 @@ interface PushYjsUpdateOpts {
  * relays are notified, and they relay the row to live sessions and fold it at compaction, or at their sweep when no
  * session holds the document. The answer follows the commit, so `appended` and `empty` both mean the server holds the
  * update.
- * @param ctx - A signed-in user acting in a resolved organization.
- * @param opts - The document, the generation the update extends, and the update.
  * @returns `appended`, or `empty` for an update that carries nothing.
  * @throws AppError 403 or 404 as `authorizeYjsEditor`; 400 for an update Yjs cannot decode; 413 for one past the log's
  * cap; 409 `sync_document_replaced` when the document has another generation (`meta.generation`) or none (null: pull,

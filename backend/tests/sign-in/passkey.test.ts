@@ -7,7 +7,7 @@ import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal, mailsTo, rawJsonRequest } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTestUser, expectRefusal, mailsTo, rawJsonRequest } from '../helpers';
 import { insertPasskey, passkeyChallenge, passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
@@ -24,7 +24,7 @@ describe('Passkey Authentication', async () => {
 
   /** A user with a software passkey registered. */
   async function userWithPasskey(email = signUpUser.email) {
-    const user = await createUser(email);
+    const user = await createTestUser(email);
     return { user, passkey: await insertPasskey(user) };
   }
 
@@ -48,7 +48,7 @@ describe('Passkey Authentication', async () => {
     });
 
     it('should refuse an MFA challenge without a second-factor challenge in progress', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
       const { response: res, error } = await call(generatePasskeyChallenge, { body: { kind: 'mfa' }, headers: defaultHeaders });
@@ -91,7 +91,7 @@ describe('Passkey Authentication', async () => {
   describe('Passkey Responses', () => {
     // The schema leaves out the credential id, public key and signature counter; nothing strips a body at runtime.
     it('should answer a new passkey and the account page with the passkey schema fields only', async () => {
-      const user = await createUser(signUpUser.email);
+      const user = await createTestUser(signUpUser.email);
       const sessionCookie = await createTestSession(user);
       const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('registration', sessionCookie);
 
@@ -125,8 +125,8 @@ describe('Passkey Authentication', async () => {
     // GHSA-4vcf-q4xf-f48m: deleting a passkey must be scoped to the owner; a user
     // cannot delete another user's passkey by id.
     it("must not delete another user's passkey via its id", async () => {
-      const victim = await createUser('victim@example.com');
-      const attacker = await createUser('attacker@example.com');
+      const victim = await createTestUser('victim@example.com');
+      const attacker = await createTestUser('attacker@example.com');
 
       const victimPasskey = await insertPasskey(victim);
       const stored = () => db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));

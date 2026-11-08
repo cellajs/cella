@@ -64,12 +64,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     // Members update their own attachments only ('own' in the permission config), and this one is the owner's.
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-member');
     admin = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-admin', adminRole);
-    attachment = await seedAttachment({
-      tenantId: owner.tenantId,
-      organizationId: owner.organization.id,
-      createdBy: owner.user.id,
-      description: original,
-    });
+    attachment = await seedAttachment(owner, { description: original });
   });
 
   afterAll(async () => {
@@ -80,12 +75,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   /** An attachment of the owner with a collaborative document, as the relay seeds it from the row. */
   const withDocument = async () => {
-    const live = await seedAttachment({
-      tenantId: owner.tenantId,
-      organizationId: owner.organization.id,
-      createdBy: owner.user.id,
-      description: original,
-    });
+    const live = await seedAttachment(owner, { description: original });
     removals.push(async () => {
       await adminDb.delete(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, live.id));
       await adminDb.delete(yjsDocumentsTable).where(eq(yjsDocumentsTable.entityId, live.id));
@@ -104,10 +94,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   const writeOutside = (entityId: string, text: string) =>
     call(updateAttachment, {
       path: { organizationId: owner.organization.id, tenantId: owner.tenantId, attachmentId: entityId },
-      body: {
-        ops: { description: paragraph(text) },
-        stx: mockStxFor('description'),
-      },
+      body: { ops: { description: paragraph(text) }, stx: mockStxFor('description') },
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });
 

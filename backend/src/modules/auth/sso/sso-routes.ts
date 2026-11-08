@@ -7,7 +7,7 @@ import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth
 import { ssoConnectionParamSchema, ssoEntrySchema, ssoFederationParamSchema } from '#/modules/auth/sso/sso-schema';
 import { locationSchema } from '#/schemas';
 
-const authSsoRoutes = createXRoutes(['auth', 'cella'], {
+export const authSsoRoutes = createXRoutes(['auth', 'cella'], {
   getSsoEntry: xRoute({
     method: 'get',
     path: '/sso/connections/{connectionId}',
@@ -69,5 +69,3 @@ const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     },
   }),
 });
-
-export { authSsoRoutes };

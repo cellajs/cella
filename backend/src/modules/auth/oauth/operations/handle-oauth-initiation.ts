@@ -32,9 +32,8 @@ export const handleOAuthInitiation = async (ctx: OAuthStartContext, { provider, 
     ctx.set('errorPagePath', '/account');
     // Fails early without the pin, or with one that another session in this browser started.
     const [pin, { user, session }] = await Promise.all([readBoundToken(ctx, 'oauth-connect'), resolveSession(ctx)]);
-    if (pin.userId !== user.id || pin.sessionId !== session.id) {
-      throw new AppError(401, 'oauth-connect_not_found', 'warn');
-    }
+    const pinOfOtherSession = pin.userId !== user.id || pin.sessionId !== session.id;
+    if (pinOfOtherSession) throw new AppError(401, 'oauth-connect_not_found', 'warn');
   }
 
   if (kind === 'verify') {

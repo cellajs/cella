@@ -18,14 +18,12 @@ export const defaultPreferences = { mentionEmail: true, commentEmail: false, dig
 
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product
- * modules that declare a `notifications` source (see lib/module.ts). Ambient posts stay out:
+ * modules that declare a `notifications` source. Ambient posts stay out:
  * menu-sheet unseen counts already cover them.
  *
  * Partitioned by `created_at` (weekly, kept `retention.activityDays`) like `seen_by`, so clearing is automatic. Two
  * consequences follow from that and must not be undone: the primary key has to include the partition column, and no
- * other unique constraint may exist. A user is therefore told of a subject once by an `INSERT ... WHERE NOT EXISTS`
- * guard over `(user_id, subject_id)` in `insertNotificationsIgnoringDuplicates`. Excluded from CDC: it is per-user
- * state, not synced content.
+ * other unique constraint may exist. Excluded from CDC: it is per-user state, not synced content.
  */
 export const notificationsTable = snakeCase.table(
   'notifications',
@@ -63,8 +61,7 @@ export const notificationsTable = snakeCase.table(
 
 /**
  * Per-user delivery preferences. Deliberately NOT partitioned: `lastDigestAt` is mutable state
- * whose loss would reset everyone's digest cadence. Kept out of the users table because
- * `userFlags` is boolean-only and the digest cadence is not.
+ * whose loss would reset everyone's digest cadence.
  */
 export const notificationPreferencesTable = snakeCase.table('notification_preferences', {
   userId: uuid()

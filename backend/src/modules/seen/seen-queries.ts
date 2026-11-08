@@ -33,7 +33,6 @@ interface FindUnseenCountsByUserOpts {
  * publish time, others creation time; `unseen-sync.ts` mirrors this.
  */
 export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels, productTypes, scopeWhereByType }: FindUnseenCountsByUserOpts) => {
-  const { db } = ctx.var;
   const rows: { channelId: string; productType: SeenTrackedProductType; unseenCount: number }[] = [];
   // `or()` of no channels admits every row.
   if (channels.length === 0) return rows;
@@ -56,7 +55,7 @@ export const findUnseenCountsByUser = async (ctx: DbContext, { userId, channels,
       scopeWhereByType?.[productType],
     ];
 
-    const entityRows = await db
+    const entityRows = await ctx.var.db
       .select({ channelId: channelIdColumn, productType: sql<SeenTrackedProductType>`${productType}`, unseenCount: count() })
       .from(entityTable)
       .where(and(...filters))
@@ -88,7 +87,6 @@ export const findSeenCandidates = async (ctx: DbContext, { productType, where }:
 interface InsertSeenByOpts {
   userId: string;
   productType: SeenTrackedProductType;
-  /** The rows the user saw. */
   productIds: string[];
 }
 
@@ -103,10 +101,8 @@ export const insertSeenBy = async (ctx: DbContext, { userId, productType, produc
   // Its own statement: the insert below must take its snapshot after the lock is granted.
   await db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`seen_by:${userId}`}, 0))`);
 
-  const values = sql.join(
-    productIds.map((productId) => sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, now())`),
-    sql`, `,
-  );
+  const rows = productIds.map((productId) => sql`(${generateId()}::uuid, ${userId}::uuid, ${productId}::uuid, ${productType}, now())`);
+  const values = sql.join(rows, sql`, `);
 
   const result = await db.execute<{ new_count: number }>(sql`
     WITH candidate (id, user_id, product_id, product_type, created_at) AS (

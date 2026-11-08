@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { inviteMembers, listInvitations, listMyInvitations, publishOrganization, resendInvitation } from 'sdk';
-import { appConfig, type EntityRole } from 'shared';
+import { listInvitations, listMyInvitations, publishOrganization, resendInvitation } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -26,6 +26,7 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
+import { inviteToOrganization } from './helpers';
 
 // Whether an invite left as mail is the observable difference between a held and a dispatched invite.
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
@@ -54,18 +55,8 @@ describe('Draft context invite deferral', async () => {
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
 
-  const invite = async (organization: { id: string; tenantId: string }, emails: string[], role: EntityRole, sessionCookie: string) => {
-    return await call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { emails, role },
-      query: { entityId: organization.id, entityType: 'organization' as const },
-      headers: { ...defaultHeaders, Cookie: sessionCookie },
-    });
-  };
-
-  const getInactiveRows = async (channelId: string) => {
-    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.channelId, channelId));
-  };
+  const getInactiveRows = async (channelId: string) =>
+    await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.channelId, channelId));
 
   /** The link tokens of an invitation: one while it goes by link, none once an account answers it in-app. */
   const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitationId));
@@ -73,7 +64,7 @@ describe('Draft context invite deferral', async () => {
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
-    const { response } = await invite(organization, ['new-member@example.com'], memberRole, sessionCookie);
+    const { response } = await inviteToOrganization(organization, ['new-member@example.com'], memberRole, sessionCookie);
     expect(response.status).toBe(200);
 
     const [row] = await getInactiveRows(organization.id);
@@ -90,7 +81,7 @@ describe('Draft context invite deferral', async () => {
   it('keeps prepare roles live: admin invites dispatch on a draft context', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
-    const { response } = await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
+    const { response } = await inviteToOrganization(organization, ['co-admin@example.com'], adminRole, sessionCookie);
     expect(response.status).toBe(200);
 
     const [row] = await getInactiveRows(organization.id);
@@ -104,7 +95,7 @@ describe('Draft context invite deferral', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
     const coAdmin = await createTestUser('co-admin@example.com');
 
-    await invite(organization, [coAdmin.email], adminRole, sessionCookie);
+    await inviteToOrganization(organization, [coAdmin.email], adminRole, sessionCookie);
 
     const { data } = await call(listMyInvitations, { headers: { ...defaultHeaders, Cookie: await createTestSession(coAdmin) } });
     expect((data as { results: unknown[] }).results).toHaveLength(1);
@@ -112,7 +103,7 @@ describe('Draft context invite deferral', async () => {
 
   it('refuses a member who publishes, leaving the draft and its held invitations as they were', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
-    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['held@example.com'], memberRole, sessionCookie);
     const member = await createOrganizationAdminUser('member@example.com', organization.id, memberRole, organization.tenantId);
 
     const { response } = await publish(organization, await createTestSession(member));
@@ -127,7 +118,7 @@ describe('Draft context invite deferral', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
     const invitee = await createTestUser('invitee@example.com');
 
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
+    await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
 
     const inviteeCookie = await createTestSession(invitee);
     const myInvitations = () => call(listMyInvitations, { headers: { ...defaultHeaders, Cookie: inviteeCookie } });
@@ -145,7 +136,7 @@ describe('Draft context invite deferral', async () => {
 
   it('keeps a held invitation held when it is resent, and sends it at the publish', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
-    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['held@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
 
     const { response } = await call(resendInvitation, {
@@ -162,7 +153,7 @@ describe('Draft context invite deferral', async () => {
 
   it("names the inviter in a held invitation's mail, whoever publishes", async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
-    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['held@example.com'], memberRole, sessionCookie);
     const publisher = await createOrganizationAdminUser('publisher@example.com', organization.id, adminRole, organization.tenantId);
 
     await publish(organization, await createTestSession(publisher));
@@ -175,7 +166,7 @@ describe('Draft context invite deferral', async () => {
     const organization = await createTestOrganization({ publishedAt: null, defaultLanguageCode: otherLanguage });
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
-    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['held@example.com'], memberRole, sessionCookie);
 
     await publish(organization, sessionCookie);
 
@@ -187,7 +178,7 @@ describe('Draft context invite deferral', async () => {
     await insertRequest({ var: { db } }, { email: 'deferred@example.com', kind: 'waitlist' });
     const waitlistInvitedAt = async () => (await db.select().from(requestsTable).where(eq(requestsTable.email, 'deferred@example.com')))[0].invitedAt;
 
-    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [beforeRow] = await getInactiveRows(organization.id);
     expect(beforeRow.remindedAt).toBeNull();
     expect(await waitlistInvitedAt()).toBeNull();
@@ -212,7 +203,7 @@ describe('Draft context invite deferral', async () => {
 
   it('keeps a held invitation held when its dispatch mail fails, so the next dispatch sends it', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
-    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
 
     failNextMailSend();
     expect(await dispatchDeferredInvites(dbContext, { channelIds: [organization.id], organization })).toEqual({ dispatched: 0 });
@@ -229,8 +220,8 @@ describe('Draft context invite deferral', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
     // The most privileged role is mailed on a draft; the member invitation is held.
-    await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
-    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['co-admin@example.com'], adminRole, sessionCookie);
+    await inviteToOrganization(organization, ['held@example.com'], memberRole, sessionCookie);
     const mailed = (await getInactiveRows(organization.id)).find((row) => row.email === 'co-admin@example.com')!;
     const [mailedLink] = await linksOf(mailed.id);
 
@@ -244,7 +235,7 @@ describe('Draft context invite deferral', async () => {
   it('dispatches nothing for a published context whose invitations were mailed when they were made', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
-    await invite(organization, ['mailed@example.com'], memberRole, await createTestSession(admin));
+    await inviteToOrganization(organization, ['mailed@example.com'], memberRole, await createTestSession(admin));
     const [mailed] = await getInactiveRows(organization.id);
     const [mailedLink] = await linksOf(mailed.id);
 
@@ -257,7 +248,7 @@ describe('Draft context invite deferral', async () => {
 
   it('lists a dispatched invite once: resending its link retires the old one', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
-    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
+    await inviteToOrganization(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
 
     await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
@@ -287,14 +278,14 @@ describe('Draft context invite deferral', async () => {
     const sessionCookie = await createTestSession(admin);
     const invitee = await createTestUser('pending@example.com');
 
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
+    await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [initial] = await getInactiveRows(organization.id);
     await db.update(inactiveMembershipsTable).set({ remindedAt: dayAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
     await endRateLimitWindows('invitationMailAddress');
 
     // Re-adding the address is as deliberate as the resend button, so the email goes out again.
-    const { data } = await invite(organization, [invitee.email], memberRole, sessionCookie);
+    const { data } = await inviteToOrganization(organization, [invitee.email], memberRole, sessionCookie);
     expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
     expect(mailsTo(invitee.email)).toHaveLength(2);
     const [reminded] = await getInactiveRows(organization.id);
@@ -307,12 +298,12 @@ describe('Draft context invite deferral', async () => {
     const sessionCookie = await createTestSession(admin);
     const newcomer = 'newcomer@example.com';
 
-    await invite(organization, [newcomer], memberRole, sessionCookie);
+    await inviteToOrganization(organization, [newcomer], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     const [initialLink] = await linksOf(initial.id);
 
     await endRateLimitWindows('invitationMailAddress');
-    await invite(organization, [newcomer], memberRole, sessionCookie);
+    await inviteToOrganization(organization, [newcomer], memberRole, sessionCookie);
     const links = await linksOf(initial.id);
     expect(links).toHaveLength(1);
     expect(links[0].id).not.toBe(initialLink.id);
@@ -322,7 +313,7 @@ describe('Draft context invite deferral', async () => {
   it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
     const newcomer = 'newcomer@example.com';
-    await invite(organization, [newcomer], memberRole, sessionCookie);
+    await inviteToOrganization(organization, [newcomer], memberRole, sessionCookie);
 
     // The invitee signs up before the context is published: the proven inbox binds the held invitation and ends its link.
     const account = await createAccount(

@@ -24,9 +24,8 @@ export function declaredQueues({
 }
 
 /**
- * Checks the declarations once per process: unique names, every dead-letter target declared, cron
- * expressions the scheduler accepts. Runs on the jobs worker at start and in the unit test, so a
- * bad declaration fails before anything is created.
+ * Checks the declarations once per process: unique names, every dead-letter target declared, cron expressions the
+ * scheduler accepts, so a bad declaration fails before anything is created.
  * @param preview - Validates one cron expression by evaluating it (pg-boss's `previewSchedule`).
  */
 export function validateJobDeclarations(
@@ -87,9 +86,7 @@ export async function ensureQueues(boss: PgBoss): Promise<void> {
 export async function scheduleJobs(boss: PgBoss): Promise<void> {
   const jobs = getBackendJobs();
   const declared = new Set(jobs.map((job) => job.name));
-  for (const job of jobs) {
-    await boss.schedule(job.name, job.cron, null, { tz: 'UTC', missed: 'once' });
-  }
+  for (const job of jobs) await boss.schedule(job.name, job.cron, null, { tz: 'UTC', missed: 'once' });
   for (const schedule of await boss.getSchedules()) {
     if (declared.has(schedule.name)) continue;
     await boss.unschedule(schedule.name, schedule.key);
@@ -112,14 +109,14 @@ export async function workDeclared(boss: PgBoss): Promise<void> {
     });
   }
   for (const queue of getBackendQueues()) {
-    if (!queue.handler) continue;
-    await boss.work(queue.name, queue.work ?? {}, workHandler(queue.name, queue.handler));
+    if (queue.handler) await boss.work(queue.name, queue.work ?? {}, workHandler(queue.name, queue.handler));
   }
 }
 
 /** Wraps a queue's handler so a failure is logged with the ids of its jobs before it fails them. */
-function workHandler(name: string, handler: BackendQueueHandler): BackendQueueHandler {
-  return async (jobs) => {
+const workHandler =
+  (name: string, handler: BackendQueueHandler): BackendQueueHandler =>
+  async (jobs) => {
     try {
       return await handler(jobs);
     } catch (error) {
@@ -127,4 +124,3 @@ function workHandler(name: string, handler: BackendQueueHandler): BackendQueueHa
       throw error;
     }
   };
-}

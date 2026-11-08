@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { type ActivityEvent, type ActivityRow, activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { defineBackendModule } from '#/lib/module';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../tests/fixtures';
 import { streamSubscriberManager } from './stream/subscriber-manager';
+import { streamSubscriber } from './stream/tests/stream-subscriber';
 import './entities-listeners';
 
 const org = 'org-listeners';
@@ -37,17 +37,7 @@ const fakeSubscriber = (userId: string) => {
       closed = true;
     },
   } as unknown as SSEStreamingApi;
-  const subscriber: AppStreamSubscriber = {
-    id: crypto.randomUUID(),
-    topic: `org:${org}`,
-    stream,
-    userId,
-    sessionId: `session-${userId}`,
-    organizationIds: new Set([org]),
-    isSystemAdmin: false,
-    systemAccessAllowed: false,
-    memberships: [membership(memberRole, userId)],
-  };
+  const subscriber = streamSubscriber(userId, stream, [membership(memberRole, userId)], org);
   streamSubscriberManager.register(subscriber, [`user:${userId}`]);
   return { subscriber, sent, isClosed: () => closed };
 };

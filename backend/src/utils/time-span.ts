@@ -10,13 +10,10 @@ const unitMs: Record<TimeSpanUnit, number> = { ms: 1, s: 1000, m: 60_000, h: 3_6
  * console.info(timeSpan.seconds()); // 3600
  */
 export class TimeSpan {
-  constructor(value: number, unit: TimeSpanUnit) {
-    this.value = value;
-    this.unit = unit;
-  }
-
-  public value: number;
-  public unit: TimeSpanUnit;
+  constructor(
+    public value: number,
+    public unit: TimeSpanUnit,
+  ) {}
 
   public milliseconds(): number {
     return this.value * unitMs[this.unit];

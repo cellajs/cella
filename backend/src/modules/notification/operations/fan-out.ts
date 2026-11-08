@@ -33,7 +33,7 @@ const dbCtx = { var: { db: baseDb } };
 
 /**
  * Turn one CDC event into per-recipient inbox rows, for entity types whose module declared a
- * notification source (lib/module.ts). Mentions come from the row's stored body when its change
+ * notification source. Mentions come from the row's stored body when its change
  * can carry new ones; further recipients from the source's `resolveRecipients`. Every recipient
  * passes the same read check, so a mention in a body the client wrote never reaches a user who
  * may not read the row. Each row is told under its own activity and writer, and only the recipients it wrote an inbox
@@ -119,20 +119,9 @@ async function fanOutRow(
   if (allowed.length === 0) return [];
 
   const contextId = resolveContextId ? resolveContextId(row) : row.id;
+  const place = { tenantId, organizationId, channelId: channel.id, channelType: channel.type, entityType, subjectId: row.id };
   const told = await insertNotificationsIgnoringDuplicates(dbCtx, {
-    rows: allowed.map<NotificationInsert>((recipient) => ({
-      userId: recipient.userId,
-      kind: recipient.kind,
-      entityType,
-      subjectId: row.id,
-      contextId,
-      channelId: channel.id,
-      channelType: channel.type,
-      organizationId,
-      tenantId,
-      activityId,
-      actorId,
-    })),
+    rows: allowed.map<NotificationInsert>((recipient) => ({ ...recipient, ...place, contextId, activityId, actorId })),
   });
 
   if (told.length === 0) return [];
@@ -141,19 +130,9 @@ async function fanOutRow(
   // An open stream hears of its inbox row at once; a recipient with none gets the push below (`isOnline` skips the rest).
   await Promise.all(told.map(({ userId }) => sendSignal('notification.created', toUser(userId), { organizationId, subjectId: row.id })));
 
-  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this costs one subscription
-  // lookup. `sendNotificationPush` never throws.
   if (isPushSendConfigured()) {
     const primaryKind = told.some((recipient) => recipient.kind === 'mention') ? 'mention' : told[0].kind;
-    const url = buildNotificationLink(appConfig.frontendUrl, {
-      tenantId,
-      organizationId,
-      channelId: channel.id,
-      channelType: channel.type,
-      entityType,
-      subjectId: row.id,
-      contextId: contextId ?? undefined,
-    });
+    const url = buildNotificationLink(appConfig.frontendUrl, { ...place, contextId: contextId ?? undefined });
     await sendNotificationPush(
       told.map((recipient) => recipient.userId),
       { t: 'notif', activityId, channelId: channel.id, kind: primaryKind, url },

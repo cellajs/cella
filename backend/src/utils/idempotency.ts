@@ -15,7 +15,6 @@ type ProductTable = PgTable & { id: PgColumn; createdBy: PgColumn; deletedAt: Pg
  * same whether or not the CDC worker has processed that attempt. Only the caller's own live rows in the request scope
  * count: an id another actor learned finds nothing, and so does an id whose row was deleted since (the tenant read
  * policy hides deleted rows too), whose insert then writes nothing.
- * @param ids - The ids of the create's input rows.
  * @returns The rows found, empty for a new create. A create inserts only the items not among them.
  */
 export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, ids: string[]): Promise<InferSelectModel<T>[]> {
@@ -33,7 +32,6 @@ export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext
  * answers the same both times. Only the caller's deletes in the request scope whose stored `stx` carries the request's
  * `mutationId` count: a row another mutation deleted stays rejected, and so does a mutation id another actor learned.
  * @param stx - The delete's `stx`; the soft delete stores its `mutationId` on each row it removes.
- * @returns The ids still to delete, and the ids refused.
  * @throws AppError 403 when the caller may delete none of the ids and no earlier attempt deleted any.
  */
 export async function splitDeleteByPermission<T extends ProductTable & { deletedBy: PgColumn; stx: PgColumn }>(

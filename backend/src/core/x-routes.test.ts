@@ -55,15 +55,9 @@ describe('route helpers', () => {
   });
 
   it('builds a JSON response with its example only when given, and a required JSON body', () => {
-    expect(json('Thing', itemSchema)).toEqual({
-      description: 'Thing',
-      content: { 'application/json': { schema: itemSchema } },
-    });
+    expect(json('Thing', itemSchema)).toEqual({ description: 'Thing', content: { 'application/json': { schema: itemSchema } } });
     expect(routes.getThing.responses[200].content['application/json']).toEqual({ schema: itemSchema, example: { id: 'a' } });
-    expect(routes.createThing.request.body).toEqual({
-      required: true,
-      content: { 'application/json': { schema: itemSchema } },
-    });
+    expect(routes.createThing.request.body).toEqual({ required: true, content: { 'application/json': { schema: itemSchema } } });
   });
 
   it('documents what the guards, limiters and errors() declare, and nothing for a public route without a request', () => {

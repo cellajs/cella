@@ -18,7 +18,7 @@ import { defaultHeaders } from '../fixtures';
 import {
   cookieChange,
   createTestOrganization,
-  createUser,
+  createTestUser,
   type ErrorResponse,
   expectRefusal,
   insertTestSession,
@@ -129,7 +129,7 @@ describe('OAuth Authentication', async () => {
   describe('OAuth Callback - Existing User Sign-In', () => {
     it('should sign in existing user with linked OAuth account', async () => {
       const userEmail = 'github-user@example.com';
-      const user = await createUser(userEmail);
+      const user = await createTestUser(userEmail);
 
       await linkIdentity(user);
 
@@ -143,7 +143,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('finds the identity by provider subject when the provider address changed, and refreshes the snapshot', async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       const identity = await linkIdentity(user, { email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
@@ -162,7 +162,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('never matches an identity of another kind that shares the issuer slug and subject', async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       const ssoIdentity = await linkIdentity(user, { kind: 'sso' });
 
       const state = 'mock-state-test';
@@ -183,7 +183,7 @@ describe('OAuth Authentication', async () => {
     // account's own address. Otherwise a sign-up identity (created from an address the provider never verified) could
     // later be pointed at the holder's inbox and verified into the account of whoever proved that address meanwhile.
     it("must not move an unverified identity's verification to another address via a signed-out sign-in", async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       const identity = await linkIdentity(user, { verified: false, email: user.email });
 
       const state = 'mock-state-test';
@@ -199,7 +199,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it("mails the verification to the account's own address, refreshing a stale snapshot (positive control)", async () => {
-      const user = await createUser('github-user@example.com');
+      const user = await createTestUser('github-user@example.com');
       const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
@@ -222,7 +222,7 @@ describe('OAuth Authentication', async () => {
       onTestFinished(() => setTestConfig({ selfRegistration: true }));
 
       const userEmail = 'github-user@example.com';
-      const user = await createUser(userEmail);
+      const user = await createTestUser(userEmail);
 
       await linkIdentity(user, { verified: false });
 
@@ -302,7 +302,7 @@ describe('OAuth Authentication', async () => {
     // local user must not link or authenticate that account.
     it('should refuse OAuth sign-in when the email matches an existing local user without a linked account', async () => {
       // Local user owns the email, but there is NO linked OAuth account.
-      await createUser('github-user@example.com');
+      await createTestUser('github-user@example.com');
 
       const state = 'mock-state-test';
       mockCookieStore.set('oauth-state', JSON.stringify({ state, provider: 'github', kind: 'auth', codeVerifier: 'verifier' }));
@@ -336,7 +336,7 @@ describe('OAuth Authentication', async () => {
     const identitiesOf = (userId: string) => db.select().from(identitiesTable).where(eq(identitiesTable.userId, userId));
 
     it('links a provider account on another address without making that address a user email', async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       await pinConnect(user);
 
       const { response: res } = await connectCallback();
@@ -375,8 +375,8 @@ describe('OAuth Authentication', async () => {
     });
 
     it('refuses when another user holds the provider address', async () => {
-      const user = await createUser('local-account@example.com');
-      await createUser(providerEmail);
+      const user = await createTestUser('local-account@example.com');
+      await createTestUser(providerEmail);
       await pinConnect(user);
 
       const { response: res, error } = await connectCallback();
@@ -386,8 +386,8 @@ describe('OAuth Authentication', async () => {
     });
 
     it('refuses a provider account already linked to another user', async () => {
-      const user = await createUser('local-account@example.com');
-      const other = await createUser('other-account@example.com');
+      const user = await createTestUser('local-account@example.com');
+      const other = await createTestUser('other-account@example.com');
       await linkIdentity(other, { email: providerEmail });
       await pinConnect(user);
 
@@ -397,8 +397,8 @@ describe('OAuth Authentication', async () => {
     });
 
     it('must not connect a provider to another account via a state naming that account', async () => {
-      const victim = await createUser('victim-account@example.com');
-      const attacker = await createUser('attacker-account@example.com');
+      const victim = await createTestUser('victim-account@example.com');
+      const attacker = await createTestUser('attacker-account@example.com');
 
       // A signed state that names the victim and no pin: nothing is connected.
       const unpinned = await connectCallback({ connectUserId: victim.id });
@@ -413,7 +413,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('must not connect a provider via a pin whose session has ended', async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       const sessionId = await pinConnect(user);
 
       // Signed out, or revoked from another device, while the provider's page stayed open in this browser.
@@ -430,7 +430,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it('connects once per pin, then refuses the same callback', async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       await pinConnect(user);
 
       expect((await connectCallback()).response.status).toBe(302);
@@ -441,8 +441,8 @@ describe('OAuth Authentication', async () => {
     });
 
     it('starts a connect only with a pin of the signed-in account, and keeps any user id out of the state', async () => {
-      const user = await createUser('local-account@example.com');
-      const other = await createUser('other-account@example.com');
+      const user = await createTestUser('local-account@example.com');
+      const other = await createTestUser('other-account@example.com');
       const signedInAs = (id: string, sessionId = 'session') =>
         vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id }, session: { id: sessionId } } as never);
 
@@ -479,7 +479,7 @@ describe('OAuth Authentication', async () => {
 
     /** A connected-but-unverified GitHub account on another address, with the mailed single-use token in hand. */
     const connectedUnverified = async () => {
-      const user = await createUser('local-account@example.com');
+      const user = await createTestUser('local-account@example.com');
       const oauthAccount = await linkIdentity(user, { verified: false, email: providerEmail });
 
       const rawSingleUse = nanoid(40);
@@ -528,7 +528,7 @@ describe('OAuth Authentication', async () => {
 
     it('refuses when another account took the address after the connect started', async () => {
       const { user } = await connectedUnverified();
-      await createUser(providerEmail);
+      await createTestUser(providerEmail);
 
       const { response: res, error } = await call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
 
@@ -650,7 +650,7 @@ describe('OAuth Authentication', async () => {
   describe('Verified redirect honors only validated same-origin paths', () => {
     const linkVerifiedAccount = async () => {
       const userEmail = 'github-user@example.com';
-      const user = await createUser(userEmail);
+      const user = await createTestUser(userEmail);
       await linkIdentity(user);
       return user;
     };
@@ -693,7 +693,7 @@ describe('OAuth Authentication', async () => {
   describe('Integration & Edge Cases', () => {
     it('should handle OAuth flow with MFA enabled user', async () => {
       const userEmail = 'github-user@example.com';
-      const user = await createUser(userEmail);
+      const user = await createTestUser(userEmail);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
       await linkIdentity(user);
@@ -718,7 +718,7 @@ describe('OAuth Authentication', async () => {
     /** An invitation to `email` whose link this browser opened, and an invite round trip started here. */
     const openedInvitation = async (email: string, provider: 'github' | 'google' = 'github') => {
       const organization = await createTestOrganization();
-      const inviter = await createUser('inviter@example.com');
+      const inviter = await createTestUser('inviter@example.com');
       const invitation = await createInvitation({ organization, email, createdBy: inviter.id, token: 'invoked' });
       // The cookie mock keeps plain values: this browser's single-use cookie for the opened link.
       mockCookieStore.set('invitation', invitation.rawSingleUseToken);
@@ -953,7 +953,7 @@ describe('OAuth Authentication', async () => {
     it('refuses to complete a sign-up when an account took the address meanwhile', async () => {
       await signUpCallback();
       await openVerificationLink(mailedLink('verificationLink').token);
-      const holder = await createUser(providerEmail);
+      const holder = await createTestUser(providerEmail);
 
       const { response: res, error } = await verifyCallback();
       await expectRefusal({ response: res, error }, 409, 'oauth_email_exists');
@@ -987,7 +987,7 @@ describe('OAuth Authentication', async () => {
       await openVerificationLink(mailedLink('verificationLink').token);
       closeRegistration();
       const organization = await createTestOrganization();
-      const inviter = await createUser('inviter@example.com');
+      const inviter = await createTestUser('inviter@example.com');
       await createInvitation({ organization, email: providerEmail, createdBy: inviter.id });
 
       const { response: res } = await verifyCallback();
@@ -1005,7 +1005,7 @@ describe('OAuth Authentication', async () => {
 
       // The same gate as the sign-up's completion: an invitation to the address lets it start.
       const organization = await createTestOrganization();
-      const inviter = await createUser('inviter@example.com');
+      const inviter = await createTestUser('inviter@example.com');
       await createInvitation({ organization, email: providerEmail, createdBy: inviter.id });
       const started = await signUpCallback();
       expect(started.response.status).toBe(302);

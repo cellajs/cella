@@ -21,7 +21,6 @@ export interface FederationClientOptions {
   fetch?: typeof fetch;
 }
 
-/** The options of one request to the federation: its deadline, and the test's fetch when one is handed in. */
 const requestOptions = (options: FederationClientOptions) => ({
   signal: providerDeadline(),
   ...(options.fetch ? { [oauth.customFetch]: options.fetch } : {}),

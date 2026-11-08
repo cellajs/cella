@@ -42,22 +42,7 @@ const newHashedCode = () => {
 
 /** What a new token records besides its secret and expiry, which issuing sets; its id too, unless the caller drew one. */
 export type NewToken = Pick<InsertTokenModel, 'kind' | 'email'> &
-  Partial<
-    Pick<
-      InsertTokenModel,
-      | 'id'
-      | 'userId'
-      | 'createdBy'
-      | 'identityId'
-      | 'inactiveMembershipId'
-      | 'followedInvitationId'
-      | 'redirectPath'
-      | 'pendingSignUp'
-      | 'sessionId'
-      | 'authStrategy'
-      | 'connectionId'
-    >
-  >;
+  Partial<Omit<InsertTokenModel, 'kind' | 'email' | 'secret' | 'singleUseToken' | 'expiresAt' | 'invokedAt' | 'createdAt'>>;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its kind's `ttl`. Each first
@@ -78,19 +63,8 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
   }));
   const rows = await insertTokens(ctx, {
     values: issued.map(({ token, id, hash }) => ({
+      ...token,
       id,
-      kind: token.kind,
-      email: token.email,
-      userId: token.userId ?? null,
-      createdBy: token.createdBy ?? null,
-      identityId: token.identityId ?? null,
-      inactiveMembershipId: token.inactiveMembershipId ?? null,
-      followedInvitationId: token.followedInvitationId ?? null,
-      redirectPath: token.redirectPath ?? null,
-      pendingSignUp: token.pendingSignUp ?? null,
-      sessionId: token.sessionId ?? null,
-      authStrategy: token.authStrategy ?? null,
-      connectionId: token.connectionId ?? null,
       secret: hash,
       expiresAt: isoDateIn(tokenPolicies[token.kind].ttl),
     })),
@@ -202,7 +176,6 @@ const checkLinkToken = async (ctx: Context<Env>, kind: LinkTokenKind, rawToken: 
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
  * holding that cookie. A link issued without an account gets its holder from `claimHolder`, committed with the
  * redemption.
- * @returns The redeemed token.
  * @throws AppError 401 `<kind>_not_found`, 401 `<kind>_expired` (expired, or redeemed by another browser), 401
  *   `invitation_opened` for an invitation redeemed by another browser or earlier, 409 `user_mismatch` while signed in
  *   to another account, or what `claimHolder` throws.
@@ -213,7 +186,6 @@ export const invokeToken = async (ctx: Context<Env>, { kind, rawToken, claimHold
   const { token, redeemed: redeemedBefore } = await checkLinkToken(ctx, kind, rawToken);
   if (redeemedBefore) return token;
 
-  // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const singleUse = newHashedToken();
   const redeem = (redeemCtx: DbContext) =>
     updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: singleUse.hash, expiresAt: isoDateIn(singleUseWindow) });

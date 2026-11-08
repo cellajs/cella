@@ -25,9 +25,7 @@ export const resolvePostAuthRedirectPath = (
 
   // A deep link targeting home would be bounced to welcome by the frontend onboarding guard; mark it to skip that.
   const resolved = new URL(explicitRedirect, appConfig.frontendUrl);
-  if (resolved.pathname === appConfig.defaultRedirectPath) {
-    resolved.searchParams.set('skipWelcome', 'true');
-  }
+  if (resolved.pathname === appConfig.defaultRedirectPath) resolved.searchParams.set('skipWelcome', 'true');
 
   return `${resolved.pathname}${resolved.search}${resolved.hash}`;
 };

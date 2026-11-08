@@ -6,12 +6,10 @@ export const createRejectionState = (): RejectionState => ({ rejectedIds: [], re
 /** No ids leaves the state untouched: clients read the reason keys, so a reason must not appear without ids. */
 const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => {
   if (ids.length === 0) return rejectionState;
+  const { rejectedIds, rejectionReasons } = rejectionState;
   return {
-    rejectedIds: [...rejectionState.rejectedIds, ...ids],
-    rejectionReasons: {
-      ...rejectionState.rejectionReasons,
-      [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
-    },
+    rejectedIds: [...rejectedIds, ...ids],
+    rejectionReasons: { ...rejectionReasons, [reason]: [...(rejectionReasons[reason] ?? []), ...ids] },
   };
 };
 

@@ -9,7 +9,7 @@ import { heldLinkKinds, linkTokenKinds } from '#/modules/auth/tokens/token-polic
 import { locationSchema, maxLength, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 
-const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
+export const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   health: xRoute({
     operationId: 'getAuthHealth',
     method: 'get',
@@ -17,9 +17,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Auth health check',
     description: 'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
-    responses: {
-      200: json('Auth health status', authHealthSchema),
-    },
+    responses: { 200: json('Auth health status', authHealthSchema) },
   }),
   checkEmail: xRoute({
     method: 'post',
@@ -145,5 +143,3 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'User signed out' }, ...errors(401) },
   }),
 });
-
-export { authGeneralRoutes };

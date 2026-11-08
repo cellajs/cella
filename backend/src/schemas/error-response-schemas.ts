@@ -101,8 +101,7 @@ type ErrorResponse = { description: string; content: { [problemJsonType]: { sche
 
 /**
  * The shared response of each documented error status, built once so a route's `responses` and the registry hold the
- * same schema instance. A route carries it as a Zod-backed response, which keeps the handler's return type exact;
- * `foldErrorResponses` writes it in the document as a `$ref` to the component `registerAllErrorResponses` registers.
+ * same schema instance. A route carries it as a Zod-backed response, which keeps the handler's return type exact.
  */
 export const sharedErrorResponses = Object.fromEntries(
   errorResponseOptions.map((option) => [

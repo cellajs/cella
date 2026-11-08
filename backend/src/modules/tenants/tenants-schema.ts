@@ -14,21 +14,17 @@ const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 const tenantKindSchema = z.enum(tenantKindValues);
 
+const countSchema = z.number().int().min(0);
+
 const rateLimitsSchema = z.object({
-  apiPointsPerHour: z
-    .number()
-    .int()
-    .min(0)
-    .describe('Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)'),
-  invitationMailsPerDay: z
-    .number()
-    .int()
-    .min(0)
-    .describe('Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)'),
+  apiPointsPerHour: countSchema.describe(
+    'Max API points per hour per actor within this tenant (0 = no tenant limit; the global safety ceiling still applies)',
+  ),
+  invitationMailsPerDay: countSchema.describe('Max invitation mails per day the tenant sends, new, reminded and reopened alike (0 = no cap)'),
 });
 
 const quotasSchema = z
-  .object(recordFromKeys(quotaKeys, () => z.number().int().min(0)))
+  .object(recordFromKeys(quotaKeys, () => countSchema))
   .describe('Caps per tenant on entities, service accounts and API keys (0 = unlimited)');
 
 const restrictionsSchema = z.object({

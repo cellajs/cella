@@ -1,4 +1,4 @@
-import { listMembers } from 'sdk';
+import { inviteMembers, listMembers } from 'sdk';
 import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -70,6 +70,17 @@ export async function createInvitation({
   const invitationCookie = authCookie('invitation', rawSingleUseToken);
 
   return { inactiveMembership, token, rawToken, rawSingleUseToken, invitationCookie };
+}
+
+/** Invites `emails` to the organization as `role`, as the browser holding `cookie` asks. */
+export async function inviteToOrganization(organization: { id: string; tenantId: string }, emails: string[], role: EntityRole, cookie: string) {
+  const call = await createAppClient();
+  return call(inviteMembers, {
+    path: { tenantId: organization.tenantId, organizationId: organization.id },
+    query: { entityId: organization.id, entityType: 'organization' },
+    body: { emails, role },
+    headers: { ...defaultHeaders, Cookie: cookie },
+  });
 }
 
 /**

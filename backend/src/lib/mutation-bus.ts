@@ -22,14 +22,11 @@ export type MutationHandler<E extends TrackedEventType = TrackedEventType> = (ct
 
 const handlers = new Map<TrackedEventType, MutationHandler[]>();
 
-// Index the `onMutation` handlers each backend module declares (see defineBackendModule).
 onBackendModuleRegister((module) => {
   for (const entry of Object.entries(module.onMutation ?? {})) {
     // Stored under its own event, a handler is called only with that event's rows.
     const [event, handler] = entry as [TrackedEventType, MutationHandler];
-    const existing = handlers.get(event);
-    if (existing) existing.push(handler);
-    else handlers.set(event, [handler]);
+    handlers.set(event, [...(handlers.get(event) ?? []), handler]);
   }
 });
 

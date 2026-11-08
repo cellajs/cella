@@ -22,13 +22,7 @@ describe('getOrderColumns', () => {
 
   it('appends fixed trailing expressions after the stable order', () => {
     const updatedAt = sql.identifier('updated_at');
-    const orderBy = getOrderColumns({
-      sort: 'name',
-      order: 'desc',
-      columns,
-      tieBreaker: id,
-      append: [desc(updatedAt)],
-    });
+    const orderBy = getOrderColumns({ sort: 'name', order: 'desc', columns, tieBreaker: id, append: [desc(updatedAt)] });
 
     expect(orderBy.map((expression) => dialect.sqlToQuery(expression).sql)).toEqual(['"name" desc', '"id" desc', '"updated_at" desc']);
   });

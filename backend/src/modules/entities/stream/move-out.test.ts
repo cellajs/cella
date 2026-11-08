@@ -2,12 +2,12 @@ import type { SSEStreamingApi } from 'hono/streaming';
 import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityRow } from '#/lib/activity-bus';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { StreamChange } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
+import { streamSubscriber } from './tests/stream-subscriber';
 import type { AppStreamProductEvent } from './types';
 
 /**
@@ -34,18 +34,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
     },
   } as unknown as SSEStreamingApi;
 
-  const subscriber: AppStreamSubscriber = {
-    id: crypto.randomUUID(),
-    topic: `org:${org}`,
-    stream,
-    userId,
-    sessionId: `session-${userId}`,
-    organizationIds: new Set([org]),
-    isSystemAdmin: false,
-    systemAccessAllowed: false,
-    memberships,
-  };
-  return { subscriber, received };
+  return { subscriber: streamSubscriber(userId, stream, memberships, org), received };
 };
 
 const nullAncestorScopes = Object.fromEntries(

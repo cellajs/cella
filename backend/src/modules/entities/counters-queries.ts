@@ -18,10 +18,8 @@ const livePredicate = (entityType: EntityType, alias: string) => (hasDeletedAt(g
 const publishedPredicate = (entityType: EntityType, alias: string) =>
   hasPublishedAt(getEntityTable(entityType)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
 
-/** JSONB pair with a COUNT subquery: 'key', COALESCE((SELECT COUNT(*) …), 0) */
 const countPair = (key: string, from: string, where: string) => `'${key}', COALESCE((SELECT COUNT(*) FROM ${from} WHERE ${where}), 0)`;
 
-/** Build JSONB pairs for membership counts: m:c:{role}…, m:c:total, m:c:pending */
 const membershipPairs = (alias: string, idColumn: string, channelType: string, channelRoles: readonly string[]) => [
   ...channelRoles.map((role) =>
     countPair(`m:c:${role}`, 'memberships cm', `cm.${idColumn} = ${alias}.id AND cm.channel_type = '${channelType}' AND cm.role = '${role}'`),
@@ -145,7 +143,6 @@ const channelCounterSelects = (): string[] => {
 /**
  * The channel counters as counted from the tables, without writing them. Run it in a REPEATABLE READ transaction to
  * count at one snapshot.
- * @param ctx - Carries the connection or transaction to count on.
  * @returns Counter keys and values per channel key.
  */
 export const computeChannelCounters = async (ctx: DbContext): Promise<Map<string, Record<string, number>>> => {
@@ -166,7 +163,6 @@ export const computeChannelCounters = async (ctx: DbContext): Promise<Map<string
  * Replaces the channel counters by a recount from the tables: for a seed on a database no CDC worker reads yet, and
  * for the worker's rebuild. A plain count the tables give no row for is set to zero; the sequence counter and the
  * frontiers never go down. Run it in one transaction, so no reader sees the counts at zero.
- * @param ctx - The connection or transaction to recount in.
  * @returns How many channels have a counter row afterwards.
  */
 export const recalculateCounters = async (ctx: DbContext) => {
@@ -189,7 +185,6 @@ export const recalculateCounters = async (ctx: DbContext) => {
  * Recounts the view count of every product from `seen_by`: its unique users within the activity retention
  * (`appConfig.retention.activityDays`). The API keeps these counts itself with every view, and no sync client reads
  * them: a seed is the only caller.
- * @param ctx - The connection to recount on.
  * @returns How many products have a view count afterwards.
  */
 export const recalculateViewCounts = async (ctx: DbContext) => {

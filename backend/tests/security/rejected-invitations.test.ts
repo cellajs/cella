@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { acceptInvitation, acceptInvitationToken, deleteInvitation, inviteMembers, rejectInvitation } from 'sdk';
+import { acceptInvitation, acceptInvitationToken, deleteInvitation, rejectInvitation } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -13,7 +13,7 @@ import { getIsoDate, isoDateAgo } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal, mailsTo } from '../helpers';
-import { createInvitation } from '../invitations/helpers';
+import { createInvitation, inviteToOrganization } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -125,12 +125,7 @@ describe('Rejected invitations', async () => {
     await markRejected(declined.inactiveMembership.id, isoDateAgo(new TimeSpan(appConfig.retention.declinedInvitationHoldDays + 1, 'd')));
     const mailsBefore = mailsTo(email).length;
 
-    const invited = await call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails: [email], role: memberRole },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
+    const invited = await inviteToOrganization(organization, [email], memberRole, admin.sessionCookie);
     expect(invited.response.status).toBe(200);
     // The inviter is told the address had declined; the invitee gets one email.
     expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'remind', declinedAt: expect.any(String) }] });
@@ -156,12 +151,7 @@ describe('Rejected invitations', async () => {
     const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
 
     // Inviting again tells the inviter of the decline and leaves it standing, mailing nothing.
-    const invited = await call(inviteMembers, {
-      path,
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails: [email], role: memberRole },
-      headers,
-    });
+    const invited = await inviteToOrganization(organization, [email], memberRole, admin.sessionCookie);
     expect(invited.response.status).toBe(200);
     expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'remind', declinedAt: expect.any(String) }] });
     expect(mailsTo(email)).toEqual([]);
@@ -195,30 +185,15 @@ describe('Rejected invitations', async () => {
     expect(items.map((item) => item.email)).toEqual(['pending-address@security-test.com']);
     expect(total).toBe(1);
 
-    const invited = await call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails: ['one-more@security-test.com'], role: memberRole },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
+    const invited = await inviteToOrganization(organization, ['one-more@security-test.com'], memberRole, admin.sessionCookie);
     expect(invited.response.status).toBe(200);
     expect(invited.data).toMatchObject({ outcomes: [{ outcome: 'invite' }] });
 
-    const overQuota = await call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails: ['past-the-quota@security-test.com'], role: memberRole },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
+    const overQuota = await inviteToOrganization(organization, ['past-the-quota@security-test.com'], memberRole, admin.sessionCookie);
     await expectRefusal(overQuota, 403, 'restrict_by_org');
 
     // A reminder takes no seat: the pending address is invited again with the quota full.
-    const reminded = await call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails: ['pending-address@security-test.com'], role: memberRole },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
+    const reminded = await inviteToOrganization(organization, ['pending-address@security-test.com'], memberRole, admin.sessionCookie);
     expect(reminded.data).toMatchObject({ outcomes: [{ outcome: 'remind' }] });
   });
 });

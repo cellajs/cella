@@ -15,7 +15,7 @@ type WithoutSecrets<T extends Table, TRefine extends Refine<T> | undefined> = z.
 >;
 
 /**
- * Select schema minus the table's `secretColumns` (db/secret-columns.ts), so a response schema built on a table
+ * Select schema minus the table's `secretColumns`, so a response schema built on a table
  * can never carry its hash or secret: the omit is derived, not remembered per schema. A hand `.omit()` of such a
  * column is a type error, since the key is already gone. `refine` is drizzle-zod's per-column override.
  */
@@ -42,9 +42,7 @@ export const describeFields = <T extends z.ZodObject<z.ZodRawShape>>(
   // Zod v4 types `.shape` values as core `$ZodType`, which lacks `.describe`; at runtime the field is a full ZodType.
   const shape = schema.shape as Record<string, z.ZodType>;
   const patches: Record<string, z.ZodType> = {};
-  for (const [key, text] of Object.entries(descriptions)) {
-    if (text) patches[key] = shape[key].describe(text);
-  }
+  for (const [key, text] of Object.entries(descriptions)) if (text) patches[key] = shape[key].describe(text);
   // `.extend()` widens to an index-signature shape, so restoring T needs a double cast; `.describe()` changes no types.
   return schema.extend(patches) as unknown as T;
 };

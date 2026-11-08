@@ -37,9 +37,7 @@ export async function getSignedUrlFromKey(
   Key: string,
   { bucketName, contentType, filename }: { bucketName: string; contentType: string | null; filename: string | null },
 ): Promise<string> {
-  if (Key.startsWith('blob:')) {
-    throw new AppError(500, 'server_error', 'error', { message: 'A blob: key names no stored object to sign' });
-  }
+  if (Key.startsWith('blob:')) throw new AppError(500, 'server_error', 'error', { message: 'A blob: key names no stored object to sign' });
 
   const type = contentType?.toLowerCase() ?? '';
   const response = inlineTypePattern.test(type)

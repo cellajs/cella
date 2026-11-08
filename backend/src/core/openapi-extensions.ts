@@ -42,15 +42,10 @@ export type GuardContext = 'actor' | 'session' | 'tenant';
 export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
   __extensionType: ExtensionType;
   __description?: string;
-  /** The error statuses this middleware answers with; `createXRoute` documents them on every route that lists it. */
   __errors?: readonly ErrorCode[];
-  /** For guards: the security schemes the route accepts, emitted per operation; `[]` means public. */
   __security?: SecurityRequirement[];
-  /** For guards: the context this guard sets. */
   __provides?: GuardContext[];
-  /** For guards: the context this guard reads, which a guard before it on the route must provide. */
   __requires?: GuardContext[];
-  /** For guards: the limiters this guard runs itself, which every route that lists the guard documents. */
   __limiters?: XMiddlewareHandler[];
 };
 
@@ -91,7 +86,6 @@ export type XRouteProps = {
   xEnabledBy?: ConfigSwitch;
   xGuard: MiddlewareArray;
   xRateLimiter?: MiddlewareArray;
-  /** Exposes the route as an MCP tool. */
   xTool?: XTool;
 };
 

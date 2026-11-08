@@ -23,7 +23,6 @@ const minSecretLength = 16;
  */
 const secretNames = new Set(['COOKIE_SECRET', 'YJS_TOKEN_PUBLIC_KEY']);
 
-/** A secret of at least `min` characters, refused with a message that names it. */
 const secretString = (name: string, min = minSecretLength) => {
   secretNames.add(name);
   return z.string().min(min, `${name} must be at least ${min} characters`);
@@ -89,7 +88,6 @@ export const env = createEnv({
     DATABASE_ADMIN_URL: appConfig.isLocal ? localDatabase('postgres') : z.url().optional(),
     // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots
     // superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it.
-    // See cella/JOBS.md, Connection budget.
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
@@ -98,9 +96,8 @@ export const env = createEnv({
     // The build Node runs: a development or test stack, or a production build; `APP_MODE` names the config.
     NODE_ENV: z.enum(nodeEnvs).default('development'),
     PORT: z.coerce.number().default(servicePort[service]),
-    // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
+    // The internal listener: the CDC socket and the Yjs relay's routes, reached only from the private network.
     INTERNAL_PORT: z.coerce.number().default(appConfig.services.backend.internalPort),
-    // Service-bound secrets (env-service-secrets.ts): each is required below only in the services that read it.
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
     // Web Push (has.push): both keys present enables sending. VAPID_SUBJECT must be a `mailto:` or `https:` URL; unset, it
@@ -165,7 +162,7 @@ export const env = createEnv({
     PII_HASH_SECRET: secretString('PII_HASH_SECRET').optional(),
     DATA_ENCRYPTION_KEY: secretString('DATA_ENCRYPTION_KEY', 32),
 
-    // GeoIP (lib/geoip.ts): local MMDB paths, the object prefix they download from ('off' disables the refresh; empty
+    // GeoIP: local MMDB paths, the object prefix they download from ('off' disables the refresh; empty
     // means the geoip/ prefix of the public bucket), and the public address development geolocates for loopback sign-ins.
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
@@ -190,7 +187,6 @@ export const env = createEnv({
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
-  // A worker VM receives only the secrets its service reads, so a service-bound secret is required in its own services alone.
   createFinalSchema: (shape) =>
     z.object(shape).superRefine((values, ctx) => {
       for (const name of missingServiceSecrets(values)) {
@@ -213,8 +209,6 @@ export const env = createEnv({
 /**
  * A service-bound secret for the code path that reads it. Throws in a process whose service does not receive it, so
  * nothing signs, hashes or compares with a missing key.
- * @param name - The secret's env var.
- * @returns Its value.
  */
 export function serviceSecret(name: ServiceSecret): string {
   const value = env[name];

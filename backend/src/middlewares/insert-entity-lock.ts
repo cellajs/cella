@@ -24,9 +24,7 @@ export const insertEntityLock = xMiddleware(
       return;
     }
 
-    if (inflightInserts.has(tenantId)) {
-      throw new AppError(409, 'insert_in_progress', 'info');
-    }
+    if (inflightInserts.has(tenantId)) throw new AppError(409, 'insert_in_progress', 'info');
 
     inflightInserts.add(tenantId);
     try {

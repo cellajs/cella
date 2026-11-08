@@ -31,7 +31,6 @@ type ChannelRelationColumns<E extends string> = EntityIdColumns<Exclude<Ancestor
   EntityIdColumns<Extract<AncestorChannelType<E>, NullableAncestorType<E>> & EntityType, NullableUuid> &
   EntityIdColumns<RelatedChannelType<E> & EntityType, NullableUuid>;
 
-/** Ancestor-context id columns spanning all product entities, all nullable, for cross-entity tables like `activities`. */
 type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
@@ -61,11 +60,8 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
 export const channelRelationIndexes = (tableName: string, table: Record<string, PgColumn>, entityType: ProductEntityType) =>
   [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
     .filter((type) => type !== 'organization')
-    .map((type) => {
-      return index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]);
-    });
+    .map((type) => index(`${tableName}_${entityIdColumnName(type)}_index`).on(table[appConfig.entityIdColumnKeys[type]]));
 
-/** One nullable id column per sub-organization channel type: the channels a membership can be held at below the organization. */
 type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
 
 /**
@@ -103,9 +99,7 @@ export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns: Record<string, NullableUuid> = {};
 
   const ancestorTypes = new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)));
-  for (const channelType of ancestorTypes) {
-    columns[appConfig.entityIdColumnKeys[channelType]] = uuid();
-  }
+  for (const channelType of ancestorTypes) columns[appConfig.entityIdColumnKeys[channelType]] = uuid();
 
   return columns as ActivityChannelColumns;
 };

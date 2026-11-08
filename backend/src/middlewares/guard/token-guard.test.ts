@@ -1,9 +1,9 @@
 import { generateKeyPair, importJWK, SignJWT } from 'jose';
 import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { AppError } from '#/core/error';
 import { ensureSigningKeys, loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { mcpInitialScope, resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
+import { thrownBy } from './tests/thrown-by';
 import { tokenGuard } from './token-guard';
 
 // Verification runs against the keystore. The end-to-end positive control is tests/mcp.test.ts: its showcases carry
@@ -18,14 +18,7 @@ const mockCtx = (authorization?: string) => ({
   header: vi.fn(),
 });
 
-const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
-  try {
-    await tokenGuard(ctx as never, vi.fn());
-  } catch (error) {
-    return error as AppError;
-  }
-  throw new Error('expected tokenGuard to throw');
-};
+const runExpectingError = (ctx: ReturnType<typeof mockCtx>) => thrownBy(() => tokenGuard(ctx as never, vi.fn()), 'tokenGuard');
 
 const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org1' });
 const resource = resourceUri({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org1' });

@@ -44,8 +44,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   // Taken before the insert, so a stored request and a dropped repeat cost the same statements.
   const confirms = await mayMail(normalizedEmail);
   // The unique index drops a repeat of a waitlist or newsletter request, concurrent ones included.
-  const createdRequest = await insertRequest(ctx, { email: normalizedEmail, kind, message });
-  if (!createdRequest) return;
+  if (!(await insertRequest(ctx, { email: normalizedEmail, kind, message }))) return;
 
   let textMessage: string;
   let title: string;
@@ -65,15 +64,13 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
       break;
   }
 
-  const staticProps = { kind, message };
-
   sendMatrixMessage(textMessage)
     .then((sent) => {
       if (sent) return;
       // Replies go to the requester, who typed this address: answering means writing back.
       return mailer.sendEmails(
         requestInfoEmail,
-        { ...staticProps, email: normalizedEmail, subject: title },
+        { kind, message, email: normalizedEmail, subject: title },
         [{ email: appConfig.company.email, lng }],
         normalizedEmail,
       );

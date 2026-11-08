@@ -1,18 +1,17 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { batchDeleteMemberships, createApiKey, createServiceAccount, inviteMembers, updateMembership, updateServiceAccount } from 'sdk';
+import { batchDeleteMemberships, createApiKey, createServiceAccount, updateMembership, updateServiceAccount } from 'sdk';
 import { type EntityRole, getEntityPolicies, getPolicyPermissions, type OrganizationRole, policyMatrix } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse, expectRefusal } from '../helpers';
-import { createInvitation } from '../invitations/helpers';
+import { createInvitation, inviteToOrganization } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
-import { clearSecurityTestData, createFactorOrgUser } from './helpers';
+import { clearSecurityTestData, createFactorOrgUser, orgMembershipOf } from './helpers';
 
 type User = { id: string; email: string; sessionCookie: string };
 
@@ -55,13 +54,6 @@ describe('Role grants above the actor', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   const headers = (as: { sessionCookie: string }) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
-  const membershipOf = async (userId: string, organizationId: string) =>
-    (
-      await db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, organizationId)))
-    )[0];
   const invitationsTo = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
   const keysOf = (actorId: string) => db.select().from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId));
   const statusOf = async (id: string) =>
@@ -92,16 +84,10 @@ describe('Role grants above the actor', async () => {
     return { org, admin, otherAdmin, member, invitee, account: account.id, apiKey: apiKey.id, disabledAccount: disabled.id };
   };
 
-  const invite = ({ org }: Fixture, actor: User, email: string, role: EntityRole) =>
-    call(inviteMembers, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      query: { entityId: org.id, entityType: 'organization' },
-      body: { emails: [email], role },
-      headers: headers(actor),
-    });
+  const invite = ({ org }: Fixture, actor: User, email: string, role: EntityRole) => inviteToOrganization(org, [email], role, actor.sessionCookie);
   const setRole = async ({ org }: Fixture, actor: User, target: User, role: EntityRole) =>
     call(updateMembership, {
-      path: { tenantId: org.tenantId, organizationId: org.id, membershipId: (await membershipOf(target.id, org.id)).id },
+      path: { tenantId: org.tenantId, organizationId: org.id, membershipId: (await orgMembershipOf(target.id, org.id)).id },
       body: { role },
       headers: headers(actor),
     });
@@ -118,7 +104,7 @@ describe('Role grants above the actor', async () => {
       {
         act: 'promote themselves to the top role',
         attempt: (fixture, actor) => setRole(fixture, actor, actor, adminRole),
-        unchanged: async ({ org, member }) => expect((await membershipOf(member.id, org.id)).role).toBe(memberRole),
+        unchanged: async ({ org, member }) => expect((await orgMembershipOf(member.id, org.id)).role).toBe(memberRole),
         okStatus: 200,
       },
       {
@@ -136,7 +122,7 @@ describe('Role grants above the actor', async () => {
       {
         act: 'demote a holder of the top role',
         attempt: (fixture, actor) => setRole(fixture, actor, fixture.otherAdmin, memberRole),
-        unchanged: async ({ org, otherAdmin }) => expect((await membershipOf(otherAdmin.id, org.id)).role).toBe(adminRole),
+        unchanged: async ({ org, otherAdmin }) => expect((await orgMembershipOf(otherAdmin.id, org.id)).role).toBe(adminRole),
         okStatus: 200,
       },
       {
@@ -148,7 +134,7 @@ describe('Role grants above the actor', async () => {
             body: { ids: [otherAdmin.id] },
             headers: headers(actor),
           }),
-        unchanged: async ({ org, otherAdmin }) => expect(await membershipOf(otherAdmin.id, org.id)).toBeDefined(),
+        unchanged: async ({ org, otherAdmin }) => expect(await orgMembershipOf(otherAdmin.id, org.id)).toBeDefined(),
         okStatus: 200,
       },
     ];

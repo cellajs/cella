@@ -21,7 +21,7 @@ import {
   createOrganizationAdminUser,
   createTestOrganization,
   createTestSession,
-  createUser,
+  createTestUser,
   expectRefusal,
   linkIdentity,
   mailsTo,
@@ -83,10 +83,7 @@ describe("the tenant's sign-in policy", async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(student, { authStrategy: 'magic' }) },
     });
     await expectRefusal(viaMagic, 403, 'sso_required');
-    expect(viaMagic.error).toMatchObject({
-      connectionId: connection.id,
-      entryPath: `/auth/sso/${connection.id}`,
-    });
+    expect(viaMagic.error).toMatchObject({ connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` });
 
     const viaSso = await call(getOrganization, {
       path,
@@ -139,7 +136,7 @@ describe("the tenant's sign-in policy", async () => {
   it('mails no magic link to an address the institution proved while the tenant excludes magic links', async () => {
     const { organization, connection } = await seed({}, ['surfconext']);
     const email = `l.jansen-${suffix()}@hu.nl`;
-    const user = await createUser(email);
+    const user = await createTestUser(email);
     await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: `sub-${nanoid(6)}`, connectionId: connection.id });
     await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, email));
 
@@ -180,7 +177,7 @@ describe('what the sign-in surfaces read', async () => {
 
   it("names the invited organization's institution on the invitation data", async () => {
     const { organization, connection } = await seed();
-    const inviter = await createUser(`teacher-${suffix()}@hu.nl`);
+    const inviter = await createTestUser(`teacher-${suffix()}@hu.nl`);
     const { token, invitationCookie } = await createInvitation({
       organization,
       email: `s.devries-${suffix()}@student.hu.nl`,

@@ -17,9 +17,7 @@ describe('buildStx', () => {
 
   describe('update (with entity + acceptedFieldNames)', () => {
     it('merges incoming HLC timestamps for accepted fields and keeps the incoming mutationId and sourceId', () => {
-      const entity = {
-        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaaaa', status: '200:0001:bbbbb' } },
-      };
+      const entity = { stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaaaa', status: '200:0001:bbbbb' } } };
       const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccccc' } };
       const result = buildStx(stx, entity, ['name']);
 
@@ -54,9 +52,7 @@ describe('buildStx', () => {
     });
 
     it('does not timestamp accepted fields without an incoming timestamp', () => {
-      const entity = {
-        stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaaaa' } },
-      };
+      const entity = { stx: { mutationId: 'old', sourceId: 'old', fieldTimestamps: { name: '100:0001:aaaaa' } } };
       const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
       const result = buildStx(stx, entity, ['status']);
 

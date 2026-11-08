@@ -67,9 +67,7 @@ describe('createUpdateSchema widening', () => {
 
   it('accepts an AWSet delta without an HLC', () => {
     const deltaSchema = createUpdateSchema(lensless, { labels: arrayDeltaSchema(z.string()) });
-    expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({
-      labels: { add: ['a'], remove: [] },
-    });
+    expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({ labels: { add: ['a'], remove: [] } });
     expect(() => deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({ labels: hlc }) })).toThrow(/does not match a scalar op/);
   });
 });

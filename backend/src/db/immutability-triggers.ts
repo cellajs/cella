@@ -38,14 +38,6 @@ $$ LANGUAGE plpgsql;`;
 export const immutableKeysTriggerName = (tableName: string) => `${tableName}_immutable_keys_trigger`;
 export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_admin_only_write_trigger`;
 
-const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', baseEntityColumns);
-
-const productImmutabilityFunctionSQL = buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns);
-
-const membershipImmutabilityFunctionSQL = buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns);
-
-const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns);
-
 const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
 BEGIN
@@ -89,10 +81,10 @@ export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = [{ tableName: 
 
 /** Creation order: both migration emitters build from this list, so every function exists before its `CREATE TRIGGER`. */
 export const allImmutabilityFunctionsSQL: string[] = [
-  baseEntityImmutabilityFunctionSQL,
-  productImmutabilityFunctionSQL,
-  membershipImmutabilityFunctionSQL,
-  inactiveMembershipImmutabilityFunctionSQL,
+  buildFunctionSQL('base_entity_immutable_keys', baseEntityColumns),
+  buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns),
+  buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns),
+  buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns),
   appendOnlyImmutabilityFunctionSQL,
   adminOnlyWriteFunctionSQL,
 ];

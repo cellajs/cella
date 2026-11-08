@@ -90,7 +90,6 @@ export async function handleMcpMessage(ctx: Context<Env>, message: unknown, tool
       });
     }
 
-    // Notifications are acknowledged with no response body.
     case 'notifications/initialized':
     case 'notifications/cancelled':
       return null;

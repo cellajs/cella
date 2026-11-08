@@ -47,20 +47,18 @@ describe('Membership Invitation', async () => {
     return { organization, sessionCookie };
   };
 
-  const makeInviteRequest = async (tenantId: string, organizationId: string, inviteData: any, sessionCookie: string | null) => {
-    return await call(inviteMembers, {
+  const makeInviteRequest = async (tenantId: string, organizationId: string, inviteData: any, sessionCookie: string | null) =>
+    await call(inviteMembers, {
       path: { tenantId, organizationId },
       body: inviteData,
       query: { entityId: organizationId, entityType: 'organization' as const },
       headers: { ...defaultHeaders, Cookie: sessionCookie || '' },
     });
-  };
 
   const outcomesOf = (data: unknown) => (data as { outcomes: { outcome: string }[] }).outcomes.map(({ outcome }) => outcome);
 
-  const getInactiveMemberships = async (organizationId: string) => {
-    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
-  };
+  const getInactiveMemberships = async (organizationId: string) =>
+    await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
 
   it('should invite new users to organization', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();

@@ -70,7 +70,6 @@ export async function getMyAuthOp(ctx: UserContext) {
   const { oauth, ssoIdentities, ...methods } = await readSignInMethods(ctx, ctx.var.user.id);
   const oauthIdentities = oauth.flatMap(({ provider, ...identity }) => (isEnabledProvider(provider) ? [{ provider, ...identity }] : []));
 
-  // The institutions of the tenants the user belongs to, each with the identity the account holds through it, if any.
   const tenantIds = [...new Set(ctx.var.memberships.map(({ tenantId }) => tenantId))];
   const identityAt = (connectionId: string) => {
     const identity = ssoIdentities.find((sso) => sso.connectionId === connectionId);

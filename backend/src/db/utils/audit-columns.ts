@@ -29,6 +29,4 @@ export const auditColumns = () => ({
 export const tombstoneColumns = () => ({ deletedAt: isoTimestamp(), deletedBy: writerColumn() });
 
 /** Type guard: the table carries `tombstoneColumns`, so its live rows are those whose `deletedAt` is null. */
-export function hasDeletedAt<T extends AnyPgTable>(table: T): table is T & { deletedAt: PgColumn } {
-  return 'deletedAt' in table;
-}
+export const hasDeletedAt = <T extends AnyPgTable>(table: T): table is T & { deletedAt: PgColumn } => 'deletedAt' in table;

@@ -3,9 +3,8 @@ import { activityBus } from '#/lib/activity-bus';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { log } from '#/utils/logger';
 
-// Activity bus listeners: product writes become per-recipient inbox rows. The fan-out skips types without a declared
-// source (notification-sources.ts), so it stays inert until a module declares one. Deletes are ignored: the inbox
-// shows a subject that is gone with empty names, and the digest leaves it out.
+// Activity bus listeners: product writes become per-recipient inbox rows. Deletes are ignored: the inbox shows a
+// subject that is gone with empty names, and the digest leaves it out.
 for (const entityType of appConfig.productEntityTypes) {
   for (const action of ['created', 'updated'] as const) {
     activityBus.on(`${entityType}.${action}`, async (event) => {

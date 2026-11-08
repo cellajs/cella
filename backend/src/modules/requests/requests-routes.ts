@@ -6,7 +6,7 @@ import { mockPaginatedRequestsResponse } from '#/modules/requests/requests-mocks
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, idsBodySchema, paginationSchema } from '#/schemas';
 
-const requestRoutes = createXRoutes(['requests', 'cella'], {
+export const requestRoutes = createXRoutes(['requests', 'cella'], {
   createRequest: xRoute({
     method: 'post',
     path: '/',
@@ -39,5 +39,3 @@ const requestRoutes = createXRoutes(['requests', 'cella'], {
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
 });
-
-export { requestRoutes };

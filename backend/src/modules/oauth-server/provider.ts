@@ -104,9 +104,7 @@ async function allowClientMetadataFetch(ctx: KoaContextWithOIDC | undefined): Pr
  * adapter read it from, so a document that claims one is refused as a document, with the provider's own error.
  */
 function allowClient(_ctx: KoaContextWithOIDC, client: object): boolean {
-  if ('client_kind' in client) {
-    throw new errors.InvalidClientMetadata('client_id metadata document must not set client_kind');
-  }
+  if ('client_kind' in client) throw new errors.InvalidClientMetadata('client_id metadata document must not set client_kind');
   return true;
 }
 

@@ -43,7 +43,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     other = await createTestTenant(call, 'yjs-token-other');
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'yjs-token-member');
     const attachmentIn = (tenant: TestTenant, createdBy: string, members?: string[]) =>
-      seedAttachment({ tenantId: tenant.tenantId, organizationId: tenant.organization.id, createdBy, description: paragraph('original'), members });
+      seedAttachment(tenant, { createdBy, description: paragraph('original'), members });
     ownersAttachment = await attachmentIn(owner, owner.user.id, [member.id]);
     membersAttachment = await attachmentIn(owner, member.id);
     otherTenantAttachment = await attachmentIn(other, other.user.id);

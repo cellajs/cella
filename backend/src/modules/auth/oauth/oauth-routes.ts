@@ -5,7 +5,7 @@ import { singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/li
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { cookieSchema, locationSchema } from '#/schemas';
 
-const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
+export const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   startOAuthConnect: xRoute({
     method: 'post',
     path: '/oauth-connect',
@@ -84,5 +84,3 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 302: { description: 'Redirect to frontend', headers: locationSchema }, ...errors(401, 403, 404, 409) },
   }),
 });
-
-export { authOAuthRoutes };

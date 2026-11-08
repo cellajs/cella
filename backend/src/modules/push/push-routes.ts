@@ -9,7 +9,7 @@ import {
   removePushSubscriptionResponseSchema,
 } from '#/modules/push/push-schema';
 
-const pushRoutes = createXRoutes(['push', 'cella'], {
+export const pushRoutes = createXRoutes(['push', 'cella'], {
   getPushVapid: xRoute({
     method: 'get',
     path: '/vapid',
@@ -48,5 +48,3 @@ const pushRoutes = createXRoutes(['push', 'cella'], {
     },
   }),
 });
-
-export { pushRoutes };

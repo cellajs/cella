@@ -45,12 +45,9 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: z.infer<
 
   const restrictionFiltered = takeWithRestriction(slugFiltered.items, availableSlots, 'org_limit_reached', slugFiltered.rejectionState);
 
-  const itemsToCreate = restrictionFiltered.items;
-  const rejectionState = restrictionFiltered.rejectionState;
+  const { items: itemsToCreate, rejectionState } = restrictionFiltered;
 
-  if (itemsToCreate.length === 0) {
-    return { data: [], ...rejectionState };
-  }
+  if (itemsToCreate.length === 0) return { data: [], ...rejectionState };
 
   const creatorRole = 'admin' as const;
 

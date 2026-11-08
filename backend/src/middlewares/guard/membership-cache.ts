@@ -20,8 +20,6 @@ const membershipCache = new TTLCache<{ version: string; memberships: Env['Variab
  * memberships with the current version in one statement and caches them under it, so a list is never stored under a
  * version newer than itself. Requests that miss at the same version share one read, which started after that version
  * was known.
- * @param userId - The acting user.
- * @param bindingsVersion - `actors.bindings_version` as the request read it.
  * @returns The memberships, at least as current as the version.
  */
 export const loadMemberships = async (userId: string, bindingsVersion: string): Promise<Env['Variables']['memberships']> => {

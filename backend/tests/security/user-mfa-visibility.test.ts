@@ -1,12 +1,10 @@
 import { getUser, listMembers } from 'sdk';
-import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, enableMFAForUser } from '../helpers';
+import { createOrganizationAdminUser, createTestOrganization, createTestSession, enableMFAForUser, insertOrgMembership } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -65,18 +63,7 @@ describe('The MFA setting of other users', async () => {
     // A member here who is an admin of another organization, one the target is not in.
     const other = await createTestOrganization();
     const user = await createOrganizationAdminUser('mfa-admin-elsewhere-user@security-test.com', other.id, adminRole, other.tenantId);
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId: user.id,
-      channelId: organizationId,
-      organizationId,
-      tenantId,
-      channelType: 'organization',
-      role: memberRole,
-      displayOrder: 2,
-      createdAt: mockPastIsoDate(),
-      createdBy: user.id,
-    });
+    await insertOrgMembership(user.id, organization, { role: memberRole, displayOrder: 2, createdAt: mockPastIsoDate() });
     adminElsewhere = { sessionCookie: await createTestSession(user) };
 
     const sysAdminUser = await createOrgUser(call, tenantId, organizationId, 'mfa-sysadmin');

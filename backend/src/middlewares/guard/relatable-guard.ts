@@ -17,8 +17,7 @@ export const relatableGuard = xMiddleware(
   async (ctx, next) => {
     const targetUserId = ctx.req.param('userId') ?? ctx.req.query('relatableUserId');
 
-    const user = ctx.var.user;
-    const isSystemAdmin = ctx.var.isSystemAdmin;
+    const { user, isSystemAdmin } = ctx.var;
 
     if (!targetUserId || targetUserId === user.id || targetUserId === user.slug || isSystemAdmin) {
       await next();
@@ -37,8 +36,7 @@ export const relatableGuard = xMiddleware(
     if (organizationIds.length === 0) throw unrelated();
 
     // Memberships carry no RLS, so the runtime pool reads them across tenants.
-    const db = ctx.var.db;
-    const [shared] = await db
+    const [shared] = await ctx.var.db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, organizationIds)))

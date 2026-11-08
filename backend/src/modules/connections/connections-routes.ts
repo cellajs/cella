@@ -10,7 +10,7 @@ import {
 } from '#/modules/connections/connections-schema';
 import { pageQuerySchema, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 
-const connectionRoutes = createXRoutes(['connections', 'cella'], {
+export const connectionRoutes = createXRoutes(['connections', 'cella'], {
   listConnections: xRoute({
     method: 'get',
     path: '/',
@@ -57,5 +57,3 @@ const connectionRoutes = createXRoutes(['connections', 'cella'], {
     responses: { 204: { description: 'Connection removed' }, ...errors(404) },
   }),
 });
-
-export { connectionRoutes };

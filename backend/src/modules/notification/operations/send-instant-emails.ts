@@ -18,6 +18,7 @@ import {
 } from '#/modules/notification/notification-queries';
 import { findContextNames } from '#/modules/notification/notification-sources';
 import { log } from '#/utils/logger';
+import { pick } from '#/utils/pick';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const excerptLength = 250;
@@ -69,12 +70,7 @@ export async function sendInstantEmails(rows: WrittenNotification[], subjects: M
         subjectTitle: titles.get(contextOf(notification)) ?? '',
         excerpt: htmlToExcerpt(descriptionText(subject.description), excerptLength),
         link: buildNotificationLink(appConfig.frontendUrl, {
-          tenantId: notification.tenantId,
-          organizationId: notification.organizationId,
-          channelId: notification.channelId,
-          channelType: notification.channelType,
-          entityType: notification.entityType,
-          subjectId: notification.subjectId,
+          ...pick(notification, ['tenantId', 'organizationId', 'channelId', 'channelType', 'entityType', 'subjectId']),
           contextId: notification.contextId ?? undefined,
           nid: notification.id,
         }),

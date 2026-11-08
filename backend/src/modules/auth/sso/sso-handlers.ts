@@ -9,11 +9,7 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(authSsoRoutes.getSsoEntry, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  const data = await getSsoEntryOp(connectionId);
-  return ctx.json(data, 200);
-});
+app.openapi(authSsoRoutes.getSsoEntry, async (ctx) => ctx.json(await getSsoEntryOp(ctx.req.valid('param').connectionId), 200));
 
 app.openapi(authSsoRoutes.startSso, (ctx) => startSso(ctx, { connectionId: ctx.req.valid('param').connectionId }));
 
@@ -21,9 +17,6 @@ app.openapi(authSsoRoutes.startSsoFederation, (ctx) => startSso(ctx, { federatio
 
 app.openapi(authSsoRoutes.ssoCallback, (ctx) => handleSsoCallback(ctx));
 
-app.openapi(authSsoRoutes.sendSsoRecoveryLink, async (ctx) => {
-  const data = await sendSsoRecoveryLinkOp(ctx);
-  return ctx.json(data, 200);
-});
+app.openapi(authSsoRoutes.sendSsoRecoveryLink, async (ctx) => ctx.json(await sendSsoRecoveryLinkOp(ctx), 200));
 
 export const authSsoHandlers = app;

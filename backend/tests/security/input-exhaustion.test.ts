@@ -116,11 +116,7 @@ describe('Input exhaustion', async () => {
   });
 
   it('answers a JSON body within the cap before sign-in (positive control)', async () => {
-    const response = await app.request('/auth/check-email', {
-      method: 'POST',
-      headers: defaultHeaders,
-      body: JSON.stringify({ email: 'a@b.co' }),
-    });
+    const response = await app.request('/auth/check-email', { method: 'POST', headers: defaultHeaders, body: JSON.stringify({ email: 'a@b.co' }) });
     expect(response.status).toBe(200);
   });
 

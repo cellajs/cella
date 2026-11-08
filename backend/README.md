@@ -27,8 +27,10 @@ When adding or changing a query:
 
 - Accept `ctx` as the first argument and read database and scope values from `ctx.var` inside the
   function, so the context boundary stays visible.
-- Accept one options object as the second argument, typed by a named `<FunctionName>Opts`
-  interface next to the function. No positional arguments or inline object types.
+- Accept one options object as the second argument. Name its type `<FunctionName>Opts` in an
+  interface next to the function when it has three or more fields, a field needs a comment, or two
+  functions share it; one or two plain fields are typed inline in the signature. No positional
+  arguments.
 - Name by returned value: `find*` for rows, `count*` for aggregates, `get*` for computed values or
   projections, `insert*` / `update*` / `delete*` for writes. Reserve `build*Query` for a builder a
   caller must extend.

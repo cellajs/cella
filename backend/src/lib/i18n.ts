@@ -25,7 +25,7 @@ const initOptions: InitOptions = {
   keySeparator: false,
 };
 
-/** The API's instance, for error messages and schema texts; emails use `backend/emails/i18n.ts`. */
+/** The API's instance, for error messages and schema texts. */
 i18n.init(initOptions);
 addI18nFormatters(i18n.services.formatter);
 

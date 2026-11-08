@@ -5,6 +5,7 @@ import { maxLength } from '#/schemas';
 
 /** Authenticator data and credential ids are a few hundred bytes; an attestation object carries a certificate chain. */
 const webAuthnBlobLength = 16_384;
+const base64urlString = z.string().max(maxLength.url);
 
 const passkeyKindSchema = z.enum(['authentication', 'mfa']);
 const challengeKindSchema = z.enum([...passkeyKindSchema.options, 'registration']);
@@ -13,12 +14,12 @@ export const passkeySchema = createSelectSchema(passkeysTable).omit({ credential
 
 /** WebAuthn registration response (`RegistrationResponseJSON`); binary fields are base64url strings. */
 const webAuthnAttestationSchema = z.object({
-  id: z.string().max(maxLength.url),
-  rawId: z.string().max(maxLength.url),
+  id: base64urlString,
+  rawId: base64urlString,
   response: z.object({
-    clientDataJSON: z.string().max(maxLength.url),
+    clientDataJSON: base64urlString,
     attestationObject: z.string().max(webAuthnBlobLength),
-    authenticatorData: z.string().max(maxLength.url).optional(),
+    authenticatorData: base64urlString.optional(),
     /** Open string set: the spec lets authenticators report transports the enum has not caught up with. */
     transports: z.array(z.string().max(maxLength.field)).max(10).optional(),
     publicKeyAlgorithm: z.number().optional(),
@@ -32,13 +33,13 @@ export type WebAuthnAttestation = z.infer<typeof webAuthnAttestationSchema>;
 
 /** WebAuthn authentication response (`AuthenticationResponseJSON`); binary fields are base64url strings. */
 export const webAuthnAssertionSchema = z.object({
-  id: z.string().max(maxLength.url),
-  rawId: z.string().max(maxLength.url),
+  id: base64urlString,
+  rawId: base64urlString,
   response: z.object({
-    clientDataJSON: z.string().max(maxLength.url),
-    authenticatorData: z.string().max(maxLength.url),
-    signature: z.string().max(maxLength.url),
-    userHandle: z.string().max(maxLength.url).optional(),
+    clientDataJSON: base64urlString,
+    authenticatorData: base64urlString,
+    signature: base64urlString,
+    userHandle: base64urlString.optional(),
   }),
   authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
   clientExtensionResults: z.unknown().optional(),

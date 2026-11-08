@@ -15,20 +15,14 @@ app.openapi(connectionRoutes.listConnections, async (ctx) => {
   return ctx.json(await readListPage(ctx, ctx.req.valid('query'), async (page) => windowOf(connections, page)), 200);
 });
 
-app.openapi(connectionRoutes.createConnection, async (ctx) => {
-  const data = await createConnectionOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 201);
-});
+app.openapi(connectionRoutes.createConnection, async (ctx) => ctx.json(await createConnectionOp(ctx, ctx.req.valid('json')), 201));
 
 app.openapi(connectionRoutes.updateConnection, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  const data = await updateConnectionOp(ctx, connectionId, ctx.req.valid('json'));
-  return ctx.json(data, 200);
+  return ctx.json(await updateConnectionOp(ctx, ctx.req.valid('param').connectionId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(connectionRoutes.deleteConnection, async (ctx) => {
-  const { connectionId } = ctx.req.valid('param');
-  await deleteConnectionOp(ctx, connectionId);
+  await deleteConnectionOp(ctx, ctx.req.valid('param').connectionId);
   return ctx.body(null, 204);
 });
 

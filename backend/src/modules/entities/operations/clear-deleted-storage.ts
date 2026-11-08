@@ -73,10 +73,8 @@ async function clearTenant(tenantId: string | null, rows: DeletedStorageModel[])
 
   if (!isObjectStorageConfigured()) return;
   for (const bucketName of new Set(released.map((object) => object.bucketName))) {
-    await deleteStoredObjects(
-      bucketName,
-      released.filter((object) => object.bucketName === bucketName).map(({ key }) => key),
-    );
+    const keys = released.filter((object) => object.bucketName === bucketName).map(({ key }) => key);
+    await deleteStoredObjects(bucketName, keys);
   }
   for (const { entityType, entityId } of rows) {
     if (entityType !== 'organization') continue;
@@ -103,12 +101,8 @@ export async function clearDeletedStorage(): Promise<number> {
   for (const [tenantId, tenantRows] of byTenant) {
     try {
       await clearTenant(tenantId, tenantRows);
-      await baseDb.delete(deletedStorageTable).where(
-        inArray(
-          deletedStorageTable.id,
-          tenantRows.map(({ id }) => id),
-        ),
-      );
+      const ids = tenantRows.map(({ id }) => id);
+      await baseDb.delete(deletedStorageTable).where(inArray(deletedStorageTable.id, ids));
       cleared += tenantRows.length;
     } catch (error) {
       failed.push(tenantId);

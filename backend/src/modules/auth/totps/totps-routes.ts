@@ -6,7 +6,7 @@ import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCodeBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema } from '#/schemas';
 
-const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
+export const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   generateTotpKey: xRoute({
     method: 'post',
     path: '/totp/generate-key',
@@ -50,5 +50,3 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'TOTP verified', headers: z.object({ 'Set-Cookie': cookieSchema }) }, ...errors(401, 403, 404) },
   }),
 });
-
-export { authTotpsRoutes };

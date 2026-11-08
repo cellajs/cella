@@ -206,12 +206,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
   it('spends the invitation without a duplicate membership when the user is already a member', async () => {
     const organization = await createTestOrganization();
     const me = await createOrganizationAdminUser('my-account@example.com', organization.id, adminRole, organization.tenantId);
-    const { inactiveMembership, invitationCookie } = await createInvitation({
-      token: 'invoked',
-      email: me.email,
-      organization,
-      createdBy: me.id,
-    });
+    const { inactiveMembership, invitationCookie } = await createInvitation({ token: 'invoked', email: me.email, organization, createdBy: me.id });
 
     const { response } = await accept([await createTestSession(me), invitationCookie]);
 

@@ -6,9 +6,7 @@ import { env } from '#/env';
 let s3Client: S3Client | undefined;
 
 /** Whether the backend holds S3 keys: without them it can neither sign, check nor delete stored objects. */
-export function isObjectStorageConfigured(): boolean {
-  return !!env.S3_ACCESS_KEY_ID && !!env.S3_ACCESS_KEY_SECRET;
-}
+export const isObjectStorageConfigured = (): boolean => !!env.S3_ACCESS_KEY_ID && !!env.S3_ACCESS_KEY_SECRET;
 
 /**
  * The backend's client for Scaleway Object Storage.

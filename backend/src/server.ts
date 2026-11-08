@@ -13,6 +13,7 @@ const mountedPrefixes = [servicePaths.backend, servicePaths.mcp];
 
 /** The Fetch standard's forbidden methods: `new Request` throws on them, and no route serves them. */
 const forbiddenMethods = new Set(['CONNECT', 'TRACE', 'TRACK']);
+const isForbiddenMethod = (method: string) => forbiddenMethods.has(method.toUpperCase());
 
 const startsWithMountedPrefix = (path: string) => mountedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 
@@ -36,8 +37,6 @@ const requestAtPath = (request: Request, path: string) => {
 
 /**
  * Serves a path prefix by redispatching each request under it through the app, with the prefix off its path.
- * @param app - The app that serves the prefix and takes the redispatch.
- * @param prefix - The path prefix to strip, such as `/api`.
  * @throws AppError 404 `route_not_found` for a path still under a mounted prefix after the strip, so a request
  *   redispatches once at most, and for a forbidden method.
  */
@@ -45,9 +44,7 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
   app.mount(prefix, (request, env, executionCtx) => app.fetch(request, env, executionCtx), {
     replaceRequest: (request) => {
       const path = app.getPath(request).slice(prefix.length) || '/';
-      if (startsWithMountedPrefix(path) || forbiddenMethods.has(request.method.toUpperCase())) {
-        throw new AppError(404, 'route_not_found', 'warn');
-      }
+      if (startsWithMountedPrefix(path) || isForbiddenMethod(request.method)) throw new AppError(404, 'route_not_found', 'warn');
       return requestAtPath(request, path);
     },
   });
@@ -56,13 +53,12 @@ function mountPrefix(app: OpenAPIHono<Env>, prefix: string) {
 /**
  * Serves custom methods (`<resource>:<verb>`) by redispatching each request for one through the app at the path its
  * route declares (`routablePath`), before the global middlewares, so they run once, on the redispatch. A request for
- * that routable path itself (`…/~verb`) reaches the route as sent, through the same middlewares and guards: the MCP
- * tools call it there.
+ * that routable path itself (`…/~verb`) reaches the route as sent, through the same middlewares and guards.
  */
 function routeCustomMethods(app: OpenAPIHono<Env>) {
   app.use('*', async (ctx, next) => {
     const path = routablePath(new URL(ctx.req.url).pathname);
-    if (!path || forbiddenMethods.has(ctx.req.method.toUpperCase())) return next();
+    if (!path || isForbiddenMethod(ctx.req.method)) return next();
     return app.fetch(requestAtPath(ctx.req.raw, path), ctx.env);
   });
 }
@@ -92,5 +88,5 @@ export function createBaseApp() {
   return app;
 }
 
-/** The API's app; `#/routes` mounts every module's routes on it. */
+/** The API's app. */
 export const baseApp = createBaseApp();

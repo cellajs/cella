@@ -24,7 +24,7 @@ import {
 } from '#/modules/attachment/attachment-schema';
 import { batchResponseSchema, idsWithStxBodySchema, productListResponseSchema, tenantOrgParamSchema } from '#/schemas';
 
-const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
+export const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   listAttachments: xRoute({
     method: 'get',
     path: '/',
@@ -127,10 +127,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     description:
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentPresignedUrlsBodySchema, mockPresignedUrlsBody()) },
-    responses: {
-      200: json('Presigned URLs', batchResponseSchema(attachmentPresignedUrlSchema), mockPresignedUrlsResponse()),
-    },
+    responses: { 200: json('Presigned URLs', batchResponseSchema(attachmentPresignedUrlSchema), mockPresignedUrlsResponse()) },
   }),
 });
-
-export { attachmentRoutes };

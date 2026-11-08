@@ -18,16 +18,9 @@ app.openapi(attachmentRoutes.listAttachments, async (ctx) => {
   return ctx.json(await readListPage(ctx, query, (page) => getAttachmentsOp(ctx, query, page)), 200);
 });
 
-app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => {
-  const result = await getPresignedUrlsOp(ctx, ctx.req.valid('json'));
-  return ctx.json(result, 200);
-});
+app.openapi(attachmentRoutes.presignAttachmentUrls, async (ctx) => ctx.json(await getPresignedUrlsOp(ctx, ctx.req.valid('json')), 200));
 
-app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  const result = await getAttachmentOp(ctx, attachmentId);
-  return ctx.json(result, 200);
-});
+app.openapi(attachmentRoutes.getAttachment, async (ctx) => ctx.json(await getAttachmentOp(ctx, ctx.req.valid('param').attachmentId), 200));
 
 app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
   const { created, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
@@ -35,21 +28,16 @@ app.openapi(attachmentRoutes.batchCreateAttachments, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  const result = await updateAttachmentOp(ctx, attachmentId, ctx.req.valid('json'));
-  return ctx.json(result, 200);
+  return ctx.json(await updateAttachmentOp(ctx, ctx.req.valid('param').attachmentId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(attachmentRoutes.linkAttachmentKeys, async (ctx) => {
-  const { attachmentId } = ctx.req.valid('param');
-  const result = await linkAttachmentKeysOp(ctx, attachmentId, ctx.req.valid('json'));
-  return ctx.json(result, 200);
+  return ctx.json(await linkAttachmentKeysOp(ctx, ctx.req.valid('param').attachmentId, ctx.req.valid('json')), 200);
 });
 
 app.openapi(attachmentRoutes.batchDeleteAttachments, async (ctx) => {
   const { ids, stx } = ctx.req.valid('json');
-  const result = await deleteAttachmentsOp(ctx, ids, stx);
-  return ctx.json(result, 200);
+  return ctx.json(await deleteAttachmentsOp(ctx, ids, stx), 200);
 });
 
 export const attachmentHandlers = app;

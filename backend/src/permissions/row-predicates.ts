@@ -19,8 +19,7 @@ const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, acces
   switch (name) {
     case 'own': {
       const actorId = 'anonymous' in access ? undefined : access.actorId;
-      if (!actorId) return neverPredicate;
-      return eq(resolveColumn(table, 'createdBy', name), actorId);
+      return actorId ? eq(resolveColumn(table, 'createdBy', name), actorId) : neverPredicate;
     }
     // Actor-independent (public read): matches for anonymous actors too.
     case 'public':

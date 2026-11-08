@@ -26,7 +26,6 @@ const dbCtx = { var: { db: baseDb } };
 
 const demoHooks: DemoCreatedHook[] = [];
 
-// Index the `onDemoCreated` hook each backend module declares (see defineBackendModule).
 onBackendModuleRegister(({ onDemoCreated }) => {
   if (onDemoCreated) demoHooks.push(onDemoCreated);
 });

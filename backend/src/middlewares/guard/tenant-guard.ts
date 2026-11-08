@@ -45,9 +45,8 @@ export const tenantGuard = xMiddleware(
 
     // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
     // so a key learns nothing about other tenants.
-    if (actor.kind === 'service' && actor.tenantId !== tenantId) {
-      throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
-    }
+    const serviceOfOtherTenant = actor.kind === 'service' && actor.tenantId !== tenantId;
+    if (serviceOfOtherTenant) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
 
     const tenant = await loadTenant(tenantId);
     if (!tenant || !(await holdsFoothold(ctx, actor, tenant))) {

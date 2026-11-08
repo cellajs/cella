@@ -3,7 +3,7 @@ import { and, count, eq, gte, inArray, lt, notInArray, or, type SQL, sql } from 
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { TenantKind } from 'shared';
 import type { DbContext } from '#/core/context';
-import { resolveListTotal } from '#/db/utils/list-total';
+import { exactTotal, resolveListTotal } from '#/db/utils/list-total';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { type InsertTenantModel, type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
@@ -31,24 +31,18 @@ const tenantColumns = pick(tenantsTable, [
   'updatedBy',
 ]);
 
-/** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
-const selectTenants = (ctx: DbContext) => {
-  const { db } = ctx.var;
+const tenantOrderColumns = pick(tenantsTable, ['name', 'createdAt']);
 
-  return db
+/** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */
+const selectTenants = (ctx: DbContext) =>
+  ctx.var.db
     .select({
       ...tenantColumns,
-      organization: {
-        id: organizationsTable.id,
-        name: organizationsTable.name,
-        slug: organizationsTable.slug,
-        thumbnailUrl: organizationsTable.thumbnailUrl,
-      },
+      organization: pick(organizationsTable, ['id', 'name', 'slug', 'thumbnailUrl']),
     })
     .from(tenantsTable)
     .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
     .$dynamic();
-};
 
 type TenantRow = Awaited<ReturnType<typeof selectTenants>>[number];
 
@@ -78,18 +72,10 @@ interface FindTenantsPaginatedOpts extends Pick<z.infer<typeof tenantListQuerySc
 }
 
 /** A page of tenants of `kinds`, each with its organization, and the total. */
-export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
-  const { db } = ctx.var;
-  const { q, status, kinds, sort, order, limit, offset } = opts;
-
+export const findTenantsPaginated = async (ctx: DbContext, { q, status, kinds, sort, order, limit, offset }: FindTenantsPaginatedOpts) => {
   const filter = and(searchFilter([tenantsTable.name], q), status ? eq(tenantsTable.status, status) : undefined, inArray(tenantsTable.kind, kinds));
 
-  const orderBy = getOrderColumns({
-    sort,
-    order,
-    columns: pick(tenantsTable, ['name', 'createdAt']),
-    tieBreaker: tenantsTable.id,
-  });
+  const orderBy = getOrderColumns({ sort, order, columns: tenantOrderColumns, tieBreaker: tenantsTable.id });
 
   const itemsQuery = selectTenants(ctx)
     .where(filter)
@@ -98,13 +84,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
     .offset(offset)
     .then((rows) => rows.map(toTenant));
 
-  return resolveListTotal(itemsQuery, {
-    kind: 'exact',
-    getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(filter);
-      return total;
-    },
-  });
+  return resolveListTotal(itemsQuery, exactTotal(ctx.var.db.select({ total: count() }).from(tenantsTable).where(filter)));
 };
 
 interface FindTenantOpts {
@@ -164,25 +144,15 @@ export const countTenantsCreatedSince = async (ctx: DbContext, { kind, since }: 
   return total;
 };
 
-interface InsertTenantOpts {
-  values: InsertTenantModel;
-}
-
 /** Inserts a tenant; kind, status, restrictions and subscription take their column defaults. */
-export const insertTenant = async (ctx: DbContext, { values }: InsertTenantOpts): Promise<TenantModel> => {
+export const insertTenant = async (ctx: DbContext, { values }: { values: InsertTenantModel }): Promise<TenantModel> => {
   const [tenant] = await ctx.var.db.insert(tenantsTable).values(values).returning();
   return tenant;
 };
 
-interface UpdateTenantOpts {
-  id: string;
-  values: Partial<InsertTenantModel>;
-}
-
 /** Writes `values` to a tenant; its response columns, or undefined for an unknown id. */
-export const updateTenant = async (ctx: DbContext, { id, values }: UpdateTenantOpts) => {
-  const { db } = ctx.var;
-  const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
+export const updateTenant = async (ctx: DbContext, { id, values }: { id: string; values: Partial<InsertTenantModel> }) => {
+  const [updated] = await ctx.var.db.update(tenantsTable).set(values).where(eq(tenantsTable.id, id)).returning(tenantColumns);
   return updated;
 };
 
@@ -198,12 +168,11 @@ const dueForRemoval = ({ archivedBefore, now }: DueTenantsOpts) =>
   or(and(eq(tenantsTable.status, 'archived'), lt(tenantsTable.statusChangedAt, archivedBefore)), lt(tenantsTable.expiresAt, now));
 
 /** Tenants archived before `archivedBefore` or expired before `now`, the ones the removal sweep removes. */
-export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) => {
-  return ctx.var.db
+export const findDueTenants = async (ctx: DbContext, opts: DueTenantsOpts) =>
+  ctx.var.db
     .select(pick(tenantsTable, ['id', 'name', 'kind', 'status', 'statusChangedAt', 'expiresAt']))
     .from(tenantsTable)
     .where(dueForRemoval(opts));
-};
 
 interface DeleteDueTenantOpts extends DueTenantsOpts {
   tenantId: string;
@@ -217,8 +186,8 @@ interface DeleteDueTenantOpts extends DueTenantsOpts {
  * tenant row then takes its service accounts, API keys and connections.
  * @returns Whether the tenant was still due and is deleted.
  */
-export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: DeleteDueTenantOpts): Promise<boolean> => {
-  return ctx.var.db.transaction(async (tx) => {
+export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: DeleteDueTenantOpts): Promise<boolean> =>
+  ctx.var.db.transaction(async (tx) => {
     const [row] = await tx
       .select({ id: tenantsTable.id })
       .from(tenantsTable)
@@ -229,4 +198,3 @@ export const deleteDueTenant = async (ctx: DbContext, { tenantId, ...due }: Dele
     await tx.delete(tenantsTable).where(eq(tenantsTable.id, tenantId));
     return true;
   });
-};

@@ -84,12 +84,10 @@ export const mockChannelMembership = (
   channel: ChannelRef,
   user: { id: string },
   overrideIds?: ChannelIdOverrides,
-): InsertMembershipModel => {
-  const userId = user.id;
-
-  return {
+): InsertMembershipModel =>
+  ({
     id: mockUuid(),
-    userId,
+    userId: user.id,
     tenantId: channel.tenantId,
     channelType,
     channelId: channel.id,
@@ -97,9 +95,8 @@ export const mockChannelMembership = (
     role: faker.helpers.arrayElement(hierarchy.getRoles(channelType)),
     displayOrder: getMembershipOrderOffset(channel.id) * 10,
     createdAt: mockPastIsoDate(),
-    createdBy: userId,
-  } as InsertMembershipModel;
-};
+    createdBy: user.id,
+  }) as InsertMembershipModel;
 
 /** Deterministic membership-base fragment. */
 export const mockMembershipBase = (key = 'membership-base:default', options: MockMembershipBaseOptions = {}): MembershipBase =>

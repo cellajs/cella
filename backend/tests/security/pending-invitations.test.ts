@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { checkMembershipInvite, deleteInvitation, inviteMembers, resendInvitation } from 'sdk';
+import { checkMembershipInvite, deleteInvitation, resendInvitation } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
@@ -7,6 +7,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestUser, endRateLimitWindows, rawJsonRequest, sentMails } from '../helpers';
+import { inviteToOrganization } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -40,13 +41,7 @@ describe('Pending invitations list', async () => {
     return { status, items: (body as { results: PendingRow[] }).results };
   };
 
-  const invite = (emails: string[]) =>
-    call(inviteMembers, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      query: { entityId: organization.id, entityType: 'organization' },
-      body: { emails, role: memberRole },
-      headers: { ...defaultHeaders, Cookie: inviter.sessionCookie },
-    });
+  const invite = (emails: string[]) => inviteToOrganization(organization, emails, memberRole, inviter.sessionCookie);
 
   const check = (emails: string[]) =>
     call(checkMembershipInvite, {

@@ -50,7 +50,6 @@ export const membershipsTable = snakeCase.table(
     ...membershipChannelIndexes('memberships', table),
     // Composite index for application-layer membership lookups (orgGuard, permission checks)
     index('memberships_org_user_tenant_idx').on(table.organizationId, table.userId, table.tenantId),
-    // One membership per user per channel
     unique('memberships_unique_channel').on(table.tenantId, table.userId, table.channelId),
     organizationForeignKey(table),
   ],

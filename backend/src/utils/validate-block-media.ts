@@ -40,9 +40,7 @@ export const validateBlockMediaJson = (blocksJson: string, ctx: MediaRefContext)
     return { valid: false, invalidUrls: ['[malformed JSON]'] };
   }
 
-  if (!Array.isArray(blocks)) {
-    return { valid: false, invalidUrls: ['[invalid block structure]'] };
-  }
+  if (!Array.isArray(blocks)) return { valid: false, invalidUrls: ['[invalid block structure]'] };
 
   return validateBlockMediaUrls(blocks, ctx);
 };

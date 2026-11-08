@@ -25,8 +25,7 @@ const messageTraceSchema = z.object({
 
 /**
  * Validates the CDC worker payload: the product rows of one audience as `rows` beside what they share, or the one
- * whole row of a change that is no product as `rowData` beside its activity. @see cdc/src/services/api-messages.ts
- * for the producing type.
+ * whole row of a change that is no product as `rowData` beside its activity.
  */
 const cdcMessageSchema = z.union([
   z.object({
@@ -51,7 +50,6 @@ export type CdcMessage = z.infer<typeof cdcMessageSchema>;
 /** A message as the worker builds it, before the parse. */
 export type CdcMessageInput = z.input<typeof cdcMessageSchema>;
 
-/** The event a message becomes on the bus: a product message with its rows, any other with its whole row. */
 function eventOf(message: CdcMessage): ActivityEvent {
   const trace = message._trace ?? null;
   if ('rows' in message) return { ...message.activity, rows: message.rows, rowData: null, trace };
@@ -64,8 +62,6 @@ const idleTimeoutMs = 90_000;
 /**
  * Why an upgrade's `x-cdc-secret` is refused, or undefined for the worker's own secret. A process that does not hold
  * the secret refuses every upgrade.
- * @param presented - The header as received.
- * @returns The reason, or undefined for the worker's secret.
  */
 export function cdcSecretRefusal(presented: string | string[] | undefined): string | undefined {
   let expected: string;
@@ -82,7 +78,6 @@ export function cdcSecretRefusal(presented: string | string[] | undefined): stri
  * its reasons are required, and `details` keeps every key it holds, so the report of a worker a release apart parses.
  */
 const cdcHealthReportSchema = z.object({
-  /** The worker's own grade. */
   status: z.enum(['healthy', 'degraded', 'unhealthy'] satisfies HealthStatus[]),
   /**
    * Why it is not healthy; empty when it is. Stable identifiers such as `replication_stopped`, `api_away`, `reading_again`,
@@ -109,7 +104,7 @@ type WorkerHealthReport = { health: CdcWorkerHealth | null; receivedAt: Date };
 
 /**
  * The API's end of the CDC worker's socket: one live connection, closed after `idleTimeoutMs` without a message. The
- * internal listener (lib/listeners.ts) routes and authenticates the upgrade before handing it over.
+ * internal listener routes and authenticates the upgrade before handing it over.
  */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
@@ -250,7 +245,6 @@ class CdcWebSocketServer {
     return this.notReadingSince !== null && Date.now() - this.notReadingSince >= workerAwayAfterMs;
   }
 
-  /** Starts the idle time anew. */
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
@@ -261,10 +255,8 @@ class CdcWebSocketServer {
 
   /** Forgets the live connection and what it reported. */
   private cleanup(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
     this.currentConnection = null;
     this.workerHealth = null;
     this.noteReading(false);

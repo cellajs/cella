@@ -17,9 +17,6 @@ interface AuthorizeYjsEditorOpts {
  * request's tenant and organization, reads as 404 (deleted, to a client); a row the caller may read but not update
  * answers 403 (view only). Collaborative editing confers no system-admin bypass, as the relay authorizes the socket:
  * a system admin whose memberships do not grant update gets a 403 and edits without the relay.
- * @param ctx - A user acting in a resolved organization.
- * @param opts - The entity to edit.
- * @returns The document's scope, from the entity row.
  */
 export async function authorizeYjsEditor(ctx: OrgContext, { entityType, entityId }: AuthorizeYjsEditorOpts): Promise<YjsDocScope> {
   const { entity } = await getValidProduct(ctx, entityId, entityType, 'update');

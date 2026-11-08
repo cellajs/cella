@@ -6,8 +6,7 @@ const escapeLikePattern = (value: string) => value.replace(/[\\%_]/g, '\\$&');
 /**
  * Case- and accent-insensitive substring filter on a text column. Both sides pass through the
  * `fold_search` SQL function, the database side of `foldText` (shared/utils/text-match), so a list
- * filtered in the browser and one filtered here agree on what matches. App queries call it per word beside other
- * per-word filters (a label or person match).
+ * filtered in the browser and one filtered here agree on what matches.
  * @public
  */
 export const textSearchFilter = (column: Column, q: string): SQL =>

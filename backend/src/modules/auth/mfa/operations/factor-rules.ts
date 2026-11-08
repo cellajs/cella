@@ -37,7 +37,6 @@ export const mfaFactorRules = {
    * Deletes a factor through `remove` in a `locked` transaction, then refuses when MFA is on and a method is now gone,
    * which rolls the delete back. It reads the MFA switch without locking again: `locked` holds the user row, so no
    * other transaction changes it.
-   * @returns What `remove` returned.
    * @throws AppError 400 `mfa_factor_in_use`.
    */
   removeFactor<T>(userId: string, remove: (txCtx: DbContext) => Promise<T>): Promise<T> {

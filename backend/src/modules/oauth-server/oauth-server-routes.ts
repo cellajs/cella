@@ -3,7 +3,7 @@ import { publicGuard } from '#/middlewares/guard';
 import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-schema';
 import { tenantOnlyParamSchema } from '#/schemas';
 
-const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
+export const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
   getApiProtectedResourceMetadata: xRoute({
     method: 'get',
     path: '/.well-known/oauth-protected-resource',
@@ -16,5 +16,3 @@ const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
     responses: { 200: json('Protected resource metadata', protectedResourceSchema) },
   }),
 });
-
-export { oauthServerRoutes };

@@ -34,9 +34,8 @@ type Planned<O extends PlannedAddress['outcome']> = Extract<PlannedAddress, { ou
  * left out. An address the tenant mailed in the last day gets no mail; past the tenant's daily mails nothing is done.
  * Returns what happened to each address.
  */
-export async function createMembershipsOp(ctx: UserContext, input: CreateMembershipsInput) {
+export async function createMembershipsOp(ctx: UserContext, { emails, role, entityId, entityType }: CreateMembershipsInput) {
   const { db, user, organization, tenantId } = ctx.var;
-  const { emails, role, entityId, entityType } = input;
 
   const channelRoles = hierarchy.getRoles(entityType);
   if (!channelRoles.includes(role)) throw new AppError(400, 'invalid_role', 'warn', { entityType });
@@ -117,11 +116,8 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     // New invitations and reminders go out alike: a reminder names the role its invitation holds now, and its inviter.
     const toMail = [...insertedInvites, ...reminders.map(({ invitation }) => invitation)].filter(({ email }) => !mailHeldBack.has(email));
     const mailed = new Set((await mailInvitations(ctx, { ids: toMail.map(({ id }) => id), organization })).map(({ email }) => email));
-    // An address whose mail did not go out gets its day back.
-    await refundInvitationMails(
-      ctx,
-      mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email)),
-    );
+    const unmailed = mailNow.filter((email) => !mailHeldBack.has(email) && !mailed.has(email));
+    await refundInvitationMails(ctx, unmailed);
 
     if (adds.length) {
       const channel = { type: entityType, id: entity.id, tenantId, organizationId: organization.id, name: entity.name, role };

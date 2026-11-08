@@ -9,18 +9,13 @@ import type { ResourceRef } from '#/modules/oauth-server/resources';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-interface FindConsentTargetNamesOpts {
-  userId: string;
-  resource: ResourceRef;
-}
-
 /**
  * The names a consent page shows for where a grant reaches: the tenant, and on the MCP face the organization, each
  * only when the user holds a membership in it. The caller has settled that the user is a member of the tenant.
  */
 export async function findConsentTargetNames(
   ctx: DbContext,
-  { userId, resource }: FindConsentTargetNamesOpts,
+  { userId, resource }: { userId: string; resource: ResourceRef },
 ): Promise<{ tenant: string | null; organization: string | null }> {
   const [tenant] = await ctx.var.db.select({ name: tenantsTable.name }).from(tenantsTable).where(eq(tenantsTable.id, resource.tenantId)).limit(1);
   // The resource grammar takes any path segment for the organization; only a uuid can name one.
@@ -36,12 +31,8 @@ export async function findConsentTargetNames(
   return { tenant: tenant?.name ?? null, organization: organization?.name ?? null };
 }
 
-interface FindGrantsByUserOpts {
-  userId: string;
-}
-
 /** The grants of one user (the provider's `accountId`) with the registered client's name when there is one, oldest first. */
-export async function findGrantsByUser(ctx: DbContext, { userId }: FindGrantsByUserOpts) {
+export async function findGrantsByUser(ctx: DbContext, { userId }: { userId: string }) {
   return ctx.var.db
     .select({ row: oidcPayloadsTable, clientName: oauthClientsTable.name })
     .from(oidcPayloadsTable)
@@ -50,13 +41,8 @@ export async function findGrantsByUser(ctx: DbContext, { userId }: FindGrantsByU
     .orderBy(oidcPayloadsTable.createdAt);
 }
 
-interface FindGrantByUserOpts {
-  grantId: string;
-  userId: string;
-}
-
 /** The grant's id while the grant exists and belongs to the user; undefined otherwise. */
-export async function findGrantByUser(ctx: DbContext, { grantId, userId }: FindGrantByUserOpts) {
+export async function findGrantByUser(ctx: DbContext, { grantId, userId }: { grantId: string; userId: string }) {
   const [grant] = await ctx.var.db
     .select({ id: oidcPayloadsTable.id })
     .from(oidcPayloadsTable)
@@ -65,16 +51,11 @@ export async function findGrantByUser(ctx: DbContext, { grantId, userId }: FindG
   return grant;
 }
 
-interface FindLiveGrantBindingsOpts {
-  grantId: string;
-  userId: string;
-}
-
 /**
  * What a person's token rests on at each use: the user's bindings version while the grant it names exists, undefined
  * once the grant is gone (revoked, replayed, refused at refresh, or the account deleted).
  */
-export async function findLiveGrantBindings(ctx: DbContext, { grantId, userId }: FindLiveGrantBindingsOpts) {
+export async function findLiveGrantBindings(ctx: DbContext, { grantId, userId }: { grantId: string; userId: string }) {
   // The text columns take any claim as it came; the stored account id is a user's, so the cast that joins it holds.
   const [live] = await ctx.var.db
     .select({ bindingsVersion: actorsTable.bindingsVersion })
@@ -85,15 +66,11 @@ export async function findLiveGrantBindings(ctx: DbContext, { grantId, userId }:
   return live;
 }
 
-interface DeleteProviderSessionsByUserOpts {
-  userId: string;
-}
-
 /**
  * The authorization server's sessions of a user, in every browser: none answers a client for them any more until they
  * consent again. Their grants and refresh tokens stay.
  */
-export async function deleteProviderSessionsByUser(ctx: DbContext, { userId }: DeleteProviderSessionsByUserOpts): Promise<void> {
+export async function deleteProviderSessionsByUser(ctx: DbContext, { userId }: { userId: string }): Promise<void> {
   await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
 }
 
@@ -107,38 +84,24 @@ export async function deleteProviderSession(ctx: DbContext, { id }: DeleteProvid
   await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
 }
 
-interface DeleteProviderRowsByUsersOpts {
-  userIds: string[];
-}
-
 /** Everything the authorization server holds for these users (grants, codes, refresh tokens, sessions): an account deletion. */
-export async function deleteProviderRowsByUsers(ctx: DbContext, { userIds }: DeleteProviderRowsByUsersOpts): Promise<void> {
+export async function deleteProviderRowsByUsers(ctx: DbContext, { userIds }: { userIds: string[] }): Promise<void> {
   if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));
 }
 
-interface DeleteGrantWithTokensOpts {
-  grantId: string;
-}
-
 /**
- * The grant and every token issued under it, on the caller's transaction; the client must ask again. `revokeGrant`
- * runs it on the transaction that also publishes the revocation, so the grant's access tokens stop with the delete.
- * @returns The account the grant belonged to, or null when there was no such grant.
+ * The grant and every token issued under it, on the caller's transaction; the client must ask again.
  */
-export async function deleteGrantWithTokens(ctx: DbContext, { grantId }: DeleteGrantWithTokensOpts): Promise<string | null> {
+export async function deleteGrantWithTokens(ctx: DbContext, { grantId }: { grantId: string }): Promise<string | null> {
   await ctx.var.db.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
   return deleteGrant(ctx, { grantId });
-}
-
-interface DeleteGrantOpts {
-  grantId: string;
 }
 
 /**
  * The Grant row alone, for when the provider deletes the grant's tokens itself.
  * @returns The account the grant belonged to, or null when there was no such grant.
  */
-export async function deleteGrant(ctx: DbContext, { grantId }: DeleteGrantOpts): Promise<string | null> {
+export async function deleteGrant(ctx: DbContext, { grantId }: { grantId: string }): Promise<string | null> {
   const [grant] = await ctx.var.db
     .delete(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
@@ -166,12 +129,8 @@ export async function stampGrantSignIn(ctx: DbContext, { grantId, authStrategy, 
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
 }
 
-interface FindGrantSignInOpts {
-  grantId: string;
-}
-
 /** The sign-in facts stamped on a grant; nulls for a grant consented before the stamp existed. */
-export async function findGrantSignIn(ctx: DbContext, { grantId }: FindGrantSignInOpts) {
+export async function findGrantSignIn(ctx: DbContext, { grantId }: { grantId: string }) {
   const [row] = await ctx.var.db
     .select({
       authStrategy: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authStrategy'`,

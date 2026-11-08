@@ -9,17 +9,13 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(seenRoutes.markSeen, async (ctx) => {
   const { entityIds, entityType } = ctx.req.valid('json');
-  const data = await markSeenOp(ctx, entityIds, entityType);
-  return ctx.json(data, 200);
+  return ctx.json(await markSeenOp(ctx, entityIds, entityType), 200);
 });
 
 export const seenHandlers = app;
 
 const unseenApp = new OpenAPIHono<Env>({ defaultHook });
 
-unseenApp.openapi(seenRoutes.getUnseenCounts, async (ctx) => {
-  const data = await getUnseenCountsOp(ctx);
-  return ctx.json(data, 200);
-});
+unseenApp.openapi(seenRoutes.getUnseenCounts, async (ctx) => ctx.json(await getUnseenCountsOp(ctx), 200));
 
 export const unseenHandlers = unseenApp;

@@ -34,12 +34,8 @@ import { toolsConfigSchema } from '#/schemas/tools-config';
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
 /** Flag keys come from the app-owned config. */
-const organizationFlagsSchema = z.object(
-  recordFromKeys(
-    typedEntries(appConfig.defaultOrganizationFlags).map(([key]) => key),
-    () => z.boolean(),
-  ),
-);
+const organizationFlagKeys = typedEntries(appConfig.defaultOrganizationFlags).map(([key]) => key);
+const organizationFlagsSchema = z.object(recordFromKeys(organizationFlagKeys, () => z.boolean()));
 
 export const organizationSchema = z
   .object({

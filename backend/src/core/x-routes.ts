@@ -99,9 +99,8 @@ const assertRouteShape = (route: string, { method, path, operationId, request }:
   };
   if (method === 'put')
     refuse('put replaces a whole resource, which no route offers. Make it a patch, or a post custom method (/~verb) for an action.');
-  if ((method === 'get' || method === 'delete') && request?.body) {
+  if ((method === 'get' || method === 'delete') && request?.body)
     refuse(`a ${method} carries no request body. Move its input into the query, or make it a post custom method (/~verb).`);
-  }
   const segments = path.split('/').filter(Boolean);
   for (const [index, segment] of segments.entries()) {
     if (/^\{\w+\}$/.test(segment) || segment === '-' || segment === '.well-known') continue;
@@ -155,15 +154,12 @@ export const assertMountPath = (path: string, routePaths: string[]) => {
   }
 };
 
-/** The shared error responses of `codes`, keyed by status. */
 const pickShared = <C extends ErrorCode>(codes: Iterable<C>): Pick<typeof sharedErrorResponses, C> =>
   Object.fromEntries([...codes].map((code) => [code, sharedErrorResponses[code]])) as Pick<typeof sharedErrorResponses, C>;
 
 /**
- * The error statuses a route's chain answers with before its handler, each with what answers it: request validation
- * (400) and the body limit (413) for a route with a request, the switch gate (`xEnabledBy`: 404 for a service or a
- * feature flag, 400 for a sign-in method), the preconditions of a route for one channel or product (400, 412), and
- * what each marked middleware declares in `errors`.
+ * The error statuses a route's chain answers with before its handler, each with what answers it. The switch gate
+ * answers 404 for a service or a feature flag and 400 for a sign-in method.
  */
 const chainErrors = (config: RouteOptions, xMiddlewares: XMiddlewareHandler[], preconditioned: boolean): Map<ErrorCode, string> => {
   const owners = new Map<ErrorCode, string>();
@@ -260,10 +256,7 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({ security, ...cleanConfig, responses, middleware, ...specificationExtensions });
 };
 
-type JsonResponse<S extends z.ZodType> = {
-  description: string;
-  content: { 'application/json': { schema: S; example?: z.output<S> } };
-};
+type JsonResponse<S extends z.ZodType> = { description: string; content: { 'application/json': { schema: S; example?: z.output<S> } } };
 
 /**
  * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs

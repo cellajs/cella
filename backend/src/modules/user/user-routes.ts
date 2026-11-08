@@ -6,7 +6,7 @@ import { mockMemberUserResponse, mockPaginatedUsersResponse } from '#/modules/us
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
 import { paginationSchema, slugIncludeQuerySchema, userIdParamSchema } from '#/schemas';
 
-const userRoutes = createXRoutes(['users', 'cella'], {
+export const userRoutes = createXRoutes(['users', 'cella'], {
   listUsers: xRoute({
     method: 'get',
     path: '/',
@@ -42,5 +42,3 @@ const userRoutes = createXRoutes(['users', 'cella'], {
     },
   }),
 });
-
-export { userRoutes };

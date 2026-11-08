@@ -40,11 +40,7 @@ describe('Product existence (getValidProduct)', async () => {
 
   const rename = async (id: string, headers: Record<string, string>) => {
     const stx = mockStxFor('name');
-    const response = await baseApp.request(attachmentUrl(id), {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ ops: { name: 'Renamed' }, stx }),
-    });
+    const response = await baseApp.request(attachmentUrl(id), { method: 'PATCH', headers, body: JSON.stringify({ ops: { name: 'Renamed' }, stx }) });
     return { status: response.status, body: (await response.json()) as ErrorResponse };
   };
 

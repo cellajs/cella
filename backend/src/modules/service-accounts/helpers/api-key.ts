@@ -97,8 +97,6 @@ export type ApiKeyRefusal = 'invalid_api_key' | 'service_account_disabled';
  * The one rule for a secret key and every access token minted with it: the key authenticates while it is neither
  * revoked nor past its expiry, and its service account is active. The clock is read at the call, so a cached key or
  * verdict asks again at every use: an expiry passes unannounced.
- * @param apiKey - The key's revocation and expiry.
- * @param account - The key's service account.
  * @returns Why the key does not authenticate, or null while it does.
  */
 export function apiKeyRefusal(

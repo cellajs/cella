@@ -20,8 +20,6 @@ export interface ValidProductResult<K extends ProductEntityType> {
  * the request scope set by the guard chain, so the answer is the same with RLS bypassed.
  * System-admin bypass sits inside `checkAccess` and never widens that scope.
  *
- * A write's `If-Match` and `If-None-Match` are checked against the row its path names (`checkPreconditions`).
- *
  * `forUpdate` locks the row until the caller's transaction ends. An update that merges its change with the stored row
  * (field timestamps, list deltas) reads it this way: without the lock two overlapping updates each merge with the row
  * the other is about to replace, and the later write drops what the earlier one merged.

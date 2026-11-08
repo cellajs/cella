@@ -7,7 +7,7 @@ import { inviteBodySchema, sendNewsletterBodySchema, systemInviteResponseSchema,
 import { userSchema } from '#/modules/user/user-schema';
 import { batchResponseSchema, booleanTransformSchema, idsBodySchema, userIdParamSchema } from '#/schemas';
 
-const systemRoutes = createXRoutes(['system', 'cella'], {
+export const systemRoutes = createXRoutes(['system', 'cella'], {
   inviteUsers: xRoute({
     method: 'post',
     path: '/users/~invite',
@@ -58,5 +58,3 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     responses: { 204: { description: 'Newsletter sent' } },
   }),
 });
-
-export { systemRoutes };

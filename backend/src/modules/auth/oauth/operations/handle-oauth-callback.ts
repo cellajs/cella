@@ -110,9 +110,8 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
-  if (!(await maySignUp(dbCtx, { email: providerUser.email }))) {
-    throw new AppError(403, 'sign_up_restricted', 'info');
-  }
+  const signUpAllowed = await maySignUp(dbCtx, { email: providerUser.email });
+  if (!signUpAllowed) throw new AppError(403, 'sign_up_restricted', 'info');
 
   return pendingSignUp(providerUser, provider);
 };
@@ -138,9 +137,7 @@ const connectCallbackFlow = async ({
   const user = await spendConnectPin(ctx);
 
   if (identity) {
-    if (identity.userId !== user.id) {
-      throw new AppError(409, 'oauth_conflict', 'warn');
-    }
+    if (identity.userId !== user.id) throw new AppError(409, 'oauth_conflict', 'warn');
 
     if (identity.verified) {
       await touchIdentity(identity, providerUser);
@@ -198,8 +195,8 @@ const inviteCallbackFlow = async ({
     const txCtx = { var: { db: tx } };
     const user = await createAccount(txCtx, { newUser: providerUser, via: provider });
     const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
-    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
-    return { userId: user.id, identity: newIdentity };
+    const identity = await insertIdentity(txCtx, { values, verified: true });
+    return { userId: user.id, identity };
   });
 
   const user = await findUserById(dbCtx, { id: created.userId });
@@ -223,9 +220,7 @@ const verifyCallbackFlow = async ({
   const verifyToken = await readBoundToken(ctx, 'oauth-verification');
 
   const { pendingSignUp } = verifyToken;
-  if (pendingSignUp) {
-    return completeSignUp({ ctx, verifyToken, signUp: pendingSignUp, providerUser, provider, identity });
-  }
+  if (pendingSignUp) return completeSignUp({ ctx, verifyToken, signUp: pendingSignUp, providerUser, provider, identity });
 
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
@@ -235,7 +230,6 @@ const verifyCallbackFlow = async ({
 
   const user = await findUserById(dbCtx, { id: identity.userId });
 
-  // Verify the identity and the address atomically, with the spend of the verification.
   const now = getIsoDate();
   await baseDb.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
@@ -300,8 +294,8 @@ const completeSignUp = async ({
     const { name, slug, givenName, familyName } = signUp;
     const user = await createAccount(txCtx, { newUser: { email, name, slug, givenName, familyName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
-    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
-    return { userId: user.id, identity: newIdentity };
+    const identity = await insertIdentity(txCtx, { values, verified: true });
+    return { userId: user.id, identity };
   });
   // The spend is committed: the cookie that named the verification goes with it.
   deleteAuthCookie(ctx, 'oauth-verification');
@@ -342,9 +336,7 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string }) => {
   const { ctx, provider, redirectAfter } = info;
 
-  if (info.type === 'verified') {
-    return finishSignIn(ctx, info.user, provider, redirectAfter);
-  }
+  if (info.type === 'verified') return finishSignIn(ctx, info.user, provider, redirectAfter);
 
   // Stored on the verification token; null means "use the default path" at the final hop.
   const redirectAfterPath = frontendRedirectPath(redirectAfter);
@@ -357,7 +349,6 @@ const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>
   }
 
   const reason = info.type === 'pending' ? 'signup' : 'connect';
-  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
-
-  return ctx.redirect(redirectUrl, 302);
+  const verificationPage = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
+  return ctx.redirect(verificationPage, 302);
 };

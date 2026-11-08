@@ -73,7 +73,6 @@ export type ActivityEventOf<T extends TrackedEventType> = T extends `${ProductEn
 
 /**
  * The row of an event of a tracked type that is no product, typed. A product event has no whole row: see `rows`.
- * @param event - The event.
  * @param trackedType - The entity or resource type the caller expects.
  * @returns The row, or undefined when the event is of another type.
  */
@@ -81,8 +80,8 @@ export function getEventData<T extends Exclude<TrackedType, ProductEntityType>>(
   event: RowActivityEvent,
   trackedType: T,
 ): TrackedModel<T> | undefined {
-  const matches = event.entityType === trackedType || event.resourceType === trackedType;
-  return matches ? (event.rowData as TrackedModel<T>) : undefined;
+  const ofTrackedType = event.entityType === trackedType || event.resourceType === trackedType;
+  return ofTrackedType ? (event.rowData as TrackedModel<T>) : undefined;
 }
 
 type EventHandler<T extends TrackedEventType> = (event: ActivityEventOf<T>) => void | Promise<void>;
@@ -106,7 +105,6 @@ class ActivityBus {
     return this;
   }
 
-  /** Called by the CDC WebSocket handler for each arriving message. */
   emit(event: ActivityEvent): void {
     const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace);
 
@@ -120,5 +118,5 @@ class ActivityBus {
   }
 }
 
-/** The process's one activity bus: the CDC socket emits on it, and the modules' listeners subscribe to it. */
+/** The process's one activity bus. */
 export const activityBus = new ActivityBus();

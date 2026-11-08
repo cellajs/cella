@@ -33,12 +33,8 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization } = ctx.var;
 
-  // Rows an earlier attempt of this create wrote come back as they are; only the other items are created.
-  const replayed = await checkIdempotency(
-    ctx,
-    attachmentsTable,
-    input.map((item) => item.id),
-  );
+  const ids = input.map((item) => item.id);
+  const replayed = await checkIdempotency(ctx, attachmentsTable, ids);
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
   if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [], created: false };
@@ -76,8 +72,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
       stx: buildStx(stx),
     };
 
-    // The create-check channel scope comes from the row's hierarchy ancestors, so re-homing
-    // attachments on a product entity needs no change here.
+    // The create-check channel scope comes from the row's hierarchy ancestors.
     canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
     attachmentsToInsert.push(attachment);
   }

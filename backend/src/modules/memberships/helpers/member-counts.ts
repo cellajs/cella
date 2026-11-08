@@ -41,7 +41,6 @@ const liveAuthoredWhere = (productType: MemberStatProductType, entityType: Chann
   return and(...scope);
 };
 
-/** The activity stamp: publish time where rows publish, else creation time. */
 const activityStamp = (t: MemberStatTable): PgColumn => t.publishedAt ?? t.createdAt;
 
 /**

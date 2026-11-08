@@ -58,11 +58,7 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     const quotas = { ...defaultRestrictions().quotas, organization: 7 };
 
     const renamed = await call(updateTenant, { path: { tenantId: tenant.id }, body: { name: 'Renamed' }, headers });
-    const requoted = await call(updateTenant, {
-      path: { tenantId: tenant.id },
-      body: { restrictions: { quotas } },
-      headers,
-    });
+    const requoted = await call(updateTenant, { path: { tenantId: tenant.id }, body: { restrictions: { quotas } }, headers });
 
     expect(renamed.error).toBeUndefined();
     expect(requoted.error).toBeUndefined();

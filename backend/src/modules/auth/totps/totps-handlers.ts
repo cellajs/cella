@@ -50,9 +50,8 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 
   // The confirming code's step is stored with the secret, so the same code cannot also answer a second factor.
   const lastUsedStep = await verifyTotp({ user, code, pendingSecret });
-  if (!(await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep }))) {
-    throw new AppError(409, 'resource_already_exists', 'warn');
-  }
+  const inserted = await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep });
+  if (!inserted) throw new AppError(409, 'resource_already_exists', 'warn');
 
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');
@@ -77,9 +76,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 });
 
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
-  const { code } = ctx.req.valid('json');
-
-  await completeMfaChallenge(ctx, { strategy: 'totp', code });
+  await completeMfaChallenge(ctx, { strategy: 'totp', code: ctx.req.valid('json').code });
 
   return ctx.body(null, 204);
 });

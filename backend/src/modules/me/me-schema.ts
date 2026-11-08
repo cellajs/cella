@@ -35,10 +35,7 @@ export const meSchema = z
   });
 
 /** When a sign-in method was added, and when it last signed the user in. */
-const methodDatesShape = {
-  createdAt: z.string(),
-  lastUsedAt: z.union([z.string(), z.null()]),
-};
+const methodDatesShape = { createdAt: z.string(), lastUsedAt: z.union([z.string(), z.null()]) };
 
 /** An external identity the account holds, with the address its issuer asserted last. */
 const identityShape = { email: z.union([z.string(), z.null()]), ...methodDatesShape };
@@ -104,7 +101,6 @@ export const mePendingInvitationSchema = z.object({
     .openapi({ description: 'The name of the organization the channel is in; null for an invitation to an organization.' }),
 });
 
-/** A consent the user gave to an OAuth client, as the account page lists it. */
 /** The path of one connected app, named by its grant id. */
 export const connectedAppParamSchema = z.object({ connectedAppId: validIdSchema });
 

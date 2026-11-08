@@ -9,6 +9,7 @@ import {
 } from 'shared/testing/deep-fixture';
 import { describe, expect, it } from 'vitest';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { actorMembership } from './tests/actor-membership';
 import { resolveViewReadStatus } from './view-read-status';
 
 /**
@@ -19,15 +20,7 @@ const rootId = 'org-1';
 
 const item = 'item' as unknown as ProductEntityType;
 
-const membership = (channelType: DeepChannelType, channelId: string, role: string): MembershipBaseModel =>
-  ({
-    id: `mem-${channelType}-${channelId}-${role}`,
-    userId: 'actor',
-    channelType,
-    channelId,
-    organizationId: rootId,
-    role,
-  }) as unknown as MembershipBaseModel;
+const membership = (channelType: DeepChannelType, channelId: string, role: string) => actorMembership(channelType, channelId, role, rootId);
 
 interface StatusOpts {
   read?: (channelType: DeepChannelType, role: string) => PolicyCellInput;

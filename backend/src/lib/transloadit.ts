@@ -28,8 +28,7 @@ const transloaditExpiry = (ms: number) =>
  * @returns The params and their signature, or null when Transloadit is not configured.
  */
 export const signedUploadParams = (templateId: UploadTemplateId, sub: string) => {
-  const authKey = env.TRANSLOADIT_KEY;
-  const authSecret = env.TRANSLOADIT_SECRET;
+  const { TRANSLOADIT_KEY: authKey, TRANSLOADIT_SECRET: authSecret } = env;
   if (!authKey || !authSecret) return null;
 
   const expires = transloaditExpiry(Date.now() + signedParamsLifetimeMs);
@@ -43,7 +42,6 @@ export const signedUploadParams = (templateId: UploadTemplateId, sub: string) =>
     nonce: nanoid(16),
     steps: {
       ':original': { robot: '/upload/handle' },
-      // Inject steps based on template: avatar thumbnail, cover image, attachments ...
       ...template.steps,
       exported: {
         use: template.use,

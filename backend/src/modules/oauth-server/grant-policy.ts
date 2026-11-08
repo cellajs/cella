@@ -22,8 +22,6 @@ interface UserGrantSubject {
  * what it rests on does: the user, a membership in the resource's tenant and, per client, an active installation in
  * that tenant (a registered app) or the tenant's consent to unregistered clients (a client whose id is the URL of its
  * metadata document). A service account's token rests on the API key it was minted with (`apiKeyRefusal`).
- * @param subject - Whose grant, for which client and tenant.
- * @returns The refusal, or null while the grant holds.
  */
 export async function grantRefusal({ userId, clientId, tenantId }: UserGrantSubject): Promise<UserGrantRefusal | null> {
   // The users row, not the actors row: an actor outlives its user.

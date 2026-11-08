@@ -7,11 +7,6 @@ import { env } from '#/env';
 import { signedUploadParams } from '#/lib/transloadit';
 import { accessFrom } from '#/permissions/access';
 
-interface GetUploadTokenOpts {
-  organizationId?: string;
-  templateId: UploadTemplateId;
-}
-
 /** A system upload (newsletter images) belongs to no organization and is stored under the system prefix. */
 const systemUploadSub = (ctx: UserContext) => {
   if (!ctx.var.isSystemAdmin) throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: ctx.var.user.id } });
@@ -24,9 +19,8 @@ const systemUploadSub = (ctx: UserContext) => {
  */
 const organizationUploadSub = (ctx: UserContext, organizationId?: string) => {
   const isMember = ctx.var.memberships.some((membership) => membership.organizationId === organizationId);
-  if (organizationId && !isMember && !ctx.var.isSystemAdmin) {
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
-  }
+  const outsideOrganization = organizationId && !isMember && !ctx.var.isSystemAdmin;
+  if (outsideOrganization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
   return [organizationId, ctx.var.user.id].filter((part): part is string => typeof part === 'string').join('/');
 };
 
@@ -55,7 +49,7 @@ const assertMayUploadAttachments = (ctx: UserContext, organizationId?: string) =
  * @throws AppError 400 `invalid_request` for a private template without an organization; 403 `forbidden` when the user
  * may create no attachment in it; 404 `not_found` for an organization the user is no member of.
  */
-export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId }: GetUploadTokenOpts) {
+export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId }: { organizationId?: string; templateId: UploadTemplateId }) {
   const { publicBucket } = uploadStorage(templateId);
 
   const sub = isSystemUploadTemplate(templateId) ? systemUploadSub(ctx) : organizationUploadSub(ctx, organizationId);

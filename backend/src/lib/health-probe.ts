@@ -25,21 +25,16 @@ async function runProbe(baseUrl: string): Promise<ProbeResult> {
     const body = (await res.json()) as Record<string, unknown>;
     return { ok: true, latencyMs, body };
   } catch (err) {
-    const latencyMs = Date.now() - startedAt;
     const reason = err instanceof Error && err.name === 'TimeoutError' ? 'timeout' : 'unreachable';
-    return { ok: false, latencyMs, reason };
+    return { ok: false, latencyMs: Date.now() - startedAt, reason };
   }
 }
 
+const yjsDetailKeys = ['connections', 'documents', 'clients', 'eventLoopLagMs', 'listener'];
+
 /** Curate the yjs worker's flat health body into component details. */
 function extractYjsDetails(body: Record<string, unknown>): Record<string, unknown> {
-  return {
-    connections: body.connections ?? null,
-    documents: body.documents ?? null,
-    clients: body.clients ?? null,
-    eventLoopLagMs: body.eventLoopLagMs ?? null,
-    listener: body.listener ?? null,
-  };
+  return Object.fromEntries(yjsDetailKeys.map((key) => [key, body[key] ?? null] as const));
 }
 
 /** Curate the oauth worker's envelope into the status of each of its checks (database, signing key, invalidation). */

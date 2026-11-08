@@ -26,10 +26,11 @@ export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 /**
  * A zod error param translated when a value fails. Schemas are built while the routes import, before the server
  * initializes i18n, so a message translated at build time would stay zod's default.
- * @param key - Translation key, e.g. 'error:invalid_skip'.
- * @param options - Interpolation values.
  */
 export const translatedError = (key: `error:${TemplateErrorKey}`, options?: TOptions) => ({ error: () => t(key, options) });
+
+/** The error of a field that holds `min` to `maxLength.field` characters. */
+const lengthError = (name: string, min: number) => translatedError('error:invalid_between_num', { name, min, max: maxLength.field });
 
 export const validIdSchema = z.string().max(maxLength.id);
 
@@ -75,7 +76,7 @@ export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organiza
 /** The path of one user: cross-tenant, a relatability check or system admin access decides. */
 export const userIdParamSchema = z.object({ userId: validIdSchema });
 
-/** A channel entity by type and id, as the membership routes name it in the query or the body. */
+/** A channel entity by type and id. */
 export const entityWithTypeSchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
 /** The largest page a list returns; a larger `maxPageSize` coerces down to it. */
@@ -88,7 +89,6 @@ const pageSizeCap = 1000;
 const integerQuerySchema = (error?: ReturnType<typeof translatedError>) =>
   z.preprocess((value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value), z.int(error).min(0, error));
 
-/** A list's sort direction. */
 const orderSchema = z.enum(['asc', 'desc']);
 
 export type OrderDirection = z.infer<typeof orderSchema>;
@@ -105,7 +105,7 @@ export const maxPageSizeSchema = (max: number) => {
     .describe(`Most results one page holds. Absent or 0 reads ${fallback}; above ${max} reads ${max}. A page may hold fewer.`);
 };
 
-/** The paging params of a list (AEP-158): a page token, a page size and results to skip. */
+/** The paging params of a list (AEP-158). */
 export const pageQuerySchema = z.object({
   pageToken: z
     .string()
@@ -174,8 +174,7 @@ const refineSeqRange = ({ afterSeq, untilSeq, q, pageToken, skip }: SeqRangeQuer
 /**
  * A product list query: paging, search, `afterSeq` and `untilSeq`, and the product's own params in `shape`. With both
  * bounds it is a range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq], deleted rows
- * included, in sequence order. A range read takes no search, no page token and no skip; the next chunk starts after the
- * last position received.
+ * included, in sequence order.
  */
 export const productListQuerySchema = <T extends z.ZodRawShape>(shape: T) =>
   listQuerySchema
@@ -184,7 +183,7 @@ export const productListQuerySchema = <T extends z.ZodRawShape>(shape: T) =>
     .superRefine((query, ctx) => refineSeqRange(query as SeqRangeQuery, ctx));
 
 /**
- * True returns fully hydrated relations. App product routes read it.
+ * True returns fully hydrated relations.
  * @public
  */
 export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransformSchema.optional() });
@@ -194,9 +193,8 @@ export type IncludeOption = (typeof includeOptions)[number];
 
 /**
  * A list in one query key, comma-separated: `?include=counts,membership`. Absent reads as an empty array and a value
- * `item` refuses answers 400. The frontend writes the same form through `csvSearchParam`.
+ * `item` refuses answers 400.
  * @param item schema of one value, which holds no comma
- * @param maxItems most values one request names; default 50
  */
 export const csvQuerySchema = <T extends z.ZodType<unknown, string>>(item: T, maxItems = 50) =>
   z
@@ -204,12 +202,10 @@ export const csvQuerySchema = <T extends z.ZodType<unknown, string>>(item: T, ma
     .max(maxLength.url)
     .optional()
     .transform((value) =>
-      value
-        ? value
-            .split(',')
-            .map((entry) => entry.trim())
-            .filter(Boolean)
-        : [],
+      (value ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
     )
     .pipe(z.array(item).max(maxItems))
     .openapi({ description: 'Comma-separated values' });
@@ -230,16 +226,11 @@ export const idsBodySchema = (maxItems = 50) =>
 /** The `Location` header of a redirect. */
 export const locationSchema = z.object({ Location: z.string() });
 
-/**
- * superRefine validator carrying a custom error type, which `defaultHook` reads from `params.type` for i18n.
- * @param errorType - Translation key, e.g. 'invalid_slug'.
- */
+/** superRefine validator carrying a custom error type, which `defaultHook` reads from `params.type` for i18n. */
 export const refineWithType =
   <T>(check: (val: T) => boolean, errorType: TemplateErrorKey) =>
   (val: T, ctx: z.RefinementCtx) => {
-    if (!check(val)) {
-      ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
-    }
+    if (!check(val)) ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
   };
 
 export const validUuidSchema = z.uuid(translatedError('error:invalid_id'));
@@ -298,22 +289,17 @@ const namePattern = /^[^\x00-\x1F\x7F-\x9F<>]+$/;
 export const validNameSchema = z
   .string()
   .trim()
-  .min(1, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
+  .min(1, lengthError('Name', 1))
+  .max(maxLength.field, lengthError('Name', 1))
   .regex(namePattern, translatedError('error:invalid_name'));
 
 /** An email address, trimmed and lowercased before it is checked; the raw input is bounded first. */
 export const validEmailSchema = z
   .string()
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
+  .max(maxLength.field, lengthError('Email', 4))
   .trim()
   .toLowerCase()
-  .pipe(
-    z
-      .email(translatedError('error:invalid_email'))
-      .min(4, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field })),
-  )
+  .pipe(z.email(translatedError('error:invalid_email')).min(4, lengthError('Email', 4)).max(maxLength.field, lengthError('Email', 4)))
   .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
 
 const canonicalDomainPattern = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -325,8 +311,8 @@ export const validDomainSchema = z
   .pipe(
     z
       .string()
-      .min(4, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .min(4, lengthError('Domain', 4))
+      .max(maxLength.field, lengthError('Domain', 4))
       .regex(canonicalDomainPattern, translatedError('error:invalid_domain')),
   )
   .openapi({ type: 'string', format: 'hostname', minLength: 4, maxLength: maxLength.field, pattern: canonicalDomainPattern.source });
@@ -338,8 +324,8 @@ const slugPattern = /^[a-zA-Z0-9]+(-{1,3}[a-zA-Z0-9]+)*$/;
 /** A slug of 2 to 255 characters, lowercased once it is checked. */
 export const validSlugSchema = z
   .string()
-  .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .min(2, lengthError('Slug', 2))
+  .max(maxLength.field, lengthError('Slug', 2))
   .regex(slugPattern, translatedError('error:invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 

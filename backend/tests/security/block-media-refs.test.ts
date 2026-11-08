@@ -4,14 +4,13 @@ import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -58,10 +57,7 @@ describe('Block media references', async () => {
   const putDescription = (description: string) =>
     call(updateAttachment, {
       path: { tenantId: owner.tenantId, organizationId: owner.organization.id, attachmentId },
-      body: {
-        ops: { description },
-        stx: mockStxFor('description'),
-      },
+      body: { ops: { description }, stx: mockStxFor('description') },
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });
 
@@ -94,20 +90,7 @@ describe('Block media references', async () => {
     owner = await createTestTenant(call, 'media-owner');
     victim = await createTestTenant(call, 'media-victim');
     plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
-    const row = buildInsertableProduct(
-      'attachment',
-      {
-        id: attachmentId,
-        tenantId: owner.tenantId,
-        ...plan.channelIdColumns,
-        description: original,
-        createdBy: owner.user.id,
-        updatedBy: null,
-        deletedBy: null,
-      },
-      attachmentId,
-    );
-    await insertAttachmentRow(row);
+    await insertAttachmentIn(plan, { id: attachmentId, tenantId: owner.tenantId, description: original, createdBy: owner.user.id });
   });
 
   afterAll(async () => {

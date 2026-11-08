@@ -4,14 +4,13 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteStoredObjects, deleteStoredPrefix } from '#/lib/object-storage';
-import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
 import { clearDeletedStorage } from '#/modules/entities/operations/clear-deleted-storage';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import { adminDb as db } from './helpers';
-import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentIn, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -37,23 +36,15 @@ describe('Deleted storage', async () => {
     const keyOf = (name: string) => `${tenant.organization.id}/${tenant.user.id}/${name}`;
     const insert = (keys: Record<string, string>, fields: { deletedAt?: string; seq?: number; bucketName?: string } = {}) => {
       const id = generateId();
-      return insertAttachmentRow(
-        buildInsertableProduct(
-          'attachment',
-          {
-            id,
-            tenantId: tenant.tenantId,
-            ...plan.channelIdColumns,
-            bucketName: appConfig.s3.privateBucket,
-            keys,
-            createdBy: tenant.user.id,
-            updatedBy: null,
-            deletedBy: fields.deletedAt ? tenant.user.id : null,
-            ...fields,
-          },
-          id,
-        ),
-      ).then(() => id);
+      return insertAttachmentIn(plan, {
+        id,
+        tenantId: tenant.tenantId,
+        bucketName: appConfig.s3.privateBucket,
+        keys,
+        createdBy: tenant.user.id,
+        deletedBy: fields.deletedAt ? tenant.user.id : null,
+        ...fields,
+      }).then(() => id);
     };
     return { tenant, keyOf, insert };
   };

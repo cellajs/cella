@@ -25,12 +25,9 @@ class StreamSubscriberManager {
     for (const topic of [subscriber.topic, ...additionalTopics]) {
       if (!topic) continue;
       topics.add(topic);
-      let set = this.byTopic.get(topic);
-      if (!set) {
-        set = new Set();
-        this.byTopic.set(topic, set);
-      }
+      const set = this.byTopic.get(topic) ?? new Set<string>();
       set.add(subscriber.id);
+      this.byTopic.set(topic, set);
     }
     this.topicsOf.set(subscriber.id, topics);
   }
@@ -41,9 +38,7 @@ class StreamSubscriberManager {
       const set = this.byTopic.get(topic);
       if (set) {
         set.delete(id);
-        if (set.size === 0) {
-          this.byTopic.delete(topic);
-        }
+        if (set.size === 0) this.byTopic.delete(topic);
       }
     }
 
@@ -51,7 +46,6 @@ class StreamSubscriberManager {
     this.subscribers.delete(id);
   }
 
-  /** Total registered subscribers. */
   get size(): number {
     return this.subscribers.size;
   }
@@ -61,7 +55,6 @@ class StreamSubscriberManager {
     return Array.from(this.subscribers.values());
   }
 
-  /** The subscribers registered on a topic. */
   getByTopic(topic: string): AppStreamSubscriber[] {
     return [...(this.byTopic.get(topic) ?? [])].flatMap((id) => this.subscribers.get(id) ?? []);
   }

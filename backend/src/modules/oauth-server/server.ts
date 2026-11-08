@@ -61,8 +61,7 @@ function withAmbientRequest(handle: (req: IncomingMessage, res: ServerResponse) 
 
 /**
  * One Node request listener for the authorization server process: the provider (a plain Node handler, mounted with
- * the prefix stripped), the interaction routes the app renders itself, and the health endpoint. Shared by the process
- * entry and the integration tests.
+ * the prefix stripped), the interaction routes the app renders itself, and the health endpoint.
  */
 export function createOauthListener(provider: Provider): Listener {
   const oidc = withAmbientRequest(provider.callback());

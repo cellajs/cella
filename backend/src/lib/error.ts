@@ -17,7 +17,6 @@ import { log } from '#/utils/logger';
 const exposesServerMessages = () => appConfig.mode === 'development' || appConfig.mode === 'test';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
 
-/** PostgreSQL error codes to user-friendly error mappings */
 const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
   // Foreign key violations
   '23503': { status: 400, type: 'invalid_request', message: 'Referenced resource does not exist' },
@@ -43,23 +42,19 @@ const pgErrorMap: Record<string, { status: AppErrorStatus; type: ErrorKey; messa
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
 const pgConstraintMap: Record<string, { status: AppErrorStatus; type: ErrorKey; message: string }> = {
-  // Refused when an organization would be left without an admin.
   [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
 };
 
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 
+const hasPgCode = (value: unknown): value is PgErrorInfo =>
+  typeof value === 'object' && value !== null && 'code' in value && typeof value.code === 'string';
+
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
 export function extractPgError(err: unknown): PgErrorInfo | null {
-  // Direct PG error (e.g., raw pg client)
-  if (err instanceof Error && 'code' in err && typeof err.code === 'string') {
-    return err as Error & PgErrorInfo;
-  }
-  // Drizzle-wrapped PG error (original PG error stored on .cause)
+  if (err instanceof Error && hasPgCode(err)) return err;
   const cause = err instanceof Error ? err.cause : undefined;
-  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') {
-    return cause as PgErrorInfo;
-  }
+  if (hasPgCode(cause)) return cause;
   return null;
 }
 
@@ -75,7 +70,6 @@ const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server
 
 /** What a client may see of a thrown value: type, title, status and a detail that never carries server internals. */
 interface ClientError {
-  /** Error key from `shared/locales/en/error.json` (or an app's `appError.json`). */
   type: ErrorKey;
   title: string;
   status: ContentfulStatusCode;
@@ -87,6 +81,16 @@ interface ClientError {
   /** The error came from an `AppError` thrown with `willRedirect`: answer with a redirect to its error page in every mode. */
   willRedirect: boolean;
 }
+
+/** A client error that answers as JSON, titled with its type's own text. */
+const jsonClientError = (type: ErrorKey, status: ContentfulStatusCode, detail: string, severity: Severity): ClientError => ({
+  type,
+  title: errorTitle(type, status),
+  status,
+  detail,
+  severity,
+  willRedirect: false,
+});
 
 /** Request facts for the error's log line (`path`, `method`, `userId`, `organizationId`, an MCP `tool`); unset ones are left out. */
 type ErrorLogFields = Record<string, string | undefined>;
@@ -109,10 +113,6 @@ const missingAncestorError = (err: MissingAncestorError) =>
  * exhaustion answers 503; anything else is a 500 whose message (for a failed query: the SQL and its parameters)
  * reaches the client as its detail only with `exposeServerMessage`. The title is the type's own text.
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
- * @param thrown - The thrown value.
- * @param logFields - Request facts for the log line.
- * @param options - Message exposure; defaults to showing 5xx messages in development and test only.
- * @returns The client-facing error.
  */
 export function toClientError(
   thrown: unknown,
@@ -125,28 +125,13 @@ export function toClientError(
 
   if (isPoolTimeoutError(err)) {
     log.error('Database pool exhausted', { err, ...fields });
-    return {
-      type: 'service_unavailable',
-      title: errorTitle('service_unavailable', 503),
-      status: 503,
-      detail: 'Service temporarily unavailable, please retry',
-      severity: 'error',
-      willRedirect: false,
-    };
+    return jsonClientError('service_unavailable', 503, 'Service temporarily unavailable, please retry', 'error');
   }
 
-  // Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
     log.warn(`HTTPException ${err.status}`, { err, ...fields });
-    const type = httpExceptionType(err.status);
-    return {
-      type,
-      title: errorTitle(type, err.status),
-      status: err.status,
-      detail: hideIfServerError(err.status, err.message || 'Request rejected'),
-      severity: 'warn',
-      willRedirect: false,
-    };
+    const detail = hideIfServerError(err.status, err.message || 'Request rejected');
+    return jsonClientError(httpExceptionType(err.status), err.status, detail, 'warn');
   }
 
   const isAppError = err instanceof AppError;
@@ -179,14 +164,10 @@ export function toClientError(
   );
 
   return {
-    type,
-    title: errorTitle(type, status),
-    status,
-    detail: hideIfServerError(status, message),
-    severity,
+    ...jsonClientError(type, status, hideIfServerError(status, message), severity),
     entityType,
     meta,
-    willRedirect: isAppError ? err.willRedirect : false,
+    willRedirect: isAppError && err.willRedirect,
   };
 }
 
@@ -204,20 +185,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
 
   // An error status the route does not document is an authoring mistake: a test gets a 500 that names the fix, development a warning.
   const undocumented = checksAuthoringRules ? undocumentedErrorStatus(ctx.var.operationId, answered.status, answered.type) : undefined;
-  if (undocumented && appConfig.mode === 'test') console.error(undocumented);
+  const undocumentedInTest = undocumented && appConfig.mode === 'test';
+  if (undocumentedInTest) console.error(undocumented);
   else if (undocumented) log.warn(undocumented);
-  const clientError: ClientError =
-    undocumented && appConfig.mode === 'test'
-      ? {
-          ...answered,
-          type: 'server_error',
-          title: errorTitle('server_error', 500),
-          status: 500,
-          detail: undocumented,
-          severity: 'error',
-          willRedirect: false,
-        }
-      : answered;
+  const clientError = undocumentedInTest ? { ...answered, ...jsonClientError('server_error', 500, undocumented, 'error') } : answered;
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
   ctx.set('errorStatus', clientError.status);

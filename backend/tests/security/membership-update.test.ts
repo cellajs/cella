@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { updateMembership } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,7 +7,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, expectRefusal, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createOrgUser, orgMembershipOf } from './helpers';
 
 const personalView = ['archived', 'muted', 'displayOrder'];
 
@@ -25,13 +25,7 @@ describe('Membership updates', async () => {
     const org = await createTestOrganization();
     const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`, memberRole);
-    const membershipOf = async (userId: string) => {
-      const [row] = await db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, org.id)));
-      return row;
-    };
+    const membershipOf = (userId: string) => orgMembershipOf(userId, org.id);
     const update = (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) =>
       call(updateMembership, {
         path: { tenantId: org.tenantId, organizationId: org.id, membershipId },

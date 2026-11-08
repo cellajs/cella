@@ -51,9 +51,7 @@ const filenameOf = (attachment: AttachmentModel, variant: AttachmentVariant): st
  */
 export async function getPresignedUrlsOp(ctx: ActorContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
   const pairs = new Map<string, { attachmentId: string; variant: AttachmentVariant }>();
-  for (const { attachmentId, variant } of items) {
-    pairs.set(`${attachmentId}:${variant}`, { attachmentId, variant });
-  }
+  for (const { attachmentId, variant } of items) pairs.set(`${attachmentId}:${variant}`, { attachmentId, variant });
   const ids = [...new Set(items.map((item) => item.attachmentId))];
 
   const rows = await tenantRead(ctx, (readCtx) => findAttachmentsByIds(readCtx, { ids }));
@@ -83,8 +81,7 @@ export async function getPresignedUrlsOp(ctx: ActorContext, { items }: Presigned
 
   const data = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {
-      const key = variantKeyOf(row, variant);
-      const url = await getSignedUrlFromKey(key, {
+      const url = await getSignedUrlFromKey(variantKeyOf(row, variant), {
         bucketName: row.bucketName,
         contentType: declaredTypeOf(row, variant),
         filename: filenameOf(row, variant),

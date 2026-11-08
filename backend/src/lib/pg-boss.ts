@@ -26,9 +26,8 @@ const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'produc
  * bloat is still detected and reported as a warning.
  */
 export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOptions> = {}): ConstructorOptions {
-  const url = overrides.connectionString ?? env.DATABASE_URL;
   return {
-    ...verifiedPostgresConnection(url, sslCa),
+    ...verifiedPostgresConnection(overrides.connectionString ?? env.DATABASE_URL, sslCa),
     application_name: `${appConfig.slug}-jobs-${role}`,
     schema: jobsSchema,
     max: poolMax[role],
@@ -44,7 +43,7 @@ export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOption
 
 let boss: PgBoss | undefined;
 
-/** The process-wide pg-boss instance, started on first use in the first caller's role; the jobs worker is its one caller. */
+/** The process-wide pg-boss instance, started on first use in the first caller's role. */
 export async function getPgBoss(role: JobsRole): Promise<PgBoss> {
   if (boss) return boss;
   const instance = new PgBoss(jobsOptions(role));

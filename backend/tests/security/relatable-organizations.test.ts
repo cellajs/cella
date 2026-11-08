@@ -1,12 +1,9 @@
 import { listOrganizations } from 'sdk';
 import { hierarchy } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal, getUserByEmail } from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal, getUserByEmail, insertOrgMembership } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -41,17 +38,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     target = await createOrgUser(call, shared.tenantId, shared.id, 'relatable-target', memberRole);
     viewer = await createOrgUser(call, shared.tenantId, shared.id, 'relatable-viewer', previewedRole);
     // The target is also a member of an organization in another tenant, which the viewer has no part in.
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId: target.id,
-      channelId: foreign.id,
-      organizationId: foreign.id,
-      tenantId: foreign.tenantId,
-      channelType: 'organization',
-      role: memberRole,
-      displayOrder: 2,
-      createdBy: target.id,
-    });
+    await insertOrgMembership(target.id, foreign, { role: memberRole, displayOrder: 2 });
   });
 
   afterAll(async () => await clearSecurityTestData());
@@ -63,19 +50,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     role: typeof memberRole,
     displayOrder: number,
     archived = false,
-  ) =>
-    db.insert(membershipsTable).values({
-      id: generateId(),
-      userId,
-      channelId: org.id,
-      organizationId: org.id,
-      tenantId: org.tenantId,
-      channelType: 'organization',
-      role,
-      displayOrder,
-      archived,
-      createdBy: userId,
-    });
+  ) => insertOrgMembership(userId, org, { role, displayOrder, archived });
 
   it("must not list another tenant's organization via relatableUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);

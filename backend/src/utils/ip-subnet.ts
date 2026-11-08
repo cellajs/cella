@@ -16,8 +16,7 @@ export const toSubnet = (ip: string): string | null => {
   }
   if (isIPv6(normalized)) {
     const groups = expandIPv6(normalized);
-    if (!groups) return null;
-    return `${groups[0]}:${groups[1]}:${groups[2]}::/48`;
+    return groups ? `${groups[0]}:${groups[1]}:${groups[2]}::/48` : null;
   }
   return null;
 };
@@ -29,9 +28,8 @@ export const toRateLimitIp = (ip: string): string => {
   if (isIPv4(normalized)) return normalized;
   if (isIPv6(normalized)) {
     const groups = expandIPv6(normalized);
-    if (!groups) return normalized;
     // /64 = the first 4 hextets.
-    return `${groups[0]}:${groups[1]}:${groups[2]}:${groups[3]}::/64`;
+    return groups ? `${groups[0]}:${groups[1]}:${groups[2]}:${groups[3]}::/64` : normalized;
   }
   return ip;
 };

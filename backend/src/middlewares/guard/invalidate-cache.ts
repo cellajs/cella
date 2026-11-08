@@ -15,9 +15,7 @@ const user = (userId: string): void => {
 };
 
 /** After an organization's name or settings change, or its deletion. */
-const org = (tenantId: string, organizationId: string): void => {
-  dropCachedOrganization(tenantId, organizationId);
-};
+const org = (tenantId: string, organizationId: string): void => dropCachedOrganization(tenantId, organizationId);
 
 /** After tenant updates or deletion. Cascades to the tenant's organizations and the verdicts on its tokens. */
 const tenant = (tenantId: string): void => {
@@ -34,9 +32,7 @@ const serviceAccount = ({ id, tenantId, oauthClientId }: Pick<ServiceAccountMode
 };
 
 /** After a grant is deleted: the verdicts on the tokens of the user who consented. */
-const grant = (userId: string, grantId: string): void => {
-  dropCachedTokenGrant(userId, grantId);
-};
+const grant = (userId: string, grantId: string): void => dropCachedTokenGrant(userId, grantId);
 
 /**
  * Drops what a write changed from this process's guard caches; call it once the write has committed, so no request

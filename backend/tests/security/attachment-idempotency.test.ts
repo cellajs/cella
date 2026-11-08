@@ -5,13 +5,11 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { dropCachedTenant } from '#/middlewares/guard/tenant-cache';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
+import { adminDb, createTestOrganization, expectRefusal, insertOrgMembership } from '../helpers';
 import { attachmentBody, cleanupEntityHierarchy, joinAttachmentHome, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -100,17 +98,7 @@ describe('Idempotent attachment creates and deletes', async () => {
     elsewhere = await createTestOrganization();
     planElsewhere = await seedAttachmentHome(elsewhere, owner.id);
     await joinAttachmentHome(elsewhere, planElsewhere, owner.id);
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId: owner.id,
-      channelId: elsewhere.id,
-      organizationId: elsewhere.id,
-      tenantId: elsewhere.tenantId,
-      channelType: 'organization',
-      role: memberRole,
-      displayOrder: 2,
-      createdBy: owner.id,
-    });
+    await insertOrgMembership(owner.id, elsewhere, { role: memberRole, displayOrder: 2 });
   });
 
   afterAll(async () => {

@@ -4,16 +4,11 @@ import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { getIsoDate } from '#/utils/iso-date';
 
-interface UpsertDeviceOpts {
-  userId: string;
-  deviceIdHash: string;
-}
-
 /**
  * Records a sign-in from this browser and tells whether its row is new. One upsert decides it: `xmax = 0` holds only for a
  * freshly inserted row, so of several parallel sign-ins exactly one sees `isNew`.
  */
-export const upsertDevice = async (ctx: DbContext, { userId, deviceIdHash }: UpsertDeviceOpts) => {
+export const upsertDevice = async (ctx: DbContext, { userId, deviceIdHash }: { userId: string; deviceIdHash: string }) => {
   const now = getIsoDate();
   const [row] = await ctx.var.db
     .insert(devicesTable)
@@ -29,13 +24,12 @@ interface FindDevicesByEmailOpts {
 }
 
 /** The device rows of the account that holds `email`; empty when no account does. */
-export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesByEmailOpts) => {
-  return ctx.var.db
+export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesByEmailOpts) =>
+  ctx.var.db
     .select({ userId: devicesTable.userId, deviceIdHash: devicesTable.deviceIdHash })
     .from(emailsTable)
     .innerJoin(devicesTable, eq(devicesTable.userId, emailsTable.userId))
     .where(eq(emailsTable.email, email));
-};
 
 interface FindNewDevicesOpts {
   userId: string;
@@ -59,17 +53,11 @@ interface CountNotifiedDevicesOpts {
 }
 
 /** How many new sign-in notices went out to the user since `since`. */
-export const countNotifiedDevices = async (ctx: DbContext, { userId, since }: CountNotifiedDevicesOpts) => {
-  return ctx.var.db.$count(devicesTable, and(eq(devicesTable.userId, userId), gt(devicesTable.notifiedAt, since)));
-};
-
-interface UpdateDeviceNotifiedAtOpts {
-  userId: string;
-  deviceIdHash: string;
-}
+export const countNotifiedDevices = async (ctx: DbContext, { userId, since }: CountNotifiedDevicesOpts) =>
+  ctx.var.db.$count(devicesTable, and(eq(devicesTable.userId, userId), gt(devicesTable.notifiedAt, since)));
 
 /** Marks that a new sign-in notice went out for this device row. */
-export const updateDeviceNotifiedAt = async (ctx: DbContext, { userId, deviceIdHash }: UpdateDeviceNotifiedAtOpts) => {
+export const updateDeviceNotifiedAt = async (ctx: DbContext, { userId, deviceIdHash }: { userId: string; deviceIdHash: string }) => {
   await ctx.var.db
     .update(devicesTable)
     .set({ notifiedAt: getIsoDate() })

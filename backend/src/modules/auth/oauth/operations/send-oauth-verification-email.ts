@@ -80,9 +80,7 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
 
   mailer.sendEmails(oauthVerificationEmail, staticProps, recipients).catch((err) => log.error('Failed to send OAuth verification email', { err }));
 
-  if (appConfig.mode === 'development') {
-    console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);
-  }
+  if (appConfig.mode === 'development') console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);
 
   log.info('Verification email sent', { userId: tokenRecord.userId, signUp: !!tokenRecord.pendingSignUp });
 };

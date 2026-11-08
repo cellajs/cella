@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, cookieChange, createMfaToken, createTestSession, createUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';
+import { authCookie, cookieChange, createMfaToken, createTestSession, createTestUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';
 import { type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -44,7 +44,7 @@ describe('Passkey challenges', async () => {
   const call = await createAppClient();
 
   async function userWithPasskey({ counter = 0, mfaRequired = false } = {}) {
-    const user = await createUser(`passkey-${nanoid(8)}@security-test.com`);
+    const user = await createTestUser(`passkey-${nanoid(8)}@security-test.com`);
     if (mfaRequired) await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id));
     return { user, passkey: await insertPasskey(user, { counter }) };
   }
@@ -150,7 +150,7 @@ describe('Passkey challenges', async () => {
 
   it("must not register a passkey via another account's credential id", async () => {
     const { user: victim, passkey: victimPasskey } = await userWithPasskey();
-    const attacker = await createUser(`attacker-${nanoid(8)}@security-test.com`);
+    const attacker = await createTestUser(`attacker-${nanoid(8)}@security-test.com`);
     const sessionCookie = await createTestSession(attacker);
 
     const register = async (passkey: SoftwarePasskey) => {

@@ -52,17 +52,9 @@ const schemaKindDescriptions: Record<SchemaKind, string> = {
 for (const kind of schemaKinds) registerTag({ tag: kind, kind: 'schema', default: kind === 'data', description: schemaKindDescriptions[kind] });
 
 // Entity-kind tags declare an operation's entity scope: a route adds `'channel'` or `'product'` to its `tags`.
-registerTag({
-  tag: 'channel',
-  kind: 'entity',
-  description: 'Operations on channel entities: the entities that have memberships.',
-});
+registerTag({ tag: 'channel', kind: 'entity', description: 'Operations on channel entities: the entities that have memberships.' });
 
-registerTag({
-  tag: 'product',
-  kind: 'entity',
-  description: 'Operations on product entities: the content entities, which have no memberships.',
-});
+registerTag({ tag: 'product', kind: 'entity', description: 'Operations on product entities: the content entities, which have no memberships.' });
 
 // Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
 registerTag({ tag: 'internal', kind: 'hidden', description: 'Operations hidden from the public API reference.' });

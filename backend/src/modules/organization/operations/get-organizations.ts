@@ -18,8 +18,7 @@ import type { PageWindow } from '#/utils/list-page';
  * @throws 403 `forbidden` when `role` or `excludeArchived` filters another user's list.
  */
 export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof organizationListQuerySchema>, { offset, limit }: PageWindow) {
-  const user = ctx.var.user;
-  const memberships = ctx.var.memberships;
+  const { user, memberships } = ctx.var;
   const { q, orderBy, relatableUserId, role, excludeArchived, include, kind } = input;
   const { sort, order } = orderBy;
 
@@ -43,7 +42,7 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
   const includeMembership = include.includes('membership');
   const includeMembers = include.includes('members');
 
-  const opts = {
+  const { items: organizations, total } = await findOrganizationsPaginated(ctx, {
     isSystemAdmin,
     targetUserId,
     organizationIds: sharedWithCaller,
@@ -57,10 +56,8 @@ export async function getOrganizationsOp(ctx: UserContext, input: z.infer<typeof
     // The kind filter is for the list across tenants: a member's own list holds whatever they belong to.
     tenantKinds: isSystemAdmin ? (kind.length ? kind : listedTenantKinds()) : undefined,
     includeCounts,
-  };
-  const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
+  });
 
-  // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:c:{role} counters.
   const memberPreviews = includeMembers
     ? await findMemberPreviewsByChannels(ctx, {
         channelType: entityType,

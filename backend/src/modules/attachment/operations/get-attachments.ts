@@ -29,9 +29,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const readFilter = resolveCollectionReadFilter(access, 'attachment', organizationId);
   const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, access);
 
-  if (scopeWhere.kind === 'none') {
-    return { items: [], total: 0 };
-  }
+  if (scopeWhere.kind === 'none') return { items: [], total: 0 };
 
   // Trusted tenant + organization predicate from guarded context, independent of RLS.
   const filters: SQL[] = [requestScopeWhere(ctx, attachmentsTable, 'attachment')];
@@ -43,7 +41,6 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const subtreeWhere = narrowed ? buildSubtreeCoverWhere(attachmentsTable, 'attachment', channelId) : undefined;
   if (subtreeWhere) filters.push(subtreeWhere);
 
-  // A range read returns deleted rows too, so caches drop them.
   const read = range ? tenantReadIncludingDeleted : tenantRead;
   const { items: rawItems, total } = await read(ctx, (readCtx) =>
     findAttachmentsPaginated(readCtx, {
@@ -58,6 +55,5 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     }),
   );
 
-  const items = projectTombstones('attachment', await withActorRefs(ctx, rawItems));
-  return { items, total };
+  return { items: projectTombstones('attachment', await withActorRefs(ctx, rawItems)), total };
 }

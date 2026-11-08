@@ -184,9 +184,7 @@ describe('the Yjs log', () => {
     const scope = scopeOf();
     expect(
       await asSystem((tx) => appendYjsUpdate(ctxOf(tx), { doc: scope, update: textUpdate('a'), userId: null, generation: randomUUID() })),
-    ).toEqual({
-      status: 'no-document',
-    });
+    ).toEqual({ status: 'no-document' });
     expect(await rowsOf(scope)).toEqual({ docs: 0, log: 0 });
   });
 
@@ -195,10 +193,7 @@ describe('the Yjs log', () => {
     const generation = await seed(scope);
     expect(
       await asSystem((tx) => appendYjsUpdate(ctxOf(tx), { doc: scope, update: textUpdate('a'), userId: null, generation: randomUUID() })),
-    ).toEqual({
-      status: 'stale-generation',
-      generation,
-    });
+    ).toEqual({ status: 'stale-generation', generation });
     expect(await rowsOf(scope)).toEqual({ docs: 1, log: 0 });
   });
 

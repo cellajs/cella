@@ -11,7 +11,7 @@ import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, createTestUser, expectRefusal } from '../helpers';
+import { createTestOrganization, createTestUser, expectRefusal, insertOrgMembership } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -45,17 +45,7 @@ describe('access written outside this process', async () => {
     const org = await createTestOrganization();
     const versions = [await bindingsVersionOf(user.id)];
 
-    await db.insert(membershipsTable).values({
-      id: generateId(),
-      userId: user.id,
-      channelId: org.id,
-      organizationId: org.id,
-      tenantId: org.tenantId,
-      channelType: 'organization',
-      role: memberRole,
-      displayOrder: 1,
-      createdBy: user.id,
-    });
+    await insertOrgMembership(user.id, org, { role: memberRole, displayOrder: 1 });
     versions.push(await bindingsVersionOf(user.id));
     await db.update(membershipsTable).set({ muted: true }).where(eq(membershipsTable.userId, user.id));
     versions.push(await bindingsVersionOf(user.id));

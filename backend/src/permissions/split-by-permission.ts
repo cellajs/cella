@@ -25,7 +25,6 @@ const draftShowsTo = (ctx: ActorContext, entityType: ChannelEntityType | Product
  * tenant or organization, names a draft that does not show to the caller, or names a row the caller may not read or
  * may not `action` on. A bulk call never acts on such a row, and `rejectedIds` keeps the request order, so the answer
  * tells none of these apart.
- * @param entityType - The type of entity (channel or product, not user).
  * @throws AppError 403 if no entities are allowed.
  */
 export const splitByPermission = async (

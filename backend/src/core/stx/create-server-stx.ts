@@ -4,9 +4,7 @@ import { generateServerHLC } from '#/core/stx/hlc';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /** Trusted server mutation metadata. Creates use it directly; `resolveServerUpdateOps` adds field timestamps. */
-export function createServerStx(): StxBase {
-  return { mutationId: uuidv7(), sourceId: 'server', fieldTimestamps: {} };
-}
+export const createServerStx = (): StxBase => ({ mutationId: uuidv7(), sourceId: 'server', fieldTimestamps: {} });
 
 /**
  * A server transaction that already stamps the scalar fields of `ops`, so a body built on the server passes the

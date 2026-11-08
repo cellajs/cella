@@ -3,13 +3,13 @@ import { buildSubject } from 'shared';
 import type { StreamSignalType } from 'shared/stream-signal-types';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
-import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import { memberRole } from '../../../../tests/fixtures';
 import { toReaders, toUser } from './audiences';
 import { sendSignal } from './send-signal';
 import { streamSubscriberManager } from './subscriber-manager';
+import { streamSubscriber } from './tests/stream-subscriber';
 
 const org = 'org-signals';
 
@@ -32,18 +32,7 @@ const openStream = (userId: string, memberships: MembershipBaseModel[] = []) => 
       frames.push(frame);
     },
   } as unknown as SSEStreamingApi;
-  const subscriber: AppStreamSubscriber = {
-    id: crypto.randomUUID(),
-    topic: `org:${org}`,
-    stream,
-    userId,
-    sessionId: `session-${userId}`,
-    organizationIds: new Set([org]),
-    isSystemAdmin: false,
-    systemAccessAllowed: false,
-    memberships,
-  };
-  streamSubscriberManager.register(subscriber, [`user:${userId}`]);
+  streamSubscriberManager.register(streamSubscriber(userId, stream, memberships, org), [`user:${userId}`]);
   return frames;
 };
 

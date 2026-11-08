@@ -47,16 +47,8 @@ const oauthProviders = {
       return transformGithubUserData(user, emails);
     },
   },
-  google: {
-    client: googleAuth,
-    scopes: ['openid', 'profile', 'email'],
-    fetchUser: verifiedProfile,
-  },
-  microsoft: {
-    client: microsoftAuth,
-    scopes: ['openid', 'profile', 'email'],
-    fetchUser: verifiedProfile,
-  },
+  google: { client: googleAuth, scopes: ['openid', 'profile', 'email'], fetchUser: verifiedProfile },
+  microsoft: { client: microsoftAuth, scopes: ['openid', 'profile', 'email'], fetchUser: verifiedProfile },
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
 /**
@@ -97,7 +89,6 @@ export const finishOAuth = async (ctx: OAuthCallbackContext, provider: BaseOAuth
   }
 
   try {
-    // For an OIDC provider, id_token claims, `nonce` binding, signature and userinfo are validated inside the provider client.
     const { codeVerifier, nonce } = cookiePayload;
     const grant = await client.validateAuthorizationCode({ code, state, iss }, { codeVerifier, nonce });
     const providerUser = await fetchUser(grant);

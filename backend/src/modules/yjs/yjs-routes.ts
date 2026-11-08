@@ -11,7 +11,7 @@ import {
 } from '#/modules/yjs/yjs-schema';
 import { tenantOrgParamSchema } from '#/schemas';
 
-const yjsRoutes = createXRoutes(['yjs', 'cella'], {
+export const yjsRoutes = createXRoutes(['yjs', 'cella'], {
   getYjsToken: xRoute({
     method: 'get',
     path: '/token',
@@ -49,5 +49,3 @@ const yjsRoutes = createXRoutes(['yjs', 'cella'], {
     responses: { 200: json('Saved', yjsPushResponseSchema), ...errors(409) },
   }),
 });
-
-export { yjsRoutes };
