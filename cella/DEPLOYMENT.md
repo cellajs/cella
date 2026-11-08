@@ -4,8 +4,7 @@ This document explains how a cella app deploys to European cloud provider [Scale
 
 ### TL;DR
 
-Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. [Pulumi](https://www.pulumi.com/) manages the foundation, and a schedule inside the Scaleway organization starts each deploy, so GitHub holds no key. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys) with only the permissions they need.
-The machines hold none and fetch the release and their secrets through links that end within minutes.
+Publishing a release starts an automatic deployment: new machines for that exact version replace the old ones once the load balancer sees them healthy. A schedule inside the Scaleway organization starts each deploy, so GitHub holds no key. Setup and deploys each use their own [API keys](./deployment/KEYS.md#api-keys), and no machine holds one.
 
 ## Overview
 

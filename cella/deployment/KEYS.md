@@ -4,9 +4,7 @@ This document explains the Scaleway API keys a deployment uses, how to rotate th
 
 ### TL;DR
 
-Every key does one kind of work: an Owner API key only for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment.
-
-No machine a deploy makes holds a key: it fetches its images and its env file through links that end within minutes. Every key a person pastes dies within a day, and no privileged key or passphrase sits in a file on your machine. Rotating keys or secrets replaces every machine by deploying the live release again.
+Every key does one kind of work: an Owner API key for IAM writes, a one-day operator key per sitting, a deploy key and an uploads key per environment. No machine holds a key, and every key a person pastes dies within a day. Rotating keys or secrets deploys the live release again on new machines.
 
 ## Zones
 
