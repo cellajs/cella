@@ -100,7 +100,7 @@ The API and the optional Yjs relay share one permission engine in `shared/`. The
 
 What a delete or an archive does depends on the entity:
 
-- **Product**: a hidden tombstone until the deleted-items period ends. Only a system admin restores it.
+- **Product**: a hidden tombstone until the deleted-items period ends.
 - **Organization**: deleting it archives its tenant and ends access at once.
 - **Archived tenant**: removed with everything in it after the archived period.
 - **Nested channel**: removed at once, with the channels and products in it.
