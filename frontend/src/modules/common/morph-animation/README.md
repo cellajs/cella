@@ -54,17 +54,23 @@ How it works:
 
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;
-below 1 it magnifies), `stamp`, `palette`, `still` and `fizz`. A still freezes the clock at a chosen value:
-the piece condenses in on mount, in view or not, then holds that frame and draws again only
-when the theme or another prop changes, so a page can show a fixed shape at no
-ongoing cost. `fizz` keeps a still's grains alive on a clock of their own while the shape
-holds: the grid slowly wavers and edge grains flicker and fade in and out. A
-fizzing still draws while in view, as a running piece does. `grid` counts cells across the canvas, so grains
-shrink with it; `minGrainPx` in the renderer stops that at a size that still reads as
-a pixel, and a phone-sized canvas draws the same piece with fewer, larger grains. Below
-the `sm` breakpoint `minGrainPxPhone` takes over, so a phone's grains come out larger
-than a desktop's. The static `+` texture language in
-`styling/plus-grain.css` shares this module's pixel vocabulary for non-animated uses.
+below 1 it magnifies), `stamp`, `palette`, `still` and `fizz`.
+
+A still freezes the clock at a chosen value: the piece condenses in on mount, in view or not,
+then holds that frame and draws again only when the theme or another prop changes, so a page
+can show a fixed shape at no ongoing cost.
+
+`fizz` keeps a still's grains alive on a clock of their own while the shape holds: the grid
+slowly wavers and edge grains flicker and fade in and out. A fizzing still draws while in view,
+as a running piece does.
+
+`grid` counts cells across the canvas, so grains shrink with it; `minGrainPx` in the renderer
+stops that at a size that still reads as a pixel, and a phone-sized canvas draws the same piece
+with fewer, larger grains. Below the `sm` breakpoint `minGrainPxPhone` takes over, so a phone's
+grains come out larger than a desktop's.
+
+The static `+` texture language in `styling/plus-grain.css` shares this module's pixel
+vocabulary for non-animated uses.
 
 Cost: one fullscreen pass, no textures, no feedback buffers; at rest only one cell is
 evaluated. A canvas larger than a full HD screen renders at a lower resolution, so it costs
