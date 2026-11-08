@@ -1,6 +1,6 @@
 # Sync engine
 
-This document explains how product data, and the facts around it, stay current across clients online and offline. It assumes you know TanStack Query: queries, stale time and paused mutations ([tanstack.com](https://tanstack.com/query/latest)).
+This document explains how product data and the facts around it stay current across clients, online and offline. It assumes you know TanStack Query: queries, stale time and paused mutations ([tanstack.com](https://tanstack.com/query/latest)).
 
 ### TL;DR
 
@@ -123,7 +123,7 @@ Catchup runs on every connection before the stream goes live. It runs only after
 - an `ok` view's frontier
 - each organization's signal versions
 
-A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor, as in a newly joined organization, takes the frontier as its baseline and refetches what it has cached there.
+A view behind its frontier hands the gap to the fetch prioritizer. A view without a cursor takes the frontier as its baseline and refetches what it has cached there. The views of a newly joined organization have none.
 
 ### SSE wire
 
@@ -172,7 +172,7 @@ A side effect an embedding cannot express, such as seeding rows when a project i
 
 A product mutation patches the cache optimistically and reconciles with the stored row. Offline, an edit pauses in the persisted replay queue.
 
-An HTTP error settles at once. A replay that meets a gateway error, as during a deploy, stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
+An HTTP error settles at once. A replay that meets a gateway error stays queued until the API answers. A queue restored after a reload or a sign-in replays after the first catchup attempt.
 
 The attachment module sends a tab's writes one at a time and in order. An online write therefore waits behind a queued one.
 
@@ -209,7 +209,7 @@ The REST API and the database work whatever the CDC worker does. The worker reco
 
 ### REST fallback
 
-Losing the stream costs live updates and nothing else. Synced queries go stale with time, so lists refetch when opened. The client reconnects with backoff, and the next catchup fetches what its cursors miss.
+Losing the stream costs live updates and nothing else. Synced queries go stale with time, so lists refetch when opened. The client reconnects with backoff. The next catchup fetches what its cursors miss.
 
 ### What happens when
 
@@ -225,7 +225,7 @@ The client's own catchup repairs missed frames. Clients refetch everything only 
 | One change can never be processed | Live updates pause until a fix ships or the slot is dropped. After a drop every client refetches once | A fix lets the worker read on. A dropped slot is made anew and the books rebuilt | Nothing after a fix. After a drop, activities and notifications of the backlog |
 | A device was away longer than the activity window | It refetches what it holds of each organization once | Catchup starts over | Nothing |
 
-A rebuild starts a new sync generation, and the API ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
+A rebuild starts a new sync generation. The API then ends every open stream. Each client refetches its synced cache once, at its own moment within a few seconds. What is on screen refetches then, the rest through its [refetch mark](#freshness).
 
 ### Failure modes
 
