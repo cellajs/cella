@@ -29,9 +29,15 @@ Resource routes follow the resource-oriented conventions of [aep.dev](https://ae
 
 In a merge patch, an absent field stays, `null` clears it and an array is replaced whole. A product update is the exception. It sends field operations with their timestamps, which the sync engine merges field by field with concurrent edits. The auth, OAuth and MCP routes, the app stream and the yjs routes follow the protocols they implement.
 
-A single channel or product answers `GET` and `PATCH` with a strong `ETag`. The tag versions the resource's own fields, not its `included` data or counts. Send it back in `If-Match` on a `PATCH` or a custom method, and the write applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
+A single channel or product answers `GET` and `PATCH` with a strong `ETag`. The tag versions the resource's own fields, not its `included` data or counts.
 
-A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged, except `maxPageSize` and `skip`. A token is opaque and bound to its list. A token that was altered, or sent with changed params, is refused as `invalid_page_token`. `skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`: a field, optionally followed by `asc` or `desc`.
+Send it back in `If-Match` on a `PATCH` or a custom method, and the write applies only while nothing changed the resource since. Otherwise the write answers 412 `precondition_failed`. A `GET` with `If-None-Match` answers 304 while the tag holds.
+
+A list answers a page: its `results`, the list's `totalSize` and, while more follow, a `nextPageToken`. The next request passes that token as `pageToken` and keeps every other param unchanged, except `maxPageSize` and `skip`.
+
+A token is opaque and bound to its list. A token that was altered, or sent with changed params, is refused as `invalid_page_token`.
+
+`skip` jumps over results, from the start or from a token. A list that orders takes `orderBy`: a field, optionally followed by `asc` or `desc`.
 
 Four choices depart from those conventions:
 
@@ -54,19 +60,31 @@ The app is its own authorization server, on the same origin under `/oauth`. A pe
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives and to start with the read scopes. It consents through the OAuth face and comes back. MCP tools are routes that opted in. A call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives and to start with the read scopes. It consents through the OAuth face and comes back.
+
+MCP tools are routes that opted in. A call the token's scopes do not cover answers with the scope to step up to, and the client re-consents.
 
 ## The substrate
 
 ### Actors
 
-Every actor is a row in `actors`, a user or a service account. The writer columns of channel and product rows reference it. A service account is tenant-scoped and holds role bindings like a member does. It is disabled, never deleted, so the rows it wrote keep pointing at it. Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
+Every actor is a row in `actors`, a user or a service account. The writer columns of channel and product rows reference it.
 
-A user and a service account are the only actor kinds. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`. A row's provenance is its writer actor. A sync or import that a connection runs acts as a service account of its own, so the rows it wrote name it, and no table carries a provenance column.
+A service account is tenant-scoped and holds role bindings like a member does. It is disabled, never deleted, so the rows it wrote keep pointing at it.
+
+Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
+
+A user and a service account are the only actor kinds. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
+
+A row's provenance is its writer actor. A sync or import that a connection runs acts as a service account of its own, so the rows it wrote name it, and no table carries a provenance column.
 
 ### API keys
 
-Only a key's hash is stored, with its prefix and last four characters for display. The plaintext is shown once, at creation. A key can expire, be rolled or be revoked. After a roll the old key keeps working for an overlap window. A revoked key keeps its row as the audit trail. "Create API key" in organization settings makes a service account named after the key, as a member of the organization. An app that needs other roles or several keys per account builds on the same routes.
+Only a key's hash is stored, with its prefix and last four characters for display. The plaintext is shown once, at creation.
+
+A key can expire, be rolled or be revoked. After a roll the old key keeps working for an overlap window. A revoked key keeps its row as the audit trail.
+
+"Create API key" in organization settings makes a service account named after the key, as a member of the organization. An app that needs other roles or several keys per account builds on the same routes.
 
 ### Access scopes
 
@@ -81,7 +99,11 @@ The scope vocabulary is derived from the policy matrix, never listed by hand. Ev
 
 ### Tokens
 
-Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants. A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. Revoking a grant or a key, or changing a membership, counts at the next request. An MCP tool call runs its REST route in the same process, so the token never travels to another resource server.
+Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants.
+
+A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. An MCP tool call runs its REST route in the same process, so the token never travels to another resource server.
+
+A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. Revoking a grant or a key, or changing a membership, counts at the next request.
 
 A machine request the REST API refuses for want of valid proof names the tenant's metadata in its challenge. The REST API's resource identifier is the tenant URL. Its metadata therefore names a prefix of the request URL, not the request URL itself.
 
