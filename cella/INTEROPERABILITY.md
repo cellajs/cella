@@ -43,13 +43,13 @@ MCP tools are routes that opted in. A call the token's scopes do not cover answe
 
 ### Actors
 
-Every actor is a row in `actors`, a user or a service account. The writer columns of channel and product rows reference it.
+Every actor is a row in `actors`, a user or a service account.
+
+A user and a service account are the only actor kinds. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
 
 A service account is tenant-scoped and holds role bindings like a member does. It is disabled, never deleted, so the rows it wrote keep pointing at it.
 
 Creating or managing one takes `update` on the organization. An account keeps working on its own bindings after its creator leaves. The organization's remaining admins see and revoke it and its keys.
-
-A user and a service account are the only actor kinds. A person without an account signs in as a [provisional user](./AUTHENTICATION.md#sign-up), never as a third kind, since every writer reference on the wire embeds an `ActorRef`.
 
 A row's provenance is its writer actor, and no table carries a provenance column. A sync or import that a connection runs acts as a service account of its own. The rows it wrote name that account.
 
@@ -63,7 +63,7 @@ A key can expire, be rolled or be revoked. After a roll the old key keeps workin
 
 ### Access scopes
 
-The scope vocabulary is derived from the policy matrix, never listed by hand. Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check:
+Every entity type with a policy has `<type>:read` and `<type>:write`, and `write` implies `read`. A scope masks the actor's bindings in every permission check:
 
 - **Narrowing only:** a key or token holding `attachment:read` reads what its role reads, nothing else.
 - **Unknown scope:** fails closed.
@@ -74,13 +74,13 @@ The scope vocabulary is derived from the policy matrix, never listed by hand. Ev
 
 ### Tokens
 
+A machine request the REST API refuses for want of valid proof names the tenant's metadata in its challenge. That metadata names a prefix of the request URL, not the request URL itself. The REST API's resource identifier is the tenant URL.
+
 Access tokens are signed JWTs, each for one tenant's resource: that tenant's REST API, or one organization's MCP endpoint. A token never crosses tenants.
 
 A token for an organization's MCP endpoint also works on that organization's REST routes, since its MCP tools run through them. A tenant's API token works at the MCP endpoint too. The token never travels to another resource server: an MCP tool call runs its REST route in the same process.
 
 A guard verifies a token locally, without a call to the authorization server. It reads what the token rests on at every request. The next request sees a revoked grant or key and any membership change.
-
-A machine request the REST API refuses for want of valid proof names the tenant's metadata in its challenge. That metadata names a prefix of the request URL, not the request URL itself. The REST API's resource identifier is the tenant URL.
 
 ### Quotas and limits
 
