@@ -111,9 +111,7 @@ Each environment has a Serverless Jobs definition, `<slug>-main`. Every run of i
 - the **engine image** its runs start from, by digest
 - the [schedule](#the-schedule) that starts them
 
-The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A run installs nothing. The image starts its deploy from four values alone: the target, the retry counter, the deploy key and the project. A deploy reads no Pulumi state and no passphrase.
-
-The target's code never runs beside the deploy key. The builder evaluates the target's own description in a container that holds no key. It reports the description's hash beside the archives' digests. Before the deploy reads a runtime value, it compares that hash with the image's. A release that describes the app otherwise ends **apply needed**.
+`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`, not the default branch's. The run's log is in Cockpit under Serverless Jobs.
 
 A run ends in one of five outcomes:
 
@@ -123,23 +121,25 @@ A run ends in one of five outcomes:
 - **Apply needed:** the target describes the app otherwise, or the run ran outside the engine image ([Apply needed](./deployment/RUNBOOKS.md#apply-needed)).
 - **Failed:** roles it did not switch keep their machines, and the target waits for a change in git or a start by hand.
 
-`pnpm infra start-deploy` starts a run on your operator key and follows it to its end. It reads the target from this checkout's `infra/environments`, not the default branch's. The run's log is in Cockpit under Serverless Jobs.
-
 **Releases only.** In an environment that follows the releases, the engine refuses a target that no release tag names. It reads that rule from the environment its image was built for. No value a start sets turns the check off or moves the run elsewhere.
 
 The check catches a start by hand that names the wrong commit. A key that may start runs can still start one with a command of its own, past that check. Show runs flags such a run.
 
 The rule is as strong as who may push a tag. A `99.0.0` pushed on any commit is the newest release. An app's ruleset restricts creating, moving and deleting every tag, with its release GitHub App as the only bypass ([Releases](./RELEASES.md#setup)).
 
+The image carries the engine and the **applied description**: the app as the apply's checkout describes it ([What needs an apply](./deployment/CHANGING_INFRASTRUCTURE.md#what-needs-an-apply)). A run installs nothing. The image starts its deploy from four values alone: the target, the retry counter, the deploy key and the project. A deploy reads no Pulumi state and no passphrase.
+
+The target's code never runs beside the deploy key. The builder evaluates the target's own description in a container that holds no key. It reports the description's hash beside the archives' digests. Before the deploy reads a runtime value, it compares that hash with the image's. A release that describes the app otherwise ends **apply needed**.
+
 ### The schedule
 
 Scaleway starts a run of the main job at the cadence each environment sets as `schedule.everyMinutes` in [config/general.config.ts](../infra/config/general.config.ts). A release waits at most that long for its deploy.
 
-One run looks at a time: a scheduled run first takes the lease. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
+An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Show status** names a schedule that stopped, went missing or whose runs fail. Show runs says when the last scheduled run started.
 
 Each target deploys once: the records are the schedule's memory. A failed target waits for a change in git, and a blocked one for an operator to clear the block.
 
-An apply writes the schedule, and nothing else needs setting up: it is part of the definition. A scheduled run that starts nothing leaves no record. **Show status** names a schedule that stopped, went missing or whose runs fail. Show runs says when the last scheduled run started.
+One run looks at a time: a scheduled run first takes the lease. It then looks for a run record of the environment's target and retry counter. Without one it opens the target's record and deploys the target.
 
 ### Run records
 
