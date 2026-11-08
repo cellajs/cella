@@ -91,11 +91,12 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const indexedItemCount = customSlashIndexedItems.filter((type) => allowedTypes.includes(type)).length;
+  const hasDigitShortcuts = items.length === originalItemCount;
 
   const handleKeyDown = (event: KeyboardEvent) => {
     const itemIndex = Number.parseInt(event.key, 10) - 1;
 
-    if (items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
+    if (!hasDigitShortcuts || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
 
     const item = items[itemIndex];
     if (!item) return;
@@ -117,9 +118,8 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
     const scrollTop = menuContainer.scrollTop;
     const scrollBottom = scrollTop + menuContainer.clientHeight;
 
-    if (itemTop < scrollTop) {
-      menuContainer.scrollTop = itemTop;
-    } else if (itemBottom > scrollBottom) menuContainer.scrollTop = itemBottom - menuContainer.clientHeight;
+    if (itemTop < scrollTop) menuContainer.scrollTop = itemTop;
+    else if (itemBottom > scrollBottom) menuContainer.scrollTop = itemBottom - menuContainer.clientHeight;
   }, [selectedIndex]);
 
   return (
@@ -130,7 +130,7 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
     >
       {items.map((item, index) => (
         <div key={item.title}>
-          {index === indexedItemCount && items.length === originalItemCount && <hr className="my-1" />}
+          {hasDigitShortcuts && index === indexedItemCount && <hr className="my-1" />}
           <button
             ref={(element) => {
               itemRefs.current[index] = element;
@@ -147,7 +147,7 @@ function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, origin
               {item.icon}
               {item.title}
             </div>
-            {items.length === originalItemCount && index < indexedItemCount && (
+            {hasDigitShortcuts && index < indexedItemCount && (
               <span className="text-faint-foreground flex min-w-4 py-0.5 pl-1 text-[0.8rem]">{index + 1}</span>
             )}
           </button>

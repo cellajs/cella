@@ -105,7 +105,9 @@ function PrimitiveValue({ value, type, collapseStringsAfterLength, openapiMode }
       const str = String(value);
 
       // Schema-mode type keywords render unquoted and in the type color.
-      if (openapiMode === 'schema' && jsonSchemaTypes.has(str)) return <span className={cn(baseClass, jsonViewerTheme.schemaType)}>{str}</span>;
+      if (openapiMode === 'schema' && jsonSchemaTypes.has(str)) {
+        return <span className={cn(baseClass, jsonViewerTheme.schemaType)}>{str}</span>;
+      }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;
       const displayValue = !isExpanded && shouldTruncate ? str.slice(0, collapseStringsAfterLength) : str;

@@ -50,16 +50,18 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   if (isNetworkError(error)) return;
 
   if (!(error instanceof ApiError)) return;
+  const { type, instance, path, status } = error;
   // A /me probe without a valid session shows no error.
-  if (error.path === '/me' && error.status === 401) return;
+  if (path === '/me' && status === 401) return;
 
   // The console line with the request id is for developers; Maple's fetch span already records the status and joins the backend trace.
-  if (error.status >= 500) console.error('[api]', error.type ?? 'server_error', { instance: error.instance, path: error.path, status: error.status });
+  if (status >= 500) console.error('[api]', type ?? 'server_error', { instance, path, status });
 
   // A query or mutation with a local toast opts out through `meta`.
   const suppress = meta?.suppressGlobalErrorToast;
+  const optedOut = typeof suppress === 'function' ? suppress(error) : suppress === true;
   // The API client raised the down alert for a service that is down; it lies over the toast stack, so no toast follows.
-  const skipToast = error.type === 'service_unavailable' || (typeof suppress === 'function' ? suppress(error) : suppress === true);
+  const skipToast = type === 'service_unavailable' || optedOut;
 
   if (!skipToast) {
     const { title, message } = getErrorInfo({ error });
